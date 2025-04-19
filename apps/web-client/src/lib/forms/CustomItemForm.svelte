@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { superForm, numberProxy } from "sveltekit-superforms/client";
+	import { Euro } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 
@@ -25,7 +26,7 @@
 </script>
 
 <form
-	class="divide-y-gray-50 flex h-auto flex-col gap-y-6 px-4 py-4"
+	class="divide-y-secondary flex flex-col gap-y-10 px-4 py-4"
 	aria-label="Edit book details"
 	use:enhance
 	method="POST"
@@ -33,18 +34,26 @@
 >
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
-			<div id="title-field-container" class="basis-full">
-				<Input bind:value={$formStore.title} name="title" label="Title" placeholder="" {...$constraints.title} />
-			</div>
-			<div id="price-field-container" class="flex basis-full justify-between gap-x-4">
-				<Input bind:value={$priceProxy} name="price" label="Price" placeholder="0" type="number" step="any" required>
-					<span slot="start-adornment">€</span>
-				</Input>
-			</div>
+			<label class="form-control basis-full" id="title-field-container">
+				<div class="label">
+					<span class="label-text">Title</span>
+				</div>
+				<input bind:value={$formStore.title} name="title" placeholder="" {...$constraints.title} class="input-bordered input w-full" />
+			</label>
+
+			<label class="form-control basis-full" id="price-field-container">
+				<span class="label">
+					<span class="label-text">Price</span>
+				</span>
+				<span class="input-bordered input flex items-center gap-2">
+					<Euro class="text-base-content/50" />
+					<input bind:value={$priceProxy} name="price" placeholder="0" type="number" step="any" required class="w-1/2" />
+				</span>
+			</label>
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="button button-white" on:click={onCancel} type="button">Cancel</button>
-		<button class="button button-green disabled:bg-gray-400" type="submit">Save</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">Cancel</button>
+		<button class="btn-primary btn disabled:bg-gray-400" type="submit">Save</button>
 	</div>
 </form>

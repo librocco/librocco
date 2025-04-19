@@ -10,6 +10,8 @@
 	import { page } from "$app/stores";
 	import { invalidate } from "$app/navigation";
 
+	import { Page } from "$lib/controllers";
+
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
@@ -51,10 +53,7 @@
 	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
-
-	$: books = data?.reconciliationOrderLines || [];
-
-	$: plugins = data.plugins;
+	$: ({ reconciliationOrderLines: books = [], plugins } = data);
 
 	async function handleIsbnSubmit(isbn: string) {
 		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
@@ -130,10 +129,6 @@
 		await goto(appPath("supplier_orders"));
 	}
 
-	const confirmDeleteDialogHeading = "Delete Reconciliation Order";
-	const confirmDeleteDialogDescription =
-		"Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines.";
-
 	const handleConfirmDeleteDialog = () => {
 		deleteDialogOpen.set(true);
 	};
@@ -147,29 +142,23 @@
 	}
 </script>
 
-<header class="navbar mb-4 bg-neutral">
-	<input type="checkbox" value="forest" class="theme-controller toggle" />
-</header>
-
-<main class="h-screen">
-	<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+<Page title={t.title.reconcile_deliveries()} view="orders/suppliers/reconcile/id" {db} {plugins}>
+	<div slot="main" class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card">
 				<div class="card-body gap-y-2 p-0">
 					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
-						<h1 class="prose card-title">{t.title.reconcile_deliveries()}</h1>
-
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
 							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
 
-							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
+							<span class="badge-outline badge-accent badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">{t.stats.created()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.created).toISOString()}
 									>{new Date(data?.reconciliationOrder.created).toLocaleString()}</time
 								>
 							</span>
-							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
+							<span class="badge-outline badge-accent badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">{t.stats.last_updated()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
@@ -177,7 +166,7 @@
 								>
 							</span>
 							{#if data?.reconciliationOrder.finalized}
-								<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
+								<span class="badge-outline badge-accent badge badge-md gap-x-2 py-2.5">
 									<span class="sr-only">Finalized At</span>
 									<ClockArrowUp size={16} aria-hidden />
 									<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
@@ -193,7 +182,7 @@
 							<dt class="mt-0">{t.stats.includes_supplier_orders()}:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
 								{#each placedOrders as [order_id, supplier_name]}
-									<dd class="badge-accent badge-outline badge badge-md gap-x-2">
+									<dd class="badge-outline badge-accent badge badge-md gap-x-2">
 										#{order_id}
 										<span class="text-sm font-light">({supplier_name})</span>
 									</dd>
@@ -355,7 +344,7 @@
 			</div>
 		</div>
 	</div>
-</main>
+</Page>
 
 <PageCenterDialog dialog={commitDialog} title="" description="">
 	<CommitDialog

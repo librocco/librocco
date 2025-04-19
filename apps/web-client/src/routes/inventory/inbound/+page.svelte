@@ -4,13 +4,12 @@
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Library, Loader2 as Loader, Trash } from "lucide-svelte";
+	import { ClockArrowUp, FilePlus, Layers, Library, Trash } from "lucide-svelte";
 
 	import { entityListView, testId } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
 
-	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
@@ -18,8 +17,9 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
-	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { deleteNote } from "$lib/db/cr-sqlite/note";
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import { InventoryManagementPage } from "$lib/controllers";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
@@ -28,6 +28,11 @@
 		title: string;
 		description: string;
 	}
+
+	$: ({ notes, plugins } = data);
+	$: db = data.dbCtx?.db;
+
+	$: t = $LL.inventory_page.inbound_tab;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -43,14 +48,8 @@
 	});
 	$: goto = racefreeGoto(disposer);
 
-	$: db = data.dbCtx?.db;
-
-	$: notes = data.notes;
-
 	let initialized = false;
 	$: initialized = Boolean(db);
-
-	$: plugins = data.plugins;
 
 	const handleCreateWarehouse = async () => {
 		const id = await getWarehouseIdSeq(db);
@@ -70,38 +69,39 @@
 	} = dialog;
 
 	let dialogContent: DialogContent;
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	$: t = $LL.inventory_page.inbound_tab;
 </script>
 
-<InventoryManagementPage {handleCreateOutboundNote} {plugins} {handleCreateWarehouse}>
+<InventoryManagementPage {handleCreateWarehouse} {db} {plugins}>
 	{#if !initialized}
-		<div class="center-absolute">
-			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+		<div class="flex grow justify-center">
+			<div class="mx-auto translate-y-1/2">
+				<span class="loading loading-spinner loading-lg text-primary"></span>
+			</div>
 		</div>
 	{:else}
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-		<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
+		<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")}>
 			{#if !notes.length}
 				<!-- Start entity list placeholder -->
-				<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`} class="center-absolute">
-					<a
-						href={appPath("warehouses")}
-						class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
-						><span class="text-green-50">{t.stats.back_to_warehouses()}</span></a
-					>
-				</PlaceholderBox>
+
+				<div class="flex grow justify-center">
+					<div class="mx-auto max-w-xl translate-y-1/2">
+						<!-- Start entity list placeholder -->
+						<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`}>
+							<FilePlus slot="icon" />
+
+							<a slot="actions" href={appPath("warehouses")} class="btn-primary btn w-full">
+								<span class="text-green-50">
+									{t.stats.back_to_warehouses()}
+								</span>
+							</a>
+						</PlaceholderBox>
+						<!-- End entity list placeholder -->
+					</div>
+				</div>
+
 				<!-- End entity list placeholder -->
 			{:else}
 				<!-- Start entity list -->
@@ -114,26 +114,28 @@
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2">
-							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
+							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
-							<div class="flex flex-col items-start gap-y-2">
-								<div class="flex gap-x-0.5">
-									<Library class="mr-1 text-gray-700" size={24} />
-									<span class="entity-list-text-sm text-gray-500"> {t.stats.books({ no_of_books: totalBooks })}</span>
+							<div class="flex flex-row gap-x-8 gap-y-2 max-sm:flex-col">
+								<div class="flex gap-x-2">
+									<Layers size={18} />
+									<span class="entity-list-text-sm text-sm text-base-content"> {t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
 								{#if note.updatedAt}
-									<span class="badge badge-md badge-green">
-										{t.stats.last_updated()}: {updatedAt}
-									</span>
+									<div class="flex items-center gap-x-2 text-sm text-base-content">
+										<ClockArrowUp size={18} />
+										{t.stats.last_updated()}:
+										{updatedAt}
+									</div>
 								{/if}
 							</div>
 						</div>
 
 						<div class="entity-list-actions">
-							<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+							<a {href} class="btn-secondary btn-outline btn-sm btn">Edit</a>
 							<button
 								use:melt={$trigger}
-								class="button button-white"
+								class="btn-secondary btn-sm btn"
 								aria-label="Delete note: {note.displayName}"
 								on:m-click={() => {
 									dialogContent = {
@@ -143,9 +145,7 @@
 									};
 								}}
 							>
-								<span aria-hidden="true">
-									<Trash size={20} />
-								</span>
+								<Trash size={18} aria-hidden />
 							</button>
 						</div>
 					</div>

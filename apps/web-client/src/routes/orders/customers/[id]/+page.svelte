@@ -35,6 +35,7 @@
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { DaisyUIBookForm, bookSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+	import { Page } from "$lib/controllers";
 
 	import {
 		addBooksToCustomer,
@@ -53,6 +54,11 @@
 	// import { createIntersectionObserver } from "$lib/actions";
 
 	export let data: PageData;
+
+	$: ({ customer, customerOrderLines, publisherList, plugins } = data);
+	$: db = data.dbCtx?.db;
+
+	$: customerId = parseInt($page.params.id);
 
 	// #region reactivity
 	let disposer: () => void;
@@ -74,17 +80,8 @@
 	});
 	// #endregion reactivity
 
-	$: customerId = parseInt($page.params.id);
-
-	$: db = data.dbCtx?.db;
-
-	$: customer = data?.customer;
-	$: customerOrderLines = data?.customerOrderLines || [];
-	$: publisherList = data.publisherList;
-
 	$: totalAmount = customerOrderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
 
-	$: plugins = data.plugins;
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
 
 	// #region infinite-scroll
@@ -208,19 +205,13 @@
 	let dialogContent: DialogContent & { type: "delete" | "edit-row" };
 </script>
 
-<header class="navbar mb-4 bg-neutral">
-	<input type="checkbox" value="forest" class="theme-controller toggle" />
-</header>
-
-<main class="h-screen">
-	<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+<Page title="Customer Orders" view="orders/customers/id" {db} {plugins}>
+	<div slot="main" class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card h-full">
 				{#if customer}
 					<div class="card-body gap-y-2 p-0">
-						<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
-							<h1 class="prose card-title">Customer Order</h1>
-
+						<div class="sticky top-0 flex flex-col gap-y-2 pb-3">
 							<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
 								<h2 class="prose">#{customer.displayId}</h2>
 
@@ -422,12 +413,6 @@
 											</div>
 										</PopoverWrapper>
 									</td>
-
-									{#if status === OrderLineStatus.Pending}
-										<td>
-											<button on:click={() => handleDeleteLine(id)} class="btn-outline btn-sm btn">Delete</button>
-										</td>
-									{/if}
 								</tr>
 							{/each}
 						</tbody>
@@ -436,7 +421,7 @@
 			</div>
 		</div>
 	</div>
-</main>
+</Page>
 
 <div use:melt={$portalled}>
 	{#if $open}

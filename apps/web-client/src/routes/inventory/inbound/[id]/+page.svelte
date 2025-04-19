@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
 	import { fade, fly } from "svelte/transition";
-	import { writable, readable } from "svelte/store";
+	import { writable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
 	import { filter, scan } from "rxjs";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, FileCheck } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";
@@ -20,14 +20,15 @@
 		Breadcrumbs,
 		DropdownWrapper,
 		PopoverWrapper,
-		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
 		TextEditable,
 		Dialog,
-		InboundTable,
-		ExtensionAvailabilityToast
+		InboundTable
 	} from "$lib/components";
+	import { Page } from "$lib/controllers";
+	import { defaultDialogConfig } from "$lib/components/Melt";
+
 	import { BookForm, bookSchema, ScannerForm, scannerSchema, type BookFormSchema } from "$lib/forms";
 
 	import { printBookLabel, printReceipt } from "$lib/printer";
@@ -44,21 +45,24 @@
 	import {
 		addVolumesToNote,
 		commitNote,
-		createOutboundNote,
 		deleteNote,
-		getNoteIdSeq,
 		getReceiptForNote,
 		removeNoteTxn,
 		updateNote,
 		updateNoteTxn
 	} from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
-	import { appPath } from "$lib/paths";
-	import { racefreeGoto } from "$lib/utils/navigation";
 	import type { NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
+
+	$: ({ plugins, id: noteId, warehouseId, warehouseName, displayName, updatedAt, publisherList } = data);
+	$: db = data.dbCtx?.db;
+
+	$: t = $LL.inventory_page.inbound_tab;
+	$: tInbound = $LL.inbound_note;
+	$: tCommon = $LL.common;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -76,25 +80,13 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
-	$: goto = racefreeGoto(disposer);
-
-	$: db = data.dbCtx?.db;
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !db;
 
-	$: noteId = data.id;
-	$: warehouseId = data.warehouseId;
-	$: warehouseName = data.warehouseName;
-	$: displayName = data.displayName;
-
-	$: updatedAt = data.updatedAt;
 	$: entries = data.entries as NoteEntriesItem[];
 	$: totalBookCount = entries.reduce((acc, { quantity }) => acc + quantity, 0);
-	$: publisherList = data.publisherList;
-
-	$: plugins = data.plugins;
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
 		await commitNote(db, noteId);
@@ -194,7 +186,7 @@
 		try {
 			await upsertBook(db, data);
 			bookFormData = null;
-			open.set(false);
+			editDialogOpen.set(false);
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
 		}
@@ -214,176 +206,187 @@
 	$: breadcrumbs =
 		noteId && warehouseId ? createBreadcrumbs("inbound", { id: warehouseId, displayName: warehouseName }, { id: noteId, displayName }) : [];
 
-	const dialog = createDialog({
-		forceVisible: true
-	});
+	const editBookDialog = createDialog(defaultDialogConfig);
 	const {
-		elements: { trigger: dialogTrigger, overlay, content, title, description, close, portalled },
-		states: { open }
-	} = dialog;
+		elements: {
+			trigger: editDialogTrigger,
+			overlay: editDialogOverlay,
+			content: editDialogContent,
+			title: editDialogTitle,
+			description: editDialogDescription,
+			close: editDialogClose,
+			portalled: editDialogPortalled
+		},
+		states: { open: editDialogOpen }
+	} = editBookDialog;
 
-	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
+	const confirmActionDialog = createDialog(defaultDialogConfig);
+	const {
+		elements: {
+			trigger: confirmDialogTrigger,
+			overlay: confirmDialogOverlay,
 
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
+			portalled: confirmDialogPortalled
+		},
+		states: { open: confirmDialogOpen }
+	} = confirmActionDialog;
 
-	$: t = $LL.inventory_page.inbound_tab;
-	$: tt = $LL.inbound_note;
-	$: tCommon = $LL.common;
+	let dialogContent: DialogContent & { type: "commit" | "delete" };
 </script>
 
-<Page {handleCreateOutboundNote} view="inbound-note" loaded={!loading}>
-	<svelte:fragment slot="topbar" let:iconProps>
-		<QrCode {...iconProps} />
-		<ScannerForm
-			data={defaults(zod(scannerSchema))}
-			options={{
-				SPA: true,
-				dataType: "json",
-				validators: zod(scannerSchema),
-				validationMethod: "submit-only",
-				resetForm: true,
-				onUpdated: async ({ form }) => {
-					const { isbn } = form?.data;
-					await handleAddTransaction(isbn);
+<Page title={displayName} view="inbound-note" {db} {plugins}>
+	<div slot="main" class="flex h-full w-full flex-col divide-y">
+		<div class="flex flex-col gap-y-4 px-6 py-4">
+			<Breadcrumbs links={breadcrumbs} />
+			<div class="flex w-full flex-wrap items-center justify-between gap-2">
+				<div class="flex max-w-md flex-col">
+					<TextEditable
+						name="title"
+						textEl="h1"
+						textClassName="text-2xl font-bold leading-7 text-base-content"
+						placeholder="Note"
+						value={displayName}
+						on:change={(e) => updateNote(db, noteId, { displayName: e.detail })}
+					/>
 
-					if ($autoPrintLabels) {
-						try {
-							getBookData(db, isbn).then(handlePrintLabel);
-							// Success
-						} catch (err) {
-							// Show error
-						}
-					}
-				}
-			}}
-		/>
-	</svelte:fragment>
-
-	<svelte:fragment slot="heading">
-		<Breadcrumbs class="mb-3" links={breadcrumbs} />
-		<div class="flex w-full flex-wrap items-center justify-between gap-2">
-			<div class="flex max-w-md flex-col">
-				<TextEditable
-					name="title"
-					textEl="h1"
-					textClassName="text-2xl font-bold leading-7 text-gray-900"
-					placeholder="Note"
-					value={displayName}
-					on:change={(e) => updateNote(db, noteId, { displayName: e.detail })}
-				/>
-
-				<div class="w-fit">
-					{#if updatedAt}
-						<span class="badge badge-md badge-green">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
-					{/if}
+					<div class="w-fit">
+						{#if updatedAt}
+							<span class="primary badge-outline badge badge-md">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
+						{/if}
+					</div>
 				</div>
-			</div>
 
-			<div class="ml-auto flex items-center gap-x-2">
-				<button
-					class="button button-green hidden xs:block"
-					use:melt={$dialogTrigger}
-					on:m-click={() => {
-						dialogContent = {
-							onConfirm: handleCommitSelf,
-							title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
-							description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
-							type: "commit"
-						};
-					}}
-					on:m-keydown={() => {
-						dialogContent = {
-							onConfirm: handleCommitSelf,
-							title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
-							description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
-							type: "commit"
-						};
-					}}
-				>
-					<span class="button-text">{tt.labels.commit()}</span>
-				</button>
-
-				<DropdownWrapper let:item>
-					<div
-						{...item}
-						use:item.action
-						use:melt={$dialogTrigger}
+				<div class="ml-auto flex items-center gap-x-2">
+					<button
+						class="btn-primary btn-sm btn hidden xs:block"
+						use:melt={$confirmDialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
-								description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
+								title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
+								description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 								type: "commit"
-							};
-						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
-					>
-						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">{tt.labels.commit()}</span>
-					</div>
-					<div
-						{...item}
-						use:item.action
-						on:m-click={handlePrintReceipt}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
-					>
-						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tt.labels.print()}</span>
-					</div>
-					<div
-						{...item}
-						use:item.action
-						on:m-click={autoPrintLabels.toggle}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
-							? '!bg-green-400'
-							: ''}"
-					>
-						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tt.labels.auto_print_book_labels()}</span>
-					</div>
-					<div
-						{...item}
-						use:item.action
-						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
-						on:m-click={() => {
-							dialogContent = {
-								onConfirm: handleDeleteSelf,
-								title: tCommon.delete_dialog.title({ entity: displayName }),
-								description: tCommon.delete_dialog.description(),
-								type: "delete"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
-								onConfirm: handleDeleteSelf,
-								title: tCommon.delete_dialog.title({ entity: displayName }),
-								description: tCommon.delete_dialog.description(),
-								type: "delete"
+								onConfirm: handleCommitSelf,
+								title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
+								description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
+								type: "commit"
 							};
 						}}
 					>
-						<Trash2 class="text-white" size={20} /><span class="text-white">{tt.labels.delete()}</span>
-					</div>
-				</DropdownWrapper>
+						<span class="button-text">{tInbound.labels.commit()}</span>
+					</button>
+
+					<DropdownWrapper let:item>
+						<div
+							{...item}
+							use:item.action
+							use:melt={$confirmDialogTrigger}
+							on:m-click={() => {
+								dialogContent = {
+									onConfirm: handleCommitSelf,
+									title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
+									description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
+									type: "commit"
+								};
+							}}
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
+						>
+							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.commit()}</span>
+						</div>
+						<div
+							{...item}
+							use:item.action
+							on:m-click={handlePrintReceipt}
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
+						>
+							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.print()}</span>
+						</div>
+						<div
+							{...item}
+							use:item.action
+							on:m-click={autoPrintLabels.toggle}
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 {$autoPrintLabels
+								? '!bg-success text-success-content'
+								: ''}"
+						>
+							<Printer class="text-base-content/70" size={20} />
+							<span class="text-base-content">
+								{tInbound.labels.auto_print_book_labels()}
+							</span>
+						</div>
+						<div
+							{...item}
+							use:item.action
+							use:melt={$confirmDialogTrigger}
+							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
+							on:m-click={() => {
+								dialogContent = {
+									onConfirm: handleDeleteSelf,
+									title: tCommon.delete_dialog.title({ entity: displayName }),
+									description: tCommon.delete_dialog.description(),
+									type: "delete"
+								};
+							}}
+							on:m-keydown={() => {
+								dialogContent = {
+									onConfirm: handleDeleteSelf,
+									title: tCommon.delete_dialog.title({ entity: displayName }),
+									description: tCommon.delete_dialog.description(),
+									type: "delete"
+								};
+							}}
+						>
+							<Trash2 class="text-error-content" size={20} /><span class="text-error-content">{tInbound.labels.delete()}</span>
+						</div>
+					</DropdownWrapper>
+				</div>
+			</div>
+			<div class="flex w-full py-4">
+				<ScannerForm
+					data={defaults(zod(scannerSchema))}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(scannerSchema),
+						validationMethod: "submit-only",
+						resetForm: true,
+						onUpdated: async ({ form }) => {
+							const { isbn } = form?.data;
+							await handleAddTransaction(isbn);
+
+							if ($autoPrintLabels) {
+								try {
+									getBookData(db, isbn).then(handlePrintLabel);
+									// Success
+								} catch (err) {
+									// Show error
+								}
+							}
+						}
+					}}
+				/>
 			</div>
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="main">
 		{#if loading}
-			<div class="center-absolute">
-				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			<div class="flex grow justify-center">
+				<div class="mx-auto translate-y-1/2">
+					<span class="loading loading-spinner loading-lg text-primary"></span>
+				</div>
 			</div>
 		{:else if !entries.length}
-			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
-				<QrCode slot="icon" let:iconProps {...iconProps} />
-			</PlaceholderBox>
+			<div class="flex grow justify-center">
+				<div class="mx-auto max-w-xl translate-y-1/4">
+					<!-- Start entity list placeholder -->
+					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
+						<QrCode slot="icon" />
+					</PlaceholderBox>
+					<!-- End entity list placeholder -->
+				</div>
+			</div>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
@@ -403,7 +406,7 @@
 									data-testid={testId("popover-control")}
 									{...trigger}
 									use:trigger.action
-									class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+									class="btn-neutral btn-outline btn-sm btn px-0.5"
 								>
 									<span class="sr-only">Edit row {rowIx}</span>
 									<span class="aria-hidden">
@@ -411,47 +414,29 @@
 									</span>
 								</button>
 
-								<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+								<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 									<button
-										use:melt={$dialogTrigger}
-										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+										use:melt={$editDialogTrigger}
+										class="btn-secondary btn-sm btn"
 										data-testid={testId("edit-row")}
 										on:m-click={() => {
 											const { warehouseId, quantity, ...bookData } = row;
 
 											bookFormData = bookData;
-
-											dialogContent = {
-												onConfirm: () => {},
-												title: tCommon.edit_book_dialog.title(),
-												description: tCommon.edit_book_dialog.description(),
-												type: "edit-row"
-											};
 										}}
 										on:m-keydown={() => {
 											const { warehouseId, quantity, ...bookData } = row;
 											bookFormData = bookData;
-
-											dialogContent = {
-												onConfirm: () => {},
-												title: tCommon.edit_book_dialog.title(),
-												description: tCommon.edit_book_dialog.description(),
-												type: "edit-row"
-											};
 										}}
 									>
-										<span class="sr-only">{tt.labels.edit_row()} {rowIx}</span>
+										<span class="sr-only">{tInbound.labels.edit_row()} {rowIx}</span>
 										<span class="aria-hidden">
 											<FileEdit />
 										</span>
 									</button>
 
-									<button
-										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-										data-testid={testId("print-book-label")}
-										on:click={() => handlePrintLabel(row)}
-									>
-										<span class="sr-only">{tt.labels.print_book_label()} {rowIx}</span>
+									<button class="btn-secondary btn-sm btn" data-testid={testId("print-book-label")} on:click={() => handlePrintLabel(row)}>
+										<span class="sr-only">{tInbound.labels.print_book_label()} {rowIx}</span>
 										<span class="aria-hidden">
 											<Printer />
 										</span>
@@ -459,10 +444,10 @@
 
 									<button
 										on:click={() => deleteRow(row.isbn, row.warehouseId)}
-										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+										class="btn-secondary btn-sm btn"
 										data-testid={testId("delete-row")}
 									>
-										<span class="sr-only">{tt.labels.delete_row()} {rowIx}</span>
+										<span class="sr-only">{tInbound.labels.delete_row()} {rowIx}</span>
 										<span class="aria-hidden">
 											<Trash2 />
 										</span>
@@ -479,80 +464,81 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
-	</svelte:fragment>
+	</div>
 </Page>
 
-{#if $open}
+{#if $editDialogOpen}
+	<div use:melt={$editDialogPortalled}>
+		<div use:melt={$editDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+		<div
+			use:melt={$editDialogContent}
+			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
+				bg-base-200 shadow-lg focus:outline-none"
+			in:fly|global={{
+				x: 350,
+				duration: 300,
+				opacity: 1
+			}}
+			out:fly|global={{
+				x: 350,
+				duration: 100
+			}}
+		>
+			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
+				<div>
+					<h2 use:melt={$editDialogTitle} class="text-lg font-medium">{tCommon.edit_book_dialog.title()}</h2>
+					<p use:melt={$editDialogDescription} class="leading-normal">
+						{tCommon.edit_book_dialog.description()}
+					</p>
+				</div>
+				<button use:melt={$editDialogClose} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
+					<X size={16} />
+				</button>
+			</div>
+			<div class="px-6">
+				<!-- {$connectivity} -->
+				<BookForm
+					data={defaults(bookFormData, zod(bookSchema))}
+					{publisherList}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(bookSchema),
+						validationMethod: "submit-only",
+						onUpdated
+					}}
+					onCancel={() => editDialogOpen.set(false)}
+					onFetch={async (isbn, form) => {
+						const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+
+						// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+						const bookData = mergeBookData({ isbn }, results);
+
+						// If there's no book was retrieved from any of the sources, exit early
+						if (!bookData) {
+							return;
+						}
+
+						form.update((data) => ({ ...data, ...bookData }));
+						// TODO: handle loading and errors
+					}}
+					isExtensionAvailable={$bookDataExtensionAvailable}
+				/>
+			</div>
+		</div>
+	</div>
+{/if}
+{#if $confirmDialogOpen}
 	{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
-		{#if type === "edit-row"}
-			<div
-				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto
-				bg-white shadow-lg focus:outline-none"
-				in:fly|global={{
-					x: 350,
-					duration: 150,
-					opacity: 1
-				}}
-				out:fly|global={{
-					x: 350,
-					duration: 100
-				}}
-			>
-				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
-					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
-					</div>
-					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
-						<X class="square-4" />
-					</button>
-				</div>
-				<div class="px-6">
-					<!-- {$connectivity} -->
-					<BookForm
-						data={defaults(bookFormData, zod(bookSchema))}
-						{publisherList}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validators: zod(bookSchema),
-							validationMethod: "submit-only",
-							onUpdated
-						}}
-						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+	<div use:melt={$confirmDialogPortalled}>
+		<div use:melt={$confirmDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 
-							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData({ isbn }, results);
-
-							// If there's no book was retrieved from any of the sources, exit early
-							if (!bookData) {
-								return;
-							}
-
-							form.update((data) => ({ ...data, ...bookData }));
-							// TODO: handle loading and errors
-						}}
-						isExtensionAvailable={$bookDataExtensionAvailable}
-					/>
-				</div>
-			</div>
-		{:else}
-			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} {type} {onConfirm}>
-					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-				</Dialog>
-			</div>
-		{/if}
+		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+			<Dialog dialog={confirmActionDialog} {type} {onConfirm}>
+				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+			</Dialog>
+		</div>
 	</div>
 {/if}

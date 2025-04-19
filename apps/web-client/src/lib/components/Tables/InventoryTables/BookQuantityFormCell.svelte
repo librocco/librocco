@@ -10,7 +10,7 @@
 		name="quantity"
 		id="quantity"
 		value={quantity}
-		class="w-full rounded border-2 border-gray-500 px-2 py-1.5 text-center focus:border-teal-500 focus:ring-0"
+		class="border-base w-full rounded border bg-transparent px-2 py-1.5 text-center focus:border-primary focus:ring-0"
 		type="number"
 		min="1"
 		required

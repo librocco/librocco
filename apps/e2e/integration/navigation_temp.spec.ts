@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
 
@@ -13,17 +13,17 @@ test("should navigate using the side nav", async ({ page }) => {
 
 	// Should load 'stock' page as default
 	await page.getByRole("link", { name: "Search stock" }).click();
-	await dashboard.content().header().title().assert("Search");
+	await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "Search" })).toBeVisible();
 
 	// Navigate to 'inventory' page
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	await dashboard.content().header().title().assert("Inventory");
+	await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "Warehouses" })).toBeVisible();
 
 	// Navigate to 'outbound' page
 	await page.getByRole("link", { name: "Outbound" }).click();
-	await dashboard.content().header().title().assert("Outbound");
+	await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "Outbound" })).toBeVisible();
 
 	// Navigate to 'settings' page
 	await page.getByRole("link", { name: "Settings" }).click();
-	await dashboard.content().header().title().assert("Settings");
+	await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "Settings" })).toBeVisible();
 });

@@ -35,10 +35,7 @@
 </script>
 
 <div>
-	<div
-		class="mt-1.5 flex min-w-[200px] items-center gap-x-1 rounded-lg border border-gray-400 bg-gray-50 p-1.5 px-4 text-gray-600"
-		use:melt={$field}
-	>
+	<div class="px mt-1.5 flex min-w-[200px] items-center gap-x-2 border border-base-100 bg-base-100 p-1.5" use:melt={$field}>
 		<p class="flex items-center gap-x-0.5">
 			<span use:melt={$segment("day")}>{day}</span>
 			<span>/</span>
@@ -58,7 +55,7 @@
 			data-calendarid={id || ""}
 			data-testid={testId("calendar-picker-control")}
 			data-open={$open}
-			class="rounded-md p-1 text-gray-600 transition-all"
+			class="btn-neutral btn p-1 transition-all"
 			use:melt={$trigger}
 		>
 			<Calendar size={20} />
@@ -69,19 +66,19 @@
 {#if $open}
 	<div
 		data-testid={testId("calendar-picker")}
-		class="z-10 min-w-[320px] rounded-lg bg-white shadow-sm"
+		class="z-10 min-w-[320px] bg-base-100 shadow-sm"
 		transition:fade={{ duration: 100 }}
 		use:melt={$content}
 	>
-		<div class="w-full rounded-lg bg-white p-3 text-gray-600 shadow-sm" use:melt={$calendar}>
+		<div class="w-full rounded-lg bg-base-100 p-3 shadow-sm" use:melt={$calendar}>
 			<div data-testid={testId("calendar-picker-month-select")} class="flex items-center justify-between pb-2">
-				<button class="rounded-lg p-1 transition-all" use:melt={$prevButton}>
+				<button class="btn-neutral btn p-1 transition-all" use:melt={$prevButton}>
 					<ChevronLeft size={24} />
 				</button>
 				<div class="flex items-center gap-6" use:melt={$heading}>
 					{$monthHeading}
 				</div>
-				<button class="rounded-lg p-1 transition-all" use:melt={$nextButton}>
+				<button class="btn-neutral btn p-1 transition-all" use:melt={$nextButton}>
 					<ChevronRight size={24} />
 				</button>
 			</div>
@@ -144,11 +141,11 @@
 		@apply pointer-events-none opacity-40;
 	}
 	[data-melt-calendar-cell][data-unavailable] {
-		@apply pointer-events-none text-red-400 line-through;
+		@apply pointer-events-none text-error-content line-through;
 	}
 
 	[data-melt-calendar-cell][data-selected] {
-		@apply bg-teal-400 text-base;
+		@apply bg-success text-base text-success-content;
 	}
 
 	[data-melt-calendar-cell][data-outside-visible-months] {

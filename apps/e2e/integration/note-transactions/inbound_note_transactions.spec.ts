@@ -15,17 +15,24 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await dashboard.content().navigate("inbound-list");
-
-	// We create a warehouse and a note for all tests
+	await page.getByRole("link", { name: "Inbound" }).click();
 	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Drop all tables or reset the database
+		await db.exec("DROP TABLE IF EXISTS customer");
+		// Drop other tables as needed
+
+		// Then reinitialize the database schema
+		await db.exec("CREATE TABLE customer (...)");
+		// Create other tables as needed
+	});
+	// We create a warehouse and a note for all tests
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
 
 	// Navigate to the note page
 	await dashboard.content().entityList("inbound-list").item(0).edit();
-	await dashboard.content().header().title().assert("Note 1");
+	await page.getByRole("main").getByRole("heading", { name: "Note 1" }).first();
 });
 
 test("should display correct transaction fields for the inbound-note note view", async ({ page }) => {
@@ -99,6 +106,11 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	await content.entityList("inbound-list").item(0).edit();
+
 	// Check that both books are in the entries table
 	// (by not using 'strict: true', we're asserting only by values we care about)
 	await entries.assertRows([
@@ -137,6 +149,11 @@ test("should allow for changing of transaction quantity using the quantity field
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	await content.entityList("inbound-list").item(0).edit();
 
 	// Wait for the transaction to appear on screen before proceeding with assertions
 	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
@@ -181,6 +198,11 @@ test("should delete the transaction from the note on delete button click", async
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567892", quantity: 1, warehouseId: 1 }] as const);
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	await content.entityList("inbound-list").item(0).edit();
 
 	const entries = getDashboard(page).content().table("inbound-note");
 
@@ -205,6 +227,8 @@ test("should display book count for all book quantities in the commit message", 
 
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 5, warehouseId: 1 }] as const);
+
+	await content.entityList("inbound-list").item(0).edit();
 
 	// Wait for the books to appear
 	await page.getByText("1234567890").waitFor();

@@ -19,7 +19,7 @@ export default defineConfig({
 	timeout: 15000,
 	globalTimeout: 55 * 60 * 1000, // 55 minutes of global timeout - the github job has a 60 minutes limit
 	/* Opt out of parallel tests on CI. */
-	workers: process.env.CI ? 1 : undefined,
+	workers: process.env.CI ? 1 : 4,
 	/* Reporter to use. See https://playwright.dev/docs/test-reporters */
 	reporter: reporter,
 	/* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */

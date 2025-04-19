@@ -1,15 +1,19 @@
 <script lang="ts">
-	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
 	import { superForm } from "sveltekit-superforms/client";
+	import { QrCode } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 
+	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
 	import type { ScannerSchema } from "$lib/forms/schemas";
+
+	export let icon = QrCode;
+	export let placeholder = "Scan to add books";
 
 	export let data: SuperValidated<ScannerSchema>;
 	export let options: FormOptions<ScannerSchema>;
 
-	let input: HTMLElement | undefined = undefined;
+	export let input: HTMLElement | undefined = undefined;
 
 	const form = superForm(data, {
 		...options,
@@ -28,16 +32,18 @@
 	const { form: formStore, enhance } = form;
 </script>
 
-<form use:enhance method="POST" id="scan-form" class="h-full w-full p-0.5">
-	<input
-		bind:this={input}
-		data-testid={testId("scan-input")}
-		name="isbn"
-		id="isbn"
-		bind:value={$formStore.isbn}
-		required
-		placeholder="Scan to add books"
-		class="h-full w-full border-0 focus:outline-none focus:ring-0"
-		autocomplete="off"
-	/>
+<form use:enhance method="POST" id="scan-form" class="h-full w-full">
+	<label class="input-bordered input flex flex-1 items-center gap-2">
+		<svelte:component this={icon} />
+		<input
+			name="isbn"
+			id="isbn"
+			required
+			autocomplete="off"
+			data-testid={testId("scan-input")}
+			bind:this={input}
+			bind:value={$formStore.isbn}
+			{placeholder}
+		/>
+	</label>
 </form>

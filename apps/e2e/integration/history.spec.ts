@@ -787,7 +787,7 @@ test("history/warehose - base", async ({ page }) => {
 	await page.getByRole("link", { name: "History" }).click();
 	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/warehouse' subview
-	await page.getByRole("link", { name: "By Warehouse" }).click();
+	await page.getByRole("link", { name: "by Warehouse" }).click();
 	await page.waitForURL("**/history/warehouse/**/");
 
 	// The list should show two existing warehouses
@@ -876,7 +876,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 	// Navigate to (default) history view
 	await page.getByRole("link", { name: "History" }).click();
 	// Navigate to 'history/warehouse' subview
-	await dashboard.content().navigate("history/warehouse");
+	await page.getByRole("link", { name: "by Warehouse" }).click();
 	// Navigate to Warehouse 1
 	await dashboard.content().entityList("warehouse-list").item(0).getByText("Warehouse 1").click();
 	await dashboard.content().header().title().assert("Warehouse 1 history");
@@ -1016,7 +1016,7 @@ test("history/warehose - navigation", async ({ page }) => {
 	await page.getByRole("link", { name: "History" }).click();
 	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/warehouse' subview
-	await page.getByRole("link", { name: "By Warehouse" }).click();
+	await page.getByRole("link", { name: "by Warehouse" }).click();
 	await page.waitForURL("**/history/warehouse/**/");
 
 	// Navigate to the page for Warehouse 1 - should default to toady - today range

@@ -3,14 +3,14 @@
 	import { Loader2 as Loader, Library, Percent } from "lucide-svelte";
 	import { invalidate } from "$app/navigation";
 
-	import type { PageData } from "./$types";
-
 	import { entityListView, testId } from "@librocco/shared";
 
-	import HistoryPage from "$lib/components/HistoryPage.svelte";
+	import HistoryPage from "$lib/controllers/HistoryPage.svelte";
 
 	import { appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
+
+	import type { PageData } from "./$types";
 
 	export let data: PageData;
 
@@ -31,7 +31,8 @@
 		disposer?.();
 	});
 
-	$: warehouses = data.warehouses;
+	$: ({ warehouses, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	$: t = $LL.history_page.warehouse_tab;
 
@@ -39,17 +40,19 @@
 	$: initialised = Boolean(data);
 </script>
 
-<HistoryPage view="history/warehouse" loaded={initialised}>
-	<svelte:fragment slot="main">
+<HistoryPage view="history/warehouse" {db} {plugins}>
+	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		{#if !initialised}
-			<div class="center-absolute">
-				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			<div class="flex grow justify-center">
+				<div class="mx-auto translate-y-1/2">
+					<span class="loading loading-spinner loading-lg text-primary"></span>
+				</div>
 			</div>
 		{:else}
 			<!-- Start entity list contaier -->
 
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-			<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")} data-loaded={true}>
+			<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")}>
 				<!-- Start entity list -->
 				{#each warehouses as warehouse}
 					{@const displayName = warehouse.displayName || warehouse.id}
@@ -59,20 +62,20 @@
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
-							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
+							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
 							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
-									<Library class="text-gray-700" size={20} />
-									<span class="entity-list-text-sm text-gray-500">{t.stats.books({ no_of_books: totalBooks })}</span>
+									<Library class="text-base-content" size={20} />
+									<span class="entity-list-text-sm text-base-content">{t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
 
 								{#if warehouseDiscount}
 									<div class="flex items-center gap-x-1">
-										<div class="border border-gray-700 p-[1px]">
-											<Percent class="text-gray-700" size={14} />
+										<div class="border border-base-content p-[1px]">
+											<Percent class="text-base-content" size={14} />
 										</div>
-										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% {t.stats.discount()}</span>
+										<span class="entity-list-text-sm text-base-content">{warehouseDiscount}% {t.stats.discount()}</span>
 									</div>
 								{/if}
 							</div>
@@ -83,5 +86,5 @@
 			</ul>
 			<!-- End entity list contaier -->
 		{/if}
-	</svelte:fragment>
+	</div>
 </HistoryPage>

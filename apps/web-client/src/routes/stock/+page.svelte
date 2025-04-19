@@ -5,9 +5,9 @@
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
+	import { Search, FileEdit, X, Printer, MoreVertical } from "lucide-svelte";
 
 	import type { BookData } from "@librocco/shared";
 	import { testId } from "@librocco/shared";
@@ -19,24 +19,20 @@
 
 	import { printBookLabel } from "$lib/printer";
 
-	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
-	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
-
+	import { PlaceholderBox, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
+	import { ScannerForm, BookForm, bookSchema, scannerSchema } from "$lib/forms";
+	import { Page } from "$lib/controllers";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { deviceSettingsStore } from "$lib/stores/app";
-
-	import { Page, PlaceholderBox } from "$lib/components";
-
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { mergeBookData } from "$lib/utils/misc";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import { appPath } from "$lib/paths";
-	import { racefreeGoto } from "$lib/utils/navigation";
 
 	export let data: PageData;
-	$: db = data?.dbCtx?.db;
+
+	$: ({ publisherList, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -49,11 +45,6 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
-	$: goto = racefreeGoto(disposer);
-
-	$: publisherList = data?.publisherList;
-
-	$: plugins = data?.plugins;
 
 	const search = writable("");
 	let entries = [] as GetStockResponseItem[];
@@ -86,31 +77,8 @@
 	let searchField: HTMLInputElement;
 	$: tick().then(() => searchField?.focus());
 
-	const autofocus = (node?: HTMLInputElement) => node?.focus();
-
 	// #region book-form
 	let bookFormData = null;
-
-	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
-		/**
-		 * This is a quick fix for `form.data` having all optional properties
-		 *
-		 * Unforuntately, Zod will not infer the correct `data` type from our schema unless we configure `strictNullChecks: true` in our TS config.
-		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
-		 * to fix these properly.
-		 *
-		 * It is still safe to assume that the required properties of BookData are there, as the relative form controls are required
-		 */
-		const data = form?.data as BookData;
-
-		try {
-			await upsertBook(db, data);
-			bookFormData = null;
-			open.set(false);
-		} catch (err) {
-			// toastError(`Error: ${err.message}`);
-		}
-	};
 
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
 	// #endregion book-form
@@ -127,44 +95,55 @@
 	});
 
 	$: ({ search: tSearch } = $LL);
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
 </script>
 
-<Page {handleCreateOutboundNote} view="stock" loaded={Boolean(db)}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<input data-testid={testId("search-input")} use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
-	</svelte:fragment>
+<Page title="Search" view="stock" {db} {plugins}>
+	<div slot="main" class="flex h-full w-full flex-col gap-y-6">
+		<div class="p-4">
+			<ScannerForm
+				bind:input={searchField}
+				placeholder="Search stock by ISBN"
+				data={defaults(zod(scannerSchema))}
+				options={{
+					SPA: true,
+					dataType: "json",
+					validators: zod(scannerSchema),
+					validationMethod: "submit-only",
+					resetForm: true,
+					onUpdated: async ({ form }) => {
+						const { isbn } = form?.data as BookData;
 
-	<svelte:fragment slot="heading">
-		<h1 class="text-2xl font-bold leading-7 text-gray-900">{tSearch.title()}</h1>
-	</svelte:fragment>
+						search.set(isbn);
+					}
+				}}
+			/>
+		</div>
 
-	<svelte:fragment slot="main">
 		{#if !$search.length}
-			<PlaceholderBox title={tSearch.empty.title()} description={tSearch.empty.description()} class="center-absolute">
-				<Search slot="icon" let:iconProps {...iconProps} />
-			</PlaceholderBox>
+			<div class="flex grow justify-center">
+				<div class="mx-auto max-w-xl translate-y-1/4">
+					<PlaceholderBox title={tSearch.empty.title()} description={tSearch.empty.description()}>
+						<Search slot="icon" />
+					</PlaceholderBox>
+				</div>
+			</div>
 		{:else if !entries?.length}
 			<!-- Using await :then trick we're displaying the loading state for 1s, after which we show no-results message -->
 			<!-- The waiting state is here so as to not display the no results to quickly (in case of initial search, being slightly slower) -->
 			{#await currentQuery}
-				<div class="center-absolute">
-					<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+				<div class="flex grow justify-center">
+					<div class="mx-auto translate-y-1/4">
+						<span class="loading loading-spinner loading-lg text-primary"></span>
+					</div>
 				</div>
 			{:then}
-				<PlaceholderBox title="No results" description="Search found no results" class="center-absolute">
-					<Search slot="icon" let:iconProps {...iconProps} />
-				</PlaceholderBox>
+				<div class="flex grow justify-center">
+					<div class="mx-auto max-w-xl translate-y-1/4">
+						<PlaceholderBox title="No results" description="Search found no results">
+							<Search slot="icon" />
+						</PlaceholderBox>
+					</div>
+				</div>
 			{/await}
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
@@ -201,7 +180,7 @@
 													data-testid={testId("popover-control")}
 													{...trigger}
 													use:trigger.action
-													class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+													class="btn-neutral btn-outline btn-sm btn px-0.5"
 												>
 													<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
 													<span class="aria-hidden">
@@ -209,14 +188,14 @@
 													</span>
 												</button>
 
-												<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+												<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 													<button
 														use:melt={$trigger}
 														on:m-click={() => {
 															const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
 															bookFormData = bookData;
 														}}
-														class="rounded p-3 text-gray-500 hover:text-gray-900"
+														class="btn-secondary btn-sm btn"
 													>
 														<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
 														<span class="aria-hidden">
@@ -225,7 +204,7 @@
 													</button>
 
 													<button
-														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+														class="btn-secondary btn-sm btn"
 														data-testid={testId("print-book-label")}
 														on:click={handlePrintLabel(row)}
 													>
@@ -240,7 +219,7 @@
 									</StockBookRow>
 								</tr>
 
-								<p slot="tooltip-content" class="px-4 py-1 text-white">{row.warehouseName}</p>
+								<p slot="tooltip-content" class="badge-secondary badge-lg">{row.warehouseName}</p>
 							</TooltipWrapper>
 						</svelte:fragment>
 					</StockTable>
@@ -252,66 +231,80 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
-	</svelte:fragment>
+	</div>
 </Page>
 
 {#if $open}
 	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}>
-			<div
-				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
-				shadow-lg focus:outline-none"
-				transition:fly|global={{
-					x: 350,
-					duration: 300,
-					opacity: 1
-				}}
-			>
-				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
-					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{$LL.stock_page.labels.edit_book_details()}</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">
-							{$LL.stock_page.labels.manually_edit_book_details()}
-						</p>
-					</div>
-					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
-						<X class="square-4" />
-					</button>
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+		<div
+			use:melt={$content}
+			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
+				bg-base-200 shadow-lg focus:outline-none"
+			transition:fly|global={{
+				x: 350,
+				duration: 300,
+				opacity: 1
+			}}
+		>
+			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
+				<div>
+					<h2 use:melt={$title} class="text-lg font-medium">{$LL.stock_page.labels.edit_book_details()}</h2>
+					<p use:melt={$description} class="leading-normal">
+						{$LL.stock_page.labels.manually_edit_book_details()}
+					</p>
 				</div>
-				<div class="px-6">
-					<BookForm
-						data={defaults(bookFormData, zod(bookSchema))}
-						{publisherList}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validators: zod(bookSchema),
-							validationMethod: "submit-only",
-							onUpdated
-						}}
-						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+				<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
+					<X size={16} />
+				</button>
+			</div>
+			<div class="px-6">
+				<BookForm
+					data={defaults(bookFormData, zod(bookSchema))}
+					{publisherList}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(bookSchema),
+						validationMethod: "submit-only",
+						onUpdated: async ({ form }) => {
+							/**
+							 * This is a quick fix for `form.data` having all optional properties
+							 *
+							 * Unforuntately, Zod will not infer the correct `data` type from our schema unless we configure `strictNullChecks: true` in our TS config.
+							 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
+							 * to fix these properly.
+							 *
+							 * It is still safe to assume that the required properties of BookData are there, as the relative form controls are required
+							 */
+							const data = form?.data as BookData;
 
-							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData({ isbn }, results);
-
-							// If there's no book was retrieved from any of the sources, exit early
-							if (!bookData) {
-								return;
+							try {
+								await upsertBook(db, data);
+								bookFormData = null;
+								open.set(false);
+							} catch (err) {
+								// toastError(`Error: ${err.message}`);
 							}
+						}
+					}}
+					onCancel={() => open.set(false)}
+					onFetch={async (isbn, form) => {
+						const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 
-							form.update((data) => ({ ...data, ...bookData }));
-							// TODO: handle loading and errors
-						}}
-						isExtensionAvailable={$bookDataExtensionAvailable}
-					/>
-				</div>
+						// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+						const bookData = mergeBookData({ isbn }, results);
+
+						// If there's no book was retrieved from any of the sources, exit early
+						if (!bookData) {
+							return;
+						}
+
+						form.update((data) => ({ ...data, ...bookData }));
+						// TODO: handle loading and errors
+					}}
+					isExtensionAvailable={$bookDataExtensionAvailable}
+				/>
 			</div>
 		</div>
 	</div>

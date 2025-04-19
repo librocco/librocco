@@ -15,9 +15,9 @@
 	data-testid="dropdown-control"
 	data-open={$open}
 	use:melt={$trigger}
-	class="rounded-md border border-gray-300 bg-white py-[9px] pl-[17px] pr-[15px] hover:bg-gray-100"
+	class="bg-content btn-sm btn items-center border border-base-content py-[9px] pl-[17px] pr-[15px] hover:bg-base-300"
 >
-	<MoreVertical class="border-gray-500" size={20} />
+	<MoreVertical class="border-base-300" size={14} />
 </button>
 
 {#if $open}
@@ -25,7 +25,7 @@
 		data-testid={testId("dropdown-menu")}
 		use:melt={$menu}
 		transition:fly|global={{ duration: 150, y: -10 }}
-		class="z-50 min-w-[224px] overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
+		class="z-50 min-w-[224px] overflow-hidden bg-base-100 shadow-lg ring-1 ring-primary ring-opacity-5"
 	>
 		<slot separator={$separator} item={$item} />
 	</div>

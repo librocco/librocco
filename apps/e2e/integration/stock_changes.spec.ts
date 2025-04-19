@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 import { baseURL } from "../constants";
 
@@ -48,8 +48,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.getByText("Inbound").click();
+	await page.getByRole("link", { name: "Inbound" }).click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
 	await content.header().commit();
@@ -59,8 +58,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("warehouse-list");
+	await page.getByRole("link", { name: "Warehouses", exact: true }).click();
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
 	await content.table("warehouse").assertRows([
@@ -96,19 +94,20 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
 	await content.header().commit();
 	await dashboard.dialog().confirm();
 
+	await expect(page.getByRole("dialog")).not.toBeVisible();
+
 	// Committed transactions should be aggregated in "Warehouse 1" stock
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("warehouse-list");
+	await page.getByRole("link", { name: "Warehouses", exact: true }).click();
+
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
 	await content.table("warehouse").assertRows([
@@ -136,11 +135,15 @@ test('warehouse stock page should show only the stock for a praticular warehouse
 
 	// Initial view: Warehouse 1 stock page
 
-	// Check "Warehouse 1" stock view
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 2 }]);
 
 	// Navigate to "Warehouse 2" and check stock
 	await content.header().breadcrumbs().getByText("Warehouses").click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+	// Check "Warehouse 1" stock view
+
 	await content.entityList("warehouse-list").item(1).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567891", quantity: 3 }]);
 });
@@ -179,6 +182,10 @@ test("committing an outbound note should decrement the stock by the quantities i
 
 	// Navigate back to "Warehouse 1" page and check the updated stock
 	await page.getByRole("link", { name: "Manage inventory" }).click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.table("warehouse").assertRows([
 		{ isbn: "1234567890", quantity: 1 },
@@ -219,6 +226,10 @@ test("should remove 0 quantity stock entries from the stock", async ({ page }) =
 
 	//  Check the updated stock
 	await page.getByRole("link", { name: "Manage inventory" }).click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567891", quantity: 5 }]);
 });
@@ -257,11 +268,19 @@ test("committing an outbound note with transactions in two warehouses should dec
 
 	// Check the updated stock - warehouse 1
 	await page.getByRole("link", { name: "Manage inventory" }).click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 1 }]);
 
 	// Check the updated stock - warehouse 2
 	await content.header().breadcrumbs().getByText("Warehouses").click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+
 	await content.entityList("warehouse-list").item(1).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 2 }]);
 });

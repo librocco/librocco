@@ -70,7 +70,8 @@ test.skip("selecting a db should be reflected in app data", async ({ page }) => 
 	await page.getByRole("link", { name: "Settings" }).click();
 
 	await getDBSelection(dashboard).select("db_1.sqlite3");
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await warehouseList.assertElements([{ name: "Warehouse 1 - db 1" }]);
 });
 
