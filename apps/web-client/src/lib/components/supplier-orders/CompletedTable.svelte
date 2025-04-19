@@ -26,7 +26,7 @@
 		</thead>
 
 		<tbody>
-			{#each orders as { supplier_name, total_book_number, created, id, reconciliation_order_id }}
+			{#each orders as { supplier_name, total_book_number, created, id, reconciliation_order_id } (id)}
 				<tr class="hover focus-within:bg-base-200">
 					<td>{supplier_name}</td>
 

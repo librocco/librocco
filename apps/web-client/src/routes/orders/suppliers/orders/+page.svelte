@@ -87,8 +87,8 @@
 
 <Page title={t.title.supplier_orders()} view="orders/suppliers/orders" {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col gap-y-10 px-4">
-		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			<div class="flex h-full w-full justify-between">
+		<div class="flex h-full flex-col gap-y-6 overflow-x-auto py-2">
+			<div class="flex w-full justify-between">
 				<div class="flex grow gap-2 px-2" role="group" aria-label="Filter orders by status">
 					<button
 						class="btn-sm btn {orderStatusFilter === 'unordered' ? 'btn-primary' : 'btn-outline'}"
