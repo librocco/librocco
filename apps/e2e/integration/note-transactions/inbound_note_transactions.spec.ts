@@ -16,9 +16,17 @@ test.beforeEach(async ({ page }) => {
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await page.getByRole("link", { name: "Inbound" }).click();
-
-	// We create a warehouse and a note for all tests
 	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Drop all tables or reset the database
+		await db.exec("DROP TABLE IF EXISTS customer");
+		// Drop other tables as needed
+
+		// Then reinitialize the database schema
+		await db.exec("CREATE TABLE customer (...)");
+		// Create other tables as needed
+	});
+	// We create a warehouse and a note for all tests
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
 
