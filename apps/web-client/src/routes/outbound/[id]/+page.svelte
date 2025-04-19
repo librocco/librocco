@@ -252,7 +252,11 @@
 	 * - custom item form
 	 */
 	const handleOpenFormPopover = (row: InventoryTableData & { key: string; rowIx: number }) => () => {
-		return isBookRow(row) ? openBookForm(row) : openCustomItemForm(row);
+		if (isBookRow(row)) {
+			return openBookForm(row);
+		}
+
+		return openCustomItemForm(row);
 	};
 
 	const openBookForm = (row: InventoryTableData<"book"> & { key: string; rowIx: number }) => {
@@ -572,18 +576,31 @@
 
 								<!-- svelte-ignore a11y-no-static-element-interactions -->
 								<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
-									<button
-										use:melt={$editBookDialogTrigger}
-										class="btn-secondary btn-sm btn"
-										data-testid={testId("edit-row")}
-										on:m-click={handleOpenFormPopover(row)}
-										on:m-keydown={handleOpenFormPopover(row)}
-									>
-										<span class="sr-only">{tOutbound.labels.edit_row()} {rowIx}</span>
-										<span class="aria-hidden">
-											<FileEdit />
-										</span>
-									</button>
+									{#if isBookRow(row)}
+										<button
+											use:melt={$editBookDialogTrigger}
+											class="btn-secondary btn-sm btn"
+											data-testid={testId("edit-row")}
+											on:m-click={handleOpenFormPopover(row)}
+										>
+											<span class="sr-only">{tOutbound.labels.edit_row()} {rowIx}</span>
+											<span class="aria-hidden">
+												<FileEdit />
+											</span>
+										</button>
+									{:else}
+										<button
+											use:melt={$customItemDialogTrigger}
+											class="btn-secondary btn-sm btn"
+											data-testid={testId("edit-row")}
+											on:m-click={handleOpenFormPopover(row)}
+										>
+											<span class="sr-only">{tOutbound.labels.edit_row()} {rowIx}</span>
+											<span class="aria-hidden">
+												<FileEdit />
+											</span>
+										</button>
+									{/if}
 
 									{#if isBookRow(row)}
 										<button class="btn-secondary btn-sm btn" data-testid={testId("print-book-label")} on:click={handlePrintLabel(row)}>
@@ -607,12 +624,7 @@
 				</div>
 
 				<div class="flex h-24 w-full items-center justify-end px-8">
-					<button
-						use:melt={$customItemDialogTrigger}
-						on:m-click={() => openCustomItemForm()}
-						on:m-keydown={() => openCustomItemForm()}
-						class="btn-primary btn">Custom item</button
-					>
+					<button use:melt={$customItemDialogTrigger} on:m-click={() => openCustomItemForm()} class="btn-primary btn">Custom item</button>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
