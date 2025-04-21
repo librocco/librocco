@@ -25,11 +25,10 @@ export async function compareEntries(container: Locator, labels: string[], selec
 type IdString = `#${string}`;
 type ClassString = `.${string}`;
 type TestIdString = `[data-testid="${string}"]` | `[data-testid*="${string}"]`;
-type DataLoadedString = `[data-loaded="${boolean}"]` | `[data-loaded*="${boolean}"]`;
 type DataViewString = `[data-view="${string}"]` | `[data-view*="${string}"]`;
 type DataValueString = `[data-value="${string}"]` | `[data-value*="${string}"]`;
 
-type SelectorSegment = IdString | ClassString | TestIdString | DataLoadedString | DataViewString | DataValueString;
+type SelectorSegment = IdString | ClassString | TestIdString | DataViewString | DataValueString;
 
 type SelectorConstructor<I, T extends SelectorSegment> = (input: I, opts?: { strict: boolean }) => T;
 
@@ -40,9 +39,6 @@ export const classSelector: SelectorConstructor<TestId, ClassString> = (_id) => 
 /** Creates a typo-safe selector string for the element testid = [data-testid="..."] */
 export const testIdSelector: SelectorConstructor<TestId, TestIdString> = (_id, { strict } = { strict: true }) =>
 	strict ? `[data-testid="${_id}"]` : `[data-testid*="${_id}"]`;
-/** Creates a typo-safe selector string for the loaded element - [data-loaded="..."] */
-export const loadedSelector: SelectorConstructor<boolean, DataLoadedString> = (_loaded, { strict } = { strict: true }) =>
-	strict ? `[data-loaded="${_loaded}"]` : `[data-loaded*="${_loaded}"]`;
 /** Creates a typo-safe selector string for the view element - [data-view="..."] */
 export const viewSelector: SelectorConstructor<WebClientView, DataViewString> = (_view, { strict } = { strict: true }) =>
 	strict ? `[data-view="${_view}"]` : `[data-view*="${_view}"]`;
