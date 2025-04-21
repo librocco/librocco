@@ -136,27 +136,29 @@
 				</button>
 			</div>
 
-			{#if orderStatusFilter === "unordered"}
-				{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
-					<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-						<p class="text-center text-base-content/70">
-							{t.placeholder.description()}
-						</p>
-						<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-							<Plus size={20} />
-							<p>{t.placeholder.button()}</p>
-						</button>
-					</div>
+			<div class="h-full w-full">
+				{#if orderStatusFilter === "unordered"}
+					{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
+						<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
+							<p class="text-base-content/70 text-center">
+								{t.placeholder.description()}
+							</p>
+							<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+								<Plus size={20} />
+								<p>{t.placeholder.button()}</p>
+							</button>
+						</div>
+					{:else}
+						<UnorderedTable orders={data.possibleOrders} />
+					{/if}
+				{:else if orderStatusFilter === "ordered"}
+					<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
+				{:else if orderStatusFilter === "reconciling"}
+					<ReconcilingTable orders={data.reconcilingOrders} />
 				{:else}
-					<UnorderedTable orders={data.possibleOrders} />
+					<CompletedTable orders={data.completedOrders} />
 				{/if}
-			{:else if orderStatusFilter === "ordered"}
-				<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
-			{:else if orderStatusFilter === "reconciling"}
-				<ReconcilingTable orders={data.reconcilingOrders} />
-			{:else}
-				<CompletedTable orders={data.completedOrders} />
-			{/if}
+			</div>
 		</div>
 	</div>
 </Page>
