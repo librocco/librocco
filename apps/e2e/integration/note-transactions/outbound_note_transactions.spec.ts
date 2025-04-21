@@ -23,15 +23,6 @@ test.beforeEach(async ({ page }) => {
 
 	// We create a warehouse and a note for all tests
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) => {
-		// Drop all tables or reset the database
-		await db.exec("DROP TABLE IF EXISTS customer");
-		// Drop other tables as needed
-
-		// Then reinitialize the database schema
-		await db.exec("CREATE TABLE customer (...)");
-		// Create other tables as needed
-	});
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 
 	await dbHandle.evaluate(createOutboundNote, { id: 1 });
