@@ -536,6 +536,16 @@ type RootTranslation = {
 			 */
 			books: RequiredParams<"bookCount">;
 		};
+		placeholder: {
+			/**
+			 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e
+			 */
+			select_warehouse: string;
+			/**
+			 * N​o​ ​a​v​a​i​l​a​b​l​e​ ​w​a​r​e​h​o​u​s​e​s
+			 */
+			no_warehouses: string;
+		};
 	};
 	outbound_page: {
 		/**
@@ -1582,6 +1592,16 @@ export type TranslationFunctions = {
 			 * {bookCount} book{{s}}
 			 */
 			books: (arg: { bookCount: string | number | boolean }) => LocalizedString;
+		};
+		placeholder: {
+			/**
+			 * Please select a warehouse
+			 */
+			select_warehouse: () => LocalizedString;
+			/**
+			 * No available warehouses
+			 */
+			no_warehouses: () => LocalizedString;
 		};
 	};
 	outbound_page: {
