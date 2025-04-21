@@ -128,6 +128,8 @@ function createConfig(localIP) {
 ${dnsName} {
     tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        propagation_timeout 20m
+        resolvers 1.1.1.1
     }
 
     @sync path /sync*
@@ -149,6 +151,8 @@ ${dnsName} {
 *.${dnsName} {
     tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        propagation_timeout 20m
+        resolvers 1.1.1.1
     }
 
     # Matcher to extract port from hostname like 'sub-1234.ip.suffix'
@@ -228,7 +232,6 @@ async function stopCaddy() {
 	child_process.execSync(stopCommand, { stdio: "inherit" });
 	// Assume success or that it was already stopped. No need to log success explicitly here.
 }
-
 
 async function createCFRecords(localIP) {
 	// Create two record: a stem one and a wildcard one
