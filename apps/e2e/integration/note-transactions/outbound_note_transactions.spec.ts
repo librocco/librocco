@@ -334,6 +334,10 @@ test("if there are two transactions, one with specified and one with unspecified
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
 
+	// * We've technically navigated here in the before hook, but the above `dbHandle.evaluate` calls can cause navigation back to the note list
+	// This may be because of data invalidation? For now, we re-navigate back to the view
+	await page.getByRole("link", { name: "Edit" }).first().click();
+
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
 
