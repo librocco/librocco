@@ -429,7 +429,7 @@
 						</select>
 					</div>
 					<button
-						class="btn-primary btn-sm btn hidden xs:block"
+						class="btn-primary btn-sm btn xs:block hidden"
 						use:melt={$confirmDialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
@@ -464,7 +464,7 @@
 									type: "commit"
 								};
 							}}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
+							class="text-base-content data-[highlighted]:bg-base-300 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">Commit</span>
 						</div>
@@ -472,7 +472,7 @@
 							{...item}
 							use:item.action
 							on:m-click={handlePrintReceipt}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
+							class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">Print</span>
 						</div>
@@ -480,7 +480,7 @@
 							{...item}
 							use:item.action
 							use:melt={$confirmDialogTrigger}
-							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
+							class="bg-error data-[highlighted]:bg-error/80 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleDeleteSelf,
@@ -549,6 +549,8 @@
 						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
 					>
 						<div slot="row-actions" let:row let:rowIx>
+							{@const editTrigger = isBookRow(row) ? $editBookDialogTrigger : $customItemDialogTrigger}
+
 							<PopoverWrapper
 								options={{
 									forceVisible: true,
@@ -573,7 +575,7 @@
 								<!-- svelte-ignore a11y-no-static-element-interactions -->
 								<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 									<button
-										use:melt={$editBookDialogTrigger}
+										use:melt={editTrigger}
 										class="btn-secondary btn-sm btn"
 										data-testid={testId("edit-row")}
 										on:m-click={handleOpenFormPopover(row)}
@@ -688,8 +690,8 @@
 		<div use:melt={$editBookDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 		<div
 			use:melt={$editBookDialogContent}
-			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
-			bg-base-200 shadow-lg focus:outline-none"
+			class="divide-y-secondary bg-base-200 fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
+			overflow-y-auto shadow-lg focus:outline-none"
 			in:fly|global={{
 				x: 350,
 				duration: 300,
@@ -700,7 +702,7 @@
 				duration: 100
 			}}
 		>
-			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
+			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
 				<div>
 					<h2 use:melt={$editBookDialogTitle} class="text-lg font-medium">{tCommon.edit_book_dialog.title()}</h2>
 					<p use:melt={$editBookDialogDescription} class="leading-normal">
@@ -749,8 +751,8 @@
 		<div use:melt={$customItemDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 		<div
 			use:melt={$customItemDialogContent}
-			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
-			bg-base-200 shadow-lg focus:outline-none"
+			class="divide-y-secondary bg-base-200 fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
+			overflow-y-auto shadow-lg focus:outline-none"
 			in:fly|global={{
 				x: 350,
 				duration: 300,
@@ -761,7 +763,7 @@
 				duration: 100
 			}}
 		>
-			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
+			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
 				<div>
 					<h2 use:melt={$customItemDialogTitle} class="text-lg font-medium">
 						{customItemFormData ? tCommon.edit_custom_item_dialog.title() : tCommon.create_custom_item_dialog.title()}
