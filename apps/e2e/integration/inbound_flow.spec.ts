@@ -11,6 +11,10 @@ test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
+	// Create a warehouse to work with (as all inbound notes are namespaced to warehouses)
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
 
@@ -21,9 +25,6 @@ test.beforeEach(async ({ page }) => {
 	const warehouseList = dashboard.content().entityList("warehouse-list");
 	await warehouseList.waitFor();
 
-	// Create a warehouse to work with (as all inbound notes are namespaced to warehouses)
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 	await page.getByRole("heading", { name: "Note" }).first();
 });
 
