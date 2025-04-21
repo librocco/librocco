@@ -1,8 +1,9 @@
 import { defineConfig, devices, ReporterDescription } from "@playwright/test";
 
 const reporter: ReporterDescription[] = [["list"]];
+// Produce a merge‑able blob report when running in CI
 if (process.env.CI) {
-	reporter.push(["html"]);
+	reporter.push(["blob"]);
 }
 
 /**
