@@ -21,18 +21,20 @@
 			class="fixed inset-0 z-[200] h-full w-full overflow-y-auto bg-[#000000]/50"
 			transition:fade={{ duration: 250, easing: expoInOut }}
 			use:melt={$overlay}
-		/>
+		></div>
 		<div
 			class="fixed left-1/2 top-1/2 z-[200] max-h-screen w-full translate-x-[-50%] translate-y-[-50%] overflow-y-auto px-4 md:max-w-md md:px-0"
 			transition:fade={{ duration: 250, easing: expoInOut }}
 			use:melt={$content}
 		>
-			<div class="overflow-clip rounded-lg bg-white md:shadow-2xl">
+			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
 				<h2 class="sr-only" use:melt={$titleStore}>{title}</h2>
 
 				<p class="sr-only" use:melt={$desciptionStore}>{description}</p>
 
-				<button use:melt={$close} class="absolute top-4 right-6" aria-label="Close"><X class="square-4" /></button>
+				<button use:melt={$close} class="btn-ghost btn-outline btn-sm btn absolute right-8 top-4" aria-label="Close">
+					<X size={16} />
+				</button>
 
 				<slot />
 			</div>

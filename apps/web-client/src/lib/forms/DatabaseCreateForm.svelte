@@ -18,14 +18,31 @@
 	const { form: formStore, constraints, enhance } = form;
 </script>
 
-<form class="flex max-w-lg flex-col gap-y-6" aria-label="Create new database" use:enhance method="POST" id="database-create-form">
-	<div class="flex flex-col justify-between gap-y-6 p-6">
-		<div class="basis-full">
-			<Input bind:value={$formStore.name} name="name" label="Name" placeholder="Database name" {...$constraints.name} />
+<form
+	class="divide-y-secondary flex flex-col gap-y-10 px-4 py-4"
+	aria-label="Create new database"
+	use:enhance
+	method="POST"
+	id="database-create-form"
+>
+	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
+		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
+			<label class="form-control basis-full">
+				<div class="label">
+					<span class="label-text">Name</span>
+				</div>
+				<input
+					bind:value={$formStore.name}
+					name="name"
+					placeholder="Database name"
+					{...$constraints.name}
+					class="input-bordered input w-full"
+				/>
+			</label>
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="button button-alert" on:click={onCancel} type="button"> Cancel </button>
-		<button class="button button-green"> Save </button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">Cancel</button>
+		<button class="btn-primary btn disabled:bg-gray-400" type="submit">Save</button>
 	</div>
 </form>

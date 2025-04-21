@@ -10,7 +10,8 @@
 	import type { PageData } from "./$types";
 
 	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
-	import { HistoryPage, PlaceholderBox } from "$lib/components";
+	import { PlaceholderBox } from "$lib/components";
+	import { HistoryPage } from "$lib/controllers";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { racefreeGoto } from "$lib/utils/navigation";
@@ -19,6 +20,11 @@
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
+
+	$: ({ notes, plugins } = data);
+	$: db = data.dbCtx?.db;
+
+	$: t = $LL.history_page.notes_tab;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -56,32 +62,25 @@
 		return date > now(getLocalTimeZone());
 	};
 	// #endregion date picker
-
-	$: notes = data.notes;
-
-	$: t = $LL.history_page.notes_tab;
 </script>
 
-<HistoryPage view="history/notes">
-	<svelte:fragment slot="heading">
+<HistoryPage view="history/notes" {db} {plugins}>
+	<div slot="main" class="h-full w-full">
 		<div class="flex w-full justify-between">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">{`${t.date.history()}`}</h1>
-
 			<div class="flex w-full flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
 			</div>
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="main">
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-		<ul class={testId("entity-list-container")} data-view={entityListView("history/notes")} data-loaded={true}>
+		<ul class={testId("entity-list-container")} data-view={entityListView("history/notes")}>
 			{#if !notes.length}
-				<!-- Start entity list placeholder -->
-				<PlaceholderBox title="No notes found" description="No notes seem to have been committed on that date" class="center-absolute" />
-				<!-- End entity list placeholder -->
+				<div class="flex grow justify-center">
+					<div class="mx-auto max-w-xl translate-y-1/2">
+						<PlaceholderBox title="No notes found" description="No notes seem to have been committed on that date" />
+					</div>
+				</div>
 			{:else}
 				<!-- Start entity list -->
 				{#each notes as note}
@@ -91,17 +90,17 @@
 
 					<div class="group entity-list-row">
 						<div class="block w-full">
-							<a {href} class="entity-list-text-lg mb-2 block text-gray-900 hover:underline focus:underline">{displayName}</a>
+							<a {href} class="entity-list-text-lg mb-2 block text-base-content hover:underline focus:underline">{displayName}</a>
 
 							<div class="grid w-full grid-cols-4 items-start gap-2 lg:grid-cols-8">
 								<div class="order-1 col-span-2 flex gap-x-0.5 lg:col-span-1">
-									<Library class="mr-1 text-gray-700" size={24} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} {t.date.books()}</span>
+									<Library class="mr-1 text-base-content" size={24} />
+									<span class="entity-list-text-sm text-base-content">{totalBooks} {t.date.books()}</span>
 								</div>
 
-								<p class="order-2 col-span-2 text-gray-500 lg:order-3">
+								<p class="order-2 col-span-2 text-base-content lg:order-3">
 									{t.date.total_cover_price()}:
-									<span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span>
+									<span class="text-base-content">{note.totalCoverPrice.toFixed(2)}</span>
 								</p>
 
 								<p class="order-3 col-span-2 lg:order-2">
@@ -110,9 +109,9 @@
 									</span>
 								</p>
 
-								<p class="order-4 col-span-2 text-gray-500">
+								<p class="order-4 col-span-2 text-base-content">
 									{t.date.total_discounted_price()}:
-									<span class="text-gray-700">{note.totalDiscountedPrice.toFixed(2)}</span>
+									<span class="text-base-content">{note.totalDiscountedPrice.toFixed(2)}</span>
 								</p>
 							</div>
 						</div>
@@ -122,46 +121,5 @@
 			{/if}
 		</ul>
 		<!-- End entity list contaier -->
-	</svelte:fragment>
+	</div>
 </HistoryPage>
-
-<style lang="postcss">
-	[data-melt-calendar-prevbutton][data-disabled] {
-		@apply pointer-events-none rounded-lg p-1 opacity-40;
-	}
-
-	[data-melt-calendar-nextbutton][data-disabled] {
-		@apply pointer-events-none rounded-lg p-1 opacity-40;
-	}
-
-	[data-melt-calendar-heading] {
-		@apply font-semibold;
-	}
-
-	[data-melt-calendar-grid] {
-		@apply w-full;
-	}
-
-	[data-melt-calendar-cell] {
-		@apply flex h-6 w-6 cursor-pointer select-none items-center justify-center rounded-lg p-4;
-	}
-
-	[data-melt-calendar-cell][data-disabled] {
-		@apply pointer-events-none opacity-40;
-	}
-	[data-melt-calendar-cell][data-unavailable] {
-		@apply pointer-events-none text-red-400 line-through;
-	}
-
-	[data-melt-calendar-cell][data-selected] {
-		@apply bg-teal-400 text-base;
-	}
-
-	[data-melt-calendar-cell][data-outside-visible-months] {
-		@apply pointer-events-none cursor-default opacity-40;
-	}
-
-	[data-melt-calendar-cell][data-outside-month] {
-		@apply pointer-events-none cursor-default opacity-0;
-	}
-</style>

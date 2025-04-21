@@ -63,7 +63,7 @@ const plugins = [
 				"@apply text-md font-normal leading-5": {}
 			},
 			".entity-list-actions": {
-				"@apply flex flex-col items-end justify-end gap-3": {},
+				"@apply flex  items-end justify-end gap-3": {},
 				["@screen xs"]: {
 					"@apply flex-row items-center": {}
 				}
@@ -82,7 +82,7 @@ module.exports = {
 	theme,
 	plugins,
 	daisyui: {
-		themes: ["lofi", "forest"],
+		themes: ["lofi", "sunset"],
 		// We're silencing the output here as it produces problems during formatting (for some editors)
 		// see: https://github.com/tailwindlabs/tailwindcss/discussions/8380
 		//

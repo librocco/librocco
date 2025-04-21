@@ -1,16 +1,10 @@
 <script lang="ts">
-	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, Book, Truck } from "lucide-svelte";
 	import { Plus, RotateCcw, Play, BookPlus } from "lucide-svelte";
-	import LL from "@librocco/shared/i18n-svelte";
 	import { onMount } from "svelte";
 
 	import { wrapIter } from "@librocco/shared";
 
 	import type { LayoutData } from "../$types";
-
-	import { page } from "$app/stores";
-
-	import { TooltipWrapper } from "$lib/components";
 
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 	import {
@@ -21,20 +15,11 @@
 	import { associatePublisher, createSupplierOrder, upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
 	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
-	import { appPath } from "$lib/paths";
 	import { debugData as dd } from "$lib/__testData__/debugData";
 
 	export let data: LayoutData;
 
 	$: db = data?.dbCtx?.db;
-
-	$: ({ nav: tNav } = $LL);
-
-	interface Link {
-		label: string;
-		href: string;
-		icon: any;
-	}
 
 	let book;
 	let supplier;
@@ -62,45 +47,6 @@
 		{ label: "Supplier Order Lines", value: () => supplier_order_line },
 		{ label: "Reconciliation Orders", value: () => reconciliation_order },
 		{ label: "Reconciliation Order Lines", value: () => reconciliation_order_lines }
-	];
-
-	let links: Link[];
-	$: links = [
-		{
-			label: tNav.search(),
-			href: appPath("stock"),
-			icon: Search
-		},
-		{
-			label: tNav.inventory(),
-			href: appPath("inventory"),
-			icon: Library
-		},
-		{
-			label: tNav.outbound(),
-			href: appPath("outbound"),
-			icon: PackageMinus
-		},
-		{
-			label: tNav.settings(),
-			href: appPath("settings"),
-			icon: Settings
-		},
-		{
-			label: tNav.history(),
-			href: appPath("history/date"),
-			icon: Book
-		},
-		{
-			label: "Customers",
-			href: appPath("customers"),
-			icon: PersonStanding
-		},
-		{
-			label: tNav.supplier_orders(),
-			href: appPath("supplier_orders"),
-			icon: Truck
-		}
 	];
 
 	// Function to generate random ISBN (10 digits)
@@ -335,147 +281,97 @@
 	});
 </script>
 
-<div class="flex h-screen w-screen overflow-hidden">
-	<!-- Sidenav -->
-	<div class="flex">
-		<div class="hidden h-screen sm:inline-block">
-			<div class="block px-6 py-4">
-				<BookCopy color="white" strokeWidth={2} size={36} />
+<div id="content" class="h-full w-full overflow-y-auto">
+	<header class="flex h-16 items-center justify-between border-b border-base-content">
+		<h2 class="pl-[70px] text-lg font-medium lg:pl-5">Debug</h2>
+	</header>
+
+	<div class="flex h-full w-full flex-col px-4">
+		<div class="flex items-center justify-between self-end p-4">
+			<div class="gap-2">
+				<button class="btn-primary btn" on:click={() => populateDatabase()}>
+					<Plus size={20} />
+					Populate Database
+				</button>
+				<button class="btn-primary btn" on:click={() => resetDatabase()}>
+					<RotateCcw size={20} />
+					Reset Database
+				</button>
+				<button class="btn-primary btn" on:click={() => upsert100Books()}>
+					<BookPlus size={20} />
+					Upsert 100 Books
+				</button>
 			</div>
-
-			<nav class="px-3" aria-label="Main navigation">
-				<ul class="flex flex-col items-center gap-y-3">
-					{#each links as { label, icon, href }}
-						<TooltipWrapper
-							options={{
-								positioning: {
-									placement: "right"
-								},
-								openDelay: 0,
-								closeDelay: 0,
-								closeOnPointerDown: true,
-								forceVisible: true
-							}}
-							let:trigger
-						>
-							<li {...trigger} use:trigger.action>
-								<a {href} class="inline-block rounded-sm p-4 {$page.url.pathname.startsWith(href)}">
-									<svelte:component this={icon} size={24} />
-								</a>
-							</li>
-
-							<p slot="tooltip-content" class="px-4 py-1 text-white">{label}</p>
-						</TooltipWrapper>
-					{/each}
-				</ul>
-			</nav>
 		</div>
-	</div>
-	<!-- Sidenav end -->
 
-	<!-- Main content -->
-	<div id="content" class="relative flex h-full w-full flex-col overflow-hidden">
-		<!-- Main section -->
+		<div class="flex py-2">
+			<div class="mr-5 flex-auto overflow-x-auto py-2">
+				<h2 class="prose font-bold">Database Query Interface</h2>
+				<div class="mr-5 flex flex-col py-2">
+					<textarea bind:value={query} id="query"></textarea>
 
-		<header class="navbar mb-4 bg-neutral">
-			<input type="checkbox" value="forest" class="theme-controller toggle" />
-		</header>
+					<button class="btn-primary btn" on:click={executeQuery} disabled={isLoading}>
+						<Play size={20} />
+						{isLoading ? "Executing..." : "Run Query"}
+					</button>
 
-		<main class="h-screen">
-			<div class="relative mx-auto flex h-full flex-col px-4">
-				<div class="flex items-center justify-between">
-					<h1 class="prose text-2xl font-bold">Debug</h1>
-					<div class="gap-2">
-						<button class="btn-primary btn" on:click={() => populateDatabase()}>
-							<Plus size={20} />
-							Populate Database
-						</button>
-						<button class="btn-primary btn" on:click={() => resetDatabase()}>
-							<RotateCcw size={20} />
-							Reset Database
-						</button>
-						<button class="btn-primary btn" on:click={() => upsert100Books()}>
-							<BookPlus size={20} />
-							Upsert 100 Books
-						</button>
-					</div>
-				</div>
+					{#if queryResult || errorMessage}
+						<h2 class="prose mt-3 font-bold">Query Results:</h2>
 
-				<div class="flex py-2">
-					<div class="mr-5 flex-auto overflow-x-auto py-2">
-						<h2 class="prose font-bold">Database Query Interface</h2>
-						<div class="mr-5 flex flex-col py-2">
-							<textarea bind:value={query} id="query"></textarea>
-
-							<button class="btn-sm btn" on:click={executeQuery} disabled={isLoading}>
-								<Play size={20} />
-								{isLoading ? "Executing..." : "Run Query"}
-							</button>
-
-							{#if queryResult || errorMessage}
-								<h2 class="prose mt-3 font-bold">Query Results:</h2>
-
-								{#if errorMessage}
-									<div class="mt-4 rounded-lg bg-red-500 p-3 text-white shadow">
-										{errorMessage}
-									</div>
-								{:else if queryResult.length === 0}
-									<p>No results found.</p>
-								{:else}
-									<table class="table">
-										<thead>
-											<tr>
-												{#each Object.keys(queryResult[0]) as column}
-													<th scope="col">{column}</th>
-												{/each}
-											</tr>
-										</thead>
-										<tbody>
-											{#each queryResult as row}
-												<tr class="hover focus-within:bg-base-200">
-													{#each Object.values(row) as value}
-														<td>{value}</td>
-													{/each}
-												</tr>
-											{/each}
-										</tbody>
-									</table>
-								{/if}
-							{/if}
-						</div>
-					</div>
-					<div class="w-64 overflow-x-auto py-2">
-						<table class="table">
-							<thead>
-								<tr>
-									<th scope="col">Table</th>
-									<th scope="col">Number of objects</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each tableData as row}
-									<tr class="hover focus-within:bg-base-200">
-										<td>{row.label}</td>
-										<td>
-											{#if isLoading}
-												<div class="spinner"></div>
-											{:else}
-												{row.value()}
-											{/if}
-										</td>
+						{#if errorMessage}
+							<div class="mt-4 rounded-lg bg-red-500 p-3 text-white shadow">
+								{errorMessage}
+							</div>
+						{:else if queryResult.length === 0}
+							<p>No results found.</p>
+						{:else}
+							<table class="table">
+								<thead>
+									<tr>
+										{#each Object.keys(queryResult[0]) as column}
+											<th scope="col">{column}</th>
+										{/each}
 									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
+								</thead>
+								<tbody>
+									{#each queryResult as row}
+										<tr class="hover focus-within:bg-base-200">
+											{#each Object.values(row) as value}
+												<td>{value}</td>
+											{/each}
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						{/if}
+					{/if}
 				</div>
 			</div>
-
-			<div class="flex h-8 items-center justify-end border-t px-4">
-				<slot name="footer" />
+			<div class="w-64 overflow-x-auto py-2">
+				<table class="table">
+					<thead>
+						<tr>
+							<th scope="col">Table</th>
+							<th scope="col">Number of objects</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each tableData as row}
+							<tr class="hover focus-within:bg-base-200">
+								<td>{row.label}</td>
+								<td>
+									{#if isLoading}
+										<div class="spinner"></div>
+									{:else}
+										{row.value()}
+									{/if}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
-		</main>
-		<!-- Main section end -->
+		</div>
 	</div>
 </div>
 

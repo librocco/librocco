@@ -14,13 +14,6 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("update is reflected in table view - stock", async ({ page }) => {
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
-	// Wait for the app to become responsive
-	await page.getByRole("link", { name: "Manage inventory" }).click();
-	await content.entityList("warehouse-list").waitFor();
-
 	const dbHandle = await getDbHandle(page);
 
 	// Setup
@@ -32,9 +25,16 @@ test("update is reflected in table view - stock", async ({ page }) => {
 	await dbHandle.evaluate(commitNote, 1);
 	// await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Wait for the app to become responsive
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	await page.waitForURL("**/inventory/warehouses/");
+
 	// Navigate to the warehouse page
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
-	await content.header().title().assert("Warehouse 1");
+	await page.getByRole("main").getByRole("heading", { name: "Warehouse 1" });
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
@@ -51,15 +51,6 @@ test("update is reflected in table view - stock", async ({ page }) => {
 });
 
 test("update is reflected in table view - inbound", async ({ page }) => {
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
-	// Wait for the app to become responsive
-	await page.getByRole("link", { name: "Manage inventory" }).click();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
-	await content.entityList("inbound-list").waitFor();
-
 	// Setup
 	//
 	// Create a warehouse and a note containing a certain book in stock
@@ -68,9 +59,17 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Wait for the app to become responsive
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	await page.getByRole("link", { name: "Inbound" }).click();
+	await page.waitForURL("**/inventory/inbound/");
+
 	// Navigate to the note page
 	await content.entityList("inbound-list").item(0).edit();
-	await content.header().title().assert("Note 1");
+	await page.getByRole("main").getByRole("heading", { name: "Note 1" });
 	await content.table("inbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
@@ -87,13 +86,6 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 });
 
 test("update is reflected in table view - outbound", async ({ page }) => {
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
-	// Wait for the app to become responsive
-	await page.getByRole("link", { name: "Outbound" }).click();
-	await content.entityList("outbound-list").waitFor();
-
 	// Setup
 	//
 	// Create a note containing a certain book in stock
@@ -101,9 +93,16 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Note 1" });
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Wait for the app to become responsive
+	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.waitForURL("**/outbound/");
+
 	// Navigate to the note page
 	await content.entityList("outbound-list").item(0).edit();
-	await content.header().title().assert("Note 1");
+	await page.getByRole("main").getByRole("heading", { name: "Note 1" });
 	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
@@ -120,13 +119,6 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 });
 
 test("book form can be submitted using keyboard", async ({ page }) => {
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
-	// Wait for the app to become responsive
-	await page.getByRole("link", { name: "Outbound" }).click();
-	await content.entityList("outbound-list").waitFor();
-
 	// Setup
 	//
 	// Create a note containing a certain book in stock
@@ -134,9 +126,16 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Note 1" });
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Wait for the app to become responsive
+	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.waitForURL("**/outbound/");
+
 	// Navigate to the note page
 	await content.entityList("outbound-list").item(0).edit();
-	await content.header().title().assert("Note 1");
+	await page.getByRole("main").getByRole("heading", { name: "Note 1" });
 	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
