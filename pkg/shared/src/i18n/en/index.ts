@@ -428,6 +428,13 @@ const settings_page = {
 	}
 };
 
+const components = {
+	warehouse_select: {
+		label: "Select a warehouse to withdraw book {{ rowIx }} from",
+		default_option: "Select a warehouse"
+	}
+};
+
 const en = {
 	nav,
 	search,
@@ -448,7 +455,8 @@ const en = {
 	new_order_page,
 	reconcile_page,
 	reconciled_list_page,
-	order_list_page
+	order_list_page,
+	components
 } satisfies BaseTranslation;
 
 export default en;
