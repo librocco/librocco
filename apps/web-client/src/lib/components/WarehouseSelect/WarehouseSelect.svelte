@@ -9,6 +9,7 @@
 	import type { WarehouseChangeDetail } from "./types";
 	import type { Warehouse } from "$lib/db/cr-sqlite/types";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: InventoryTableData<"book">;
 	export let rowIx: number;
@@ -52,10 +53,12 @@
 	// Out of stock situations are handled in the row (painting it red) or
 	// when committing the note (prompting for reconciliation)
 	$: options = mapWarehousesToOptions(warehouseList);
+
+	$: t = $LL.components.warehouse_select;
 </script>
 
 <!-- svelte-ignore a11y-label-has-associated-control - $label contains the 'for' attribute -->
-<label class="hidden" {...$label} use:label>Select a warehouse to withdraw book {rowIx} from</label>
+<label class="hidden" {...$label} use:label>{t.label(rowIx)}</label>
 <button
 	data-testid={testId("dropdown-control")}
 	data-open={open}
@@ -67,10 +70,10 @@
 	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-teal-400' : 'bg-red-400'}"></span>
 	{#if $selectedLabel}
 		<span class="truncate">
-			{$selectedLabel === "not-found" ? "Select a warehouse" : $selectedLabel}
+			{$selectedLabel === "not-found" ? t.default_option() : $selectedLabel}
 		</span>
 	{:else}
-		<span class="truncate text-gray-400">Select a warehouse</span>
+		<span class="truncate text-gray-400">{t.default_option()}</span>
 	{/if}
 	<ChevronsUpDown size={18} class="ml-auto shrink-0 self-end" />
 </button>
