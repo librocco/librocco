@@ -33,16 +33,20 @@ test.beforeEach(async ({ page }) => {
 
 	await page.getByRole("link", { name: "Outbound" }).click();
 	await dashboard.content().entityList("outbound-list").waitFor();
-
-	// Navigate to the note page
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.getByRole("main").getByRole("heading", { name: "Note 1" }).first();
 });
 
 test("should display correct transaction fields for the outbound note view", async ({ page }) => {
 	// Setup: Add the book data to the database
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertBook, book1);
+
+	// Navigate to the note page
+	// * We repeat this at the start of each test, as tests which do a lot of `dbHandle.evaluate`
+	// * calls within the test block can variably end up on `/inventory/inbound` or `/inventory/inbound/1` between firefox and chrome, and this way we can make sure we navigate after
+	// await dashboard.content().entityList("outbound-list").item(0).edit();
+	//* The following is more reliable on chrome than ^^
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const content = getDashboard(page).content();
 
@@ -66,6 +70,11 @@ test("should display correct transaction fields for the outbound note view", asy
 });
 
 test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case no book data is provided)", async ({ page }) => {
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const content = getDashboard(page).content();
 
 	// Add a book transaction without book data (only isbn)
@@ -90,6 +99,11 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 test("should add a transaction to the note by 'typing the ISBN into the 'Scan' field and pressing \"Enter\" (the same way scenner interaction would be processed)", async ({
 	page
 }) => {
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const content = getDashboard(page).content();
 
 	await content.scanField().add("1234567890");
@@ -104,13 +118,14 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
 
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
-	await content.entityList("outbound-list").item(0).edit();
 	// Check that both books are in the entries table
 	// (by not using 'strict: true', we're asserting only by values we care about)
 	await entries.assertRows([
@@ -133,6 +148,11 @@ test("should autofill the existing book data when adding a transaction with exis
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertBook, book1);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const content = getDashboard(page).content();
 
 	// Add book 1 again (this time using only isbn and 'Add' button)
@@ -147,13 +167,14 @@ test("should allow for changing of transaction quantity using the quantity field
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
 
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
-	await content.entityList("outbound-list").item(0).edit();
 	// Wait for the transaction to appear on screen before proceeding with assertions
 	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
 
@@ -173,6 +194,11 @@ test("should allow for changing of transaction quantity using the quantity field
 });
 
 test("should sort in reverse order to being added/aggregated", async ({ page }) => {
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
 
@@ -198,12 +224,13 @@ test("should delete the transaction from the note when when selected for deletio
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567892", quantity: 1, warehouseId: 1 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const entries = getDashboard(page).content().table("outbound-note");
 
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
-	await content.entityList("outbound-list").item(0).edit();
 	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567891" }, { isbn: "1234567890" }]);
 
@@ -223,6 +250,11 @@ test.skip("transaction should default to the only warehouse the given book is av
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 2);
+
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const content = getDashboard(page).content();
 
@@ -255,13 +287,14 @@ test("transaction should allow for warehouse selection if there is more than one
 	// Warehouse without book in stock should still be available for selection (out-of-stock is handled at a later step)
 	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const scanField = getDashboard(page).content().scanField();
 	const row = getDashboard(page).content().table("outbound-note").row(0);
 
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
-	await content.entityList("outbound-list").item(0).edit();
 	// Add a book transaction to the note
 	await scanField.add("1234567890");
 
@@ -289,13 +322,14 @@ test("if there's one transaction for the isbn with specified warehouse, should a
 	// Add a transaction to the note, belonging to the first warehouse - specified warehouse
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
 
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
-	await content.entityList("outbound-list").item(0).edit();
 	// Wait for the transaction to be displayed before continuing with assertions
 	//
 	// TDDO: Replace the following with a single call to `assertRows` (commented line below) when the
@@ -334,9 +368,10 @@ test("if there are two transactions, one with specified and one with unspecified
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
 
-	// * We've technically navigated here in the before hook, but the above `dbHandle.evaluate` calls can cause navigation back to the note list
-	// This may be because of data invalidation? For now, we re-navigate back to the view
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
 	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
@@ -368,11 +403,13 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 2 }] as const);
 
-	const entries = getDashboard(page).content().table("outbound-note");
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
-	await content.entityList("outbound-list").item(0).edit();
+	const entries = getDashboard(page).content().table("outbound-note");
+
 	// Wait for the transactions to be displayed before continuing with assertions
 	await entries.assertRows([
 		{ isbn: "1234567890", quantity: 2, warehouseName: "Warehouse 2" },
@@ -390,9 +427,13 @@ test("should add custom item on 'Custom Item' button click after filling out the
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "11111111", quantity: 1 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const content = getDashboard(page).content();
 
-	await content.entityList("outbound-list").item(0).edit();
 	// Add a custom item using custom item button
 	await content.getByRole("button", { name: "Custom Item" }).click();
 	// The custom item form appears automatically, when adding a new custom item
@@ -439,9 +480,13 @@ test("should allow for editing of custom items using the custom item form", asyn
 	await dbHandle.evaluate(upsertNoteCustomItem, [1, { id: 1, title: "Custom item 1", price: 10 }] as const);
 	await dbHandle.evaluate(upsertNoteCustomItem, [1, { id: 2, title: "Custom item 2", price: 10 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const content = getDashboard(page).content();
 
-	await content.entityList("outbound-list").item(0).edit();
 	// Edit custom items using custom item form
 	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
 	await content.table("outbound-note").row(1).getByRole("button").click();
@@ -492,10 +537,12 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	// No warehouse assigned
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "44444444", quantity: 1 }] as const);
 
-	const dashboard = getDashboard(page);
-
-	// It seems to help to navigate again to the outbound page after all of the dbHandle's have been evaluated
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
 	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
+	const dashboard = getDashboard(page);
 
 	const entries = dashboard.content().table("outbound-note");
 	const dialog = dashboard.dialog();

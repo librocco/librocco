@@ -10,24 +10,18 @@ test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
+	// We're creating one warehouse (for each test) and are using its stock view as default view
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+
 	// Navigate to warehouse-list view and wait for the page to load
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
 
 	// Navigate to the stock/search page
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-
 	await dashboard.content().entityList("warehouse-list").waitFor();
-
-	// We're creating one warehouse (for each test) and are using its stock view as default view
-	const dbHandle = await getDbHandle(page);
-
-	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
-
-	// Navigate to "Warehouse 1" stock view
-	await dashboard.content().entityList("warehouse-list").item(0).dropdown().viewStock();
-	await dashboard.view("warehouse").waitFor();
-	await dashboard.content().header().title().assert("Warehouse 1");
 });
 
 test("should update the stock when the inbound note is committed", async ({ page }) => {
@@ -36,6 +30,12 @@ test("should update the stock when the inbound note is committed", async ({ page
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Test Note" });
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 3, warehouseId: 1 }] as const);
+
+	// Navigate to the warehouse page
+	// * We repeat this at the start of each test, as tests which do a lot of `dbHandle.evaluate`
+	// * calls within the test block can variably end up on `/inventory/warehouses/` or `/inventory/warehouses/1` between firefox and chrome, and this way we can make sure we navigate after
+	await page.getByRole("link", { name: "Warehouse 1" }).click();
+	await page.waitForURL("**/warehouses/1/");
 
 	// Initial view: Warehouse 1 stock page
 
@@ -79,6 +79,11 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Test Note" });
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567891", quantity: 2, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567893", quantity: 1, warehouseId: 1 }] as const);
+
+	// Navigate to the warehouse page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Warehouse 1" }).click();
+	await page.waitForURL("**/warehouses/1/");
 
 	// Initial view: Warehouse 1 stock page
 
@@ -130,6 +135,11 @@ test('warehouse stock page should show only the stock for a praticular warehouse
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567891", quantity: 3, warehouseId: 2 }] as const);
 	await dbHandle.evaluate(commitNote, 2);
 
+	// Navigate to the warehouse page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Warehouse 1" }).click();
+	await page.waitForURL("**/warehouses/1/");
+
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
 
@@ -160,6 +170,11 @@ test("committing an outbound note should decrement the stock by the quantities i
 	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Test Note" });
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 2, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567891", quantity: 3, warehouseId: 1 }] as const);
+
+	// Navigate to the warehouse page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Warehouse 1" }).click();
+	await page.waitForURL("**/warehouses/1/");
 
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
@@ -206,6 +221,11 @@ test("should remove 0 quantity stock entries from the stock", async ({ page }) =
 	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Test Note" });
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
 
+	// Navigate to the warehouse page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Warehouse 1" }).click();
+	await page.waitForURL("**/warehouses/1/");
+
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
 
@@ -250,6 +270,11 @@ test("committing an outbound note with transactions in two warehouses should dec
 	await dbHandle.evaluate(createOutboundNote, { id: 3, displayName: "Test Note" });
 	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1234567890", quantity: 1, warehouseId: 2 }] as const);
+
+	// Navigate to the warehouse page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Warehouse 1" }).click();
+	await page.waitForURL("**/warehouses/1/");
 
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
