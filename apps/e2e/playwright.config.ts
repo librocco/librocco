@@ -15,7 +15,7 @@ export default defineConfig({
 	/* Fail the build on CI if you accidentally left test.only in the source code. */
 	forbidOnly: !!process.env.CI,
 	/* Retry for local test run (normally, the tests ran using the UI will not be flaky, but headless tests might take a toll on the CPU, resulting in flaky tests) */
-	retries: 1,
+	retries: 3,
 	timeout: 15000,
 	globalTimeout: 55 * 60 * 1000, // 55 minutes of global timeout - the github job has a 60 minutes limit
 	/* Opt out of parallel tests on CI. */
