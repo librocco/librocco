@@ -1,8 +1,9 @@
 import { defineConfig, devices, ReporterDescription } from "@playwright/test";
 
 const reporter: ReporterDescription[] = [["list"]];
+// Produce a merge‑able blob report when running in CI
 if (process.env.CI) {
-	reporter.push(["html"]);
+	reporter.push(["blob"]);
 }
 
 /**
@@ -11,7 +12,7 @@ if (process.env.CI) {
 export default defineConfig({
 	testDir: "./integration",
 	/* Run tests in files in parallel */
-	fullyParallel: true,
+	fullyParallel: false,
 	/* Fail the build on CI if you accidentally left test.only in the source code. */
 	forbidOnly: !!process.env.CI,
 	/* Retry for local test run (normally, the tests ran using the UI will not be flaky, but headless tests might take a toll on the CPU, resulting in flaky tests) */
