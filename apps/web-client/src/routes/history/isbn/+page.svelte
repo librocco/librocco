@@ -6,7 +6,8 @@
 
 	import type { PageData } from "./$types";
 
-	import { HistoryPage, PlaceholderBox } from "$lib/components";
+	import { PlaceholderBox } from "$lib/components";
+	import { HistoryPage } from "$lib/controllers";
 
 	import { createSearchDropdown } from "./[isbn]/actions";
 
@@ -18,6 +19,7 @@
 
 	export let data: PageData;
 
+	$: ({ plugins } = data);
 	$: db = data.dbCtx?.db;
 
 	const createMetaString = ({ authors, year, publisher }: Pick<BookData, "authors" | "year" | "publisher">) =>
@@ -43,43 +45,39 @@
 	// #endregion search
 </script>
 
-<HistoryPage view="history/isbn">
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<!-- svelte-ignore a11y_autofocus -->
-		<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
-	<svelte:fragment slot="heading">
-		<div class="flex h-full items-center">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">{t.titles.history()}</h1>
+<HistoryPage view="history/isbn" {db} {plugins}>
+	<div slot="main" class="h-full w-full">
+		<div class="flex w-full p-4">
+			<label class="input-bordered input flex flex-1 items-center gap-2">
+				<Search />
+				<input data-testid={testId("search-input")} use:input placeholder="Search" class="w-full" />
+			</label>
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="main">
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
-			<!-- Start entity list placeholder -->
-			<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`} class="center-absolute" />
-			<!-- End entity list placeholder -->
+		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
+			<div class="flex grow justify-center">
+				<div class="mx-auto max-w-xl translate-y-1/2">
+					<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`} />
+				</div>
+			</div>
 		</div>
 
 		<!-- End entity list contaier -->
-	</svelte:fragment>
+	</div>
 </HistoryPage>
 
 {#if $open && entries?.length}
 	<div use:dropdown>
-		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
+		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-base-100 shadow-2xl">
 			{#each entries as { isbn, title, authors, year, publisher }}
 				<li
 					class="cursor-pointer items-start px-4 py-3"
 					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
 					data-testid={testId("search-completion")}
 				>
-					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
+					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-base-content">{isbn}</p>
 					<p data-property="title" class="text-xl font-medium">{title}</p>
 					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
 				</li>

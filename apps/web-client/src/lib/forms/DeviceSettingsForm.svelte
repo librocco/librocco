@@ -16,19 +16,30 @@
 	$: hasChanges = $tainted && !compare($formStore, data.data);
 </script>
 
-<form class="flex h-auto flex-col gap-y-6" use:enhance method="POST" aria-label="Edit remote database connection config">
+<form
+	class="divide-y-secondary flex flex-col gap-y-10 px-4 py-4"
+	use:enhance
+	method="POST"
+	aria-label="Edit remote database connection config"
+>
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
-			<div class="basis-full">
-				<Input id="url" name="labelPrinterUrl" label="Label Printer URL" bind:value={$formStore.labelPrinterUrl} />
-			</div>
+			<label class="form-control basis-full">
+				<div class="label">
+					<span class="label-text">Label Printer URL</span>
+				</div>
+				<input id="url" name="labelPrinterUrl" bind:value={$formStore.labelPrinterUrl} class="input-bordered input w-full" />
+			</label>
 
-			<div class="basis-full">
-				<Input id="url" name="receiptPrinterUrl" label="Receipt Printer URL" bind:value={$formStore.receiptPrinterUrl} />
-			</div>
+			<label class="form-control basis-full">
+				<div class="label">
+					<span class="label-text">Receipt Printer URL</span>
+				</div>
+				<input id="url" name="receiptPrinterUrl" bind:value={$formStore.receiptPrinterUrl} class="input-bordered input w-full" />
+			</label>
 		</div>
 	</div>
-	<div class="flex justify-end gap-x-2 px-4 py-6">
-		<button type="submit" class="button button-green" disabled={!hasChanges}>Save and Reload</button>
+	<div class="flex w-full justify-end gap-x-2">
+		<button type="submit" class="btn-primary btn disabled:btn-disabled" disabled={!hasChanges}>Save and Reload</button>
 	</div>
 </form>

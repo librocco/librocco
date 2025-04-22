@@ -21,6 +21,11 @@ jobs:
   e2e-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4, 5, 6]
+        shardTotal: [6]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,39 +39,17 @@ jobs:
         run: cd apps/web-client && rushx build:e2e
       - name: Download playwright browsers
         run: cd apps/e2e && npx playwright install
-      - name: Run Playwright tests
+      - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: cd apps/e2e && rushx test:ci
-      - name: Install lftp
-        if: always()
-        run: |
-          [ -d apps/e2e/playwright-report ] || exit 0
-          sudo apt-get update
-          sudo apt-get install lftp
-      - name: Copy playwright test result to bunny storage zone
-        if: always()
-        run: |
-          [ -d apps/e2e/playwright-report ] || exit 0
-          lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
-          set ftp:ssl-allow no
-          set mirror:parallel-transfer-count 10
-          mirror -R apps/e2e/playwright-report/ ${{ github.head_ref || github.ref_name }}/tests
-          EOF
-          echo Uploaded to https://test.libroc.co/${{ github.head_ref || github.ref_name }}/tests
         env:
-          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
-      - name: Purge bunny cache
-        if: always()
-        run: |
-          [ -d apps/e2e/playwright-report ] || exit 0
-          curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache --header "content-type: application/json" --header "AccessKey: $BUNNY_API_KEY"
-        env:
-          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+          PLAYWRIGHT_OPTIONS: "--shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}"
+      #! upload each shard’s blob so we can merge later
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-test-results
-          path: apps/e2e/test-results
-          retention-days: 30
+          name: e2e-blob-report-${{ matrix.shardIndex }}
+          path: apps/e2e/blob-report
+          retention-days: 2
 
   lint-and-typecheck:
     runs-on: ubuntu-latest
@@ -167,3 +150,55 @@ jobs:
           BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
       - name: Output link to deployed app
         run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
+  e2e-merge-report:
+    if: ${{ !cancelled() }}
+    needs: [e2e-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Download blob reports
+        uses: actions/download-artifact@v4
+        with:
+          path: all-blob-reports
+          pattern: e2e-blob-report-*
+          merge-multiple: true
+
+      - name: Merge to HTML report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Install lftp
+        run: |
+          sudo apt-get update
+          sudo apt-get install lftp
+
+      - name: Upload merged report to Bunny storage
+        run: |
+          lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
+          set ftp:ssl-allow no
+          set mirror:parallel-transfer-count 10
+          mirror -R playwright-report/ ${{ github.head_ref || github.ref_name }}/tests
+          EOF
+        env:
+          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+
+      - name: Purge Bunny cache
+        run: |
+          curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache \
+               --header "content-type: application/json" \
+               --header "AccessKey: $BUNNY_API_KEY"
+        env:
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-merged-html-report
+          path: playwright-report
+          retention-days: 30
+
+      - name: Output link to report
+        run: echo "Merged e2e report https://test.libroc.co/${{ github.head_ref || github.ref_name }}/tests/index.html" | tee -a $GITHUB_STEP_SUMMARY

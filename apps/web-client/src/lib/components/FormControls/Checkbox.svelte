@@ -6,39 +6,27 @@
 	export let helpText = "";
 	export let checked = false;
 	export let disabled = false;
-
-	$: labelBaseClasses = ["text-base font-medium", disabled ? "text-gray-400" : "text-gray-800"].join(" ");
-	$: helpTextClasses = ["text-sm", disabled ? "text-gray-300" : "text-gray-500"].join(" ");
-	const inputBaseClasses = [
-		"focus:ring-gray-400",
-		"h-4",
-		"w-4",
-		"text-gray-800",
-		"border-gray-300",
-		"rounded",
-		"disabled:text-gray-200"
-	].join(" ");
 </script>
 
 <div class="relative flex max-w-max items-start gap-x-2 p-1">
-	<div class="inline-flex h-5 items-center">
+	<div class="inline-flex items-center">
 		<input
 			type="checkbox"
 			{id}
 			{name}
 			value={id}
 			aria-describedby="{name}-description"
-			class={inputBaseClasses}
+			class="checkbox checkbox-sm"
 			bind:checked
 			{disabled}
 			on:change
 		/>
 	</div>
 	<div>
-		<label for={id} class={labelBaseClasses}>
+		<label for={id} class="text-md leading-5 text-base-content">
 			{label}
 		</label>
-		<p id="{name}-description" class={helpTextClasses}>
+		<p id="{name}-description" class="text-sm text-base-content/80">
 			{helpText}
 		</p>
 	</div>
