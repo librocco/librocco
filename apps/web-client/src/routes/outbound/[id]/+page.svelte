@@ -414,7 +414,7 @@
 
 					<div class="w-fit">
 						{#if updatedAt}
-							<span class="badge-primary badge-outline badge badge-md">
+							<span class="badge-outline badge-primary badge badge-md">
 								{tOutbound.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}
 							</span>
 						{/if}
