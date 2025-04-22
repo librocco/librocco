@@ -13,6 +13,8 @@
 
 	import { upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
 	import { SupplierTable } from "$lib/components";
+	import { Page } from "$lib/controllers";
+
 	import { writable } from "svelte/store";
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 	import type { Supplier } from "$lib/db/cr-sqlite/types";
@@ -40,9 +42,8 @@
 
 	$: goto = racefreeGoto(disposer);
 
+	$: ({ plugins, suppliers } = data);
 	$: db = data?.dbCtx?.db;
-
-	$: suppliers = data?.suppliers;
 
 	// #region table
 	const suppliersStore = writable(suppliers);
@@ -69,21 +70,15 @@
 	};
 </script>
 
-<header class="navbar mb-4 bg-neutral">
-	<input type="checkbox" value="forest" class="theme-controller toggle" />
-</header>
-
-<main class="h-screen">
-	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
-		<div class="flex items-center justify-between">
-			<h1 class="prose mt-2 text-2xl font-bold">{t.title.suppliers()}</h1>
-			<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
-				{t.labels.new_supplier()}
-				<Plus size={20} />
-			</button>
-		</div>
-
+<Page title="Suppliers" view="orders/suppliers" {db} {plugins}>
+	<div slot="main" class="flex flex-col gap-y-6 overflow-x-auto py-2">
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
+			<div class="self-end">
+				<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
+					{t.labels.new_supplier()}
+					<Plus size={20} />
+				</button>
+			</div>
 			<SupplierTable data={suppliersStore}>
 				<div class="flex gap-x-2" slot="row-actions" let:row>
 					<button class="btn-outline btn-sm btn">{t.table.delete()}</button>
@@ -92,7 +87,7 @@
 			</SupplierTable>
 		</div>
 	</div>
-</main>
+</Page>
 
 <PageCenterDialog {dialog} title="" description="">
 	<SupplierMetaForm

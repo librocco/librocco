@@ -21,12 +21,6 @@ test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
-	const dashboard = getDashboard(page);
-	await dashboard.waitFor();
-
-	await page.getByRole("link", { name: "Outbound" }).click();
-	await dashboard.content().entityList("outbound-list").waitFor();
-
 	// We create a warehouse and a note for all tests
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
@@ -34,15 +28,25 @@ test.beforeEach(async ({ page }) => {
 	await dbHandle.evaluate(createOutboundNote, { id: 1 });
 	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Note 1" });
 
-	// Navigate to the note page
-	await dashboard.content().entityList("outbound-list").item(0).edit();
-	await dashboard.content().header().title().assert("Note 1");
+	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
+
+	await page.getByRole("link", { name: "Outbound" }).click();
+	await dashboard.content().entityList("outbound-list").waitFor();
 });
 
 test("should display correct transaction fields for the outbound note view", async ({ page }) => {
 	// Setup: Add the book data to the database
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertBook, book1);
+
+	// Navigate to the note page
+	// * We repeat this at the start of each test, as tests which do a lot of `dbHandle.evaluate`
+	// * calls within the test block can variably end up on `/inventory/inbound` or `/inventory/inbound/1` between firefox and chrome, and this way we can make sure we navigate after
+	// await dashboard.content().entityList("outbound-list").item(0).edit();
+	//* The following is more reliable on chrome than ^^
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const content = getDashboard(page).content();
 
@@ -66,6 +70,11 @@ test("should display correct transaction fields for the outbound note view", asy
 });
 
 test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case no book data is provided)", async ({ page }) => {
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const content = getDashboard(page).content();
 
 	// Add a book transaction without book data (only isbn)
@@ -90,6 +99,11 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 test("should add a transaction to the note by 'typing the ISBN into the 'Scan' field and pressing \"Enter\" (the same way scenner interaction would be processed)", async ({
 	page
 }) => {
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const content = getDashboard(page).content();
 
 	await content.scanField().add("1234567890");
@@ -103,6 +117,11 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1 }] as const);
+
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
@@ -129,6 +148,11 @@ test("should autofill the existing book data when adding a transaction with exis
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertBook, book1);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const content = getDashboard(page).content();
 
 	// Add book 1 again (this time using only isbn and 'Add' button)
@@ -142,6 +166,11 @@ test("should allow for changing of transaction quantity using the quantity field
 	// Setup: Add one transaction to the note
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
@@ -165,6 +194,11 @@ test("should allow for changing of transaction quantity using the quantity field
 });
 
 test("should sort in reverse order to being added/aggregated", async ({ page }) => {
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
 
@@ -190,6 +224,11 @@ test("should delete the transaction from the note when when selected for deletio
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567892", quantity: 1, warehouseId: 1 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const entries = getDashboard(page).content().table("outbound-note");
 
 	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
@@ -211,6 +250,11 @@ test.skip("transaction should default to the only warehouse the given book is av
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 2);
+
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const content = getDashboard(page).content();
 
@@ -243,6 +287,11 @@ test("transaction should allow for warehouse selection if there is more than one
 	// Warehouse without book in stock should still be available for selection (out-of-stock is handled at a later step)
 	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const scanField = getDashboard(page).content().scanField();
 	const row = getDashboard(page).content().table("outbound-note").row(0);
 
@@ -272,6 +321,11 @@ test("if there's one transaction for the isbn with specified warehouse, should a
 
 	// Add a transaction to the note, belonging to the first warehouse - specified warehouse
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
@@ -314,6 +368,11 @@ test("if there are two transactions, one with specified and one with unspecified
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
 
@@ -344,6 +403,11 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 2 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const entries = getDashboard(page).content().table("outbound-note");
 
 	// Wait for the transactions to be displayed before continuing with assertions
@@ -362,6 +426,11 @@ test("should add custom item on 'Custom Item' button click after filling out the
 	// Setup: add one non-custom transaction
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "11111111", quantity: 1 }] as const);
+
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const content = getDashboard(page).content();
 
@@ -410,6 +479,11 @@ test("should allow for editing of custom items using the custom item form", asyn
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "22222222", quantity: 1 }] as const);
 	await dbHandle.evaluate(upsertNoteCustomItem, [1, { id: 1, title: "Custom item 1", price: 10 }] as const);
 	await dbHandle.evaluate(upsertNoteCustomItem, [1, { id: 2, title: "Custom item 2", price: 10 }] as const);
+
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
 
 	const content = getDashboard(page).content();
 
@@ -463,6 +537,11 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	// No warehouse assigned
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "44444444", quantity: 1 }] as const);
 
+	// Navigate to the note page
+	// * See note on first test about why this is repeated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.waitForURL("**/outbound/1/");
+
 	const dashboard = getDashboard(page);
 
 	const entries = dashboard.content().table("outbound-note");
@@ -471,18 +550,20 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	const invalidTransctionList = dialog.locator("ul");
 
 	// Try to commit the note
-	await dashboard.content().header().commit();
+	await page.getByRole("button", { name: "Commit" }).click();
 	await dialog.confirm();
 
 	// Should display no-warehouse-selected error dialog
 	await dialog.getByText("No warehouse(s) selected").waitFor();
 	// Should display isbns for transactions with no warehouse selected
 	await compareEntries(invalidTransctionList, ["22222222", "44444444"], "li");
-	// No-warehouse-selected dialog doesn't have a 'Confirm' button
-	await dialog.getByText("Confirm").waitFor({ state: "detached" });
 
 	// Close the dialog and fix the invalid transactions
-	await dialog.cancel();
+	const noWarehouseSelectedDialog = page.getByRole("dialog", { name: "No warehouse(s) selected" });
+	await noWarehouseSelectedDialog.getByRole("button", { name: "Cancel" }).click();
+
+	await expect(noWarehouseSelectedDialog).not.toBeVisible();
+
 	// "22222222" - reverse order than order of adding/aggregating
 	await entries.row(2).field("warehouseName").set("Warehouse 1");
 	// "44444444"
@@ -502,7 +583,7 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	]);
 
 	// Try to commit the note
-	await dashboard.content().header().commit();
+	await page.getByRole("button", { name: "Commit" }).click();
 	// Regression: check the commit message (book count was broken -- this tests the fix)
 	//
 	// 1 + 2 + 5 + 3 + 3 = 14
@@ -533,14 +614,16 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	await invalidTransctionList.locator("li").nth(3).waitFor({ state: "detached" });
 
 	// Confirm the reconciliation
-	await dialog.confirm();
-	await dialog.waitFor({ state: "detached" });
+	const stockMisMatchDialog = page.getByRole("dialog", { name: "Stock mismatch" });
+	await stockMisMatchDialog.getByRole("button", { name: "Confirm" }).click();
+	await expect(stockMisMatchDialog).not.toBeVisible();
 
 	// The note should be committed, we're redirected to '/outbound' page
 	await dashboard.view("outbound").waitFor();
 
 	// Check Wareahouse 1 stock (only the existing books should have been removed)
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await dashboard.content().entityList("warehouse-list").item(0).dropdown().viewStock();
 	await dashboard
 		.content()
@@ -548,7 +631,8 @@ test("should check validity of the transactions and commit the note on 'commit' 
 		.assertRows([{ isbn: "11111111", quantity: 1 }]);
 
 	// Check Wareahouse 2 stock (only the existing books should have been removed)
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await dashboard.content().entityList("warehouse-list").item(1).dropdown().viewStock();
 	await dashboard
 		.content()
