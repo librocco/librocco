@@ -352,7 +352,7 @@ testInventory(
 		await dbHandle.evaluate(commitNote, 222);
 
 		// Navigate to outbound page
-		await dashboard.navigate("outbound");
+		await page.getByRole("link", { name: "Outbound" }).click();
 
 		await dashboard.content().entityList("outbound-list").waitFor();
 
@@ -418,7 +418,7 @@ testInventory(
 		await dbHandle.evaluate(commitNote, 222);
 
 		// Navigate to outbound page
-		await dashboard.navigate("outbound");
+		await page.getByRole("link", { name: "Outbound" }).click();
 
 		await dashboard.content().entityList("outbound-list").waitFor();
 
@@ -490,7 +490,7 @@ testInventory(
 		await dbHandle.evaluate(commitNote, 333);
 
 		// Navigate to outbound page
-		await dashboard.navigate("outbound");
+		await page.getByRole("link", { name: "Outbound" }).click();
 
 		await dashboard.content().entityList("outbound-list").waitFor();
 
@@ -563,7 +563,7 @@ testInventory(
 		await dbHandle.evaluate(commitNote, 333);
 
 		// Navigate to outbound page
-		await dashboard.navigate("outbound");
+		await page.getByRole("link", { name: "Outbound" }).click();
 
 		await dashboard.content().entityList("outbound-list").waitFor();
 
@@ -638,7 +638,7 @@ testInventory(
 		await dbHandle.evaluate(commitNote, 333);
 
 		// Navigate to outbound page
-		await dashboard.navigate("outbound");
+		await page.getByRole("link", { name: "Outbound" }).click();
 
 		await dashboard.content().entityList("outbound-list").waitFor();
 
