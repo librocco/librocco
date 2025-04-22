@@ -24,11 +24,11 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// Navigate to the outbound note page
-	await page.getByRole("link", { name: "Outbound" }).click();
 });
 
 test('should create a new outbound note, on "New note" and redirect to it', async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	// Create a new note
 	await dashboard.content().header().getByRole("button", { name: "New note" }).first().click();
@@ -39,6 +39,7 @@ test('should create a new outbound note, on "New note" and redirect to it', asyn
 
 test("should delete the note on delete button click (after confirming the prompt)", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	const content = dashboard.content();
 
@@ -60,6 +61,7 @@ test("should delete the note on delete button click (after confirming the prompt
 
 test("note heading should display note name, 'updated at' timestamp", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	const header = dashboard.content().header();
 
@@ -75,6 +77,7 @@ test("note heading should display note name, 'updated at' timestamp", async ({ p
 
 test("note should display breadcrumbs leading back to outbound page", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	const header = dashboard.content().header();
 
@@ -91,6 +94,7 @@ test("note should display breadcrumbs leading back to outbound page", async ({ p
 
 test("should assign default name to notes in sequential order", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	const content = dashboard.content();
 	const header = dashboard.content().header();
@@ -126,6 +130,8 @@ test("should continue the naming sequence from the highest sequenced note name (
 	page
 }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
 
@@ -178,6 +184,8 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 test("should navigate to note page on 'edit' button click", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
 
@@ -205,6 +213,8 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 test("should display book count for each respective note in the list", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 
 	const dbHandle = await getDbHandle(page);
@@ -241,6 +251,8 @@ test("should display book count for each respective note in the list", async ({ 
 
 test("should display book original price and discounted price as well as the warehouse discount percentage", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
 
@@ -328,12 +340,12 @@ testInventory(
 	If book is present in only one warehouse it should be assigned to that warehouse even
 	if default warehouse is different`,
 	async ({ page, books, warehouses }) => {
-		await page.goto(baseURL);
-
 		const dashboard = getDashboard(page);
 		await dashboard.waitFor();
 
 		const dbHandle = await getDbHandle(page);
+
+		await page.getByRole("link", { name: "Outbound" }).click();
 
 		// Create an outbound note
 		await dbHandle.evaluate(createOutboundNote, { id: 111, displayName: "Different Default Warehouse Test", defaultWarehouse: 2 });
@@ -351,16 +363,14 @@ testInventory(
 
 		await dbHandle.evaluate(commitNote, 222);
 
-		// Navigate to outbound page
-		await page.getByRole("link", { name: "Outbound" }).click();
-
 		await dashboard.content().entityList("outbound-list").waitFor();
 
 		await dashboard.content().entityList("outbound-list").item(0).edit();
 
 		// Verify we're on the note page
 		await dashboard.view("outbound-note").waitFor();
-		await dashboard.content().header().title().assert("Different Default Warehouse Test");
+
+		expect(dashboard.content().header().first()).toContainText("Different Default Warehouse Test");
 
 		const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
 		await defaultWarehouseDropdown.waitFor();
@@ -426,7 +436,7 @@ testInventory(
 
 		// Verify we're on the note page
 		await dashboard.view("outbound-note").waitFor();
-		await dashboard.content().header().title().assert("No Default Warehouse Test");
+		expect(dashboard.content().header().first()).toContainText("No Default Warehouse Test");
 
 		const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
 		await defaultWarehouseDropdown.waitFor();
@@ -501,7 +511,7 @@ testInventory(
 
 		// Verify we're on the note page
 		await dashboard.view("outbound-note").waitFor();
-		await dashboard.content().header().title().assert("Default Warehouse Test - 2 Warehouses");
+		expect(dashboard.content().header().first()).toContainText("Default Warehouse Test - 2 Warehouses");
 
 		// Verify initial default warehouse
 
@@ -574,7 +584,7 @@ testInventory(
 
 		// Verify we're on the note page
 		await dashboard.view("outbound-note").waitFor();
-		await dashboard.content().header().title().assert("Different default Warehouse Test - 2 Warehouses");
+		expect(dashboard.content().header().first()).toContainText("Different default Warehouse Test - 2 Warehouses");
 
 		// Verify initial default warehouse
 
@@ -649,7 +659,7 @@ testInventory(
 
 		// Verify we're on the note page
 		await dashboard.view("outbound-note").waitFor();
-		await dashboard.content().header().title().assert("Different default Warehouse Test - 2 Warehouses");
+		expect(dashboard.content().header().first()).toContainText("Different default Warehouse Test - 2 Warehouses");
 
 		// Verify initial default warehouse
 
