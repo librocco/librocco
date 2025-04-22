@@ -1,5 +1,7 @@
 import * as net from "net";
 
+export const IS_CI = process.env.CI === "true";
+
 export function getPort(): Promise<number> {
 	const testSocket = new net.Socket();
 
@@ -21,5 +23,6 @@ export function getPort(): Promise<number> {
 const port = await getPort();
 export const baseURL = `http://localhost:${port}`;
 
+
 /** Max timeout for DOM assertions (waitFor, etc. - longer in CI, default in non-CI) */
-export const assertionTimeout = process.env.CI ? 15000 : undefined;
+export const assertionTimeout = IS_CI ? 15000 : undefined;
