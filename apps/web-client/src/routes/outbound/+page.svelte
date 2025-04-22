@@ -4,7 +4,7 @@
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
+	import { Plus, Trash, Library, FilePlus, Layers, ClockArrowUp } from "lucide-svelte";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
@@ -12,7 +12,8 @@
 
 	import type { PageData } from "./$types";
 
-	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast } from "$lib/components";
+	import { PlaceholderBox, Dialog } from "$lib/components";
+	import { Page } from "$lib/controllers";
 
 	import { type DialogContent } from "$lib/types";
 
@@ -23,6 +24,9 @@
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
+
+	$: ({ notes, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -37,12 +41,6 @@
 		disposer?.();
 	});
 	$: goto = racefreeGoto(disposer);
-
-	$: db = data.dbCtx?.db;
-
-	$: notes = data.notes;
-
-	$: plugins = data.plugins;
 
 	let initialized = false;
 	$: initialized = Boolean(db);
@@ -72,42 +70,43 @@
 	$: tOutboundPage = $LL.outbound_page;
 </script>
 
-<Page handleCreateOutboundNote={handleCreateNote} view="outbound" loaded={initialized}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
-	<svelte:fragment slot="heading">
-		<div class="flex w-full items-center justify-between">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">{tOutboundPage.heading()}</h1>
-			<button
-				on:click={handleCreateNote}
-				class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]"
-			>
-				<span><Plus size={20} /></span>
-				<span class="text-sm font-medium leading-5 text-gray-700">{tOutboundPage.labels.new_note()}</span>
-			</button>
+<Page title="Outbound" view="outbound" {db} {plugins}>
+	<div slot="main" class="flex h-full flex-col gap-y-4 divide-y">
+		<div class="flex w-full items-center">
+			<div class="flex w-full items-center justify-end p-4">
+				<button on:click={handleCreateNote} class="btn-primary btn-sm btn">
+					<Plus size={20} aria-hidden />
+					{tOutboundPage.labels.new_note()}
+				</button>
+			</div>
 		</div>
-	</svelte:fragment>
 
-	<svelte:fragment slot="main">
 		{#if !initialized}
-			<div class="center-absolute">
-				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			<div class="flex grow justify-center">
+				<div class="mx-auto translate-y-1/2">
+					<span class="loading loading-spinner loading-lg text-primary"></span>
+				</div>
 			</div>
 		{:else}
 			<!-- Start entity list contaier -->
 
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-			<ul class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
+			<ul class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 				{#if !notes.length}
 					<!-- Start entity list placeholder -->
-					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
-						<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
-							><span class="text-green-50">{tOutboundPage.labels.new_note()}</span></button
-						>
-					</PlaceholderBox>
+
+					<div class="flex grow justify-center">
+						<div class="mx-auto max-w-xl translate-y-1/2">
+							<!-- Start entity list placeholder -->
+							<PlaceholderBox title="No open notes" description="Get started by adding a new note">
+								<FilePlus slot="icon" />
+								<button slot="actions" on:click={handleCreateNote} class="btn-primary btn w-full">
+									{tOutboundPage.labels.new_note()}
+								</button>
+							</PlaceholderBox>
+							<!-- End entity list placeholder -->
+						</div>
+					</div>
 					<!-- End entity list placeholder -->
 				{:else}
 					<!-- Start entity list -->
@@ -119,27 +118,31 @@
 
 						<div class="group entity-list-row">
 							<div class="flex flex-col gap-y-2">
-								<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
+								<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
-								<div class="flex flex-col items-start gap-y-2">
-									<div class="flex gap-x-0.5">
-										<Library class="mr-1 text-gray-700" size={24} />
-										<span class="entity-list-text-sm text-gray-500">{tOutboundPage.stats.books({ bookCount: totalBooks })}</span>
+								<div class="flex flex-row gap-x-8 gap-y-2 max-sm:flex-col">
+									<div class="flex gap-x-2">
+										<Layers size={18} />
+										<span class="entity-list-text-sm text-sm text-base-content">{tOutboundPage.stats.books({ bookCount: totalBooks })}</span
+										>
 									</div>
+
 									{#if note.updatedAt}
-										<span class="badge badge-md badge-green">
-											{tOutboundPage.stats.last_updated()}: {updatedAt}
-										</span>
+										<div class="flex items-center gap-x-2 text-sm text-base-content">
+											<ClockArrowUp size={18} />
+											{tOutboundPage.stats.last_updated()}:
+											{updatedAt}
+										</div>
 									{/if}
 								</div>
 							</div>
 
 							<div class="entity-list-actions">
-								<a {href} class="button button-alert"><span class="button-text">{tOutboundPage.labels.edit()}</span></a>
+								<a {href} class="btn-secondary btn-outline btn-sm btn">{tOutboundPage.labels.edit()}</a>
 
 								<button
 									use:melt={$trigger}
-									class="button button-white"
+									class="btn-secondary btn-sm btn"
 									aria-label="Delete note: {note.displayName}"
 									on:m-click={() => {
 										dialogContent = {
@@ -161,11 +164,7 @@
 			</ul>
 			<!-- End entity list contaier -->
 		{/if}
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
-	</svelte:fragment>
+	</div>
 </Page>
 
 {#if $open}

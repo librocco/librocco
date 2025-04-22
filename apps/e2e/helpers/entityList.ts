@@ -5,12 +5,12 @@ import { DashboardNode, EntityListInterface, EntityListItem, EntityListMatcher, 
 import { assertionTimeout } from "@/constants";
 
 import { getDateString } from "./dateString";
-import { classSelector, entityListViewSelector, loadedSelector, selector } from "./utils";
+import { classSelector, entityListViewSelector, selector } from "./utils";
 import { getDropdown } from "./dropdown";
 
 export function getEntityList(_parent: DashboardNode, view: EntityListView): EntityListInterface {
 	const dashboard = _parent.dashboard;
-	const container = _parent.locator(selector(classSelector("entity-list-container"), entityListViewSelector(view), loadedSelector(true)));
+	const container = _parent.locator(selector(classSelector("entity-list-container"), entityListViewSelector(view)));
 
 	async function assertElement(element: null, nth: number): Promise<void>;
 	async function assertElement(element: EntityListMatcher, nth?: number): Promise<void>;
@@ -27,8 +27,8 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 
 		if (name) await locator.getByText(name, { exact: true }).waitFor();
 		if (updatedAt) {
-			const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace(" at ", ", ").replace("Last updated: ", ""));
-			await getDateString(Object.assign(locator, { dashboard: _parent.dashboard }), "Last updated:", extractDateFromUpdatedAtString).assert(
+			const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace("Updated: ", ""));
+			await getDateString(Object.assign(locator, { dashboard: _parent.dashboard }), "Updated:", extractDateFromUpdatedAtString).assert(
 				updatedAt
 			);
 		}

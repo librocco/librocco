@@ -115,7 +115,7 @@ const inventory_page = {
 		stats: {
 			back_to_warehouses: "Back to warehouses",
 			books: "{no_of_books} book{{s}}",
-			last_updated: "Last Updated"
+			last_updated: "Updated"
 		},
 		labels: {
 			button_edit: "Edit"

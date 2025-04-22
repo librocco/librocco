@@ -7,7 +7,7 @@
 		"test:debug": "PLAYWRIGHT_HTML_OPEN=never playwright test $1 --debug",
 		"test:run": "PLAYWRIGHT_HTML_OPEN=never playwright test",
 		"test:codegen": "playwright codegen",
-		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; CI=true playwright test; RESULT=$?; kill $PREVIEW_PID; exit $RESULT",
+		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; CI=true playwright test ${PLAYWRIGHT_OPTIONS:-} \"$@\"; RESULT=$?; kill $PREVIEW_PID; exit $RESULT",
 		"typecheck": "tsc",
 		"lint": "prettier --check . && eslint .",
 		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
