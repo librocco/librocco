@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { baseURL } from "./constants";
+import { baseURL } from "@/constants";
 import { assertionTimeout } from "@/constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
