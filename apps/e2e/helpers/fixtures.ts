@@ -2,12 +2,12 @@ import { DB } from "@vlcn.io/crsqlite-wasm";
 import test, { JSHandle } from "@playwright/test";
 
 import { BookData, wrapIter, TranslationFunctions, Locales } from "@librocco/shared";
-
-import { Customer, Supplier } from "./types";
-
-import { baseURL } from "@/integration/constants";
 import { loadLocale } from "@librocco/shared/i18n-util.sync";
 import { i18nObject } from "@librocco/shared/i18n-util";
+
+import { baseURL } from "@/constants";
+
+import { Customer, Supplier } from "./types";
 
 import {
 	addBooksToCustomer,
