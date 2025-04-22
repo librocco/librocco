@@ -704,6 +704,8 @@ test("should be able to edit note title", async ({ page }) => {
 	await dbHandle.evaluate(createOutboundNote, { id: 1, warehouseId: 1, displayName: "New Note" });
 
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 
 	await content.entityList("outbound-list").item(0).edit();
