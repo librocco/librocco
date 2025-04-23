@@ -51,6 +51,7 @@ CREATE TABLE book (
     PRIMARY KEY (isbn)
 );
 SELECT crsql_as_crr('book');
+CREATE INDEX idx_book_publisher ON book(publisher);
 
 CREATE TABLE supplier (
 	id INTEGER NOT NULL,

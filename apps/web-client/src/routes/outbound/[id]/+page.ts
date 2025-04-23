@@ -42,7 +42,7 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		redirect(307, appPath("outbound"));
 	}
 
-	const warehouses = await getAllWarehouses(dbCtx.db);
+	const warehouses = await getAllWarehouses(dbCtx.db, { skipTotals: true });
 	const _entries = await getNoteEntries(dbCtx.db, id);
 	const entriesAvailability = await getAvailabilityByISBN(
 		dbCtx.db,
