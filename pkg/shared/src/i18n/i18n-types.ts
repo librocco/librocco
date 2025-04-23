@@ -536,6 +536,16 @@ type RootTranslation = {
 			 */
 			books: RequiredParams<"bookCount">;
 		};
+		placeholder: {
+			/**
+			 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e
+			 */
+			select_warehouse: string;
+			/**
+			 * N​o​ ​a​v​a​i​l​a​b​l​e​ ​w​a​r​e​h​o​u​s​e​s
+			 */
+			no_warehouses: string;
+		};
 	};
 	outbound_page: {
 		/**
@@ -1057,6 +1067,18 @@ type RootTranslation = {
 			 * U​n​a​s​s​i​g​n​e​d​ ​p​u​b​l​i​s​h​e​r​s
 			 */
 			unassigned_publishers: string;
+		};
+	};
+	components: {
+		warehouse_select: {
+			/**
+			 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​w​i​t​h​d​r​a​w​ ​b​o​o​k​ ​{​{​r​o​w​I​x​}​}​ ​f​r​o​m
+			 */
+			label: string;
+			/**
+			 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e
+			 */
+			default_option: string;
 		};
 	};
 };
@@ -1583,6 +1605,16 @@ export type TranslationFunctions = {
 			 */
 			books: (arg: { bookCount: string | number | boolean }) => LocalizedString;
 		};
+		placeholder: {
+			/**
+			 * Please select a warehouse
+			 */
+			select_warehouse: () => LocalizedString;
+			/**
+			 * No available warehouses
+			 */
+			no_warehouses: () => LocalizedString;
+		};
 	};
 	outbound_page: {
 		/**
@@ -2096,6 +2128,18 @@ export type TranslationFunctions = {
 			 * Unassigned publishers
 			 */
 			unassigned_publishers: () => LocalizedString;
+		};
+	};
+	components: {
+		warehouse_select: {
+			/**
+			 * Select a warehouse to withdraw book {{rowIx}} from
+			 */
+			label: (arg0: number | string | boolean) => LocalizedString;
+			/**
+			 * Select a warehouse
+			 */
+			default_option: () => LocalizedString;
 		};
 	};
 };
