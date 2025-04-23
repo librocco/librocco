@@ -112,7 +112,6 @@
 					resetForm: true,
 					onUpdated: async ({ form }) => {
 						const { isbn } = form?.data as BookData;
-
 						search.set(isbn);
 					}
 				}}

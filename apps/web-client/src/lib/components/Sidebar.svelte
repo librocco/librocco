@@ -11,7 +11,8 @@
 		ChevronDown,
 		Moon,
 		Sun,
-		Globe
+		Globe,
+		CalendarClock
 	} from "lucide-svelte";
 
 	import { LL } from "@librocco/shared/i18n-svelte";
@@ -36,6 +37,11 @@
 			icon: Search
 		},
 		{
+			label: tNav.books(),
+			href: appPath("books"),
+			icon: Book
+		},
+		{
 			label: tNav.inventory(),
 			href: appPath("inventory"),
 			icon: Library
@@ -53,7 +59,7 @@
 		{
 			label: tNav.history(),
 			href: appPath("history/date"),
-			icon: Book
+			icon: CalendarClock
 		},
 		{
 			label: "Customers",
