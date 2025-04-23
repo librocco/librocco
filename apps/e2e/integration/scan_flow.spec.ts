@@ -20,7 +20,7 @@ test.beforeEach(async ({ page }) => {
 
 	// Create new outbound note (and navigate to it)
 	await page.getByRole("button", { name: "New Note" }).first().click();
-	await page.getByRole("heading", { name: "New note" }).first();
+	await page.getByRole("heading", { name: "New note" }).first().waitFor();
 });
 
 test("should allow for continous scanning by auto focusing the scan field after the previous scanning operation is submitted", async ({
