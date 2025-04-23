@@ -4,6 +4,7 @@
 	import { goto } from "$lib/utils/navigation";
 	import { base } from "$app/paths";
 	import { createEventDispatcher } from "svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let orders: Array<PlacedSupplierOrder & { reconciled?: boolean }>;
 
@@ -41,10 +42,10 @@
 				<th scope="col" class="w-16">
 					<span class="sr-only">Select</span>
 				</th>
-				<th scope="col">Supplier</th>
-				<th scope="col">Books</th>
-				<th scope="col">Placed</th>
-				<th scope="col"><span class="sr-only">Actions</span></th>
+				<th scope="col">{$LL.supplier_orders_component.ordered_table.supplier()}</th>
+				<th scope="col">{$LL.supplier_orders_component.ordered_table.books()}</th>
+				<th scope="col">{$LL.supplier_orders_component.ordered_table.placed()}</th>
+				<th scope="col"><span class="sr-only">{$LL.supplier_orders_component.ordered_table.actions()}</span></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -52,8 +53,8 @@
 				<tr aria-live="polite" aria-atomic="true" class="bg-base-200">
 					<td role="cell"></td>
 					<th role="columnheader" scope="row">
-						<span class="sr-only">Selected orders summary: </span>
-						{selectedOrders.length} orders selected
+						<span class="sr-only">{$LL.supplier_orders_component.ordered_table.selected_orders_summary()}: </span>
+						{$LL.supplier_orders_component.ordered_table.selected_orders(selectedOrders.length)}
 					</th>
 					<td role="cell"></td>
 					<td role="cell"></td>
@@ -65,7 +66,7 @@
 						>
 							<ListTodo aria-hidden focusable="false" size={20} />
 
-							Reconcile Selected
+							{$LL.supplier_orders_component.ordered_table.reconcile_selected()}
 						</button>
 					</td>
 				</tr>
@@ -89,11 +90,13 @@
 						</span>
 					</td>
 					<td class="flex items-center justify-evenly text-right">
-						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}> View Order </button>
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}>
+							{$LL.supplier_orders_component.ordered_table.view_order()}
+						</button>
 						{#if !hasSelectedOrders && !reconciled}
 							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile([id])}>
 								<ListTodo aria-hidden focusable="false" size={20} />
-								Reconcile
+								{$LL.supplier_orders_component.ordered_table.reconcile()}
 							</button>
 						{/if}
 						{#if !hasSelectedOrders && reconciled}
@@ -102,7 +105,7 @@
 								on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
 							>
 								<ListTodo aria-hidden focusable="false" size={20} />
-								View Reconciliation
+								{$LL.supplier_orders_component.ordered_table.view_reconciliation()}
 							</button>
 						{/if}
 					</td>

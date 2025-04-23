@@ -9,7 +9,7 @@
 	import BookPriceCell from "./BookPriceCell.svelte";
 	import BookOutPrintCell from "./BookOutPrintCell.svelte";
 	import BookQuantityFormCell from "./BookQuantityFormCell.svelte";
-
+	import LL from "@librocco/shared/i18n-svelte";
 	import { createInboundTableEvents, type InboundTableEvents } from "./events";
 	import type { InventoryTableData } from "../types";
 
@@ -30,18 +30,18 @@
 	<thead>
 		<tr>
 			<th scope="col">
-				<span class="hidden lg:inline">ISBN</span>
-				<span class="inline lg:hidden">Book</span>
+				<span class="hidden lg:inline">{$LL.table_components.inventory_tables.inbound_table.isbn()}</span>
+				<span class="inline lg:hidden">{$LL.table_components.inventory_tables.inbound_table.book()}</span>
 			</th>
-			<th scope="col" class="show-col-lg"> Title </th>
-			<th scope="col" class="show-col-lg"> Authors </th>
-			<th scope="col" class="table-cell-fit"> Price </th>
-			<th scope="col" class="table-cell-fit"> Quantity </th>
-			<th scope="col" class="show-col-md"> Publisher </th>
-			<th scope="col" class="show-col-lg table-cell-fit"> Year </th>
-			<th scope="col" class="show-col-xl"> Edited By </th>
-			<th scope="col" class="show-col-xl table-cell-fit"> O.P </th>
-			<th scope="col" class="show-col-xl table-cell-fit"> Category </th>
+			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_tables.inbound_table.title()} </th>
+			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_tables.inbound_table.authors()} </th>
+			<th scope="col" class="table-cell-fit"> {$LL.table_components.inventory_tables.inbound_table.price()} </th>
+			<th scope="col" class="table-cell-fit"> {$LL.table_components.inventory_tables.inbound_table.quantity()} </th>
+			<th scope="col" class="show-col-md"> {$LL.table_components.inventory_tables.inbound_table.publisher()} </th>
+			<th scope="col" class="show-col-lg table-cell-fit"> {$LL.table_components.inventory_tables.inbound_table.year()} </th>
+			<th scope="col" class="show-col-xl"> {$LL.table_components.inventory_tables.inbound_table.edited_by()} </th>
+			<th scope="col" class="show-col-xl table-cell-fit"> {$LL.table_components.inventory_tables.inbound_table.op()} </th>
+			<th scope="col" class="show-col-xl table-cell-fit"> {$LL.table_components.inventory_tables.inbound_table.category()} </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}

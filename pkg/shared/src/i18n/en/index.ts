@@ -423,6 +423,112 @@ const settings_page = {
 		new: "New"
 	}
 };
+const supplier_orders_component = {
+	commit_dialog: {
+		heading: "Finalize reconciliation order",
+		delivered_book_count: "{{ deliveredBookCount }} books will be marked as delivered (and ready to be collected)",
+		rejected_book_count: "{{ rejectedBookCount }} books will be marked as rejected (waiting for reordering)",
+		cancel: "Cancel",
+		confirm: "Confirm"
+	},
+	comparison_table: {
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		price: "Price",
+		ordered_quantity: "Ordered Quantity",
+		delivered_quantity: "Delivered Quantity",
+		unmatched_books: "Unmatched Books"
+	},
+	completed_table: {
+		supplier: "Supplier",
+		books: "Books",
+		placed: "Placed",
+		actions: "Actions",
+		view_order: "View Order",
+		view_reconciliation: "View Reconciliation"
+	},
+	ordered_table: {
+		supplier: "Supplier",
+		books: "Books",
+		placed: "Placed",
+		actions: "Actions",
+		selected_orders_summary: "Selected orders summary",
+		selected_orders: "{{ selectedOrders }} orders selected",
+		reconcile_selected: "Reconcile Selected",
+		view_order: "View Order",
+		reconcile: "Reconcile",
+		view_reconciliation: "View Reconciliation"
+	},
+	reconciling_table: {
+		order_id: "Order Id",
+		supplier_orders: "Supplier Orders",
+		last_updated: "Last Updated",
+		update_order: "Update order",
+		continue: "Continue"
+	},
+	unordered_table: {
+		supplier: "Supplier",
+		books: "Books",
+		place_order: "Place Order"
+	}
+};
+
+const table_components = {
+	inventory_tables: {
+		book_price_cell: {
+			discounted_price: "Discounted Price",
+			original_price: "Original Price",
+			percentage_discount: "Percentage Discount"
+		},
+		inbound_table: {
+			isbn: "ISBN",
+			book: "Book",
+			title: "Title",
+			authors: "Authors",
+			price: "Price",
+			quantity: "Quantity",
+			publisher: "Publisher",
+			year: "Year",
+			edited_by: "Edited By",
+			op: "O.P",
+			category: "Category",
+			delivered_quantity: "Delivered Quantity",
+			unmatched_books: "Unmatched Books"
+		},
+		stock_table: {
+			isbn: "ISBN",
+			book: "Book",
+			title: "Title",
+			authors: "Authors",
+			price: "Price",
+			quantity: "Quantity",
+			publisher: "Publisher",
+			year: "Year",
+			edited_by: "Edited By",
+			op: "O.P",
+			category: "Category",
+			delivered_quantity: "Delivered Quantity",
+			unmatched_books: "Unmatched Books"
+		}
+	},
+	order_tables: {
+		order_line_table: {
+			isbn: "ISBN",
+			book: "Book",
+			title: "Title",
+			status: "Status",
+			authors: "Authors",
+			price: "Price",
+
+			publisher: "Publisher",
+			year: "Year",
+			discounted_price: "Discounted Price",
+			original_price: "Original Price",
+			percentage_discount: "Percentage Discount"
+		}
+	}
+};
 
 const en = {
 	nav,
@@ -444,7 +550,9 @@ const en = {
 	new_order_page,
 	reconcile_page,
 	reconciled_list_page,
-	order_list_page
+	order_list_page,
+	supplier_orders_component,
+	table_components
 } satisfies BaseTranslation;
 
 export default en;
