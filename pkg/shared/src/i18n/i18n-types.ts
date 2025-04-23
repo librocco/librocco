@@ -1235,6 +1235,234 @@ type RootTranslation = {
 				 */
 				percentage_discount: string
 			}
+			inbound_table: {
+				/**
+				 * I​S​B​N
+				 */
+				isbn: string
+				/**
+				 * B​o​o​k
+				 */
+				book: string
+				/**
+				 * T​i​t​l​e
+				 */
+				title: string
+				/**
+				 * A​u​t​h​o​r​s
+				 */
+				authors: string
+				/**
+				 * P​r​i​c​e
+				 */
+				price: string
+				/**
+				 * Q​u​a​n​t​i​t​y
+				 */
+				quantity: string
+				/**
+				 * P​u​b​l​i​s​h​e​r
+				 */
+				publisher: string
+				/**
+				 * Y​e​a​r
+				 */
+				year: string
+				/**
+				 * E​d​i​t​e​d​ ​B​y
+				 */
+				edited_by: string
+				/**
+				 * O​.​P
+				 */
+				op: string
+				/**
+				 * C​a​t​e​g​o​r​y
+				 */
+				category: string
+				/**
+				 * D​e​l​i​v​e​r​e​d​ ​Q​u​a​n​t​i​t​y
+				 */
+				delivered_quantity: string
+				/**
+				 * U​n​m​a​t​c​h​e​d​ ​B​o​o​k​s
+				 */
+				unmatched_books: string
+			}
+			stock_table: {
+				/**
+				 * I​S​B​N
+				 */
+				isbn: string
+				/**
+				 * B​o​o​k
+				 */
+				book: string
+				/**
+				 * T​i​t​l​e
+				 */
+				title: string
+				/**
+				 * A​u​t​h​o​r​s
+				 */
+				authors: string
+				/**
+				 * P​r​i​c​e
+				 */
+				price: string
+				/**
+				 * Q​u​a​n​t​i​t​y
+				 */
+				quantity: string
+				/**
+				 * P​u​b​l​i​s​h​e​r
+				 */
+				publisher: string
+				/**
+				 * Y​e​a​r
+				 */
+				year: string
+				/**
+				 * E​d​i​t​e​d​ ​B​y
+				 */
+				edited_by: string
+				/**
+				 * O​.​P
+				 */
+				op: string
+				/**
+				 * C​a​t​e​g​o​r​y
+				 */
+				category: string
+				/**
+				 * D​e​l​i​v​e​r​e​d​ ​Q​u​a​n​t​i​t​y
+				 */
+				delivered_quantity: string
+				/**
+				 * U​n​m​a​t​c​h​e​d​ ​B​o​o​k​s
+				 */
+				unmatched_books: string
+			}
+		}
+		order_tables: {
+			order_line_table: {
+				/**
+				 * I​S​B​N
+				 */
+				isbn: string
+				/**
+				 * B​o​o​k
+				 */
+				book: string
+				/**
+				 * T​i​t​l​e
+				 */
+				title: string
+				/**
+				 * S​t​a​t​u​s
+				 */
+				status: string
+				/**
+				 * A​u​t​h​o​r​s
+				 */
+				authors: string
+				/**
+				 * P​r​i​c​e
+				 */
+				price: string
+				/**
+				 * P​u​b​l​i​s​h​e​r
+				 */
+				publisher: string
+				/**
+				 * Y​e​a​r
+				 */
+				year: string
+				/**
+				 * D​i​s​c​o​u​n​t​e​d​ ​P​r​i​c​e
+				 */
+				discounted_price: string
+				/**
+				 * O​r​i​g​i​n​a​l​ ​P​r​i​c​e
+				 */
+				original_price: string
+				/**
+				 * P​e​r​c​e​n​t​a​g​e​ ​D​i​s​c​o​u​n​t
+				 */
+				percentage_discount: string
+			}
+			supplier_order_table: {
+				/**
+				 * S​u​p​p​l​i​e​r
+				 */
+				supplier: string
+				/**
+				 * T​o​t​a​l​ ​B​o​o​k​s
+				 */
+				total_books: string
+				/**
+				 * O​r​d​e​r​e​d
+				 */
+				ordered: string
+				/**
+				 * O​r​d​e​r​ ​n​o​.
+				 */
+				order_no: string
+				/**
+				 * E​d​i​t
+				 */
+				edit: string
+				/**
+				 * M​a​n​a​g​e
+				 */
+				manage: string
+			}
+			supplier_table: {
+				labels: {
+					/**
+					 * N​a​m​e
+					 */
+					name: string
+					/**
+					 * E​m​a​i​l
+					 */
+					email: string
+					/**
+					 * A​d​d​r​e​s​s
+					 */
+					address: string
+					/**
+					 * A​s​s​i​g​n​e​d​ ​P​u​b​l​i​s​h​e​r​s
+					 */
+					assigned_publishers: string
+					/**
+					 * R​o​w​ ​A​c​t​i​o​n​s
+					 */
+					row_actions: string
+				}
+			}
+		}
+	}
+	misc_components: {
+		extension_banner: {
+			/**
+			 * B​o​o​k​ ​D​a​t​a​ ​E​x​t​e​n​s​i​o​n
+			 */
+			book_data_extension: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B
+			 */
+			remote_db: string
+		}
+		page_layout: {
+			/**
+			 * S​t​o​c​k
+			 */
+			stock: string
+			/**
+			 * C​h​e​c​k​o​u​t
+			 */
+			checkout: string
 		}
 	}
 }
@@ -2450,6 +2678,234 @@ export type TranslationFunctions = {
 				 */
 				percentage_discount: () => LocalizedString
 			}
+			inbound_table: {
+				/**
+				 * ISBN
+				 */
+				isbn: () => LocalizedString
+				/**
+				 * Book
+				 */
+				book: () => LocalizedString
+				/**
+				 * Title
+				 */
+				title: () => LocalizedString
+				/**
+				 * Authors
+				 */
+				authors: () => LocalizedString
+				/**
+				 * Price
+				 */
+				price: () => LocalizedString
+				/**
+				 * Quantity
+				 */
+				quantity: () => LocalizedString
+				/**
+				 * Publisher
+				 */
+				publisher: () => LocalizedString
+				/**
+				 * Year
+				 */
+				year: () => LocalizedString
+				/**
+				 * Edited By
+				 */
+				edited_by: () => LocalizedString
+				/**
+				 * O.P
+				 */
+				op: () => LocalizedString
+				/**
+				 * Category
+				 */
+				category: () => LocalizedString
+				/**
+				 * Delivered Quantity
+				 */
+				delivered_quantity: () => LocalizedString
+				/**
+				 * Unmatched Books
+				 */
+				unmatched_books: () => LocalizedString
+			}
+			stock_table: {
+				/**
+				 * ISBN
+				 */
+				isbn: () => LocalizedString
+				/**
+				 * Book
+				 */
+				book: () => LocalizedString
+				/**
+				 * Title
+				 */
+				title: () => LocalizedString
+				/**
+				 * Authors
+				 */
+				authors: () => LocalizedString
+				/**
+				 * Price
+				 */
+				price: () => LocalizedString
+				/**
+				 * Quantity
+				 */
+				quantity: () => LocalizedString
+				/**
+				 * Publisher
+				 */
+				publisher: () => LocalizedString
+				/**
+				 * Year
+				 */
+				year: () => LocalizedString
+				/**
+				 * Edited By
+				 */
+				edited_by: () => LocalizedString
+				/**
+				 * O.P
+				 */
+				op: () => LocalizedString
+				/**
+				 * Category
+				 */
+				category: () => LocalizedString
+				/**
+				 * Delivered Quantity
+				 */
+				delivered_quantity: () => LocalizedString
+				/**
+				 * Unmatched Books
+				 */
+				unmatched_books: () => LocalizedString
+			}
+		}
+		order_tables: {
+			order_line_table: {
+				/**
+				 * ISBN
+				 */
+				isbn: () => LocalizedString
+				/**
+				 * Book
+				 */
+				book: () => LocalizedString
+				/**
+				 * Title
+				 */
+				title: () => LocalizedString
+				/**
+				 * Status
+				 */
+				status: () => LocalizedString
+				/**
+				 * Authors
+				 */
+				authors: () => LocalizedString
+				/**
+				 * Price
+				 */
+				price: () => LocalizedString
+				/**
+				 * Publisher
+				 */
+				publisher: () => LocalizedString
+				/**
+				 * Year
+				 */
+				year: () => LocalizedString
+				/**
+				 * Discounted Price
+				 */
+				discounted_price: () => LocalizedString
+				/**
+				 * Original Price
+				 */
+				original_price: () => LocalizedString
+				/**
+				 * Percentage Discount
+				 */
+				percentage_discount: () => LocalizedString
+			}
+			supplier_order_table: {
+				/**
+				 * Supplier
+				 */
+				supplier: () => LocalizedString
+				/**
+				 * Total Books
+				 */
+				total_books: () => LocalizedString
+				/**
+				 * Ordered
+				 */
+				ordered: () => LocalizedString
+				/**
+				 * Order no.
+				 */
+				order_no: () => LocalizedString
+				/**
+				 * Edit
+				 */
+				edit: () => LocalizedString
+				/**
+				 * Manage
+				 */
+				manage: () => LocalizedString
+			}
+			supplier_table: {
+				labels: {
+					/**
+					 * Name
+					 */
+					name: () => LocalizedString
+					/**
+					 * Email
+					 */
+					email: () => LocalizedString
+					/**
+					 * Address
+					 */
+					address: () => LocalizedString
+					/**
+					 * Assigned Publishers
+					 */
+					assigned_publishers: () => LocalizedString
+					/**
+					 * Row Actions
+					 */
+					row_actions: () => LocalizedString
+				}
+			}
+		}
+	}
+	misc_components: {
+		extension_banner: {
+			/**
+			 * Book Data Extension
+			 */
+			book_data_extension: () => LocalizedString
+			/**
+			 * Remote DB
+			 */
+			remote_db: () => LocalizedString
+		}
+		page_layout: {
+			/**
+			 * Stock
+			 */
+			stock: () => LocalizedString
+			/**
+			 * Checkout
+			 */
+			checkout: () => LocalizedString
 		}
 	}
 }

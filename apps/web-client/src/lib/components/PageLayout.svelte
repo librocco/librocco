@@ -2,6 +2,7 @@
 	import { Search, ScanBarcode } from "lucide-svelte";
 
 	import { testId, type WebClientView } from "@librocco/shared";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let view: WebClientView;
 	export let title: string;
@@ -19,11 +20,11 @@
 			<div class="flex gap-x-2 p-4">
 				<button class="btn-seconday btn-sm btn max-xs:hidden lg:hidden" on:click={handleSearch}>
 					<Search size={18} />
-					Stock
+					{$LL.misc_components.page_layout.stock()}
 				</button>
 				<button class="btn-primary btn-outline btn-sm btn" on:click={handleCreateOutboundNote}>
 					<ScanBarcode size={18} />
-					Checkout
+					{$LL.misc_components.page_layout.checkout()}
 				</button>
 			</div>
 		</div>
