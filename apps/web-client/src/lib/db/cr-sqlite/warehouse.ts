@@ -99,9 +99,13 @@ export function upsertWarehouse(db: DB, data: PickPartial<Warehouse, "displayNam
  * Only committed notes are included in calculations.
  *
  * @param {DB} db - Database connection
+ * @param opts - query options, set `skipTotals` to `true` if warehouse total books aren't required for much faster queries
  * @returns {Promise<(Warehouse & { totalBooks: number })[]>} Warehouses with book counts
  */
-async function _getAllWarehouses(db: DB): Promise<(Warehouse & { totalBooks: number })[]> {
+async function _getAllWarehouses(
+	db: DB,
+	{ skipTotals = false }: { skipTotals?: boolean } = {}
+): Promise<(Warehouse & { totalBooks: number })[]> {
 	// NOTE: there's a n.committed IS NULL constraint
 	// - this makes sure there are no issues if warehouse doesn't have any notes associated with it
 	// - we make sure committed = 0 (default) and is never null to avoid miscalculations here
@@ -122,7 +126,8 @@ async function _getAllWarehouses(db: DB): Promise<(Warehouse & { totalBooks: num
 		WHERE n.committed = 1 OR n.committed IS NULL
 		GROUP BY w.id
 	`;
-	const query = `
+
+	const queryWithTotals = `
 		SELECT
 			w.id,
 			w.display_name AS displayName,
@@ -131,6 +136,20 @@ async function _getAllWarehouses(db: DB): Promise<(Warehouse & { totalBooks: num
 		FROM warehouse w
 		LEFT JOIN (${totalBooksQuery}) AS tb ON w.id == tb.id
 	`;
+
+	const queryWithoutTotals = `
+		SELECT
+			w.id,
+			w.display_name AS displayName,
+			w.discount,
+			0 as totalBooks
+		FROM warehouse w
+	`;
+
+	// TODO: we might consider removing these (totalBooks) altogether
+	// but this is a quick fix
+	const query = skipTotals ? queryWithoutTotals : queryWithTotals;
+
 	return db.execO<Warehouse & { totalBooks: number }>(query);
 }
 
