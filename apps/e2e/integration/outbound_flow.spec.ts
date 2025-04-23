@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { testBase as test, testInventory } from "@/helpers/fixtures";
 
-import { baseURL } from "./constants";
+import { baseURL } from "@/constants";
 import { assertionTimeout } from "@/constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
