@@ -15,6 +15,7 @@
 
 	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
 
+	import LL from "@librocco/shared/i18n-svelte";
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
@@ -37,17 +38,19 @@
 	<thead>
 		<tr>
 			<th scope="col">
-				<span class="hidden lg:inline">ISBN</span>
-				<span class="inline lg:hidden">Book</span>
+				<span class="hidden lg:inline">{$LL.supplier_orders_component.tables.inventory_tables.outbound_table.isbn()}</span>
+				<span class="inline lg:hidden">{$LL.supplier_orders_component.tables.inventory_tables.outbound_table.book()}</span>
 			</th>
-			<th scope="col" class="show-col-lg"> Title </th>
-			<th scope="col" class="show-col-lg"> Authors </th>
-			<th scope="col" class="table-cell-fit"> Price </th>
-			<th scope="col" class="table-cell-fit"> Quantity </th>
-			<th scope="col" class="show-col-md"> Publisher </th>
-			<th scope="col" class="show-col-lg table-cell-fit"> Year </th>
-			<th scope="col">Warehouse </th>
-			<th scope="col" class="show-col-md"> Category </th>
+			<th scope="col" class="show-col-lg"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.isbn()} </th>
+			<th scope="col" class="show-col-lg"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.authors()} </th>
+			<th scope="col" class="table-cell-fit"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.price()} </th>
+			<th scope="col" class="table-cell-fit"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.quantity()} </th>
+			<th scope="col" class="show-col-md"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.publisher()} </th>
+			<th scope="col" class="show-col-lg table-cell-fit">
+				{$LL.supplier_orders_component.tables.inventory_tables.outbound_table.year()}
+			</th>
+			<th scope="col">{$LL.supplier_orders_component.tables.inventory_tables.outbound_table.warehouse()} </th>
+			<th scope="col" class="show-col-md"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.category()} </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}

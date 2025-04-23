@@ -2,6 +2,7 @@
 	import { _group, wrapIter } from "@librocco/shared";
 
 	import type { ReconciliationUnmatchedBookLine, ReconciliationProcessedLine } from "./utils";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let reconciledBooks: { processedLines: ReconciliationProcessedLine[]; unmatchedBooks: ReconciliationUnmatchedBookLine[] } = {
 		processedLines: [],
@@ -16,12 +17,12 @@
 	<table class="table-pin-rows table">
 		<thead>
 			<tr>
-				<th>ISBN</th>
-				<th>Title</th>
-				<th>Authors</th>
-				<th>Price</th>
-				<th>Ordered Quantity</th>
-				<th>Delivered Quantity</th>
+				<th> {$LL.supplier_orders_component.comparison_table.isbn()}</th>
+				<th> {$LL.supplier_orders_component.comparison_table.title()}</th>
+				<th> {$LL.supplier_orders_component.comparison_table.authors()}</th>
+				<th> {$LL.supplier_orders_component.comparison_table.price()}</th>
+				<th> {$LL.supplier_orders_component.comparison_table.ordered_quantity()}</th>
+				<th> {$LL.supplier_orders_component.comparison_table.delivered_quantity()}</th>
 				<!-- <th class="w-16">
 					<span class="sr-only">Delivered</span>
 				</th> -->
@@ -31,7 +32,7 @@
 		{#if reconciledBooks.unmatchedBooks.length}
 			<thead>
 				<tr class="bg-base-200/50">
-					<th colspan="7" class="text-left"> Unmatched Books </th>
+					<th colspan="7" class="text-left"> {{$LL.supplier_orders_component.comparison_table.unmatched_books()}} </th>
 				</tr>
 			</thead>
 			<tbody>
