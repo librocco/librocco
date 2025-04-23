@@ -1,6 +1,6 @@
 import * as net from "net";
 
-export const IS_CI = process.env.CI === "true";
+export const IS_CI = /^(?:1|true|on)$/i.test(process.env.CI?.trim() ?? "");
 
 export function getPort(): Promise<number> {
 	const testSocket = new net.Socket();
