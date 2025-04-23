@@ -526,7 +526,36 @@ const table_components = {
 			discounted_price: "Discounted Price",
 			original_price: "Original Price",
 			percentage_discount: "Percentage Discount"
+		},
+		supplier_order_table: {
+			supplier: "Supplier",
+			total_books: "Total Books",
+			ordered: "Ordered",
+			order_no: "Order no.",
+			edit: "Edit",
+			manage: "Manage"
+		},
+		supplier_table: {
+			labels: {
+				name: "Name",
+				email: "Email",
+				address: "Address",
+
+				assigned_publishers: "Assigned Publishers",
+				row_actions: "Row Actions"
+			}
 		}
+	}
+};
+
+const misc_components = {
+	extension_banner: {
+		book_data_extension: "Book Data Extension",
+		remote_db: "Remote DB"
+	},
+	page_layout: {
+		stock: "Stock",
+		checkout: "Checkout"
 	}
 };
 
@@ -552,7 +581,8 @@ const en = {
 	reconciled_list_page,
 	order_list_page,
 	supplier_orders_component,
-	table_components
+	table_components,
+	misc_components
 } satisfies BaseTranslation;
 
 export default en;
