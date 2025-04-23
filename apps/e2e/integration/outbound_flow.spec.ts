@@ -1,11 +1,19 @@
 import { expect } from "@playwright/test";
-import { testBase as test } from "@/helpers/fixtures";
+import { testBase as test, testInventory } from "@/helpers/fixtures";
 
 import { baseURL } from "@/constants";
 import { assertionTimeout } from "@/constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
-import { createOutboundNote, updateNote, addVolumesToNote, upsertWarehouse, upsertBook } from "@/helpers/cr-sqlite";
+import {
+	createOutboundNote,
+	updateNote,
+	addVolumesToNote,
+	upsertWarehouse,
+	upsertBook,
+	createInboundNote,
+	commitNote
+} from "@/helpers/cr-sqlite";
 import { book1 } from "@/integration/data";
 
 test.beforeEach(async ({ page }) => {
@@ -16,11 +24,11 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// Navigate to the outbound note page
-	await page.getByRole("link", { name: "Outbound" }).click();
 });
 
 test('should create a new outbound note, on "New note" and redirect to it', async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	// Create a new note
 	await dashboard.content().header().getByRole("button", { name: "New note" }).first().click();
@@ -31,6 +39,7 @@ test('should create a new outbound note, on "New note" and redirect to it', asyn
 
 test("should delete the note on delete button click (after confirming the prompt)", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	const content = dashboard.content();
 
@@ -52,6 +61,7 @@ test("should delete the note on delete button click (after confirming the prompt
 
 test("note heading should display note name, 'updated at' timestamp", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	const header = dashboard.content().header();
 
@@ -67,6 +77,7 @@ test("note heading should display note name, 'updated at' timestamp", async ({ p
 
 test("note should display breadcrumbs leading back to outbound page", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	const header = dashboard.content().header();
 
@@ -83,6 +94,7 @@ test("note should display breadcrumbs leading back to outbound page", async ({ p
 
 test("should assign default name to notes in sequential order", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	const content = dashboard.content();
 	const header = dashboard.content().header();
@@ -118,6 +130,8 @@ test("should continue the naming sequence from the highest sequenced note name (
 	page
 }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
 
@@ -170,6 +184,8 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 test("should navigate to note page on 'edit' button click", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
 
@@ -197,6 +213,8 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 test("should display book count for each respective note in the list", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 
 	const dbHandle = await getDbHandle(page);
@@ -233,6 +251,8 @@ test("should display book count for each respective note in the list", async ({ 
 
 test("should display book original price and discounted price as well as the warehouse discount percentage", async ({ page }) => {
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
 
@@ -315,12 +335,377 @@ test("should update default warehouse for outbound note using dropdown", async (
 	await expect(defaultWarehouseDropdown).toHaveValue("2");
 });
 
+testInventory(
+	`should assign scanned book to a warehouse according to stock availability -
+	If book is present in only one warehouse it should be assigned to that warehouse even
+	if default warehouse is different`,
+	async ({ page, books, warehouses }) => {
+		const dashboard = getDashboard(page);
+		await dashboard.waitFor();
+
+		const dbHandle = await getDbHandle(page);
+
+		await page.getByRole("link", { name: "Outbound" }).click();
+
+		// Create an outbound note
+		await dbHandle.evaluate(createOutboundNote, { id: 111, displayName: "Different Default Warehouse Test", defaultWarehouse: 2 });
+
+		// create an commit an inbound Note
+		await dbHandle.evaluate(createInboundNote, { id: 222, warehouseId: warehouses[0].id, bookId: books[0].isbn });
+
+		// Create an inbound note and commit it to add book to Warehouse 1
+		await dbHandle.evaluate(async (db, bookIsbn) => {
+			await db.exec(`
+         INSERT INTO book_transaction (note_id, isbn, warehouse_id, quantity)
+         VALUES (222, '${bookIsbn}', 1, 1)
+       `);
+		});
+
+		await dbHandle.evaluate(commitNote, 222);
+
+		await dashboard.content().entityList("outbound-list").waitFor();
+
+		await dashboard.content().entityList("outbound-list").item(0).edit();
+
+		// Verify we're on the note page
+		await dashboard.view("outbound-note").waitFor();
+
+		expect(dashboard.content().header().first()).toContainText("Different Default Warehouse Test");
+
+		const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
+		await defaultWarehouseDropdown.waitFor();
+		await defaultWarehouseDropdown.selectOption({ label: "Warehouse 2" });
+
+		// Verify initial default warehouse
+		await expect(defaultWarehouseDropdown).toHaveValue("2");
+
+		// Add a book to the note - it should use the warehouse where it's present
+
+		const isbnInput = page.getByPlaceholder("Scan to add books");
+		await isbnInput.fill(books[0].isbn);
+
+		await page.keyboard.press("Enter");
+		// await l1.waitFor();
+
+		// await dashboard.content().scanField().add(books[0].isbn);
+
+		// Verify the book was added with Warehouse 2 as the default
+		const table = dashboard.content().table("warehouse");
+		await table.assertRows([
+			{
+				isbn: books[0].isbn,
+				warehouseName: warehouses[0].displayName
+			}
+		]);
+	}
+);
+testInventory(
+	`should assign scanned book to a warehouse according to stock availability
+ - If book is present in only one warehouse it should be assigned to that warehouse
+ if no default warehouse is assigned`,
+	async ({ page, books, warehouses }) => {
+		await page.goto(baseURL);
+
+		const dashboard = getDashboard(page);
+		await dashboard.waitFor();
+
+		const dbHandle = await getDbHandle(page);
+
+		// Create an outbound note
+		await dbHandle.evaluate(createOutboundNote, { id: 111, displayName: "No Default Warehouse Test" });
+
+		// create an commit an inbound Note
+		await dbHandle.evaluate(createInboundNote, { id: 222, warehouseId: warehouses[0].id, bookId: books[0].isbn });
+
+		// Create an inbound note and commit it to add book to Warehouse 1
+		await dbHandle.evaluate(async (db, bookIsbn) => {
+			await db.exec(`
+         INSERT INTO book_transaction (note_id, isbn, warehouse_id, quantity)
+         VALUES (222, '${bookIsbn}', 1, 1)
+       `);
+		});
+
+		await dbHandle.evaluate(commitNote, 222);
+
+		// Navigate to outbound page
+		await page.getByRole("link", { name: "Outbound" }).click();
+
+		await dashboard.content().entityList("outbound-list").waitFor();
+
+		await dashboard.content().entityList("outbound-list").item(0).edit();
+
+		// Verify we're on the note page
+		await dashboard.view("outbound-note").waitFor();
+		expect(dashboard.content().header().first()).toContainText("No Default Warehouse Test");
+
+		const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
+		await defaultWarehouseDropdown.waitFor();
+
+		// Verify initial default warehouse
+		await expect(defaultWarehouseDropdown).toHaveValue("");
+
+		// Add a book to the note - it should use the warehouse where it's present
+
+		const isbnInput = page.getByPlaceholder("Scan to add books");
+		await isbnInput.fill(books[0].isbn);
+
+		await page.keyboard.press("Enter");
+
+		// Verify the book was added with Warehouse 2 as the default
+		const table = dashboard.content().table("warehouse");
+		await table.assertRows([
+			{
+				isbn: books[0].isbn,
+				warehouseName: warehouses[0].displayName
+			}
+		]);
+	}
+);
+
+testInventory(
+	`should assign scanned book to a warehouse according to stock availability
+	- If book is present in more than one warehouse, one of which is the default warehouse
+	it should be assigned to the default warehouse`,
+	async ({ page, books, warehouses }) => {
+		await page.goto(baseURL);
+
+		const dashboard = getDashboard(page);
+		await dashboard.waitFor();
+
+		const dbHandle = await getDbHandle(page);
+
+		// Create an outbound note
+		await dbHandle.evaluate(createOutboundNote, {
+			id: 111,
+			displayName: "Default Warehouse Test - 2 Warehouses"
+		});
+
+		// create and commit an inbound Note
+		await dbHandle.evaluate(createInboundNote, { id: 222, warehouseId: warehouses[0].id, bookId: books[0].isbn });
+		await dbHandle.evaluate(createInboundNote, { id: 333, warehouseId: warehouses[1].id, bookId: books[0].isbn });
+
+		// Create an inbound note and commit it to add book to Warehouses
+		await dbHandle.evaluate(async (db, bookIsbn) => {
+			await db.exec(`
+         INSERT INTO book_transaction (note_id, isbn, warehouse_id, quantity)
+         VALUES (222, '${bookIsbn}', 1, 1)
+       `);
+			await db.exec(`
+         INSERT INTO book_transaction (note_id, isbn, warehouse_id, quantity)
+         VALUES (333, '${bookIsbn}', 2, 1)
+       `);
+		});
+
+		await dbHandle.evaluate(commitNote, 222);
+		await dbHandle.evaluate(commitNote, 333);
+
+		// Navigate to outbound page
+		await page.getByRole("link", { name: "Outbound" }).click();
+
+		await dashboard.content().entityList("outbound-list").waitFor();
+
+		await dashboard.content().entityList("outbound-list").item(0).edit();
+		const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
+		await defaultWarehouseDropdown.waitFor();
+		await defaultWarehouseDropdown.selectOption({ label: "Warehouse 2" });
+
+		// Verify we're on the note page
+		await dashboard.view("outbound-note").waitFor();
+		expect(dashboard.content().header().first()).toContainText("Default Warehouse Test - 2 Warehouses");
+
+		// Verify initial default warehouse
+
+		await expect(defaultWarehouseDropdown).toHaveValue("2");
+
+		// Add a book to the note - it should use the warehouse where it's present
+
+		const isbnInput = page.getByPlaceholder("Scan to add books");
+		await isbnInput.fill(books[0].isbn);
+
+		await page.keyboard.press("Enter");
+
+		// Verify the book was added with Warehouse 2 as the default
+		const table = dashboard.content().table("warehouse");
+		await table.assertRows([
+			{
+				isbn: books[0].isbn,
+				warehouseName: warehouses[1].displayName
+			}
+		]);
+	}
+);
+
+testInventory(
+	`should assign scanned book to a warehouse according to stock availability
+	- If book is present in more than one warehouse, none of which is the default,
+	it shouldn't be assigned to neither and the choice is left to the user`,
+	async ({ page, books, warehouses }) => {
+		await page.goto(baseURL);
+
+		const dashboard = getDashboard(page);
+		await dashboard.waitFor();
+
+		const dbHandle = await getDbHandle(page);
+
+		// Create an outbound note
+		await dbHandle.evaluate(createOutboundNote, {
+			id: 111,
+			displayName: "Different default Warehouse Test - 2 Warehouses"
+		});
+
+		// create and commit an inbound Note
+		await dbHandle.evaluate(createInboundNote, { id: 222, warehouseId: warehouses[0].id, bookId: books[0].isbn });
+		await dbHandle.evaluate(createInboundNote, { id: 333, warehouseId: warehouses[1].id, bookId: books[0].isbn });
+
+		// Create an inbound note and commit it to add book to Warehouses
+		await dbHandle.evaluate(async (db, bookIsbn) => {
+			await db.exec(`
+         INSERT INTO book_transaction (note_id, isbn, warehouse_id, quantity)
+         VALUES (222, '${bookIsbn}', 1, 1)
+       `);
+			await db.exec(`
+         INSERT INTO book_transaction (note_id, isbn, warehouse_id, quantity)
+         VALUES (333, '${bookIsbn}', 2, 1)
+       `);
+		});
+
+		await dbHandle.evaluate(commitNote, 222);
+		await dbHandle.evaluate(commitNote, 333);
+
+		// Navigate to outbound page
+		await page.getByRole("link", { name: "Outbound" }).click();
+
+		await dashboard.content().entityList("outbound-list").waitFor();
+
+		await dashboard.content().entityList("outbound-list").item(0).edit();
+		const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
+		await defaultWarehouseDropdown.waitFor();
+		await defaultWarehouseDropdown.selectOption({ label: "Warehouse 3" });
+
+		// Verify we're on the note page
+		await dashboard.view("outbound-note").waitFor();
+		expect(dashboard.content().header().first()).toContainText("Different default Warehouse Test - 2 Warehouses");
+
+		// Verify initial default warehouse
+
+		await expect(defaultWarehouseDropdown).toHaveValue("3");
+
+		// Add a book to the note - it should use the warehouse where it's present
+
+		const isbnInput = page.getByPlaceholder("Scan to add books");
+		await isbnInput.fill(books[0].isbn);
+
+		await page.keyboard.press("Enter");
+
+		// Verify the book was added with no warehouse
+		const table = dashboard.content().table("warehouse");
+		await table.assertRows([
+			{
+				isbn: books[0].isbn,
+				warehouseName: ""
+			}
+		]);
+	}
+);
+
+testInventory(
+	`should assign scanned book to a warehouse according to stock availability
+	- If book is present in more than one warehouse, it should not assign scanned book to any
+	of them if no selected default warehouse`,
+	async ({ page, books, warehouses }) => {
+		await page.goto(baseURL);
+
+		const dashboard = getDashboard(page);
+		await dashboard.waitFor();
+
+		const dbHandle = await getDbHandle(page);
+
+		// Create an outbound note
+		await dbHandle.evaluate(createOutboundNote, {
+			id: 111,
+			displayName: "Different default Warehouse Test - 2 Warehouses"
+		});
+
+		// create and commit an inbound Note
+		await dbHandle.evaluate(createInboundNote, { id: 222, warehouseId: warehouses[0].id, bookId: books[0].isbn });
+		await dbHandle.evaluate(addVolumesToNote, [222, { isbn: books[1].isbn, quantity: 1 }] as const);
+
+		await dbHandle.evaluate(createInboundNote, { id: 333, warehouseId: warehouses[1].id, bookId: books[0].isbn });
+
+		// Create an inbound note and commit it to add book to Warehouses
+		await dbHandle.evaluate(async (db, bookIsbn) => {
+			await db.exec(`
+         INSERT INTO book_transaction (note_id, isbn, warehouse_id, quantity)
+         VALUES (222, '${bookIsbn}', 1, 1)
+       `);
+			await db.exec(`
+         INSERT INTO book_transaction (note_id, isbn, warehouse_id, quantity)
+         VALUES (333, '${bookIsbn}', 2, 1)
+       `);
+		});
+
+		await dbHandle.evaluate(commitNote, 222);
+		await dbHandle.evaluate(commitNote, 333);
+
+		// Navigate to outbound page
+		await page.getByRole("link", { name: "Outbound" }).click();
+
+		await dashboard.content().entityList("outbound-list").waitFor();
+
+		await dashboard.content().entityList("outbound-list").item(0).edit();
+		const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
+		await defaultWarehouseDropdown.waitFor();
+		await defaultWarehouseDropdown.selectOption({ label: "Warehouse 2" });
+
+		// Verify we're on the note page
+		await dashboard.view("outbound-note").waitFor();
+		expect(dashboard.content().header().first()).toContainText("Different default Warehouse Test - 2 Warehouses");
+
+		// Verify initial default warehouse
+
+		await expect(defaultWarehouseDropdown).toHaveValue("2");
+
+		// Add a book to the note - it should use the warehouse where it's present
+
+		const isbnInput = page.getByPlaceholder("Scan to add books");
+		await isbnInput.fill(books[0].isbn);
+
+		await page.keyboard.press("Enter");
+
+		// Verify the book was added with no warehouse
+		const table = dashboard.content().table("warehouse");
+		await table.assertRows([
+			{
+				isbn: books[0].isbn,
+				warehouseName: "2"
+			}
+		]);
+
+		// deselect default Warehouse
+		await defaultWarehouseDropdown.selectOption({ index: 0 });
+
+		await isbnInput.fill(books[1].isbn);
+
+		await page.keyboard.press("Enter");
+
+		// Verify the book was added with no warehouse
+		await table.assertRows([
+			{
+				isbn: books[1].isbn,
+				warehouseName: ""
+			}
+		]);
+	}
+);
+
 test("should be able to edit note title", async ({ page }) => {
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(createOutboundNote, { id: 1, warehouseId: 1, displayName: "New Note" });
 
 	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	const content = dashboard.content();
 
 	await content.entityList("outbound-list").item(0).edit();
