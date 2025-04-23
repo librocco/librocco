@@ -24,6 +24,8 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// Navigate to the outbound note page
+	await page.getByRole("link", { name: "Outbound" }).click();
+	await dashboard.content().entityList("outbound-list").waitFor();
 });
 
 test('should create a new outbound note, on "New note" and redirect to it', async ({ page }) => {
