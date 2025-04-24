@@ -8,7 +8,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, FileCheck } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Plus } from "lucide-svelte";
 
 	import { desc, testId } from "@librocco/shared";
 	import { type BookData } from "@librocco/shared";
@@ -71,6 +71,7 @@
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 
 	import LL from "@librocco/shared/i18n-svelte";
+	import { getStock } from "$lib/db/cr-sqlite/stock";
 
 	export let data: PageData;
 
@@ -167,7 +168,13 @@
 
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
-		if (defaultWarehouse) {
+		const stock = await getStock(db, { isbns: [isbn] });
+
+		const warehouseOptions = stock.map((st) => ({ warehouseId: st.warehouseId, warehouseName: st.warehouseName }));
+
+		if (warehouseOptions.length === 1) {
+			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: warehouseOptions[0].warehouseId });
+		} else if ((!warehouseOptions.length && defaultWarehouse) || warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
 			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: defaultWarehouse });
 		} else {
 			await addVolumesToNote(db, noteId, { isbn, quantity: 1 });
@@ -420,9 +427,12 @@
 							id="defaultWarehouse"
 							name="defaultWarehouse"
 							class="select-bordered select select-sm w-full"
-							value={defaultWarehouse}
+							value={defaultWarehouse || ""}
 							on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
 						>
+							<option value=""
+								>{warehouses.length > 0 ? tOutbound.placeholder.select_warehouse() : tOutbound.placeholder.no_warehouses()}</option
+							>
 							{#each warehouses as warehouse}
 								<option value={warehouse.id}>{warehouse.displayName}</option>
 							{/each}
@@ -536,6 +546,14 @@
 						<QrCode slot="icon" />
 					</PlaceholderBox>
 					<!-- End entity list placeholder -->
+					<div class="flex h-24 w-full items-center justify-center px-8">
+						<button
+							use:melt={$customItemDialogTrigger}
+							on:m-click={() => openCustomItemForm()}
+							on:m-keydown={() => openCustomItemForm()}
+							class="btn-neutral btn">Custom item</button
+						>
+					</div>
 				</div>
 			</div>
 		{:else}
@@ -608,12 +626,12 @@
 					</OutboundTable>
 				</div>
 
-				<div class="flex h-24 w-full items-center justify-end px-8">
+				<div class="flex h-24 w-full items-center justify-start px-8">
 					<button
 						use:melt={$customItemDialogTrigger}
 						on:m-click={() => openCustomItemForm()}
 						on:m-keydown={() => openCustomItemForm()}
-						class="btn-primary btn">Custom item</button
+						class="btn-neutral btn">Custom item</button
 					>
 				</div>
 

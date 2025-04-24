@@ -1,4 +1,4 @@
-import { baseURL } from "../constants";
+import { baseURL } from "@/constants";
 
 import { addBooksToCustomer, associatePublisher, getDbHandle, upsertBook, upsertSupplier } from "@/helpers/cr-sqlite";
 import { testOrders } from "@/helpers/fixtures";

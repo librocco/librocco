@@ -2,12 +2,12 @@ import { DB } from "@vlcn.io/crsqlite-wasm";
 import test, { JSHandle } from "@playwright/test";
 
 import { BookData, wrapIter, TranslationFunctions, Locales } from "@librocco/shared";
-
-import { Customer, Supplier } from "./types";
-
-import { baseURL } from "@/integration/constants";
 import { loadLocale } from "@librocco/shared/i18n-util.sync";
 import { i18nObject } from "@librocco/shared/i18n-util";
+
+import { baseURL } from "@/constants";
+
+import { Customer, Supplier } from "./types";
 
 import {
 	addBooksToCustomer,
@@ -18,7 +18,9 @@ import {
 	finalizeReconciliationOrder,
 	upsertBook,
 	upsertCustomer,
-	upsertSupplier
+	upsertSupplier,
+	Warehouse,
+	upsertWarehouse
 } from "./cr-sqlite";
 import { getDbHandle } from "./db";
 
@@ -30,6 +32,11 @@ const books = [
 	{ isbn: "9999", authors: "author5", title: "title5", publisher: "pub1", price: 50 },
 	{ isbn: "8888", authors: "author6", title: "title6", publisher: "pub2", price: 60 },
 	{ isbn: "7777", authors: "author7", title: "title7", publisher: "pub1", price: 70 }
+];
+const warehouses = [
+	{ id: 1, displayName: "Warehouse 1", discount: 10 },
+	{ id: 2, displayName: "Warehouse 2", discount: 15 },
+	{ id: 3, displayName: "Warehouse 3", discount: 20 }
 ];
 
 const suppliers = [
@@ -112,6 +119,25 @@ const supplierOrders: FixtureSupplierOrder[] = [
 	}
 ];
 
+type InventoryTestFixture = {
+	dbHandle: JSHandle<DB>;
+
+	/**
+	 * Data:
+	 *
+	 * isbn: "1234", authors: "author1", title: "title1", publisher: "pub1", price: 10
+	 * isbn: "4321", authors: "author2", title: "title2", publisher: "pub2", price: 20
+	 * isbn: "5678", authors: "author3", title: "title3", publisher: "pub1", price: 30
+	 * isbn: "8765", authors: "author4", title: "title4", publisher: "pub2", price: 40
+	 * isbn: "9999", authors: "author5", title: "title5", publisher: "pub1", price: 50
+	 * isbn: "8888", authors: "author6", title: "title6", publisher: "pub2", price: 60
+	 * isbn: "7777", authors: "author7", title: "title7", publisher: "pub1", price: 70
+	 */
+	books: BookData[];
+	warehouses: Warehouse[];
+	t: TranslationFunctions;
+	locale: Locales;
+};
 type OrderTestFixture = {
 	dbHandle: JSHandle<DB>;
 
@@ -241,6 +267,35 @@ export const testBase = test.extend({
 
 // NOTE: In order to order to avoid circular depenedencies within fixtures, the best prectice is
 // for each fixture to depend only on the fixtures that are declared before it.
+export const testInventory = testBase.extend<InventoryTestFixture>({
+	dbHandle: async ({ page }, use) => {
+		await page.goto(baseURL);
+
+		const dbHandle = await getDbHandle(page);
+		await use(dbHandle);
+	},
+
+	books: async ({ dbHandle }, use) => {
+		for (const book of books) {
+			await dbHandle.evaluate(upsertBook, book);
+		}
+		await use(books);
+	},
+	warehouses: async ({ dbHandle }, use) => {
+		for (const warehouse of warehouses) {
+			await dbHandle.evaluate(upsertWarehouse, warehouse);
+		}
+		await use(warehouses);
+	},
+	t: ({ locale }, use) => {
+		loadLocale(locale);
+
+		const t = i18nObject(locale);
+
+		use(t);
+	}
+});
+
 export const testOrders = testBase.extend<OrderTestFixture>({
 	dbHandle: async ({ page }, use) => {
 		await page.goto(baseURL);
