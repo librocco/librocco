@@ -1,10 +1,10 @@
-import { test } from "@playwright/test";
-
 import { baseURL } from "@/constants";
 
+import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard, getDbHandle } from "@/helpers";
-import { book1 } from "@/integration/data";
 import { addVolumesToNote, commitNote, createInboundNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
+
+import { book1 } from "@/integration/data";
 
 test.beforeEach(async ({ page }) => {
 	await page.waitForTimeout(1000);
