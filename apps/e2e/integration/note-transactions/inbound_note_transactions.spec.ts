@@ -21,20 +21,17 @@ test.beforeEach(async ({ page }) => {
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await page.getByRole("link", { name: "Inbound" }).click();
+	await dashboard.content().entityList("inbound-list").waitFor();
+
+	// Navigate to the note page
+	await page.getByRole("link", { name: "Edit" }).first().click();
+	await page.getByRole("heading", { name: "Note 1" }).first().waitFor();
 });
 
 test("should display correct transaction fields for the inbound-note note view", async ({ page }) => {
 	// Setup: Add the book data to the database
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertBook, book1);
-
-	// Navigate to the note page
-	// * We repeat this at the start of each test, as tests which do a lot of `dbHandle.evaluate`
-	// * calls within the test block can variably end up on `/inventory/inbound` or `/inventory/inbound/1` between firefox and chrome, and this way we can make sure we navigate after
-	// await dashboard.content().entityList("inbound-list").item(0).edit();
-	//* The following is more reliable on chrome than ^^
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.waitForURL("**/inventory/inbound/1/");
 
 	const content = getDashboard(page).content();
 
@@ -59,11 +56,6 @@ test("should display correct transaction fields for the inbound-note note view",
 });
 
 test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case no book data is provided)", async ({ page }) => {
-	// Navigate to the note page
-	// * See note on first test about why this is repeated
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.waitForURL("**/inventory/inbound/1/");
-
 	const content = getDashboard(page).content();
 
 	// Add a book transaction without book data (only isbn)
@@ -89,11 +81,6 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 test("should add a transaction to the note by 'typing the ISBN into the 'Scan' field and pressing \"Enter\" (the same way scenner interaction would be processed)", async ({
 	page
 }) => {
-	// Navigate to the note page
-	// * See note on first test about why this is repeated
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.waitForURL("**/inventory/inbound/1/");
-
 	const content = getDashboard(page).content();
 
 	// Open the book form with the isbn added to the form using the 'Scan' field
@@ -108,11 +95,6 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1, warehouseId: 1 }] as const);
-
-	// Navigate to the note page
-	// * See note on first test about why this is repeated
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.waitForURL("**/inventory/inbound/1/");
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
@@ -139,11 +121,6 @@ test("should autofill the existing book data when adding a transaction with exis
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertBook, book1);
 
-	// Navigate to the note page
-	// * See note on first test about why this is repeated
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.waitForURL("**/inventory/inbound/1/");
-
 	const content = getDashboard(page).content();
 
 	// Add book 1 again (this time using only isbn and 'Add' button)
@@ -157,11 +134,6 @@ test("should allow for changing of transaction quantity using the quantity field
 	// Setup: Add one transaction to the note
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
-
-	// Navigate to the note page
-	// * See note on first test about why this is repeated
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.waitForURL("**/inventory/inbound/1/");
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
@@ -185,11 +157,6 @@ test("should allow for changing of transaction quantity using the quantity field
 });
 
 test("should sort in reverse order to being added/aggregated", async ({ page }) => {
-	// Navigate to the note page
-	// * See note on first test about why this is repeated
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.waitForURL("**/inventory/inbound/1/");
-
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
 
@@ -215,11 +182,6 @@ test("should delete the transaction from the note on delete button click", async
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567892", quantity: 1, warehouseId: 1 }] as const);
 
-	// Navigate to the note page
-	// * See note on first test about why this is repeated
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.waitForURL("**/inventory/inbound/1/");
-
 	const entries = getDashboard(page).content().table("inbound-note");
 
 	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
@@ -239,11 +201,6 @@ test("should display book count for all book quantities in the commit message", 
 
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 5, warehouseId: 1 }] as const);
-
-	// Navigate to the note page
-	// * See note on first test about why this is repeated
-	await page.getByRole("link", { name: "Edit" }).first().click();
-	await page.waitForURL("**/inventory/inbound/1/");
 
 	const dashboard = getDashboard(page);
 
