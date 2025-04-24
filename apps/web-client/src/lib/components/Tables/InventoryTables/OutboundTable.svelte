@@ -38,21 +38,23 @@
 	<thead>
 		<tr>
 			<th scope="col">
-				<span class="hidden lg:inline">{$LL.supplier_orders_component.tables.inventory_tables.outbound_table.isbn()}</span>
-				<span class="inline lg:hidden">{$LL.supplier_orders_component.tables.inventory_tables.outbound_table.book()}</span>
+				<span class="hidden lg:inline">{$LL.table_components.inventory_tables.outbound_table.isbn()}</span>
+				<span class="inline lg:hidden">{$LL.table_components.inventory_tables.outbound_table.book()}</span>
 			</th>
-			<th scope="col" class="show-col-lg"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.isbn()} </th>
-			<th scope="col" class="show-col-lg"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.authors()} </th>
-			<th scope="col" class="table-cell-fit"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.price()} </th>
-			<th scope="col" class="table-cell-fit"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.quantity()} </th>
-			<th scope="col" class="show-col-md"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.publisher()} </th>
+			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_tables.outbound_table.title()} </th>
+			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_tables.outbound_table.authors()} </th>
+			<th scope="col" class="table-cell-fit"> {$LL.table_components.inventory_tables.outbound_table.price()} </th>
+			<th scope="col" class="table-cell-fit"> {$LL.table_components.inventory_tables.outbound_table.quantity()} </th>
+			<th scope="col" class="show-col-md"> {$LL.table_components.inventory_tables.outbound_table.publisher()} </th>
 			<th scope="col" class="show-col-lg table-cell-fit">
-				{$LL.supplier_orders_component.tables.inventory_tables.outbound_table.year()}
+				{$LL.table_components.inventory_tables.outbound_table.year()}
 			</th>
-			<th scope="col">{$LL.supplier_orders_component.tables.inventory_tables.outbound_table.warehouse()} </th>
-			<th scope="col" class="show-col-md"> {$LL.supplier_orders_component.tables.inventory_tables.outbound_table.category()} </th>
+			<th scope="col">{$LL.table_components.inventory_tables.outbound_table.warehouse()} </th>
+			<th scope="col" class="show-col-md"> {$LL.table_components.inventory_tables.outbound_table.category()} </th>
 			{#if $$slots["row-actions"]}
-				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
+				<th scope="col" class="table-cell-fit">
+					<HeadCol label={$LL.table_components.inventory_tables.outbound_table.row_actions()} srOnly />
+				</th>
 			{/if}
 		</tr>
 	</thead>
