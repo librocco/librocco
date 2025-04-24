@@ -40,7 +40,7 @@ test('should create a new warehouse, on "New warehouse" and redirect to it', asy
 
 	// Check that we've been redirected to the new warehouse's page
 	await dashboard.view("warehouse").waitFor();
-	await page.getByRole("main").getByRole("heading", { name: "New Warehouse" });
+	await page.getByRole("heading", { name: "New Warehouse" }).waitFor();
 });
 
 test("should delete the warehouse on delete button click (after confirming the prompt)", async ({ page }) => {
@@ -206,7 +206,7 @@ test("should navigate to warehouse page on 'View stock' button click", async ({ 
 
 	// Check title
 	await dashboard.view("warehouse").waitFor();
-	await page.getByRole("main").getByRole("heading", { name: "Warehouse 1" });
+	await page.getByRole("heading", { name: "Warehouse 1" }).waitFor();
 
 	// Navigate back to inventory page and to second warehouse
 	await page.getByRole("link", { name: "Manage inventory" }).click();
