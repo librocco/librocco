@@ -100,7 +100,7 @@ const history_page = {
 			}
 		},
 		stats: {
-			books: "{no_of_books} book{{s}}",
+			books: "{ no_of_books } book{{s}}",
 			discount: "discount"
 		}
 	}
@@ -114,7 +114,7 @@ const inventory_page = {
 		},
 		stats: {
 			back_to_warehouses: "Back to warehouses",
-			books: "{no_of_books} book{{s}}",
+			books: "{ no_of_books } book{{s}}",
 			last_updated: "Updated"
 		},
 		labels: {
@@ -319,11 +319,11 @@ const common = {
 	},
 	commit_inbound_dialog: {
 		title: `Commit inbound {entity}?`,
-		description: `{bookCount} book{{s}} will be added to {warehouseName}`
+		description: `{ bookCount } book{{s}} will be added to { warehouseName }`
 	},
 	commit_outbound_dialog: {
 		title: `Commit outbound {entity}?`,
-		description: `{bookCount} book{{s}} will be removed from your stock`
+		description: `{ bookCount } book{{s}} will be removed from your stock`
 	},
 	no_warehouse_dialog: {
 		title: "No warehouse(s) selected",
@@ -348,7 +348,7 @@ const common = {
 		description: "Update warehouse details"
 	},
 	delete_warehouse_dialog: {
-		description: `Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock`
+		description: `Once you delete this warehouse { bookCount } book{{s}} will be removed from your stock`
 	},
 	delete_database_dialog: {
 		description: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`
@@ -376,7 +376,7 @@ const outbound_note = {
 	},
 	stats: {
 		last_updated: "Last updated",
-		books: "{bookCount} book{{s}}"
+		books: "{ bookCount } book{{s}}"
 	},
 	placeholder: {
 		select_warehouse: "Please select a warehouse",
@@ -388,7 +388,7 @@ const outbound_page = {
 	heading: "Outbound",
 	stats: {
 		last_updated: "Last updated",
-		books: "{bookCount} book{{s}}"
+		books: "{ bookCount } book{{s}}"
 	},
 	labels: {
 		new_note: "New Note",
@@ -430,8 +430,8 @@ const settings_page = {
 const supplier_orders_component = {
 	commit_dialog: {
 		heading: "Finalize reconciliation order",
-		delivered_book_count: "{{ deliveredBookCount }} books will be marked as delivered (and ready to be collected)",
-		rejected_book_count: "{{ rejectedBookCount }} books will be marked as rejected (waiting for reordering)",
+		delivered_book_count: "{ deliveredBookCount } books will be marked as delivered (and ready to be collected)",
+		rejected_book_count: "{ rejectedBookCount } books will be marked as rejected (waiting for reordering)",
 		cancel: "Cancel",
 		confirm: "Confirm"
 	},
@@ -458,7 +458,7 @@ const supplier_orders_component = {
 		placed: "Placed",
 		actions: "Actions",
 		selected_orders_summary: "Selected orders summary",
-		selected_orders: "{{ selectedOrders }} orders selected",
+		selected_orders: "{ selectedOrders } orders selected",
 		reconcile_selected: "Reconcile Selected",
 		view_order: "View Order",
 		reconcile: "Reconcile",
@@ -575,7 +575,7 @@ const misc_components = {
 		checkout: "Checkout"
 	},
 	warehouse_select: {
-		label: "Select a warehouse to withdraw book {{ rowIx }} from",
+		label: "Select a warehouse to withdraw book { rowIx } from",
 		default_option: "Select a warehouse"
 	}
 };
