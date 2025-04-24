@@ -510,6 +510,19 @@ const table_components = {
 			category: "Category",
 			delivered_quantity: "Delivered Quantity",
 			unmatched_books: "Unmatched Books"
+		},
+		outbound_table: {
+			isbn: "ISBN",
+			book: "Book",
+			title: "Title",
+			authors: "Authors",
+			price: "Price",
+			quantity: "Quantity",
+			publisher: "Publisher",
+			year: "Year",
+			warehouse: "Warehouse",
+			category: "Category",
+			row_actions: "Row Actions"
 		}
 	},
 	order_tables: {

@@ -19,18 +19,18 @@
 	<thead>
 		<tr>
 			<th scope="col" class="w-[20%] lg:w-[13%] xl:w-[10%]">
-				<span class="hidden lg:inline">{$LL.table_components.inventory_table.stock_table.isbn()}</span>
-				<span class="inline lg:hidden">{$LL.table_components.inventory_table.stock_table.book()}</span>
+				<span class="hidden lg:inline">{$LL.table_components.inventory_tables.stock_table.isbn()}</span>
+				<span class="inline lg:hidden">{$LL.table_components.inventory_tables.stock_table.book()}</span>
 			</th>
-			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_table.stock_table.title()} </th>
-			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_table.stock_table.authors()} </th>
-			<th scope="col"> {$LL.table_components.inventory_table.stock_table.price()} </th>
-			<th scope="col"> {$LL.table_components.inventory_table.stock_table.quantity()} </th>
-			<th scope="col"> {$LL.table_components.inventory_table.stock_table.publisher()} </th>
-			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_table.stock_table.year()} </th>
-			<th scope="col" class="show-col-xl"> {$LL.table_components.inventory_table.stock_table.edited_by()} </th>
-			<th scope="col" class="show-col-xl"> {$LL.table_components.inventory_table.stock_table.op()} </th>
-			<th scope="col" class="show-col-xl"> {$LL.table_components.inventory_table.stock_table.category()} </th>
+			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_tables.stock_table.title()} </th>
+			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_tables.stock_table.authors()} </th>
+			<th scope="col"> {$LL.table_components.inventory_tables.stock_table.price()} </th>
+			<th scope="col"> {$LL.table_components.inventory_tables.stock_table.quantity()} </th>
+			<th scope="col"> {$LL.table_components.inventory_tables.stock_table.publisher()} </th>
+			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_tables.stock_table.year()} </th>
+			<th scope="col" class="show-col-xl"> {$LL.table_components.inventory_tables.stock_table.edited_by()} </th>
+			<th scope="col" class="show-col-xl"> {$LL.table_components.inventory_tables.stock_table.op()} </th>
+			<th scope="col" class="show-col-xl"> {$LL.table_components.inventory_tables.stock_table.category()} </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}

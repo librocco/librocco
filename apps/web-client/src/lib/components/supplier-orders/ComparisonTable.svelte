@@ -32,7 +32,7 @@
 		{#if reconciledBooks.unmatchedBooks.length}
 			<thead>
 				<tr class="bg-base-200/50">
-					<th colspan="7" class="text-left"> {{$LL.supplier_orders_component.comparison_table.unmatched_books()}} </th>
+					<th colspan="7" class="text-left"> {$LL.supplier_orders_component.comparison_table.unmatched_books()} </th>
 				</tr>
 			</thead>
 			<tbody>
