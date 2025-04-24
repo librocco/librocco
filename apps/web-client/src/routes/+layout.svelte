@@ -36,9 +36,9 @@
 
 	const { dbCtx } = data;
 
-	// beforeNavigate(({ to }) => {
-	// 	timeLogger.setCurrentRoute(to.route.id);
-	// });
+	beforeNavigate(({ to }) => {
+		timeLogger.setCurrentRoute(to.route.id);
+	});
 
 	$: {
 		// Register (and update on each change) the db and some db handlers to the window object.

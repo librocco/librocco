@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { baseURL } from "./constants";
+import { baseURL } from "@/constants";
 
 import { getDashboard } from "@/helpers";
 import { selector, testIdSelector } from "@/helpers/utils";

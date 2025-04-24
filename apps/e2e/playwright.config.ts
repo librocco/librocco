@@ -1,8 +1,10 @@
 import { defineConfig, devices, ReporterDescription } from "@playwright/test";
 
+import { IS_CI } from "./constants";
+
 const reporter: ReporterDescription[] = [["list"]];
 // Produce a merge‑able blob report when running in CI
-if (process.env.CI) {
+if (IS_CI) {
 	reporter.push(["blob"]);
 }
 
@@ -12,15 +14,15 @@ if (process.env.CI) {
 export default defineConfig({
 	testDir: "./integration",
 	/* Run tests in files in parallel */
-	fullyParallel: false,
+	fullyParallel: true,
 	/* Fail the build on CI if you accidentally left test.only in the source code. */
-	forbidOnly: !!process.env.CI,
+	forbidOnly: IS_CI,
 	/* Retry for local test run (normally, the tests ran using the UI will not be flaky, but headless tests might take a toll on the CPU, resulting in flaky tests) */
-	retries: 3,
+	retries: 1,
 	timeout: 15000,
 	globalTimeout: 55 * 60 * 1000, // 55 minutes of global timeout - the github job has a 60 minutes limit
 	/* Opt out of parallel tests on CI. */
-	workers: process.env.CI ? 1 : 4,
+	workers: IS_CI ? 1 : undefined,
 	/* Reporter to use. See https://playwright.dev/docs/test-reporters */
 	reporter: reporter,
 	/* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */

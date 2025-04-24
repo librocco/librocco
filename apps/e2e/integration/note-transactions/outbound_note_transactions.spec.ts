@@ -65,8 +65,8 @@ test("should display correct transaction fields for the outbound note view", asy
 	// Should show 'Edit' button
 	await row.getByRole("button", { name: "Edit" }).waitFor();
 
-	// There is no warehouse the book is available in so 'not-found' should be displayed
-	await row.field("warehouseName").assert("not-found");
+	// There is no warehouse the book is available in so 'Select a warehouse' should be displayed
+	await row.field("warehouseName").assert("Select a warehouse");
 });
 
 test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case no book data is provided)", async ({ page }) => {
@@ -92,8 +92,8 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 	// Should show 'Edit' button
 	await row.getByRole("button", { name: "Edit" }).waitFor();
 
-	// There is no warehouse the book is available in so 'not-found' should be displayed
-	await row.field("warehouseName").assert("not-found");
+	// There is no warehouse the book is available in so 'select a warehouse' should be displayed
+	await row.field("warehouseName").assert("Select a warehouse");
 });
 
 test("should add a transaction to the note by 'typing the ISBN into the 'Scan' field and pressing \"Enter\" (the same way scenner interaction would be processed)", async ({

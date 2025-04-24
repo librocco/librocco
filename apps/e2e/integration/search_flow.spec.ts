@@ -1,6 +1,6 @@
 import { test } from "@playwright/test";
 
-import { baseURL } from "./constants";
+import { baseURL } from "@/constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
 import { addVolumesToNote, commitNote, createInboundNote, upsertWarehouse } from "@/helpers/cr-sqlite";

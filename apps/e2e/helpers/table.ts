@@ -64,7 +64,7 @@ const defaultInventoryRowValues: InventoryRowValues = {
 	authors: "N/A",
 	publisher: "",
 	editedBy: "",
-	warehouseName: "not-found",
+	warehouseName: "Select a warehouse",
 	outOfPrint: false,
 	category: ""
 };

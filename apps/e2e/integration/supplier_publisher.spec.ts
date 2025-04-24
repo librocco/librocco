@@ -1,4 +1,4 @@
-import { baseURL } from "./constants";
+import { baseURL } from "@/constants";
 import { test, expect } from "@playwright/test";
 import { associatePublisher, removePublisherFromSupplier, upsertBook } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
