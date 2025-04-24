@@ -1078,13 +1078,15 @@ type RootTranslation = {
 			 */
 			heading: string
 			/**
-			 * {​{​d​e​l​i​v​e​r​e​d​B​o​o​k​C​o​u​n​t​}​}​ ​b​o​o​k​s​ ​w​i​l​l​ ​b​e​ ​m​a​r​k​e​d​ ​a​s​ ​d​e​l​i​v​e​r​e​d​ ​(​a​n​d​ ​r​e​a​d​y​ ​t​o​ ​b​e​ ​c​o​l​l​e​c​t​e​d​)
+			 * {​d​e​l​i​v​e​r​e​d​B​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​s​ ​w​i​l​l​ ​b​e​ ​m​a​r​k​e​d​ ​a​s​ ​d​e​l​i​v​e​r​e​d​ ​(​a​n​d​ ​r​e​a​d​y​ ​t​o​ ​b​e​ ​c​o​l​l​e​c​t​e​d​)
+			 * @param {unknown} deliveredBookCount
 			 */
-			delivered_book_count: string
+			delivered_book_count: RequiredParams<'deliveredBookCount'>
 			/**
-			 * {​{​r​e​j​e​c​t​e​d​B​o​o​k​C​o​u​n​t​}​}​ ​b​o​o​k​s​ ​w​i​l​l​ ​b​e​ ​m​a​r​k​e​d​ ​a​s​ ​r​e​j​e​c​t​e​d​ ​(​w​a​i​t​i​n​g​ ​f​o​r​ ​r​e​o​r​d​e​r​i​n​g​)
+			 * {​r​e​j​e​c​t​e​d​B​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​s​ ​w​i​l​l​ ​b​e​ ​m​a​r​k​e​d​ ​a​s​ ​r​e​j​e​c​t​e​d​ ​(​w​a​i​t​i​n​g​ ​f​o​r​ ​r​e​o​r​d​e​r​i​n​g​)
+			 * @param {unknown} rejectedBookCount
 			 */
-			rejected_book_count: string
+			rejected_book_count: RequiredParams<'rejectedBookCount'>
 			/**
 			 * C​a​n​c​e​l
 			 */
@@ -1172,9 +1174,10 @@ type RootTranslation = {
 			 */
 			selected_orders_summary: string
 			/**
-			 * {​{​s​e​l​e​c​t​e​d​O​r​d​e​r​s​}​}​ ​o​r​d​e​r​s​ ​s​e​l​e​c​t​e​d
+			 * {​s​e​l​e​c​t​e​d​O​r​d​e​r​s​}​ ​o​r​d​e​r​s​ ​s​e​l​e​c​t​e​d
+			 * @param {unknown} selectedOrders
 			 */
-			selected_orders: string
+			selected_orders: RequiredParams<'selectedOrders'>
 			/**
 			 * R​e​c​o​n​c​i​l​e​ ​S​e​l​e​c​t​e​d
 			 */
@@ -1522,9 +1525,10 @@ type RootTranslation = {
 		}
 		warehouse_select: {
 			/**
-			 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​w​i​t​h​d​r​a​w​ ​b​o​o​k​ ​{​{​r​o​w​I​x​}​}​ ​f​r​o​m
+			 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​w​i​t​h​d​r​a​w​ ​b​o​o​k​ ​{​r​o​w​I​x​}​ ​f​r​o​m
+			 * @param {unknown} rowIx
 			 */
-			label: string
+			label: RequiredParams<'rowIx'>
 			/**
 			 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e
 			 */
@@ -2587,13 +2591,13 @@ export type TranslationFunctions = {
 			 */
 			heading: () => LocalizedString
 			/**
-			 * {{deliveredBookCount}} books will be marked as delivered (and ready to be collected)
+			 * {deliveredBookCount} books will be marked as delivered (and ready to be collected)
 			 */
-			delivered_book_count: (arg0: number | string | boolean) => LocalizedString
+			delivered_book_count: (arg: { deliveredBookCount: unknown }) => LocalizedString
 			/**
-			 * {{rejectedBookCount}} books will be marked as rejected (waiting for reordering)
+			 * {rejectedBookCount} books will be marked as rejected (waiting for reordering)
 			 */
-			rejected_book_count: (arg0: number | string | boolean) => LocalizedString
+			rejected_book_count: (arg: { rejectedBookCount: unknown }) => LocalizedString
 			/**
 			 * Cancel
 			 */
@@ -2681,9 +2685,9 @@ export type TranslationFunctions = {
 			 */
 			selected_orders_summary: () => LocalizedString
 			/**
-			 * {{selectedOrders}} orders selected
+			 * {selectedOrders} orders selected
 			 */
-			selected_orders: (arg0: number | string | boolean) => LocalizedString
+			selected_orders: (arg: { selectedOrders: unknown }) => LocalizedString
 			/**
 			 * Reconcile Selected
 			 */
@@ -3031,9 +3035,9 @@ export type TranslationFunctions = {
 		}
 		warehouse_select: {
 			/**
-			 * Select a warehouse to withdraw book {{rowIx}} from
+			 * Select a warehouse to withdraw book {rowIx} from
 			 */
-			label: (arg0: number | string | boolean) => LocalizedString
+			label: (arg: { rowIx: unknown }) => LocalizedString
 			/**
 			 * Select a warehouse
 			 */
