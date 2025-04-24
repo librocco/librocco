@@ -16,7 +16,6 @@ test.beforeEach(async ({ page }) => {
 	await page.getByRole("link", { name: "Search stock" }).click();
 
 	await page.getByText("Search for stock").waitFor();
-	await new Promise((res) => setTimeout(res, 100));
 });
 
 test("should progressively load entries until all are shown", async ({ page }) => {
