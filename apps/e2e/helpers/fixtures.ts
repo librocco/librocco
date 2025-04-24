@@ -246,12 +246,12 @@ export const testBase = test.extend({
 	page: async ({ page }, use) => {
 		// Make sure the DB schema is initialised before running any tests
 		// This is here to prevent partial initialisation (and subsequent conflicts when reinitialising the, partially initialised, schema)
-		await page.goto(baseURL)
+		await page.goto(baseURL);
 		await getDbHandle(page);
 
 		const goto = page.goto;
 
-		page.goto = async function(url, opts) {
+		page.goto = async function (url, opts) {
 			// Wait for 100ms, for ongoing IndexedDB transactions to finish
 			// This is as dirty as it gets, but is a quick fix to ensure that ongoing txns (such as fixture setups)
 			// don't get interrupted on navigation - causing flaky-as-hell tests
