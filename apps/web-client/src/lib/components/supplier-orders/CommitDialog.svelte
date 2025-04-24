@@ -14,11 +14,11 @@
 <div class="prose flex max-w-none flex-col gap-y-2 p-6">
 	<h3>{$LL.supplier_orders_component.commit_dialog.heading()}</h3>
 	{#if deliveredBookCount > 0}
-		<p>{$LL.supplier_orders_component.commit_dialog.delivered_book_count(deliveredBookCount)}</p>
+		<p>{$LL.supplier_orders_component.commit_dialog.delivered_book_count({ deliveredBookCount })}</p>
 	{/if}
 
 	{#if rejectedBookCount > 0}
-		<p>{$LL.supplier_orders_component.commit_dialog.rejected_book_count(rejectedBookCount)}</p>
+		<p>{$LL.supplier_orders_component.commit_dialog.rejected_book_count({ rejectedBookCount })}</p>
 	{/if}
 
 	<div class="stretch flex w-full gap-x-4">

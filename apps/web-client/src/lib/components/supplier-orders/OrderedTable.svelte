@@ -54,7 +54,7 @@
 					<td role="cell"></td>
 					<th role="columnheader" scope="row">
 						<span class="sr-only">{$LL.supplier_orders_component.ordered_table.selected_orders_summary()}: </span>
-						{$LL.supplier_orders_component.ordered_table.selected_orders(selectedOrders.length)}
+						{$LL.supplier_orders_component.ordered_table.selected_orders({ selectedOrders: selectedOrders.length })}
 					</th>
 					<td role="cell"></td>
 					<td role="cell"></td>

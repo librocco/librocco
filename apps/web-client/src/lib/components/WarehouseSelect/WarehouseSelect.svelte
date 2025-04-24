@@ -58,7 +58,7 @@
 </script>
 
 <!-- svelte-ignore a11y-label-has-associated-control - $label contains the 'for' attribute -->
-<label class="hidden" {...$label} use:label>{t.label(rowIx)}</label>
+<label class="hidden" {...$label} use:label>{t.label({ rowIx })}</label>
 <button
 	data-testid={testId("dropdown-control")}
 	data-open={open}
