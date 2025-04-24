@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { baseURL } from "./constants";
+import { baseURL } from "@/constants";
 import { getDbHandle } from "@/helpers";
 import {
 	addBooksToCustomer,
