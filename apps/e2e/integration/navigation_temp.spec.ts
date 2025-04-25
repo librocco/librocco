@@ -1,7 +1,8 @@
-import { test, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
 
 import { baseURL } from "@/constants";
 
+import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard } from "@/helpers";
 
 test("should navigate using the side nav", async ({ page }) => {
