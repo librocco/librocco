@@ -93,6 +93,7 @@ export type Supplier = {
 	name?: string;
 	email?: string;
 	address?: string;
+	customerId?: number;
 };
 
 export type SupplierExtended = Supplier & {
