@@ -44,6 +44,7 @@ async function _getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
 			name,
 			COALESCE(email, 'N/A') as email,
 			COALESCE(address, 'N/A') as address,
+			COALESCE(customerId, 'N/A') as customerId,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -110,18 +111,19 @@ async function _upsertSupplier(db: DB, supplier: Supplier) {
         ON CONFLICT(id) DO UPDATE SET
         	name = COALESCE(?, name),
             email = COALESCE(?, email),
-            customerId = COALESCE(?, customerId),
-            address = COALESCE(?, address);`,
+            address = COALESCE(?, address),
+            customerId = COALESCE(?, customerId)
+            ;`,
 		[
 			supplier.id,
 			supplier.name ?? null,
 			supplier.email ?? null,
-			supplier.customerId ?? null,
 			supplier.address ?? null,
+			supplier.customerId ?? null,
 			supplier.name ?? null,
 			supplier.email ?? null,
-			supplier.customerId ?? null,
-			supplier.address ?? null
+			supplier.address ?? null,
+			supplier.customerId ?? null
 		]
 	);
 }
