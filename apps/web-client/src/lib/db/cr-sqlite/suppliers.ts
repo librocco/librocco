@@ -79,6 +79,7 @@ async function _getSupplierDetails(db: DB, id: number): Promise<SupplierExtended
 			name,
 			email,
 			address,
+			customerId,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -104,19 +105,22 @@ async function _upsertSupplier(db: DB, supplier: Supplier) {
 	}
 
 	await db.exec(
-		`INSERT INTO supplier (id, name, email, address)
-        VALUES (?, ?, ?, ?)
+		`INSERT INTO supplier (id, name, email, address, customerId)
+        VALUES (?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
         	name = COALESCE(?, name),
             email = COALESCE(?, email),
+            customerId = COALESCE(?, customerId),
             address = COALESCE(?, address);`,
 		[
 			supplier.id,
 			supplier.name ?? null,
 			supplier.email ?? null,
+			supplier.customerId ?? null,
 			supplier.address ?? null,
 			supplier.name ?? null,
 			supplier.email ?? null,
+			supplier.customerId ?? null,
 			supplier.address ?? null
 		]
 	);

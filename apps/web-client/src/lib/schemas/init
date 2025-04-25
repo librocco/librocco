@@ -58,6 +58,7 @@ CREATE TABLE supplier (
 	name TEXT,
 	email TEXT,
 	address TEXT,
+	customerId INTEGER,
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('supplier');
@@ -186,4 +187,3 @@ CREATE TABLE custom_item (
 );
 CREATE INDEX idx_custom_item_note_id ON custom_item(note_id);
 SELECT crsql_as_crr('custom_item');
-
