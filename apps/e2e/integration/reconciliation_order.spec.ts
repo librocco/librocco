@@ -1632,8 +1632,8 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 	//more assertions to give time for the line to be updated to delivered
 
 	// navigate to customer order view
-	await page.getByRole("navigation").getByRole("listitem").nth(5).click();
-	await page.locator(`a[href$='orders/customers/${customers[0].id}/']`).click();
+	await page.goto(`${baseURL}orders/customers/`);
+	await table.getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
 	await expect(table.getByText("Delivered")).toHaveCount(2);
