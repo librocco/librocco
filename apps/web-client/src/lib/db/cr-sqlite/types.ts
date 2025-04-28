@@ -15,6 +15,7 @@ export type DBCustomer = {
 	id: number;
 	fullname?: string;
 	email?: string;
+	phone?: string;
 	displayId: string;
 	deposit?: number;
 	updated_at?: number;
@@ -29,6 +30,7 @@ export type Customer = {
 	id: number;
 	fullname?: string;
 	email?: string;
+	phone?: string;
 	displayId: string;
 	deposit?: number;
 	updatedAt?: Date;

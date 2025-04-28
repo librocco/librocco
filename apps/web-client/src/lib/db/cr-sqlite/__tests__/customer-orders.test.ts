@@ -45,6 +45,7 @@ describe("Customer orders", () => {
 				fullname: "John Doe",
 				id: 1,
 				email: "john@example.com",
+				phone: null,
 				deposit: 13.2,
 				displayId: "1",
 				updatedAt: expect.any(Date)
@@ -65,6 +66,7 @@ describe("Customer orders", () => {
 				email: null,
 				deposit: 0,
 				displayId: "1",
+				phone: null,
 				updatedAt: expect.any(Date)
 			});
 		});
@@ -78,7 +80,8 @@ describe("Customer orders", () => {
 				id: 1,
 				displayId: "1",
 				fullname: "John Doe (Updated)",
-				deposit: 13.2
+				deposit: 13.2,
+				phone: null
 			});
 		});
 
@@ -186,6 +189,7 @@ describe("Customer orders", () => {
 				email: null,
 				deposit: 0,
 				displayId: "1",
+				phone: null,
 				updatedAt: expect.any(Date)
 			});
 		});
@@ -211,8 +215,26 @@ describe("Customer orders", () => {
 			await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
 
 			expect(await getCustomerOrderList(db)).toEqual([
-				{ id: 1, fullname: "John Doe", displayId: "1", email: "N/A", deposit: 0, updatedAt: expect.any(Date), completed: false },
-				{ id: 2, fullname: "Jane Doe", displayId: "2", email: "N/A", deposit: 0, updatedAt: expect.any(Date), completed: false }
+				{
+					id: 1,
+					fullname: "John Doe",
+					displayId: "1",
+					email: "N/A",
+					phone: "N/A",
+					deposit: 0,
+					updatedAt: expect.any(Date),
+					completed: false
+				},
+				{
+					id: 2,
+					fullname: "Jane Doe",
+					displayId: "2",
+					email: "N/A",
+					phone: "N/A",
+					deposit: 0,
+					updatedAt: expect.any(Date),
+					completed: false
+				}
 			]);
 		});
 
