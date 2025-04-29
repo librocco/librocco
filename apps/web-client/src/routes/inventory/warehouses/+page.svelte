@@ -11,6 +11,8 @@
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
+	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
+
 	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
@@ -44,8 +46,10 @@
 
 		// Reload when warehouse data changes
 		const disposer1 = rx.onRange(["warehouse"], () => invalidate("warehouse:list"));
-		// Reload when a note gets committed (affecting stock)
-		const disposer2 = rx.onRange(["note"], () => invalidate("warehouse:books"));
+
+		// Invalidate the stock cache when a note is committed (unfortunately, we don't have a fine-grained control over this, so we invalidate each time a note updates)
+		// TODO: move this to a central location
+		const disposer2 = rx.onRange(["note"], () => stockCache.invalidate());
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(() => {
@@ -53,6 +57,8 @@
 		disposer?.();
 	});
 	$: goto = racefreeGoto(disposer);
+
+	$: ({ warehouseTotals } = stockCache);
 
 	const handleDeleteWarehouse = (id: number) => async () => {
 		await deleteWarehouse(db, id);
@@ -128,7 +134,7 @@
 				</div>
 			{:else}
 				<!-- Start entity list -->
-				{#each warehouses as { id, displayName, totalBooks, discount }}
+				{#each warehouses as { id, displayName, discount }}
 					{@const href = appPath("warehouses", id)}
 
 					<div class="group entity-list-row">
@@ -140,11 +146,11 @@
 									<Layers size={18} />
 
 									<div>
-										{#if totalBooks === -1}
+										{#await $warehouseTotals}
 											<PlaceholderDots />
-										{:else}
-											<span class="">{totalBooks}</span>
-										{/if}
+										{:then warehouseTotals}
+											<span class="">{warehouseTotals.get(id)}</span>
+										{/await}
 										books
 									</div>
 								</div>
