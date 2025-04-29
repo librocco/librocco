@@ -315,6 +315,14 @@ type RootTranslation = {
 				button_edit: string
 			}
 		}
+		warehouses_tab: {
+			labels: {
+				/**
+				 * N​e​w​ ​p​u​r​c​h​a​s​e
+				 */
+				button_create_purchase: string
+			}
+		}
 	}
 	orders_page: {
 		labels: {
@@ -571,9 +579,9 @@ type RootTranslation = {
 		}
 		labels: {
 			/**
-			 * N​e​w​ ​N​o​t​e
+			 * N​e​w​ ​S​a​l​e
 			 */
-			new_note: string
+			new_sale: string
 			/**
 			 * E​d​i​t
 			 */
@@ -1389,6 +1397,14 @@ export type TranslationFunctions = {
 				button_edit: () => LocalizedString
 			}
 		}
+		warehouses_tab: {
+			labels: {
+				/**
+				 * New purchase
+				 */
+				button_create_purchase: () => LocalizedString
+			}
+		}
 	}
 	orders_page: {
 		labels: {
@@ -1643,9 +1659,9 @@ export type TranslationFunctions = {
 		}
 		labels: {
 			/**
-			 * New Note
+			 * New Sale
 			 */
-			new_note: () => LocalizedString
+			new_sale: () => LocalizedString
 			/**
 			 * Edit
 			 */

@@ -29,7 +29,7 @@ export function getHeader(_parent: DashboardNode): ContentHeaderInterface {
 
 	const createNote = async (opts: WaitForOpts = {}) => {
 		// Create a new note by clicking the button
-		await header.getByRole("button", { name: "New note" }).click();
+		await header.getByRole("button", { name: "New Sale" }).click();
 		// Wait for the outbound note view to load (signaling that we've been successfully redirected and can continue with the test)
 		await dashboard()
 			.view("outbound-note")
