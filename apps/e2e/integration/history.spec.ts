@@ -1,8 +1,9 @@
-import { test, expect } from "@playwright/test";
+import { expect } from "@playwright/test";
 
 import type { BookData } from "@librocco/shared";
 
 import { baseURL } from "@/constants";
+import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard, getDbHandle } from "@/helpers";
 import { upsertWarehouse, createInboundNote, createOutboundNote, addVolumesToNote, commitNote, upsertBook } from "../helpers/cr-sqlite";
 import { getDateStub } from "@/helpers/dateStub";

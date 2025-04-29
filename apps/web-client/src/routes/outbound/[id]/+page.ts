@@ -1,7 +1,7 @@
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
-import type { Warehouse, DB, NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
+import type { Warehouse, NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 import { getNoteById, getNoteCustomItems, getNoteEntries } from "$lib/db/cr-sqlite/note";
 import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
@@ -43,29 +43,29 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	}
 
 	const warehouses = await getAllWarehouses(dbCtx.db, { skipTotals: true });
-	const _entries = await getNoteEntries(dbCtx.db, id);
-	const entriesAvailability = await getAvailabilityByISBN(
-		dbCtx.db,
-		_entries.map(({ isbn }) => isbn)
-	);
-	const entries = _entries.map((e, i) => ({ ...e, availableWarehouses: entriesAvailability[i] }));
 	const customItems = await getNoteCustomItems(dbCtx.db, id);
-
+	const _entries = await getNoteEntries(dbCtx.db, id);
 	const publisherList = await getPublisherList(dbCtx.db);
 
-	return { dbCtx, ...note, warehouses, entries, customItems, publisherList };
-};
-
-// TODO: replace the type
-const getAvailabilityByISBN = async (db: DB, isbns: string[]): Promise<Map<number, { displayName: string; quantity: number }>[]> => {
-	const resMap = new Map(isbns.map((isbn) => [isbn, new Map<number, { displayName: string; quantity: number }>()]));
-
-	const stock = await getStock(db, { isbns });
-	for (const { isbn, warehouseId, warehouseName, quantity } of stock) {
-		resMap.get(isbn)?.set(warehouseId, { displayName: warehouseName, quantity });
+	// If there are no entries, we don't need to go through (potentially expensive) stock query
+	if (!_entries.length) {
+		return { dbCtx, ...note, warehouses, entries: [], customItems, publisherList };
 	}
 
-	return [...resMap.values()];
+	// Get availability by ISBN
+	const isbns = _entries.map(({ isbn }) => isbn);
+	const isbnAvailability = new Map(isbns.map((isbn) => [isbn, new Map<number, { displayName: string; quantity: number }>()]));
+
+	// NOTE: we're skipping this part as it's completely unnecessary if there are no entries,
+	// but expecially because getStock below will treat empty 'isbns' as all isbns, leading to extremely expensive
+	// query in case of fully populated database
+	const stock = await getStock(dbCtx.db, { isbns });
+	for (const { isbn, warehouseId, warehouseName, quantity } of stock) {
+		isbnAvailability.get(isbn)?.set(warehouseId, { displayName: warehouseName, quantity });
+	}
+	const entries = _entries.map((e) => ({ ...e, availableWarehouses: isbnAvailability.get(e.isbn) }));
+
+	return { dbCtx, ...note, warehouses, entries, customItems, publisherList };
 };
 
 export const load: PageLoad = timed(_load);

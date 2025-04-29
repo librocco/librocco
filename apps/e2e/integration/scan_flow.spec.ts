@@ -1,7 +1,6 @@
-import { test } from "@playwright/test";
-
 import { baseURL } from "../constants";
 
+import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard } from "@/helpers";
 
 test.beforeEach(async ({ page }) => {

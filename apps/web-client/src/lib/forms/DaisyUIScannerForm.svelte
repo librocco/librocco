@@ -41,7 +41,7 @@
 			type="text"
 			class="grow"
 			bind:value={$formStore.isbn}
-			placeholder="Enter ISBN of delivered books"
+			placeholder="Enter ISBN of ordered books"
 			required
 			autocomplete="off"
 		/>

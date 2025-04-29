@@ -1,5 +1,8 @@
+import { expect } from "@playwright/test";
+
 import { baseURL } from "@/constants";
-import { test, expect } from "@playwright/test";
+
+import { testBase as test } from "@/helpers/fixtures";
 import { associatePublisher, removePublisherFromSupplier, upsertBook } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";

@@ -21,7 +21,7 @@ testOrders("create: single order: on row button click", async ({ page, supplierO
 		.click();
 
 	// Check that we're at the reconciliation page
-	await page.getByPlaceholder("Enter ISBN of delivered books").waitFor();
+	await page.getByPlaceholder("Enter ISBN of ordered books").waitFor();
 });
 
 testOrders("create: multiple orders: using checkboxes and a global 'Reconcile' button", async ({ page, supplierOrders }) => {
@@ -43,7 +43,7 @@ testOrders("create: multiple orders: using checkboxes and a global 'Reconcile' b
 	await page.getByRole("button", { name: "Reconcile" }).first().click();
 
 	// Check that we're at the reconciliation page
-	await page.getByPlaceholder("Enter ISBN of delivered books").waitFor();
+	await page.getByPlaceholder("Enter ISBN of ordered books").waitFor();
 });
 
 testOrders("create: adds the created reconciliation order to (active) 'Reconciling' tab", async ({ page, supplierOrders }) => {
@@ -69,7 +69,7 @@ testOrders("create: adds the created reconciliation order to (active) 'Reconcili
 		.click();
 
 	// Check that we're at the reconciliation page
-	await page.getByPlaceholder("Enter ISBN of delivered books").waitFor();
+	await page.getByPlaceholder("Enter ISBN of ordered books").waitFor();
 
 	// Navigate back to supplier orders
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
@@ -105,7 +105,7 @@ testOrders("create: doesn't allow for reconciling same supplier order(s) twice",
 	await page.getByRole("button", { name: "Reconcile" }).first().click();
 
 	// Check that we're at the reconciliation page
-	await page.getByPlaceholder("Enter ISBN of delivered books").waitFor();
+	await page.getByPlaceholder("Enter ISBN of ordered books").waitFor();
 
 	// Navigate back to supplier orders
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
@@ -135,7 +135,7 @@ testOrders("delete: doesn't delete the reconciliation order on cancel", async ({
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 	const l1 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
 	const l2 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[1].isbn });
 
@@ -189,7 +189,7 @@ testOrders("delete: deletes the order (and navigates back to supplier orders) on
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 	const l1 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
 	const l2 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[1].isbn });
 
@@ -281,7 +281,7 @@ testOrders("populate: initial state", async ({ page, supplierOrders }) => {
 
 	// Verify initial UI elements
 	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
-	await expect(page.getByPlaceholder("Enter ISBN of delivered books")).toBeVisible();
+	await expect(page.getByPlaceholder("Enter ISBN of ordered books")).toBeVisible();
 	await expect(page.getByText("Scan or enter the ISBNs of the delivered books to begin reconciliation.")).toBeVisible();
 
 	// Check the list of associated orders
@@ -317,7 +317,7 @@ testOrders("populate: aggregates the quantity for scanned books", async ({ page,
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Scan three books with the same isbn
 	//
@@ -370,7 +370,7 @@ testOrders("populate: adjusts quantity using the +/- buttons", async ({ page, bo
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Scan some lines to work with
 	//
@@ -428,7 +428,7 @@ testOrders("populate: removes a line when quantity drops to 0", async ({ page, b
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Scan some lines to work with
 	//
@@ -471,7 +471,7 @@ testOrders("populate: sorts books by ISBN", async ({ page, books, supplierOrders
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Scan book 1 (at the time of this writing - alphabetically first ISBN)
 	// Scan three books with the same isbn
@@ -549,7 +549,7 @@ testOrders(
 
 		await page.getByText("Reconcile").first().click();
 
-		const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+		const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 		// Scan one book
 		await isbnInput.fill(supplierOrders[0].lines[0].isbn);
@@ -808,7 +808,7 @@ testOrders(
 		await page.getByText("Reconcile").first().click();
 
 		// Scan 1 book not belonging to the order (NOTE: at the time of this wrigint, books[4] is not part of the order)
-		const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+		const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 		await isbnInput.fill(books[4].isbn);
 		await page.keyboard.press("Enter");
 		await table
@@ -869,7 +869,7 @@ testOrders("compare: overdelivered books should be shown in the 'Unmatched' sect
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Add 1 more line 1 than ordered
 	// NOTE: At the time of this wrting, order 1 - line 1 had ordered quantity of 2
@@ -935,7 +935,7 @@ testOrders("compare: single order: fully filled", async ({ page, supplierOrders 
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Scan all books belonging to the order
 	for (const line of supplierOrders[0].lines) {
@@ -986,7 +986,7 @@ testOrders("compare: single order: overdelivery", async ({ page, supplierOrders 
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Scan the books belonging to the order
 	for (const line of supplierOrders[0].lines) {
@@ -1040,7 +1040,7 @@ testOrders("compare: single order: partial delivery: no additional books", async
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Scan the books belonging to the order
 	for (const line of supplierOrders[0].lines) {
@@ -1086,7 +1086,7 @@ testOrders("compare: single order: partial delivery: 1 line overdelivered", asyn
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	const l1 = table.getByRole("row").filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }) });
 
@@ -1127,7 +1127,7 @@ testOrders("compare: single order: partial delivery: 1 unmatched book", async ({
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	const l1 = table.getByRole("row").filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }) });
 
@@ -1174,7 +1174,7 @@ testOrders("compare: multiple orders: fully filled", async ({ page, supplierOrde
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	const [o1, o2] = supplierOrders;
 
@@ -1239,7 +1239,7 @@ testOrders("compare: multiple orders: overdelivery", async ({ page, supplierOrde
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	const [o1, o2] = supplierOrders;
 
@@ -1309,7 +1309,7 @@ testOrders("compare: multiple orders: partial delivery: no additional books", as
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	const [o1, o2] = supplierOrders;
 
@@ -1374,7 +1374,7 @@ testOrders("compare: multiple orders: partial delivery: 1 line overdelivered", a
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	const [o1, o2] = supplierOrders;
 
@@ -1448,7 +1448,7 @@ testOrders("compare: multiple orders: partial delivery: 1 unmatched book", async
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	const [o1, o2] = supplierOrders;
 
@@ -1527,7 +1527,7 @@ testOrders(
 
 		await page.getByText("Reconcile").first().click();
 
-		const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+		const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 		// Use the shared ISBN for the test
 		// NOTE: At the time of this writing the following lines shared the same ISBN:
@@ -1595,7 +1595,7 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Scan all books belonging to the order
 	for (const line of supplierOrders[0].lines) {
@@ -1632,8 +1632,8 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 	//more assertions to give time for the line to be updated to delivered
 
 	// navigate to customer order view
-	await page.getByRole("navigation").getByRole("listitem").nth(5).click();
-	await page.locator(`a[href$='orders/customers/${customers[0].id}/']`).click();
+	await page.goto(`${baseURL}orders/customers/`);
+	await table.getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
 	await expect(table.getByText("Delivered")).toHaveCount(2);
@@ -1647,7 +1647,7 @@ testOrders("quantity: should handle quantity adjustments correctly", async ({ pa
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Add multiple quantities of same book
 	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
@@ -1671,7 +1671,7 @@ testOrders("quantity:should remove line when quantity reaches zero", async ({ pa
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	// Add single quantity
 	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
@@ -1697,7 +1697,7 @@ testOrders("quantity: should handle multiple quantity adjustments", async ({ pag
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
 
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 
 	const table = page.getByRole("table");
 	const firstRow = table.getByRole("row").nth(1);
@@ -1734,7 +1734,7 @@ testOrders("delete: should allow supplier orders to be reconciled again after de
 	await page.getByText("Reconcile").first().click();
 
 	// Add scanned books
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
 	await page.keyboard.press("Enter");
 
@@ -1768,7 +1768,7 @@ testOrders("delete: should not delete reconciliation order when canceling deleti
 	await page.getByText("Reconcile").first().click();
 
 	// Add some scanned books
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
 	await page.keyboard.press("Enter");
 
@@ -1789,7 +1789,7 @@ testOrders("delete: should allow deletion after comparing books", async ({ page,
 	await page.getByText("Reconcile").first().click();
 
 	// Add books and go to compare view
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
 	await page.keyboard.press("Enter");
 	await page.getByRole("button", { name: "Compare" }).nth(1).click();

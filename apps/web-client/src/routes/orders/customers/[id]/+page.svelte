@@ -299,6 +299,7 @@
 								<th>Title</th>
 								<th>Authors</th>
 								<th>Price</th>
+								<th>Publisher</th>
 								<th>Status</th>
 								<th>Collected</th>
 								<th>Actions</th>
@@ -311,6 +312,7 @@
 									<td>{title}</td>
 									<td>{authors}</td>
 									<td>{price}</td>
+									<td>{publisher}</td>
 									<td>
 										{#if status === OrderLineStatus.Collected}
 											<span class="badge-success badge">Collected</span>

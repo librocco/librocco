@@ -19,6 +19,8 @@
 	import { appPath } from "$lib/paths";
 
 	import LL from "@librocco/shared/i18n-svelte";
+	import { download, generateCsv, mkConfig } from "export-to-csv";
+	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
 
 	export let data: PageData;
 
@@ -64,6 +66,29 @@
 	const table = createTable(tableOptions);
 	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
+
+	// #region csv
+	const handleExportCsv = () => {
+		const csvConfig = mkConfig({
+			columnHeaders: [
+				{ displayLabel: t.column_headers.quantity(), key: "quantity" },
+				{ displayLabel: t.column_headers.isbn(), key: "isbn" },
+				{ displayLabel: t.column_headers.title(), key: "title" },
+				{ displayLabel: t.column_headers.publisher(), key: "publisher" },
+				{ displayLabel: t.column_headers.authors(), key: "authors" },
+				{ displayLabel: t.column_headers.year(), key: "year" },
+				{ displayLabel: t.column_headers.price(), key: "price" },
+				{ displayLabel: t.column_headers.category(), key: "category" },
+				{ displayLabel: t.column_headers.edited_by(), key: "edited_by" },
+				{ displayLabel: t.column_headers.out_of_print(), key: "out_of_print" }
+			],
+			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
+		});
+
+		const gen = generateCsv(csvConfig)<Omit<InventoryTableData, "updatedAt">>(entries);
+		download(csvConfig)(gen);
+	};
+	// #endregion csv
 </script>
 
 <HistoryPage view="history/notes" {db} {plugins}>
@@ -84,7 +109,7 @@
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="btn-primary btn">{t.export_csv()}</button>
+				<button on:click={handleExportCsv} class="btn-primary btn">{t.export_csv()}</button>
 			</div>
 		</div>
 		{#if loading}

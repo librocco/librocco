@@ -244,6 +244,11 @@ type OrderTestFixture = {
 
 export const testBase = test.extend({
 	page: async ({ page }, use) => {
+		// Make sure the DB schema is initialised before running any tests
+		// This is here to prevent partial initialisation (and subsequent conflicts when reinitialising the, partially initialised, schema)
+		await page.goto(baseURL);
+		await getDbHandle(page);
+
 		const goto = page.goto;
 
 		page.goto = async function (url, opts) {
