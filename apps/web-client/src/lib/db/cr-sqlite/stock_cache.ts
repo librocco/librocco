@@ -17,7 +17,14 @@ const execQuery = async (db: DB) => {
 	return stock;
 };
 
-/** An internal store keeping the full stock query as a promise */
+/**
+ * An internal store keeping the full stock query as a promise
+ * NOTE: This is somewhat lazy - the initial promise never resolves, but it doesn't
+ * choke up the DB either. Only when the cached stock is activated (needed by a consumer), does it
+ * run the query.
+ *
+ * This is a tradeoff between prefetching the results and not blocking other DB interactions until the stock is needed.
+ */
 const query = writable<Promise<GetStockResponseItem[]>>(new Promise(() => {}));
 
 /**
