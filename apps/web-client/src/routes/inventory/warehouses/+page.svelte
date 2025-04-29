@@ -45,12 +45,7 @@
 		const { rx } = data.dbCtx;
 
 		// Reload when warehouse data changes
-		const disposer1 = rx.onRange(["warehouse"], () => invalidate("warehouse:list"));
-
-		// Invalidate the stock cache when a note is committed (unfortunately, we don't have a fine-grained control over this, so we invalidate each time a note updates)
-		// TODO: move this to a central location
-		const disposer2 = rx.onRange(["note"], () => stockCache.invalidate());
-		disposer = () => (disposer1(), disposer2());
+		disposer = rx.onRange(["warehouse"], () => invalidate("warehouse:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
