@@ -67,7 +67,19 @@ const history_page = {
 		},
 		archive: {
 			committed_at: "Committed At",
-			export_csv: "Export CSV"
+			export_csv: "Export CSV",
+			column_headers: {
+				quantity: "quantity",
+				isbn: "isbn",
+				title: "title",
+				publisher: "publisher",
+				authors: "authors",
+				year: "year",
+				price: "price",
+				category: "category",
+				edited_by: "edited_by",
+				out_of_print: "out_of_print"
+			}
 		}
 	},
 	warehouse_tab: {

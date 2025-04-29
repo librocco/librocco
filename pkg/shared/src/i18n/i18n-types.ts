@@ -179,6 +179,48 @@ type RootTranslation = {
 				 * E​x​p​o​r​t​ ​C​S​V
 				 */
 				export_csv: string
+				column_headers: {
+					/**
+					 * q​u​a​n​t​i​t​y
+					 */
+					quantity: string
+					/**
+					 * i​s​b​n
+					 */
+					isbn: string
+					/**
+					 * t​i​t​l​e
+					 */
+					title: string
+					/**
+					 * p​u​b​l​i​s​h​e​r
+					 */
+					publisher: string
+					/**
+					 * a​u​t​h​o​r​s
+					 */
+					authors: string
+					/**
+					 * y​e​a​r
+					 */
+					year: string
+					/**
+					 * p​r​i​c​e
+					 */
+					price: string
+					/**
+					 * c​a​t​e​g​o​r​y
+					 */
+					category: string
+					/**
+					 * e​d​i​t​e​d​_​b​y
+					 */
+					edited_by: string
+					/**
+					 * o​u​t​_​o​f​_​p​r​i​n​t
+					 */
+					out_of_print: string
+				}
 			}
 		}
 		warehouse_tab: {
@@ -1255,6 +1297,48 @@ export type TranslationFunctions = {
 				 * Export CSV
 				 */
 				export_csv: () => LocalizedString
+				column_headers: {
+					/**
+					 * quantity
+					 */
+					quantity: () => LocalizedString
+					/**
+					 * isbn
+					 */
+					isbn: () => LocalizedString
+					/**
+					 * title
+					 */
+					title: () => LocalizedString
+					/**
+					 * publisher
+					 */
+					publisher: () => LocalizedString
+					/**
+					 * authors
+					 */
+					authors: () => LocalizedString
+					/**
+					 * year
+					 */
+					year: () => LocalizedString
+					/**
+					 * price
+					 */
+					price: () => LocalizedString
+					/**
+					 * category
+					 */
+					category: () => LocalizedString
+					/**
+					 * edited_by
+					 */
+					edited_by: () => LocalizedString
+					/**
+					 * out_of_print
+					 */
+					out_of_print: () => LocalizedString
+				}
 			}
 		}
 		warehouse_tab: {
