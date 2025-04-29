@@ -37,7 +37,9 @@
 	const { dbCtx } = data;
 
 	beforeNavigate(({ to }) => {
-		timeLogger.setCurrentRoute(to.route.id);
+		if (IS_DEBUG || IS_E2E) {
+			timeLogger.setCurrentRoute(to?.route?.id);
+		}
 	});
 
 	$: {
@@ -82,7 +84,9 @@
 		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
 		document.body.setAttribute("hydrated", "true");
 
-		window["timeLogger"] = timeLogger;
+		if (IS_E2E || IS_DEBUG) {
+			window["timeLogger"] = timeLogger;
+		}
 
 		// Start the sync worker
 		//

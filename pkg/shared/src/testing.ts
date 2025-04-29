@@ -3,6 +3,7 @@
 /** Union of names for all top-level views of the inventory app */
 export type WebClientView =
 	| "stock"
+	| "books"
 	| "inventory"
 	| "outbound"
 	| "settings"
