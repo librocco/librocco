@@ -121,6 +121,11 @@ const inventory_page = {
 		labels: {
 			button_edit: "Edit"
 		}
+	},
+	warehouses_tab: {
+		labels: {
+			button_create_purchase: "New purchase"
+		}
 	}
 };
 const orders_page = {
@@ -392,7 +397,7 @@ const outbound_page = {
 		books: "{bookCount} book{{s}}"
 	},
 	labels: {
-		new_note: "New Note",
+		new_sale: "New Sale",
 		edit: "Edit",
 		print_book_label: "Print book label",
 		delete_row: "Delete row"
