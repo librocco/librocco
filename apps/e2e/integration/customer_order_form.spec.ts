@@ -26,8 +26,8 @@ testOrders("customer list: new: submits the form with all fields", async ({ page
 	const customer = {
 		Name: "John Doe",
 		Email: "john@gmail.com",
-		phone1: "1234567890",
-		phone2: "0987654321",
+		"Phone 1": "1234567890",
+		"Phone 2": "0987654321",
 		Deposit: "10"
 	};
 
