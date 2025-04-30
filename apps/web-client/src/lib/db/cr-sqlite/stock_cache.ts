@@ -93,3 +93,20 @@ export const invalidate = () => {
 		query.set(execQuery(db));
 	}
 };
+
+let onInvalidatedSubscribers = new Set<() => void>();
+
+// Every time a query changes (it had been invalidated), we notify all of the 'onInvalidated' subscribers
+// NOTE: We're doint this way, instead of directly subscribing every 'onInvalidated' callback to the query,
+// to prevent triggering on subscription (thus preventing flashing UI on init). This way the subscribers are notified
+// only on changes in t > t0 (where t0 is the time of subscription)
+query.subscribe(() => {
+	for (const cb of onInvalidatedSubscribers) {
+		cb();
+	}
+});
+
+export const onInvalidated = (cb: () => void) => {
+	onInvalidatedSubscribers.add(cb);
+	return () => onInvalidatedSubscribers.delete(cb);
+};

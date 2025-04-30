@@ -1,15 +1,19 @@
-import { getStock } from "$lib/db/cr-sqlite/stock";
-import { getWarehouseById } from "$lib/db/cr-sqlite/warehouse";
 import { redirect } from "@sveltejs/kit";
+import { get } from "svelte/store";
+
+import { getWarehouseById } from "$lib/db/cr-sqlite/warehouse";
+import { stockByWarehouse } from "$lib/db/cr-sqlite/stock_cache";
 
 import type { PageLoad } from "./$types";
 
-import { getPublisherList } from "$lib/db/cr-sqlite/books";
+import { getMultipleBookData, getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { appPath } from "$lib/paths";
 
 import { timed } from "$lib/utils/timer";
 import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
+import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
+import { map, wrapIter } from "@librocco/shared";
 
 const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	const id = Number(params.id);
@@ -21,7 +25,14 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 
 	// We're not in the browser, no need for further loading
 	if (!dbCtx) {
-		return { dbCtx, id, displayName: "N/A", discount: 0, publisherList: [] as string[] };
+		return {
+			dbCtx,
+			id,
+			displayName: "N/A",
+			discount: 0,
+			publisherList: [] as string[],
+			entries: new Promise<GetStockResponseItem[]>(() => {})
+		};
 	}
 
 	// Disable the stock cache to prevent the expensive stock query from blocking the
@@ -38,7 +49,18 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	// Enable the stock cache again to execute in the background
 	stockCache.enable(dbCtx.db);
 
-	return { dbCtx, ...warehouse, publisherList };
+	const entries = get(stockByWarehouse)
+		.then((s) => s.get(id))
+		.then(async (entries) => {
+			const isbns = map(entries, ({ isbn }) => isbn);
+			const bookData = await getMultipleBookData(dbCtx.db, ...isbns);
+			const iter = wrapIter(entries)
+				.zip(bookData)
+				.map(([stock, bookData]) => ({ ...stock, ...bookData }));
+			return [...iter];
+		});
+
+	return { dbCtx, ...warehouse, publisherList, entries };
 };
 
 export const load: PageLoad = timed(_load);
