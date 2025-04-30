@@ -42,8 +42,7 @@
 	$: db = data.dbCtx?.db;
 
 	let entries: GetStockResponseItem[] = [];
-	$: ({ stockByWarehouse } = stockCache);
-	$: $stockByWarehouse.then((s) => (entries = [...s.get(id)]));
+	$: data.entries.then((e) => (entries = e));
 
 	$: tColumnHeaders = $LL.warehouse_page.table;
 	$: tLabels = $LL.warehouse_page.labels;
@@ -57,8 +56,11 @@
 		// Reload when warehouse data changes
 		const disposer1 = rx.onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
 		// Reload when some stock changes (note being committed)
-		const disposer2 = rx.onRange(["note", "book"], () => invalidate("warehouse:books"));
-		disposer = () => (disposer1(), disposer2());
+		const disposer2 = rx.onRange(["book"], () => invalidate("warehouse:books"));
+		// Reload when stock cache invalidates
+		const disposer3 = stockCache.onInvalidated(() => invalidate("warehouse:books"));
+
+		disposer = () => (disposer1(), disposer2(), disposer3());
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -175,7 +177,7 @@
 			</div>
 		</div>
 
-		{#await $stockByWarehouse}
+		{#await data.entries}
 			<div class="flex grow justify-center">
 				<div class="mx-auto translate-y-1/2">
 					<span class="loading loading-spinner loading-lg text-primary"></span>

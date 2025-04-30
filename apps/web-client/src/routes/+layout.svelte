@@ -114,7 +114,7 @@
 		// Control the invalidation of the stock cache in central spot
 		// Invalidate on every change to note (notes being committed)
 		// TODO: Implement more fine-grained control over this - potentially using a separate table to control committed state
-		disposer = dbCtx.rx.onRange(["note", "book"], () => stockCache.invalidate());
+		disposer = dbCtx.rx.onRange(["note"], () => stockCache.invalidate());
 	});
 
 	onDestroy(() => {
