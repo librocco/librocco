@@ -134,7 +134,9 @@
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
-							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
+							<a data-sveltekit-preload-data="hover" {href} class="entity-list-text-lg text-base-content hover:underline focus:underline"
+								>{displayName}</a
+							>
 
 							<div class="flex flex-row gap-x-8 gap-y-2 max-xs:flex-col">
 								<div class="entity-list-text-sm flex items-center gap-x-2 text-sm text-base-content">
