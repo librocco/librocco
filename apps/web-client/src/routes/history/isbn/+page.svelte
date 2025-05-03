@@ -12,7 +12,7 @@
 	import { createSearchDropdown } from "./[isbn]/actions";
 
 	import { goto } from "$lib/utils/navigation";
-	import { searchBooks } from "$lib/db/cr-sqlite/books";
+	import { searchBooks } from "$lib/db/books";
 
 	import { appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";

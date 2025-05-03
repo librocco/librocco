@@ -8,7 +8,7 @@
 
 	import { entityListView, testId, type TranslationFunctions } from "@librocco/shared";
 
-	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
+	import type { PastTransactionItem } from "$lib/db/types";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 

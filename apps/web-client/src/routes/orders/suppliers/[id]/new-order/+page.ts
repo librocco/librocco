@@ -1,10 +1,10 @@
 import { redirect } from "@sveltejs/kit";
 
-import { getPossibleSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
+import { getPossibleSupplierOrderLines } from "$lib/db/suppliers";
 
 import { base } from "$app/paths";
 
-import type { PossibleSupplierOrderLine } from "$lib/db/cr-sqlite/types";
+import type { PossibleSupplierOrderLine } from "$lib/db/types";
 import type { PageLoad } from "./$types";
 
 import { timed } from "$lib/utils/timer";

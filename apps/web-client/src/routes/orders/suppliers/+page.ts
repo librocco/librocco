@@ -1,8 +1,8 @@
 import type { PageLoad } from "./$types";
 
-import { getAllSuppliers } from "$lib/db/cr-sqlite/suppliers";
+import { getAllSuppliers } from "$lib/db/suppliers";
 
-import type { SupplierExtended } from "$lib/db/cr-sqlite/types";
+import type { SupplierExtended } from "$lib/db/types";
 
 import { timed } from "$lib/utils/timer";
 

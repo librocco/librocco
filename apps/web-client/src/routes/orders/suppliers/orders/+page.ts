@@ -1,7 +1,7 @@
-import { getAllReconciliationOrders } from "$lib/db/cr-sqlite/order-reconciliation";
-import { getPlacedSupplierOrders, getPossibleSupplierOrders } from "$lib/db/cr-sqlite/suppliers";
+import { getAllReconciliationOrders } from "$lib/db/order-reconciliation";
+import { getPlacedSupplierOrders, getPossibleSupplierOrders } from "$lib/db/suppliers";
 
-import type { PlacedSupplierOrder, PossibleSupplierOrder, ReconciliationOrder } from "$lib/db/cr-sqlite/types";
+import type { PlacedSupplierOrder, PossibleSupplierOrder, ReconciliationOrder } from "$lib/db/types";
 import type { PageLoad } from "./$types";
 
 import { timed } from "$lib/utils/timer";

@@ -4,7 +4,7 @@
 
 	import { invalidate } from "$app/navigation";
 
-	import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
+	import { createSupplierOrder } from "$lib/db/suppliers";
 	import { Page } from "$lib/controllers";
 
 	import { racefreeGoto } from "$lib/utils/navigation";

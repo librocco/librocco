@@ -13,7 +13,7 @@
 	import { testId } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
-	import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
+	import type { GetStockResponseItem } from "$lib/db/types";
 
 	import { LL } from "@librocco/shared/i18n-svelte";
 
@@ -26,8 +26,8 @@
 	import { deviceSettingsStore } from "$lib/stores/app";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { mergeBookData } from "$lib/utils/misc";
-	import { getStock } from "$lib/db/cr-sqlite/stock";
-	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import { getStock } from "$lib/db/stock";
+	import { upsertBook } from "$lib/db/books";
 
 	export let data: PageData;
 

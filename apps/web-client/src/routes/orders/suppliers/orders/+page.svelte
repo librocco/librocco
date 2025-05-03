@@ -9,7 +9,7 @@
 	import { base } from "$app/paths";
 
 	import type { PageData } from "./$types";
-	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import type { Customer } from "$lib/db/types";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
@@ -21,8 +21,8 @@
 	import ReconcilingTable from "$lib/components/supplier-orders/ReconcilingTable.svelte";
 	import CompletedTable from "$lib/components/supplier-orders/CompletedTable.svelte";
 
-	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
-	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { createReconciliationOrder } from "$lib/db/order-reconciliation";
+	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/customers";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;

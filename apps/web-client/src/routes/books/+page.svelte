@@ -27,8 +27,8 @@
 	import { deviceSettingsStore } from "$lib/stores/app";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { mergeBookData } from "$lib/utils/misc";
-	import { searchBooks, upsertBook } from "$lib/db/cr-sqlite/books";
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { searchBooks, upsertBook } from "$lib/db/books";
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/note";
 	import { appPath } from "$lib/paths";
 	import { racefreeGoto } from "$lib/utils/navigation";
 

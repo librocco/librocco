@@ -2,8 +2,8 @@ import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
 
-import { getNoteById, getNoteCustomItems, getNoteEntries } from "$lib/db/cr-sqlite/note";
-import type { NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
+import { getNoteById, getNoteCustomItems, getNoteEntries } from "$lib/db/note";
+import type { NoteCustomItem, NoteEntriesItem } from "$lib/db/types";
 
 import { appPath } from "$lib/paths";
 

@@ -1,6 +1,6 @@
-import { getPlacedSupplierOrderLines, getPlacedSupplierOrders } from "$lib/db/cr-sqlite/suppliers";
+import { getPlacedSupplierOrderLines, getPlacedSupplierOrders } from "$lib/db/suppliers";
 
-import type { PlacedSupplierOrderLine } from "$lib/db/cr-sqlite/types";
+import type { PlacedSupplierOrderLine } from "$lib/db/types";
 import type { PageLoad } from "./$types";
 
 import { timed } from "$lib/utils/timer";

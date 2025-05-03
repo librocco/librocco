@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
-	import type { Warehouse } from "$lib/db/cr-sqlite/types";
+	import type { Warehouse } from "$lib/db/types";
 	import type { InventoryTableData } from "../types";
 
 	import type { createTable } from "$lib/actions";

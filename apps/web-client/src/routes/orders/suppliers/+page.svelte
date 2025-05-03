@@ -11,13 +11,13 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import { supplierSchema } from "$lib/forms";
 
-	import { upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import { upsertSupplier } from "$lib/db/suppliers";
 	import { SupplierTable } from "$lib/components";
 	import { Page } from "$lib/controllers";
 
 	import { writable } from "svelte/store";
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
-	import type { Supplier } from "$lib/db/cr-sqlite/types";
+	import type { Supplier } from "$lib/db/types";
 	import { base } from "$app/paths";
 	import { Plus } from "lucide-svelte";
 	import { appPath } from "$lib/paths";

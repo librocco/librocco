@@ -7,7 +7,7 @@
 	import { testId } from "@librocco/shared";
 
 	import type { WarehouseChangeDetail } from "./types";
-	import type { Warehouse } from "$lib/db/cr-sqlite/types";
+	import type { Warehouse } from "$lib/db/types";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import LL from "@librocco/shared/i18n-svelte";
 

@@ -2,7 +2,7 @@
 	import { Building2, Hash, CalendarClock } from "lucide-svelte";
 	import type { Writable } from "svelte/store";
 
-	import type { SupplierExtended } from "$lib/db/cr-sqlite/types";
+	import type { SupplierExtended } from "$lib/db/types";
 
 	import { HeadCol, BodyMultiRow } from "../Cells";
 

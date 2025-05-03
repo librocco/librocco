@@ -1,12 +1,12 @@
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
-import type { Warehouse, NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
+import type { Warehouse, NoteCustomItem, NoteEntriesItem } from "$lib/db/types";
 
-import { getNoteById, getNoteCustomItems, getNoteEntries } from "$lib/db/cr-sqlite/note";
-import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
-import { getStock } from "$lib/db/cr-sqlite/stock";
-import { getPublisherList } from "$lib/db/cr-sqlite/books";
+import { getNoteById, getNoteCustomItems, getNoteEntries } from "$lib/db/note";
+import { getAllWarehouses } from "$lib/db/warehouse";
+import { getStock } from "$lib/db/stock";
+import { getPublisherList } from "$lib/db/books";
 
 import { appPath } from "$lib/paths";
 

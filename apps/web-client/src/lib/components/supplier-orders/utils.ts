@@ -1,4 +1,4 @@
-import type { PlacedSupplierOrderLine } from "$lib/db/cr-sqlite/types";
+import type { PlacedSupplierOrderLine } from "$lib/db/types";
 import { extractBookData } from "$lib/utils/misc";
 import type { BookData } from "@librocco/shared";
 

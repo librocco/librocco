@@ -1,8 +1,8 @@
-import { getPastTransactions } from "$lib/db/cr-sqlite/history";
-import { getWarehouseById } from "$lib/db/cr-sqlite/warehouse";
+import { getPastTransactions } from "$lib/db/history";
+import { getWarehouseById } from "$lib/db/warehouse";
 
 import type { PageLoad } from "./$types";
-import type { NoteType } from "$lib/db/cr-sqlite/types";
+import type { NoteType } from "$lib/db/types";
 
 import { timed } from "$lib/utils/timer";
 

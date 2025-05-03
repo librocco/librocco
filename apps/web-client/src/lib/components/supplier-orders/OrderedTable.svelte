@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ListTodo } from "lucide-svelte";
-	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
+	import type { PlacedSupplierOrder } from "$lib/db/types";
 	import { goto } from "$lib/utils/navigation";
 	import { base } from "$app/paths";
 	import { createEventDispatcher } from "svelte";

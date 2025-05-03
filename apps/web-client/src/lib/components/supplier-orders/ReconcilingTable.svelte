@@ -3,7 +3,7 @@
 
 	import { base } from "$app/paths";
 	import { goto } from "$lib/utils/navigation";
-	import type { ReconciliationOrder } from "$lib/db/cr-sqlite/types";
+	import type { ReconciliationOrder } from "$lib/db/types";
 	import { appPath } from "$lib/paths";
 
 	function handleUpdateOrder(reconciliationOrderId: number) {

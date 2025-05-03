@@ -17,8 +17,8 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
-	import { deleteNote } from "$lib/db/cr-sqlite/note";
-	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import { deleteNote } from "$lib/db/note";
+	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/warehouse";
 	import { InventoryManagementPage } from "$lib/controllers";
 	import LL from "@librocco/shared/i18n-svelte";
 

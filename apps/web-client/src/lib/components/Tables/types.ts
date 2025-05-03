@@ -1,4 +1,4 @@
-import type { NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
+import type { NoteCustomItem, NoteEntriesItem } from "$lib/db/types";
 import type { VolumeStockKind } from "@librocco/shared";
 
 /**

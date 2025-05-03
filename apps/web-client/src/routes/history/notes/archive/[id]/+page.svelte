@@ -20,7 +20,7 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
-	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
+	import type { PastTransactionItem } from "$lib/db/types";
 
 	export let data: PageData;
 

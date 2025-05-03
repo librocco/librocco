@@ -1,6 +1,6 @@
 import type { PageLoad } from "./$types";
 
-import { getPublisherList } from "$lib/db/cr-sqlite/books";
+import { getPublisherList } from "$lib/db/books";
 
 import { timed } from "$lib/utils/timer";
 

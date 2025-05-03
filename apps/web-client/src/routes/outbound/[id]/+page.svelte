@@ -14,9 +14,9 @@
 	import { type BookData } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
-	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem } from "$lib/db/cr-sqlite/types";
+	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem } from "$lib/db/types";
 
-	import { OutOfStockError, NoWarehouseSelectedError } from "$lib/db/cr-sqlite/errors";
+	import { OutOfStockError, NoWarehouseSelectedError } from "$lib/db/errors";
 
 	import {
 		Breadcrumbs,
@@ -67,11 +67,11 @@
 		updateNote,
 		updateNoteTxn,
 		upsertNoteCustomItem
-	} from "$lib/db/cr-sqlite/note";
-	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
+	} from "$lib/db/note";
+	import { getBookData, upsertBook } from "$lib/db/books";
 
 	import LL from "@librocco/shared/i18n-svelte";
-	import { getStock } from "$lib/db/cr-sqlite/stock";
+	import { getStock } from "$lib/db/stock";
 
 	export let data: PageData;
 

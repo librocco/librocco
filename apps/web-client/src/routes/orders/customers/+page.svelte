@@ -13,10 +13,10 @@
 
 	import { base } from "$app/paths";
 
-	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/customers";
 	import { Page } from "$lib/controllers";
 
-	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import type { Customer } from "$lib/db/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";

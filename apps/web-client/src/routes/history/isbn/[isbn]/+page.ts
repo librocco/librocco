@@ -1,9 +1,9 @@
 import type { PageLoad } from "./$types";
-import type { GetStockResponseItem, PastTransactionItem } from "$lib/db/cr-sqlite/types";
+import type { GetStockResponseItem, PastTransactionItem } from "$lib/db/types";
 
-import { getPastTransactions } from "$lib/db/cr-sqlite/history";
-import { getStock } from "$lib/db/cr-sqlite/stock";
-import { getBookData } from "$lib/db/cr-sqlite/books";
+import { getPastTransactions } from "$lib/db/history";
+import { getStock } from "$lib/db/stock";
+import { getBookData } from "$lib/db/books";
 
 import { timed } from "$lib/utils/timer";
 

@@ -6,14 +6,10 @@
 
 	import type { LayoutData } from "../$types";
 
-	import { upsertBook } from "$lib/db/cr-sqlite/books";
-	import {
-		createReconciliationOrder,
-		finalizeReconciliationOrder,
-		upsertReconciliationOrderLines
-	} from "$lib/db/cr-sqlite/order-reconciliation";
-	import { associatePublisher, createSupplierOrder, upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
-	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { upsertBook } from "$lib/db/books";
+	import { createReconciliationOrder, finalizeReconciliationOrder, upsertReconciliationOrderLines } from "$lib/db/order-reconciliation";
+	import { associatePublisher, createSupplierOrder, upsertSupplier } from "$lib/db/suppliers";
+	import { addBooksToCustomer, upsertCustomer } from "$lib/db/customers";
 
 	import { debugData as dd } from "$lib/__testData__/debugData";
 

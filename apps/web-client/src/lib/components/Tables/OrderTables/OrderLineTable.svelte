@@ -10,7 +10,7 @@
 	import BookHeadCell from "../InventoryTables/BookHeadCell.svelte";
 	import BodyMultiRow from "../Cells/BodyMultiRow.svelte";
 
-	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
+	import type { CustomerOrderLine } from "$lib/db/types";
 
 	export let table: ReturnType<typeof createTable<CustomerOrderLine & BookData>>;
 

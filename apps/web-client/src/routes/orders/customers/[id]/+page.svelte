@@ -23,7 +23,7 @@
 
 	import { testId, stripNulls, type BookData } from "@librocco/shared";
 
-	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
+	import { OrderLineStatus, type Customer } from "$lib/db/types";
 	import { PopoverWrapper, Dialog } from "$lib/components";
 
 	import type { PageData } from "./$types";
@@ -43,9 +43,9 @@
 		isDisplayIdUnique,
 		upsertCustomer,
 		markCustomerOrderLinesAsCollected
-	} from "$lib/db/cr-sqlite/customers";
+	} from "$lib/db/customers";
 
-	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
+	import { getBookData, upsertBook } from "$lib/db/books";
 
 	import { mergeBookData } from "$lib/utils/misc";
 	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";

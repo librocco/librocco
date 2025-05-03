@@ -20,7 +20,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
-	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/note";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;

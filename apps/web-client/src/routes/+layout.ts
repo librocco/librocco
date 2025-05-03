@@ -17,7 +17,7 @@ import { detectLocale } from "@librocco/shared/i18n-util";
 
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
-import { getDB } from "$lib/db/cr-sqlite";
+import { getDB } from "$lib/db";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
@@ -55,7 +55,7 @@ export const load: LayoutLoad = async ({ url }) => {
 		window["getDB"] = getDB;
 
 		// Init the db
-		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
+		const { getInitializedDB } = await import("$lib/db");
 		const dbCtx = await getInitializedDB(get(dbid));
 
 		// Register plugins

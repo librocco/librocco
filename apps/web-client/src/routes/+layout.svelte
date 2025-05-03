@@ -21,12 +21,12 @@
 	import { sync, syncConfig, syncActive } from "$lib/db/config";
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 
-	import * as books from "$lib/db/cr-sqlite/books";
-	import * as customers from "$lib/db/cr-sqlite/customers";
-	import * as note from "$lib/db/cr-sqlite/note";
-	import * as reconciliation from "$lib/db/cr-sqlite/order-reconciliation";
-	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
-	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
+	import * as books from "$lib/db/books";
+	import * as customers from "$lib/db/customers";
+	import * as note from "$lib/db/note";
+	import * as reconciliation from "$lib/db/order-reconciliation";
+	import * as suppliers from "$lib/db/suppliers";
+	import * as warehouse from "$lib/db/warehouse";
 	import { timeLogger } from "$lib/utils/timer";
 	import { beforeNavigate } from "$app/navigation";
 
