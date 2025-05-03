@@ -1,4 +1,4 @@
-import { writable, get, derived, type Readable } from "svelte/store";
+import { writable, get, derived } from "svelte/store";
 
 import type { DB, GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
@@ -77,7 +77,7 @@ export const invalidate = () => {
 	}
 };
 
-let onInvalidatedSubscribers = new Set<() => void>();
+const onInvalidatedSubscribers = new Set<() => void>();
 
 // Every time a query changes (it had been invalidated), we notify all of the 'onInvalidated' subscribers
 // NOTE: We're doint this way, instead of directly subscribing every 'onInvalidated' callback to the query,
