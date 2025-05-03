@@ -11,7 +11,7 @@
 <script lang="ts">
 	import { Story } from "@storybook/addon-svelte-csf";
 
-	import type { SupplierExtended } from "$lib/db/cr-sqlite/types";
+	import type { SupplierExtended } from "$lib/db/types";
 	import type { CustomerOrderSchema } from "$lib/forms/schemas";
 
 	import { writable } from "svelte/store";

@@ -1,7 +1,7 @@
 import type { PageLoad } from "./$types";
-import type { CustomerOrderListItem } from "$lib/db/cr-sqlite/types";
+import type { CustomerOrderListItem } from "$lib/db/types";
 
-import { getCustomerOrderList } from "$lib/db/cr-sqlite/customers";
+import { getCustomerOrderList } from "$lib/db/customers";
 
 import { timed } from "$lib/utils/timer";
 

@@ -3,12 +3,12 @@
 	import { appPath } from "$lib/paths";
 	import { goto } from "$lib/utils/navigation";
 
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/note";
 
 	import { PageLayout, ExtensionStatusBanner } from "$lib/components";
 
 	import type { WebClientView } from "@librocco/shared";
-	import type { DB } from "$lib/db/cr-sqlite/types";
+	import type { DB } from "$lib/db/types";
 
 	export let db: DB;
 	export let plugins: PluginsInterface;

@@ -23,8 +23,8 @@
 	import { InventoryManagementPage } from "$lib/controllers";
 	import { defaultDialogConfig } from "$lib/components/Melt";
 
-	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import { createInboundNote, getNoteIdSeq } from "$lib/db/note";
+	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/warehouse";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";

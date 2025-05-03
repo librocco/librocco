@@ -2,8 +2,8 @@ import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
 
-import { getNoteById, getNoteEntries } from "$lib/db/cr-sqlite/note";
-import { getPublisherList } from "$lib/db/cr-sqlite/books";
+import { getNoteById, getNoteEntries } from "$lib/db/note";
+import { getPublisherList } from "$lib/db/books";
 
 import { appPath } from "$lib/paths";
 

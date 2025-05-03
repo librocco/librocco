@@ -5,7 +5,7 @@ import { zod } from "sveltekit-superforms/adapters";
 
 import { browser } from "$app/environment";
 
-import { checkUrlConnection } from "$lib/db";
+import { checkUrlConnection } from "$lib/db/config";
 import type { PluginsInterface } from "$lib/plugins";
 
 import { readableFromStream } from "$lib/utils/streams";

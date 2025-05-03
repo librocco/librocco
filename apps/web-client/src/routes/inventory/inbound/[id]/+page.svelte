@@ -42,17 +42,9 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { mergeBookData } from "$lib/utils/misc";
 
-	import {
-		addVolumesToNote,
-		commitNote,
-		deleteNote,
-		getReceiptForNote,
-		removeNoteTxn,
-		updateNote,
-		updateNoteTxn
-	} from "$lib/db/cr-sqlite/note";
-	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
-	import type { NoteEntriesItem } from "$lib/db/cr-sqlite/types";
+	import { addVolumesToNote, commitNote, deleteNote, getReceiptForNote, removeNoteTxn, updateNote, updateNoteTxn } from "$lib/db/note";
+	import { getBookData, upsertBook } from "$lib/db/books";
+	import type { NoteEntriesItem } from "$lib/db/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;

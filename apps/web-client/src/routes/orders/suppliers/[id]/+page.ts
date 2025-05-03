@@ -1,12 +1,12 @@
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
-import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
+import type { PlacedSupplierOrder } from "$lib/db/types";
 
-import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails } from "$lib/db/cr-sqlite/suppliers";
+import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails } from "$lib/db/suppliers";
 
 import { appPath } from "$lib/paths";
-import { getPublisherList } from "$lib/db/cr-sqlite/books";
+import { getPublisherList } from "$lib/db/books";
 
 import { timed } from "$lib/utils/timer";
 

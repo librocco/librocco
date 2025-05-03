@@ -10,7 +10,7 @@
 
 	import type { HistoryView } from "@librocco/shared";
 
-	import type { DB } from "$lib/db/cr-sqlite/types";
+	import type { DB } from "$lib/db/types";
 	import type { PluginsInterface } from "$lib/plugins";
 
 	$: tabs = [

@@ -1,6 +1,6 @@
 import type { BookData } from "@librocco/shared";
 
-import type { ReceiptData } from "$lib/db/cr-sqlite/types";
+import type { ReceiptData } from "$lib/db/types";
 
 const postPrint = <D extends BookData | ReceiptData>(url: string, data: D) => {
 	const body = JSON.stringify(Object.fromEntries(Object.entries(data).map(([k, v]) => [camelToSnake(k), v])));

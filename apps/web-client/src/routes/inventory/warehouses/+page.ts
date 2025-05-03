@@ -1,4 +1,4 @@
-import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
+import { getAllWarehouses } from "$lib/db/warehouse";
 
 import type { PageLoad } from "./$types";
 

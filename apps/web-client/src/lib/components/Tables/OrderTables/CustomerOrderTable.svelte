@@ -6,7 +6,7 @@
 	import BodyHead from "./BodyHead.svelte";
 
 	import type { createTable } from "$lib/actions";
-	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import type { Customer } from "$lib/db/types";
 
 	export let table: ReturnType<typeof createTable<Customer>>;
 	$: ({ rows } = $table);

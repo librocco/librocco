@@ -21,13 +21,13 @@
 
 	import type { PageData } from "./$types";
 
-	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
+	import { getBookData, upsertBook } from "$lib/db/books";
 	import {
 		upsertReconciliationOrderLines,
 		deleteOrderLineFromReconciliationOrder,
 		finalizeReconciliationOrder,
 		deleteReconciliationOrder
-	} from "$lib/db/cr-sqlite/order-reconciliation";
+	} from "$lib/db/order-reconciliation";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 

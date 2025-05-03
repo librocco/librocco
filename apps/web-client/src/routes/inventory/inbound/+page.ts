@@ -1,4 +1,4 @@
-import { getActiveInboundNotes } from "$lib/db/cr-sqlite/note";
+import { getActiveInboundNotes } from "$lib/db/note";
 
 import type { PageLoad } from "./$types";
 

@@ -10,7 +10,7 @@
 
 	import type { PageData } from "./$types";
 
-	import { dbid, syncConfig, syncActive } from "$lib/db";
+	import { dbid, syncConfig, syncActive } from "$lib/db/config";
 
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";

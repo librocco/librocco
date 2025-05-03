@@ -2,10 +2,10 @@ import { redirect } from "@sveltejs/kit";
 import { fromDate, getLocalTimeZone } from "@internationalized/date";
 
 import type { PageLoad } from "./$types";
-import type { PastNoteItem } from "$lib/db/cr-sqlite/types";
+import type { PastNoteItem } from "$lib/db/types";
 
 import { appPath } from "$lib/paths";
-import { getPastNotes } from "$lib/db/cr-sqlite/history";
+import { getPastNotes } from "$lib/db/history";
 
 import { timed } from "$lib/utils/timer";
 

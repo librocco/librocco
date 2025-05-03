@@ -30,8 +30,8 @@
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
-	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import { createInboundNote, getNoteIdSeq } from "$lib/db/note";
+	import { upsertBook } from "$lib/db/books";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;

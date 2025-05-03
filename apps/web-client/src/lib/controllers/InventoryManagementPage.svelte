@@ -6,7 +6,7 @@
 	import { Page } from "$lib/controllers";
 	import { appPath } from "$lib/paths";
 
-	import type { DB } from "$lib/db/cr-sqlite/types";
+	import type { DB } from "$lib/db/types";
 	import type { PluginsInterface } from "$lib/plugins";
 
 	$: tabs = [

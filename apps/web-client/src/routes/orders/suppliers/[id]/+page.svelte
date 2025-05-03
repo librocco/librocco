@@ -9,17 +9,17 @@
 
 	import { stripNulls } from "@librocco/shared";
 
-	import type { Supplier } from "$lib/db/cr-sqlite/types";
+	import type { Supplier } from "$lib/db/types";
 	import type { PageData } from "./$types";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import { Page } from "$lib/controllers";
 
 	import { supplierSchema } from "$lib/forms/schemas";
-	import { upsertSupplier, associatePublisher, removePublisherFromSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import { upsertSupplier, associatePublisher, removePublisherFromSupplier } from "$lib/db/suppliers";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
 	import { racefreeGoto } from "$lib/utils/navigation";
-	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+	import { createReconciliationOrder } from "$lib/db/order-reconciliation";
 	import { appPath } from "$lib/paths";
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 	import LL from "@librocco/shared/i18n-svelte";

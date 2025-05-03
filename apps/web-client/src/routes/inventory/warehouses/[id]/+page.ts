@@ -1,10 +1,10 @@
-import { getStock } from "$lib/db/cr-sqlite/stock";
-import { getWarehouseById } from "$lib/db/cr-sqlite/warehouse";
+import { getStock } from "$lib/db/stock";
+import { getWarehouseById } from "$lib/db/warehouse";
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
 
-import { getPublisherList } from "$lib/db/cr-sqlite/books";
+import { getPublisherList } from "$lib/db/books";
 
 import { appPath } from "$lib/paths";
 
