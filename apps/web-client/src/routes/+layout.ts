@@ -6,7 +6,7 @@ import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
 import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
 
-import { dbid } from "$lib/db";
+import { dbid } from "$lib/db/config";
 import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";

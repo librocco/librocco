@@ -18,7 +18,7 @@
 	import { Sidebar } from "$lib/components";
 
 	import { IS_DEBUG, IS_E2E } from "$lib/constants";
-	import { sync, syncConfig, syncActive } from "$lib/db";
+	import { sync, syncConfig, syncActive } from "$lib/db/config";
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 
 	import * as books from "$lib/db/cr-sqlite/books";

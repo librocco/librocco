@@ -7,7 +7,7 @@ import type { PageLoad } from "./$types";
 import { deviceSettingsStore } from "$lib/stores/app";
 import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 
-import { syncConfig } from "$lib/db";
+import { syncConfig } from "$lib/db/config";
 
 import { timed } from "$lib/utils/timer";
 
