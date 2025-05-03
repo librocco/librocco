@@ -229,9 +229,12 @@ export type VolumeStock = {
 	warehouseId?: number;
 };
 
-export type NoteEntriesItem = VolumeStock & { warehouseName?: string; warehouseDiscount: number; updatedAt?: Date } & Required<
-		Omit<BookData, "updatedAt">
-	>;
+export type NoteEntriesItem = VolumeStock & {
+	warehouseName?: string;
+	warehouseDiscount: number;
+	updatedAt?: Date;
+	committedAt?: Date;
+} & Required<Omit<BookData, "updatedAt">>;
 
 export type NoteCustomItem = { id: number; title: string; price: number; updatedAt?: Date };
 

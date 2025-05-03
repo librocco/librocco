@@ -105,29 +105,42 @@ describe("Inbound note tests", () => {
 		]);
 	});
 
-	it("commits an inbound note", async () => {
+	it("commits an inbound note (updating committed_at for both the note and all associated book transactions)", async () => {
 		const db = await getRandomDb();
 
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 2" });
 
-		let note = await getNoteById(db, 1);
-		expect(note).toEqual(
-			expect.objectContaining({
-				committed: false,
-				committedAt: undefined
-			})
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 1 });
+
+		// No committed state on the note
+		expect(await getNoteById(db, 1)).toEqual(expect.objectContaining({ committed: false, committedAt: undefined }));
+		// No committed state on the txns
+		// NOTE: Array containing as we're not testing for order exhaustiveness and so (that should be tested elsewhere)
+		expect(await getNoteEntries(db, 1)).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1111111111", committedAt: undefined }),
+				expect.objectContaining({ isbn: "2222222222", committedAt: undefined })
+			])
 		);
 
 		await commitNote(db, 1);
 
-		note = await getNoteById(db, 1);
-		expect(note).toEqual(
-			expect.objectContaining({
-				committed: true,
-				committedAt: expect.any(Date)
-			})
+		// Committed state reflected in the note
+		const committedNote = await getNoteById(db, 1);
+		const committedEntries = await getNoteEntries(db, 1);
+
+		expect(committedNote).toEqual(expect.objectContaining({ committed: true, committedAt: expect.any(Date) }));
+		expect(committedEntries).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1111111111", committedAt: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2222222222", committedAt: expect.any(Date) })
+			])
 		);
+		expect(committedEntries[0].committedAt).toEqual(committedNote.committedAt);
+		expect(committedEntries[1].committedAt).toEqual(committedNote.committedAt);
 	});
 
 	it("doesn't allow committing of a note more than once (keeping the committed_at consistent)", async () => {
@@ -437,28 +450,40 @@ describe("Outbound note tests", () => {
 		]);
 	});
 
-	it("commits an outbound note", async () => {
+	it("commits an outbound note (updating committed_at for both the note and all associated book transactions)", async () => {
 		const db = await getRandomDb();
 
 		await createOutboundNote(db, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 2 });
 
-		let note = await getNoteById(db, 1);
-		expect(note).toEqual(
-			expect.objectContaining({
-				committed: false,
-				committedAt: undefined
-			})
+		// No committed state on the note
+		expect(await getNoteById(db, 1)).toEqual(expect.objectContaining({ committed: false, committedAt: undefined }));
+		// No committed state on the txns
+		// NOTE: Array containing as we're not testing for order exhaustiveness and so (that should be tested elsewhere)
+		expect(await getNoteEntries(db, 1)).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1111111111", committedAt: undefined }),
+				expect.objectContaining({ isbn: "2222222222", committedAt: undefined })
+			])
 		);
 
-		await commitNote(db, 1);
+		// NOTE: force = true - to avoid pre-commit (out-of-stock) checks
+		await commitNote(db, 1, { force: true });
 
-		note = await getNoteById(db, 1);
-		expect(note).toEqual(
-			expect.objectContaining({
-				committed: true,
-				committedAt: expect.any(Date)
-			})
+		// Committed state reflected in the note
+		const committedNote = await getNoteById(db, 1);
+		const committedEntries = await getNoteEntries(db, 1);
+
+		expect(committedNote).toEqual(expect.objectContaining({ committed: true, committedAt: expect.any(Date) }));
+		expect(committedEntries).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1111111111", committedAt: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2222222222", committedAt: expect.any(Date) })
+			])
 		);
+		expect(committedEntries[0].committedAt).toEqual(committedNote.committedAt);
+		expect(committedEntries[1].committedAt).toEqual(committedNote.committedAt);
 	});
 
 	it("doesn't allow for committing of a note if not all warehouse ids are assigned", async () => {
@@ -1336,6 +1361,8 @@ describe("Reconciliation note", () => {
 		await createAndCommitReconciliationNote(db, 1, volumes);
 
 		const note = await getNoteById(db, 1);
+		const entries = await getNoteEntries(db, 1);
+
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
@@ -1348,27 +1375,15 @@ describe("Reconciliation note", () => {
 		);
 		expect(note.committedAt).toEqual(note.updatedAt);
 		expect(note.displayName).toEqual(`Reconciliation note: ${note.committedAt.toISOString()}`);
-
 		const { committedAt } = note;
 
-		// TODO: this is tested somewhat explicitly for now, when we add stock functionality, test (implicitly) for stock state
-		const transactionsQuery = "SELECT isbn, quantity, warehouse_id, committed_at, updated_at FROM book_transaction WHERE note_id = 1";
-		const transactions = await db
-			.execO<{ isbn: string; quantity: number; warehouseId: number; updated_at: number; committed_at: number }>(transactionsQuery)
-			.then((x) =>
-				x.map(({ committed_at, updated_at, ...item }) => ({
-					...item,
-					committedAt: new Date(committed_at),
-					updatedAt: new Date(updated_at)
-				}))
-			);
-		expect(transactions).toEqual([
-			{ isbn: "1234567890", quantity: 5, warehouse_id: 1, committedAt, updatedAt: committedAt },
-			{ isbn: "0987654321", quantity: 10, warehouse_id: 2, committedAt, updatedAt: committedAt }
-		]);
-
-		// Check for updated_at consistency
-		expect(note.updatedAt).toEqual(note.committedAt);
+		// NOTE: Array containing as we're not testing for order exhaustiveness and so (that should be tested elsewhere)
+		expect(entries).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1234567890", quantity: 5, warehouseId: 1, committedAt, updatedAt: committedAt }),
+				expect.objectContaining({ isbn: "0987654321", quantity: 10, warehouseId: 2, committedAt, updatedAt: committedAt })
+			])
+		);
 	});
 
 	it("integration: reconciles the entries necessary for an outbound note to be committed", async () => {
