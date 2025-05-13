@@ -15,6 +15,7 @@ CREATE TABLE customer (
 	display_id TEXT,
 	fullname TEXT,
 	email TEXT,
+	phone TEXT,
 	deposit DECIMAL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id)
@@ -186,4 +187,3 @@ CREATE TABLE custom_item (
 );
 CREATE INDEX idx_custom_item_note_id ON custom_item(note_id);
 SELECT crsql_as_crr('custom_item');
-
