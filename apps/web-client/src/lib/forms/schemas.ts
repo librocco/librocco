@@ -76,7 +76,9 @@ export const createCustomerOrderSchema = (kind: "create" | "update") => {
 		displayId,
 		fullname: z.string().min(1),
 		email: z.string().max(0).optional().or(z.string().email()),
-		deposit: z.number().default(0)
+		deposit: z.number().default(0),
+		phone1: z.string().optional(),
+		phone2: z.string().optional()
 	});
 };
 
