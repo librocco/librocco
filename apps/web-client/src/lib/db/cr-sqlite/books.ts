@@ -76,6 +76,11 @@ async function _upsertBook(db: DB, book: BookData) {
 }
 
 async function _getMultipleBookData(db: DB, ...isbns: string[]): Promise<Array<Required<BookData> & { updatedAt: Date | null }>> {
+	// Supporting this case as there might be a request for empty entries list (as this depends on warehouse/note entries)
+	if (!isbns.length) {
+		return [];
+	}
+
 	const placeholders = isbns.map((_, i) => `(?, ${i})`).join(",\n");
 	const query = `
 		WITH input_list(isbn, ord) AS (
@@ -101,10 +106,6 @@ async function _getMultipleBookData(db: DB, ...isbns: string[]): Promise<Array<R
 	`;
 
 	const res = await db.execO<RawBookRes>(query, isbns);
-	if (!res) {
-		return undefined;
-	}
-
 	return res.map(processRawBookRes);
 }
 
