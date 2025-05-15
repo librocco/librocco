@@ -109,3 +109,67 @@ export const getPeerDBVersion = async (db: DB, siteId: Uint8Array): Promise<bigi
 	const version = (await db.execA(`SELECT max(db_version) FROM crsql_changes WHERE site_id = ?`, [siteId]))[0][0];
 	return version ? BigInt(version) : BigInt(0);
 };
+
+/**
+ * Promisified version of the `indexedDB.open`
+ */
+function openIndexedDB(dbName: string) {
+	return new Promise<IDBDatabase>((resolve, reject) => {
+		const req = indexedDB.open(dbName);
+
+		req.onerror = () => {
+			reject(new Error(`Failed to open database '${dbName}': ${req.error}`));
+		};
+
+		req.onsuccess = () => {
+			resolve(req.result);
+		};
+	});
+}
+
+/**
+ * Takes an indexed DB file handle and clears all data in it.
+ * We're using this to "delete" the database.
+ *
+ * NOTE: It doesn't actually delete the database itself, but rather clears all the data (leaving the empty DB)
+ * as the former produced some problems flakiness.
+ */
+function clearIndexedDB(db: IDBDatabase) {
+	return new Promise<void>((resolve, reject) => {
+		const transaction = db.transaction(db.objectStoreNames, "readwrite");
+
+		transaction.oncomplete = () => {
+			db.close();
+			resolve();
+		};
+
+		transaction.onerror = () => {
+			db.close();
+			reject(new Error(`Failed to clear data: ${transaction.error}`));
+		};
+
+		for (const storeName of db.objectStoreNames) {
+			transaction.objectStore(storeName).clear();
+		}
+	});
+}
+
+/**
+ * Clears the current cr-sqlite DB (in IndexedDB)
+ *
+ * NOTE: It doesn't actually delete the database itself, but rather clears all the data (leaving the empty DB)
+ * as the former produced some problems flakiness.
+ *
+ * NOTE: Currently it clears all data for the DB - this deletes all DBs created using the current cr-sqlite stack
+ * (e.g. we could have multiple DBs "dev", "foo", "bar-122", etc. created by cr-sqlite and all stored in "idb-batch-atomic" - this will delete them all)
+ * TODO: Implement a more fine-grained approach - delete only the chunks associated with a particular DB name, e.g. "dev"
+ */
+export async function clearDb() {
+	const dbName = "idb-batch-atomic";
+
+	const db = await openIndexedDB(dbName);
+	await clearIndexedDB(db);
+
+	// TODO: This is a bit inconsistent -- maybe clear only the "dev" db
+	delete dbCache["dev"];
+}

@@ -22,6 +22,7 @@
 	import { invalidateAll } from "$app/navigation";
 	import { deviceSettingsStore } from "$lib/stores/app";
 	import { LL } from "@librocco/shared/i18n-svelte";
+	import { clearDb } from "$lib/db/cr-sqlite/db";
 
 	export let data: PageData;
 
@@ -148,6 +149,20 @@
 	let deleteDatabase = { name: "" };
 
 	let dialogContent: (DialogContent & { type: "create" | "delete" }) | null = null;
+
+	const nukeAndResyncDB = async () => {
+		// Stop the ongoing sync
+		syncActive.set(false);
+
+		// Clear all the data in CR-SQLite IndexedDB
+		await clearDb();
+
+		// Invalidate all - reinitialise the DB
+		await invalidateAll();
+
+		// Reset the sync
+		syncActive.set(true);
+	};
 </script>
 
 <Page title="Settings" view="settings" {db} {plugins}>
@@ -263,6 +278,7 @@
 					</ul>
 
 					<div class="flex justify-end gap-x-2 px-4 py-6">
+						<button on:click={nukeAndResyncDB} type="button" class="btn-secondary btn"> Nuke and resync </button>
 						<button on:click={toggleImport} type="button" class="btn-secondary btn">
 							{importOn ? "Cancel" : "Import"}
 						</button>
