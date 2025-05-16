@@ -1,13 +1,12 @@
 <script lang="ts">
 	import { ClockArrowUp, Scan } from "lucide-svelte";
 
-	import { base } from "$app/paths";
 	import { goto } from "$lib/utils/navigation";
 	import type { ReconciliationOrder } from "$lib/db/cr-sqlite/types";
-	import { appPath } from "$lib/paths";
+	import { appHash } from "$lib/paths";
 
 	function handleUpdateOrder(reconciliationOrderId: number) {
-		goto(`${base}/orders/suppliers/reconcile/${reconciliationOrderId}`);
+		goto(appHash("reconcile", reconciliationOrderId));
 	}
 	export let orders: Array<ReconciliationOrder>;
 </script>
@@ -30,7 +29,7 @@
 					<!-- @TODO replace with supplierOrderIds parse array??? -->
 					<td>
 						{#each supplierOrderIds as supplier_id}
-							<a class="hover:underline" href={appPath("supplier_orders", supplier_id)}>#{supplier_id} </a>
+							<a class="hover:underline" href={appHash("supplier_orders", supplier_id)}>#{supplier_id} </a>
 						{/each}
 					</td>
 					<td>
