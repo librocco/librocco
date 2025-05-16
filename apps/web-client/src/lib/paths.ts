@@ -1,29 +1,29 @@
 import { base } from "$app/paths";
 
-const basepath = `${base}`;
-
-const PATHS = {
-	debug: `${basepath}/debug`,
+const HASHES = {
+	debug: "#/debug/",
 	// Inventory mgmt
-	stock: `${basepath}/stock/`,
-	books: `${basepath}/books/`,
-	warehouses: `${basepath}/inventory/warehouses/`,
-	inventory: `${basepath}/inventory/`,
-	inbound: `${basepath}/inventory/inbound/`,
-	outbound: `${basepath}/outbound/`,
-	settings: `${basepath}/settings/`,
-	"history/date": `${basepath}/history/date/`,
-	"history/isbn": `${basepath}/history/isbn/`,
-	"history/notes/date": `${basepath}/history/notes/`,
-	"history/notes/archive": `${basepath}/history/notes/archive`,
-	"history/warehouse": `${basepath}/history/warehouse/`,
+	stock: "#/stock/",
+	books: "#/books/",
+	warehouses: "#/inventory/warehouses/",
+	inventory: "#/inventory/",
+	inbound: "#/inventory/inbound/",
+	outbound: "#/outbound/",
+	settings: "#/settings/",
+	"history/date": "#/history/date/",
+	"history/isbn": "#/history/isbn/",
+	"history/notes/date": "#/history/notes/",
+	"history/notes/archive": "#/history/notes/archive",
+	"history/warehouse": "#/history/warehouse/",
 
 	// Order mgmt
-	customers: `${basepath}/orders/customers/`,
-	suppliers: `${basepath}/orders/suppliers/`,
-	supplier_orders: `${basepath}/orders/suppliers/orders/`,
-	reconcile: `${basepath}/orders/suppliers/reconcile/`
+	customers: "#/orders/customers/",
+	suppliers: "#/orders/suppliers/",
+	supplier_orders: "#/orders/suppliers/orders/",
+	reconcile: "#/orders/suppliers/reconcile/"
 };
+
+const PATHS: { [key: string]: string } = Object.fromEntries(Object.entries(HASHES).map(([key, hash]) => [key, `${base}/${hash}`]));
 
 /**
  * We're using this util to construct app paths. This is preferable to using constants as it
@@ -38,4 +38,8 @@ const PATHS = {
  */
 export const appPath = (location: keyof typeof PATHS, ...segments: (number | string)[]) => {
 	return [PATHS[location], ...segments].join("/").concat("/").replaceAll(/\/\/+/g, "/");
+};
+
+export const appHash = (location: keyof typeof HASHES, ...segments: (number | string)[]) => {
+	return [HASHES[location], ...segments].join("/").concat("/").replaceAll(/\/\/+/g, "/");
 };

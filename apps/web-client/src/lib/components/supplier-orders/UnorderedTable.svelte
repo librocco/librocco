@@ -9,9 +9,10 @@
 
 	import { base } from "$app/paths";
 	import { goto } from "$lib/utils/navigation";
+	import { appHash } from "$lib/paths";
 
 	function handlePlaceOrder(supplierId: number) {
-		goto(`${base}/orders/suppliers/${supplierId}/new-order`);
+		goto(appHash("suppliers", supplierId, "new-order"));
 	}
 </script>
 

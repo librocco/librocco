@@ -21,6 +21,4 @@ const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
 	return { suppliers };
 };
 
-export const ssr = false;
-
 export const load: PageLoad = timed(_load);
