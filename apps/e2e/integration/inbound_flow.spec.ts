@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { baseURL } from "@/constants";
+import { appHash } from "@/constants";
 import { assertionTimeout } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
@@ -9,22 +9,12 @@ import { addVolumesToNote, createInboundNote, updateNote, upsertBook, upsertWare
 import { book1 } from "@/integration/data";
 
 test.beforeEach(async ({ page }) => {
-	// Load the app
-	await page.goto(baseURL);
+	// Navigate to the inventory page
+	await page.goto(appHash("warehouses"));
 
 	// Create a warehouse to work with (as all inbound notes are namespaced to warehouses)
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
-
-	const dashboard = getDashboard(page);
-	await dashboard.waitFor();
-
-	// Navigate to the inventory page
-	await page.getByRole("link", { name: "Manage inventory" }).click();
-
-	// Wait for the view to load (warehouse list is the default sub-view)
-	const warehouseList = dashboard.content().entityList("warehouse-list");
-	await warehouseList.waitFor();
 });
 
 test('should create a new inbound note, under the particular warehouse, on warehouse row -> "New Purchase" click and redirect to it', async ({

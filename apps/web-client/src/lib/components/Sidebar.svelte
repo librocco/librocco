@@ -17,7 +17,7 @@
 
 	import { LL } from "@librocco/shared/i18n-svelte";
 
-	import { appPath } from "$lib/paths";
+	import { appHash } from "$lib/paths";
 
 	import { page } from "$app/stores";
 
@@ -33,42 +33,42 @@
 	$: links = [
 		{
 			label: tNav.search(),
-			href: appPath("stock"),
+			href: appHash("stock"),
 			icon: Search
 		},
 		{
 			label: tNav.books(),
-			href: appPath("books"),
+			href: appHash("books"),
 			icon: Book
 		},
 		{
 			label: tNav.inventory(),
-			href: appPath("inventory"),
+			href: appHash("inventory"),
 			icon: Library
 		},
 		{
 			label: tNav.sale(),
-			href: appPath("outbound"),
+			href: appHash("outbound"),
 			icon: PackageMinus
 		},
 		{
 			label: tNav.settings(),
-			href: appPath("settings"),
+			href: appHash("settings"),
 			icon: Settings
 		},
 		{
 			label: tNav.history(),
-			href: appPath("history/date"),
+			href: appHash("history/date"),
 			icon: CalendarClock
 		},
 		{
 			label: "Customers",
-			href: appPath("customers"),
+			href: appHash("customers"),
 			icon: PersonStanding
 		},
 		{
 			label: tNav.supplier_orders(),
-			href: appPath("supplier_orders"),
+			href: appHash("supplier_orders"),
 			icon: Truck
 		}
 	];
@@ -87,9 +87,8 @@
 		<ul class="menu gap-y-1">
 			{#each links as { label, icon, href }}
 				<li>
-					<a {href} class={$page.url.pathname === href ? "active" : ""}>
+					<a {href} class={$page.url.hash.startsWith(href) ? "active" : ""}>
 						<svelte:component this={icon} size={24} />
-
 						{label}
 					</a>
 				</li>
