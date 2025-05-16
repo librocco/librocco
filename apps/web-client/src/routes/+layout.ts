@@ -1,4 +1,5 @@
 import { get } from "svelte/store";
+import { redirect } from "@sveltejs/kit";
 import { navigatorDetector } from "typesafe-i18n/detectors";
 
 import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
@@ -8,12 +9,13 @@ import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
 import { dbid } from "$lib/db";
 import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
-import { base } from "$app/paths";
+import { base} from "$app/paths";
 
 import { loadLocaleAsync } from "@librocco/shared/i18n-util.async";
 import { setLocale } from "@librocco/shared/i18n-svelte";
 import { detectLocale } from "@librocco/shared/i18n-util";
 
+import { appPath } from "$lib/paths";
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
@@ -25,9 +27,7 @@ export const load: LayoutLoad = async ({ url }) => {
 	const { pathname, hash } = url;
 
 	if (redirectPaths.includes(pathname) && !hash) {
-		if (browser) {
-			window.location.hash = "#/stock";
-		}
+		redirect(307, appPath("stock"));
 	}
 
 	// Check for navigator locale or fallback to default defined on the server
