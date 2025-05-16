@@ -34,6 +34,4 @@ const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
 	return { possibleOrders, placedOrders, reconcilingOrders, completedOrders };
 };
 
-export const ssr = false;
-
 export const load: PageLoad = timed(_load);
