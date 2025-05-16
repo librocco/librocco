@@ -22,7 +22,7 @@
 		}
 	];
 
-	$: activeTab = tabs.find(({ href }) => $page.url.pathname.startsWith(href));
+	$: activeTab = tabs.find(({ href }) => `${$page.url.pathname}${$page.url.hash}`.startsWith(href));
 
 	export let db: DB;
 	export let plugins: PluginsInterface;

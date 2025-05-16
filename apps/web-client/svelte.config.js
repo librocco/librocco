@@ -19,6 +19,9 @@ const config = {
 			register: false
 		},
 		adapter: adapter(),
+		router: {
+			type: "hash"
+		},
 		prerender: {
 			// Note: the '...path/1/' is a workaround for prebuilding the skeleton for all
 			// pages that will, in the browser have a param (in place of the 1), used to render dynamic data.

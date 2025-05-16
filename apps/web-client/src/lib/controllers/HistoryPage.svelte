@@ -49,7 +49,7 @@
 	<div slot="main" class="flex h-full w-full flex-col">
 		<div class="tabs tabs-bordered w-full py-4">
 			{#each tabs as { label, icon, href }}
-				{@const active = $page.url.pathname.startsWith(href)}
+				{@const active = `${$page.url.pathname}${$page.url.hash}`.startsWith(href)}
 
 				<a {href} class="tab gap-x-2 {active ? 'tab-active' : ''}">
 					<svelte:component this={icon} size={20} />

@@ -1,6 +1,6 @@
 import { base } from "$app/paths";
 
-const basepath = `${base}`;
+const basepath = `${base}/#`;
 
 const PATHS = {
 	debug: `${basepath}/debug`,

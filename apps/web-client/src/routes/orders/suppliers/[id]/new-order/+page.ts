@@ -32,6 +32,4 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	return { orderLines };
 };
 
-export const ssr = false;
-
 export const load: PageLoad = timed(_load);
