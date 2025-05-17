@@ -7,6 +7,7 @@ import rxtbl from "@vlcn.io/rx-tbl";
 import schema from "$lib/schemas/init?raw";
 
 import { type DB, type Change } from "./types";
+import { idbPromise, idbTxn } from "../indexeddb";
 
 export type DbCtx = { db: DB; rx: ReturnType<typeof rxtbl> };
 
@@ -46,32 +47,89 @@ export async function initializeDB(db: DB) {
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
 }
 
+export class ErrDBCorrupted extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "ErrDBCorrupted";
+	}
+}
+
+type ErrDBSchemaMismatchPayload = { wantName: string; wantVersion: bigint; gotName: string; gotVersion: bigint };
+export class ErrDBSchemaMismatch extends Error {
+	wantName: string;
+	wantVersion: bigint;
+
+	gotName: string;
+	gotVersion: bigint;
+
+	constructor({ wantName, wantVersion, gotName, gotVersion }: ErrDBSchemaMismatchPayload) {
+		const message = [
+			"DB name/schema mismatch:",
+			`  req name: ${wantName}, got name: ${gotName}`,
+			`  req version: ${wantVersion}, got version: ${gotVersion}`
+		].join("\n");
+
+		super(message);
+
+		this.name = "ErrDBSchemaMismatch";
+
+		this.wantName = wantName;
+		this.wantVersion = wantVersion;
+
+		this.gotName = gotName;
+		this.gotVersion = gotVersion;
+	}
+}
+
+/**
+ * An intermediate function that checks for different (potentially bad) DB states:
+ * - throws error(s) if need be
+ * - initialises the DB if not initialised
+ */
+const checkAndInitializeDB = async (db: _DB) => {
+	// Integrity check
+	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
+	if (res !== "ok") {
+		throw new ErrDBCorrupted(res);
+	}
+
+	// Check if DB initialized
+	const schemaRes = await getSchemaNameAndVersion(db);
+	if (!schemaRes) {
+		await initializeDB(db);
+		return db;
+	}
+
+	// Check schema name/version
+	const [name, version] = schemaRes;
+	if (name !== schemaName || version !== schemaVersion) {
+		throw new ErrDBSchemaMismatch({ wantName: schemaName, wantVersion: schemaVersion, gotName: name, gotVersion: version });
+	}
+
+	return db;
+};
+
 export const getInitializedDB = async (dbname: string): Promise<DbCtx> => {
+	// NOTE: DB Cache holds promises to prevent multiple initialisation attemtps:
+	// - if initialization needed - cache the request (promise) immediately
+	// - if cache exists, return the promise (which may or may not be resolved yet)
+
 	if (dbCache[dbname]) {
 		return await dbCache[dbname];
 	}
 
-	return await (dbCache[dbname] = getDB(dbname)
-		.then((db) => getSchemaNameAndVersion(db).then((schemaRes) => [db, schemaRes] as const))
-		.then(([db, schemaRes]) => {
-			if (!schemaRes) {
-				return initializeDB(db).then(() => db);
-			} else {
-				// Check if schema name/version match
-				const [name, version] = schemaRes;
-				if (name !== schemaName || version !== schemaVersion) {
-					// TODO: We're throwing an error here on mismatch. Should probably be handled in a more delicate manner.
-					const msg = [
-						"DB name/schema mismatch:",
-						`  req name: ${schemaName}, got name: ${name}`,
-						`  req version: ${schemaVersion}, got version: ${version}`
-					].join("\n");
-					throw new Error(msg);
-				}
-				return db;
-			}
-		})
-		.then((db) => ({ db, rx: rxtbl(db) })));
+	try {
+		// Register the request (promise) immediately, to prevent multiple init requests
+		// at the same time
+		return await (dbCache[dbname] = getDB(dbname)
+			.then(checkAndInitializeDB)
+			.then((db) => ({ db, rx: rxtbl(db) })));
+	} catch (err) {
+		// If the request fails, however, (invalid DB state)
+		// remove the cached promise so that we rerun the reqiuest on error fix + invalidateAll
+		delete dbCache[dbname];
+		throw err;
+	}
 };
 
 export const getChanges = (db: DB, since: bigint | null = BigInt(0)): Promise<Change[]> => {
@@ -111,50 +169,6 @@ export const getPeerDBVersion = async (db: DB, siteId: Uint8Array): Promise<bigi
 };
 
 /**
- * Promisified version of the `indexedDB.open`
- */
-function openIndexedDB(dbName: string) {
-	return new Promise<IDBDatabase>((resolve, reject) => {
-		const req = indexedDB.open(dbName);
-
-		req.onerror = () => {
-			reject(new Error(`Failed to open database '${dbName}': ${req.error}`));
-		};
-
-		req.onsuccess = () => {
-			resolve(req.result);
-		};
-	});
-}
-
-/**
- * Takes an indexed DB file handle and clears all data in it.
- * We're using this to "delete" the database.
- *
- * NOTE: It doesn't actually delete the database itself, but rather clears all the data (leaving the empty DB)
- * as the former produced some problems flakiness.
- */
-function clearIndexedDB(db: IDBDatabase) {
-	return new Promise<void>((resolve, reject) => {
-		const transaction = db.transaction(db.objectStoreNames, "readwrite");
-
-		transaction.oncomplete = () => {
-			db.close();
-			resolve();
-		};
-
-		transaction.onerror = () => {
-			db.close();
-			reject(new Error(`Failed to clear data: ${transaction.error}`));
-		};
-
-		for (const storeName of db.objectStoreNames) {
-			transaction.objectStore(storeName).clear();
-		}
-	});
-}
-
-/**
  * Clears the current cr-sqlite DB (in IndexedDB)
  *
  * NOTE: It doesn't actually delete the database itself, but rather clears all the data (leaving the empty DB)
@@ -167,8 +181,13 @@ function clearIndexedDB(db: IDBDatabase) {
 export async function clearDb() {
 	const dbName = "idb-batch-atomic";
 
-	const db = await openIndexedDB(dbName);
-	await clearIndexedDB(db);
+	const db = await idbPromise(indexedDB.open(dbName));
+	await idbTxn(db.transaction(db.objectStoreNames, "readwrite"), async (txn) => {
+		for (const storeName of db.objectStoreNames) {
+			await idbPromise(txn.objectStore(storeName).clear());
+		}
+	});
+	db.close();
 
 	// TODO: This is a bit inconsistent -- maybe clear only the "dev" db
 	delete dbCache["dev"];
