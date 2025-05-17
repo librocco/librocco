@@ -11,16 +11,21 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Menu } from "lucide-svelte";
 
-	import { afterNavigate } from "$app/navigation";
+	import { afterNavigate, invalidateAll } from "$app/navigation";
 	import { browser } from "$app/environment";
+	import { beforeNavigate } from "$app/navigation";
+
+	import type { LayoutData } from "./$types";
+
+	import { IS_DEBUG, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
-	import { IS_DEBUG, IS_E2E } from "$lib/constants";
-	import { sync, syncConfig, syncActive, newSyncProgressStore } from "$lib/db";
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
+	import { sync, syncConfig, syncActive, dbid, newSyncProgressStore } from "$lib/db";
+	import { clearDb, ErrDBSchemaMismatch, getDB } from "$lib/db/cr-sqlite/db";
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
 	import * as note from "$lib/db/cr-sqlite/note";
@@ -29,14 +34,13 @@
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
-	import { beforeNavigate } from "$app/navigation";
 
-	import type { LayoutData } from "./$types";
 	import type { SyncProgress } from "$lib/workers/sync-transport-control";
 
 	export let data: LayoutData;
 
-	const { dbCtx } = data;
+	$: dbCtx = data.dbCtx;
+	$: error = data.error;
 
 	beforeNavigate(({ to }) => {
 		if (IS_DEBUG || IS_E2E) {
@@ -184,6 +188,42 @@
 			node?.style.setProperty("width", `${value * 100}%`);
 		});
 	}
+
+	const {
+		elements: {
+			overlay: errorDialogOverlay,
+			content: errorDialogContent,
+			portalled: errorDialogPortalled,
+			title: errorDialogTitle,
+			description: errorDialogDescription
+		},
+		states: { open: errorDialogOpen }
+	} = createDialog({
+		forceVisible: true
+	});
+
+	$: $errorDialogOpen = Boolean(error);
+
+	const nukeDB = async () => {
+		// Stop the ongoing sync
+		sync.stop();
+		syncActive.set(false);
+
+		// Clear all the data in CR-SQLite IndexedDB
+		await clearDb();
+
+		// Invalidate all - reinitialise the DB
+		await invalidateAll();
+	};
+
+	const forceDBVersion = (wantVersion: bigint) => async () => {
+		// We need to retrieve the DB directly, as the broken DB won't be passed down from the load function
+		const db = await getDB($dbid);
+		await db.exec("UPDATE crsql_master SET value = ? WHERE key = 'schema_version'", [wantVersion]);
+
+		// Invalidate all - reinitialise the DB
+		await invalidateAll();
+	};
 </script>
 
 <div class="flex h-full bg-base-200 lg:divide-x lg:divide-base-content">
@@ -259,6 +299,55 @@
 					</p>
 					<!-- TODO: try and make the sync stop on unload (to avoid broken DB) -->
 				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if $errorDialogOpen}
+	<div use:melt={$errorDialogPortalled}>
+		<div use:melt={$errorDialogOverlay} class="fixed inset-0 z-[100] bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+
+		<div
+			class="fixed left-1/2 top-1/2 z-[200] max-h-screen w-full translate-x-[-50%] translate-y-[-50%] overflow-y-auto px-4 md:max-w-md md:px-0"
+			transition:fade={{ duration: 250 }}
+			use:melt={$errorDialogContent}
+		>
+			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
+				{#if error.name === ErrDBSchemaMismatch.name}
+					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">Error: DB Schema mismatch</h2>
+
+					<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
+						<span class="mb-2 block">An update to your schema seems to have happened and the version doesn't match the current version</span
+						>
+						<span class="ml-4 block">Current schema version: {(error as ErrDBSchemaMismatch).wantVersion}</span>
+						<span class="ml-4 block">Your DB schema version: {(error as ErrDBSchemaMismatch).gotVersion}</span>
+						<span class="mt-2 mb-4 block"
+							>If you think the update is a minor one and the mismatch won't break the functionality, click below to force the current
+							version</span
+						>
+					</p>
+
+					<div class="w-full text-end">
+						<button on:click={forceDBVersion((error as ErrDBSchemaMismatch).wantVersion)} type="button" class="btn-secondary btn"
+							>Force DB version</button
+						>
+					</div>
+				{:else}
+					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">Error: DB corrupted</h2>
+
+					<p class="mb-2 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
+						<span class="mb-2 block">The only way to use the app seems to be to delete it and start fresh.</span>
+						<span class="mb-4 block">
+							Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page
+							(after reinitialisation)
+						</span>
+					</p>
+
+					<div class="w-full text-end">
+						<button on:click={nukeDB} type="button" class="btn-secondary btn">Click to delete the DB</button>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
