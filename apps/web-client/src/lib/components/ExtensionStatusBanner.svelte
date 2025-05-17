@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PluginsInterface } from "$lib/plugins";
 	import { createDBConnectivityStore, createExtensionAvailabilityStore } from "$lib/stores";
+	import { busy } from "$lib/db/cr-sqlite/activity-monitor";
 
 	export let plugins: PluginsInterface;
 
@@ -17,5 +18,9 @@
 	<div class="badge-content badge-outline badge badge-md gap-x-2">
 		<div class="block h-3 w-3 rounded-full align-baseline {$dbConnectivity ? 'bg-success' : 'bg-error'}"></div>
 		<p class="leading-none">Remote DB</p>
+	</div>
+	<div class="badge-content badge-outline badge badge-md gap-x-2">
+		<div class="block h-3 w-3 rounded-full align-baseline {$busy ? 'bg-success' : 'bg-error'}"></div>
+		<p class="leading-none">DB Busy</p>
 	</div>
 </div>
