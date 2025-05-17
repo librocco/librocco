@@ -19,6 +19,7 @@
 
 	import { IS_DEBUG, IS_E2E } from "$lib/constants";
 	import { sync, syncConfig, syncActive } from "$lib/db";
+	import * as dbActivityMonitor from "$lib/db/cr-sqlite/activity-monitor";
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 
 	import * as books from "$lib/db/cr-sqlite/books";
@@ -100,6 +101,9 @@
 			window["timeLogger"] = timeLogger;
 		}
 
+		// Prevent unload if DB busy
+		dbActivityMonitor.preventUnloadIfBusy();
+
 		// Start the sync worker
 		//
 		// Init worker and sync interface
@@ -118,6 +122,11 @@
 	});
 
 	onDestroy(() => {
+		// Stop the activity monitor
+		dbActivityMonitor.stop();
+		dbActivityMonitor.preventUnloadIfBusyStop();
+
+		// Stop the sync (if active)
 		sync.stop(); // Safe and idempotent
 
 		availabilitySubscription?.unsubscribe();
