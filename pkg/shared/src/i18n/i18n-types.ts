@@ -1101,6 +1101,10 @@ type RootTranslation = {
 			 * S​u​p​p​l​i​e​r​ ​e​m​a​i​l
 			 */
 			supplier_email: string
+			/**
+			 * S​u​p​p​l​i​e​r​ ​c​u​s​t​o​m​e​r​ ​I​D
+			 */
+			supplier_customerId: string
 		}
 		table: {
 			/**
@@ -2208,6 +2212,10 @@ export type TranslationFunctions = {
 			 * Supplier email
 			 */
 			supplier_email: () => LocalizedString
+			/**
+			 * Supplier customer ID
+			 */
+			supplier_customerId: () => LocalizedString
 		}
 		table: {
 			/**

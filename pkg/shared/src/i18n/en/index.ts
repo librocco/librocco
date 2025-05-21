@@ -224,7 +224,8 @@ const order_list_page = {
 		supplier_page: "Supplier page",
 		supplier_name: "Supplier name",
 		supplier_address: "Supplier address",
-		supplier_email: "Supplier email"
+		supplier_email: "Supplier email",
+		supplier_customerId: "Supplier customer ID"
 	},
 	table: {
 		publisher_name: "Publisher name",
