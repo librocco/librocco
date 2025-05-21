@@ -67,7 +67,7 @@
 	} = dialog;
 
 	let dialogContent: DialogContent | null = null;
-	$: tOutboundPage = $LL.outbound_page;
+	$: tOutboundPage = $LL.sale_page;
 </script>
 
 <Page title="Outbound" view="outbound" {db} {plugins}>
