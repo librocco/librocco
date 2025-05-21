@@ -24,22 +24,24 @@
 	export let data: Writable<SupplierOrderData[]>;
 
 	export let isPending = (x: SupplierOrderData) => !x.placedAt;
+
+	import LL from "@librocco/shared/i18n-svelte";
 </script>
 
 <table id="supplier-orders" class="order-table">
 	<thead>
 		<tr>
 			<th scope="col">
-				<HeadCol icon={Building2} label="Supplier" />
+				<HeadCol icon={Building2} label={$LL.table_components.order_tables.supplier_order_table.supplier()} />
 			</th>
 			<th scope="col">
-				<HeadCol label="Total Books" />
+				<HeadCol label={$LL.table_components.order_tables.supplier_order_table.total_books()} />
 			</th>
 			<th scope="col">
-				<HeadCol icon={CalendarClock} label="Ordered" />
+				<HeadCol icon={CalendarClock} label={$LL.table_components.order_tables.supplier_order_table.ordered()} />
 			</th>
 			<th scope="col">
-				<HeadCol icon={Hash} label="Order no." />
+				<HeadCol icon={Hash} label={$LL.table_components.order_tables.supplier_order_table.order_no()} />
 			</th>
 		</tr>
 	</thead>
@@ -65,7 +67,13 @@
 				</td>
 				<td data-property="id">{id}</td>
 				<td data-property="action">
-					<BodyLink link={actionLink} label={pending ? "Edit" : "Manage"} style={pending ? "gray" : "yellow"} />
+					<BodyLink
+						link={actionLink}
+						label={pending
+							? $LL.table_components.order_tables.supplier_order_table.edit()
+							: $LL.table_components.order_tables.supplier_order_table.manage()}
+						style={pending ? "gray" : "yellow"}
+					/>
 				</td>
 			</tr>
 		{/each}

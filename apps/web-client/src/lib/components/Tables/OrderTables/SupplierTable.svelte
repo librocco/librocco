@@ -7,6 +7,7 @@
 	import { HeadCol, BodyMultiRow } from "../Cells";
 
 	import BodyHead from "./BodyHead.svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: Writable<SupplierExtended[]>;
 </script>
@@ -15,23 +16,25 @@
 	<thead>
 		<tr>
 			<th scope="col">
-				<HeadCol icon={Building2} label="Name" />
+				<HeadCol icon={Building2} label={$LL.table_components.order_tables.supplier_table.labels.name()} />
 			</th>
 
 			<th scope="col">
-				<HeadCol label="Email" />
+				<HeadCol label={$LL.table_components.order_tables.supplier_table.labels.email()} />
 			</th>
 
 			<th scope="col">
-				<HeadCol label="Address" />
+				<HeadCol label={$LL.table_components.order_tables.supplier_table.labels.address()} />
 			</th>
 
 			<th scope="col">
-				<HeadCol label="Assigned Publishers" />
+				<HeadCol label={$LL.table_components.order_tables.supplier_table.labels.assigned_publishers()} />
 			</th>
 
 			{#if $$slots["row-actions"]}
-				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
+				<th scope="col" class="table-cell-fit">
+					<HeadCol label={$LL.table_components.order_tables.supplier_table.labels.row_actions()} srOnly />
+				</th>
 			{/if}
 		</tr>
 	</thead>
