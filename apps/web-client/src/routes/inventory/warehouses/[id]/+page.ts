@@ -35,9 +35,9 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		};
 	}
 
-	// Disable the stock cache to prevent the expensive stock query from blocking the
+	// Disable the stock cache refreshing to prevent the expensive stock query from blocking the
 	// DB for other (cheaper) queries necessary for the page load.
-	stockCache.disable();
+	stockCache.disableRefresh();
 
 	const warehouse = await getWarehouseById(dbCtx.db, id);
 	if (!warehouse) {
@@ -46,8 +46,8 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 
 	const publisherList = await getPublisherList(dbCtx.db);
 
-	// Enable the stock cache again to execute in the background
-	stockCache.enable(dbCtx.db);
+	// Re-enable the stock cache refreshing to execute in the background
+	stockCache.enableRefresh(dbCtx.db);
 
 	const entries = get(stockByWarehouse)
 		.then((s) => s.get(id))
