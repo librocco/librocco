@@ -53,7 +53,7 @@ export const warehouseTotals = derived(stockByWarehouse, ($stockByWarehouse) =>
 	)
 );
 
-export const enable = (db: DB) => {
+export const enableRefresh = (db: DB) => {
 	// Set the DB -- effectively enabling the cache
 	dbStore.set(db);
 
@@ -63,7 +63,7 @@ export const enable = (db: DB) => {
 	}
 };
 
-export const disable = () => dbStore.set(null);
+export const disableRefresh = () => dbStore.set(null);
 
 export const invalidate = () => {
 	// Invalidate the cache
