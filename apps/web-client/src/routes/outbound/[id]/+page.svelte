@@ -393,7 +393,7 @@
 		await updateNote(db, noteId, { defaultWarehouse: warehouseId });
 	};
 
-	$: tOutbound = $LL.outbound_note;
+	$: tOutbound = $LL.sale_note;
 	$: tCommon = $LL.common;
 </script>
 
@@ -414,7 +414,7 @@
 
 					<div class="w-fit">
 						{#if updatedAt}
-							<span class="badge-outline badge-primary badge badge-md">
+							<span class="badge-primary badge-outline badge badge-md">
 								{tOutbound.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}
 							</span>
 						{/if}
@@ -444,16 +444,16 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
-								description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
+								title: tCommon.commit_sale_dialog.title({ entity: displayName }),
+								description: tCommon.commit_sale_dialog.description({ bookCount: totalBookCount }),
 								type: "commit"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
-								description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
+								title: tCommon.commit_sale_dialog.title({ entity: displayName }),
+								description: tCommon.commit_sale_dialog.description({ bookCount: totalBookCount }),
 								type: "commit"
 							};
 						}}
@@ -469,8 +469,8 @@
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleCommitSelf,
-									title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
-									description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
+									title: tCommon.commit_sale_dialog.title({ entity: displayName }),
+									description: tCommon.commit_sale_dialog.description({ bookCount: totalBookCount }),
 									type: "commit"
 								};
 							}}
@@ -683,8 +683,8 @@
 		<div use:melt={$reconcileDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
 			<Dialog dialog={reconcileDialog} type="delete" onConfirm={handleReconcileAndCommitSelf(reconcileDialogData)}>
-				<svelte:fragment slot="title">{tCommon.reconcile_outbound_dialog.title()}</svelte:fragment>
-				<svelte:fragment slot="description">{tCommon.reconcile_outbound_dialog.description()}</svelte:fragment>
+				<svelte:fragment slot="title">{tCommon.reconcile_sale_dialog.title()}</svelte:fragment>
+				<svelte:fragment slot="description">{tCommon.reconcile_sale_dialog.description()}</svelte:fragment>
 				<h3 class="mb-2 mt-4 font-semibold">{tOutbound.reconcile_dialog.review_transaction()}:</h3>
 				<ul class="pl-2">
 					{#each reconcileDialogData as { isbn, warehouseName, quantity, available }}

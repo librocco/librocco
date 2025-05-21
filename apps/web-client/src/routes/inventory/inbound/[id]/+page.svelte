@@ -60,8 +60,8 @@
 	$: ({ plugins, id: noteId, warehouseId, warehouseName, displayName, updatedAt, publisherList } = data);
 	$: db = data.dbCtx?.db;
 
-	$: t = $LL.inventory_page.inbound_tab;
-	$: tInbound = $LL.inbound_note;
+	$: t = $LL.inventory_page.purchase_tab;
+	$: tInbound = $LL.purchase_note;
 	$: tCommon = $LL.common;
 
 	// #region reactivity
@@ -263,16 +263,16 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
-								description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
+								title: tCommon.commit_purchase_dialog.title({ entity: displayName }),
+								description: tCommon.commit_purchase_dialog.description({ bookCount: totalBookCount, warehouseName }),
 								type: "commit"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
-								description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
+								title: tCommon.commit_purchase_dialog.title({ entity: displayName }),
+								description: tCommon.commit_purchase_dialog.description({ bookCount: totalBookCount, warehouseName }),
 								type: "commit"
 							};
 						}}
@@ -288,8 +288,8 @@
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleCommitSelf,
-									title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
-									description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
+									title: tCommon.commit_sale_dialog.title({ entity: displayName }),
+									description: tCommon.commit_sale_dialog.description({ bookCount: totalBookCount }),
 									type: "commit"
 								};
 							}}

@@ -47,7 +47,7 @@
 			icon: Library
 		},
 		{
-			label: tNav.outbound(),
+			label: tNav.sale(),
 			href: appPath("outbound"),
 			icon: PackageMinus
 		},
