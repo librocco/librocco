@@ -11,15 +11,18 @@ const _load = async ({ parent, depends }: Parameters<PageLoad>[0]) => {
 	depends("warehouse:list");
 	depends("warehouse:books");
 
-	// Disable the stock cache to prevent the expensive stock query from blocking the
+	// Disable the stock cache refreshing to prevent the expensive stock query from blocking the
 	// DB for other (cheaper) queries necessary for the page load.
-	stockCache.disable();
+	stockCache.disableRefresh();
+
 	const { dbCtx } = await parent();
 	if (!dbCtx) return { dbCtx, warehouses: [] as Warehouse[] };
 
 	const warehouses = await getAllWarehouses(dbCtx.db, { skipTotals: true });
 
-	stockCache.enable(dbCtx.db);
+	// Re-enable the stock cache refreshing to execute in the background
+	stockCache.enableRefresh(dbCtx.db);
+
 	return { dbCtx, warehouses };
 };
 

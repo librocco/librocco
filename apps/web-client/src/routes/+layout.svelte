@@ -49,7 +49,7 @@
 		//
 		// NOTE: the cache will still be invalidated in the mean while, there will just be no requerying,
 		// effectively turning the cache back to lazy mode
-		stockCache.disable();
+		stockCache.disableRefresh();
 	});
 
 	$: {
