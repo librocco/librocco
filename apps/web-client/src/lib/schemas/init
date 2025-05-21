@@ -59,6 +59,7 @@ CREATE TABLE supplier (
 	name TEXT,
 	email TEXT,
 	address TEXT,
+	customerId INTEGER,
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('supplier');

@@ -55,6 +55,13 @@
 					</TextControl>
 				</FormFieldProxy>
 			</div>
+			<div class="form-control gap-y-2">
+				<FormFieldProxy {form} name="address">
+					<TextControl label="Customer ID" let:controlAttrs>
+						<input {...controlAttrs} bind:value={$formStore.customerId} class="input-bordered input w-full" type="number" />
+					</TextControl>
+				</FormFieldProxy>
+			</div>
 		</div>
 	</div>
 
