@@ -32,7 +32,7 @@
 	$: ({ notes, plugins } = data);
 	$: db = data.dbCtx?.db;
 
-	$: t = $LL.inventory_page.inbound_tab;
+	$: t = $LL.inventory_page.purchase_tab;
 
 	// #region reactivity
 	let disposer: () => void;
