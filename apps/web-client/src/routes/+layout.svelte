@@ -212,8 +212,9 @@
 		// Clear all the data in CR-SQLite IndexedDB
 		await clearDb();
 
-		// Invalidate all - reinitialise the DB
-		await invalidateAll();
+		// Reload the window - to avoid a huge number of issues related to
+		// having to account for DB not being available, but becoming available within the same lifetime
+		window.location.reload();
 	};
 
 	const forceDBVersion = (wantVersion: bigint) => async () => {
@@ -221,8 +222,9 @@
 		const db = await getDB($dbid);
 		await db.exec("UPDATE crsql_master SET value = ? WHERE key = 'schema_version'", [wantVersion]);
 
-		// Invalidate all - reinitialise the DB
-		await invalidateAll();
+		// Reload the window - to avoid a huge number of issues related to
+		// having to account for DB not being available, but becoming available within the same lifetime
+		window.location.reload();
 	};
 </script>
 
