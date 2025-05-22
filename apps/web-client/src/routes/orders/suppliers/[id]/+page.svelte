@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import { Mail, UserCircle, PencilLine, Plus } from "lucide-svelte";
+	import { Mail, UserCircle, PencilLine, Plus, Printer } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -161,6 +161,10 @@
 									{t.labels.create_new_order()}
 									<Plus aria-hidden size={20} />
 								</a>
+								<button class="btn-secondary btn-outline btn-sm btn no-print" type="button" on:click={() => window.print()}>
+									{$LL.general.print()}
+									<Printer aria-hidden size={20} />
+								</button>
 							</div>
 						{/if}
 					</div>

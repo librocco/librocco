@@ -19,7 +19,7 @@
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 	import type { Supplier } from "$lib/db/cr-sqlite/types";
 	import { base } from "$app/paths";
-	import { Plus } from "lucide-svelte";
+	import { Plus, Printer } from "lucide-svelte";
 	import { appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
 
@@ -73,7 +73,11 @@
 <Page title="Suppliers" view="orders/suppliers" {db} {plugins}>
 	<div slot="main" class="flex flex-col gap-y-6 overflow-x-auto py-2">
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			<div class="self-end">
+			<div class="self-end flex gap-x-2">
+				<button class="btn-outline btn-sm btn gap-2 no-print" on:click={() => window.print()}>
+					{$LL.general.print()}
+					<Printer size={20} />
+				</button>
 				<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
 					{t.labels.new_supplier()}
 					<Plus size={20} />
