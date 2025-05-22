@@ -13,7 +13,8 @@
 		ArrowRight,
 		ClockArrowUp,
 		PencilLine,
-		Phone
+		Phone,
+		Printer
 	} from "lucide-svelte";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
@@ -293,10 +294,14 @@
 								{/if}
 							</div>
 						</dl>
-						<div class="card-actions border-t py-6 md:mb-20">
+						<div class="card-actions flex gap-x-2 border-t py-6 md:mb-20">
 							<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled>
 								Print receipt
 								<ArrowRight aria-hidden size={20} />
+							</button>
+							<button class="no-print btn-secondary btn-outline btn-sm btn" type="button" on:click={() => window.print()}>
+								{$LL.general.print()}
+								<Printer aria-hidden size={20} />
 							</button>
 						</div>
 					</div>
