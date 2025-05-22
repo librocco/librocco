@@ -63,7 +63,7 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 
 	// Wait for the app to become responsive
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	await page.getByRole("link", { name: "Inbound" }).click();
+	await page.getByRole("link", { name: "Purchase" }).click();
 	await page.waitForURL("**/inventory/inbound/");
 
 	// Navigate to the note page
