@@ -50,8 +50,11 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	stockCache.enableRefresh(dbCtx.db);
 
 	const entries = get(stockByWarehouse)
-		.then((s) => s.get(id))
+		.then((s) => [...(s.get(id) || [])])
 		.then(async (entries) => {
+			// Return early if stock empty
+			if (!entries.length) return [];
+
 			const isbns = map(entries, ({ isbn }) => isbn);
 			const bookData = await getMultipleBookData(dbCtx.db, ...isbns);
 			const iter = wrapIter(entries)

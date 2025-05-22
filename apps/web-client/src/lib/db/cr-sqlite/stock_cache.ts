@@ -4,16 +4,20 @@ import type { DB, GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
 import { getStock } from "$lib/db/cr-sqlite/stock";
 import { reduce, wrapIter } from "@librocco/shared";
+import { timed } from "$lib/utils/timer";
 
 const dbStore = writable<DB | null>(null);
 const valid = writable(false);
+const cacheTimestamp = writable(0);
 
 /**
  * Executes the stock query and sets the cache as valid (upon resolution)
  */
 const execQuery = async (db: DB) => {
 	const stock = await getStock(db);
+	const [[timestamp]] = await db.execA<[number]>("SELECT COALESCE(MAX(committed_at), 0) FROM book_transaction");
 	valid.set(true);
+	cacheTimestamp.set(timestamp);
 	return stock;
 };
 
@@ -74,6 +78,26 @@ export const invalidate = () => {
 	// If currently active, rerun the query
 	if (db) {
 		query.set(execQuery(db));
+	}
+};
+
+async function _countRelevantUpdates(db: DB, cacheTimestamp: number) {
+	// Count the number of updates that are relevant to the stock calculation
+	const [[res]] = await db.execA<[number]>("SELECT COUNT(*) FROM book_transaction WHERE committed_at > ?", [cacheTimestamp]);
+	return res;
+}
+const countRelevantUpdates = timed(_countRelevantUpdates);
+
+/**
+ * We run a intermediate (cheap) query to check if the observed updates affect the stock calculation:
+ * - if so, we invalidate the cache (which will then may, or may not, re-execute the, expensive stock query - depending on the cache being active)
+ * - if not, noop
+ *
+ */
+export const maybeInvalidate = async (db: DB) => {
+	const numUpdates = await countRelevantUpdates(db, get(cacheTimestamp));
+	if (numUpdates > 0) {
+		invalidate();
 	}
 };
 
