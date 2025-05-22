@@ -32,12 +32,17 @@
 	import { appPath } from "$lib/paths";
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import LL from "@librocco/shared/i18n-svelte";
+	import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
 	export let data: PageData;
 
-	$: ({ plugins, displayName, entries, publisherList, id } = data);
+	$: ({ plugins, displayName, publisherList, id } = data);
 	$: db = data.dbCtx?.db;
+
+	let entries: GetStockResponseItem[] = [];
+	$: data.entries.then((e) => (entries = e));
 
 	$: tColumnHeaders = $LL.warehouse_page.table;
 	$: tLabels = $LL.warehouse_page.labels;
@@ -51,18 +56,17 @@
 		// Reload when warehouse data changes
 		const disposer1 = rx.onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
 		// Reload when some stock changes (note being committed)
-		const disposer2 = rx.onRange(["note", "book"], () => invalidate("warehouse:books"));
-		disposer = () => (disposer1(), disposer2());
+		const disposer2 = rx.onRange(["book"], () => invalidate("warehouse:books"));
+		// Reload when stock cache invalidates
+		const disposer3 = stockCache.onInvalidated(() => invalidate("warehouse:books"));
+
+		disposer = () => (disposer1(), disposer2(), disposer3());
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
 		disposer?.();
 	});
 	$: goto = racefreeGoto(disposer);
-
-	// We display loading state before navigation (in case of creating new note/warehouse)
-	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
-	$: loading = !db;
 
 	// #region csv
 	const handleExportCsv = () => {
@@ -172,90 +176,93 @@
 				{/if}
 			</div>
 		</div>
-		{#if loading}
+
+		{#await data.entries}
 			<div class="flex grow justify-center">
 				<div class="mx-auto translate-y-1/2">
 					<span class="loading loading-spinner loading-lg text-primary"></span>
 				</div>
 			</div>
-		{:else if !entries?.length}
-			<div class="flex grow justify-center">
-				<div class="mx-auto max-w-xl translate-y-1/2">
-					<!-- Start entity list placeholder -->
-					<PlaceholderBox title="Add new purchase note" description="Get started by adding a new note">
-						<FilePlus slot="icon" />
-						<button slot="actions" on:click={handleCreateInboundNote} class="btn-primary btn w-full">
-							{tLabels.new_note()}
-						</button>
-					</PlaceholderBox>
-					<!-- End entity list placeholder -->
+		{:then}
+			{#if !entries?.length}
+				<div class="flex grow justify-center">
+					<div class="mx-auto max-w-xl translate-y-1/2">
+						<!-- Start entity list placeholder -->
+						<PlaceholderBox title="Add new purchase note" description="Get started by adding a new note">
+							<FilePlus slot="icon" />
+							<button slot="actions" on:click={handleCreateInboundNote} class="btn-primary btn w-full">
+								{tLabels.new_note()}
+							</button>
+						</PlaceholderBox>
+						<!-- End entity list placeholder -->
+					</div>
 				</div>
-			</div>
-		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
-				<div>
-					<StockTable {table}>
-						<tr slot="row" let:row let:rowIx>
-							<StockBookRow {row} {rowIx}>
-								<div slot="row-actions">
-									<PopoverWrapper
-										options={{
-											forceVisible: true,
-											positioning: {
-												placement: "left"
-											}
-										}}
-										let:trigger
-									>
-										<button
-											data-testid={testId("popover-control")}
-											{...trigger}
-											use:trigger.action
-											class="btn-neutral btn-outline btn-sm btn px-0.5"
+			{:else}
+				<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+					<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+					<div>
+						<StockTable {table}>
+							<tr slot="row" let:row let:rowIx>
+								<StockBookRow {row} {rowIx}>
+									<div slot="row-actions">
+										<PopoverWrapper
+											options={{
+												forceVisible: true,
+												positioning: {
+													placement: "left"
+												}
+											}}
+											let:trigger
 										>
-											<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
-											<span class="aria-hidden">
-												<MoreVertical />
-											</span>
-										</button>
-
-										<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 											<button
-												use:melt={$trigger}
-												data-testid={testId("edit-row")}
-												on:m-click={() => {
-													const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
-													bookFormData = bookData;
-												}}
-												class="btn-secondary btn-sm btn"
+												data-testid={testId("popover-control")}
+												{...trigger}
+												use:trigger.action
+												class="btn-neutral btn-outline btn-sm btn px-0.5"
 											>
 												<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
 												<span class="aria-hidden">
-													<FileEdit />
+													<MoreVertical />
 												</span>
 											</button>
 
-											<button class="btn-secondary btn-sm btn" data-testid={testId("print-book-label")} on:click={handlePrintLabel(row)}>
-												<span class="sr-only">{tLabels.print_book_label()} {rowIx}</span>
-												<span class="aria-hidden">
-													<Printer />
-												</span>
-											</button>
-										</div>
-									</PopoverWrapper>
-								</div>
-							</StockBookRow>
-						</tr>
-					</StockTable>
+											<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
+												<button
+													use:melt={$trigger}
+													data-testid={testId("edit-row")}
+													on:m-click={() => {
+														const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
+														bookFormData = bookData;
+													}}
+													class="btn-secondary btn-sm btn"
+												>
+													<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
+													<span class="aria-hidden">
+														<FileEdit />
+													</span>
+												</button>
+
+												<button class="btn-secondary btn-sm btn" data-testid={testId("print-book-label")} on:click={handlePrintLabel(row)}>
+													<span class="sr-only">{tLabels.print_book_label()} {rowIx}</span>
+													<span class="aria-hidden">
+														<Printer />
+													</span>
+												</button>
+											</div>
+										</PopoverWrapper>
+									</div>
+								</StockBookRow>
+							</tr>
+						</StockTable>
+					</div>
+
+					<!-- Trigger for the infinite scroll intersection observer -->
+					{#if entries?.length > maxResults}
+						<div use:scroll.trigger></div>
+					{/if}
 				</div>
-
-				<!-- Trigger for the infinite scroll intersection observer -->
-				{#if entries?.length > maxResults}
-					<div use:scroll.trigger></div>
-				{/if}
-			</div>
-		{/if}
+			{/if}
+		{/await}
 	</div>
 </Page>
 

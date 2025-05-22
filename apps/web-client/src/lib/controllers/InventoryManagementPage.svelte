@@ -40,7 +40,7 @@
 		</div>
 
 		<div class="flex h-full w-full flex-col">
-			<div class="tabs tabs-bordered w-full">
+			<div class="tabs-bordered tabs w-full">
 				{#each tabs as { label, icon, href }}
 					{@const active = $page.url.pathname.startsWith(href)}
 
