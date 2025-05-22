@@ -27,6 +27,7 @@
 	import * as reconciliation from "$lib/db/cr-sqlite/order-reconciliation";
 	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
+	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
 	import { beforeNavigate } from "$app/navigation";
 
@@ -40,6 +41,15 @@
 		if (IS_DEBUG || IS_E2E) {
 			timeLogger.setCurrentRoute(to?.route?.id);
 		}
+
+		// We're disabling updates to the stock cache whenever we navigate to prevent
+		// invalidations (and requerying) choking up the DB for view that don't require it.
+		//
+		// NOTE: It is up to views that require the stock data to re-enable the cache (on load)
+		//
+		// NOTE: the cache will still be invalidated in the mean while, there will just be no requerying,
+		// effectively turning the cache back to lazy mode
+		stockCache.disableRefresh();
 	});
 
 	$: {
@@ -80,6 +90,8 @@
 		sync.stop();
 	}
 
+	let disposer: () => void;
+
 	onMount(() => {
 		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
 		document.body.setAttribute("hydrated", "true");
@@ -98,12 +110,19 @@
 		if (get(syncActive)) {
 			sync.sync(get(syncConfig));
 		}
+
+		// Control the invalidation of the stock cache in central spot
+		// Invalidate on every change to note (notes being committed)
+		// TODO: Implement more fine-grained control over this - potentially using a separate table to control committed state
+		disposer = dbCtx.rx.onRange(["note"], () => stockCache.invalidate());
 	});
 
 	onDestroy(() => {
 		sync.stop(); // Safe and idempotent
 
 		availabilitySubscription?.unsubscribe();
+
+		disposer?.();
 	});
 
 	const {
