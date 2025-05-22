@@ -96,7 +96,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	const content = dashboard.content();
 
 	// Wait for the app to become responsive
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 	await page.waitForURL("**/outbound/");
 
 	// Navigate to the note page
@@ -129,7 +129,7 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 	const content = dashboard.content();
 
 	// Wait for the app to become responsive
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 	await page.waitForURL("**/outbound/");
 
 	// Navigate to the note page
