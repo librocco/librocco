@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// We're using outbound note view, but same behaviour should apply to inbound as well
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	await dashboard.content().entityList("outbound-list").waitFor();
 
