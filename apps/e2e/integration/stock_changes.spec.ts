@@ -49,7 +49,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
-	await page.getByRole("link", { name: "Inbound" }).click();
+	await page.getByRole("link", { name: "Purchase" }).click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
 	await content.header().commit();
@@ -100,7 +100,7 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
-	await page.getByRole("link", { name: "Inbound" }).click();
+	await page.getByRole("link", { name: "Purchase" }).click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
 	await content.header().commit();
