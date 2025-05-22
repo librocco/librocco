@@ -970,7 +970,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 	await filter.waitFor();
 
 	// Test for only inbound
-	await filter.getByText("Inbound").click();
+	await filter.getByText("Purchase").click();
 	await dashboard
 		.content()
 		.table("history/warehouse")
@@ -989,7 +989,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 		]);
 
 	// Test for only outbound
-	await filter.getByText("Outbound").click();
+	await filter.getByText("Sale").click();
 	await dashboard
 		.content()
 		.table("history/warehouse")
