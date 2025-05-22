@@ -67,7 +67,19 @@ const history_page = {
 		},
 		archive: {
 			committed_at: "Committed At",
-			export_csv: "Export CSV"
+			export_csv: "Export CSV",
+			column_headers: {
+				quantity: "quantity",
+				isbn: "isbn",
+				title: "title",
+				publisher: "publisher",
+				authors: "authors",
+				year: "year",
+				price: "price",
+				category: "category",
+				edited_by: "edited_by",
+				out_of_print: "out_of_print"
+			}
 		}
 	},
 	warehouse_tab: {
@@ -217,7 +229,8 @@ const order_list_page = {
 		supplier_page: "Supplier page",
 		supplier_name: "Supplier name",
 		supplier_address: "Supplier address",
-		supplier_email: "Supplier email"
+		supplier_email: "Supplier email",
+		supplier_customerId: "Supplier customer ID"
 	},
 	table: {
 		publisher_name: "Publisher name",

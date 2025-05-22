@@ -15,6 +15,7 @@ CREATE TABLE customer (
 	display_id TEXT,
 	fullname TEXT,
 	email TEXT,
+	phone TEXT,
 	deposit DECIMAL,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id)
@@ -58,6 +59,7 @@ CREATE TABLE supplier (
 	name TEXT,
 	email TEXT,
 	address TEXT,
+	customerId INTEGER,
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('supplier');
@@ -155,6 +157,7 @@ CREATE TABLE note (
 );
 CREATE INDEX idx_note_warehouse_id ON note(warehouse_id);
 CREATE INDEX idx_note_default_warehouse ON note(default_warehouse);
+CREATE INDEX idx_note_committed_at ON note(committed_at);
 SELECT crsql_as_crr('note');
 
 CREATE TABLE book_transaction (
@@ -172,6 +175,7 @@ CREATE TABLE book_transaction (
 CREATE INDEX idx_book_transaction_isbn ON book_transaction(isbn);
 CREATE INDEX idx_book_transaction_note_id ON book_transaction(note_id);
 CREATE INDEX idx_book_transaction_warehouse_id ON book_transaction(warehouse_id);
+CREATE INDEX idx_book_transaction_committed_at ON book_transaction(committed_at);
 SELECT crsql_as_crr('book_transaction');
 
 
@@ -186,4 +190,3 @@ CREATE TABLE custom_item (
 );
 CREATE INDEX idx_custom_item_note_id ON custom_item(note_id);
 SELECT crsql_as_crr('custom_item');
-

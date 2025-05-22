@@ -404,13 +404,13 @@ async function _commitNote(db: DB, id: number, { force = false }: { force?: bool
 	}
 
 	const timestamp = Date.now();
-	const query = `
-		UPDATE note
-		SET committed = 1, committed_at = ?
-		WHERE id = ?
-	`;
 
-	await db.exec(query, [timestamp, id]);
+	await db.tx(async (db) => {
+		// Update note's committed_at
+		await db.exec("UPDATE note SET committed = 1, committed_at = ? WHERE id = ?", [timestamp, id]);
+		// Update all related book transactions' committed_at
+		await db.exec("UPDATE book_transaction SET committed_at = ? WHERE note_id = ?", [timestamp, id]);
+	});
 }
 
 /**
@@ -482,6 +482,7 @@ async function _getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
 			bt.quantity,
 			bt.warehouse_id AS warehouseId,
 			bt.updated_at,
+			bt.committed_at, -- NOTE: committed at is not used in production, but this is useful for testing
 			COALESCE(w.display_name, 'not-found') AS warehouseName,
 			COALESCE(w.discount, 0) AS warehouseDiscount,
 			COALESCE(b.title, 'N/A') AS title,
@@ -504,6 +505,7 @@ async function _getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
 		quantity: number;
 		warehouseId?: number;
 		updated_at: number;
+		committed_at: number;
 
 		warehouseName?: string;
 		warehouseDiscount: number;
@@ -518,9 +520,10 @@ async function _getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
 		category: string;
 	}>(query, [id]);
 
-	return result.map(({ warehouseId, out_of_print, updated_at, ...res }) => ({
+	return result.map(({ warehouseId, out_of_print, updated_at, committed_at, ...res }) => ({
 		...res,
-		updatedAt: new Date(updated_at),
+		updatedAt: updated_at ? new Date(updated_at) : undefined,
+		committedAt: committed_at ? new Date(committed_at) : undefined,
 		warehouseId: warehouseId ?? undefined,
 		outOfPrint: Boolean(out_of_print)
 	}));

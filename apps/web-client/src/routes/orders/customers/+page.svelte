@@ -156,7 +156,8 @@
 			validators: zod(createCustomerOrderSchema("create")),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					createCustomer(form.data);
+					const phone = [form.data.phone1, form.data.phone2].join(",");
+					createCustomer({ ...form.data, phone });
 				}
 			}
 		}}
