@@ -24,13 +24,13 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// Navigate to the outbound note page
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 	await page.getByRole("heading", { name: "Outbound" }).first().waitFor();
 });
 
 test('should create a new outbound note, on "New sale" and redirect to it', async ({ page }) => {
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	// Create a new note
 	await dashboard.content().header().getByRole("button", { name: "New sale" }).first().click();
@@ -41,7 +41,7 @@ test('should create a new outbound note, on "New sale" and redirect to it', asyn
 
 test("should delete the note on delete button click (after confirming the prompt)", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	const content = dashboard.content();
 
@@ -63,7 +63,7 @@ test("should delete the note on delete button click (after confirming the prompt
 
 test("note heading should display note name, 'updated at' timestamp", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	const header = dashboard.content().header();
 
@@ -79,7 +79,7 @@ test("note heading should display note name, 'updated at' timestamp", async ({ p
 
 test("note should display breadcrumbs leading back to outbound page", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	const header = dashboard.content().header();
 
@@ -96,7 +96,7 @@ test("note should display breadcrumbs leading back to outbound page", async ({ p
 
 test("should assign default name to notes in sequential order", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	const content = dashboard.content();
 	const header = dashboard.content().header();
@@ -132,7 +132,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	page
 }) => {
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
@@ -146,7 +146,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await page.getByRole("heading", { name: "New Sale (3)" }).first().waitFor();
 
 	// Verify names
-	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
+	await page.getByRole("link", { name: "Sale" }).first().click(); // In the main nav, not the breadcrumb nav
 	await content.entityList("outbound-list").assertElements([{ name: "New Sale (3)" }, { name: "New Sale (2)" }, { name: "New Sale" }]);
 
 	// Rename the first two notes
@@ -186,7 +186,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 test("should navigate to note page on 'edit' button click", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
@@ -205,7 +205,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 	await page.getByRole("heading", { name: "Sale 1" }).first().waitFor();
 
 	// Navigate back to outbound page and to note 2
-	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
+	await page.getByRole("link", { name: "Sale" }).first().click(); // In the main nav, not the breadcrumb nav
 	await content.entityList("outbound-list").item(0).edit();
 
 	// Check title
@@ -215,7 +215,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 test("should display book count for each respective note in the list", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	const content = dashboard.content();
 
@@ -253,7 +253,7 @@ test("should display book count for each respective note in the list", async ({ 
 
 test("should display book original price and discounted price as well as the warehouse discount percentage", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
@@ -296,7 +296,7 @@ test("should update default warehouse for outbound note using dropdown", async (
 	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Default Warehouse Test" });
 
 	// Navigate to outbound page
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	await dashboard.content().entityList("outbound-list").item(0).edit();
 
@@ -329,7 +329,7 @@ test("should update default warehouse for outbound note using dropdown", async (
 	]);
 
 	// Navigate away and back to ensure the default warehouse setting persists
-	await page.getByLabel("Main navigation").getByRole("link", { name: "Outbound" }).click();
+	await page.getByLabel("Main navigation").getByRole("link", { name: "Sale" }).click();
 
 	await dashboard.content().entityList("outbound-list").item(0).edit();
 
@@ -347,7 +347,7 @@ testInventory(
 
 		const dbHandle = await getDbHandle(page);
 
-		await page.getByRole("link", { name: "Outbound" }).click();
+		await page.getByRole("link", { name: "Sale" }).click();
 
 		// Create an outbound note
 		await dbHandle.evaluate(createOutboundNote, { id: 111, displayName: "Different Default Warehouse Test", defaultWarehouse: 2 });
@@ -430,7 +430,7 @@ testInventory(
 		await dbHandle.evaluate(commitNote, 222);
 
 		// Navigate to outbound page
-		await page.getByRole("link", { name: "Outbound" }).click();
+		await page.getByRole("link", { name: "Sale" }).click();
 
 		await dashboard.content().entityList("outbound-list").waitFor();
 
@@ -502,7 +502,7 @@ testInventory(
 		await dbHandle.evaluate(commitNote, 333);
 
 		// Navigate to outbound page
-		await page.getByRole("link", { name: "Outbound" }).click();
+		await page.getByRole("link", { name: "Sale" }).click();
 
 		await dashboard.content().entityList("outbound-list").waitFor();
 
@@ -575,7 +575,7 @@ testInventory(
 		await dbHandle.evaluate(commitNote, 333);
 
 		// Navigate to outbound page
-		await page.getByRole("link", { name: "Outbound" }).click();
+		await page.getByRole("link", { name: "Sale" }).click();
 
 		await dashboard.content().entityList("outbound-list").waitFor();
 
@@ -650,7 +650,7 @@ testInventory(
 		await dbHandle.evaluate(commitNote, 333);
 
 		// Navigate to outbound page
-		await page.getByRole("link", { name: "Outbound" }).click();
+		await page.getByRole("link", { name: "Sale" }).click();
 
 		await dashboard.content().entityList("outbound-list").waitFor();
 
@@ -706,7 +706,7 @@ test("should be able to edit note title", async ({ page }) => {
 	await dbHandle.evaluate(createOutboundNote, { id: 1, warehouseId: 1, displayName: "New Sale" });
 
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale", exact: true }).click();
 
 	const content = dashboard.content();
 
@@ -719,7 +719,7 @@ test("should be able to edit note title", async ({ page }) => {
 	await dashboard.textEditableField().fillData("title");
 	await dashboard.textEditableField().submit();
 
-	await page.getByLabel("Main navigation").getByRole("link", { name: "Outbound" }).click();
+	await page.getByLabel("Main navigation").getByRole("link", { name: "Sale" }).click();
 
 	await expect(content.entityList("outbound-list").item(0).getByText("title")).toBeVisible();
 });
