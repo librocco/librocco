@@ -157,6 +157,7 @@ CREATE TABLE note (
 );
 CREATE INDEX idx_note_warehouse_id ON note(warehouse_id);
 CREATE INDEX idx_note_default_warehouse ON note(default_warehouse);
+CREATE INDEX idx_note_committed_at ON note(committed_at);
 SELECT crsql_as_crr('note');
 
 CREATE TABLE book_transaction (
