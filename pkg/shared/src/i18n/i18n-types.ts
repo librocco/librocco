@@ -14,6 +14,12 @@ export type Translation = RootTranslation
 export type Translations = RootTranslation
 
 type RootTranslation = {
+	general: {
+		/**
+		 * P​r​i​n​t
+		 */
+		print: string
+	}
 	nav: {
 		/**
 		 * S​e​a​r​c​h​ ​s​t​o​c​k
@@ -1136,6 +1142,12 @@ type RootTranslation = {
 }
 
 export type TranslationFunctions = {
+	general: {
+		/**
+		 * Print
+		 */
+		print: () => LocalizedString
+	}
 	nav: {
 		/**
 		 * Search stock
