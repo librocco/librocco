@@ -161,7 +161,7 @@
 									{t.labels.create_new_order()}
 									<Plus aria-hidden size={20} />
 								</a>
-								<button class="btn-secondary btn-outline btn-sm btn no-print" type="button" on:click={() => window.print()}>
+								<button class="no-print btn-secondary btn-outline btn-sm btn" type="button" on:click={() => window.print()}>
 									{$LL.general.print()}
 									<Printer aria-hidden size={20} />
 								</button>

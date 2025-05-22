@@ -108,7 +108,7 @@
 					</button>
 				</div>
 				<div class="flex gap-x-2">
-					<button class="btn-outline btn gap-2 no-print" on:click={() => window.print()}>
+					<button class="no-print btn-outline btn gap-2" on:click={() => window.print()}>
 						<Printer size={20} />
 						{$LL.general.print()}
 					</button>

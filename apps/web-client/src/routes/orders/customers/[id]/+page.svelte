@@ -294,12 +294,12 @@
 								{/if}
 							</div>
 						</dl>
-						<div class="card-actions border-t py-6 md:mb-20 flex gap-x-2">
+						<div class="card-actions flex gap-x-2 border-t py-6 md:mb-20">
 							<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled>
 								Print receipt
 								<ArrowRight aria-hidden size={20} />
 							</button>
-							<button class="btn-secondary btn-outline btn-sm btn no-print" type="button" on:click={() => window.print()}>
+							<button class="no-print btn-secondary btn-outline btn-sm btn" type="button" on:click={() => window.print()}>
 								{$LL.general.print()}
 								<Printer aria-hidden size={20} />
 							</button>

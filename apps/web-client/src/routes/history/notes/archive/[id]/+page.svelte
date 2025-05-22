@@ -109,7 +109,7 @@
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="btn btn-outline no-print" on:click={() => window.print()}>
+				<button class="no-print btn-outline btn" on:click={() => window.print()}>
 					<Printer size={16} class="mr-2" />
 					{$LL.general.print()}
 				</button>

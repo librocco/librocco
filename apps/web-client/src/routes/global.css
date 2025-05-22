@@ -13,33 +13,42 @@ body {
 
 	/* Hide common navigation/UI elements */
 	/* Assuming '.drawer' is the main container for sidebar navigation and '.drawer-toggle' is its button */
-	.drawer, .drawer-toggle, .drawer-side, .drawer-overlay {
+	.drawer,
+	.drawer-toggle,
+	.drawer-side,
+	.drawer-overlay {
 		display: none !important;
 	}
 
 	/* Assuming 'header' and 'footer' elements are used for general site headers/footers */
-	header, footer {
+	header,
+	footer {
 		display: none !important;
 	}
 
 	/* Hide the top navigation bar if it's within a nav element or has a specific class like 'navbar' */
-	nav, .navbar {
+	nav,
+	.navbar {
 		display: none !important;
 	}
-	
+
 	/* Special case for Page.svelte and HistoryPage.svelte from $lib/controllers - hide their nav bar */
 	/* This is a guess based on component structure, might need adjustment if the internal structure is different */
-	.page-controller-navbar, .history-page-controller-navbar { /* Fictional classes, need to check actual implementation or use a more generic approach */
+	.page-controller-navbar,
+	.history-page-controller-navbar {
+		/* Fictional classes, need to check actual implementation or use a more generic approach */
 		display: none !important;
 	}
 	/* More generic approach for controller headers if they exist */
-	div[class*="Page__"] > nav, div[class*="HistoryPage__"] > nav { /* if controllers use specific class names for their top bars */
-	    display: none !important;
+	div[class*="Page__"] > nav,
+	div[class*="HistoryPage__"] > nav {
+		/* if controllers use specific class names for their top bars */
+		display: none !important;
 	}
 
-
 	/* Ensure main content takes full width */
-	body, html {
+	body,
+	html {
 		width: 100%;
 		height: auto;
 		overflow-y: visible !important; /* Allow content to flow for printing */
@@ -49,7 +58,10 @@ body {
 
 	/* Targeting the main content slot in Svelte components */
 	/* This often is a <main> element or a div with slot="main" */
-	main, div[slot="main"], .main-content, .content {
+	main,
+	div[slot="main"],
+	.main-content,
+	.content {
 		width: 100% !important;
 		max-width: 100% !important;
 		margin: 0 !important;
@@ -58,24 +70,25 @@ body {
 		box-shadow: none !important;
 		overflow-y: visible !important; /* Show all content */
 	}
-	
+
 	/* For the specific Page.svelte, HistoryPage.svelte, ensure their main slot is full width */
-    /* Typically, the slot itself doesn't have a class, but its parent might or the page itself */
-    /* Let's assume the structure <Page><div slot="main">...</div></Page> */
-    /* The main/div[slot="main"] above should cover this, but if there's an intermediate wrapper: */
-    div[class*="Page__"] div[slot="main"], 
-    div[class*="HistoryPage__"] div[slot="main"] {
-        width: 100% !important;
+	/* Typically, the slot itself doesn't have a class, but its parent might or the page itself */
+	/* Let's assume the structure <Page><div slot="main">...</div></Page> */
+	/* The main/div[slot="main"] above should cover this, but if there's an intermediate wrapper: */
+	div[class*="Page__"] div[slot="main"],
+	div[class*="HistoryPage__"] div[slot="main"] {
+		width: 100% !important;
 		max-width: 100% !important;
 		margin: 0 !important;
 		padding: 1em !important; /* Add some padding for print */
 		border: none !important;
 		box-shadow: none !important;
-    }
-
+	}
 
 	/* Resetting padding/margins for common layout containers that might constrain width */
-	.container, .container-fluid, .prose {
+	.container,
+	.container-fluid,
+	.prose {
 		max-width: 100% !important;
 		margin: 0 !important;
 		padding: 0 !important;
@@ -89,7 +102,8 @@ body {
 		font-size: 10pt !important; /* Adjust as needed */
 	}
 
-	th, td {
+	th,
+	td {
 		border: 1px solid #ccc !important;
 		padding: 0.4rem !important;
 		text-align: left !important;
@@ -105,16 +119,21 @@ body {
 		page-break-inside: avoid !important;
 	}
 
-	h1, h2, h3, h4, h5, h6 {
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
 		page-break-after: avoid !important;
 		page-break-inside: avoid !important;
 		margin-top: 1.5rem !important;
 		margin-bottom: 1rem !important;
 	}
-	
+
 	p {
-	    orphans: 3;
-	    widows: 3;
+		orphans: 3;
+		widows: 3;
 	}
 
 	/* Ensure all text is black and backgrounds are white (unless specified otherwise) */
@@ -124,30 +143,51 @@ body {
 		box-shadow: none !important;
 		text-shadow: none !important;
 	}
-	
-	a {
-        text-decoration: underline !important;
-        color: #0000EE !important; /* Standard blue for links if needed, though black is fine too */
-    }
 
-    /* Hide DaisyUI specific interactive elements that are not content */
-    .btn, .badge, .alert, .modal, .dropdown, .tabs, .steps, .tooltip, .kbd, .progress, .rating, .skeleton, .chat, .stat, .indicator, .join, .stack, .toast {
-        border: 1px solid #ccc !important; /* Give some basic styling if not hidden */
-    }
-    .modal, .dropdown, .tooltip, .toast { /* Definitely hide these */
-        display:none !important;
-    }
-    
-    /* If using DaisyUI themes, try to reset colors */
-    [data-theme] {
-        background-color: #fff !important;
-        color: #000 !important;
-    }
-    [data-theme] :where(*){
-        background-color: transparent !important;
-        color: #000 !important;
-        border-color: #ccc !important; /* Ensure borders are visible */
-    }
+	a {
+		text-decoration: underline !important;
+		color: #0000ee !important; /* Standard blue for links if needed, though black is fine too */
+	}
+
+	/* Hide DaisyUI specific interactive elements that are not content */
+	.btn,
+	.badge,
+	.alert,
+	.modal,
+	.dropdown,
+	.tabs,
+	.steps,
+	.tooltip,
+	.kbd,
+	.progress,
+	.rating,
+	.skeleton,
+	.chat,
+	.stat,
+	.indicator,
+	.join,
+	.stack,
+	.toast {
+		border: 1px solid #ccc !important; /* Give some basic styling if not hidden */
+	}
+	.modal,
+	.dropdown,
+	.tooltip,
+	.toast {
+		/* Definitely hide these */
+		display: none !important;
+	}
+
+	/* If using DaisyUI themes, try to reset colors */
+	[data-theme] {
+		background-color: #fff !important;
+		color: #000 !important;
+	}
+	[data-theme] :where(*) {
+		background-color: transparent !important;
+		color: #000 !important;
+		border-color: #ccc !important; /* Ensure borders are visible */
+	}
 
 	/* Remove card styling to focus on content */
 	.card {
@@ -161,15 +201,16 @@ body {
 	.card-actions {
 		display: none !important; /* Usually contains buttons not needed for print */
 	}
-	
+
 	/* Ensure specific content like ISBNs, titles, quantities are visible */
 	/* This is generally covered by the table styles, but if specific elements need targeting: */
 	/* Example: .isbn-class, .title-class { font-weight: bold; } */
 
-    /* Hide elements from Page.svelte, PageLayout.svelte like sidebar toggles etc. */
-    /* This requires knowing the specific structure or classes used in those components */
-    /* For example, if PageLayout.svelte has a header with class 'page-layout-header' */
-    .page-layout-header, .page-layout-sidebar-toggle {
-        display: none !important;
-    }
+	/* Hide elements from Page.svelte, PageLayout.svelte like sidebar toggles etc. */
+	/* This requires knowing the specific structure or classes used in those components */
+	/* For example, if PageLayout.svelte has a header with class 'page-layout-header' */
+	.page-layout-header,
+	.page-layout-sidebar-toggle {
+		display: none !important;
+	}
 }

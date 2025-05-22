@@ -73,8 +73,8 @@
 <Page title="Suppliers" view="orders/suppliers" {db} {plugins}>
 	<div slot="main" class="flex flex-col gap-y-6 overflow-x-auto py-2">
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			<div class="self-end flex gap-x-2">
-				<button class="btn-outline btn-sm btn gap-2 no-print" on:click={() => window.print()}>
+			<div class="flex gap-x-2 self-end">
+				<button class="no-print btn-outline btn-sm btn gap-2" on:click={() => window.print()}>
 					{$LL.general.print()}
 					<Printer size={20} />
 				</button>

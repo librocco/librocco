@@ -70,7 +70,7 @@
 			<div class="flex flex-1 justify-center">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
 			</div>
-			<button class="btn btn-outline btn-sm flex items-center gap-2 no-print" on:click={() => window.print()}>
+			<button class="no-print btn-outline btn-sm btn flex items-center gap-2" on:click={() => window.print()}>
 				<Printer size={16} />
 				{$LL.general.print()}
 			</button>
