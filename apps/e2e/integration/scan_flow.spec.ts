@@ -13,13 +13,13 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// We're using outbound note view, but same behaviour should apply to inbound as well
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 
 	await dashboard.content().entityList("outbound-list").waitFor();
 
 	// Create new outbound note (and navigate to it)
-	await page.getByRole("button", { name: "New Note" }).first().click();
-	await page.getByRole("heading", { name: "New note" }).first().waitFor();
+	await page.getByRole("button", { name: "New Sale" }).first().click();
+	await page.getByRole("heading", { name: "New Sale" }).first().waitFor();
 });
 
 test("should allow for continous scanning by auto focusing the scan field after the previous scanning operation is submitted", async ({

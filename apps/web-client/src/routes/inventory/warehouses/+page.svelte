@@ -37,6 +37,7 @@
 	$: db = data.dbCtx?.db;
 
 	$: tCommon = $LL.common;
+	$: tWarehouses = $LL.inventory_page.warehouses_tab;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -164,7 +165,7 @@
 
 						<div class="entity-list-actions">
 							<button on:click={handleCreateInboundNote(id)} class="btn-primary btn-sm btn">
-								<span class="button-text"> New note </span>
+								<span class="button-text"> {tWarehouses.labels.button_create_purchase()} </span>
 							</button>
 
 							<DropdownWrapper let:separator let:item>

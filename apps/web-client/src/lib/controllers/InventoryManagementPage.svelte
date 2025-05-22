@@ -17,7 +17,7 @@
 		},
 		{
 			icon: CopyPlus,
-			label: "Inbound",
+			label: "Purchase",
 			href: appPath("inbound")
 		}
 	];

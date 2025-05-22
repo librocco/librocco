@@ -49,7 +49,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
-	await page.getByRole("link", { name: "Inbound" }).click();
+	await page.getByRole("link", { name: "Purchase" }).click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
 	await content.header().commit();
@@ -100,7 +100,7 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
-	await page.getByRole("link", { name: "Inbound" }).click();
+	await page.getByRole("link", { name: "Purchase" }).click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
 	await content.header().commit();
@@ -190,7 +190,7 @@ test("committing an outbound note should decrement the stock by the quantities i
 	]);
 
 	// Navigate to the note and commit it
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 	await content.entityList("outbound-list").item(0).edit();
 	await dashboard.view("outbound-note").waitFor();
 	await content.header().commit();
@@ -239,7 +239,7 @@ test("should remove 0 quantity stock entries from the stock", async ({ page }) =
 	]);
 
 	// Commit the outbound note
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 	await content.entityList("outbound-list").item(0).edit();
 	await dashboard.view("outbound-note").waitFor();
 	await content.header().commit();
@@ -286,7 +286,7 @@ test("committing an outbound note with transactions in two warehouses should dec
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 2 }]);
 
 	// Navigate to the note and commit it
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 	await content.entityList("outbound-list").item(0).edit();
 	await dashboard.view("outbound-note").waitFor();
 	await content.header().commit();

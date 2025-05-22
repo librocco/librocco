@@ -69,7 +69,7 @@ async function _getNoteIdSeq(db: DB) {
 const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM note
-			WHERE displayName LIKE 'New Note%'
+			WHERE displayName LIKE 'New ${kind === "inbound" ? "Purchase" : "Sale"}%'
 			AND warehouse_id ${kind === "outbound" ? "IS NULL" : "IS NOT NULL"}
 			ORDER BY displayName DESC
 			LIMIT 1;
@@ -78,16 +78,17 @@ const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 	const displayName = result[0]?.displayName;
 
 	if (!displayName) {
-		return "New Note";
+		return kind === "inbound" ? "New Purchase" : "New Sale";
 	}
 
-	if (displayName === "New Note") {
-		return "New Note (2)";
+	if (displayName === "New Purchase" || displayName === "New Sale") {
+		return displayName === "New Purchase" ? "New Purchase (2)" : "New Sale (2)";
 	}
 
-	const maxSequence = Number(displayName.replace("New Note", "").replace("(", "").replace(")", "").trim()) + 1;
+	const maxSequence =
+		Number(displayName.replace("New ", "").replace("Sale", "").replace("Purchase", "").replace("(", "").replace(")", "").trim()) + 1;
 
-	return `New Note (${maxSequence})`;
+	return kind === "inbound" ? `New Purchase (${maxSequence})` : `New Sale (${maxSequence})`;
 };
 
 /**
