@@ -188,7 +188,7 @@
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
 						<!-- Start entity list placeholder -->
-						<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note">
+						<PlaceholderBox title="Add new purchase note" description="Get started by adding a new note">
 							<FilePlus slot="icon" />
 							<button slot="actions" on:click={handleCreateInboundNote} class="btn-primary btn w-full">
 								{tLabels.new_note()}
