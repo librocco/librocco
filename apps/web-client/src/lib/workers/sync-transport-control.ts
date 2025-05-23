@@ -1,16 +1,13 @@
 import type { Transport } from "@vlcn.io/ws-client";
-import type { Changes, StartStreaming } from "@vlcn.io/ws-common";
 
-type TransportListener<M> = (msg: M) => void;
+type Listener<M = undefined> = M extends undefined ? () => void : (msg: M) => void;
 
-export class TransportEventEmitter {
-	changesReceivedListeners = new Set<TransportListener<Changes>>();
-	changesProcessedListeners = new Set<TransportListener<{ ok: boolean }>>();
-	startStreamingListeners = new Set<TransportListener<StartStreaming>>();
-	resetStreamListeners = new Set<TransportListener<StartStreaming>>();
+export class SyncEventEmitter {
+	changesReceivedListeners = new Set<Listener<{ timestamp: number }>>();
+	changesProcessedListeners = new Set<Listener<{ timestamp: number }>>();
 
 	private _notify =
-		<M>(listeners: Set<TransportListener<M>>) =>
+		<M>(listeners: Set<Listener<M>>) =>
 		(msg: M) => {
 			for (const listener of listeners) {
 				listener(msg);
@@ -18,26 +15,22 @@ export class TransportEventEmitter {
 		};
 
 	private _listen =
-		<M>(listeners: Set<TransportListener<M>>) =>
-		(cb: TransportListener<M>) => {
+		<M>(listeners: Set<Listener<M>>) =>
+		(cb: Listener<M>) => {
 			listeners.add(cb);
 			return () => listeners.delete(cb);
 		};
 
 	onChangesReceived = this._listen(this.changesReceivedListeners);
 	onChangesProcessed = this._listen(this.changesProcessedListeners);
-	onStartStreaming = this._listen(this.startStreamingListeners);
-	onResetStream = this._listen(this.resetStreamListeners);
 
 	notifyChangesReceived = this._notify(this.changesReceivedListeners);
 	notifyChangesProcessed = this._notify(this.changesProcessedListeners);
-	notifyStartStreaming = this._notify(this.startStreamingListeners);
-	notifyResetStream = this._notify(this.resetStreamListeners);
 }
 
 export class SyncTransportController implements Transport {
 	#transport: Transport;
-	#progressEmitter: TransportEventEmitter;
+	#progressEmitter: SyncEventEmitter;
 
 	start: Transport["start"];
 	announcePresence: Transport["announcePresence"];
@@ -50,7 +43,7 @@ export class SyncTransportController implements Transport {
 
 	close: Transport["close"];
 
-	constructor(transport: Transport, progressEmitter: TransportEventEmitter) {
+	constructor(transport: Transport, progressEmitter: SyncEventEmitter) {
 		this.#transport = transport;
 		this.#progressEmitter = progressEmitter;
 
@@ -69,17 +62,18 @@ export class SyncTransportController implements Transport {
 	}
 
 	private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
-		this.#progressEmitter.notifyChangesReceived(msg);
-		await this.#transport.onChangesReceived?.(msg);
-		this.#progressEmitter.notifyChangesProcessed({ ok: true });
+		const timestamp = Date.now();
+		this.#progressEmitter.notifyChangesReceived({ timestamp });
+		await this.onChangesReceived?.(msg);
+		this.#progressEmitter.notifyChangesProcessed({ timestamp });
 	}
+
 	private _onStartStreaming(msg: Parameters<Transport["onStartStreaming"]>[0]) {
-		this.#progressEmitter.notifyStartStreaming(msg);
-		this.#transport.onStartStreaming?.(msg);
+		this.onStartStreaming?.(msg);
 	}
+
 	private _onResetStream(msg: Parameters<Transport["onResetStream"]>[0]) {
-		this.#progressEmitter.notifyResetStream(msg);
-		this.#transport.onResetStream?.(msg);
+		this.onResetStream?.(msg);
 	}
 }
 
