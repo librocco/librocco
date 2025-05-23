@@ -11,7 +11,6 @@
 	import type { PageData } from "./$types";
 
 	import { dbid, syncConfig, syncActive } from "$lib/db";
-	import * as dbActivityMonitor from "$lib/db/cr-sqlite/activity-monitor";
 
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
@@ -154,8 +153,6 @@
 	const nukeAndResyncDB = async () => {
 		// Stop the ongoing sync
 		syncActive.set(false);
-		// Stop the activity monitor (it will be restarted in the root load function)
-		dbActivityMonitor.stop();
 
 		// Clear all the data in CR-SQLite IndexedDB
 		await clearDb();
