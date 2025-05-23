@@ -1,4 +1,5 @@
-import type { WorkerInterface } from "@vlcn.io/ws-client";
+import type WorkerInterface from "$lib/workers/WorkerInterface";
+import { derived, writable } from "svelte/store";
 
 export type SyncConfig = {
 	dbid?: string;
@@ -71,3 +72,22 @@ const newSyncInterface = () => {
 };
 
 export const sync = newSyncInterface();
+
+export const newSyncProgressStore = () => {
+	const startTimestamp = writable<number | null>(null);
+	const isSyncing = derived(startTimestamp, ($startTimestamp) => !!$startTimestamp);
+
+	let disposer: () => void;
+
+	const start = (wkr: WorkerInterface) => {
+		const disposer1 = wkr.onChangesReceived(({ timestamp }) => startTimestamp.set(timestamp));
+		const disposer2 = wkr.onChangesProcessed(({ timestamp }) => startTimestamp.update(($ts) => ($ts === timestamp ? null : $ts)));
+		disposer = () => (disposer1(), disposer2());
+	};
+
+	const stop = () => {
+		disposer?.();
+	};
+
+	return { start, stop, isSyncing };
+};

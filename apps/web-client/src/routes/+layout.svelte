@@ -17,7 +17,7 @@
 	import { Sidebar } from "$lib/components";
 
 	import { IS_DEBUG, IS_E2E } from "$lib/constants";
-	import { sync, syncConfig, syncActive } from "$lib/db";
+	import { sync, syncConfig, syncActive, newSyncProgressStore } from "$lib/db";
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
@@ -92,6 +92,9 @@
 
 	let disposer: () => void;
 
+	const syncProgressStore = newSyncProgressStore();
+	const { isSyncing } = syncProgressStore;
+
 	onMount(() => {
 		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
 		document.body.setAttribute("hydrated", "true");
@@ -105,13 +108,23 @@
 		// Init worker and sync interface
 		const wkr = new WorkerInterface(new SyncWorker());
 		sync.init(wkr);
-		sync.worker().onChangesReceived(() => (console.time("changes_processing"), console.log("changes received")));
-		sync.worker().onChangesProcessed(() => (console.timeEnd("changes_processing"), console.log("changes processed")));
+
+		// Start the sync progress store (listen to sync events)
+		syncProgressStore.start(wkr);
 
 		// Start the sync
 		if (get(syncActive)) {
 			sync.sync(get(syncConfig));
 		}
+
+		// Prevent user from navigating away if sync is in progress (this would result in an invalid DB state)
+		const preventUnloadIfSyncing = (e: BeforeUnloadEvent) => {
+			if (get(isSyncing)) {
+				e.preventDefault();
+				e.returnValue = "";
+			}
+		};
+		window.addEventListener("beforeunload", preventUnloadIfSyncing);
 
 		// Control the invalidation of the stock cache in central spot
 		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
@@ -122,6 +135,7 @@
 	onDestroy(() => {
 		// Stop the sync (if active)
 		sync.stop(); // Safe and idempotent
+		syncProgressStore.stop(); // Safe and idempotent
 
 		availabilitySubscription?.unsubscribe();
 
@@ -143,18 +157,12 @@
 	});
 
 	const {
-		elements: {
-			overlay: syncDialogOverlay,
-			content: syncDialogContent,
-			portalled: syncDialogPortalled,
-			title: syncDialogTitle,
-			description: syncDialogDescription
-		},
+		elements: { content: syncDialogContent, portalled: syncDialogPortalled, title: syncDialogTitle, description: syncDialogDescription },
 		states: { open: syncDialogOpen }
 	} = createDialog({
 		forceVisible: true
 	});
-	$: $syncDialogOpen = true;
+	$: $syncDialogOpen = $isSyncing;
 
 	afterNavigate(() => {
 		if ($mobileNavOpen) {
@@ -208,7 +216,7 @@
 
 {#if $syncDialogOpen}
 	<div use:melt={$syncDialogPortalled}>
-		<div use:melt={$syncDialogOverlay} class="fixed inset-0 z-[100] bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+		<div on:click={(e) => e.preventDefault()} class="fixed inset-0 z-[100] bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 
 		<div
 			class="fixed left-1/2 top-1/2 z-[200] max-h-screen w-full translate-x-[-50%] translate-y-[-50%] overflow-y-auto px-4 md:max-w-md md:px-0"
