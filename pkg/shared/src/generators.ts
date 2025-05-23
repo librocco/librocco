@@ -104,6 +104,29 @@ export function slice<T>(iterable: Iterable<T>, start: number, end: number): Reu
 	});
 }
 
+export function chunks<T>(iterable: Iterable<T>, chunkSize: number): ReusableGenerator<T[]> {
+	return iterableFromGenerator(function* () {
+		const iterator = iterable[Symbol.iterator]();
+
+		while (true) {
+			const chunk: T[] = [];
+			for (let i = 0; i < chunkSize; i++) {
+				const { value, done } = iterator.next();
+				if (done && value === undefined) {
+					break;
+				}
+				chunk.push(value);
+			}
+
+			if (chunk.length === 0) {
+				break;
+			}
+
+			yield chunk;
+		}
+	});
+}
+
 export function zip<A extends readonly Iterable<unknown>[]>(
 	...iterables: A
 ): ReusableGenerator<{ [K in keyof A]: A[K] extends Iterable<infer T> ? T : never }> {
@@ -184,6 +207,7 @@ interface TransformableIterable<T> extends Iterable<T> {
 	partition<S extends T>(predicate: (value: T) => value is S): [TransformableIterable<S>, TransformableIterable<Exclude<T, S>>];
 	partition(predicate: (value: T) => boolean): [TransformableIterable<T>, TransformableIterable<T>];
 	slice(start: number, end: number): TransformableIterable<T>;
+	chunks(chunkSize: number): TransformableIterable<T[]>;
 	zip<A extends readonly Iterable<unknown>[]>(
 		...iterables: A
 	): TransformableIterable<[T, ...{ [K in keyof A]: A[K] extends Iterable<infer E> ? E : never }]>;
@@ -227,6 +251,7 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 		return [wrapIter(a), wrapIter(b)] as [TransformableIterable<S>, TransformableIterable<Exclude<T, S>>];
 	};
 	const s = (start: number, end: number) => wrapIter(slice(iterable, start, end));
+	const c = (chunkSize: number) => wrapIter(chunks(iterable, chunkSize));
 	const z = <A extends readonly Iterable<unknown>[]>(...iterables: A) => wrapIter(zip(iterable, ...iterables));
 
 	const r = (reducer: (accumulator: T, value: T) => T, seed?: T) => reduce(iterable, reducer, seed);
@@ -241,6 +266,7 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 		filter: f,
 		partition: p,
 		slice: s,
+		chunks: c,
 		reduce: r,
 		zip: z,
 		array: () => Array.from(iterable)

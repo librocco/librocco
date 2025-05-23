@@ -1,8 +1,17 @@
+import { chunks } from "@librocco/shared";
 import type { Transport } from "@vlcn.io/ws-client";
+import type { Changes } from "@vlcn.io/ws-common";
 
 type Listener<M = undefined> = M extends undefined ? () => void : (msg: M) => void;
 
+export type SyncProgress = {
+	active: boolean;
+	nProcessed: number;
+	nTotal: number;
+};
+
 export class SyncEventEmitter {
+	progressListeners = new Set<Listener<SyncProgress>>();
 	changesReceivedListeners = new Set<Listener<{ timestamp: number }>>();
 	changesProcessedListeners = new Set<Listener<{ timestamp: number }>>();
 
@@ -23,14 +32,75 @@ export class SyncEventEmitter {
 
 	onChangesReceived = this._listen(this.changesReceivedListeners);
 	onChangesProcessed = this._listen(this.changesProcessedListeners);
+	onProgress = this._listen(this.progressListeners);
 
 	notifyChangesReceived = this._notify(this.changesReceivedListeners);
 	notifyChangesProcessed = this._notify(this.changesProcessedListeners);
+	notifyProgress = this._notify(this.progressListeners);
+}
+
+export type SyncConfig = {
+	maxChunkSize: number;
+};
+
+type ChunkTask = {
+	chunk: Changes;
+	nProcessed: number;
+	nTotal: number;
+};
+
+class ChangesProcessor {
+	#maxChunkSize: number;
+
+	#queue: Changes[] = [];
+	#nProcessed = 0;
+
+	#running = false;
+
+	onChunk: ((task: ChunkTask) => Promise<void>) | null = null;
+	onDone: (() => void) | null = null;
+
+	constructor(config: SyncConfig) {
+		this.#maxChunkSize = config.maxChunkSize;
+	}
+
+	private _processQueue = async () => {
+		let i = 0;
+		while (i < this.#queue.length) {
+			const chunk = this.#queue[i];
+
+			// Process chunk
+			const task = { chunk, nProcessed: this.#nProcessed, nTotal: this.#queue.length };
+			await this.onChunk?.(task);
+
+			this.#nProcessed++;
+			i++;
+		}
+
+		// Cleanup
+		this.#queue = [];
+		this.#running = false;
+
+		this.onDone?.();
+	};
+
+	enqueue({ _tag, sender, changes, since }: Changes) {
+		for (const chunk of chunks(changes, this.#maxChunkSize)) {
+			this.#queue.push({ _tag, sender, changes: chunk, since });
+		}
+
+		// Start the process if not already running
+		if (!this.#running) {
+			this.#running = true;
+			this._processQueue();
+		}
+	}
 }
 
 export class SyncTransportController implements Transport {
 	#transport: Transport;
 	#progressEmitter: SyncEventEmitter;
+	#changesProcessor: ChangesProcessor;
 
 	start: Transport["start"];
 	announcePresence: Transport["announcePresence"];
@@ -43,7 +113,7 @@ export class SyncTransportController implements Transport {
 
 	close: Transport["close"];
 
-	constructor(transport: Transport, progressEmitter: SyncEventEmitter) {
+	constructor(transport: Transport, progressEmitter: SyncEventEmitter, config: SyncConfig) {
 		this.#transport = transport;
 		this.#progressEmitter = progressEmitter;
 
@@ -59,13 +129,15 @@ export class SyncTransportController implements Transport {
 		this.#transport.onChangesReceived = this._onChangesReceived.bind(this);
 		this.#transport.onStartStreaming = this._onStartStreaming.bind(this);
 		this.#transport.onResetStream = this._onResetStream.bind(this);
+
+		// Setup the changes processor
+		this.#changesProcessor = new ChangesProcessor(config);
+		this.#changesProcessor.onChunk = this._onChunk.bind(this);
+		this.#changesProcessor.onDone = this._onDone.bind(this);
 	}
 
 	private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
-		const timestamp = Date.now();
-		this.#progressEmitter.notifyChangesReceived({ timestamp });
-		await this.onChangesReceived?.(msg);
-		this.#progressEmitter.notifyChangesProcessed({ timestamp });
+		this.#changesProcessor.enqueue(msg);
 	}
 
 	private _onStartStreaming(msg: Parameters<Transport["onStartStreaming"]>[0]) {
@@ -74,6 +146,15 @@ export class SyncTransportController implements Transport {
 
 	private _onResetStream(msg: Parameters<Transport["onResetStream"]>[0]) {
 		this.onResetStream?.(msg);
+	}
+
+	private async _onChunk({ chunk, nProcessed, nTotal }: ChunkTask) {
+		this.#progressEmitter.notifyProgress({ active: true, nProcessed, nTotal });
+		await this.onChangesReceived?.(chunk);
+	}
+
+	private _onDone() {
+		this.#progressEmitter.notifyProgress({ active: false, nProcessed: 0, nTotal: 0 });
 	}
 }
 
