@@ -7,7 +7,6 @@
 	import { get } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
 
-	import { WorkerInterface } from "@vlcn.io/ws-client";
 	import { Subscription } from "rxjs";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Menu } from "lucide-svelte";
@@ -19,8 +18,8 @@
 
 	import { IS_DEBUG, IS_E2E } from "$lib/constants";
 	import { sync, syncConfig, syncActive } from "$lib/db";
-	import * as dbActivityMonitor from "$lib/db/cr-sqlite/activity-monitor";
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
+	import WorkerInterface from "$lib/workers/WorkerInterface";
 
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -101,14 +100,13 @@
 			window["timeLogger"] = timeLogger;
 		}
 
-		// Prevent unload if DB busy
-		dbActivityMonitor.preventUnloadIfBusy();
-
 		// Start the sync worker
 		//
 		// Init worker and sync interface
 		const wkr = new WorkerInterface(new SyncWorker());
 		sync.init(wkr);
+		sync.worker().onChangesReceived(() => (console.time("changes_processing"), console.log("changes received")));
+		sync.worker().onChangesProcessed(() => (console.timeEnd("changes_processing"), console.log("changes processed")));
 
 		// Start the sync
 		if (get(syncActive)) {
@@ -122,10 +120,6 @@
 	});
 
 	onDestroy(() => {
-		// Stop the activity monitor
-		dbActivityMonitor.stop();
-		dbActivityMonitor.preventUnloadIfBusyStop();
-
 		// Stop the sync (if active)
 		sync.stop(); // Safe and idempotent
 
