@@ -4,7 +4,7 @@
 	import "./global.css";
 
 	import { onDestroy, onMount } from "svelte";
-	import { get } from "svelte/store";
+	import { type Readable, get } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
 
 	import { Subscription } from "rxjs";
@@ -32,6 +32,7 @@
 	import { beforeNavigate } from "$app/navigation";
 
 	import type { LayoutData } from "./$types";
+	import type { SyncProgress } from "$lib/workers/sync-transport-control";
 
 	export let data: LayoutData;
 
@@ -93,7 +94,7 @@
 	let disposer: () => void;
 
 	const syncProgressStore = newSyncProgressStore();
-	const { isSyncing } = syncProgressStore;
+	const { progress } = syncProgressStore;
 
 	onMount(() => {
 		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
@@ -119,7 +120,7 @@
 
 		// Prevent user from navigating away if sync is in progress (this would result in an invalid DB state)
 		const preventUnloadIfSyncing = (e: BeforeUnloadEvent) => {
-			if (get(isSyncing)) {
+			if (get(progress).active) {
 				e.preventDefault();
 				e.returnValue = "";
 			}
@@ -156,19 +157,33 @@
 		forceVisible: true
 	});
 
-	const {
-		elements: { content: syncDialogContent, portalled: syncDialogPortalled, title: syncDialogTitle, description: syncDialogDescription },
-		states: { open: syncDialogOpen }
-	} = createDialog({
-		forceVisible: true
-	});
-	$: $syncDialogOpen = $isSyncing;
-
 	afterNavigate(() => {
 		if ($mobileNavOpen) {
 			$mobileNavOpen = false;
 		}
 	});
+
+	const {
+		elements: {
+			overlay: syncDialogOverlay,
+			content: syncDialogContent,
+			portalled: syncDialogPortalled,
+			title: syncDialogTitle,
+			description: syncDialogDescription
+		},
+		states: { open: syncDialogOpen }
+	} = createDialog({
+		forceVisible: true
+	});
+	$: $syncDialogOpen = $progress.active;
+
+	/** An action used to (reactively) update the progress bar during sync */
+	function progressBar(node?: HTMLElement, progress?: Readable<SyncProgress>) {
+		progress.subscribe(({ nProcessed, nTotal }) => {
+			const value = nTotal > 0 ? nProcessed / nTotal : 0;
+			node?.style.setProperty("width", `${value * 100}%`);
+		});
+	}
 </script>
 
 <div class="flex h-full bg-base-200 lg:divide-x lg:divide-base-content">
@@ -216,7 +231,12 @@
 
 {#if $syncDialogOpen}
 	<div use:melt={$syncDialogPortalled}>
-		<div on:click={(e) => e.preventDefault()} class="fixed inset-0 z-[100] bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+		<div
+			on:click={(e) => e.preventDefault()}
+			use:melt={$syncDialogOverlay}
+			class="fixed inset-0 z-[100] bg-black/50"
+			transition:fade|global={{ duration: 150 }}
+		></div>
 
 		<div
 			class="fixed left-1/2 top-1/2 z-[200] max-h-screen w-full translate-x-[-50%] translate-y-[-50%] overflow-y-auto px-4 md:max-w-md md:px-0"
@@ -226,13 +246,19 @@
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
 				<h2 use:melt={$syncDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">Sync in progress</h2>
 
-				<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$syncDialogDescription}>
-					<span class="mb-2 block">The initial DB sync is in progress. This might take a while</span>
-					<span class="mb-2 block"
-						>Please don't navigate away while the sync is in progress as it will result in broken DB and the sync will need to be restarted.</span
-					>
+				<div class="mb-4 text-sm leading-6 text-gray-600" use:melt={$syncDialogDescription}>
+					<p class="mb-8">The initial DB sync is in progress. This might take a while</p>
+
+					<p class="mb-2">Progress:</p>
+					<div class="mb-8 h-3 w-full overflow-hidden rounded">
+						<div use:progressBar={progress} class="h-full bg-cyan-300"></div>
+					</div>
+
+					<p>
+						Please don't navigate away while the sync is in progress as it will result in broken DB and the sync will need to be restarted.
+					</p>
 					<!-- TODO: try and make the sync stop on unload (to avoid broken DB) -->
-				</p>
+				</div>
 			</div>
 		</div>
 	</div>
