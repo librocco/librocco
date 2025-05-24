@@ -55,6 +55,7 @@ class ChangesProcessor {
 	#queue: Changes[] = [];
 	#nProcessed = 0;
 
+	#active = true;
 	#running = false;
 
 	onChunk: ((task: ChunkTask) => Promise<void>) | null = null;
@@ -66,7 +67,7 @@ class ChangesProcessor {
 
 	private _processQueue = async () => {
 		let i = 0;
-		while (i < this.#queue.length) {
+		while (i < this.#queue.length && this.#active) {
 			const chunk = this.#queue[i];
 
 			// Process chunk
@@ -95,6 +96,16 @@ class ChangesProcessor {
 			this._processQueue();
 		}
 	}
+
+	start() {
+		this.#active = true;
+	}
+
+	stop() {
+		this.#active = false;
+		this.#queue = [];
+		this.onDone?.();
+	}
 }
 
 export class SyncTransportController implements Transport {
@@ -102,7 +113,6 @@ export class SyncTransportController implements Transport {
 	#progressEmitter: SyncEventEmitter;
 	#changesProcessor: ChangesProcessor;
 
-	start: Transport["start"];
 	announcePresence: Transport["announcePresence"];
 	sendChanges: Transport["sendChanges"];
 	rejectChanges: Transport["rejectChanges"];
@@ -111,14 +121,11 @@ export class SyncTransportController implements Transport {
 	onStartStreaming: Transport["onStartStreaming"] = null;
 	onResetStream: Transport["onResetStream"] = null;
 
-	close: Transport["close"];
-
 	constructor(transport: Transport, progressEmitter: SyncEventEmitter, config: SyncConfig) {
 		this.#transport = transport;
 		this.#progressEmitter = progressEmitter;
 
 		// Propagate the immutable transport methods
-		this.start = this.#transport.start.bind(this.#transport);
 		this.announcePresence = this.#transport.announcePresence.bind(this.#transport);
 		this.sendChanges = this.#transport.sendChanges.bind(this.#transport);
 		this.rejectChanges = this.#transport.rejectChanges.bind(this.#transport);
@@ -155,6 +162,16 @@ export class SyncTransportController implements Transport {
 
 	private _onDone() {
 		this.#progressEmitter.notifyProgress({ active: false, nProcessed: 0, nTotal: 0 });
+	}
+
+	start(...params: Parameters<Transport["start"]>) {
+		this.#changesProcessor.start();
+		this.#transport.start(...params);
+	}
+
+	close() {
+		this.#changesProcessor.stop();
+		this.#transport.close();
 	}
 }
 
