@@ -249,7 +249,7 @@
 				<div class="mb-4 text-sm leading-6 text-gray-600" use:melt={$syncDialogDescription}>
 					<p class="mb-8">The initial DB sync is in progress. This might take a while</p>
 
-					<p class="mb-2">Progress:</p>
+					<p class="mb-2">Progress ({$progress.nProcessed}/{$progress.nTotal}):</p>
 					<div class="mb-8 h-3 w-full overflow-hidden rounded">
 						<div use:progressBar={progress} class="h-full bg-cyan-300"></div>
 					</div>
