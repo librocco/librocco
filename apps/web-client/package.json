@@ -29,7 +29,7 @@
 	"dependencies": {
 		"wa-sqlite": "workspace:*",
 		"pouchdb": "~8.0.1",
-		"@vlcn.io/crsqlite-wasm": "0.16.0",
+		"@vlcn.io/crsqlite-wasm": "workspace:*",
 		"@vlcn.io/ws-browserdb": "~0.2.0",
 		"@vlcn.io/ws-client": "~0.2.0",
 		"@vlcn.io/ws-common": "~0.2.0",
