@@ -6,6 +6,8 @@ import SQLiteAsyncESMFactory from "wa-sqlite/dist/wa-sqlite-async.mjs";
 import { OPFSAnyContextVFS } from "wa-sqlite/src/examples/OPFSAnyContextVFS.js";
 import * as SQLite from "wa-sqlite/src/sqlite-api.js";
 
+import { locateFile } from "./init";
+
 /**
  * A TEMP function, to be run from the console, here to reduce the repetitive
  * steps when debugging / testing out
@@ -18,9 +20,7 @@ export const setupOPFSDebug = async () => {
 		//
 		// This is not an ideally integrated solution (ideally, we would serve the build from the dist of the wa-sqlite submodule)
 		locateFile() {
-			const base = `http://${window.location.host}/preview/`;
-			const url = new URL("wa-sqlite-async.wasm", base).href;
-			return url;
+			return locateFile()
 		}
 	});
 
