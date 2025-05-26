@@ -19,6 +19,9 @@ import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
 
+// TEMP
+import { setupOPFSDebug } from "$lib/db/cr-sqlite/opfs";
+
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
 
@@ -53,6 +56,8 @@ export const load: LayoutLoad = async ({ url }) => {
 	if (browser) {
 		// For debug purposes and manual overrides (e.g. 'schema_version')
 		window["getDB"] = getDB;
+		// For OPFS play-around
+		window["setupOPFSDebug"] = setupOPFSDebug;
 
 		// Init the db
 		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
