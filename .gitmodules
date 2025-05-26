@@ -1,0 +1,3 @@
+[submodule "3rd-party/wa-sqlite"]
+	path = 3rd-party/wa-sqlite
+	url = git@github.com:librocco/wa-sqlite
