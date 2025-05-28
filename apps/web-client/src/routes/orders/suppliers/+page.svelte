@@ -18,9 +18,8 @@
 	import { writable } from "svelte/store";
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 	import type { Supplier } from "$lib/db/cr-sqlite/types";
-	import { base } from "$app/paths";
 	import { Plus } from "lucide-svelte";
-	import { appPath } from "$lib/paths";
+	import { appHash, appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
@@ -66,7 +65,7 @@
 
 		dialogOpen.set(false);
 
-		await goto(`${base}/orders/suppliers/${id}`);
+		await goto(appHash("suppliers", id));
 	};
 </script>
 
