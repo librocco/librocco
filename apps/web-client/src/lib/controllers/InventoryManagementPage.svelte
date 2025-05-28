@@ -4,7 +4,7 @@
 	import { page } from "$app/stores";
 
 	import { Page } from "$lib/controllers";
-	import { appPath } from "$lib/paths";
+	import { appHash } from "$lib/paths";
 
 	import type { DB } from "$lib/db/cr-sqlite/types";
 	import type { PluginsInterface } from "$lib/plugins";
@@ -13,16 +13,16 @@
 		{
 			icon: Building,
 			label: "Warehouses",
-			href: appPath("warehouses")
+			href: appHash("warehouses")
 		},
 		{
 			icon: CopyPlus,
 			label: "Purchase",
-			href: appPath("inbound")
+			href: appHash("inbound")
 		}
 	];
 
-	$: activeTab = tabs.find(({ href }) => $page.url.pathname.startsWith(href));
+	$: activeTab = tabs.find(({ href }) => $page.url.hash.startsWith(href));
 
 	export let db: DB;
 	export let plugins: PluginsInterface;
@@ -42,7 +42,7 @@
 		<div class="flex h-full w-full flex-col">
 			<div class="tabs-bordered tabs w-full">
 				{#each tabs as { label, icon, href }}
-					{@const active = $page.url.pathname.startsWith(href)}
+					{@const active = $page.url.hash.startsWith(href)}
 
 					<a {href} class="tab gap-x-2 {active ? 'tab-active' : ''}">
 						<svelte:component this={icon} size={20} />

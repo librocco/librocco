@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { baseURL } from "@/constants";
+import { appHash } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard } from "@/helpers";
@@ -8,14 +8,7 @@ import { selector, testIdSelector } from "@/helpers/utils";
 import { DashboardNode } from "@/helpers/types";
 
 test.beforeEach(async ({ page }) => {
-	// Load the app
-	await page.goto(baseURL);
-
-	const dashboard = getDashboard(page);
-	await dashboard.waitFor();
-
-	// Navigate to the settings page
-	await page.getByRole("link", { name: "Settings" }).click();
+	await page.goto(appHash("settings"));
 });
 
 // TODO: Unskip these when we manage to fix issues with COOP/COEP
