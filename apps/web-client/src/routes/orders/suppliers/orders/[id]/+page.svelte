@@ -18,11 +18,8 @@
 	let disposer: () => void;
 
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
-		const disposer1 = rx.onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
-		const disposer2 = rx.onRange(["book"], () => invalidate("book:data"));
+		const disposer1 = data.dbCtx?.rx?.onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
+		const disposer2 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("book:data"));
 		disposer = () => (disposer1(), disposer2());
 	});
 

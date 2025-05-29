@@ -28,12 +28,9 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
 		// Reload when book data changes, or when a note "changes" (we're interested in committed change)
 		// We don't subscribe to book_transaction as we're only interested in committed txns - and this is triggered by note change
-		disposer = rx.onRange(["book", "note"], () => invalidate("history:transactions"));
+		disposer = data.dbCtx?.rx?.onRange(["book", "note"], () => invalidate("history:transactions"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount

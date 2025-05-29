@@ -134,7 +134,7 @@
 		// Control the invalidation of the stock cache in central spot
 		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
 		// between the last cached value and the current one and invalidates the cache if needed
-		disposer = dbCtx.rx.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
+		disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
 	});
 
 	onDestroy(() => {
