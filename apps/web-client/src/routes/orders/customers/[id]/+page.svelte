@@ -67,13 +67,10 @@
 	let disposer: () => void;
 
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
 		// Reload add customer data dependants when the data changes
-		const disposer1 = rx.onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
+		const disposer1 = data.dbCtx?.rx?.onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
 		// Reload all customer order line/book data dependants when the data changes
-		const disposer2 = rx.onRange(["customer_order_lines", "book"], () => invalidate("customer:books"));
+		const disposer2 = data.dbCtx?.rx?.onRange(["customer_order_lines", "book"], () => invalidate("customer:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 
