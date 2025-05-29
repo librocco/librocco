@@ -39,11 +39,10 @@
 
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
-		const disposer1 = rx.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
-		const disposer2 = rx.onRange(["reconciliation_order", "reconciliation_order_lines"], () => invalidate("reconciliationOrder:data"));
+		const disposer1 = data.dbCtx?.rx?.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
+		const disposer2 = data.dbCtx?.rx?.onRange(["reconciliation_order", "reconciliation_order_lines"], () =>
+			invalidate("reconciliationOrder:data")
+		);
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(async () => {
