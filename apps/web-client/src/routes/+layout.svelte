@@ -11,7 +11,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Menu } from "lucide-svelte";
 
-	import { afterNavigate, invalidateAll } from "$app/navigation";
+	import { afterNavigate } from "$app/navigation";
 	import { browser } from "$app/environment";
 	import { beforeNavigate } from "$app/navigation";
 
@@ -25,7 +25,8 @@
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
 	import { sync, syncConfig, syncActive, dbid, newSyncProgressStore } from "$lib/db";
-	import { clearDb, ErrDBSchemaMismatch, getDB } from "$lib/db/cr-sqlite/db";
+	import { clearDb, ErrDBSchemaMismatch, getDB, schemaName, schemaContent } from "$lib/db/cr-sqlite/db";
+
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
 	import * as note from "$lib/db/cr-sqlite/note";
@@ -217,14 +218,15 @@
 		window.location.reload();
 	};
 
-	const forceDBVersion = (wantVersion: bigint) => async () => {
+	const automigrateDB = async () => {
 		// We need to retrieve the DB directly, as the broken DB won't be passed down from the load function
 		const db = await getDB($dbid);
-		await db.exec("UPDATE crsql_master SET value = ? WHERE key = 'schema_version'", [wantVersion]);
+		await db.automigrateTo(schemaName, schemaContent);
 
 		// Reload the window - to avoid a huge number of issues related to
 		// having to account for DB not being available, but becoming available within the same lifetime
-		window.location.reload();
+		// NOTE: commented out so we can observe the errors before navigating away, TODO: uncomment when stable
+		// window.location.reload();
 	};
 </script>
 
@@ -320,20 +322,15 @@
 					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">Error: DB Schema mismatch</h2>
 
 					<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
-						<span class="mb-2 block">An update to your schema seems to have happened and the version doesn't match the current version</span
+						<span class="mb-2 block"
+							>Your DB's schema version doesn't match the latest schema version. Click automigrate to migrate to the latest version.</span
 						>
-						<span class="ml-4 block">Current schema version: {(error as ErrDBSchemaMismatch).wantVersion}</span>
+						<span class="ml-4 block">Latest schema version: {(error as ErrDBSchemaMismatch).wantVersion}</span>
 						<span class="ml-4 block">Your DB schema version: {(error as ErrDBSchemaMismatch).gotVersion}</span>
-						<span class="mt-2 mb-4 block"
-							>If you think the update is a minor one and the mismatch won't break the functionality, click below to force the current
-							version</span
-						>
 					</p>
 
 					<div class="w-full text-end">
-						<button on:click={forceDBVersion((error as ErrDBSchemaMismatch).wantVersion)} type="button" class="btn-secondary btn"
-							>Force DB version</button
-						>
+						<button on:click={automigrateDB} type="button" class="btn-secondary btn">Automigrate</button>
 					</div>
 				{:else}
 					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">Error: DB corrupted</h2>
