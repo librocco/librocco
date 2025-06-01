@@ -4,20 +4,21 @@ import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
 import rxtbl from "@vlcn.io/rx-tbl";
 
-import schema from "$lib/schemas/init?raw";
+import schemaContent from "$lib/schemas/init?raw";
+export { schemaContent };
 
 import { type DB, type Change } from "./types";
 import { idbPromise, idbTxn } from "../indexeddb";
 
-export type DbCtx = { db: DB; rx: ReturnType<typeof rxtbl> };
+export type DbCtx = { db: _DB; rx: ReturnType<typeof rxtbl> };
 
 // DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
 // chahe the DB as soon as the first time 'getInitializedDB' is called, so that all subsequent calls
 // await the same promise (which may or may not be resolved by then).
 const dbCache: Record<string, Promise<DbCtx>> = {};
 
-const schemaName = "init";
-const schemaVersion = cryb64(schema);
+export const schemaName = "init";
+export const schemaVersion = cryb64(schemaContent);
 
 async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null> {
 	const nameRes = await db.execA<[string]>("SELECT value FROM crsql_master WHERE key = 'schema_name'");
@@ -40,7 +41,7 @@ export async function initializeDB(db: DB) {
 	// Thought: This could probably be wrapped into a txn
 	// not really: transactions are for DML, not for DDL
 	// Apply the schema (initialise the db)
-	await db.exec(schema);
+	await db.exec(schemaContent);
 
 	// Store schema info in crsql_master
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
