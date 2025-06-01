@@ -14,7 +14,19 @@ function firstPick<T>(data: any[]): T | undefined {
 	return d[Object.keys(d)[0]];
 }
 
-const newLogger = (prefixes: string[] = []) => {
+interface LogDone {
+	(): void;
+	<R>(res: R): R;
+}
+type Logger = {
+	log: (...params: any[]) => void;
+	debug: (...params: any[]) => void;
+	extend: (prefix: string) => Logger;
+	start: (params?: Record<string, any>) => void;
+	done: LogDone;
+};
+
+const newLogger = (prefixes: string[] = []): Logger => {
 	const prefix = prefixes.map((x) => `[${x}]`).join("");
 
 	const log = (...params: any[]) => {
@@ -42,7 +54,7 @@ const newLogger = (prefixes: string[] = []) => {
 		}
 	};
 
-	const done = <R>(res?: R) => {
+	const done = <R>(res: R) => {
 		log("done!");
 
 		debug("result:");
@@ -51,7 +63,7 @@ const newLogger = (prefixes: string[] = []) => {
 		return res;
 	};
 
-	return { log, debug, extend, start, done };
+	return { log, debug, extend, start, done: done as LogDone };
 };
 const logger = newLogger();
 
@@ -62,6 +74,8 @@ const logger = newLogger();
  * JS code defined below instead of calling the `crsql_automigrate` SQL function.
  *
  * The JS code used below is a port of the Rust code integrated into the crsqlite extension.
+ *
+ * IMPORTANT NOTE: This is for debug purposes only and should NEVER be used in production as (unlike the original) it doesn't wrap everything into a transaction
  */
 export async function jsAutomigrateTo(db: DB, schemaName: string, schemaContent: string): Promise<"noop" | "apply" | "migrate"> {
 	const l = logger.extend("jsAutomigrateTo");
@@ -81,32 +95,33 @@ export async function jsAutomigrateTo(db: DB, schemaName: string, schemaContent:
 
 	const ret = storedName === undefined || storedName !== schemaName ? "apply" : "migrate";
 
-	await db.tx(async (tx) => {
-		if (storedVersion == null || storedName !== schemaName) {
-			if (storedName !== schemaName) {
-				// drop all tables since a schema name change is a reformat of the db.
-				const tables = await tx.execA(
-					`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'crsql_%'`
-				);
-				for (const table of tables) {
-					await tx.exec(`DROP TABLE [${table[0]}]`);
-				}
+	// IMPORTANT NOTE: the following would have been a transaction, but, while that may work with internally defined crsqlite_migrate,
+	// we can't use it as we need access to different DBs internally and that would cause deadlocks
+	if (storedVersion == null || storedName !== schemaName) {
+		if (storedName !== schemaName) {
+			// drop all tables since a schema name change is a reformat of the db.
+			const tables = await db.execA(
+				`SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'crsql_%'`
+			);
+			for (const table of tables) {
+				await db.exec(`DROP TABLE [${table[0]}]`);
 			}
-			await tx.exec(schemaContent);
-		} else {
-			// The following line is the original (for the original method):
-			//
-			// await tx.exec(`SELECT crsql_automigrate(?, 'SELECT crsql_finalize();')`, [schemaContent]);
-			//
-			// it calls the crsql_automigrate function, the impl for which can be found at:
-			// https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L31
-			//
-			// Here we're using the JS version of the same code in order to have clear and granunlar control on the execution
-			await crsql_automigrate(tx, schemaContent, `SELECT crsql_finalize()`);
 		}
-		await tx.exec(`INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)`, ["schema_version", version]);
-		await tx.exec(`INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)`, ["schema_name", schemaName]);
-	});
+		await db.exec(schemaContent);
+	} else {
+		// The following line is the original (for the original method):
+		//
+		// await db.exec(`SELECT crsql_automigrate(?, 'SELECT crsql_finalize();')`, [schemaContent]);
+		//
+		// it calls the crsql_automigrate function, the impl for which can be found at:
+		// https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L31
+		//
+		// Here we're using the JS version of the same code in order to have clear and granunlar control on the execution
+		await crsql_automigrate(db, schemaContent, `SELECT crsql_finalize()`);
+	}
+	await db.exec(`INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)`, ["schema_version", version]);
+	await db.exec(`INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)`, ["schema_name", schemaName]);
+
 	await db.exec(`VACUUM;`);
 
 	return l.done(ret);
@@ -115,14 +130,14 @@ export async function jsAutomigrateTo(db: DB, schemaName: string, schemaContent:
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L31
  */
-export async function crsql_automigrate(tx: TXAsync, schema: string, cleanup_stmt: string): Promise<void> {
+export async function crsql_automigrate(db: DB, schema: string, cleanup_stmt: string): Promise<void> {
 	const l = logger.extend("crsql_automigrate");
-	l.start({ tx, schema, cleanup_stmt });
+	l.start({ db, schema, cleanup_stmt });
 
 	// NOTE: the original Rust code parses the args received as pointers from the C glue and then proceeds to call the
 	// automigrate_impl function with the parsed args. Here we're letting TS take care of that and are calling the impl
 	// right away (rendering this function unnecessary, but defined here to keep consistent with the original code structure.
-	await automigrate_impl(tx, schema, cleanup_stmt);
+	await automigrate_impl(db, schema, cleanup_stmt);
 	console.log("Automigration completed successfully!");
 
 	return l.done();
@@ -131,22 +146,25 @@ export async function crsql_automigrate(tx: TXAsync, schema: string, cleanup_stm
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L55
  */
-export async function automigrate_impl(tx: TXAsync, schema: string, cleanup_stmt: string) {
+export async function automigrate_impl(db: DB, schema: string, cleanup_stmt: string) {
 	const l = logger.extend("automigrate_impl");
-	l.start({ tx, schema, cleanup_stmt });
+	l.start({ db, schema, cleanup_stmt });
 
 	const cleanup = (mem_db: DB) => mem_db.exec(cleanup_stmt);
 
-	const local_db = tx;
+	const local_db = db;
 	const desired_schema = schema;
 	const stripped_schema = strip_crr_statements(desired_schema);
 
+	l.debug("initialising db");
 	const mem_db = await getDB(":memory:");
 	if (!mem_db) {
 		throw new Error("could not open the temporary migration db");
 	}
+	l.debug("got db");
 
 	try {
+		l.debug("applying schema");
 		await mem_db.exec(stripped_schema);
 	} catch (e) {
 		// NOTE: we won't get as good of an error as we would within
@@ -155,7 +173,9 @@ export async function automigrate_impl(tx: TXAsync, schema: string, cleanup_stmt
 		await cleanup(mem_db);
 		throw e;
 	}
-	local_db.exec("SAVEPOINT automigrate_tables;");
+
+	l.debug("schema applied, starting migration");
+	await local_db.exec("SAVEPOINT automigrate_tables;");
 
 	try {
 		await migrate_to(local_db, mem_db);
@@ -316,6 +336,11 @@ export async function drop_columns(local_db: DB, table: string, columns: string[
 	const l = logger.extend("drop_columns");
 	l.start({ local_db, table, columns });
 
+	if (!columns.length) {
+		l.debug("no columns to drop, returning");
+		return l.done();
+	}
+
 	await local_db.exec('DROP VIEW IF EXISTS "?"', [`${table}_fractindex`]);
 	for (const col of columns) {
 		await local_db.exec('ALTER TABLE "?" DROP "?"', [table, col]);
@@ -332,7 +357,8 @@ export async function add_columns(local_db: DB, table: string, columns: string[]
 	l.start({ local_db, table, columns, mem_db });
 
 	if (!columns.length) {
-		return;
+		l.debug("no columns to add");
+		return l.done();
 	}
 
 	const placeholder = `(${columns.map(() => "?").join(", ")})`;
@@ -415,6 +441,11 @@ export async function drop_indices(local_db: DB, dropped: string[]) {
 	const l = logger.extend("drop_indices");
 	l.start({ local_db, dropped });
 
+	if (!dropped.length) {
+		l.debug("no indices to drop");
+		return l.done();
+	}
+
 	// drop if exists given column dropping could have destroyed the index
 	// already.
 	for (const idx of dropped) {
@@ -442,11 +473,13 @@ export async function maybe_recreate_index(local_db: DB, table: string, idx: str
 	const IS_UNIQUE_IDX_SQL = `SELECT "unique" FROM pragma_index_list(?) WHERE name = ?`;
 	const IDX_COLS_SQL = `SELECT name FROM pragma_index_info(?) ORDER BY seqno ASC`;
 
-	const is_unique_local = firstPick(await local_db.exec(IS_UNIQUE_IDX_SQL, [table, idx]).then((res) => res[0]?.[0] ?? 0));
-	const is_unique_mem = firstPick(await mem_db.exec(IS_UNIQUE_IDX_SQL, [table, idx]).then((res) => res[0]?.[0] ?? 0));
+	const is_unique_local = firstPick(await local_db.execA<[number]>(IS_UNIQUE_IDX_SQL, [table, idx]));
+	const is_unique_mem = firstPick(await mem_db.execA<[number]>(IS_UNIQUE_IDX_SQL, [table, idx]));
 
-	if (!is_unique_local && !is_unique_mem) {
-		throw new Error("Cannot alter index that is not unique");
+	if (is_unique_local === undefined || !is_unique_mem === undefined) {
+		throw new Error(
+			"Trying to recreate an index that doesn't exist in both DBs - this probably indicates an error in the automigration code as it should never happen"
+		);
 	}
 
 	// NOTE: Here the Rust code drops the prepared statement in order to free the index (not having open statements against it),
