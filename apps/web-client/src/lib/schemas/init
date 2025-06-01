@@ -10,7 +10,7 @@
 	NOTE: Each table definition is followed by a call to 'crsql_as_crr' for that particular table - this activates the cr-sqlite extension functionality for that table
 */
 
-CREATE TABLE customer (
+CREATE TABLE IF NOT EXISTS customer (
 	id INTEGER NOT NULL,
 	display_id TEXT,
 	fullname TEXT,
@@ -22,7 +22,7 @@ CREATE TABLE customer (
 );
 SELECT crsql_as_crr('customer');
 
-CREATE TABLE customer_order_lines (
+CREATE TABLE IF NOT EXISTS customer_order_lines (
 	id INTEGER NOT NULL,
 	customer_id INTEGER,
 	isbn TEXT,
@@ -34,11 +34,11 @@ CREATE TABLE customer_order_lines (
 	-- FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	-- FOREIGN KEY (isbn) REFERENCES book(isbn) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX idx_customer_order_lines_customer_id ON customer_order_lines(customer_id);
-CREATE INDEX idx_customer_order_lines_isbn ON customer_order_lines(isbn);
+CREATE INDEX IF NOT EXISTS idx_customer_order_lines_customer_id ON customer_order_lines(customer_id);
+CREATE INDEX IF NOT EXISTS idx_customer_order_lines_isbn ON customer_order_lines(isbn);
 SELECT crsql_as_crr('customer_order_lines');
 
-CREATE TABLE book (
+CREATE TABLE IF NOT EXISTS book (
 	isbn TEXT NOT NULL,
 	title TEXT,
     authors TEXT,
@@ -52,9 +52,9 @@ CREATE TABLE book (
     PRIMARY KEY (isbn)
 );
 SELECT crsql_as_crr('book');
-CREATE INDEX idx_book_publisher ON book(publisher);
+CREATE INDEX IF NOT EXISTS idx_book_publisher ON book(publisher);
 
-CREATE TABLE supplier (
+CREATE TABLE IF NOT EXISTS supplier (
 	id INTEGER NOT NULL,
 	name TEXT,
 	email TEXT,
@@ -64,26 +64,26 @@ CREATE TABLE supplier (
 );
 SELECT crsql_as_crr('supplier');
 
-CREATE TABLE supplier_publisher (
+CREATE TABLE IF NOT EXISTS supplier_publisher (
 	supplier_id INTEGER,
 	publisher TEXT NOT NULL,
 	PRIMARY KEY (publisher)
 	-- FOREIGN KEY (supplier_id) REFERENCES supplier(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX idx_supplier_publisher_supplier_id ON supplier_publisher(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_publisher_supplier_id ON supplier_publisher(supplier_id);
 SELECT crsql_as_crr('supplier_publisher');
 
-CREATE TABLE supplier_order (
+CREATE TABLE IF NOT EXISTS supplier_order (
 	id INTEGER NOT NULL,
 	supplier_id INTEGER,
 	created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id)
 	-- FOREIGN KEY (supplier_id) REFERENCES supplier(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX idx_supplier_order_supplier_id ON supplier_order(supplier_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_order_supplier_id ON supplier_order(supplier_id);
 SELECT crsql_as_crr('supplier_order');
 
-CREATE TABLE supplier_order_line (
+CREATE TABLE IF NOT EXISTS supplier_order_line (
 	supplier_order_id INTEGER NOT NULL,
 	isbn TEXT NOT NULL,
 	quantity INTEGER NOT NULL DEFAULT 1,
@@ -91,11 +91,11 @@ CREATE TABLE supplier_order_line (
 	-- FOREIGN KEY (supplier_order_id) REFERENCES supplier_order(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	-- FOREIGN KEY (isbn) REFERENCES book(isbn) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX idx_supplier_order_line_supplier_order_id ON supplier_order_line(supplier_order_id);
-CREATE INDEX idx_supplier_order_line_isbn ON supplier_order_line(isbn);
+CREATE INDEX IF NOT EXISTS idx_supplier_order_line_supplier_order_id ON supplier_order_line(supplier_order_id);
+CREATE INDEX IF NOT EXISTS idx_supplier_order_line_isbn ON supplier_order_line(isbn);
 SELECT crsql_as_crr('supplier_order_line');
 
-CREATE TABLE reconciliation_order (
+CREATE TABLE IF NOT EXISTS reconciliation_order (
 	id INTEGER NOT NULL,
 	supplier_order_ids TEXT CHECK (json_valid(supplier_order_ids) AND json_array_length(supplier_order_ids) >= 1),
 	created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
@@ -105,7 +105,7 @@ CREATE TABLE reconciliation_order (
 );
 SELECT crsql_as_crr('reconciliation_order');
 
-CREATE TABLE reconciliation_order_lines (
+CREATE TABLE IF NOT EXISTS reconciliation_order_lines (
 	reconciliation_order_id INTEGER NOT NULL,
 	isbn TEXT NOT NULL,
 	quantity INTEGER NOT NULL DEFAULT 1,
@@ -113,11 +113,11 @@ CREATE TABLE reconciliation_order_lines (
 	-- FOREIGN KEY (reconciliation_order_id) REFERENCES reconciliation_order(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	-- FOREIGN KEY (isbn) REFERENCES book(isbn) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX idx_reconciliation_order_lines_reconciliation_order_id ON reconciliation_order_lines(reconciliation_order_id);
-CREATE INDEX idx_reconciliation_order_lines_isbn ON reconciliation_order_lines(isbn);
+CREATE INDEX IF NOT EXISTS idx_reconciliation_order_lines_reconciliation_order_id ON reconciliation_order_lines(reconciliation_order_id);
+CREATE INDEX IF NOT EXISTS idx_reconciliation_order_lines_isbn ON reconciliation_order_lines(isbn);
 SELECT crsql_as_crr('reconciliation_order_lines');
 
-CREATE TABLE customer_order_line_supplier_order (
+CREATE TABLE IF NOT EXISTS customer_order_line_supplier_order (
 	customer_order_line_id INTEGER NOT NULL,
 	supplier_order_id INTEGER NOT NULL,
 	placed INTEGER DEFAULT 0,
@@ -125,11 +125,11 @@ CREATE TABLE customer_order_line_supplier_order (
 	-- FOREIGN KEY (customer_order_line_id) REFERENCES customer_order_lines(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	-- FOREIGN KEY (supplier_order_id) REFERENCES supplier_order(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX idx_customer_order_line_supplier_order_customer_order_line_id ON customer_order_line_supplier_order(customer_order_line_id);
-CREATE INDEX idx_customer_order_line_supplier_order_supplier_order_id ON customer_order_line_supplier_order(supplier_order_id);
+CREATE INDEX IF NOT EXISTS idx_customer_order_line_supplier_order_customer_order_line_id ON customer_order_line_supplier_order(customer_order_line_id);
+CREATE INDEX IF NOT EXISTS idx_customer_order_line_supplier_order_supplier_order_id ON customer_order_line_supplier_order(supplier_order_id);
 SELECT crsql_as_crr('customer_order_line_supplier_order');
 
-CREATE TABLE warehouse (
+CREATE TABLE IF NOT EXISTS warehouse (
 	-- 0 id is reserved -- when warehouse id is unassigned (in a book txn for ex.) we're defaulting to 0
 	-- using 0 instead of NULL as 0 = 0 and NULL != NULL
     id INTEGER NOT NULL CHECK (id <> 0),
@@ -142,7 +142,7 @@ SELECT crsql_as_crr('warehouse');
 -- if warehouse_id is not null, the note is inbound
 -- if is_reconciliation_note is true (1) - it's a reconciliation note (obvious)
 -- if the note is not inbound, nor reconciliation, it is outbound
-CREATE TABLE note (
+CREATE TABLE IF NOT EXISTS note (
 	id INTEGER NOT NULL,
 	display_name TEXT,
 	warehouse_id INTEGER,
@@ -155,12 +155,12 @@ CREATE TABLE note (
 	-- FOREIGN KEY (warehouse_id) REFERENCES warehouse(id) ON UPDATE CASCADE ON DELETE SET NULL,
 	-- FOREIGN KEY (default_warehouse) REFERENCES warehouse(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
-CREATE INDEX idx_note_warehouse_id ON note(warehouse_id);
-CREATE INDEX idx_note_default_warehouse ON note(default_warehouse);
-CREATE INDEX idx_note_committed_at ON note(committed_at);
+CREATE INDEX IF NOT EXISTS idx_note_warehouse_id ON note(warehouse_id);
+CREATE INDEX IF NOT EXISTS idx_note_default_warehouse ON note(default_warehouse);
+CREATE INDEX IF NOT EXISTS idx_note_committed_at ON note(committed_at);
 SELECT crsql_as_crr('note');
 
-CREATE TABLE book_transaction (
+CREATE TABLE IF NOT EXISTS book_transaction (
 	isbn TEXT NOT NULL,
 	quantity INTEGER NOT NULL DEFAULT 0,
 	note_id INTEGER NOT NULL,
@@ -172,14 +172,14 @@ CREATE TABLE book_transaction (
 	-- FOREIGN KEY (note_id) REFERENCES note(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	-- FOREIGN KEY (warehouse_id) REFERENCES warehouse(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX idx_book_transaction_isbn ON book_transaction(isbn);
-CREATE INDEX idx_book_transaction_note_id ON book_transaction(note_id);
-CREATE INDEX idx_book_transaction_warehouse_id ON book_transaction(warehouse_id);
-CREATE INDEX idx_book_transaction_committed_at ON book_transaction(committed_at);
+CREATE INDEX IF NOT EXISTS idx_book_transaction_isbn ON book_transaction(isbn);
+CREATE INDEX IF NOT EXISTS idx_book_transaction_note_id ON book_transaction(note_id);
+CREATE INDEX IF NOT EXISTS idx_book_transaction_warehouse_id ON book_transaction(warehouse_id);
+CREATE INDEX IF NOT EXISTS idx_book_transaction_committed_at ON book_transaction(committed_at);
 SELECT crsql_as_crr('book_transaction');
 
 
-CREATE TABLE custom_item (
+CREATE TABLE IF NOT EXISTS custom_item (
 	id INTEGER NOT NULL,
 	title TEXT,
 	price DECIMAL,
@@ -188,5 +188,5 @@ CREATE TABLE custom_item (
 	PRIMARY KEY (id, note_id)
 	-- FOREIGN KEY (note_id) REFERENCES note(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-CREATE INDEX idx_custom_item_note_id ON custom_item(note_id);
+CREATE INDEX IF NOT EXISTS idx_custom_item_note_id ON custom_item(note_id);
 SELECT crsql_as_crr('custom_item');
