@@ -26,7 +26,7 @@
 
 	import { sync, syncConfig, syncActive, dbid, newSyncProgressStore } from "$lib/db";
 	import { clearDb, ErrDBSchemaMismatch, getDB, schemaName, schemaContent } from "$lib/db/cr-sqlite/db";
-
+	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
 	import * as note from "$lib/db/cr-sqlite/note";
@@ -75,6 +75,8 @@
 			window["warehouse"] = warehouse;
 
 			window["sync"] = sync;
+
+			window["migrations"] = migrations;
 		}
 
 		// This shouldn't affect much, but is here for the purpose of exhaustive handling
@@ -221,7 +223,8 @@
 	const automigrateDB = async () => {
 		// We need to retrieve the DB directly, as the broken DB won't be passed down from the load function
 		const db = await getDB($dbid);
-		await db.automigrateTo(schemaName, schemaContent);
+		// NOTE: using the pure JS implementation for debug purposes
+		await migrations.jsAutomigrateTo(db, schemaName, schemaContent);
 
 		// Reload the window - to avoid a huge number of issues related to
 		// having to account for DB not being available, but becoming available within the same lifetime
