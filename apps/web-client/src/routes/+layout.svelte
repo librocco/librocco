@@ -223,13 +223,15 @@
 	const automigrateDB = async () => {
 		// We need to retrieve the DB directly, as the broken DB won't be passed down from the load function
 		const db = await getDB($dbid);
-		// NOTE: using the pure JS implementation for debug purposes
-		await migrations.jsAutomigrateTo(db, schemaName, schemaContent);
+
+		console.log("automigrating db to latest versin....");
+		await db.automigrateTo(schemaName, schemaContent);
+		console.log("automigration done");
 
 		// Reload the window - to avoid a huge number of issues related to
 		// having to account for DB not being available, but becoming available within the same lifetime
 		// NOTE: commented out so we can observe the errors before navigating away, TODO: uncomment when stable
-		// window.location.reload();
+		window.location.reload();
 	};
 </script>
 
