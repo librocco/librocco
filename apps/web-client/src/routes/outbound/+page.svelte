@@ -31,10 +31,8 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
 		// Note (names/list) and book_transaction (note's totalBooks) all affect the list
-		disposer = rx.onRange(["note", "book_transaction"], () => invalidate("outbound:list"));
+		disposer = data.dbCtx?.rx?.onRange(["note", "book_transaction"], () => invalidate("outbound:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
