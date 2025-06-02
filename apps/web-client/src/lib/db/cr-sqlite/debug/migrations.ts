@@ -2,7 +2,7 @@ import { cryb64 } from "@vlcn.io/ws-common";
 
 import { zip } from "@librocco/shared";
 
-import type { DB, TXAsync } from "../types";
+import type { DB } from "../types";
 import { getDB } from "../db";
 
 function firstPick<T>(data: any[]): T | undefined {
@@ -369,7 +369,7 @@ export async function add_columns(local_db: DB, table: string, columns: string[]
 	let processed_cols = 0;
 	for (const col of res) {
 		const [name, col_type, nutnull, dflt_val, pk] = col;
-		if (Boolean(pk)) {
+		if (pk) {
 			throw new Error("Adding primary key columns to existing tables is not supported in auto-migration");
 		}
 		await add_column(local_db, table, name, col_type, nutnull, dflt_val);
@@ -518,7 +518,7 @@ export async function recreate_index(local_db: DB, idx: string) {
 	const l = logger.extend("recreate_index");
 	l.start({ local_db, idx });
 
-	let indices = [idx];
+	const indices = [idx];
 	await drop_indices(local_db, indices);
 
 	// no need to call add_indices
