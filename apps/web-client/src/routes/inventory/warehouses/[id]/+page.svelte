@@ -50,13 +50,10 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
 		// Reload when warehouse data changes
-		const disposer1 = rx.onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
+		const disposer1 = data.dbCtx?.rx?.onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
 		// Reload when some stock changes (note being committed)
-		const disposer2 = rx.onRange(["book"], () => invalidate("warehouse:books"));
+		const disposer2 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("warehouse:books"));
 		// Reload when stock cache invalidates
 		const disposer3 = stockCache.onInvalidated(() => invalidate("warehouse:books"));
 
