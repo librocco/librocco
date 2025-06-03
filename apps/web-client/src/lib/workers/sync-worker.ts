@@ -6,6 +6,7 @@ import { createDbProvider } from "@vlcn.io/ws-browserdb";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 
 import { SyncTransportController, SyncEventEmitter } from "./sync-transport-control";
+import type { SyncConfig } from "./sync-transport-control";
 
 // Emitter object
 // - emits sync events to the main thread
@@ -19,10 +20,15 @@ progressEmitter.onChangesReceived((payload) => {
 progressEmitter.onChangesProcessed((payload) => {
 	self.postMessage({ _type: "changesProcessed", payload });
 });
+progressEmitter.onProgress((payload) => {
+	self.postMessage({ _type: "progress", payload });
+});
+
+const maxChunkSize = 1024;
 
 const config: Config = {
 	dbProvider: createDbProvider(wasmUrl),
-	transportProvider: wrapProvider(defaultConfig.transportProvider, progressEmitter)
+	transportProvider: wrapProvider(defaultConfig.transportProvider, progressEmitter, { maxChunkSize })
 };
 
 // Start the sync process
@@ -36,6 +42,6 @@ type TransportProvider = Config["transportProvider"];
  * See `wrapTransport` above. This merely wraps the transport provider (rather than transport itself), to
  * fit the signature (shape of the config) passed to the sync service `start` function.
  */
-function wrapProvider(provider: TransportProvider, emitter: SyncEventEmitter): TransportProvider {
-	return (...params: Parameters<TransportProvider>) => new SyncTransportController(provider(...params), emitter);
+function wrapProvider(provider: TransportProvider, emitter: SyncEventEmitter, config: SyncConfig): TransportProvider {
+	return (...params: Parameters<TransportProvider>) => new SyncTransportController(provider(...params), emitter, config);
 }
