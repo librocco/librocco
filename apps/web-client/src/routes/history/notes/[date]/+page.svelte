@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Library } from "lucide-svelte";
+	import { Library, Printer } from "lucide-svelte";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 	import { browser } from "$app/environment";
 	import { invalidate } from "$app/navigation";
@@ -66,9 +66,15 @@
 
 <HistoryPage view="history/notes" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div class="flex w-full justify-between">
-			<div class="flex w-full flex-col items-center gap-3">
+		<div class="flex w-full justify-between items-center">
+			<div class="flex flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
+			</div>
+			<div>
+				<a href={appPath("history/notes/date", data.date, "print")} target="_blank" class="btn btn-outline btn-sm">
+					{t.print_list()}
+					<Printer size={16} class="ml-1" />
+				</a>
 			</div>
 		</div>
 		<!-- Start entity list contaier -->

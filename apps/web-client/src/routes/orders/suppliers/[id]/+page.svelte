@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import { Mail, UserCircle, PencilLine, Plus } from "lucide-svelte";
+	import { Mail, UserCircle, PencilLine, Plus, Printer } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -156,10 +156,14 @@
 								</div>
 							</dl>
 
-							<div class="card-actions border-t py-6 md:mb-20">
+							<div class="card-actions border-t py-6 md:mb-20 flex-wrap gap-2">
 								<a href={appPath("suppliers", supplier.id, "new-order")} class="btn-secondary btn-outline btn-sm btn" type="button">
 									{t.labels.create_new_order()}
 									<Plus aria-hidden size={20} />
+								</a>
+								<a href={appPath("suppliers", supplier.id, "print")} target="_blank" class="btn btn-outline btn-sm">
+									{$LL.actions.print()} List
+									<Printer size={16} class="ml-1" />
 								</a>
 							</div>
 						{/if}

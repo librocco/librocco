@@ -10,7 +10,7 @@
 		ReceiptEuro,
 		UserCircle,
 		MoreVertical,
-		ArrowRight,
+		Printer,
 		ClockArrowUp,
 		PencilLine,
 		Phone
@@ -37,6 +37,7 @@
 	import { DaisyUIBookForm, bookSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 	import { Page } from "$lib/controllers";
+	import { appPath } from "$lib/paths";
 
 	import {
 		addBooksToCustomer,
@@ -294,10 +295,10 @@
 							</div>
 						</dl>
 						<div class="card-actions border-t py-6 md:mb-20">
-							<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled>
+							<a href={appPath("orders/customers", customerId, "print")} target="_blank" class="btn-secondary btn-outline btn-sm btn" type="button">
 								Print receipt
-								<ArrowRight aria-hidden size={20} />
-							</button>
+								<Printer aria-hidden size={16} class="ml-1" />
+							</a>
 						</div>
 					</div>
 				{/if}

@@ -8,6 +8,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
+	import { page } from "$app/stores";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Plus } from "lucide-svelte";
 
 	import { desc, testId } from "@librocco/shared";
@@ -54,6 +55,7 @@
 
 	import CustomItemForm from "$lib/forms/CustomItemForm.svelte";
 	import { printBookLabel, printReceipt } from "$lib/printer";
+	import { appPath } from "$lib/paths";
 
 	import {
 		addVolumesToNote,
@@ -421,7 +423,11 @@
 					</div>
 				</div>
 
-				<div class="ml-auto flex items-center gap-x-2">
+				<div class="ml-auto flex items-center gap-x-2 flex-wrap">
+					<a href={appPath("outbound", $page.params.id, "print")} target="_blank" class="btn btn-outline btn-sm">
+						Print Note
+						<Printer size={16} class="ml-1" />
+					</a>
 					<div class="flex flex-col">
 						<select
 							id="defaultWarehouse"

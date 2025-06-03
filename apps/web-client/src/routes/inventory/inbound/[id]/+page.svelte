@@ -32,6 +32,8 @@
 	import { BookForm, bookSchema, ScannerForm, scannerSchema, type BookFormSchema } from "$lib/forms";
 
 	import { printBookLabel, printReceipt } from "$lib/printer";
+	import { appPath } from "$lib/paths";
+	import { page } from "$app/stores";
 
 	import { type DialogContent } from "$lib/types";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
@@ -256,7 +258,11 @@
 					</div>
 				</div>
 
-				<div class="ml-auto flex items-center gap-x-2">
+				<div class="ml-auto flex items-center gap-x-2 flex-wrap">
+					<a href={appPath("inventory/inbound", $page.params.id, "print")} target="_blank" class="btn btn-outline btn-sm">
+						{tInbound.labels.print_note()}
+						<Printer size={16} class="ml-1" />
+					</a>
 					<button
 						class="btn-primary btn-sm btn hidden xs:block"
 						use:melt={$confirmDialogTrigger}
