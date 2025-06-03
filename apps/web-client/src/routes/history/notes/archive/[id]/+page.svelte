@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
 
-	import { QrCode, Loader2 as Loader, Search, Printer } from "lucide-svelte";
+	import { QrCode, Loader2 as Loader, Search } from "lucide-svelte";
 
 	import type { PageData } from "./$types";
 
@@ -16,7 +16,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
-	import { appPath } from "$lib/paths";
+	import { appPath, base } from "$lib/paths";
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
@@ -109,10 +109,7 @@
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="no-print btn-outline btn" on:click={() => window.print()}>
-					<Printer size={16} class="mr-2" />
-					{$LL.general.print()}
-				</button>
+				<a href="{base}/print/notes/{data.id}" class="btn btn-outline" target="_blank">Print Note</a>
 				<button on:click={handleExportCsv} class="btn-primary btn">{t.export_csv()}</button>
 			</div>
 		</div>

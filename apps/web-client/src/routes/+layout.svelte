@@ -56,7 +56,7 @@
 		// Register (and update on each change) the db and some db handlers to the window object.
 		// This is used for e2e tests (easier setup through direct access to the db).
 		// Additionally, we're doing this in debug mode - in case we want to interact with the DB directly (using dev console)
-		if (browser && dbCtx && (IS_E2E || IS_DEBUG)) {
+		if (browser && dbCtx) {
 			window["db_ready"] = true;
 			window["_db"] = dbCtx.db;
 			window.dispatchEvent(new Event("db_ready"));
@@ -112,9 +112,9 @@
 		}
 
 		// Control the invalidation of the stock cache in central spot
-		// Invalidate on every change to note (notes being committed)
-		// TODO: Implement more fine-grained control over this - potentially using a separate table to control committed state
-		disposer = dbCtx.rx.onRange(["note"], () => stockCache.invalidate());
+		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
+		// between the last cached value and the current one and invalidates the cache if needed
+		disposer = dbCtx.rx.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
 	});
 
 	onDestroy(() => {

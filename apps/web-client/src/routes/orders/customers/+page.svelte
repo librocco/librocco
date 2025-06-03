@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Plus, Printer } from "lucide-svelte";
+	import { Plus } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -107,16 +107,10 @@
 						{t.tabs.completed()}
 					</button>
 				</div>
-				<div class="flex gap-x-2">
-					<button class="no-print btn-outline btn gap-2" on:click={() => window.print()}>
-						<Printer size={20} />
-						{$LL.general.print()}
-					</button>
-					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-						<Plus size={20} />
-						{t.labels.new_order()}
-					</button>
-				</div>
+				<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+					<Plus size={20} />
+					{t.labels.new_order()}
+				</button>
 			</div>
 			<table class="table-lg table">
 				<thead>

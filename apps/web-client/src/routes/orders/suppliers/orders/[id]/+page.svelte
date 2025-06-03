@@ -114,10 +114,15 @@
 							</div>
 						</dl>
 						<div class="card-actions border-t py-6 md:mb-20">
-							<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled on:click={handlePrintOrder}>
+							<a
+								href="{base}/print/orders/supplier/{id}"
+								class="btn-secondary btn-outline btn-sm btn"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
 								{t.labels.print_order()}
 								<ArrowRight aria-hidden size={20} />
-							</button>
+							</a>
 						</div>
 					</div>
 				</div>

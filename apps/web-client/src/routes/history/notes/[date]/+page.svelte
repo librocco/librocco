@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Library, Printer } from "lucide-svelte";
+	import { Library } from "lucide-svelte";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 	import { browser } from "$app/environment";
 	import { invalidate } from "$app/navigation";
@@ -16,7 +16,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { racefreeGoto } from "$lib/utils/navigation";
 
-	import { appPath } from "$lib/paths";
+	import { appPath, base } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
@@ -66,14 +66,13 @@
 
 <HistoryPage view="history/notes" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div class="flex w-full items-center justify-between pb-4">
-			<div class="flex flex-1 justify-center">
+		<div class="flex w-full justify-between items-center">
+			<div class="flex flex-col items-start gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
 			</div>
-			<button class="no-print btn-outline btn-sm btn flex items-center gap-2" on:click={() => window.print()}>
-				<Printer size={16} />
-				{$LL.general.print()}
-			</button>
+			<div class="flex items-center gap-x-2">
+				<a href="{base}/print/notes/open/{data.date}" class="btn btn-outline" target="_blank">Print All Notes for this Date</a>
+			</div>
 		</div>
 		<!-- Start entity list contaier -->
 

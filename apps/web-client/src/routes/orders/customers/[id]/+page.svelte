@@ -13,8 +13,7 @@
 		ArrowRight,
 		ClockArrowUp,
 		PencilLine,
-		Phone,
-		Printer
+		Phone
 	} from "lucide-svelte";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
@@ -52,6 +51,7 @@
 	import { mergeBookData } from "$lib/utils/misc";
 	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
 	import LL from "@librocco/shared/i18n-svelte";
+	import { base } from "$app/paths";
 
 	// import { createIntersectionObserver } from "$lib/actions";
 
@@ -294,15 +294,16 @@
 								{/if}
 							</div>
 						</dl>
-						<div class="card-actions flex gap-x-2 border-t py-6 md:mb-20">
-							<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled>
+						<div class="card-actions border-t py-6 md:mb-20">
+							<a
+								href="{base}/print/orders/customer/{customerId}"
+								class="btn-secondary btn-outline btn-sm btn"
+								target="_blank"
+								rel="noopener noreferrer"
+							>
 								Print receipt
 								<ArrowRight aria-hidden size={20} />
-							</button>
-							<button class="no-print btn-secondary btn-outline btn-sm btn" type="button" on:click={() => window.print()}>
-								{$LL.general.print()}
-								<Printer aria-hidden size={20} />
-							</button>
+							</a>
 						</div>
 					</div>
 				{/if}

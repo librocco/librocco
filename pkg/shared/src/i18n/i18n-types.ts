@@ -14,12 +14,6 @@ export type Translation = RootTranslation
 export type Translations = RootTranslation
 
 type RootTranslation = {
-	general: {
-		/**
-		 * P​r​i​n​t
-		 */
-		print: string
-	}
 	nav: {
 		/**
 		 * S​e​a​r​c​h​ ​s​t​o​c​k
@@ -34,13 +28,13 @@ type RootTranslation = {
 		 */
 		inventory: string
 		/**
-		 * O​u​t​b​o​u​n​d
+		 * S​a​l​e
 		 */
-		outbound: string
+		sale: string
 		/**
-		 * I​n​b​o​u​n​d
+		 * P​u​r​c​h​a​s​e
 		 */
-		inbound: string
+		purchase: string
 		/**
 		 * S​e​t​t​i​n​g​s
 		 */
@@ -78,29 +72,29 @@ type RootTranslation = {
 				 */
 				title: string
 				/**
-				 * I​n​b​o​u​n​d​ ​B​o​o​k​ ​C​o​u​n​t
+				 * P​u​r​c​h​a​s​e​ ​B​o​o​k​ ​C​o​u​n​t
 				 */
-				total_inbound_book_count: string
+				total_purchase_book_count: string
 				/**
-				 * I​n​b​o​u​n​d​ ​C​o​v​e​r​ ​P​r​i​c​e
+				 * P​u​r​c​h​a​s​e​ ​C​o​v​e​r​ ​P​r​i​c​e
 				 */
-				total_inbound_cover_price: string
+				total_purchase_cover_price: string
 				/**
-				 * I​n​b​o​u​n​d​ ​D​i​s​c​o​u​n​t​e​d​ ​P​r​i​c​e
+				 * P​u​r​c​h​a​s​e​ ​D​i​s​c​o​u​n​t​e​d​ ​P​r​i​c​e
 				 */
-				total_inbound_discounted_price: string
+				total_purchase_discounted_price: string
 				/**
-				 * O​u​t​b​o​u​n​d​ ​B​o​o​k​ ​C​o​u​n​t
+				 * S​a​l​e​ ​B​o​o​k​ ​C​o​u​n​t
 				 */
-				total_outbound_book_count: string
+				total_sale_book_count: string
 				/**
-				 * O​u​t​b​o​u​n​d​ ​C​o​v​e​r​ ​P​r​i​c​e
+				 * S​a​l​e​ ​C​o​v​e​r​ ​P​r​i​c​e
 				 */
-				total_outbound_cover_price: string
+				total_sale_cover_price: string
 				/**
-				 * O​u​t​b​o​u​n​d​ ​D​i​s​c​o​u​n​t​e​d​ ​P​r​i​c​e
+				 * S​a​l​e​ ​D​i​s​c​o​u​n​t​e​d​ ​P​r​i​c​e
 				 */
-				total_outbound_discounted_price: string
+				total_sale_discounted_price: string
 			}
 			transactions: {
 				/**
@@ -237,13 +231,13 @@ type RootTranslation = {
 					 */
 					all: string
 					/**
-					 * I​n​b​o​u​n​d
+					 * P​u​r​c​h​a​s​e
 					 */
-					inbound: string
+					purchase: string
 					/**
-					 * O​u​t​b​o​u​n​d
+					 * S​a​l​e
 					 */
-					outbound: string
+					sale: string
 				}
 				column_headers: {
 					/**
@@ -330,7 +324,7 @@ type RootTranslation = {
 		}
 	}
 	inventory_page: {
-		inbound_tab: {
+		purchase_tab: {
 			placeholder_box: {
 				/**
 				 * N​o​ ​o​p​e​n​ ​n​o​t​e​s
@@ -363,6 +357,14 @@ type RootTranslation = {
 				button_edit: string
 			}
 		}
+		warehouses_tab: {
+			labels: {
+				/**
+				 * N​e​w​ ​p​u​r​c​h​a​s​e
+				 */
+				button_create_purchase: string
+			}
+		}
 	}
 	orders_page: {
 		labels: {
@@ -371,9 +373,9 @@ type RootTranslation = {
 			 */
 			checkout: string
 			/**
-			 * C​r​e​a​t​e​ ​a​ ​n​e​w​ ​O​u​t​b​o​u​n​d​ ​N​o​t​e
+			 * C​r​e​a​t​e​ ​a​ ​n​e​w​ ​S​a​l​e​ ​N​o​t​e
 			 */
-			create_outbound_note: string
+			create_sale_note: string
 		}
 	}
 	customer_orders_page: {
@@ -536,7 +538,7 @@ type RootTranslation = {
 			manually_edit_book_details: string
 		}
 	}
-	outbound_note: {
+	sale_note: {
 		delete_dialog: {
 			/**
 			 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​f​o​r​ ​e​a​c​h​ ​o​f​ ​t​h​e​ ​f​o​l​l​o​w​i​n​g​ ​t​r​a​n​s​a​c​t​i​o​n​s
@@ -601,9 +603,9 @@ type RootTranslation = {
 			no_warehouses: string
 		}
 	}
-	outbound_page: {
+	sale_page: {
 		/**
-		 * O​u​t​b​o​u​n​d
+		 * S​a​l​e
 		 */
 		heading: string
 		stats: {
@@ -619,9 +621,9 @@ type RootTranslation = {
 		}
 		labels: {
 			/**
-			 * N​e​w​ ​N​o​t​e
+			 * N​e​w​ ​S​a​l​e
 			 */
-			new_note: string
+			new_sale: string
 			/**
 			 * E​d​i​t
 			 */
@@ -636,7 +638,7 @@ type RootTranslation = {
 			delete_row: string
 		}
 	}
-	inbound_note: {
+	purchase_note: {
 		stats: {
 			/**
 			 * L​a​s​t​ ​u​p​d​a​t​e​d
@@ -756,9 +758,9 @@ type RootTranslation = {
 			 */
 			description: string
 		}
-		commit_inbound_dialog: {
+		commit_purchase_dialog: {
 			/**
-			 * C​o​m​m​i​t​ ​i​n​b​o​u​n​d​ ​{​e​n​t​i​t​y​}​?
+			 * C​o​m​m​i​t​ ​p​u​r​c​h​a​s​e​ ​{​e​n​t​i​t​y​}​?
 			 * @param {unknown} entity
 			 */
 			title: RequiredParams<'entity'>
@@ -769,9 +771,9 @@ type RootTranslation = {
 			 */
 			description: RequiredParams<'bookCount' | 'warehouseName'>
 		}
-		commit_outbound_dialog: {
+		commit_sale_dialog: {
 			/**
-			 * C​o​m​m​i​t​ ​o​u​t​b​o​u​n​d​ ​{​e​n​t​i​t​y​}​?
+			 * C​o​m​m​i​t​ ​s​a​l​e​ ​{​e​n​t​i​t​y​}​?
 			 * @param {unknown} entity
 			 */
 			title: RequiredParams<'entity'>
@@ -791,7 +793,7 @@ type RootTranslation = {
 			 */
 			description: string
 		}
-		reconcile_outbound_dialog: {
+		reconcile_sale_dialog: {
 			/**
 			 * S​t​o​c​k​ ​m​i​s​m​a​t​c​h
 			 */
@@ -1142,12 +1144,6 @@ type RootTranslation = {
 }
 
 export type TranslationFunctions = {
-	general: {
-		/**
-		 * Print
-		 */
-		print: () => LocalizedString
-	}
 	nav: {
 		/**
 		 * Search stock
@@ -1162,13 +1158,13 @@ export type TranslationFunctions = {
 		 */
 		inventory: () => LocalizedString
 		/**
-		 * Outbound
+		 * Sale
 		 */
-		outbound: () => LocalizedString
+		sale: () => LocalizedString
 		/**
-		 * Inbound
+		 * Purchase
 		 */
-		inbound: () => LocalizedString
+		purchase: () => LocalizedString
 		/**
 		 * Settings
 		 */
@@ -1206,29 +1202,29 @@ export type TranslationFunctions = {
 				 */
 				title: () => LocalizedString
 				/**
-				 * Inbound Book Count
+				 * Purchase Book Count
 				 */
-				total_inbound_book_count: () => LocalizedString
+				total_purchase_book_count: () => LocalizedString
 				/**
-				 * Inbound Cover Price
+				 * Purchase Cover Price
 				 */
-				total_inbound_cover_price: () => LocalizedString
+				total_purchase_cover_price: () => LocalizedString
 				/**
-				 * Inbound Discounted Price
+				 * Purchase Discounted Price
 				 */
-				total_inbound_discounted_price: () => LocalizedString
+				total_purchase_discounted_price: () => LocalizedString
 				/**
-				 * Outbound Book Count
+				 * Sale Book Count
 				 */
-				total_outbound_book_count: () => LocalizedString
+				total_sale_book_count: () => LocalizedString
 				/**
-				 * Outbound Cover Price
+				 * Sale Cover Price
 				 */
-				total_outbound_cover_price: () => LocalizedString
+				total_sale_cover_price: () => LocalizedString
 				/**
-				 * Outbound Discounted Price
+				 * Sale Discounted Price
 				 */
-				total_outbound_discounted_price: () => LocalizedString
+				total_sale_discounted_price: () => LocalizedString
 			}
 			transactions: {
 				/**
@@ -1365,13 +1361,13 @@ export type TranslationFunctions = {
 					 */
 					all: () => LocalizedString
 					/**
-					 * Inbound
+					 * Purchase
 					 */
-					inbound: () => LocalizedString
+					purchase: () => LocalizedString
 					/**
-					 * Outbound
+					 * Sale
 					 */
-					outbound: () => LocalizedString
+					sale: () => LocalizedString
 				}
 				column_headers: {
 					/**
@@ -1457,7 +1453,7 @@ export type TranslationFunctions = {
 		}
 	}
 	inventory_page: {
-		inbound_tab: {
+		purchase_tab: {
 			placeholder_box: {
 				/**
 				 * No open notes
@@ -1489,6 +1485,14 @@ export type TranslationFunctions = {
 				button_edit: () => LocalizedString
 			}
 		}
+		warehouses_tab: {
+			labels: {
+				/**
+				 * New purchase
+				 */
+				button_create_purchase: () => LocalizedString
+			}
+		}
 	}
 	orders_page: {
 		labels: {
@@ -1497,9 +1501,9 @@ export type TranslationFunctions = {
 			 */
 			checkout: () => LocalizedString
 			/**
-			 * Create a new Outbound Note
+			 * Create a new Sale Note
 			 */
-			create_outbound_note: () => LocalizedString
+			create_sale_note: () => LocalizedString
 		}
 	}
 	customer_orders_page: {
@@ -1662,7 +1666,7 @@ export type TranslationFunctions = {
 			manually_edit_book_details: () => LocalizedString
 		}
 	}
-	outbound_note: {
+	sale_note: {
 		delete_dialog: {
 			/**
 			 * Please select a warehouse for each of the following transactions
@@ -1726,9 +1730,9 @@ export type TranslationFunctions = {
 			no_warehouses: () => LocalizedString
 		}
 	}
-	outbound_page: {
+	sale_page: {
 		/**
-		 * Outbound
+		 * Sale
 		 */
 		heading: () => LocalizedString
 		stats: {
@@ -1743,9 +1747,9 @@ export type TranslationFunctions = {
 		}
 		labels: {
 			/**
-			 * New Note
+			 * New Sale
 			 */
-			new_note: () => LocalizedString
+			new_sale: () => LocalizedString
 			/**
 			 * Edit
 			 */
@@ -1760,7 +1764,7 @@ export type TranslationFunctions = {
 			delete_row: () => LocalizedString
 		}
 	}
-	inbound_note: {
+	purchase_note: {
 		stats: {
 			/**
 			 * Last updated
@@ -1879,9 +1883,9 @@ export type TranslationFunctions = {
 			 */
 			description: () => LocalizedString
 		}
-		commit_inbound_dialog: {
+		commit_purchase_dialog: {
 			/**
-			 * Commit inbound {entity}?
+			 * Commit purchase {entity}?
 			 */
 			title: (arg: { entity: unknown }) => LocalizedString
 			/**
@@ -1889,9 +1893,9 @@ export type TranslationFunctions = {
 			 */
 			description: (arg: { bookCount: string | number | boolean, warehouseName: unknown }) => LocalizedString
 		}
-		commit_outbound_dialog: {
+		commit_sale_dialog: {
 			/**
-			 * Commit outbound {entity}?
+			 * Commit sale {entity}?
 			 */
 			title: (arg: { entity: unknown }) => LocalizedString
 			/**
@@ -1909,7 +1913,7 @@ export type TranslationFunctions = {
 			 */
 			description: () => LocalizedString
 		}
-		reconcile_outbound_dialog: {
+		reconcile_sale_dialog: {
 			/**
 			 * Stock mismatch
 			 */
