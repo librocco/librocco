@@ -423,8 +423,8 @@
 					</div>
 				</div>
 
-				<div class="ml-auto flex items-center gap-x-2 flex-wrap">
-					<a href={appPath("outbound", $page.params.id, "print")} target="_blank" class="btn btn-outline btn-sm">
+				<div class="ml-auto flex flex-wrap items-center gap-x-2">
+					<a href={appPath("outbound", $page.params.id, "print")} target="_blank" class="btn-outline btn-sm btn">
 						Print Note
 						<Printer size={16} class="ml-1" />
 					</a>

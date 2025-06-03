@@ -6,25 +6,25 @@ import { appPath } from "$lib/paths";
 import type { NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
-  const id = Number(params.id);
-  depends("note:data");
-  depends("note:books");
+	const id = Number(params.id);
+	depends("note:data");
+	depends("note:books");
 
-  const { dbCtx } = await parent();
+	const { dbCtx } = await parent();
 
-  if (!dbCtx) {
-    return { id, note: null, entries: [] as NoteEntriesItem[] };
-  }
+	if (!dbCtx) {
+		return { id, note: null, entries: [] as NoteEntriesItem[] };
+	}
 
-  const note = await getNoteById(dbCtx.db, id);
+	const note = await getNoteById(dbCtx.db, id);
 
-  if (!note || note.committed) {
-    redirect(307, appPath("inbound")); // Or handle error for print
-  }
+	if (!note || note.committed) {
+		redirect(307, appPath("inbound")); // Or handle error for print
+	}
 
-  const entries = await getNoteEntries(dbCtx.db, id);
+	const entries = await getNoteEntries(dbCtx.db, id);
 
-  return { id, note, entries };
+	return { id, note, entries };
 };
 
 export const load: PageLoad = timed(_load);

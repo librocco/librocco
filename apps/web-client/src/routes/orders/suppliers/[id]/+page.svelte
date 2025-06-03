@@ -156,12 +156,12 @@
 								</div>
 							</dl>
 
-							<div class="card-actions border-t py-6 md:mb-20 flex-wrap gap-2">
+							<div class="card-actions flex-wrap gap-2 border-t py-6 md:mb-20">
 								<a href={appPath("suppliers", supplier.id, "new-order")} class="btn-secondary btn-outline btn-sm btn" type="button">
 									{t.labels.create_new_order()}
 									<Plus aria-hidden size={20} />
 								</a>
-								<a href={appPath("suppliers", supplier.id, "print")} target="_blank" class="btn btn-outline btn-sm">
+								<a href={appPath("suppliers", supplier.id, "print")} target="_blank" class="btn-outline btn-sm btn">
 									{$LL.actions.print()} List
 									<Printer size={16} class="ml-1" />
 								</a>

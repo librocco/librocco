@@ -66,12 +66,12 @@
 
 <HistoryPage view="history/notes" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div class="flex w-full justify-between items-center">
+		<div class="flex w-full items-center justify-between">
 			<div class="flex flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
 			</div>
 			<div>
-				<a href={appPath("history/notes/date", data.date, "print")} target="_blank" class="btn btn-outline btn-sm">
+				<a href={appPath("history/notes/date", data.date, "print")} target="_blank" class="btn-outline btn-sm btn">
 					{t.print_list()}
 					<Printer size={16} class="ml-1" />
 				</a>

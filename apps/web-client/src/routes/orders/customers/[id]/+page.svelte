@@ -295,7 +295,12 @@
 							</div>
 						</dl>
 						<div class="card-actions border-t py-6 md:mb-20">
-							<a href={appPath("orders/customers", customerId, "print")} target="_blank" class="btn-secondary btn-outline btn-sm btn" type="button">
+							<a
+								href={appPath("orders/customers", customerId, "print")}
+								target="_blank"
+								class="btn-secondary btn-outline btn-sm btn"
+								type="button"
+							>
 								Print receipt
 								<Printer aria-hidden size={16} class="ml-1" />
 							</a>
