@@ -1,6 +1,6 @@
 import { WorkerInterface as WI } from "@vlcn.io/ws-client";
 
-import { SyncEventEmitter } from "./sync-transport-control";
+import { SyncEventEmitter, type SyncProgress } from "./sync-transport-control";
 
 type ChangesReceivedData = {
 	_type: "changesReceived";
@@ -10,14 +10,18 @@ type ChangesProcessedData = {
 	_type: "changesProcessed";
 	payload: { timestamp: number };
 };
+type ProgressData = {
+	_type: "progress";
+	payload: SyncProgress;
+};
 
-type TransportEventData = ChangesReceivedData | ChangesProcessedData;
+type TransportEventData = ChangesReceivedData | ChangesProcessedData | ProgressData;
 
 const isTransportMessageEvent = (e: MessageEvent<unknown>): e is MessageEvent<TransportEventData> => {
 	if (!(e.data as any)?._type) return false;
 	const data = e.data as { _type: string };
 
-	return ["changesReceived", "changesProcessed", "startStreaming", "resetStream"].includes(data._type);
+	return ["changesReceived", "changesProcessed", "progress"].includes(data._type);
 };
 
 export default class WorkerInterface extends WI {
@@ -43,6 +47,9 @@ export default class WorkerInterface extends WI {
 			case "changesProcessed":
 				this.#emitter.notifyChangesProcessed(e.data.payload);
 				break;
+			case "progress":
+				this.#emitter.notifyProgress(e.data.payload);
+				break;
 		}
 	}
 
@@ -51,5 +58,8 @@ export default class WorkerInterface extends WI {
 	}
 	onChangesProcessed(cb: (msg: { timestamp: number }) => void) {
 		return this.#emitter.onChangesProcessed(cb);
+	}
+	onProgress(cb: (msg: { active: boolean; nProcessed: number; nTotal: number }) => void) {
+		return this.#emitter.onProgress(cb);
 	}
 }
