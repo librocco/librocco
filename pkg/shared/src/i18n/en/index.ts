@@ -113,7 +113,7 @@ const history_page = {
 			}
 		},
 		stats: {
-			books: "{no_of_books} book{{s}}",
+			books: "{ no_of_books } book{{s}}",
 			discount: "discount"
 		}
 	}
@@ -127,7 +127,7 @@ const inventory_page = {
 		},
 		stats: {
 			back_to_warehouses: "Back to warehouses",
-			books: "{no_of_books} book{{s}}",
+			books: "{ no_of_books } book{{s}}",
 			last_updated: "Updated"
 		},
 		labels: {
@@ -338,11 +338,11 @@ const common = {
 	},
 	commit_purchase_dialog: {
 		title: `Commit purchase {entity}?`,
-		description: `{bookCount} book{{s}} will be added to {warehouseName}`
+		description: `{ bookCount } book{{s}} will be added to { warehouseName }`
 	},
 	commit_sale_dialog: {
 		title: `Commit sale {entity}?`,
-		description: `{bookCount} book{{s}} will be removed from your stock`
+		description: `{ bookCount } book{{s}} will be removed from your stock`
 	},
 	no_warehouse_dialog: {
 		title: "No warehouse(s) selected",
@@ -367,7 +367,7 @@ const common = {
 		description: "Update warehouse details"
 	},
 	delete_warehouse_dialog: {
-		description: `Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock`
+		description: `Once you delete this warehouse { bookCount } book{{s}} will be removed from your stock`
 	},
 	delete_database_dialog: {
 		description: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`
@@ -395,7 +395,7 @@ const sale_note = {
 	},
 	stats: {
 		last_updated: "Last updated",
-		books: "{bookCount} book{{s}}"
+		books: "{ bookCount } book{{s}}"
 	},
 	placeholder: {
 		select_warehouse: "Please select a warehouse",
@@ -407,7 +407,7 @@ const sale_page = {
 	heading: "Sale",
 	stats: {
 		last_updated: "Last updated",
-		books: "{bookCount} book{{s}}"
+		books: "{ bookCount } book{{s}}"
 	},
 	labels: {
 		new_sale: "New Sale",
@@ -446,10 +446,155 @@ const settings_page = {
 		new: "New"
 	}
 };
+const supplier_orders_component = {
+	commit_dialog: {
+		heading: "Finalize reconciliation order",
+		delivered_book_count: "{ deliveredBookCount } books will be marked as delivered (and ready to be collected)",
+		rejected_book_count: "{ rejectedBookCount } books will be marked as rejected (waiting for reordering)",
+		cancel: "Cancel",
+		confirm: "Confirm"
+	},
+	comparison_table: {
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		price: "Price",
+		ordered_quantity: "Ordered Quantity",
+		delivered_quantity: "Delivered Quantity",
+		unmatched_books: "Unmatched Books"
+	},
+	completed_table: {
+		supplier: "Supplier",
+		books: "Books",
+		placed: "Placed",
+		actions: "Actions",
+		view_order: "View Order",
+		view_reconciliation: "View Reconciliation"
+	},
+	ordered_table: {
+		supplier: "Supplier",
+		books: "Books",
+		placed: "Placed",
+		actions: "Actions",
+		selected_orders_summary: "Selected orders summary",
+		selected_orders: "{ selectedOrders } orders selected",
+		reconcile_selected: "Reconcile Selected",
+		view_order: "View Order",
+		reconcile: "Reconcile",
+		view_reconciliation: "View Reconciliation"
+	},
+	reconciling_table: {
+		order_id: "Order Id",
+		supplier_orders: "Supplier Orders",
+		last_updated: "Last Updated",
+		update_order: "Update order",
+		continue: "Continue"
+	},
+	unordered_table: {
+		supplier: "Supplier",
+		books: "Books",
+		place_order: "Place Order"
+	}
+};
 
-const components = {
+const table_components = {
+	inventory_tables: {
+		book_price_cell: {
+			discounted_price: "Discounted Price",
+			original_price: "Original Price",
+			percentage_discount: "Percentage Discount"
+		},
+		inbound_table: {
+			isbn: "ISBN",
+			book: "Book",
+			title: "Title",
+			authors: "Authors",
+			price: "Price",
+			quantity: "Quantity",
+			publisher: "Publisher",
+			year: "Year",
+			edited_by: "Edited By",
+			op: "O.P",
+			category: "Category",
+			delivered_quantity: "Delivered Quantity",
+			unmatched_books: "Unmatched Books"
+		},
+		stock_table: {
+			isbn: "ISBN",
+			book: "Book",
+			title: "Title",
+			authors: "Authors",
+			price: "Price",
+			quantity: "Quantity",
+			publisher: "Publisher",
+			year: "Year",
+			edited_by: "Edited By",
+			op: "O.P",
+			category: "Category",
+			delivered_quantity: "Delivered Quantity",
+			unmatched_books: "Unmatched Books"
+		},
+		outbound_table: {
+			isbn: "ISBN",
+			book: "Book",
+			title: "Title",
+			authors: "Authors",
+			price: "Price",
+			quantity: "Quantity",
+			publisher: "Publisher",
+			year: "Year",
+			warehouse: "Warehouse",
+			category: "Category",
+			row_actions: "Row Actions"
+		}
+	},
+	order_tables: {
+		order_line_table: {
+			isbn: "ISBN",
+			book: "Book",
+			title: "Title",
+			status: "Status",
+			authors: "Authors",
+			price: "Price",
+
+			publisher: "Publisher",
+			year: "Year",
+			discounted_price: "Discounted Price",
+			original_price: "Original Price",
+			percentage_discount: "Percentage Discount"
+		},
+		supplier_order_table: {
+			supplier: "Supplier",
+			total_books: "Total Books",
+			ordered: "Ordered",
+			order_no: "Order no.",
+			edit: "Edit",
+			manage: "Manage"
+		},
+		supplier_table: {
+			labels: {
+				name: "Name",
+				email: "Email",
+				address: "Address",
+
+				assigned_publishers: "Assigned Publishers",
+				row_actions: "Row Actions"
+			}
+		}
+	}
+};
+
+const misc_components = {
+	extension_banner: {
+		book_data_extension: "Book Data Extension",
+		remote_db: "Remote DB"
+	},
+	page_layout: {
+		stock: "Stock",
+		checkout: "Checkout"
+	},
 	warehouse_select: {
-		label: "Select a warehouse to withdraw book {{ rowIx }} from",
+		label: "Select a warehouse to withdraw book { rowIx } from",
 		default_option: "Select a warehouse"
 	}
 };
@@ -475,7 +620,9 @@ const en = {
 	reconcile_page,
 	reconciled_list_page,
 	order_list_page,
-	components
+	supplier_orders_component,
+	table_components,
+	misc_components
 } satisfies BaseTranslation;
 
 export default en;

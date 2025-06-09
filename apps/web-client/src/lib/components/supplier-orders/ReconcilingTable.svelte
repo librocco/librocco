@@ -3,6 +3,7 @@
 
 	import { goto } from "$lib/utils/navigation";
 	import type { ReconciliationOrder } from "$lib/db/cr-sqlite/types";
+	import LL from "@librocco/shared/i18n-svelte";
 	import { appHash } from "$lib/paths";
 
 	function handleUpdateOrder(reconciliationOrderId: number) {
@@ -15,11 +16,11 @@
 	<table class="table-lg table whitespace-nowrap">
 		<thead>
 			<tr>
-				<th scope="col">Order Id</th>
-				<th scope="col">Supplier Orders</th>
-				<th scope="col">Last Updated</th>
+				<th scope="col">{$LL.supplier_orders_component.reconciling_table.order_id()}</th>
+				<th scope="col">{$LL.supplier_orders_component.reconciling_table.supplier_orders()}</th>
+				<th scope="col">{$LL.supplier_orders_component.reconciling_table.last_updated()}</th>
 				<th scope="col"></th>
-				<th scope="col"><span class="sr-only">Update order</span></th>
+				<th scope="col"><span class="sr-only">{$LL.supplier_orders_component.reconciling_table.update_order()}</span></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -34,7 +35,7 @@
 					</td>
 					<td>
 						<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-							<span class="sr-only">Last updated</span>
+							<span class="sr-only">{$LL.supplier_orders_component.reconciling_table.last_updated()}</span>
 							<ClockArrowUp size={16} aria-hidden />
 							<time dateTime={new Date(updatedAt).toISOString()}>{new Date(updatedAt).toLocaleString()}</time>
 						</span></td
@@ -43,7 +44,7 @@
 					<td class="text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleUpdateOrder(id)}>
 							<Scan aria-hidden focusable="false" size={20} />
-							Continue
+							{$LL.supplier_orders_component.reconciling_table.continue()}
 						</button>
 					</td>
 				</tr>

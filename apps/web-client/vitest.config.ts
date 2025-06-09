@@ -12,5 +12,14 @@ export default defineConfig({
 		alias: {
 			$lib: path.resolve(__dirname, "src/lib")
 		}
+	},
+	server: {
+		hmr: {
+			// Force the HMR websocket to use the same protocol as the page
+			protocol: "ws",
+			// Use the browser's location for the HMR websocket
+			host: "localhost",
+			port: 5173
+		}
 	}
 });

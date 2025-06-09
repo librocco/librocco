@@ -7,8 +7,8 @@
 		total_book_number: number;
 	}>;
 
-	import { base } from "$app/paths";
 	import { goto } from "$lib/utils/navigation";
+	import LL from "@librocco/shared/i18n-svelte";
 	import { appHash } from "$lib/paths";
 
 	function handlePlaceOrder(supplierId: number) {
@@ -20,9 +20,9 @@
 	<table class="table-lg table whitespace-nowrap">
 		<thead>
 			<tr>
-				<th scope="col">Supplier</th>
-				<th scope="col">Books</th>
-				<th scope="col"><span class="sr-only">Place order</span></th>
+				<th scope="col">{$LL.supplier_orders_component.unordered_table.supplier()}</th>
+				<th scope="col">{$LL.supplier_orders_component.unordered_table.books()}</th>
+				<th scope="col"><span class="sr-only">{$LL.supplier_orders_component.unordered_table.place_order()}</span></th>
 			</tr>
 		</thead>
 		<tbody>
@@ -33,7 +33,7 @@
 					<td class="text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handlePlaceOrder(supplier_id)}>
 							<Truck aria-hidden focusable="false" size={20} />
-							Place Order
+							{$LL.supplier_orders_component.unordered_table.place_order()}
 						</button>
 					</td>
 				</tr>

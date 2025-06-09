@@ -2,7 +2,7 @@
 	import { ListTodo } from "lucide-svelte";
 	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 	import { goto } from "$lib/utils/navigation";
-	import { base } from "$app/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 	import { appHash } from "$lib/paths";
 
 	export let orders: PlacedSupplierOrder[];
@@ -19,10 +19,10 @@
 	<table class="table-pin-rows table-lg table whitespace-nowrap">
 		<thead>
 			<tr>
-				<th scope="col">Supplier</th>
-				<th scope="col">Books</th>
-				<th scope="col">Placed</th>
-				<th scope="col"><span class="sr-only">Actions</span></th>
+				<th scope="col">{$LL.supplier_orders_component.completed_table.supplier()}</th>
+				<th scope="col">{$LL.supplier_orders_component.completed_table.books()}</th>
+				<th scope="col">{$LL.supplier_orders_component.completed_table.placed()}</th>
+				<th scope="col"><span class="sr-only">{$LL.supplier_orders_component.completed_table.actions()}</span></th>
 			</tr>
 		</thead>
 
@@ -40,11 +40,13 @@
 					</td>
 
 					<td class="flex items-center justify-evenly text-right">
-						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}>View Order</button>
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}
+							>{$LL.supplier_orders_component.completed_table.view_order()}</button
+						>
 
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleViewReconcileOrder(reconciliation_order_id)}>
 							<ListTodo aria-hidden focusable="false" size={20} />
-							View Reconciliation
+							{$LL.supplier_orders_component.completed_table.view_reconciliation()}
 						</button>
 					</td>
 				</tr>
