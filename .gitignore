@@ -64,3 +64,6 @@ common/autoinstallers/*/.npmrc
 .aider*
 
 caddy-data
+
+# Ignore the symlink for the WASM binary (it should be created by the build process)
+*/**/wa-sqlite-async.wasm
