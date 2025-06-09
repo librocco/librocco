@@ -21,6 +21,9 @@ import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
 import { ErrDBCorrupted, ErrDBSchemaMismatch } from "$lib/db/cr-sqlite/db";
 
+// TEMP
+import { setupOPFSDebug } from "$lib/db/cr-sqlite/opfs";
+
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/#/stock/")
 const redirectPaths = ["", "/", "/#", "/#/"].map((path) => `${base}${path}`);
 
@@ -53,6 +56,8 @@ export const load: LayoutLoad = async ({ url }) => {
 	if (browser) {
 		// For debug purposes and manual overrides (e.g. 'schema_version')
 		window["getDB"] = getDB;
+		// For OPFS play-around
+		window["setupOPFSDebug"] = setupOPFSDebug;
 
 		// Register plugins
 		// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
