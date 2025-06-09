@@ -336,12 +336,12 @@ const common = {
 		title: `Permenantly delete {entity}?`,
 		description: "Once you delete this note, you will not be able to access it again"
 	},
-	commit_inbound_dialog: {
-		title: `Commit inbound {entity}?`,
+	commit_purchase_dialog: {
+		title: `Commit purchase {entity}?`,
 		description: `{ bookCount } book{{s}} will be added to { warehouseName }`
 	},
-	commit_outbound_dialog: {
-		title: `Commit outbound {entity}?`,
+	commit_sale_dialog: {
+		title: `Commit sale {entity}?`,
 		description: `{ bookCount } book{{s}} will be removed from your stock`
 	},
 	no_warehouse_dialog: {
