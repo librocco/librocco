@@ -1,12 +1,12 @@
 import { expect } from "@playwright/test";
 
-import { baseURL } from "@/constants";
+import { appHash } from "@/constants";
 
 import { getDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
 
 testOrders("customer list: updates the list as customer orders are added or updated", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 
 	const dbHandle = await getDbHandle(page);
 	const table = page.getByRole("table");
@@ -38,7 +38,7 @@ testOrders("customer list: updates the list as customer orders get completed", a
 	// TODO: remove this when we silence the no-unused-vars rule
 	depends(customerOrderLines);
 
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 
 	const dbHandle = await getDbHandle(page);
 	const table = page.getByRole("table");

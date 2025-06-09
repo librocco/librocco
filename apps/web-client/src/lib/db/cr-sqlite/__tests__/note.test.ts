@@ -40,7 +40,7 @@ describe("Inbound note tests", () => {
 		expect(res).toEqual([
 			expect.objectContaining({
 				id: 1,
-				display_name: "New Note",
+				display_name: "New Purchase",
 				warehouse_id: 1,
 				is_reconciliation_note: 0,
 				updated_at: expect.any(Number),
@@ -62,7 +62,7 @@ describe("Inbound note tests", () => {
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "New Note",
+				displayName: "New Purchase",
 				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				noteType: "inbound",
@@ -85,49 +85,62 @@ describe("Inbound note tests", () => {
 
 		// NOTE: notes are displayed in a reverse order of being added/updated
 		expect(await getActiveInboundNotes(db)).toEqual([
-			{ id: 3, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Purchase (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "New Purchase", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Committed notes aren't displayed in the list
 		await commitNote(db, 1);
 		expect(await getActiveInboundNotes(db)).toEqual([
-			{ id: 3, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Purchase (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Add an outbond note (as noise) - this shouldn't be returned
 		await createOutboundNote(db, 4);
 		expect(await getActiveInboundNotes(db)).toEqual([
-			{ id: 3, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Purchase (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 	});
 
-	it("commits an inbound note", async () => {
+	it("commits an inbound note (updating committed_at for both the note and all associated book transactions)", async () => {
 		const db = await getRandomDb();
 
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 2" });
 
-		let note = await getNoteById(db, 1);
-		expect(note).toEqual(
-			expect.objectContaining({
-				committed: false,
-				committedAt: undefined
-			})
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 1 });
+
+		// No committed state on the note
+		expect(await getNoteById(db, 1)).toEqual(expect.objectContaining({ committed: false, committedAt: undefined }));
+		// No committed state on the txns
+		// NOTE: Array containing as we're not testing for order exhaustiveness and so (that should be tested elsewhere)
+		expect(await getNoteEntries(db, 1)).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1111111111", committedAt: undefined }),
+				expect.objectContaining({ isbn: "2222222222", committedAt: undefined })
+			])
 		);
 
 		await commitNote(db, 1);
 
-		note = await getNoteById(db, 1);
-		expect(note).toEqual(
-			expect.objectContaining({
-				committed: true,
-				committedAt: expect.any(Date)
-			})
+		// Committed state reflected in the note
+		const committedNote = await getNoteById(db, 1);
+		const committedEntries = await getNoteEntries(db, 1);
+
+		expect(committedNote).toEqual(expect.objectContaining({ committed: true, committedAt: expect.any(Date) }));
+		expect(committedEntries).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1111111111", committedAt: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2222222222", committedAt: expect.any(Date) })
+			])
 		);
+		expect(committedEntries[0].committedAt).toEqual(committedNote.committedAt);
+		expect(committedEntries[1].committedAt).toEqual(committedNote.committedAt);
 	});
 
 	it("doesn't allow committing of a note more than once (keeping the committed_at consistent)", async () => {
@@ -169,7 +182,7 @@ describe("Inbound note tests", () => {
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "New Note",
+				displayName: "New Purchase",
 				updatedAt: expect.any(Date),
 				committed: false,
 				committedAt: undefined
@@ -177,13 +190,13 @@ describe("Inbound note tests", () => {
 		);
 		const { updatedAt } = note;
 
-		await updateNote(db, 1, { displayName: "Updated Note" });
+		await updateNote(db, 1, { displayName: "Updated Purchase" });
 
 		note = await getNoteById(db, 1);
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "Updated Note",
+				displayName: "Updated Purchase",
 				noteType: "inbound",
 				updatedAt: expect.any(Date),
 				committed: false,
@@ -200,11 +213,11 @@ describe("Inbound note tests", () => {
 
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
 		await createInboundNote(db, 1, 1);
-		await updateNote(db, 1, { displayName: "Note 1" });
+		await updateNote(db, 1, { displayName: "Purchase 1" });
 		let note = await getNoteById(db, 1);
 		expect(note).toEqual(
 			expect.objectContaining({
-				displayName: "Note 1", // Should remain unchanged
+				displayName: "Purchase 1", // Should remain unchanged
 				committed: false,
 				updatedAt: expect.any(Date)
 			})
@@ -215,13 +228,13 @@ describe("Inbound note tests", () => {
 		await commitNote(db, 1);
 
 		// Attempt to update the note
-		await updateNote(db, 1, { displayName: "Updated Note" });
+		await updateNote(db, 1, { displayName: "Updated Purchase" });
 
 		// Retrieve the note to verify it hasn't been updated
 		note = await getNoteById(db, 1);
 		expect(note).toEqual(
 			expect.objectContaining({
-				displayName: "Note 1", // Should remain unchanged
+				displayName: "Purchase 1", // Should remain unchanged
 				committed: true
 			})
 		);
@@ -231,56 +244,56 @@ describe("Inbound note tests", () => {
 	it("assigns default note name continuing the sequence", async () => {
 		const db = await getRandomDb();
 
-		// Create note 1, default name should be 'New Note'
+		// Create note 1, default name should be 'New Purchase'
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
 		await createInboundNote(db, 1, 1);
 		let res = await getActiveInboundNotes(db);
-		expect(res).toEqual([{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }]);
+		expect(res).toEqual([{ id: 1, displayName: "New Purchase", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }]);
 
-		// Create note 2, default name should be 'New Note (2)'
+		// Create note 2, default name should be 'New Purchase (2)'
 		await createInboundNote(db, 1, 2);
 		res = await getActiveInboundNotes(db);
 		expect(res).toEqual([
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 2, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "New Purchase", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Rename note 1 to 'Note 1'
-		await updateNote(db, 1, { displayName: "Note 1" });
+		await updateNote(db, 1, { displayName: "Purchase 1" });
 		res = await getActiveInboundNotes(db);
 		expect(res).toEqual([
-			{ id: 1, displayName: "Note 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 1, displayName: "Purchase 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
-		// Create note 3, default name should be 'New Note (3)' (continuing the sequence)
+		// Create note 3, default name should be 'New Purchase (3)' (continuing the sequence)
 		await createInboundNote(db, 1, 3);
 		res = await getActiveInboundNotes(db);
 		expect(res).toEqual([
-			{ id: 3, displayName: "New Note (3)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "Note 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Purchase (3)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Purchase 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
-		// Rename note 2 to 'Note 2'
-		await updateNote(db, 2, { displayName: "Note 2" });
-		// Rename note 3 to 'Note 3'
-		await updateNote(db, 3, { displayName: "Note 3" });
+		// Rename note 2 to 'Purchase 2'
+		await updateNote(db, 2, { displayName: "Purchase 2" });
+		// Rename note 3 to 'Purchase 3'
+		await updateNote(db, 3, { displayName: "Purchase 3" });
 		res = await getActiveInboundNotes(db);
 		expect(res).toEqual([
-			{ id: 3, displayName: "Note 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "Note 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "Note 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "Purchase 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Purchase 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Purchase 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Create note 4, default name should be 'New Note' (restarting the sequence)
 		await createInboundNote(db, 1, 4);
 		res = await getActiveInboundNotes(db);
 		expect(res).toEqual([
-			{ id: 4, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "Note 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "Note 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "Note 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 4, displayName: "New Purchase", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Purchase 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Purchase 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Purchase 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Adding an outbound note shouldn't mess with the sequence
@@ -288,11 +301,11 @@ describe("Inbound note tests", () => {
 		await createInboundNote(db, 1, 6); // New Note (2) - continuing as if the outbound note doesn't exist
 		res = await getActiveInboundNotes(db);
 		expect(res).toEqual([
-			{ id: 6, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 4, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "Note 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "Note 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "Note 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 6, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 4, displayName: "New Purchase", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Purchase 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Purchase 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Purchase 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Adding a note to a different warehouse should still continue the sequence
@@ -300,12 +313,12 @@ describe("Inbound note tests", () => {
 		await createInboundNote(db, 2, 7); // New Note (2) - continuing as if the outbound note doesn't exist
 		res = await getActiveInboundNotes(db);
 		expect(res).toEqual([
-			{ id: 7, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 6, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 4, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "Note 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "Note 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "Note 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 7, displayName: "New Purchase (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 6, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 4, displayName: "New Purchase", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Purchase 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Purchase 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Purchase 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 	});
 
@@ -318,13 +331,13 @@ describe("Inbound note tests", () => {
 		await createInboundNote(db, 1, 2);
 
 		expect(await getActiveInboundNotes(db)).toEqual([
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 2, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "New Purchase", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		await deleteNote(db, 1);
 		expect(await getActiveInboundNotes(db)).toEqual([
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 2, displayName: "New Purchase (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 	});
 
@@ -346,7 +359,7 @@ describe("Inbound note tests", () => {
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "New Note",
+				displayName: "New Purchase",
 				committed: true
 			})
 		);
@@ -361,7 +374,7 @@ describe("Inbound note tests", () => {
 		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 1 });
 
 		expect(await getActiveInboundNotes(db)).toEqual([
-			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 5 }
+			{ id: 1, displayName: "New Purchase", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 5 }
 		]);
 	});
 });
@@ -377,7 +390,7 @@ describe("Outbound note tests", () => {
 		expect(res).toEqual([
 			expect.objectContaining({
 				id: 1,
-				display_name: "New Note",
+				display_name: "New Sale",
 				is_reconciliation_note: 0,
 				warehouse_id: null,
 				updated_at: expect.any(Number),
@@ -396,7 +409,7 @@ describe("Outbound note tests", () => {
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "New Note",
+				displayName: "New Sale",
 				warehouseId: null,
 				warehouseName: null,
 				defaultWarehouse: null,
@@ -416,49 +429,61 @@ describe("Outbound note tests", () => {
 		await createOutboundNote(db, 3);
 
 		expect(await getActiveOutboundNotes(db)).toEqual([
-			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Sale (3)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Sale (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "New Sale", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Committed notes aren't displayed in the list
 		await commitNote(db, 1);
 		expect(await getActiveOutboundNotes(db)).toEqual([
-			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Sale (3)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Sale (2)", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Add an outbond note (as noise) - this shouldn't be returned
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
 		await createInboundNote(db, 1, 4);
 		expect(await getActiveOutboundNotes(db)).toEqual([
-			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Sale (3)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Sale (2)", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 	});
 
-	it("commits an outbound note", async () => {
+	it("commits an outbound note (updating committed_at for both the note and all associated book transactions)", async () => {
 		const db = await getRandomDb();
 
 		await createOutboundNote(db, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 2 });
 
-		let note = await getNoteById(db, 1);
-		expect(note).toEqual(
-			expect.objectContaining({
-				committed: false,
-				committedAt: undefined
-			})
+		// No committed state on the note
+		expect(await getNoteById(db, 1)).toEqual(expect.objectContaining({ committed: false, committedAt: undefined }));
+		// No committed state on the txns
+		// NOTE: Array containing as we're not testing for order exhaustiveness and so (that should be tested elsewhere)
+		expect(await getNoteEntries(db, 1)).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1111111111", committedAt: undefined }),
+				expect.objectContaining({ isbn: "2222222222", committedAt: undefined })
+			])
 		);
 
-		await commitNote(db, 1);
+		// NOTE: force = true - to avoid pre-commit (out-of-stock) checks
+		await commitNote(db, 1, { force: true });
 
-		note = await getNoteById(db, 1);
-		expect(note).toEqual(
-			expect.objectContaining({
-				committed: true,
-				committedAt: expect.any(Date)
-			})
+		// Committed state reflected in the note
+		const committedNote = await getNoteById(db, 1);
+		const committedEntries = await getNoteEntries(db, 1);
+
+		expect(committedNote).toEqual(expect.objectContaining({ committed: true, committedAt: expect.any(Date) }));
+		expect(committedEntries).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1111111111", committedAt: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2222222222", committedAt: expect.any(Date) })
+			])
 		);
+		expect(committedEntries[0].committedAt).toEqual(committedNote.committedAt);
+		expect(committedEntries[1].committedAt).toEqual(committedNote.committedAt);
 	});
 
 	it("doesn't allow for committing of a note if not all warehouse ids are assigned", async () => {
@@ -550,7 +575,7 @@ describe("Outbound note tests", () => {
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "New Note",
+				displayName: "New Sale",
 				updatedAt: expect.any(Date),
 				committed: false,
 				committedAt: undefined
@@ -558,13 +583,13 @@ describe("Outbound note tests", () => {
 		);
 		const { updatedAt } = note;
 
-		await updateNote(db, 1, { displayName: "Updated Note" });
+		await updateNote(db, 1, { displayName: "Updated Sale" });
 
 		note = await getNoteById(db, 1);
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "Updated Note",
+				displayName: "Updated Sale",
 				noteType: "outbound",
 				updatedAt: expect.any(Date),
 				committed: false,
@@ -581,7 +606,7 @@ describe("Outbound note tests", () => {
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "Updated Note",
+				displayName: "Updated Sale",
 				noteType: "outbound",
 				defaultWarehouse: 1,
 				updatedAt: expect.any(Date),
@@ -598,11 +623,11 @@ describe("Outbound note tests", () => {
 		const db = await getRandomDb();
 
 		await createOutboundNote(db, 1);
-		await updateNote(db, 1, { displayName: "Note 1" });
+		await updateNote(db, 1, { displayName: "Sale 1" });
 		let note = await getNoteById(db, 1);
 		expect(note).toEqual(
 			expect.objectContaining({
-				displayName: "Note 1", // Should remain unchanged
+				displayName: "Sale 1", // Should remain unchanged
 				committed: false,
 				updatedAt: expect.any(Date)
 			})
@@ -613,14 +638,14 @@ describe("Outbound note tests", () => {
 		await commitNote(db, 1);
 
 		// Attempt to update the note
-		await updateNote(db, 1, { displayName: "Updated Note" });
+		await updateNote(db, 1, { displayName: "Updated Sale" });
 		await updateNote(db, 1, { defaultWarehouse: 2 });
 
 		// Retrieve the note to verify it hasn't been updated
 		note = await getNoteById(db, 1);
 		expect(note).toEqual(
 			expect.objectContaining({
-				displayName: "Note 1", // Should remain unchanged
+				displayName: "Sale 1", // Should remain unchanged
 				committed: true
 			})
 		);
@@ -630,67 +655,67 @@ describe("Outbound note tests", () => {
 	it("assigns default note name continuing the sequence", async () => {
 		const db = await getRandomDb();
 
-		// Create note 1, default name should be 'New Note'
+		// Create note 1, default name should be 'New Sale'
 		await createOutboundNote(db, 1);
 		let res = await getActiveOutboundNotes(db);
-		expect(res).toEqual([{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }]);
+		expect(res).toEqual([{ id: 1, displayName: "New Sale", updatedAt: expect.any(Date), totalBooks: 0 }]);
 
-		// Create note 2, default name should be 'New Note (2)'
+		// Create note 2, default name should be 'New Sale (2)'
 		await createOutboundNote(db, 2);
 		res = await getActiveOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 2, displayName: "New Sale (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "New Sale", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Rename note 1 to 'Note 1'
-		await updateNote(db, 1, { displayName: "Note 1" });
+		await updateNote(db, 1, { displayName: "Sale 1" });
 		res = await getActiveOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 1, displayName: "Sale 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Sale (2)", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
-		// Create note 3, default name should be 'New Note (3)' (continuing the sequence)
+		// Create note 3, default name should be 'New Sale (3)' (continuing the sequence)
 		await createOutboundNote(db, 3);
 		res = await getActiveOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Sale (3)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Sale 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Sale (2)", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Rename note 2 to 'Note 2'
-		await updateNote(db, 2, { displayName: "Note 2" });
+		await updateNote(db, 2, { displayName: "Sale 2" });
 		// Rename note 3 to 'Note 3'
-		await updateNote(db, 3, { displayName: "Note 3" });
+		await updateNote(db, 3, { displayName: "Sale 3" });
 		res = await getActiveOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "Sale 3", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Sale 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Sale 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
-		// Create note 4, default name should be 'New Note' (restarting the sequence)
+		// Create note 4, default name should be 'New Sale' (restarting the sequence)
 		await createOutboundNote(db, 4);
 		res = await getActiveOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 4, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 4, displayName: "New Sale", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Sale 3", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Sale 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Sale 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Adding an inbound note shouldn't mess with the sequence
-		await createInboundNote(db, 1, 5); // Latest (outbound note sequence) should still be 1 - "New Note"
-		await createOutboundNote(db, 6); // New Note (2) - continuing as if the inbound note doesn't exist
+		await createInboundNote(db, 1, 5); // Latest (outbound note sequence) should still be 1 - "New Sale"
+		await createOutboundNote(db, 6); // New Sale (2) - continuing as if the inbound note doesn't exist
 		res = await getActiveOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 6, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 4, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 6, displayName: "New Sale (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 4, displayName: "New Sale", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Sale 3", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Sale 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Sale 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 	});
 
@@ -711,7 +736,7 @@ describe("Outbound note tests", () => {
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "New Note",
+				displayName: "New Sale",
 				committed: true
 			})
 		);
@@ -724,12 +749,12 @@ describe("Outbound note tests", () => {
 		await createOutboundNote(db, 2);
 
 		expect(await getActiveOutboundNotes(db)).toEqual([
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 2, displayName: "New Sale (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "New Sale", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		await deleteNote(db, 1);
-		expect(await getActiveOutboundNotes(db)).toEqual([{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }]);
+		expect(await getActiveOutboundNotes(db)).toEqual([{ id: 2, displayName: "New Sale (2)", updatedAt: expect.any(Date), totalBooks: 0 }]);
 	});
 
 	it("doesn't allow deletion of a committed note", async () => {
@@ -750,7 +775,7 @@ describe("Outbound note tests", () => {
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
-				displayName: "New Note",
+				displayName: "New Sale",
 				committed: true
 			})
 		);
@@ -824,7 +849,7 @@ describe("Outbound note tests", () => {
 		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 5, warehouseId: 2 });
 		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 1 });
 
-		expect(await getActiveOutboundNotes(db)).toEqual([{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 10 }]);
+		expect(await getActiveOutboundNotes(db)).toEqual([{ id: 1, displayName: "New Sale", updatedAt: expect.any(Date), totalBooks: 10 }]);
 	});
 });
 
@@ -1336,6 +1361,8 @@ describe("Reconciliation note", () => {
 		await createAndCommitReconciliationNote(db, 1, volumes);
 
 		const note = await getNoteById(db, 1);
+		const entries = await getNoteEntries(db, 1);
+
 		expect(note).toEqual(
 			expect.objectContaining({
 				id: 1,
@@ -1348,27 +1375,15 @@ describe("Reconciliation note", () => {
 		);
 		expect(note.committedAt).toEqual(note.updatedAt);
 		expect(note.displayName).toEqual(`Reconciliation note: ${note.committedAt.toISOString()}`);
-
 		const { committedAt } = note;
 
-		// TODO: this is tested somewhat explicitly for now, when we add stock functionality, test (implicitly) for stock state
-		const transactionsQuery = "SELECT isbn, quantity, warehouse_id, committed_at, updated_at FROM book_transaction WHERE note_id = 1";
-		const transactions = await db
-			.execO<{ isbn: string; quantity: number; warehouseId: number; updated_at: number; committed_at: number }>(transactionsQuery)
-			.then((x) =>
-				x.map(({ committed_at, updated_at, ...item }) => ({
-					...item,
-					committedAt: new Date(committed_at),
-					updatedAt: new Date(updated_at)
-				}))
-			);
-		expect(transactions).toEqual([
-			{ isbn: "1234567890", quantity: 5, warehouse_id: 1, committedAt, updatedAt: committedAt },
-			{ isbn: "0987654321", quantity: 10, warehouse_id: 2, committedAt, updatedAt: committedAt }
-		]);
-
-		// Check for updated_at consistency
-		expect(note.updatedAt).toEqual(note.committedAt);
+		// NOTE: Array containing as we're not testing for order exhaustiveness and so (that should be tested elsewhere)
+		expect(entries).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ isbn: "1234567890", quantity: 5, warehouseId: 1, committedAt, updatedAt: committedAt }),
+				expect.objectContaining({ isbn: "0987654321", quantity: 10, warehouseId: 2, committedAt, updatedAt: committedAt })
+			])
+		);
 	});
 
 	it("integration: reconciles the entries necessary for an outbound note to be committed", async () => {

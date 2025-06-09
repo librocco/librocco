@@ -61,7 +61,7 @@ function getEntityListItem(parent: DashboardNode, nth: number): EntityListItem {
 
 	const createNote = async (opts: WaitForOpts = {}) => {
 		// Create a new note by clicking the button
-		await container.getByRole("button", { name: "New note" }).click();
+		await container.getByRole("button", { name: "New Purchase" }).click();
 		// Wait for the outbound note view to load (signaling that we've been successfully redirected and can continue with the test)
 		await dashboard()
 			.view("inbound-note")

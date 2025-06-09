@@ -2,16 +2,16 @@
 	import { ListTodo } from "lucide-svelte";
 	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 	import { goto } from "$lib/utils/navigation";
-	import { base } from "$app/paths";
 	import LL from "@librocco/shared/i18n-svelte";
+	import { appHash } from "$lib/paths";
 
 	export let orders: PlacedSupplierOrder[];
 
 	function handleView(supplierOrderId: number) {
-		goto(`${base}/orders/suppliers/orders/${supplierOrderId}`);
+		goto(appHash("supplier_orders", supplierOrderId));
 	}
 	function handleViewReconcileOrder(id: number) {
-		goto(`${base}/orders/suppliers/reconcile/${id}`);
+		goto(appHash("reconcile", id));
 	}
 </script>
 

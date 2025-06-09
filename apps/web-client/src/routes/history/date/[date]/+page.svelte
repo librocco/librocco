@@ -86,30 +86,30 @@
 				<div data-testid={testId("history-date-stats")}>
 					<div class="flex flex-row text-sm">
 						<div class="badge badge-green m-2 p-2 font-bold">
-							{t.stats.total_inbound_book_count()}:
+							{t.stats.total_purchase_book_count()}:
 							<span data-property="inbound-count">{stats.totalInboundBookCount}</span>
 						</div>
 						<div class="badge badge-green m-2 p-2 font-bold">
-							{t.stats.total_inbound_cover_price()}:
+							{t.stats.total_purchase_cover_price()}:
 							<span data-property="inbound-cover-price">{stats.totalInboundCoverPrice.toFixed(2)}</span>
 						</div>
 						<div class="badge badge-green m-2 p-2 font-bold">
-							{t.stats.total_inbound_cover_price()}:
+							{t.stats.total_purchase_cover_price()}:
 							<span data-property="inbound-discounted-price">{stats.totalInboundDiscountedPrice.toFixed(2)}</span>
 						</div>
 					</div>
 
 					<div class="flex flex-row text-sm">
 						<div class="badge badge-red m-2 p-2 font-bold">
-							{t.stats.total_outbound_book_count()}:
+							{t.stats.total_sale_book_count()}:
 							<span data-property="outbound-count">{stats.totalOutboundBookCount}</span>
 						</div>
 						<div class="badge badge-red m-2 p-2 font-bold">
-							{t.stats.total_outbound_cover_price()}:
+							{t.stats.total_sale_cover_price()}:
 							<span data-property="outbound-cover-price">{stats.totalOutboundCoverPrice.toFixed(2)}</span>
 						</div>
 						<div class="badge badge-red m-2 p-2 font-bold">
-							{t.stats.total_outbound_discounted_price()}:
+							{t.stats.total_sale_discounted_price()}:
 							<span data-property="outbound-discounted-price">{stats.totalOutboundDiscountedPrice.toFixed(2)}</span>
 						</div>
 					</div>

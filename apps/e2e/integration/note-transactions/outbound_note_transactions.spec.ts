@@ -32,7 +32,7 @@ test.beforeEach(async ({ page }) => {
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
 
-	await page.getByRole("link", { name: "Outbound" }).click();
+	await page.getByRole("link", { name: "Sale" }).click();
 	await dashboard.content().entityList("outbound-list").waitFor();
 
 	// Navigate to the note page
