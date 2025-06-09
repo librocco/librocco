@@ -13,21 +13,20 @@ export class SQLite3 {
 	constructor(private base: SQLiteAPI, private vfs = "idb-batch-atomic") { }
 
 	open(filename?: string, mode: string = "c") {
+		const fname = filename || ":memory:";
+		const flags = SQLite.SQLITE_OPEN_CREATE | SQLite.SQLITE_OPEN_READWRITE | SQLite.SQLITE_OPEN_URI;
+		const vfs = filename != null ? this.vfs : undefined;
+
+		console.log(`fname: ${fname}, mode: ${mode}, vfs: ${vfs}`);
+
 		return serialize(
 			null,
 			undefined,
-			() => {
-				return this.base.open_v2(
-					filename || ":memory:",
-					SQLite.SQLITE_OPEN_CREATE |
-					SQLite.SQLITE_OPEN_READWRITE |
-					SQLite.SQLITE_OPEN_URI,
-					filename != null ? this.vfs : undefined
-				);
-			},
+			() => this.base.open_v2(fname, flags, vfs),
 			topLevelMutex
 		).then((db: any) => {
-			const ret = new DB(this.base, db, filename || ":memory:");
+			console.log("serialised (whatever)")
+			const ret = new DB(this.base, db, fname);
 			return ret
 				.prepare(
 					`SELECT tbl_name FROM tables_used(?) AS u
