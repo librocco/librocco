@@ -2,7 +2,7 @@ import { expect } from "@playwright/test";
 
 import type { BookData } from "@librocco/shared";
 
-import { baseURL } from "@/constants";
+import { appHash } from "@/constants";
 import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard, getDbHandle } from "@/helpers";
 import { upsertWarehouse, createInboundNote, createOutboundNote, addVolumesToNote, commitNote, upsertBook } from "../helpers/cr-sqlite";
@@ -17,15 +17,9 @@ const TIME_MIN = 60 * 1000;
 const TIME_DAY = 24 * 60 * TIME_MIN;
 
 test.beforeEach(async ({ page }) => {
-	await page.goto(baseURL);
-
-	const dashboard = getDashboard(page);
-	await dashboard.waitFor();
+	await page.goto(appHash("history/date"));
 
 	const dbHandle = await getDbHandle(page);
-
-	// Wait for the default view to load
-	await dashboard.view("stock").waitFor();
 
 	// Create two warehouses to work with
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
@@ -42,8 +36,8 @@ test("history/date - display", async ({ page }) => {
 	// const dbHandle = await getDbHandle(page);
 
 	// Default history view (sidebar navigation) is 'history/date'
-	await page.getByRole("link", { name: "History" }).click();
-	await page.waitForURL("**/history/date/**/");
+	await page.goto(appHash("history/date"));
+
 	// Default view is today
 	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
 
@@ -200,9 +194,6 @@ test("history/date - display", async ({ page }) => {
 
 test("history/date - general navigation", async ({ page }) => {
 	const dashboard = getDashboard(page);
-
-	await page.getByRole("link", { name: "History" }).click();
-	await page.waitForURL("**/history/date/**/");
 
 	await page.getByRole("link", { name: "By ISBN" }).click(); // This is our "previous" view
 	await page.waitForURL("**/history/isbn/**/");
@@ -970,7 +961,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 	await filter.waitFor();
 
 	// Test for only inbound
-	await filter.getByText("Inbound").click();
+	await filter.getByText("Purchase").click();
 	await dashboard
 		.content()
 		.table("history/warehouse")
@@ -989,7 +980,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 		]);
 
 	// Test for only outbound
-	await filter.getByText("Outbound").click();
+	await filter.getByText("Sale").click();
 	await dashboard
 		.content()
 		.table("history/warehouse")

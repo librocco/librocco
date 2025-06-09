@@ -1,4 +1,6 @@
-import type { WorkerInterface } from "@vlcn.io/ws-client";
+import type { SyncProgress } from "$lib/workers/sync-transport-control";
+import type WorkerInterface from "$lib/workers/WorkerInterface";
+import { writable } from "svelte/store";
 
 export type SyncConfig = {
 	dbid?: string;
@@ -71,3 +73,19 @@ const newSyncInterface = () => {
 };
 
 export const sync = newSyncInterface();
+
+export const newSyncProgressStore = () => {
+	const progress = writable<SyncProgress>({ active: false, nProcessed: 0, nTotal: 0 });
+
+	let disposer: () => void;
+
+	const start = (wkr: WorkerInterface) => {
+		disposer = wkr.onProgress(($progress) => progress.set($progress));
+	};
+
+	const stop = () => {
+		disposer?.();
+	};
+
+	return { start, stop, progress };
+};

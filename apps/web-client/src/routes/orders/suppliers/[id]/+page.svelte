@@ -132,6 +132,14 @@
 												</dt>
 												<dd class="truncate">{supplier.address || "N/A"}</dd>
 											</div>
+
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">{t.details.supplier_customerId()}</span>
+													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">{supplier.customerId || "N/A"}</dd>
+											</div>
 										</div>
 									</div>
 

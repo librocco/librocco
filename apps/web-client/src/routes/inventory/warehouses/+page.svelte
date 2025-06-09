@@ -11,6 +11,8 @@
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
+	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
+
 	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
@@ -35,6 +37,7 @@
 	$: db = data.dbCtx?.db;
 
 	$: tCommon = $LL.common;
+	$: tWarehouses = $LL.inventory_page.warehouses_tab;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -43,16 +46,15 @@
 		const { rx } = data.dbCtx;
 
 		// Reload when warehouse data changes
-		const disposer1 = rx.onRange(["warehouse"], () => invalidate("warehouse:list"));
-		// Reload when a note gets committed (affecting stock)
-		const disposer2 = rx.onRange(["note"], () => invalidate("warehouse:books"));
-		disposer = () => (disposer1(), disposer2());
+		disposer = rx.onRange(["warehouse"], () => invalidate("warehouse:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
 		disposer?.();
 	});
 	$: goto = racefreeGoto(disposer);
+
+	$: ({ warehouseTotals } = stockCache);
 
 	const handleDeleteWarehouse = (id: number) => async () => {
 		await deleteWarehouse(db, id);
@@ -128,23 +130,25 @@
 				</div>
 			{:else}
 				<!-- Start entity list -->
-				{#each warehouses as { id, displayName, totalBooks, discount }}
+				{#each warehouses as { id, displayName, discount }}
 					{@const href = appPath("warehouses", id)}
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
-							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
+							<a data-sveltekit-preload-data="hover" {href} class="entity-list-text-lg text-base-content hover:underline focus:underline"
+								>{displayName}</a
+							>
 
 							<div class="flex flex-row gap-x-8 gap-y-2 max-xs:flex-col">
 								<div class="entity-list-text-sm flex items-center gap-x-2 text-sm text-base-content">
 									<Layers size={18} />
 
 									<div>
-										{#if totalBooks === -1}
+										{#await $warehouseTotals}
 											<PlaceholderDots />
-										{:else}
-											<span class="">{totalBooks}</span>
-										{/if}
+										{:then warehouseTotals}
+											<span class="">{warehouseTotals.get(id)}</span>
+										{/await}
 										books
 									</div>
 								</div>
@@ -161,7 +165,7 @@
 
 						<div class="entity-list-actions">
 							<button on:click={handleCreateInboundNote(id)} class="btn-primary btn-sm btn">
-								<span class="button-text"> New note </span>
+								<span class="button-text"> {tWarehouses.labels.button_create_purchase()} </span>
 							</button>
 
 							<DropdownWrapper let:separator let:item>

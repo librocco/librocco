@@ -1,13 +1,13 @@
 import { expect } from "@playwright/test";
 
-import { baseURL } from "@/constants";
+import { appHash } from "@/constants";
 
 import { testBase as test, testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
 import { addBooksToCustomer } from "@/helpers/cr-sqlite";
 
 test("should create a new customer order", async ({ page }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	await page.getByRole("button", { name: "New Order" }).first().click();
 
 	const dialog = page.getByRole("dialog");
@@ -18,14 +18,14 @@ test("should create a new customer order", async ({ page }) => {
 
 	await page.getByRole("button", { name: "Create" }).click();
 
-	await page.waitForURL(`${baseURL}orders/customers/**`);
+	await page.waitForURL(appHash("customers", "**"));
 	// Verify new customer appears in list
 	await expect(page.getByText("New Customer")).toBeVisible();
 	await expect(page.getByText("new@example.com")).toBeVisible();
 });
 
 testOrders("should show list of In Progress orders", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	page.getByRole("button", { name: "In Progress" });
 
 	await expect(page.getByText(customers[0].fullname)).toBeVisible();
@@ -37,10 +37,10 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn] });
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	const updateButton = page.getByRole("link", { name: "Update" }).first();
 	await updateButton.click();
-	await page.waitForURL(`${baseURL}orders/customers/1/`);
+	await page.waitForURL(appHash("customers", "1"));
 
 	await expect(page.getByText(customers[0].fullname)).toBeVisible();
 	await expect(page.getByText(customers[0].email)).toBeVisible();
@@ -64,7 +64,7 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 });
 
 testOrders("should update a customer details", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/1/`);
+	await page.goto(appHash("customers", "1"));
 
 	const newCustomer = { fullname: "New Customer", email: "new@gmail.com", deposit: "10" };
 	await expect(page.getByText(customers[0].fullname)).toBeVisible();
@@ -88,7 +88,7 @@ testOrders("should update a customer details", async ({ page, customers }) => {
 });
 
 testOrders("should add books to a customer order", async ({ page, customers, books }) => {
-	await page.goto(`${baseURL}orders/customers/1/`);
+	await page.goto(appHash("customers", "1"));
 
 	await expect(page.getByText(customers[0].fullname)).toBeVisible();
 	await expect(page.getByText(customers[0].email)).toBeVisible();
@@ -122,7 +122,7 @@ testOrders("should delete books from a customer order", async ({ page, books }) 
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
 
-	await page.goto(`${baseURL}orders/customers/1/`);
+	await page.goto(appHash("customers", "1"));
 
 	const table = page.getByRole("table");
 	const firstRow = table.getByRole("row").nth(1);
@@ -139,7 +139,7 @@ testOrders("should delete books from a customer order", async ({ page, books }) 
 });
 
 testOrders("should mark order lines as collected", async ({ page, collectCustomerOrderLine: customerOrderLines }) => {
-	await page.goto(`${baseURL}orders/customers/1/`);
+	await page.goto(appHash("customers", "1"));
 
 	const table = page.getByRole("table");
 	const firstBookRow = table.getByRole("row").nth(1);
