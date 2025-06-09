@@ -4,6 +4,7 @@
 
 	import { invalidate } from "$app/navigation";
 
+	import { appHash } from "$lib/paths";
 	import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
 	import { Page } from "$lib/controllers";
 
@@ -81,7 +82,7 @@
 
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
-		await goto(`${base}/orders/suppliers/orders/`);
+		await goto(appHash("supplier_orders"));
 	}
 
 	function selectPortion(portion: number) {

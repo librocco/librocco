@@ -15,6 +15,7 @@ export type DBCustomer = {
 	id: number;
 	fullname?: string;
 	email?: string;
+	phone?: string;
 	displayId: string;
 	deposit?: number;
 	updated_at?: number;
@@ -29,6 +30,7 @@ export type Customer = {
 	id: number;
 	fullname?: string;
 	email?: string;
+	phone?: string;
 	displayId: string;
 	deposit?: number;
 	updatedAt?: Date;
@@ -93,6 +95,7 @@ export type Supplier = {
 	name?: string;
 	email?: string;
 	address?: string;
+	customerId?: number;
 };
 
 export type SupplierExtended = Supplier & {
@@ -227,9 +230,12 @@ export type VolumeStock = {
 	warehouseId?: number;
 };
 
-export type NoteEntriesItem = VolumeStock & { warehouseName?: string; warehouseDiscount: number; updatedAt?: Date } & Required<
-		Omit<BookData, "updatedAt">
-	>;
+export type NoteEntriesItem = VolumeStock & {
+	warehouseName?: string;
+	warehouseDiscount: number;
+	updatedAt?: Date;
+	committedAt?: Date;
+} & Required<Omit<BookData, "updatedAt">>;
 
 export type NoteCustomItem = { id: number; title: string; price: number; updatedAt?: Date };
 

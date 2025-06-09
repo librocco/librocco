@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { baseURL } from "@/constants";
+import { appHash } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
 import { associatePublisher, removePublisherFromSupplier, upsertBook } from "@/helpers/cr-sqlite";
@@ -11,15 +11,15 @@ test.describe("Supplier publisher lists", () => {
 	testOrders("displays three different lists of publishers correctly", async ({ page, suppliers, books, suppliersWithPublishers }) => {
 		depends(books);
 		depends(suppliersWithPublishers);
-		await page.goto(`${baseURL}`);
 
+		await page.goto(appHash("suppliers"));
 		const dbHandle = await getDbHandle(page);
 
 		await dbHandle.evaluate(upsertBook, { isbn: "978-0-306-40615-7", title: "Book A", author: "Author A", publisher: "Publisher A" });
 
-		await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}/`);
-		// await page.goto(`${baseURL}orders/customers/${customers[0].id}/`);
-		await page.goto(`${baseURL}orders/suppliers/`);
+		await page.goto(appHash("supplier_orders", suppliers[0].id));
+		await page.goto(appHash("suppliers"));
+
 		await page.getByText(suppliers[0].name, { exact: true }).waitFor();
 		await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByText("Edit").click();
 		// Wait for the page to load

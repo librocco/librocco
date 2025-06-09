@@ -36,13 +36,15 @@ const suppliers = [
 		id: 1,
 		name: "BooksRUs",
 		email: "contact@booksrus.com",
-		address: "123 Book St, New York, NY"
+		address: "123 Book St, New York, NY",
+		customerId: 1111
 	},
 	{
 		id: 2,
 		name: "NovelSupply Co.",
 		email: "support@novelsupply.co",
-		address: "456 Fiction Ave, Los Angeles, CA"
+		address: "456 Fiction Ave, Los Angeles, CA",
+		customerId: 2222
 	}
 ];
 

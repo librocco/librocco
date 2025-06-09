@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import { ArrowRight, ListTodo } from "lucide-svelte";
-	import { base } from "$app/paths";
 
 	import type { PageData } from "./$types";
 
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { Page } from "$lib/controllers";
+	import { appHash } from "$lib/paths";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { invalidate } from "$app/navigation";
@@ -59,11 +59,11 @@
 		const reconOrderId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 
 		await createReconciliationOrder(db, reconOrderId, [id]);
-		goto(`${base}/orders/suppliers/reconcile/${reconOrderId}`);
+		goto(appHash("reconcile", reconOrderId));
 	}
 
 	function handleViewReconcileOrder(id: number) {
-		goto(`${base}/orders/suppliers/reconcile/${id}`);
+		goto(appHash("reconcile", id));
 	}
 </script>
 

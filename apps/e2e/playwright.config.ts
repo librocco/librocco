@@ -1,6 +1,6 @@
 import { defineConfig, devices, ReporterDescription } from "@playwright/test";
 
-import { IS_CI } from "./constants";
+import { IS_CI, baseURL } from "./constants";
 
 const reporter: ReporterDescription[] = [["list"]];
 // Produce a merge‑able blob report when running in CI
@@ -29,7 +29,7 @@ export default defineConfig({
 	use: {
 		/* Base URL to use in actions like `await page.goto('/')`. */
 		// baseURL: 'http://127.0.0.1:3000',
-
+		baseURL: baseURL,
 		/* Collect trace for failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: "retain-on-failure",
 

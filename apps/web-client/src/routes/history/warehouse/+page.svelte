@@ -1,16 +1,19 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Loader2 as Loader, Library, Percent } from "lucide-svelte";
+	import { Library, Percent } from "lucide-svelte";
 	import { invalidate } from "$app/navigation";
 
 	import { entityListView, testId } from "@librocco/shared";
+	import LL from "@librocco/shared/i18n-svelte";
+
+	import type { PageData } from "./$types";
+
+	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 
 	import HistoryPage from "$lib/controllers/HistoryPage.svelte";
 
 	import { appPath } from "$lib/paths";
-	import LL from "@librocco/shared/i18n-svelte";
-
-	import type { PageData } from "./$types";
+	import { PlaceholderDots } from "$lib/components";
 
 	export let data: PageData;
 
@@ -21,10 +24,7 @@
 		const { rx } = data.dbCtx;
 
 		// Reload when warehouse data changes
-		const disposer1 = rx.onRange(["warehouse"], () => invalidate("warehouse:list"));
-		// Reload when a note gets committed (affecting stock)
-		const disposer2 = rx.onRange(["note"], () => invalidate("warehouse:books"));
-		disposer = () => (disposer1(), disposer2());
+		disposer = rx.onRange(["warehouse"], () => invalidate("warehouse:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -33,6 +33,8 @@
 
 	$: ({ warehouses, plugins } = data);
 	$: db = data.dbCtx?.db;
+
+	$: ({ warehouseTotals } = stockCache);
 
 	$: t = $LL.history_page.warehouse_tab;
 
@@ -56,7 +58,6 @@
 				<!-- Start entity list -->
 				{#each warehouses as warehouse}
 					{@const displayName = warehouse.displayName || warehouse.id}
-					{@const totalBooks = warehouse.totalBooks}
 					{@const href = appPath("history/warehouse", warehouse.id)}
 					{@const warehouseDiscount = warehouse.discount}
 
@@ -67,7 +68,14 @@
 							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
 									<Library class="text-base-content" size={20} />
-									<span class="entity-list-text-sm text-base-content">{t.stats.books({ no_of_books: totalBooks })}</span>
+
+									{#await $warehouseTotals}
+										<PlaceholderDots />
+									{:then warehouseTotals}
+										<span class="entity-list-text-sm text-base-content">
+											{t.stats.books({ no_of_books: warehouseTotals.get(warehouse.id) })}
+										</span>
+									{/await}
 								</div>
 
 								{#if warehouseDiscount}

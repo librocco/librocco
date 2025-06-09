@@ -10,6 +10,7 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema } from "$lib/forms";
+	import { appPath, appHash } from "$lib/paths";
 
 	import { base } from "$app/paths";
 
@@ -74,7 +75,7 @@
 
 		newOrderDialogOpen.set(false);
 
-		await goto(`${base}/orders/customers/${id}`);
+		await goto(appHash("customers", id));
 	};
 </script>
 
@@ -134,7 +135,7 @@
 								<span class="font-medium">{displayId}</span>
 							</td>
 							<td class="text-right">
-								<a href="{base}/orders/customers/{id}/" class="btn-outline btn-sm btn">{t.labels.update()}</a>
+								<a href={appPath("customers", id)} class="btn-outline btn-sm btn">{t.labels.update()}</a>
 							</td>
 						</tr>
 					{/each}
@@ -156,7 +157,8 @@
 			validators: zod(createCustomerOrderSchema("create")),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					createCustomer(form.data);
+					const phone = [form.data.phone1, form.data.phone2].join(",");
+					createCustomer({ ...form.data, phone });
 				}
 			}
 		}}

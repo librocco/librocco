@@ -1,4 +1,4 @@
-import { baseURL } from "@/constants";
+import { appHash } from "@/constants";
 
 import { addBooksToCustomer, associatePublisher, getDbHandle, upsertBook, upsertSupplier } from "@/helpers/cr-sqlite";
 import { testOrders } from "@/helpers/fixtures";
@@ -9,7 +9,7 @@ import { testOrders } from "@/helpers/fixtures";
 testOrders(
 	"unordered: reacts to updates to suppliers, customer order lines and publisher association",
 	async ({ page, books, customers, suppliers }) => {
-		await page.goto(`${baseURL}orders/suppliers/orders/`);
+		await page.goto(appHash("supplier_orders"));
 
 		const dbHandle = await getDbHandle(page);
 		const table = page.getByRole("table");
@@ -65,7 +65,7 @@ testOrders(
 		await getDbHandle(page).then((db) => db.evaluate(associatePublisher, { supplierId: suppliers[0].id, publisher: books[0].publisher }));
 
 		// Open a new supplier order view for supplier 1
-		await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}/new-order/`);
+		await page.goto(appHash("suppliers", suppliers[0].id, "new-order"));
 
 		const dbHandle = await getDbHandle(page);
 		const table = page.getByRole("table");

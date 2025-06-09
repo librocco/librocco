@@ -75,6 +75,40 @@ async function _upsertBook(db: DB, book: BookData) {
 	);
 }
 
+async function _getMultipleBookData(db: DB, ...isbns: string[]): Promise<Array<Required<BookData> & { updatedAt: Date | null }>> {
+	// Supporting this case as there might be a request for empty entries list (as this depends on warehouse/note entries)
+	if (!isbns.length) {
+		return [];
+	}
+
+	const placeholders = isbns.map((_, i) => `(?, ${i})`).join(",\n");
+	const query = `
+		WITH input_list(isbn, ord) AS (
+			VALUES
+				${placeholders}
+		)
+		SELECT
+			input_list.isbn,
+			COALESCE(title, '') as title,
+			COALESCE(authors, '') as authors,
+			COALESCE(publisher, '') as publisher,
+			COALESCE(price, 0) as price,
+			COALESCE(year, '') as year,
+			COALESCE(edited_by, '') as editedBy,
+			COALESCE(out_of_print, 0) as outOfPrint,
+			COALESCE(category, '') as category,
+			updated_at as updatedAt
+		FROM input_list
+		LEFT JOIN book AS b
+			ON b.isbn = input_list.isbn
+		ORDER BY
+			input_list.ord;
+	`;
+
+	const res = await db.execO<RawBookRes>(query, isbns);
+	return res.map(processRawBookRes);
+}
+
 async function _getBookData(db: DB, isbn: string): Promise<Required<BookData> & { updatedAt: Date | null }> {
 	const [res] = await db.execO<RawBookRes>(
 		`SELECT
@@ -175,5 +209,6 @@ const processRawBookRes = (res: RawBookRes): Required<BookData> & { updatedAt: D
 
 export const upsertBook = timed(_upsertBook);
 export const getBookData = timed(_getBookData);
+export const getMultipleBookData = timed(_getMultipleBookData);
 export const getPublisherList = timed(_getPublisherList);
 export const searchBooks = timed(_searchBooks);

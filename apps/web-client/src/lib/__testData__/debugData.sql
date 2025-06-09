@@ -7,9 +7,9 @@ INSERT INTO book (isbn, title, authors, publisher, price) VALUES
 ('9780590353427', 'Harry Potter and the Sorcerer''s Stone', 'J.K. Rowling', 'Scholastic', 12.50);
 
 -- Suppliers
-INSERT INTO supplier (id, name, email, address) VALUES
-(1, 'BooksRUs', 'contact@booksrus.com', '123 Book St, New York, NY'),
-(2, 'NovelSupply Co.', 'support@novelsupply.co', '456 Fiction Ave, Los Angeles, CA');
+INSERT INTO supplier (id, name, email, address, customerId) VALUES
+(1, 'BooksRUs', 'contact@booksrus.com', '123 Book St, New York, NY', 1111),
+(2, 'NovelSupply Co.', 'support@novelsupply.co', '456 Fiction Ave, Los Angeles, CA', 2222);
 
 -- Supplier Publisher Relationships
 INSERT INTO supplier_publisher (supplier_id, publisher) VALUES

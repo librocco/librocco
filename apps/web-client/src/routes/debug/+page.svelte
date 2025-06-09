@@ -117,17 +117,19 @@
 
 				// Insert supplier
 				await db.exec(`
-                     INSERT INTO supplier (id, name, email, address)
+                     INSERT INTO supplier (id, name, email, address, customerId)
                      VALUES (
                          ${supplierId},
                          '${publisherName} Distribution',
                          'contact@${publisherName.toLowerCase().replace(/\s+/g, "")}.com',
-                         '${i} Publisher Street, Book City'
+                         '${i} Publisher Street, Book City',
+                         ${supplierId}${i}
                      )
                      ON CONFLICT(id) DO UPDATE SET
                          name = '${publisherName} Distribution',
                          email = 'contact@${publisherName.toLowerCase().replace(/\s+/g, "")}.com',
-                         address = '${i} Publisher Street, Book City'
+                         address = '${i} Publisher Street, Book City',
+                         customerId = ${supplierId}${i}
                  `);
 
 				// Link publisher to supplier

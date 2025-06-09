@@ -5,8 +5,8 @@ const nav = {
 	search: "Search stock",
 	books: "View known books",
 	inventory: "Manage inventory",
-	outbound: "Outbound",
-	inbound: "Inbound",
+	sale: "Sale",
+	purchase: "Purchase",
 	settings: "Settings",
 	history: "History",
 
@@ -26,12 +26,12 @@ const history_page = {
 	date_tab: {
 		stats: {
 			title: "Stats",
-			total_inbound_book_count: "Inbound Book Count",
-			total_inbound_cover_price: "Inbound Cover Price",
-			total_inbound_discounted_price: "Inbound Discounted Price",
-			total_outbound_book_count: "Outbound Book Count",
-			total_outbound_cover_price: "Outbound Cover Price",
-			total_outbound_discounted_price: "Outbound Discounted Price"
+			total_purchase_book_count: "Purchase Book Count",
+			total_purchase_cover_price: "Purchase Cover Price",
+			total_purchase_discounted_price: "Purchase Discounted Price",
+			total_sale_book_count: "Sale Book Count",
+			total_sale_cover_price: "Sale Cover Price",
+			total_sale_discounted_price: "Sale Discounted Price"
 		},
 		transactions: {
 			title: "Transactions",
@@ -86,8 +86,8 @@ const history_page = {
 		note_table: {
 			filter_options: {
 				all: "All",
-				inbound: "Inbound",
-				outbound: "Outbound"
+				purchase: "Purchase",
+				sale: "Sale"
 			},
 			column_headers: {
 				quantity: "quantity",
@@ -120,7 +120,7 @@ const history_page = {
 };
 
 const inventory_page = {
-	inbound_tab: {
+	purchase_tab: {
 		placeholder_box: {
 			title: "No open notes",
 			description: "Get started by adding a new note with the appropriate warehouse"
@@ -133,12 +133,17 @@ const inventory_page = {
 		labels: {
 			button_edit: "Edit"
 		}
+	},
+	warehouses_tab: {
+		labels: {
+			button_create_purchase: "New purchase"
+		}
 	}
 };
 const orders_page = {
 	labels: {
 		checkout: "Checkout",
-		create_outbound_note: "Create a new Outbound Note"
+		create_sale_note: "Create a new Sale Note"
 	}
 };
 
@@ -160,7 +165,7 @@ const supplier_orders_page = {
 		button: "New Customer Order"
 	}
 };
-const inbound_note = {
+const purchase_note = {
 	stats: {
 		last_updated: "Last updated"
 	},
@@ -224,7 +229,8 @@ const order_list_page = {
 		supplier_page: "Supplier page",
 		supplier_name: "Supplier name",
 		supplier_address: "Supplier address",
-		supplier_email: "Supplier email"
+		supplier_email: "Supplier email",
+		supplier_customerId: "Supplier customer ID"
 	},
 	table: {
 		publisher_name: "Publisher name",
@@ -342,7 +348,7 @@ const common = {
 		title: "No warehouse(s) selected",
 		description: "Can't commit the note as some transactions don't have any warehouse selected"
 	},
-	reconcile_outbound_dialog: {
+	reconcile_sale_dialog: {
 		title: "Stock mismatch",
 		description: "Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed."
 	},
@@ -371,7 +377,7 @@ const common = {
 		description: "Please type in the name for the new database"
 	}
 };
-const outbound_note = {
+const sale_note = {
 	delete_dialog: {
 		select_warehouse: "Please select a warehouse for each of the following transactions"
 	},
@@ -397,14 +403,14 @@ const outbound_note = {
 	}
 };
 
-const outbound_page = {
-	heading: "Outbound",
+const sale_page = {
+	heading: "Sale",
 	stats: {
 		last_updated: "Last updated",
 		books: "{ bookCount } book{{s}}"
 	},
 	labels: {
-		new_note: "New Note",
+		new_sale: "New Sale",
 		edit: "Edit",
 		print_book_label: "Print book label",
 		delete_row: "Delete row"
@@ -603,9 +609,9 @@ const en = {
 	suppliers_page,
 	warehouse_list_page,
 	warehouse_page,
-	outbound_note,
-	outbound_page,
-	inbound_note,
+	sale_note,
+	sale_page,
+	purchase_note,
 	settings_page,
 	stock_page,
 	common,

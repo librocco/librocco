@@ -11,9 +11,30 @@ import {
 } from "../suppliers";
 
 // Test fixtures
-const supplier1 = { id: 1, name: "Science Books LTD", email: "contact@science.books", address: "123 Science St", numPublishers: 0 };
-const supplier2 = { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.books", address: "456 Fantasy Ave", numPublishers: 0 };
-const supplier3 = { id: 3, name: "History Books LTD", email: "hello@history.books", address: "789 History Rd", numPublishers: 0 };
+const supplier1 = {
+	id: 1,
+	name: "Science Books LTD",
+	customerId: 111,
+	email: "contact@science.books",
+	address: "123 Science St",
+	numPublishers: 0
+};
+const supplier2 = {
+	id: 2,
+	name: "Fantasy Books LTD",
+	customerId: 222,
+	email: "info@fantasy.books",
+	address: "456 Fantasy Ave",
+	numPublishers: 0
+};
+const supplier3 = {
+	id: 3,
+	name: "History Books LTD",
+	customerId: 333,
+	email: "hello@history.books",
+	address: "789 History Rd",
+	numPublishers: 0
+};
 
 const publisher1 = "AnimalPublisher";
 const publisher2 = "FantasyPublisher";
@@ -43,6 +64,8 @@ describe("Supplier management:", () => {
 			expect(suppliers).toEqual({
 				id: 1,
 				name: "Partial Books",
+
+				customerId: null,
 				email: null,
 				address: null,
 				numPublishers: 0
@@ -118,8 +141,14 @@ describe("Supplier management:", () => {
 	it("retrieves data for single supplier by id", async () => {
 		const db = await getRandomDb();
 
-		await upsertSupplier(db, { id: 1, name: "Science Books LTD" });
-		await upsertSupplier(db, { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.com", address: "123 Yellow Brick Rd" });
+		await upsertSupplier(db, { id: 1, name: "Science Books LTD", customerId: 111 });
+		await upsertSupplier(db, {
+			id: 2,
+			name: "Fantasy Books LTD",
+			email: "info@fantasy.com",
+			address: "123 Yellow Brick Rd",
+			customerId: 222
+		});
 		await associatePublisher(db, 1, "SciencePublisher");
 		await associatePublisher(db, 1, "PhysicsPublisher");
 
@@ -128,6 +157,7 @@ describe("Supplier management:", () => {
 			name: "Science Books LTD",
 			address: null,
 			email: null,
+			customerId: 111,
 			numPublishers: 2
 		});
 
@@ -136,6 +166,7 @@ describe("Supplier management:", () => {
 			name: "Fantasy Books LTD",
 			address: "123 Yellow Brick Rd",
 			email: "info@fantasy.com",
+			customerId: 222,
 			numPublishers: 0
 		});
 

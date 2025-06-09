@@ -7,12 +7,12 @@
 		total_book_number: number;
 	}>;
 
-	import { base } from "$app/paths";
 	import { goto } from "$lib/utils/navigation";
 	import LL from "@librocco/shared/i18n-svelte";
+	import { appHash } from "$lib/paths";
 
 	function handlePlaceOrder(supplierId: number) {
-		goto(`${base}/orders/suppliers/${supplierId}/new-order`);
+		goto(appHash("suppliers", supplierId, "new-order"));
 	}
 </script>
 

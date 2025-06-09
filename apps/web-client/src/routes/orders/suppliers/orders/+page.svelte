@@ -6,10 +6,10 @@
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { racefreeGoto } from "$lib/utils/navigation";
-	import { base } from "$app/paths";
 
 	import type { PageData } from "./$types";
 	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import { appHash } from "$lib/paths";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
@@ -65,7 +65,7 @@
 
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		await createReconciliationOrder(db, id, event.detail.supplierOrderIds);
-		goto(`${base}/orders/suppliers/reconcile/${id}`);
+		goto(appHash("reconcile", id));
 	}
 
 	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
@@ -79,7 +79,7 @@
 
 		newOrderDialogOpen.set(false);
 
-		await goto(`${base}/orders/customers/${id}`);
+		await goto(appHash("customers", id));
 	};
 
 	$: t = $LL.supplier_orders_page;
@@ -130,7 +130,7 @@
 					</div>
 				</div>
 
-				<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(`${base}/orders/suppliers/`)}>
+				<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(appHash("suppliers"))}>
 					{t.labels.suppliers()}
 					<Settings size={20} />
 				</button>

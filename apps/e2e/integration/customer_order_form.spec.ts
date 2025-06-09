@@ -1,17 +1,17 @@
 import { expect } from "@playwright/test";
 
-import { baseURL } from "@/constants";
+import { appHash } from "@/constants";
 
 import { testOrders } from "@/helpers/fixtures";
 
 testOrders("general: closes the form 'Cancel' click or 'Esc' press", async ({ page }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 
 	const dialog = page.getByRole("dialog");
 
 	await page.getByRole("button", { name: "New Order" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await page.getByRole("button", { name: "Cancel" }).click();
+	await page.getByRole("button", { name: "Cancel" }).click({ force: true });
 	await dialog.waitFor({ state: "detached" });
 
 	await page.getByRole("button", { name: "New Order" }).first().click(); // First as there might be 2 (in case of no customer orders)
@@ -21,11 +21,13 @@ testOrders("general: closes the form 'Cancel' click or 'Esc' press", async ({ pa
 });
 
 testOrders("customer list: new: submits the form with all fields", async ({ page }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 
 	const customer = {
 		Name: "John Doe",
 		Email: "john@gmail.com",
+		"Phone 1": "1234567890",
+		"Phone 2": "0987654321",
 		Deposit: "10"
 	};
 
@@ -39,7 +41,7 @@ testOrders("customer list: new: submits the form with all fields", async ({ page
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Create" }).click();
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -47,7 +49,7 @@ testOrders("customer list: new: submits the form with all fields", async ({ page
 });
 
 testOrders("customer list: new: submits the form with only name provided", async ({ page }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 
 	const customer = {
 		Name: "John Doe"
@@ -63,7 +65,7 @@ testOrders("customer list: new: submits the form with only name provided", async
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Create" }).click();
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -71,7 +73,7 @@ testOrders("customer list: new: submits the form with only name provided", async
 });
 
 testOrders("customer list: new: doesn't allow for submission without the name field", async ({ page }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 
 	// NOTE: filling in non-required fields ensures the focus moves away from the name field (asserted to return back in failed validation)
 	const customer = {
@@ -89,13 +91,13 @@ testOrders("customer list: new: doesn't allow for submission without the name fi
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Create" }).click();
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Name", { exact: true })).toBeFocused();
 });
 
 testOrders("customer list: new: doesn't allow for submission with invalid email field", async ({ page }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 
 	const customer = {
 		Name: "John Doe",
@@ -113,14 +115,14 @@ testOrders("customer list: new: doesn't allow for submission with invalid email 
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Create" }).click();
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Email", { exact: true })).toBeFocused();
 });
 
 testOrders("customer page: update: doesn't submit the form without any changes made", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.goto(appHash("customers"));
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click({});
 
 	const dialog = page.getByRole("dialog");
 
@@ -134,7 +136,7 @@ testOrders("customer page: update: doesn't submit the form without any changes m
 });
 
 testOrders("customer page: update: submits the form with all fields changed", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
@@ -154,7 +156,7 @@ testOrders("customer page: update: submits the form with all fields changed", as
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -162,7 +164,7 @@ testOrders("customer page: update: submits the form with all fields changed", as
 });
 
 testOrders("customer page: update: submits the form with only name updated", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
@@ -179,7 +181,7 @@ testOrders("customer page: update: submits the form with only name updated", asy
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -187,7 +189,7 @@ testOrders("customer page: update: submits the form with only name updated", asy
 });
 
 testOrders("customer page: update: submits the form with only displayId updated", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
@@ -204,7 +206,7 @@ testOrders("customer page: update: submits the form with only displayId updated"
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -212,7 +214,7 @@ testOrders("customer page: update: submits the form with only displayId updated"
 });
 
 testOrders("customer page: update: submits the form with only email updated", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
@@ -229,7 +231,7 @@ testOrders("customer page: update: submits the form with only email updated", as
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -237,7 +239,7 @@ testOrders("customer page: update: submits the form with only email updated", as
 });
 
 testOrders("customer page: update: submits the form with only deposit updated", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
@@ -254,7 +256,7 @@ testOrders("customer page: update: submits the form with only deposit updated", 
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -262,7 +264,7 @@ testOrders("customer page: update: submits the form with only deposit updated", 
 });
 
 testOrders("customer page: update: doesn't allow for blank name field update", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const dialog = page.getByRole("dialog");
@@ -279,8 +281,13 @@ testOrders("customer page: update: doesn't allow for blank name field update", a
 });
 
 testOrders("customer page: update: doesn't allow for blank displayId field update", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.goto(appHash("customers"));
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: "Update" })
+		.click({ force: true });
 
 	const dialog = page.getByRole("dialog");
 
@@ -290,13 +297,13 @@ testOrders("customer page: update: doesn't allow for blank displayId field updat
 
 	await dialog.getByLabel("Display ID", { exact: true }).clear();
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Display ID", { exact: true })).toBeFocused();
 });
 
 testOrders("customer page: update: doesn't allow for submission with invalid email field", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
+	await page.goto(appHash("customers"));
 	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const customer = {
@@ -313,7 +320,7 @@ testOrders("customer page: update: doesn't allow for submission with invalid ema
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Email", { exact: true })).toBeFocused();
 });
@@ -322,8 +329,13 @@ testOrders("customer page: update: allows updates to customer an email (previous
 	// NOTE: This also tests for the returned custoemr data compatibility with the no-email form (should catch incompatible fallbacks and such)
 
 	// NOTE: At the time of this writing, customers[2] doesn't have an assigned email
-	await page.goto(`${baseURL}orders/customers/`);
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[2].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.goto(appHash("customers"));
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[2].fullname })
+		.getByRole("link", { name: "Update" })
+		.click({ force: true });
 
 	const customer = {
 		Name: "Updated Customer Guy (or Girl)"
@@ -339,7 +351,7 @@ testOrders("customer page: update: allows updates to customer an email (previous
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -347,8 +359,13 @@ testOrders("customer page: update: allows updates to customer an email (previous
 });
 
 testOrders("customer page: update: allows for blank email string", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/`);
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.goto(appHash("customers"));
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: "Update" })
+		.click({ force: true });
 
 	const customer = {
 		Email: ""
@@ -364,7 +381,7 @@ testOrders("customer page: update: allows for blank email string", async ({ page
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -372,11 +389,13 @@ testOrders("customer page: update: allows for blank email string", async ({ page
 });
 
 testOrders("supplier order list: new: submits the form with all fields", async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	const customer = {
 		Name: "John Doe",
 		Email: "john@gmail.com",
+		"Phone 1": "1234567890",
+		"Phone 2": "0987654321",
 		Deposit: "10"
 	};
 
@@ -390,7 +409,7 @@ testOrders("supplier order list: new: submits the form with all fields", async (
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Create" }).click();
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -398,7 +417,7 @@ testOrders("supplier order list: new: submits the form with all fields", async (
 });
 
 testOrders("supplier order list: new: submits the form with only name provided", async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	const customer = {
 		Name: "John Doe"
@@ -414,7 +433,7 @@ testOrders("supplier order list: new: submits the form with only name provided",
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Create" }).click();
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -422,7 +441,7 @@ testOrders("supplier order list: new: submits the form with only name provided",
 });
 
 testOrders("supplier order list: new: doesn't allow for submission without the name field", async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	// NOTE: filling in non-required fields ensures the focus moves away from the name field (asserted to return back in failed validation)
 	const customer = {
@@ -440,13 +459,13 @@ testOrders("supplier order list: new: doesn't allow for submission without the n
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Create" }).click();
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Name", { exact: true })).toBeFocused();
 });
 
 testOrders("supplier order list: new: doesn't allow for submission with invalid email field", async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	const customer = {
 		Name: "John Doe",
@@ -464,7 +483,7 @@ testOrders("supplier order list: new: doesn't allow for submission with invalid 
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Create" }).click();
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Email", { exact: true })).toBeFocused();
 });

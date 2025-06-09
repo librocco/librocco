@@ -50,21 +50,37 @@
 					</TextControl>
 				</FormFieldProxy>
 			</div>
-
-			<div class="form-control gap-y-2">
-				<FormFieldProxy {form} name="email">
-					<TextControl label="Email" let:controlAttrs>
-						<input {...controlAttrs} bind:value={$formStore.email} class="input-bordered input w-full" />
-					</TextControl>
-				</FormFieldProxy>
+			<div class="grid grid-cols-4 gap-4">
+				<div class="form-control col-span-3 gap-y-2">
+					<FormFieldProxy {form} name="email">
+						<TextControl label="Email" let:controlAttrs>
+							<input {...controlAttrs} bind:value={$formStore.email} class="input-bordered input w-full" />
+						</TextControl>
+					</FormFieldProxy>
+				</div>
+				<div class="form-control gap-y-2">
+					<FormFieldProxy {form} name="deposit">
+						<TextControl label="Deposit" let:controlAttrs>
+							<input {...controlAttrs} bind:value={$formStore.deposit} class="input-bordered input" type="number" />
+						</TextControl>
+					</FormFieldProxy>
+				</div>
 			</div>
-
-			<div class="form-control max-w-fit gap-y-2">
-				<FormFieldProxy {form} name="deposit">
-					<TextControl label="Deposit" let:controlAttrs>
-						<input {...controlAttrs} bind:value={$formStore.deposit} class="input-bordered input" type="number" />
-					</TextControl>
-				</FormFieldProxy>
+			<div class="grid grid-cols-2 gap-4">
+				<div class="form-control gap-y-2">
+					<FormFieldProxy {form} name="phone1">
+						<TextControl label="Phone 1" let:controlAttrs>
+							<input {...controlAttrs} bind:value={$formStore.phone1} class="input-bordered input w-full" />
+						</TextControl>
+					</FormFieldProxy>
+				</div>
+				<div class="form-control gap-y-2">
+					<FormFieldProxy {form} name="phone2">
+						<TextControl label="Phone 2" let:controlAttrs>
+							<input {...controlAttrs} bind:value={$formStore.phone2} class="input-bordered input w-full" />
+						</TextControl>
+					</FormFieldProxy>
+				</div>
 			</div>
 		</div>
 	</div>

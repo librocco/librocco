@@ -1,5 +1,5 @@
-import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
+import { redirect } from "@sveltejs/kit";
 import { navigatorDetector } from "typesafe-i18n/detectors";
 
 import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
@@ -15,20 +15,19 @@ import { loadLocaleAsync } from "@librocco/shared/i18n-util.async";
 import { setLocale } from "@librocco/shared/i18n-svelte";
 import { detectLocale } from "@librocco/shared/i18n-util";
 
+import { appPath } from "$lib/paths";
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
 
-// Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
-const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
+// Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/#/stock/")
+const redirectPaths = ["", "/", "/#", "/#/"].map((path) => `${base}${path}`);
 
 export const load: LayoutLoad = async ({ url }) => {
-	const { pathname } = url;
+	const { pathname, hash } = url;
 
-	if (redirectPaths.includes(pathname)) {
-		// * Important: trailing slash is required here
-		// * otherwise sveltekit will attempt to add it, and in doing so will strip `base`
-		redirect(307, `${base}/stock/`);
+	if ((redirectPaths.includes(pathname) && !hash) || hash == "#/") {
+		redirect(307, appPath("stock"));
 	}
 
 	// Check for navigator locale or fallback to default defined on the server
@@ -71,6 +70,3 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	return { dbCtx: null, status: false, plugins };
 };
-
-export const prerender = true;
-export const trailingSlash = "always";

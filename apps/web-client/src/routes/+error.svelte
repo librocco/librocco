@@ -24,7 +24,7 @@
 				</div>
 
 				<div class="card-actions self-end">
-					<a href="{base}/" class="btn-primary btn"> Reload </a>
+					<a href="{base}/#/" class="btn-primary btn"> Reload </a>
 				</div>
 			</div>
 		</div>

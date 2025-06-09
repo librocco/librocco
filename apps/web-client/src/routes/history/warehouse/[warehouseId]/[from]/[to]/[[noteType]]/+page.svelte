@@ -88,11 +88,11 @@
 			value: ""
 		},
 		{
-			label: tt.inbound(),
+			label: tt.purchase(),
 			value: "inbound"
 		},
 		{
-			label: tt.outbound(),
+			label: tt.sale(),
 			value: "outbound"
 		}
 	];

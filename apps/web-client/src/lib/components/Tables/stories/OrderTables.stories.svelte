@@ -22,6 +22,8 @@
 		{
 			fullname: "Billy Bob",
 			email: "bill@bbob.com",
+			phone1: "0987654321",
+			phone2: "0987654321",
 			id: 10219,
 			displayId: "10219",
 			deposit: 100
@@ -30,6 +32,8 @@
 			fullname: "Kim K",
 			email: "kim@spills-it.com",
 			id: 11928,
+			phone1: "32132213",
+			phone2: "32132213",
 			displayId: "11928",
 			deposit: 200
 		}

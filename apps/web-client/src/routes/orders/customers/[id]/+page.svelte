@@ -12,7 +12,8 @@
 		MoreVertical,
 		ArrowRight,
 		ClockArrowUp,
-		PencilLine
+		PencilLine,
+		Phone
 	} from "lucide-svelte";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
@@ -57,6 +58,8 @@
 
 	$: ({ customer, customerOrderLines, publisherList, plugins } = data);
 	$: db = data.dbCtx?.db;
+	$: phone1 = customer?.phone?.split(",").length > 0 ? customer?.phone?.split(",")[0] : "";
+	$: phone2 = customer?.phone?.split(",").length > 1 ? customer?.phone?.split(",")[1] : "";
 
 	$: customerId = parseInt($page.params.id);
 
@@ -247,6 +250,24 @@
 													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 												</dt>
 												<dd class="truncate">{data?.customer?.email || ""}</dd>
+											</div>
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">Customer phone</span>
+													<Phone aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">
+													{data?.customer?.phone?.split(",").length > 1
+														? data?.customer?.phone?.split(",")[0]
+														: data?.customer?.phone || ""}
+												</dd>
+											</div>
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">Secondary phone</span>
+													<Phone aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">{data?.customer?.phone?.split(",")[1] || ""}</dd>
 											</div>
 										</div>
 										<div class="flex gap-x-3">
@@ -501,13 +522,14 @@
 		heading="Update customer details"
 		saveLabel="Update"
 		kind="update"
-		data={defaults(stripNulls(customer), zod(createCustomerOrderSchema("update")))}
+		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema("update")))}
 		options={{
 			SPA: true,
 			validators: zod(createCustomerOrderSchema("update")),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					handleUpdateCustomer(form.data);
+					const phone = [form.data.phone1, form.data.phone2].join(",");
+					handleUpdateCustomer({ ...form.data, phone });
 				}
 			},
 			onUpdated: async ({ form }) => {

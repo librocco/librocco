@@ -32,7 +32,9 @@
 	</thead>
 	<tbody>
 		{#each rows as row (row.key)}
-			{@const { fullname, email, id, rowIx, deposit } = row}
+			{@const { fullname, email, phone, id, rowIx, deposit } = row}
+			{@const phone1 = phone.split(", ").length > 1 ? phone.split(", ")[0] : phone}
+			{@const phone2 = phone.split(", ").length > 1 ? phone.split(", ")[1] : ""}
 
 			<tr>
 				<th scope="row" data-property="customer">
@@ -41,7 +43,9 @@
 							rows={{
 								fullname: { data: fullname ?? "", className: "text-md font-medium" },
 								email: { data: email ?? "", className: "text-md font-light" },
-								deposit: { data: `${deposit ?? 0}`, className: "text-md font-light" }
+								deposit: { data: `${deposit ?? 0}`, className: "text-md font-light" },
+								phone1: { data: phone1 ?? "", className: "text-md font-light" },
+								phone2: { data: phone2 ?? "", className: "text-md font-light" }
 							}}
 						/>
 					</BodyHead>

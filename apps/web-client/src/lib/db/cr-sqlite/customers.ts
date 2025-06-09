@@ -63,11 +63,12 @@ async function _upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt">) {
 	const timestamp = Date.now();
 
 	await db.exec(
-		`INSERT INTO customer (id, fullname, email, deposit, display_id, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)
+		`INSERT INTO customer (id, fullname, email, phone, deposit, display_id, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
+           phone = COALESCE(?, phone),
            deposit = COALESCE(?, deposit),
            display_id = COALESCE(?, display_id),
            updated_at = ?
@@ -76,11 +77,13 @@ async function _upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt">) {
 			customer.id,
 			customer.fullname ?? null,
 			customer.email ?? null,
+			customer.phone ?? null,
 			customer.deposit ?? null,
 			customer.displayId,
 			timestamp,
 			customer.fullname ?? null,
 			customer.email ?? null,
+			customer.phone ?? null,
 			customer.deposit ?? null,
 			customer.displayId,
 			timestamp
@@ -122,6 +125,7 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
 				display_id AS displayId,
 				COALESCE(fullname, 'N/A') AS fullname,
 				COALESCE(deposit, 0) AS deposit,
+				phone,
 
 				-- NOTE: we're not coalescing email as we need it to be null if not set
 				-- so that the form can treat it as (undefined) optional field and not an (existing) invalid email
@@ -167,6 +171,7 @@ async function _getCustomerOrderList(db: DB): Promise<CustomerOrderListItem[]> {
 			COALESCE(fullname, 'N/A') AS fullname,
 			COALESCE(deposit, 0) AS deposit,
 			COALESCE(email, 'N/A') AS email,
+			COALESCE(phone, 'N/A') AS phone,
 			updated_at,
 			MIN(col.status_ord) as status
 		FROM customer

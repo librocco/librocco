@@ -67,7 +67,7 @@
 	} = dialog;
 
 	let dialogContent: DialogContent | null = null;
-	$: tOutboundPage = $LL.outbound_page;
+	$: tOutboundPage = $LL.sale_page;
 </script>
 
 <Page title="Outbound" view="outbound" {db} {plugins}>
@@ -76,7 +76,7 @@
 			<div class="flex w-full items-center justify-end p-4">
 				<button on:click={handleCreateNote} class="btn-primary btn-sm btn">
 					<Plus size={20} aria-hidden />
-					{tOutboundPage.labels.new_note()}
+					{tOutboundPage.labels.new_sale()}
 				</button>
 			</div>
 		</div>
@@ -98,10 +98,10 @@
 					<div class="flex grow justify-center">
 						<div class="mx-auto max-w-xl translate-y-1/2">
 							<!-- Start entity list placeholder -->
-							<PlaceholderBox title="No open notes" description="Get started by adding a new note">
+							<PlaceholderBox title="No open sales" description="Get started by adding a new sale">
 								<FilePlus slot="icon" />
 								<button slot="actions" on:click={handleCreateNote} class="btn-primary btn w-full">
-									{tOutboundPage.labels.new_note()}
+									{tOutboundPage.labels.new_sale()}
 								</button>
 							</PlaceholderBox>
 							<!-- End entity list placeholder -->

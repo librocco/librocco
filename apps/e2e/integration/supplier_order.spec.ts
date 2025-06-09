@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { baseURL } from "@/constants";
+import { appHash } from "@/constants";
 import { getDbHandle } from "@/helpers";
 import {
 	addBooksToCustomer,
@@ -14,7 +14,7 @@ import {
 import { depends, testOrders } from "@/helpers/fixtures";
 
 testOrders("order tabs (filters): shows completed orders under 'completed' tab", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	const dbHandle = await getDbHandle(page);
 
@@ -33,7 +33,7 @@ testOrders("order tabs (filters): shows completed orders under 'completed' tab",
 });
 
 testOrders("should show empty state when no customer orders exist", async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	await expect(page.getByRole("table")).not.toBeVisible();
 	await expect(page.getByText("No unordered supplier orders available")).toBeVisible();
@@ -47,14 +47,14 @@ testOrders("should show empty state when no customer orders exist", async ({ pag
 });
 
 testOrders("should show list of unordered orders", async ({ page, suppliers: [supplier], books }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
 	await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisher: "pub1" });
 
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 	page.getByRole("button", { name: "Unordered" });
 
 	await expect(page.getByText(supplier.name)).toBeVisible();
@@ -70,7 +70,7 @@ testOrders("should show list of unordered orders", async ({ page, suppliers: [su
 testOrders.skip(
 	"should allow a new supplier order to be placed from a batch of possible customer order lines",
 	async ({ page, suppliers: [supplier], books, customers }) => {
-		await page.goto(`${baseURL}orders/suppliers/orders/`);
+		await page.goto(appHash("supplier_orders"));
 
 		const dbHandle = await getDbHandle(page);
 
@@ -87,7 +87,7 @@ testOrders.skip(
 			bookIsbns: [books[2].isbn, books[2].isbn]
 		});
 
-		await page.goto(`${baseURL}orders/suppliers/orders/`);
+		await page.goto(appHash("supplier_orders"));
 
 		const table = page.getByRole("table");
 
@@ -159,13 +159,13 @@ testOrders.skip(
 
 		await page.getByRole("button", { name: "Place Order" }).first().click();
 
-		await page.waitForURL(`${baseURL}orders/suppliers/orders/`);
+		await page.waitForURL(appHash("supplier_orders"));
 		page.getByRole("button", { name: "Ordered" }).nth(1).click();
 
 		await expect(page.getByText(supplier.name)).toBeVisible();
 		await expect(page.getByText("reconcile")).toBeVisible();
 
-		await page.goto(`${baseURL}orders/suppliers/orders/`);
+		await page.goto(appHash("supplier_orders"));
 		page.getByRole("button", { name: "Unordered" });
 		// Start new order
 		await page.getByRole("button", { name: "Place Order" }).first().click();
@@ -180,7 +180,7 @@ testOrders.skip(
 );
 
 testOrders("should view reconciliation controls for orders already in reconciliation", async ({ page, suppliers: [supplier], books }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	const dbHandle = await getDbHandle(page);
 
@@ -219,7 +219,7 @@ testOrders("should view reconciliation controls for orders already in reconcilia
 	});
 
 	// Navigate to supplier's orders view
-	await page.goto(`${baseURL}orders/suppliers/${supplier.id}/`);
+	await page.goto(appHash("suppliers", supplier.id));
 
 	// Get the table rows for both orders
 	const table = page.getByRole("table").nth(3);
@@ -240,7 +240,7 @@ testOrders("should view reconciliation controls for orders already in reconcilia
 testOrders(
 	"should show correct batch reconciliation state with mixed reconciliation status",
 	async ({ page, suppliers: [supplier], books }) => {
-		await page.goto(`${baseURL}orders/suppliers/orders/`);
+		await page.goto(appHash("supplier_orders"));
 
 		const dbHandle = await getDbHandle(page);
 
@@ -290,7 +290,7 @@ testOrders(
 			supplierOrderIds: [1]
 		});
 
-		await page.goto(`${baseURL}orders/suppliers/${supplier.id}/`);
+		await page.goto(appHash("suppliers", supplier.id));
 
 		// Select the two non-reconciled orders
 		const table = page.getByRole("table").nth(3);
@@ -319,7 +319,7 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 
 	const table = page.getByRole("table");
 
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	// NOTE: this should be unnecessary once the reactivity fix is in
 	await page.reload();
@@ -422,7 +422,7 @@ testOrders(
 
 		const table = page.getByRole("table");
 
-		await page.goto(`${baseURL}orders/suppliers/orders/`);
+		await page.goto(appHash("supplier_orders"));
 
 		// NOTE: this should be unnecessary once the reactivity fix is in
 		await page.reload();
@@ -593,7 +593,7 @@ testOrders(
 );
 
 testOrders("supplier order page: view + reactivity", async ({ page, books, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 
 	const table = page.getByRole("table");
 
@@ -609,7 +609,7 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 		.click();
 
 	// Wait for navigation
-	await page.waitForURL(`${baseURL}orders/suppliers/orders/${order.id}/`);
+	await page.waitForURL(appHash("supplier_orders", order.id));
 
 	// Displays supplier name
 	await page.getByText(order.supplier_name).waitFor();
@@ -657,26 +657,26 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 	await page.getByRole("button", { name: "Reconcile", exact: true }).click();
 
 	// The reconciliation order should be created
-	await page.waitForURL(`${baseURL}orders/suppliers/reconcile/**`);
+	await page.waitForURL(appHash("reconcile", "**"));
 	const reconOrderId = page.url().split("/").filter(Boolean).pop();
 
 	// Navigate back to the order (now the reconciliation order had been created)
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 	await page.getByRole("button", { name: "Reconciling", exact: true }).click();
 	await page.getByText(`#${order.id}`).click();
-	await page.waitForURL(`${baseURL}orders/suppliers/orders/${order.id}/`);
+	await page.waitForURL(appHash("supplier_orders", order.id));
 
 	// The reconciliation button now reads 'View Reconciliation'
 	await page.getByRole("button", { name: "Reconcile", exact: true }).waitFor({ state: "detached" });
 	await page.getByRole("button", { name: "View Reconciliation", exact: true }).click();
 
 	// Should navigate to (existing) reconciliation order
-	await page.waitForURL(`${baseURL}orders/suppliers/reconcile/${reconOrderId}/`);
+	await page.waitForURL(appHash("reconcile", reconOrderId));
 
 	// Check reconciliation order reactivity
 	//
 	// Go back to the supplier order
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.goto(appHash("supplier_orders"));
 	await page.getByRole("button", { name: "Reconciling", exact: true }).click();
 	await page.getByText(`#${order.id}`).click();
 

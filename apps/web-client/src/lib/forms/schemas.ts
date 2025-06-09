@@ -76,7 +76,9 @@ export const createCustomerOrderSchema = (kind: "create" | "update") => {
 		displayId,
 		fullname: z.string().min(1),
 		email: z.string().max(0).optional().or(z.string().email()),
-		deposit: z.number().default(0)
+		deposit: z.number().default(0),
+		phone1: z.string().optional(),
+		phone2: z.string().optional()
 	});
 };
 
@@ -85,5 +87,6 @@ export const supplierSchema = z.object({
 	id: z.number(),
 	name: z.string().min(1),
 	email: z.string().max(0).optional().or(z.string().email().optional()),
-	address: z.string().optional()
+	address: z.string().optional(),
+	customerId: z.number().default(0)
 });

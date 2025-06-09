@@ -69,7 +69,7 @@ async function _getNoteIdSeq(db: DB) {
 const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM note
-			WHERE displayName LIKE 'New Note%'
+			WHERE displayName LIKE 'New ${kind === "inbound" ? "Purchase" : "Sale"}%'
 			AND warehouse_id ${kind === "outbound" ? "IS NULL" : "IS NOT NULL"}
 			ORDER BY displayName DESC
 			LIMIT 1;
@@ -78,16 +78,17 @@ const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 	const displayName = result[0]?.displayName;
 
 	if (!displayName) {
-		return "New Note";
+		return kind === "inbound" ? "New Purchase" : "New Sale";
 	}
 
-	if (displayName === "New Note") {
-		return "New Note (2)";
+	if (displayName === "New Purchase" || displayName === "New Sale") {
+		return displayName === "New Purchase" ? "New Purchase (2)" : "New Sale (2)";
 	}
 
-	const maxSequence = Number(displayName.replace("New Note", "").replace("(", "").replace(")", "").trim()) + 1;
+	const maxSequence =
+		Number(displayName.replace("New ", "").replace("Sale", "").replace("Purchase", "").replace("(", "").replace(")", "").trim()) + 1;
 
-	return `New Note (${maxSequence})`;
+	return kind === "inbound" ? `New Purchase (${maxSequence})` : `New Sale (${maxSequence})`;
 };
 
 /**
@@ -403,13 +404,13 @@ async function _commitNote(db: DB, id: number, { force = false }: { force?: bool
 	}
 
 	const timestamp = Date.now();
-	const query = `
-		UPDATE note
-		SET committed = 1, committed_at = ?
-		WHERE id = ?
-	`;
 
-	await db.exec(query, [timestamp, id]);
+	await db.tx(async (db) => {
+		// Update note's committed_at
+		await db.exec("UPDATE note SET committed = 1, committed_at = ? WHERE id = ?", [timestamp, id]);
+		// Update all related book transactions' committed_at
+		await db.exec("UPDATE book_transaction SET committed_at = ? WHERE note_id = ?", [timestamp, id]);
+	});
 }
 
 /**
@@ -481,6 +482,7 @@ async function _getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
 			bt.quantity,
 			bt.warehouse_id AS warehouseId,
 			bt.updated_at,
+			bt.committed_at, -- NOTE: committed at is not used in production, but this is useful for testing
 			COALESCE(w.display_name, 'not-found') AS warehouseName,
 			COALESCE(w.discount, 0) AS warehouseDiscount,
 			COALESCE(b.title, 'N/A') AS title,
@@ -503,6 +505,7 @@ async function _getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
 		quantity: number;
 		warehouseId?: number;
 		updated_at: number;
+		committed_at: number;
 
 		warehouseName?: string;
 		warehouseDiscount: number;
@@ -517,9 +520,10 @@ async function _getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
 		category: string;
 	}>(query, [id]);
 
-	return result.map(({ warehouseId, out_of_print, updated_at, ...res }) => ({
+	return result.map(({ warehouseId, out_of_print, updated_at, committed_at, ...res }) => ({
 		...res,
-		updatedAt: new Date(updated_at),
+		updatedAt: updated_at ? new Date(updated_at) : undefined,
+		committedAt: committed_at ? new Date(committed_at) : undefined,
 		warehouseId: warehouseId ?? undefined,
 		outOfPrint: Boolean(out_of_print)
 	}));
