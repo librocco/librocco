@@ -15,7 +15,7 @@ test.beforeEach(async ({ page }) => {
 	// We're using outbound note view, but same behaviour should apply to inbound as well
 	await page.getByRole("link", { name: "Sale" }).click();
 
-	await dashboard.content().getByText("No open notes").waitFor();
+	await dashboard.content().getByText("No open sales").waitFor();
 
 	// Create new outbound note (and navigate to it)
 	await page.getByRole("button", { name: "New Sale" }).first().click();
