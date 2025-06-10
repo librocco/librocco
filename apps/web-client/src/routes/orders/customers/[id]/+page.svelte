@@ -327,7 +327,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, collected, status }}
+							{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, collected, status, received, placed, created }}
 								<tr>
 									<th>{isbn}</th>
 									<td>{title}</td>
@@ -336,13 +336,21 @@
 									<td>{publisher}</td>
 									<td>
 										{#if status === OrderLineStatus.Collected}
-											<span class="badge-success badge">Collected</span>
+											<h5 class="text-xs font-semibold">
+												Collected <span class="badge-xs badge">{collected.toDateString()}</span>
+											</h5>
 										{:else if status === OrderLineStatus.Received}
-											<span class="badge-info badge">Delivered</span>
+											<h5 class="text-xs font-semibold">
+												Delivered <span class="badge-xs badge">{received.toDateString()}</span>
+											</h5>
 										{:else if status === OrderLineStatus.Placed}
-											<span class="badge-warning badge">Placed</span>
+											<h5 class="text-xs font-semibold">
+												Placed <span class="badge-xs badge">{placed.toDateString()}</span>
+											</h5>
 										{:else}
-											<span class="badge">Pending</span>
+											<h5 class="text-xs font-semibold">
+												Pending <span class="badge-xs badge">{created.toDateString()}</span>
+											</h5>
 										{/if}
 									</td>
 
