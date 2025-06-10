@@ -104,8 +104,8 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: "Pending" })).toBeVisible();
 
+	await expect(firstRow.getByRole("cell", { name: /Pending [A-Za-z]{3} [A-Za-z]{3} \d{1,2} \d{4}/ })).toBeVisible();
 	isbnField.fill(books[2].isbn);
 	isbnField.press("Enter");
 
