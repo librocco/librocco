@@ -102,9 +102,8 @@
 					validators: zod(customerSearchSchema),
 					validationMethod: "submit-only",
 					resetForm: true,
-					onUpdated: async ({ form }) => {
+					onUpdate: async ({ form }) => {
 						const { fullname } = form?.data as CustomerOrderListItem;
-						console.log({ form });
 						search.set(fullname);
 					}
 				}}
