@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Plus } from "lucide-svelte";
+	import { Plus, SearchIcon } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -9,18 +9,22 @@
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
-	import { createCustomerOrderSchema } from "$lib/forms";
+	import { createCustomerOrderSchema, customerSearchSchema } from "$lib/forms";
 	import { appPath, appHash } from "$lib/paths";
 
 	import { base } from "$app/paths";
 
-	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { getCustomerDisplayIdSeq, getCustomerOrderList, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { Page } from "$lib/controllers";
 
-	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import type { Customer, CustomerOrderListItem } from "$lib/db/cr-sqlite/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";
+	import ScannerForm from "$lib/forms/ScannerForm.svelte";
+	import { testId } from "@librocco/shared";
+	import CustomerSearchForm from "$lib/forms/CustomerSearchForm.svelte";
+	import { writable } from "svelte/store";
 
 	export let data: PageData;
 
@@ -56,11 +60,17 @@
 	function setFilter(status: "completed" | "in_progress") {
 		orderFilterStatus = status;
 	}
+	let searchField: HTMLInputElement;
+	const search = writable("");
 
 	$: hasCompletedOrders = customerOrders.some(({ completed }) => completed);
 
-	$: filteredOrders = customerOrders.filter(({ completed }) => completed === (orderFilterStatus === "completed"));
-
+	$: filteredOrders = customerOrders
+		.filter(({ completed }) => completed === (orderFilterStatus === "completed"))
+		.filter(({ fullname }) => {
+			if (!$search) return true;
+			return fullname.toLowerCase().includes($search.toLowerCase());
+		});
 	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
@@ -81,6 +91,25 @@
 
 <Page title="Customer Orders" view="orders/customers" {db} {plugins}>
 	<div slot="main" class="flex flex-col gap-y-6 overflow-x-auto py-2">
+		<div class="p-4">
+			<CustomerSearchForm
+				bind:input={searchField}
+				placeholder="Search for customers by name"
+				data={defaults(zod(customerSearchSchema))}
+				options={{
+					SPA: true,
+					dataType: "json",
+					validators: zod(customerSearchSchema),
+					validationMethod: "submit-only",
+					resetForm: true,
+					onUpdated: async ({ form }) => {
+						const { fullname } = form?.data as CustomerOrderListItem;
+						console.log({ form });
+						search.set(fullname);
+					}
+				}}
+			/>
+		</div>
 		{#if !customerOrders.length}
 			<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
 				<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
