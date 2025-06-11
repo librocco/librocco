@@ -53,12 +53,12 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: `${books[0].price}` })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: `${books[0].price}`, exact: true })).toBeVisible();
 
 	await expect(secondRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: books[0].title })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
-	await expect(secondRow.getByRole("cell", { name: `${books[0].price}` })).toBeVisible();
+	await expect(secondRow.getByRole("cell", { name: `${books[0].price}`, exact: true })).toBeVisible();
 
 	await expect(thirdRow.getByRole("cell", { name: books[1].isbn })).toBeVisible();
 });
