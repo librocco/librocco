@@ -151,7 +151,7 @@ const unmarshallCustomerOrder = ({ updated_at, ...customer }: DBCustomer): Custo
  * @param {DB} db - Database connection
  * @returns {Promise<CustomerOrderListItem[]>} Array of customers
  */
-async function _getCustomerOrderList(db: DB): Promise<CustomerOrderListItem[]> {
+async function _getCustomerOrderList(db: DB, name?: string): Promise<CustomerOrderListItem[]> {
 	const orderLineStatusQuery = `
 		SELECT
 			customer_id,
@@ -176,11 +176,12 @@ async function _getCustomerOrderList(db: DB): Promise<CustomerOrderListItem[]> {
 			MIN(col.status_ord) as status
 		FROM customer
 		LEFT JOIN (${orderLineStatusQuery}) AS col ON customer.id = col.customer_id
+		WHERE fullname LIKE ?
 		GROUP BY id
 		ORDER BY id ASC -- TODO: check prefered ordering
 	`;
 
-	const res = await db.execO<DBCustomerOrderListItem>(query);
+	const res = await db.execO<DBCustomerOrderListItem>(query, [name ? `%${name}%` : "%"]);
 	return res.map(unmarshallCustomerOrderListItem);
 }
 
@@ -363,6 +364,7 @@ export const markCustomerOrderLinesAsCollected = async (db: DB, ids: number[]): 
 		[timestamp, ...ids]
 	);
 };
+
 export const upsertCustomer = timed(_upsertCustomer);
 export const getCustomerOrderList = timed(_getCustomerOrderList);
 export const getCustomerOrderLineHistory = timed(_getCustomerOrderLineHistory);
