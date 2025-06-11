@@ -336,31 +336,21 @@
 									<td>{publisher}</td>
 									<td>
 										{#if status === OrderLineStatus.Collected}
-											<h5 class="text-xs font-semibold">
-												Collected <span class="badge-xs badge">{collected.toDateString()}</span>
-											</h5>
+											<span class="text-xs font-semibold">
+												Collected <time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
+											</span>
 										{:else if status === OrderLineStatus.Received}
-											<h5 class="text-xs font-semibold">
-												Delivered <span class="badge-xs badge">{received.toDateString()}</span>
-											</h5>
+											<span class="text-xs font-semibold">
+												Delivered <time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
+											</span>
 										{:else if status === OrderLineStatus.Placed}
-											<h5 class="text-xs font-semibold">
-												Placed <span class="badge-xs badge">{placed.toDateString()}</span>
-											</h5>
+											<span class="text-xs font-semibold">
+												Placed <time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
+											</span>
 										{:else}
-											<h5 class="text-xs font-semibold">
-												Pending <span class="badge-xs badge">{created.toDateString()}</span>
-											</h5>
-										{/if}
-									</td>
-
-									<td>
-										{#if status === OrderLineStatus.Collected}
-											<!--
-												NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
-												TODO: use some more robust way to handle this (loacle time string that actually works)
-											-->
-											{collected.toISOString().slice(0, 10)}
+											<span class="text-xs font-semibold">
+												Pending <time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
+											</span>
 										{/if}
 									</td>
 
