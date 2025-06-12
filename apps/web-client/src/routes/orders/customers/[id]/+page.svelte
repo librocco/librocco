@@ -322,7 +322,6 @@
 								<th>Price</th>
 								<th>Publisher</th>
 								<th>Status</th>
-								<th>Collected</th>
 								<th>Actions</th>
 							</tr>
 						</thead>
@@ -336,21 +335,21 @@
 									<td>{publisher}</td>
 									<td>
 										{#if status === OrderLineStatus.Collected}
-											<span class="text-xs font-semibold">
+											<div class="badge-primary badge-outline badge text-xs font-semibold">
 												Collected <time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
-											</span>
+											</div>
 										{:else if status === OrderLineStatus.Received}
-											<span class="text-xs font-semibold">
+											<div class="badge-primary badge-outline badge text-xs font-semibold">
 												Delivered <time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
-											</span>
+											</div>
 										{:else if status === OrderLineStatus.Placed}
-											<span class="text-xs font-semibold">
+											<div class="badge-primary badge-outline badge text-xs font-semibold">
 												Placed <time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
-											</span>
+											</div>
 										{:else}
-											<span class="text-xs font-semibold">
+											<div class="badge-primary badge-outline badge text-xs font-semibold">
 												Pending <time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
-											</span>
+											</div>
 										{/if}
 									</td>
 
