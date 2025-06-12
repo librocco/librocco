@@ -67,13 +67,10 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
 		// Reload when note
-		const disposer1 = rx.onPoint("note", BigInt(data.id), () => invalidate("note:data"));
+		const disposer1 = data.dbCtx?.rx?.onPoint("note", BigInt(data.id), () => invalidate("note:data"));
 		// Reload when entries change
-		const disposer2 = rx.onRange(["book", "book_transaction"], () => invalidate("note:books"));
+		const disposer2 = data.dbCtx?.rx?.onRange(["book", "book_transaction"], () => invalidate("note:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(() => {
