@@ -32,12 +32,9 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
 		// Here we only care about updates to warehouses (displayName)
 		// as the rest of the data is immutable at this point (archived)
-		disposer = rx.onRange(["warehouse"], () => invalidate("note:books"));
+		disposer = data.dbCtx?.rx?.onRange(["warehouse"], () => invalidate("note:books"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
