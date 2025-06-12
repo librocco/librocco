@@ -319,12 +319,11 @@
 								<th>Price</th>
 								<th>Publisher</th>
 								<th>Status</th>
-								<th>Collected</th>
 								<th>Actions</th>
 							</tr>
 						</thead>
 						<tbody>
-							{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, collected, status }}
+							{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, collected, status, received, placed, created }}
 								<tr>
 									<th>{isbn}</th>
 									<td>{title}</td>
@@ -333,23 +332,21 @@
 									<td>{publisher}</td>
 									<td>
 										{#if status === OrderLineStatus.Collected}
-											<span class="badge-success badge">Collected</span>
+											<div class="badge-primary badge-outline badge text-xs font-semibold">
+												Collected <time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
+											</div>
 										{:else if status === OrderLineStatus.Received}
-											<span class="badge-info badge">Delivered</span>
+											<div class="badge-primary badge-outline badge text-xs font-semibold">
+												Delivered <time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
+											</div>
 										{:else if status === OrderLineStatus.Placed}
-											<span class="badge-warning badge">Placed</span>
+											<div class="badge-primary badge-outline badge text-xs font-semibold">
+												Placed <time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
+											</div>
 										{:else}
-											<span class="badge">Pending</span>
-										{/if}
-									</td>
-
-									<td>
-										{#if status === OrderLineStatus.Collected}
-											<!--
-												NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
-												TODO: use some more robust way to handle this (loacle time string that actually works)
-											-->
-											{collected.toISOString().slice(0, 10)}
+											<div class="badge-primary badge-outline badge text-xs font-semibold">
+												Pending <time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
+											</div>
 										{/if}
 									</td>
 
