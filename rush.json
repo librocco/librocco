@@ -294,9 +294,7 @@
 		/**
 		 * The list of shell commands to run after the Rush installation finishes
 		 */
-		"postRushInstall": [
-			"rush postinstall"
-		],
+		"postRushInstall": ["rush postinstall"],
 		/**
 		 * The list of shell commands to run before the Rush build command starts
 		 */
@@ -393,7 +391,7 @@
 			"projectFolder": "plugins/open-library-api"
 		},
 		{
-			"packageName": "wa-sqlite",
+			"packageName": "@vlcn.io/wa-sqlite",
 			"projectFolder": "3rd-party/wa-sqlite"
 		},
 		{
