@@ -1,32 +1,33 @@
 {
-  "nav": {
-    "search": "Ricerca magazzino",
-    "books": "Dati dei libri",
-    "inventory": "Gestione magazzini",
-    "outbound": "Uscita",
-    "inbound": "Entrata",
-    "settings": "Impostazioni",
-    "history": "Storico",
-    "supplier_orders": "Ordini fornitori"
-  },
-  "search": {
-    "title": "Ricerca",
-    "empty": {
-      "title": "Cerca nei magazzini",
-      "description": "Ricerca per titolo, autore o ISBN"
+    "nav": {
+        "search": "Ricerca magazzino",
+        "books": "Dati dei libri",
+        "inventory": "Gestione magazzini",
+        "outbound": "Uscita",
+        "inbound": "Entrata",
+        "settings": "Impostazioni",
+        "history": "Storico",
+        "supplier_orders": "Ordini fornitori",
+        "purchase": "Acquisto"
+    },
+    "search": {
+        "title": "Ricerca",
+        "empty": {
+            "title": "Cerca nei magazzini",
+            "description": "Ricerca per titolo, autore o ISBN"
+        }
+    },
+    "history_page": {
+        "date_tab": {
+            "stats": {
+                "title": "Statistiche",
+                "total_inbound_book_count": "Libri in entrata",
+                "total_inbound_cover_price": "Entrata: prezzo di copertina",
+                "total_inbound_discounted_price": "Uscita: prezzo scontato",
+                "total_outbound_book_count": "Uscita: quantità libri",
+                "total_outbound_cover_price": "Uscita: prezzo di copertina",
+                "total_outbound_discounted_price": "Uscita: prezzo scontato"
+            }
+        }
     }
-  },
-  "history_page": {
-    "date_tab": {
-      "stats": {
-        "title": "Statistiche",
-        "total_inbound_book_count": "Libri in entrata",
-        "total_inbound_cover_price": "Entrata: prezzo di copertina",
-        "total_inbound_discounted_price": "Uscita: prezzo scontato",
-        "total_outbound_book_count": "Uscita: quantità libri",
-        "total_outbound_cover_price": "Uscita: prezzo di copertina",
-        "total_outbound_discounted_price": "Uscita: prezzo scontato"
-      }
-    }
-  }
 }
