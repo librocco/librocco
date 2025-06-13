@@ -14,6 +14,7 @@ Our DB is in-browser (local first), synced and replicated with the server. In or
 
 The centerpiece of vlcn stack is cr-sqlite - an SQLite extension that seeks to make the DB sync friendly by using [CRDTs](https://vlcn.io/docs/cr-sqlite/crdts/about) to avoid conflicts.
 While our DB stack is built on top of cr-sqlite, it is comprised of several components in order to achieve the functionality:
+
 - **local DB** - local DB is a WASM build of SQLite (loaded with `crsql` extension) accessible from JS environment [see more](#local-db)
 - **sync worker** - a glue between the client process and the server, the sync worker handles reactive syncing of local DB -> server and applies server -> local DB changes to the local DB in a reactive manner [see more](#sync-worker)
 - **sync server** - a central hub for syncing all local nodes - the number of nodes is not limited, but all syncing in-between happens through the server [see more](#sync-server)
@@ -51,24 +52,25 @@ The local DB is a WASM build of SQLite (including `crsql` extension) and is call
 This is a wrapper around [vlcn.io/wa-sqlite] (more below), providing some additional API for the JS-side DB initialisation.
 
 It exposes two useful artifacts:
+
 - `SQLite3` - a wrapper class performing additional (crsql-related) setup (on JS side) around the [vlcn.io/wa-sqlite] provided API
 
 - `initWasm` - a one-shot initialisation for the entire API, e.g.:
 
-    ```typescript
-    import { initWasm } from "@vlcn-io/crsqlite-wasm";
+  ```typescript
+  import { initWasm } from "@vlcn-io/crsqlite-wasm";
 
-    const sqlite = await initWasm()
-    const db = await sqlite.open("db-name")
+  const sqlite = await initWasm();
+  const db = await sqlite.open("db-name");
 
-    await db.exec(/* ... */)
-    ```
+  await db.exec(/* ... */);
+  ```
 
-    Internally, it:
-    - loads the WASM binary and the JS glue code (from [vlcn.io/wa-sqlite], more below)
-    - registers the `IDBBatchAtomicVFS` (IndexedDB) as the default VFS adapter
-    - wraps the code with aforementioned `SQLite3` wrapper
+  Internally, it:
 
+  - loads the WASM binary and the JS glue code (from [vlcn.io/wa-sqlite], more below)
+  - registers the `IDBBatchAtomicVFS` (IndexedDB) as the default VFS adapter
+  - wraps the code with aforementioned `SQLite3` wrapper
 
 ### [vlcn.io/wa-sqlite]
 
@@ -132,10 +134,12 @@ The sync worker is a dedicated worker used to communicate (and sync) the DB stat
 We scaffold the worker using the code from [vlcn.io/ws-client] package, which provides a `start` function that sets up the worker and makes it available for syncing.
 
 Furthermore, the default implementation (default config) uses:
+
 - web socket transport (exported by [vlcn.io/ws-client]) - communicating to and from the server (in a way that's compatible with [vlcn.io/ws-server] setup, more below)
 - browser db ([vlcn.io/ws-browserdb]) - a wrapper around [vlcn.io/crsqlite-wasm] and [vlcn.io/wa-sqlite] utilising [vlcn.io/rx-tbl] for reactivity (more below)
 
 The "naked" worker exposes the following functionality:
+
 - it listens to start / stop messages from the main thread to control the on/off lifecycle
 - it accepts two components (in a modular way):
   - the DB instance (by way of DB provider, defaulting to a DB scaffolded by [ws-browserdb])
@@ -164,19 +168,21 @@ flowchart TD
 ```
 
 Let's break this down:
+
 - Inbound change:
-    1. A change happens somewhere else (most often the server - either directly, or as a proxy for a change on another node)
-    2. The change is communicated through the transport object (default: `WebSocketTransport`)
-    3. The change is passed through the `InboundStream` - an internal of the sync process
-    4. The change is communicated to the DB interface (JS object)
-    5. The change is persisted (in respective VFS)
+
+  1. A change happens somewhere else (most often the server - either directly, or as a proxy for a change on another node)
+  2. The change is communicated through the transport object (default: `WebSocketTransport`)
+  3. The change is passed through the `InboundStream` - an internal of the sync process
+  4. The change is communicated to the DB interface (JS object)
+  5. The change is persisted (in respective VFS)
 
 - Outbound change:
-    1. A change happens in the local DB (this needs to be expanded, more below)
-    2. The sync process listens to changes in a reactive manner (again more below)
-    3. When the sync process is notified of changes, it pulls the changes from the DB (notified = knows something happened, not exactly what)
-    4. The changes are communicated, via `OutboundStream` to the transport object
-    5. The changes are sent (over transport) to the outside note (default: server)
+  1. A change happens in the local DB (this needs to be expanded, more below)
+  2. The sync process listens to changes in a reactive manner (again more below)
+  3. When the sync process is notified of changes, it pulls the changes from the DB (notified = knows something happened, not exactly what)
+  4. The changes are communicated, via `OutboundStream` to the transport object
+  5. The changes are sent (over transport) to the outside note (default: server)
 
 Now, I've mentioned the local changes handling needs to be expanded as the flow is not a trivial one.
 When a change happens within sync worker's DB interface (JS object), the sync process gets notifed.
@@ -205,8 +211,8 @@ import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 
 // Set up the config
 const config: Config = {
-	dbProvider: createDbProvider(wasmUrl), // Creates a reactive DB instance (see more below)
-	transportProvider: defaultConfig.transportProvider
+  dbProvider: createDbProvider(wasmUrl), // Creates a reactive DB instance (see more below)
+  transportProvider: defaultConfig.transportProvider
 };
 
 // Start the worker
@@ -224,6 +230,7 @@ worker.startSync(dbid, { url, room: dbid });
 ```
 
 Some quirks here:
+
 - `dbid` - this is used to identify the **local DB** (`sqlite.open(dbid)`) and is not communicated with the server
 - `url` is self explanatory - the URL of the WS server
 - `room` - this value is communicated to the server and is used to **identify the DB on the server**, therefore we use the same value as DB name (for client/server consistency)
@@ -238,14 +245,15 @@ With the high-level overview, let's break down the components, and how they inte
 #### [vlcn.io/ws-client]
 
 WS-Client package exports the scaffolding for the worker:
+
 - `start` function - used to start the whole process
 - `defaultConfig` - the default worker config (including the, defatult, `WebSocket` transport)
 - `WorkerInterface` - an interface used to communicate with the sync worker from the main thread
 
-
 #### [vlcn.io/ws-browserdb]
 
 Not much to say here except that it scaffolds a DB instnace as we'd use it in the browser context:
+
 - [vlcn.io/crsqlite-wasm] JavaScript DB interface, built on top of [vlcn.io/wa-sqlite] WASM binary
 - [vlcn.io/rx-tbl] - uses `tblrx` to provide for cross-process (main thead <-> sync worker) reactivity
 
@@ -256,8 +264,10 @@ This is where the majority of the magic happens. I'd mentioned above that the pa
 This wrapping achieves the following flow:
 
 0. The DB is wrapped (`const rx = tblrx(db)`):
-  - the `TblRx` (internal) subscribes to changes (`db.onChange`)
-  - the `TblRx` instance is returned, exposing reactive API
+
+- the `TblRx` (internal) subscribes to changes (`db.onChange`)
+- the `TblRx` instance is returned, exposing reactive API
+
 1. When the change happens, both the local subscribers (consumers of the `rx` object) and peers get notified
 2. By extension of point 1., when an update happens on a peer, our DB is notified as well
 
@@ -265,19 +275,19 @@ This wrapping achieves the following flow:
 // example with two peers (in the same thread)
 
 // An abstract function that constructs a pristine DB instnace for purpose of this exmple
-import { getDB } from "./db"
+import { getDB } from "./db";
 import rxtbl from "@vlcn.io/rx-tbl";
 
 // Create two (unrelated peers)
-const db1 = getDB("dev")
-const db2 = getDB("dev")
+const db1 = getDB("dev");
+const db2 = getDB("dev");
 
 const rx1 = tblrx(db1);
 const rx2 = tblrx(db2);
 
 // Subscribe to changes
-rx1.onAny(() => console.log("change registered at db1!"))
-rx2.onAny(() => console.log("change registered at db2!"))
+rx1.onAny(() => console.log("change registered at db1!"));
+rx2.onAny(() => console.log("change registered at db2!"));
 
 // Write to DB 1
 await db1.exec("INSERT INTO customer (id, name) VALUES (1, 'Alice')");
@@ -293,15 +303,15 @@ Even though we've used same process to define our 2 DBs for this example, the sa
 // example with two peers: 1 in the worker, 1 in the main thread
 
 // main thread
-const db = getDB("dev")
+const db = getDB("dev");
 const rx = tblrx(db1);
-rx.onAny(() => console.log("change registered at main thread"))
+rx.onAny(() => console.log("change registered at main thread"));
 
 // sync-worker.ts
-const db = getDB("dev")
+const db = getDB("dev");
 const rx = tblrx(db);
 
-rx.onAny(() => console.log("change registered in the sync worker"))
+rx.onAny(() => console.log("change registered in the sync worker"));
 // Write to the DB (in the worker)
 await db.exec("INSERT INTO customer (id, name) VALUES (1, 'Alice')");
 
@@ -397,6 +407,7 @@ rx.onPoint("customers", 1 , () => {...}) // Notify only on change to entry in "c
 ### Some enhancements - How we control the sync
 
 Using the default sync setup works out of the box. However, there were some issues with it:
+
 1. initial sync of the DB (50k entries) was quite slow
 2. interupting sync (by unloading the page -- refreshing or navigating away) would result in corrupted DB state.
 
@@ -412,18 +423,18 @@ the sync worker overrides the transport's `.onChangesReceived` method and attach
 
 ```ts
 class SyncedDB {
-    readonly #transport
-    readonly #inboundStream
+  readonly #transport;
+  readonly #inboundStream;
 
+  // ...
+
+  constructor() {
     // ...
 
-    constructor() {
-        // ...
+    this.#transport.onChangesReceived = this.#inboundStream.receiveChanges;
+  }
 
-        this.#transport.onChangesReceived = this.#inboundStream.receiveChanges;
-    }
-
-    // ...
+  // ...
 }
 ```
 
@@ -432,32 +443,32 @@ In order to wrap the transport and have more control over the transmission we do
 
 ```ts
 class TransportController {
-    readonly #transport
+  readonly #transport;
 
-    // Immutable methods - these are passed on as they are
-    announcePresence: Transport["announcePresence"];
-    // ...rest immutable methods
+  // Immutable methods - these are passed on as they are
+  announcePresence: Transport["announcePresence"];
+  // ...rest immutable methods
 
-    // Mutable methods - we expose these for downstream overrides,
-    // while keeping control over the same methods of the internal transport
-    onChangesReceived: Transport["onChangesReceived"] = null
-    // ...rest mutable methods
+  // Mutable methods - we expose these for downstream overrides,
+  // while keeping control over the same methods of the internal transport
+  onChangesReceived: Transport["onChangesReceived"] = null;
+  // ...rest mutable methods
 
-    constructor(transport: Transport) {
-        this.#transport = transport
+  constructor(transport: Transport) {
+    this.#transport = transport;
 
-        // ... Bind all transport immutable methods to TransportController's methods, e.g.
-        this.announcePresence = this.#transport.announcePresence.bind(this.#transport)
+    // ... Bind all transport immutable methods to TransportController's methods, e.g.
+    this.announcePresence = this.#transport.announcePresence.bind(this.#transport);
 
-        // Hijack the mutable methods (e.g. onChangesReceived)
-        this.#transport.onChangesReceived = this._onChangesReceived
-    }
+    // Hijack the mutable methods (e.g. onChangesReceived)
+    this.#transport.onChangesReceived = this._onChangesReceived;
+  }
 
-    // We're "routing" internal transport's onChangesReceived here (this is immutable and will always run - won't be overriden downstream)
-    private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
-        // Call the exposed '.onChangesReceived' (overridden downstream, see previous code block ^^)
-		await (this.onChangesReceived?.(msg) || Promise.resolve())
-	}
+  // We're "routing" internal transport's onChangesReceived here (this is immutable and will always run - won't be overriden downstream)
+  private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
+    // Call the exposed '.onChangesReceived' (overridden downstream, see previous code block ^^)
+    await (this.onChangesReceived?.(msg) || Promise.resolve());
+  }
 }
 ```
 
@@ -466,11 +477,11 @@ We define some "event emitter" (not event emitter in strictest JS sense, but an 
 
 ```ts
 interface SyncEventEmitter {
-    notifySyncStarted() // Used to signal the sync start (by transport controller)
-    notifySyncDone() // Used to signal the sync done (by transport controller)
+  notifySyncStarted(); // Used to signal the sync start (by transport controller)
+  notifySyncDone(); // Used to signal the sync done (by transport controller)
 
-    onSyncStarted(notify: () => void): () => void // Used to subscribe to sync start events (returns disposer)
-    onSyncDone(notify: () => void): () => void // Used to subscribe to sync done events (returns disposer)
+  onSyncStarted(notify: () => void): () => void; // Used to subscribe to sync start events (returns disposer)
+  onSyncDone(notify: () => void): () => void; // Used to subscribe to sync done events (returns disposer)
 }
 ```
 
@@ -478,30 +489,31 @@ We pass the event emitter to transport controller like so:
 
 ```ts
 class TransportController {
+  // ...
+
+  onChangesReceived: Transport["onChangesReceived"] = null;
+
+  constructor(transport: Transport, progressEmitter: SyncEventEmitter) {
     // ...
 
-    onChangesReceived: Transport["onChangesReceived"] = null
+    // Hijack the mutable methods (e.g. onChangesReceived)
+    this.#transport.onChangesReceived = this._onChangesReceived;
+  }
 
-    constructor(transport: Transport, progressEmitter: SyncEventEmitter) {
-        // ...
+  private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
+    this.#progressEmitter.notifySyncStarted();
 
-        // Hijack the mutable methods (e.g. onChangesReceived)
-        this.#transport.onChangesReceived = this._onChangesReceived
-    }
+    // Since '.onChangesReceived' is hooked up to 'InboundStream' (applying those changes),
+    // awaiting the function let's us know when the changes have been applied (sync done)
+    await (this.onChangesReceived?.(msg) || Promise.resolve());
 
-    private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
-        this.#progressEmitter.notifySyncStarted()
-
-        // Since '.onChangesReceived' is hooked up to 'InboundStream' (applying those changes),
-        // awaiting the function let's us know when the changes have been applied (sync done)
-		await (this.onChangesReceived?.(msg) || Promise.resolve())
-
-        this.#progressEmitter.notifySyncDone()
-	}
+    this.#progressEmitter.notifySyncDone();
+  }
 }
 ```
 
 Next, we've updated the sync worker to:
+
 - wrap the transport (into `TransportController`) before passing it to the sync process (as `config`)
 - subscribe to sync start / stop events (using the `SyncEventEmitter` interface) and notify the main thread of the same
 
@@ -514,70 +526,69 @@ We've split this up into chunks, at transport level and are sending those chunks
 // Updated to not signal start / stop, but rather
 // signal the progress
 interface SyncEventEmitter {
-    notifyProgress(progres)
-    onProgress(notify: (progress) => void): () => void
+  notifyProgress(progres);
+  onProgress(notify: (progress) => void): () => void;
 }
 
 type ChunkTask = {
-	chunk: Changes;
-	nProcessed: number;
-	nTotal: number;
+  chunk: Changes;
+  nProcessed: number;
+  nTotal: number;
 };
 
 class ChangesProcessor {
-    // ...
+  // ...
 
-    // Overridable (mutable methods)
-    //
-    // Overriden downstream to attach to a function handling application of a single chunk
-    onChunk: ((task: ChunkTask) => Promise<void> | null) = null
-    // Overriden downstream to attach to done notifier
-    onDone: (() => void | null) = null
+  // Overridable (mutable methods)
+  //
+  // Overriden downstream to attach to a function handling application of a single chunk
+  onChunk: (task: ChunkTask) => Promise<void> | null = null;
+  // Overriden downstream to attach to done notifier
+  onDone: () => void | null = null;
 
-    enqueue(msg: Changes) {
-        // Split the changes into chunks (default size 1024, but configurable)
+  enqueue(msg: Changes) {
+    // Split the changes into chunks (default size 1024, but configurable)
 
-        // Start processing
-        // NOTE: the actual implementation differs, this is a simplified version for purpose
-        // of the example
-        for (const chunk of chunks) {
-            await this.onChunk?.({ chunk, nProcessed, nTotal })
-            // Update the counter
-        }
+    // Start processing
+    // NOTE: the actual implementation differs, this is a simplified version for purpose
+    // of the example
+    for (const chunk of chunks) {
+      await this.onChunk?.({ chunk, nProcessed, nTotal });
+      // Update the counter
     }
-
+  }
 }
 
 class TransportController {
+  // ...
+  #changesProcessor = new ChangesProcessor();
+
+  onChangesReceived: Transport["onChangesReceived"] = null;
+
+  constructor(transport: Transport, progressEmitter: SyncEventEmitter) {
     // ...
-    #changesProcessor = new ChangesProcessor()
 
-    onChangesReceived: Transport["onChangesReceived"] = null
+    // Hijack the mutable methods (e.g. onChangesReceived)
+    this.#transport.onChangesReceived = this._onChangesReceived;
 
-    constructor(transport: Transport, progressEmitter: SyncEventEmitter) {
-        // ...
+    // Route the chunk queue processor's 'onChunk' to local '_onChunk'
+    this.#changesProcessor.onChunk = this._onChunk.bind(this);
+  }
 
-        // Hijack the mutable methods (e.g. onChangesReceived)
-        this.#transport.onChangesReceived = this._onChangesReceived
+  private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
+    // Instead of passing to downstream '.onChangesReceived', enqueue the chunk
+    this.#changesProcessor.enqueue(msg);
+  }
 
-        // Route the chunk queue processor's 'onChunk' to local '_onChunk'
-        this.#changesProcessor.onChunk = this._onChunk.bind(this)
-    }
+  private async _onChunk(task: ChunkTask) {
+    // Notify of the progress
+    this.#progressEmitter.notifyProgress(/* progress inered from the chunk 'task' */);
 
-    private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
-        // Instead of passing to downstream '.onChangesReceived', enqueue the chunk
-        this.#changesProcessor.enqueue(msg)
-	}
-
-    private async _onChunk(task: ChunkTask) {
-        // Notify of the progress
-        this.#progressEmitter.notifyProgress(/* progress inered from the chunk 'task' */)
-
-        // Pass the chunk to the downstream 'onChangesReceived' -- sync process applying the change
-        // Notice how this is the same as the previous implementation, only difference being in the applicatin of
-        // chunks rather than the entire blob
-        await this.onChangesReceived?.(task.chunk)
-    }
+    // Pass the chunk to the downstream 'onChangesReceived' -- sync process applying the change
+    // Notice how this is the same as the previous implementation, only difference being in the applicatin of
+    // chunks rather than the entire blob
+    await this.onChangesReceived?.(task.chunk);
+  }
 }
 ```
 
@@ -603,6 +614,7 @@ flowchart TD
 ```
 
 This flow achieves all of the sync reporting goals:
+
 - it allows us to show sync `active` state in the UI
 - it provides for better UX - showing of progress bar
 
@@ -625,9 +637,9 @@ const app = express();
 const server = http.createServer(app);
 
 const wsConfig = {
-	dbFolder: "./test-dbs", // Instructs the server as to where to store DB files
-	schemaFolder: "./src/lib/schemas", // Instructs the server as to where to look for the schema (more belo)
-	pathPattern: /\/sync/ // Sync endpoints are matched by this pattern (and all requests upgraded to WebSocket)
+  dbFolder: "./test-dbs", // Instructs the server as to where to store DB files
+  schemaFolder: "./src/lib/schemas", // Instructs the server as to where to look for the schema (more belo)
+  pathPattern: /\/sync/ // Sync endpoints are matched by this pattern (and all requests upgraded to WebSocket)
 };
 
 // This is where the magic happens
@@ -641,6 +653,7 @@ Let's examine the sync server by looking at the package that scaffolds it.
 ### [vlcn.io/ws-server]
 
 The package exports the aforementioned `attachWebsocketServer` function, which accepts:
+
 - `server` instance
 - `config` object
 - `dbFactory` (optional) - custom factory used to retrieve (construct) the DB instance for a particular `room` (more below) - _we're using default at this time_
@@ -651,9 +664,9 @@ The `config` object (already shown) looks like this
 
 ```ts
 const wsConfig = {
-	dbFolder: "./test-dbs", // Instructs the server as to where to store DB files
-	schemaFolder: "./src/lib/schemas", // Instructs the server as to where to look for the schema (more belo)
-	pathPattern: /\/sync/ // Sync endpoints are matched by this pattern (and all requests upgraded to WebSocket)
+  dbFolder: "./test-dbs", // Instructs the server as to where to store DB files
+  schemaFolder: "./src/lib/schemas", // Instructs the server as to where to look for the schema (more belo)
+  pathPattern: /\/sync/ // Sync endpoints are matched by this pattern (and all requests upgraded to WebSocket)
 };
 ```
 
@@ -671,6 +684,7 @@ One relevant export for our purposes - `cryb64(schemaContent: string): number` -
 
 The important thing to note when interacting with the server is that the [sync worker](#sync-worker) is the one that handles the communication with the server, using WebSocket transport, in such a way that's compatible with the server.
 The important input on our part consists of the following:
+
 - DB should contain two entries in the `crsql_master` table (these are read and communicated with the server by sync worker):
   - `key = 'schema_name'`, `value =` - the name of the DB schema - this is used by the server to look into the `schemaFolder` (see config above) and load the schema file by the value provided here, **important** - the schema name can't have any special characters (this includes `.`, so no `.sql`, or `.sqlite3` extensions, e.g. we're using `init`, not `init.sql`).
   - `key = 'schema_version'`, `value =` - a hash of the schema file, there's a special function that computes the hash (`cryb64`, exported from [vlcn.io/ws-common]) - when a schema is loaded on the server, the server hashes it and checks if the communicated schema version matches the server-side one
@@ -678,17 +692,18 @@ The important input on our part consists of the following:
 
 ```ts
 worker.startSync({
-    // This value is kept at the worker level (as mentioned above) - it's used to perform sqlite3.open(dbid)
-    // This is our local DB, that the worker uses to sync to/from, as well as reading the aforementioned `schema_name` and `schema_version`
-    // (communicated at initial connection)
-    dbid: "dev",
-    // Sync server URL (not important)
-    url: "ws://localhost:3000/sync", // URL of the sync server
-    room: "dev" // Room name - used to identify the DB on the server
+  // This value is kept at the worker level (as mentioned above) - it's used to perform sqlite3.open(dbid)
+  // This is our local DB, that the worker uses to sync to/from, as well as reading the aforementioned `schema_name` and `schema_version`
+  // (communicated at initial connection)
+  dbid: "dev",
+  // Sync server URL (not important)
+  url: "ws://localhost:3000/sync", // URL of the sync server
+  room: "dev" // Room name - used to identify the DB on the server
 });
 ```
 
 To break this down:
+
 - `dbid`:
   - this is used to access the DB locally (e.g. `sqlite.open(dbid)`)
   - this isn't communicated to the server
@@ -700,7 +715,7 @@ To break this down:
   // The server does something like this
   import Database from "better-sqlite3";
   const dbPath = [config.dbFolder, room].join("/");
-  const db = new Datebase(dbPath)
+  const db = new Datebase(dbPath);
   ```
   - it doesn't have to match any dbid (dbname), but if we want to sync two (or more) clients, they have to use the same `room`
   - for our purposes it makes the most sense to use `dbid` (db name) for both the local DB file as well as the on-server DB (baked into the code), making sure all the client nodes always use the same "master" DB (server room)
@@ -763,12 +778,14 @@ flowchart LR
 _note: I'm laying this out for better understanding of server and relevant config variables: what is the purpose of each and how they're used. It's important to note that, in production, we're using the same `room`, while the `senderId` is auto-generated._
 
 In multi client setup, the server needs to:
+
 - identify different clients
 - group clients together so that (1) all clients with a group sync up (2) different groups don't interfere with each other
 
 This is done by way of `room` and `senderId`.
 
 The `room` was mentioned a couple of times above and I hope this makes it clear, to recap:
+
 - `room` is communicated at the start of the sync connection (by way of `announcePresence`, handled by sync worker)
 - it serves as an identifier for a group of client nodes that should be synced
 - it can take any value, but the value should be consistent across clients we want syncing up
@@ -776,6 +793,7 @@ The `room` was mentioned a couple of times above and I hope this makes it clear,
 - for convenience, we're using the same name as the (local) DB name, e.g. `"dev"` in development
 
 Now, the `senderId` is communicated by the sync worker (by way of `announcePresence` message) as well and is hidden away from the client code:
+
 - it's unique to the particular node (I don't know how it's achieved, but I imagine some random generator)
 - under the hood the `db.siteid` (I have no clue what that is) is used
 - on the server it is used to id different client nodes
@@ -817,6 +835,7 @@ flowchart LR
 ```
 
 Here the `client-1` and `client-2` are using the same room (`room-1`) and are thus:
+
 - accessing the same DB
 - kept in sync (between themselves)
 
@@ -848,13 +867,13 @@ We load the schema and version it using the `cryb64` function (exported from [vl
 import { cryb64 } from "@vlcn.io/ws-common";
 import schemaContent from "./init.sql?raw"; // Load the schema file as a string
 
-const schemaName = "init"
+const schemaName = "init";
 const schemaVersion = cryb64(schemaContent); // Hash the schema content
 
-const db = await getDB("dev") // Not getting into internals of initialising the DB, see the first sections of this document
+const db = await getDB("dev"); // Not getting into internals of initialising the DB, see the first sections of this document
 
 // Initialise the DB
-await db.exec(schemaContent)
+await db.exec(schemaContent);
 
 // Store schema name and version
 await db.exec(`INSERT INTO crsql_master (key, value) VALUES ('schema_name', ?)`, [schemaName]);
@@ -877,6 +896,7 @@ CREATE TABLE IF NOT EXISTS customer (
 this will produce a completely different version (which makes sense: the string representation of the schema is different, therefore the hash is different).
 
 Now, when loading the DB, we need to check:
+
 - whether or not the DB is initialised
 - whether or not the schema name and version match the expected ones
 
@@ -886,37 +906,38 @@ The updated init flow:
 import { cryb64 } from "@vlcn.io/ws-common";
 import schemaContent from "./init.sql?raw"; // Load the schema file as a string
 
-const schemaName = "init"
+const schemaName = "init";
 const schemaVersion = cryb64(schemaContent); // Hash the schema content
 
-const db = await getDB("dev") // Not getting into internals of initialising the DB, see the first sections of this document
+const db = await getDB("dev"); // Not getting into internals of initialising the DB, see the first sections of this document
 
 // Check if the DB is initialised
-const [_schemaName, _schemaVersion] = await getSchemaAndVersion(db) // Something like SELECT key, value FROM crsql_master WHERE key IN ('schema_name', 'schema_version')
+const [_schemaName, _schemaVersion] = await getSchemaAndVersion(db); // Something like SELECT key, value FROM crsql_master WHERE key IN ('schema_name', 'schema_version')
 
 if (!_schemaName || !_schemaVersion) {
-    // NOTE: Not handling partial init (e.g. name exists, but not the version -- keeping it simple)
+  // NOTE: Not handling partial init (e.g. name exists, but not the version -- keeping it simple)
 
-    // Initialise the DB
-    await db.exec(schemaContent)
+  // Initialise the DB
+  await db.exec(schemaContent);
 
-    // Store schema name and version
-    await db.exec(`INSERT INTO crsql_master (key, value) VALUES ('schema_name', ?)`, [schemaName]);
-    await db.exec(`INSERT INTO crsql_master (key, value) VALUES ('schema_version', ?)`, [schemaVersion]);
+  // Store schema name and version
+  await db.exec(`INSERT INTO crsql_master (key, value) VALUES ('schema_name', ?)`, [schemaName]);
+  await db.exec(`INSERT INTO crsql_master (key, value) VALUES ('schema_version', ?)`, [schemaVersion]);
 } else {
-    // Check name / version match
-    if (schemaName !== _schemaName) {
-        // This should never happen -- handle the error elsewhere
-        throw new Error("Schema name mismatch: you probably want to nuke the DB and reinitialise clean")
-    } else if (schemaVersion !== _schemaVersion) {
-        // This is quite common -- as mentioned above, the version changes with any slight update to the schema
-        // However -- handle elsewhere
-        throw new Error("Schema version mismatch: you might want to migrate the DB to the up-to-date version")
-    }
+  // Check name / version match
+  if (schemaName !== _schemaName) {
+    // This should never happen -- handle the error elsewhere
+    throw new Error("Schema name mismatch: you probably want to nuke the DB and reinitialise clean");
+  } else if (schemaVersion !== _schemaVersion) {
+    // This is quite common -- as mentioned above, the version changes with any slight update to the schema
+    // However -- handle elsewhere
+    throw new Error("Schema version mismatch: you might want to migrate the DB to the up-to-date version");
+  }
 }
 ```
 
 In this example, we're throwing an error when a mismatch is encountered:
+
 - we consider the DB unusable if the schema stored is different than the one we expect
 - we throw an error, letting the updates/reinitialisations/migrations be handled elsewhere
 
@@ -929,12 +950,13 @@ The crsql extension ships with an automigration functionality, execution of whic
 ```ts
 import schemaContent from "./init.sql?raw"; // Load the schema file as a string
 
-const schemaName = "init"
+const schemaName = "init";
 
-await db.automigrateTo(schemaName, schemaContent)
+await db.automigrateTo(schemaName, schemaContent);
 ```
 
 The `db.automigrateTo` method will:
+
 - check the diff
 - update the DB's schema
 - hash the content and update the `schema_version`
@@ -947,20 +969,21 @@ The `db.automigrateTo` method will:
 This section describes the automigration innter workins in more detail, which, while not strictly necessary, can come useful if we need to debug / reason about the way we perform DB versioning/migrations.
 
 The flow (running `db.automigrateTo(schemaName, schemaVersion)`) looks something like this:
+
 1. Check if the `schemaName` (provided) matches the `schema_name` (stored in the DB):
-    - if not, the DB is nuked and reinitialised (the flow is done here)
-    - if match, continue
+   - if not, the DB is nuked and reinitialised (the flow is done here)
+   - if match, continue
 2. Check if the `schemaVersion` (provided) matches the `schema_version` (stored in the DB):
-    - if match, the flow is done here
-    - if not, preform automigration
+   - if match, the flow is done here
+   - if not, preform automigration
 3. Run `crsql_automigrate` and internal (SQL) function, loaded within the SQLite process by the `crsql` extension\* (the following steps happen within the SQLite process)
 4. Create a new (transient) in-memory DB and apply schema to it
 5. Check table differences between the two DBs (the original one and the one with the new schema applied):
-    - check if some tables should be removed
-    - check if some tables should be updated (columns added/removed/updated)
-    - don't add new tables just yet
-    - check if indices should be removed/updated
-    - don't add new indices just yet
+   - check if some tables should be removed
+   - check if some tables should be updated (columns added/removed/updated)
+   - don't add new tables just yet
+   - check if indices should be removed/updated
+   - don't add new indices just yet
 6. Apply the changes: removals and updates
 7. Apply the new schema to the original DB: **this is why we need to make sure the schema is idempotent** (e.g. `CREATE TABLE IF NOT EXISTS ...`), otherwise the migration will fail
 8. Finally: store the new version to the DB
@@ -970,11 +993,13 @@ _\* the function is implemented in Rust as part of the extension implementation,
 #### How we use the schema / migrations
 
 We use the same schema for the server DB and the client DB as a single source of truth:
+
 - one intricacy is: we can't use the `.sql` extension due to constraints imposed by the sync server (see more above), so our schema (file) name is simply `init`
 - we use `"init"` as our `"schema_name"` for simplicity
 - **we make sure the schema is idempotent**: instead of using `CREATE TABLE` / `CREATE INDEX`, we do `CREATE TABLE IF NOT EXISTS` (and respective index check)
 
 Similarly to the initialisation flow detailed above:
+
 - we throw errors if schema name/version mismatch the existing ones.
 - the (respective) error is handled by presenting user with a prompt to automigrate the DB.
 - on confirmation, we run the automigration
