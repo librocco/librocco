@@ -39,11 +39,10 @@
 
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
-		const disposer1 = rx.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
-		const disposer2 = rx.onRange(["reconciliation_order", "reconciliation_order_lines"], () => invalidate("reconciliationOrder:data"));
+		const disposer1 = data.dbCtx?.rx?.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
+		const disposer2 = data.dbCtx?.rx?.onRange(["reconciliation_order", "reconciliation_order_lines"], () =>
+			invalidate("reconciliationOrder:data")
+		);
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(async () => {
@@ -151,14 +150,14 @@
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
 							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
 
-							<span class="badge-outline badge-accent badge badge-md gap-x-2 py-2.5">
+							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">{t.stats.created()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.created).toISOString()}
 									>{new Date(data?.reconciliationOrder.created).toLocaleString()}</time
 								>
 							</span>
-							<span class="badge-outline badge-accent badge badge-md gap-x-2 py-2.5">
+							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">{t.stats.last_updated()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
@@ -166,7 +165,7 @@
 								>
 							</span>
 							{#if data?.reconciliationOrder.finalized}
-								<span class="badge-outline badge-accent badge badge-md gap-x-2 py-2.5">
+								<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 									<span class="sr-only">Finalized At</span>
 									<ClockArrowUp size={16} aria-hidden />
 									<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
@@ -182,7 +181,7 @@
 							<dt class="mt-0">{t.stats.includes_supplier_orders()}:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
 								{#each placedOrders as [order_id, supplier_name]}
-									<dd class="badge-outline badge-accent badge badge-md gap-x-2">
+									<dd class="badge-accent badge-outline badge badge-md gap-x-2">
 										#{order_id}
 										<span class="text-sm font-light">({supplier_name})</span>
 									</dd>

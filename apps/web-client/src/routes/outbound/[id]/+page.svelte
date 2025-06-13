@@ -81,13 +81,10 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
 		// Reload when note
-		const disposer1 = rx.onPoint("note", BigInt(data.id), () => invalidate("note:data"));
+		const disposer1 = data.dbCtx?.rx?.onPoint("note", BigInt(data.id), () => invalidate("note:data"));
 		// Reload when entries (book/custom item) change
-		const disposer2 = rx.onRange(["book", "book_transaction", "custom_item", "warehouse"], () => invalidate("note:books"));
+		const disposer2 = data.dbCtx?.rx?.onRange(["book", "book_transaction", "custom_item", "warehouse"], () => invalidate("note:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(() => {
@@ -414,7 +411,7 @@
 
 					<div class="w-fit">
 						{#if updatedAt}
-							<span class="badge-outline badge-primary badge badge-md">
+							<span class="badge-primary badge-outline badge badge-md">
 								{tOutbound.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}
 							</span>
 						{/if}

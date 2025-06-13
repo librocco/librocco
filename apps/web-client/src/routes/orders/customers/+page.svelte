@@ -54,13 +54,8 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-
 		// Reload all customer order/customer order line data dependants when the data changes
-		disposer = rx.onRange(["customer", "customer_order_lines"], () => invalidate("customer:list"));
-
-		console.log({ $tableStore });
+		disposer = data.dbCtx?.rx?.onRange(["customer", "customer_order_lines"], () => invalidate("customer:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
