@@ -21,6 +21,8 @@
 
 	import { page } from "$app/stores";
 
+	import LanguageSelector from "./LanguageSelector.svelte";
+
 	interface Link {
 		label: string;
 		href: string;
@@ -97,31 +99,7 @@
 	</nav>
 
 	<div class="flex w-full items-center justify-between gap-x-2 p-4">
-		<div class="dropdown-top dropdown">
-			<div tabindex="0" role="button" class="btn-ghost btn-sm btn">
-				<Globe size={20} />
-				<ChevronDown size={16} />
-			</div>
-			<div
-				class="dropdown-content top-px mt-16 w-40 overflow-y-auto rounded-box border border-white/5 bg-base-200 text-base-content shadow-2xl outline-1 outline-black/5"
-			>
-				<!-- TODO: iterate list of langs that we have in dicts -->
-				<ul class="menu menu-sm w-full bg-base-200">
-					<li>
-						<button class="active">
-							<span class="font-mono font-bold opacity-40">EN</span>
-							<span>English</span>
-						</button>
-					</li>
-					<li class="disabled">
-						<button>
-							<span class="font-mono font-bold opacity-40">IT</span>
-							<span>Italian</span>
-						</button>
-					</li>
-				</ul>
-			</div>
-		</div>
+		<LanguageSelector />
 		<label class="flex cursor-pointer gap-2">
 			<Sun size={20} />
 			<input type="checkbox" value="sunset" class="theme-controller toggle" />
