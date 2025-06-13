@@ -21,18 +21,36 @@
 	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";
-	import ScannerForm from "$lib/forms/ScannerForm.svelte";
-	import { testId } from "@librocco/shared";
+
 	import CustomerSearchForm from "$lib/forms/CustomerSearchForm.svelte";
 	import { writable } from "svelte/store";
+	import { createIntersectionObserver } from "$lib/actions";
 
 	export let data: PageData;
 
 	$: ({ customerOrders, plugins } = data);
 	$: db = data.dbCtx?.db;
 
-	$: t = $LL.customer_orders_page;
+	let searchField: HTMLInputElement;
+	const search = writable("");
 
+	$: t = $LL.customer_orders_page;
+	const tableStore = writable<CustomerOrderListItem[]>(customerOrders);
+
+	const seeMore = () => {
+		maxResults += 10;
+	};
+	const scroll = createIntersectionObserver(seeMore);
+	let maxResults = 10;
+
+	$: filteredOrders = customerOrders
+		.filter(({ completed }) => completed === (orderFilterStatus === "completed"))
+		.filter(({ fullname }) => {
+			if (!$search) return true;
+			return fullname.toLowerCase().includes($search.toLowerCase());
+		});
+
+	$: tableStore.set(filteredOrders.slice(0, maxResults));
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
@@ -41,6 +59,8 @@
 
 		// Reload all customer order/customer order line data dependants when the data changes
 		disposer = rx.onRange(["customer", "customer_order_lines"], () => invalidate("customer:list"));
+
+		console.log({ $tableStore });
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -60,17 +80,9 @@
 	function setFilter(status: "completed" | "in_progress") {
 		orderFilterStatus = status;
 	}
-	let searchField: HTMLInputElement;
-	const search = writable("");
 
 	$: hasCompletedOrders = customerOrders.some(({ completed }) => completed);
 
-	$: filteredOrders = customerOrders
-		.filter(({ completed }) => completed === (orderFilterStatus === "completed"))
-		.filter(({ fullname }) => {
-			if (!$search) return true;
-			return fullname.toLowerCase().includes($search.toLowerCase());
-		});
 	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
@@ -141,34 +153,40 @@
 					{t.labels.new_order()}
 				</button>
 			</div>
-			<table class="table-lg table">
-				<thead>
-					<tr>
-						<th scope="col">{t.table.customer()}</th>
-						<th scope="col">{t.table.order_id()}</th>
-						<th scope="col"> <span class="sr-only"> {t.labels.update_order()} </span></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each filteredOrders as { id, fullname, email, displayId }}
-						<tr class="hover focus-within:bg-base-200">
-							<td>
-								<dl class="flex flex-col gap-y-1">
-									<dt class="sr-only">{t.table.customer_details()}</dt>
-									<dd>{fullname}</dd>
-									<dd class="text-sm">{email ?? ""}</dd>
-								</dl>
-							</td>
-							<td>
-								<span class="font-medium">{displayId}</span>
-							</td>
-							<td class="text-right">
-								<a href={appPath("customers", id)} class="btn-outline btn-sm btn">{t.labels.update()}</a>
-							</td>
+			<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<table class="table-lg table">
+					<thead>
+						<tr>
+							<th scope="col">{t.table.customer()}</th>
+							<th scope="col">{t.table.order_id()}</th>
+							<th scope="col"> <span class="sr-only"> {t.labels.update_order()} </span></th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						{#each $tableStore as { id, fullname, email, displayId }}
+							<tr class="hover focus-within:bg-base-200">
+								<td>
+									<dl class="flex flex-col gap-y-1">
+										<dt class="sr-only">{t.table.customer_details()}</dt>
+										<dd>{fullname}</dd>
+										<dd class="text-sm">{email ?? ""}</dd>
+									</dl>
+								</td>
+								<td>
+									<span class="font-medium">{displayId}</span>
+								</td>
+								<td class="text-right">
+									<a href={appPath("customers", id)} class="btn-outline btn-sm btn">{t.labels.update()}</a>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+				<!-- Trigger for the infinite scroll intersection observer -->
+				{#if $tableStore?.length === maxResults && filteredOrders.length > maxResults}
+					<div use:scroll.trigger></div>
+				{/if}
+			</div>
 		{/if}
 	</div>
 	<!-- </div> -->
