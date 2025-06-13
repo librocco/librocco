@@ -19,6 +19,7 @@ import { appPath } from "$lib/paths";
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
+import { ErrDBCorrupted, ErrDBSchemaMismatch } from "$lib/db/cr-sqlite/db";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/#/stock/")
 const redirectPaths = ["", "/", "/#", "/#/"].map((path) => `${base}${path}`);
@@ -53,10 +54,6 @@ export const load: LayoutLoad = async ({ url }) => {
 		// For debug purposes and manual overrides (e.g. 'schema_version')
 		window["getDB"] = getDB;
 
-		// Init the db
-		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
-		const dbCtx = await getInitializedDB(get(dbid));
-
 		// Register plugins
 		// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
 		if (!IS_E2E) {
@@ -65,8 +62,23 @@ export const load: LayoutLoad = async ({ url }) => {
 			plugins.get("book-fetcher").register(createGoogleBooksApiPlugin());
 		}
 
-		return { dbCtx, status: true, plugins };
+		// Init the db
+		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
+
+		try {
+			const dbCtx = await getInitializedDB(get(dbid));
+			return { dbCtx, plugins, error: null };
+		} catch (err) {
+			console.error("Error initializing DB", err);
+			// If know error, return it (it will ba handled in the shown dialog)
+			if (err instanceof ErrDBCorrupted || err instanceof ErrDBSchemaMismatch) {
+				return { dbCtx: null, plugins, error: err as Error };
+			}
+
+			// We don't know how to handle this err - throw
+			throw err;
+		}
 	}
 
-	return { dbCtx: null, status: false, plugins };
+	return { dbCtx: null, plugins, error: null };
 };
