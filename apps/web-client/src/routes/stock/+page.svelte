@@ -37,9 +37,7 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: dbCtx should always be defined on client
-		const { rx } = data.dbCtx;
-		disposer = rx.onRange(["book"], () => invalidate("book:data"));
+		disposer = data.dbCtx?.rx?.onRange(["book"], () => invalidate("book:data"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
