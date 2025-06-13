@@ -1,18 +1,18 @@
 {
-  "nav": {
-    "search": "Bestände suchen",
-    "inventory": "Inventar verwalten",
-    "outbound": "Ausgehend",
-    "inbound": "Eingehend",
-    "settings": "Einstellungen",
-    "history": "Verlauf",
-    "supplier_orders": "Lieferantenbestellungen"
-  },
-  "search": {
-    "title": "Suche",
-    "empty": {
-      "title": "Nach Beständen suchen",
-      "description": "Beginnen Sie mit der Suche nach Titel, Autor, ISBN"
-    }
-  }
+	"nav": {
+		"search": "Bestände suchen",
+		"inventory": "Inventar verwalten",
+		"outbound": "Ausgehend",
+		"inbound": "Eingehend",
+		"settings": "Einstellungen",
+		"history": "Verlauf",
+		"supplier_orders": "Lieferantenbestellungen"
+	},
+	"search": {
+		"title": "Suche",
+		"empty": {
+			"title": "Nach Beständen suchen",
+			"description": "Beginnen Sie mit der Suche nach Titel, Autor, ISBN"
+		}
+	}
 }
