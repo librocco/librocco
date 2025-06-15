@@ -13,7 +13,7 @@
 		"build:prod-rootdir": "VITE_GIT_SHA=$(git rev-parse --short HEAD) BASE_PATH= vite build",
 		"build:e2e": "VITE_GIT_SHA=$(git rev-parse --short HEAD) PUBLIC_IS_E2E=true vite build",
 		"format": "prettier --write .",
-		"postinstall": "svelte-kit sync",
+		"postinstall": "svelte-kit sync && ./scripts/setup_wasm.sh",
 		"lint": "prettier --check . && eslint .",
 		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
 		"preview": "vite preview",
@@ -27,6 +27,7 @@
 		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)"
 	},
 	"dependencies": {
+		"wa-sqlite": "workspace:*",
 		"@vlcn.io/crsqlite-wasm": "0.16.0",
 		"@vlcn.io/ws-browserdb": "~0.2.0",
 		"@vlcn.io/ws-client": "~0.2.0",
