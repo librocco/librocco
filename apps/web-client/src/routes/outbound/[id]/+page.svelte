@@ -129,6 +129,10 @@
 		reconcileDialogOpen.set(true);
 	};
 
+	const handlePrint = () => {
+		window.print();
+	};
+
 	const handleCommitSelf = async (closeDialog: () => void) => {
 		try {
 			await commitNote(db, noteId);
@@ -396,7 +400,7 @@
 
 <Page title={displayName} view="outbound-note" {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
-		<div class="flex flex-col gap-y-4 px-6 py-4">
+		<div id="header" class="flex flex-col gap-y-4 px-6 py-4">
 			<Breadcrumbs links={breadcrumbs} />
 			<div class="flex w-full items-center justify-between">
 				<div class="flex max-w-md flex-col">
@@ -530,13 +534,13 @@
 		</div>
 
 		{#if loading}
-			<div class="flex grow justify-center">
+			<div id="spinner" class="flex grow justify-center">
 				<div class="mx-auto translate-y-1/2">
 					<span class="loading loading-spinner loading-lg text-primary"></span>
 				</div>
 			</div>
 		{:else if !entries.length}
-			<div class="flex grow justify-center">
+			<div id="empty" class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/4">
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
@@ -563,7 +567,7 @@
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
 						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
 					>
-						<div slot="row-actions" let:row let:rowIx>
+						<div id="row-actions" slot="row-actions" let:row let:rowIx>
 							{@const editTrigger = isBookRow(row) ? $editBookDialogTrigger : $customItemDialogTrigger}
 
 							<PopoverWrapper
@@ -623,13 +627,14 @@
 					</OutboundTable>
 				</div>
 
-				<div class="flex h-24 w-full items-center justify-start px-8">
+				<div id="button-container" class="flex h-24 w-full items-center justify-start px-8">
 					<button
 						use:melt={$customItemDialogTrigger}
 						on:m-click={() => openCustomItemForm()}
 						on:m-keydown={() => openCustomItemForm()}
-						class="btn-neutral btn">Custom item</button
+						class="btn-neutral btn mx-2">Custom item</button
 					>
+					<button on:click={() => handlePrint()} on:keydown={() => handlePrint()} class="btn-neutral btn">Print</button>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
@@ -807,3 +812,23 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	@media print {
+		#header {
+			display: none;
+		}
+		#spinner {
+			display: none;
+		}
+		#row-actions {
+			display: none;
+		}
+		#empty {
+			display: none;
+		}
+		#button-container {
+			display: none;
+		}
+	}
+</style>
