@@ -461,6 +461,9 @@
 					>
 						<span class="button-text">Commit</span>
 					</button>
+					<button on:click={() => handlePrint()} on:keydown={() => handlePrint()} class="btn-primary btn-sm btn hidden xs:block"
+						>Print</button
+					>
 
 					<DropdownWrapper let:item>
 						<div
@@ -634,7 +637,6 @@
 						on:m-keydown={() => openCustomItemForm()}
 						class="btn-neutral btn mx-2">Custom item</button
 					>
-					<button on:click={() => handlePrint()} on:keydown={() => handlePrint()} class="btn-neutral btn">Print</button>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
