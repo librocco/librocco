@@ -562,8 +562,5 @@
 		#empty {
 			display: none;
 		}
-		#button-container {
-			display: none;
-		}
 	}
 </style>
