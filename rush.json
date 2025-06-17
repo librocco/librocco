@@ -395,6 +395,10 @@
 		{
 			"packageName": "@vlcn.io/wa-sqlite",
 			"projectFolder": "3rd-party/wa-sqlite"
+		},
+		{
+			"packageName": "@vlcn.io/crsqlite-wasm",
+			"projectFolder": "3rd-party/crsqlite-wasm"
 		}
 	]
 }
