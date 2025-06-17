@@ -1746,6 +1746,10 @@ type RootTranslation = {
 			 * U​n​m​a​t​c​h​e​d​ ​B​o​o​k​s
 			 */
 			unmatched_books: string
+			/**
+			 * B​o​o​k​e​d​ ​W​i​t​h​ ​S​u​p​p​l​i​e​r
+			 */
+			booked_with_supplier: string
 		}
 		completed_table: {
 			/**
@@ -4516,6 +4520,10 @@ export type TranslationFunctions = {
 			 * Unmatched Books
 			 */
 			unmatched_books: () => LocalizedString
+			/**
+			 * Booked With Supplier
+			 */
+			booked_with_supplier: () => LocalizedString
 		}
 		completed_table: {
 			/**
