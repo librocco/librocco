@@ -4,3 +4,6 @@
 [submodule "3rd-party/cr-sqlite"]
 	path = 3rd-party/cr-sqlite
 	url = git@github.com:librocco/cr-sqlite
+[submodule "3rd-party/emsdk"]
+	path = 3rd-party/emsdk
+	url = git@github.com:emscripten-core/emsdk
