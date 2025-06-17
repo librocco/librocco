@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Plus, SearchIcon } from "lucide-svelte";
+	import { Plus } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -11,8 +11,6 @@
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema, customerSearchSchema } from "$lib/forms";
 	import { appPath, appHash } from "$lib/paths";
-
-	import { base } from "$app/paths";
 
 	import { getCustomerDisplayIdSeq, getCustomerOrderList, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { Page } from "$lib/controllers";
@@ -43,12 +41,10 @@
 	const scroll = createIntersectionObserver(seeMore);
 	let maxResults = 10;
 
-	$: filteredOrders = customerOrders
-		.filter(({ completed }) => completed === (orderFilterStatus === "completed"))
-		.filter(({ fullname, displayId }) => {
-			if (!$search) return true;
-			return fullname.toLowerCase().includes($search.toLowerCase()) || displayId.toLowerCase().includes($search.toLowerCase());
-		});
+	$: filteredOrders = customerOrders.filter(({ fullname, displayId }) => {
+		if (!$search) return true;
+		return fullname.toLowerCase().includes($search.toLowerCase()) || displayId.toLowerCase().includes($search.toLowerCase());
+	});
 
 	$: tableStore.set(filteredOrders.slice(0, maxResults));
 	// #region reactivity
@@ -67,16 +63,6 @@
 	const {
 		states: { open: newOrderDialogOpen }
 	} = newOrderDialog;
-
-	/**
-	 * Toggle between in-progress and completed orders:
-	 */
-	let orderFilterStatus: "completed" | "in_progress" = "in_progress";
-	function setFilter(status: "completed" | "in_progress") {
-		orderFilterStatus = status;
-	}
-
-	$: hasCompletedOrders = customerOrders.some(({ completed }) => completed);
 
 	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
 		/**@TODO replace randomId with incremented id */
@@ -126,26 +112,11 @@
 		{:else}
 			<div class="flex justify-between gap-2 px-2" role="group" aria-label="Filter orders by status">
 				<div class="flex gap-x-2">
-					<button
-						class="btn-sm btn {orderFilterStatus === 'in_progress' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("in_progress")}
-						aria-pressed={orderFilterStatus === "in_progress"}
-					>
-						{t.tabs.in_progress()}
-					</button>
-					<button
-						class="btn-sm btn {orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("completed")}
-						aria-pressed={orderFilterStatus === "completed"}
-						disabled={!hasCompletedOrders}
-					>
-						{t.tabs.completed()}
+					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+						<Plus size={20} />
+						{t.labels.new_order()}
 					</button>
 				</div>
-				<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-					<Plus size={20} />
-					{t.labels.new_order()}
-				</button>
 			</div>
 			<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<table class="table-lg table">
