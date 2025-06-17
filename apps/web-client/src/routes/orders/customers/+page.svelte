@@ -45,9 +45,9 @@
 
 	$: filteredOrders = customerOrders
 		.filter(({ completed }) => completed === (orderFilterStatus === "completed"))
-		.filter(({ fullname }) => {
+		.filter(({ fullname, displayId }) => {
 			if (!$search) return true;
-			return fullname.toLowerCase().includes($search.toLowerCase());
+			return fullname.toLowerCase().includes($search.toLowerCase()) || displayId.toLowerCase().includes($search.toLowerCase());
 		});
 
 	$: tableStore.set(filteredOrders.slice(0, maxResults));
@@ -108,7 +108,6 @@
 					dataType: "json",
 					validators: zod(customerSearchSchema),
 					validationMethod: "submit-only",
-					resetForm: true,
 					onUpdate: async ({ form }) => {
 						const { fullname } = form?.data as CustomerOrderListItem;
 						search.set(fullname);
