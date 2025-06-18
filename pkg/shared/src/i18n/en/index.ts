@@ -404,7 +404,10 @@ const sale_note = {
 		print_book_label: "Print book label",
 		delete_row: "Delete row",
 		edit_row: "Edit row",
-		delete: "Delete"
+		delete: "Delete",
+		commit: "Commit",
+		print: "Print",
+		custom_item: "Custom item"
 	},
 	stats: {
 		last_updated: "Last updated",
@@ -412,7 +415,9 @@ const sale_note = {
 	},
 	placeholder: {
 		select_warehouse: "Please select a warehouse",
-		no_warehouses: "No available warehouses"
+		no_warehouses: "No available warehouses",
+		scan_title: "Scan to add books",
+		scan_description: "Plugin your barcode scanner and pull the trigger"
 	}
 };
 
@@ -426,7 +431,9 @@ const sale_page = {
 		new_sale: "New Sale",
 		edit: "Edit",
 		print_book_label: "Print book label",
-		delete_row: "Delete row"
+		delete_row: "Delete row",
+		no_open_sales: "No open sales",
+		get_started: "Get started by adding a new sale"
 	}
 };
 const stock_page = {
