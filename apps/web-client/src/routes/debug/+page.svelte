@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { Plus, RotateCcw, Play, BookPlus } from "lucide-svelte";
+	import Plus from "$lucide/plus";
+	import RotateCcw from "$lucide/rotate-ccw";
+	import Play from "$lucide/play";
+	import BookPlus from "$lucide/book-plus";
+
 	import { onMount } from "svelte";
 
 	import { wrapIter } from "@librocco/shared";
@@ -284,7 +288,7 @@
 </script>
 
 <div id="content" class="h-full w-full overflow-y-auto">
-	<header class="flex h-16 items-center justify-between border-b border-base-content">
+	<header class="border-base-content flex h-16 items-center justify-between border-b">
 		<h2 class="pl-[70px] text-lg font-medium lg:pl-5">Debug</h2>
 	</header>
 

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
-	import { Settings, Plus } from "lucide-svelte";
+	import Settings from "$lucide/settings";
+	import Plus from "$lucide/plus";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -136,8 +137,8 @@
 			<div class="h-full w-full">
 				{#if orderStatusFilter === "unordered"}
 					{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
-						<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-							<p class="text-center text-base-content/70">
+						<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
+							<p class="text-base-content/70 text-center">
 								{t.placeholder.description()}
 							</p>
 							<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>

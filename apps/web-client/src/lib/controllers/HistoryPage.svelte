@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Book, Calendar, Search } from "lucide-svelte";
+	import Book from "$lucide/book";
+	import Calendar from "$lucide/calendar";
 
 	import { browser } from "$app/environment";
 	import { page } from "$app/stores";

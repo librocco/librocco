@@ -4,7 +4,11 @@
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { ClockArrowUp, FilePlus, Layers, Library, Trash } from "lucide-svelte";
+	import ClockArrowUp from "$lucide/clock-arrow-up";
+	import FilePlus from "$lucide/file-plus";
+	import Layers from "$lucide/layers";
+	import Library from "$lucide/library";
+	import Trash from "$lucide/trash";
 
 	import { entityListView, testId } from "@librocco/shared";
 
@@ -110,17 +114,17 @@
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("inbound", note.id)}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2">
 							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
 							<div class="flex flex-row gap-x-8 gap-y-2 max-sm:flex-col">
 								<div class="flex gap-x-2">
 									<Layers size={18} />
-									<span class="entity-list-text-sm text-sm text-base-content"> {t.stats.books({ no_of_books: totalBooks })}</span>
+									<span class="entity-list-text-sm text-base-content text-sm"> {t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
 								{#if note.updatedAt}
-									<div class="flex items-center gap-x-2 text-sm text-base-content">
+									<div class="text-base-content flex items-center gap-x-2 text-sm">
 										<ClockArrowUp size={18} />
 										{t.stats.last_updated()}:
 										{updatedAt}

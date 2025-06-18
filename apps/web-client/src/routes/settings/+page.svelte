@@ -2,7 +2,8 @@
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 	import { get } from "svelte/store";
-	import { Download, Trash } from "lucide-svelte";
+	import Download from "$lucide/download";
+	import Trash from "$lucide/trash";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { zod } from "sveltekit-superforms/adapters";
 
@@ -266,7 +267,7 @@
 							{/each}
 						{:else}
 							<div
-								class="flex h-full items-center justify-center border-2 border-dashed border-base-100"
+								class="border-base-100 flex h-full items-center justify-center border-2 border-dashed"
 								on:drop={handleDrop}
 								role="region"
 								aria-label="Drop zone"

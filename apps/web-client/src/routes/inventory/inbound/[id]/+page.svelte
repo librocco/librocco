@@ -8,7 +8,13 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, FileCheck } from "lucide-svelte";
+	import Printer from "$lucide/printer";
+	import QrCode from "$lucide/qr-code";
+	import Trash2 from "$lucide/trash-2";
+	import FileEdit from "$lucide/file-edit";
+	import MoreVertical from "$lucide/more-vertical";
+	import X from "$lucide/x";
+	import FileCheck from "$lucide/file-check";
 
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";
@@ -255,7 +261,7 @@
 
 				<div class="ml-auto flex items-center gap-x-2">
 					<button
-						class="btn-primary btn-sm btn hidden xs:block"
+						class="btn-primary btn-sm btn xs:block hidden"
 						use:melt={$confirmDialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
@@ -290,7 +296,7 @@
 									type: "commit"
 								};
 							}}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
+							class="text-base-content data-[highlighted]:bg-base-300 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.commit()}</span>
 						</div>
@@ -298,7 +304,7 @@
 							{...item}
 							use:item.action
 							on:m-click={handlePrintReceipt}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
+							class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.print()}</span>
 						</div>
@@ -306,7 +312,7 @@
 							{...item}
 							use:item.action
 							on:m-click={autoPrintLabels.toggle}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 {$autoPrintLabels
+							class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 {$autoPrintLabels
 								? '!bg-success text-success-content'
 								: ''}"
 						>
@@ -319,7 +325,7 @@
 							{...item}
 							use:item.action
 							use:melt={$confirmDialogTrigger}
-							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
+							class="bg-error data-[highlighted]:bg-error/80 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleDeleteSelf,
@@ -469,8 +475,8 @@
 		<div use:melt={$editDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 		<div
 			use:melt={$editDialogContent}
-			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
-				bg-base-200 shadow-lg focus:outline-none"
+			class="divide-y-secondary bg-base-200 fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
+				overflow-y-auto shadow-lg focus:outline-none"
 			in:fly|global={{
 				x: 350,
 				duration: 300,
@@ -481,7 +487,7 @@
 				duration: 100
 			}}
 		>
-			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
+			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
 				<div>
 					<h2 use:melt={$editDialogTitle} class="text-lg font-medium">{tCommon.edit_book_dialog.title()}</h2>
 					<p use:melt={$editDialogDescription} class="leading-normal">
