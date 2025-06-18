@@ -378,7 +378,7 @@
 			<div class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/4">
 					<!-- Start entity list placeholder -->
-					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
+					<PlaceholderBox title={tInbound.placeholder.scan_title} description={tInbound.placeholder.scan_description}>
 						<QrCode slot="icon" />
 					</PlaceholderBox>
 					<!-- End entity list placeholder -->

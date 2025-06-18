@@ -132,7 +132,8 @@ const inventory_page = {
 			last_updated: "Updated"
 		},
 		labels: {
-			button_edit: "Edit"
+			button_edit: "Edit",
+			button_delete: "Delete"
 		}
 	},
 	warehouses_tab: {
@@ -183,7 +184,8 @@ const purchase_note = {
 		delete: "Delete",
 		edit_row: "Edit row",
 		print_book_label: "Print book label",
-		delete_row: "Delete row"
+		delete_row: "Delete row",
+		edit: "Edit"
 	},
 	placeholder: {
 		scan_title: "Scan to add books",
