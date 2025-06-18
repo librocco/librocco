@@ -379,7 +379,10 @@ const common = {
 	},
 	actions: {
 		cancel: "Cancel",
-		confirm: "Confirm"
+		confirm: "Confirm",
+		import: "Import",
+		select: "Select",
+		reload: "Reload"
 	},
 	placeholders: {
 		no_results: "No results",
@@ -455,7 +458,9 @@ const settings_page = {
 		import: "Drag and drop your .sqlite3 file here to import",
 		device_settings: "Manage connections to external devices"
 	},
-
+	actions: {
+		nuke_and_resync: "Nuke and resync"
+	},
 	stats: {
 		version: "Version"
 	},
@@ -616,6 +621,14 @@ const misc_components = {
 	}
 };
 
+const error_page = {
+	title: "Error",
+	message: {
+		title: "Something crashed!",
+		description: "Try checking your internet connection if you're using an online database."
+	}
+};
+
 const layout = {
 	mobile_nav: {
 		trigger: {
@@ -675,7 +688,8 @@ const en = {
 	supplier_orders_component,
 	table_components,
 	misc_components,
-	layout
+	layout,
+	error_page
 } satisfies BaseTranslation;
 
 export default en;
