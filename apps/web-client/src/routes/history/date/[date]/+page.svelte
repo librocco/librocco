@@ -168,6 +168,7 @@
 	</div>
 </HistoryPage>
 
+<!-- svelte-ignore css-unused-selector -->
 <style lang="postcss">
 	[data-melt-calendar-prevbutton][data-disabled] {
 		@apply pointer-events-none rounded-lg p-1 opacity-40;
@@ -207,4 +208,5 @@
 	[data-melt-calendar-cell][data-outside-month] {
 		@apply pointer-events-none cursor-default opacity-0;
 	}
+	/* purgecss end ignore */
 </style>
