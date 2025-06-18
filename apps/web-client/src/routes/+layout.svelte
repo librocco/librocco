@@ -235,7 +235,7 @@
 	};
 </script>
 
-<div class="bg-base-200 lg:divide-base-content flex h-full lg:divide-x">
+<div class="flex h-full bg-base-200 lg:divide-x lg:divide-base-content">
 	<div class="hidden h-full w-72 lg:block">
 		<Sidebar />
 	</div>
@@ -259,7 +259,7 @@
 
 		<div
 			use:melt={$mobileNavContent}
-			class="bg-base-200 fixed bottom-0 left-0 top-0 z-[200] h-full w-2/3 max-w-md overflow-y-auto"
+			class="fixed bottom-0 left-0 top-0 z-[200] h-full w-2/3 max-w-md overflow-y-auto bg-base-200"
 			transition:fly|global={{
 				x: -350,
 				duration: 300,

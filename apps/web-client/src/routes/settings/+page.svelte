@@ -267,7 +267,7 @@
 							{/each}
 						{:else}
 							<div
-								class="border-base-100 flex h-full items-center justify-center border-2 border-dashed"
+								class="flex h-full items-center justify-center border-2 border-dashed border-base-100"
 								on:drop={handleDrop}
 								role="region"
 								aria-label="Drop zone"

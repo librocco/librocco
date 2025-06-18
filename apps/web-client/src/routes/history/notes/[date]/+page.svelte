@@ -85,17 +85,17 @@
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("history/notes/archive", note.id)}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="block w-full">
-							<a {href} class="entity-list-text-lg text-base-content mb-2 block hover:underline focus:underline">{displayName}</a>
+							<a {href} class="entity-list-text-lg mb-2 block text-base-content hover:underline focus:underline">{displayName}</a>
 
 							<div class="grid w-full grid-cols-4 items-start gap-2 lg:grid-cols-8">
 								<div class="order-1 col-span-2 flex gap-x-0.5 lg:col-span-1">
-									<Library class="text-base-content mr-1" size={24} />
+									<Library class="mr-1 text-base-content" size={24} />
 									<span class="entity-list-text-sm text-base-content">{totalBooks} {t.date.books()}</span>
 								</div>
 
-								<p class="text-base-content order-2 col-span-2 lg:order-3">
+								<p class="order-2 col-span-2 text-base-content lg:order-3">
 									{t.date.total_cover_price()}:
 									<span class="text-base-content">{note.totalCoverPrice.toFixed(2)}</span>
 								</p>
@@ -106,7 +106,7 @@
 									</span>
 								</p>
 
-								<p class="text-base-content order-4 col-span-2">
+								<p class="order-4 col-span-2 text-base-content">
 									{t.date.total_discounted_price()}:
 									<span class="text-base-content">{note.totalDiscountedPrice.toFixed(2)}</span>
 								</p>

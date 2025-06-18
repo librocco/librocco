@@ -185,12 +185,12 @@
 				{#if $open}
 					<ul
 						use:melt={$menu}
-						class="bg-base-100 absolute z-[200] mt-1 max-h-60 w-full overflow-auto rounded-md py-1 text-base shadow-md"
+						class="absolute z-[200] mt-1 max-h-60 w-full overflow-auto rounded-md bg-base-100 py-1 text-base shadow-md"
 						transition:fly|global={{ duration: 150, y: -5 }}
 					>
 						{#each $selectedStates as { publisher, isSelected, isHighlighted }}
 							<li
-								class="text-base-content data-[highlighted]:bg-primary data-[highlighted]:text-primary-content relative cursor-pointer select-none py-2 pl-10 pr-4"
+								class="relative cursor-pointer select-none py-2 pl-10 pr-4 text-base-content data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
 								use:melt={$option(toOption(publisher))}
 							>
 								<span class="block truncate {isSelected ? 'font-medium' : 'font-normal'}">{publisher}</span>

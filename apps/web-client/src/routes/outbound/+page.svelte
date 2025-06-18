@@ -119,19 +119,19 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", note.id)}
 
-						<div class="entity-list-row group">
+						<div class="group entity-list-row">
 							<div class="flex flex-col gap-y-2">
 								<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
 								<div class="flex flex-row gap-x-8 gap-y-2 max-sm:flex-col">
 									<div class="flex gap-x-2">
 										<Layers size={18} />
-										<span class="entity-list-text-sm text-base-content text-sm">{tOutboundPage.stats.books({ bookCount: totalBooks })}</span
+										<span class="entity-list-text-sm text-sm text-base-content">{tOutboundPage.stats.books({ bookCount: totalBooks })}</span
 										>
 									</div>
 
 									{#if note.updatedAt}
-										<div class="text-base-content flex items-center gap-x-2 text-sm">
+										<div class="flex items-center gap-x-2 text-sm text-base-content">
 											<ClockArrowUp size={18} />
 											{tOutboundPage.stats.last_updated()}:
 											{updatedAt}

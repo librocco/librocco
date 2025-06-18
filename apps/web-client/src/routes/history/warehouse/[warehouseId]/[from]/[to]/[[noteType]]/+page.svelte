@@ -126,7 +126,7 @@
 <HistoryPage view="history/date" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
-			<h1 class="text-base-content order-1 whitespace-nowrap text-2xl font-bold leading-7">
+			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-base-content">
 				{displayName || ""}
 				{t.heading.history()}
 			</h1>
@@ -150,7 +150,7 @@
 
 				<p>{t.heading.filter()}:</p>
 				<div id="inbound-outbound-filter" class="inline-block">
-					<div class="divide-base-300 mt-1 flex items-center divide-x overflow-hidden rounded-md border">
+					<div class="mt-1 flex items-center divide-x divide-base-300 overflow-hidden rounded-md border">
 						{#each options as { label, value }}
 							{@const active = value === filter}
 							<button
@@ -180,13 +180,13 @@
 				</div>
 			{:else}
 				<div class="sticky top-0">
-					<h2 class="border-base-300 bg-base-100 border-b px-4 py-4 pt-8 text-xl font-semibold">
+					<h2 class="border-b border-base-300 bg-base-100 px-4 py-4 pt-8 text-xl font-semibold">
 						{t.titles.transactions()}
 					</h2>
 				</div>
-				<ul id="history-table" class="divide-base-300 grid w-full grid-cols-12 divide-y">
+				<ul id="history-table" class="grid w-full grid-cols-12 divide-y divide-base-300">
 					{#each transactions as txn}
-						<li class="entity-list-row text-base-content col-span-12 grid grid-cols-12 items-center gap-4 whitespace-nowrap">
+						<li class="entity-list-row col-span-12 grid grid-cols-12 items-center gap-4 whitespace-nowrap text-base-content">
 							<p data-property="committedAt" class="col-span-12 overflow-hidden font-semibold lg:col-span-2 lg:font-normal">
 								{generateUpdatedAtString(txn.committedAt)}
 							</p>

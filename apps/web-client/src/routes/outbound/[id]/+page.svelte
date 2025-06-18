@@ -442,7 +442,7 @@
 						</select>
 					</div>
 					<button
-						class="btn-primary btn-sm btn xs:block hidden"
+						class="btn-primary btn-sm btn hidden xs:block"
 						use:melt={$confirmDialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
@@ -477,7 +477,7 @@
 									type: "commit"
 								};
 							}}
-							class="text-base-content data-[highlighted]:bg-base-300 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
 						>
 							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">Commit</span>
 						</div>
@@ -485,7 +485,7 @@
 							{...item}
 							use:item.action
 							on:m-click={handlePrintReceipt}
-							class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 						>
 							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">Print</span>
 						</div>
@@ -493,7 +493,7 @@
 							{...item}
 							use:item.action
 							use:melt={$confirmDialogTrigger}
-							class="bg-error data-[highlighted]:bg-error/80 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleDeleteSelf,
@@ -711,8 +711,8 @@
 		<div use:melt={$editBookDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 		<div
 			use:melt={$editBookDialogContent}
-			class="divide-y-secondary bg-base-200 fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
-			overflow-y-auto shadow-lg focus:outline-none"
+			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
+			bg-base-200 shadow-lg focus:outline-none"
 			in:fly|global={{
 				x: 350,
 				duration: 300,
@@ -723,7 +723,7 @@
 				duration: 100
 			}}
 		>
-			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
+			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
 				<div>
 					<h2 use:melt={$editBookDialogTitle} class="text-lg font-medium">{tCommon.edit_book_dialog.title()}</h2>
 					<p use:melt={$editBookDialogDescription} class="leading-normal">
@@ -772,8 +772,8 @@
 		<div use:melt={$customItemDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 		<div
 			use:melt={$customItemDialogContent}
-			class="divide-y-secondary bg-base-200 fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
-			overflow-y-auto shadow-lg focus:outline-none"
+			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
+			bg-base-200 shadow-lg focus:outline-none"
 			in:fly|global={{
 				x: 350,
 				duration: 300,
@@ -784,7 +784,7 @@
 				duration: 100
 			}}
 		>
-			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
+			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
 				<div>
 					<h2 use:melt={$customItemDialogTitle} class="text-lg font-medium">
 						{customItemFormData ? tCommon.edit_custom_item_dialog.title() : tCommon.create_custom_item_dialog.title()}
