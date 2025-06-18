@@ -73,8 +73,8 @@
 </script>
 
 <div class="flex h-full w-full flex-col">
-	<div class="border-base-content relative flex h-16 w-full items-center border-b">
-		<div class="text-primary px-6 py-4">
+	<div class="relative flex h-16 w-full items-center border-b border-base-content">
+		<div class="px-6 py-4 text-primary">
 			<BookCopy strokeWidth={2} size={36} />
 		</div>
 		<!-- TODO: better app name font? -->
@@ -101,10 +101,10 @@
 				<ChevronDown size={16} />
 			</div>
 			<div
-				class="dropdown-content rounded-box bg-base-200 text-base-content top-px mt-16 w-40 overflow-y-auto border border-white/5 shadow-2xl outline-1 outline-black/5"
+				class="dropdown-content top-px mt-16 w-40 overflow-y-auto rounded-box border border-white/5 bg-base-200 text-base-content shadow-2xl outline-1 outline-black/5"
 			>
 				<!-- TODO: iterate list of langs that we have in dicts -->
-				<ul class="menu menu-sm bg-base-200 w-full">
+				<ul class="menu menu-sm w-full bg-base-200">
 					<li>
 						<button class="active">
 							<span class="font-mono font-bold opacity-40">EN</span>
