@@ -1,19 +1,17 @@
 <script lang="ts">
-	import {
-		BookCopy,
-		Library,
-		PackageMinus,
-		Search,
-		Settings,
-		PersonStanding,
-		Book,
-		Truck,
-		ChevronDown,
-		Moon,
-		Sun,
-		Globe,
-		CalendarClock
-	} from "lucide-svelte";
+	import BookCopy from "$lucide/book-copy";
+	import Library from "$lucide/library";
+	import PackageMinus from "$lucide/package-minus";
+	import Search from "$lucide/search";
+	import Settings from "$lucide/settings";
+	import PersonStanding from "$lucide/person-standing";
+	import Book from "$lucide/book";
+	import Truck from "$lucide/truck";
+	import ChevronDown from "$lucide/chevron-down";
+	import Moon from "$lucide/moon";
+	import Sun from "$lucide/sun";
+	import Globe from "$lucide/globe";
+	import CalendarClock from "$lucide/calendar-clock";
 
 	import { LL } from "@librocco/shared/i18n-svelte";
 
@@ -75,8 +73,8 @@
 </script>
 
 <div class="flex h-full w-full flex-col">
-	<div class="relative flex h-16 w-full items-center border-b border-base-content">
-		<div class="px-6 py-4 text-primary">
+	<div class="border-base-content relative flex h-16 w-full items-center border-b">
+		<div class="text-primary px-6 py-4">
 			<BookCopy strokeWidth={2} size={36} />
 		</div>
 		<!-- TODO: better app name font? -->
@@ -103,10 +101,10 @@
 				<ChevronDown size={16} />
 			</div>
 			<div
-				class="dropdown-content top-px mt-16 w-40 overflow-y-auto rounded-box border border-white/5 bg-base-200 text-base-content shadow-2xl outline-1 outline-black/5"
+				class="dropdown-content rounded-box bg-base-200 text-base-content top-px mt-16 w-40 overflow-y-auto border border-white/5 shadow-2xl outline-1 outline-black/5"
 			>
 				<!-- TODO: iterate list of langs that we have in dicts -->
-				<ul class="menu menu-sm w-full bg-base-200">
+				<ul class="menu menu-sm bg-base-200 w-full">
 					<li>
 						<button class="active">
 							<span class="font-mono font-bold opacity-40">EN</span>

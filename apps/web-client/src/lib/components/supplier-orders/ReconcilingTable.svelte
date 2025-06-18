@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { ClockArrowUp, Scan } from "lucide-svelte";
+	import ClockArrowUp from "$lucide/clock-arrow-up";
+	import Scan from "$lucide/scan";
 
 	import { goto } from "$lib/utils/navigation";
 	import type { ReconciliationOrder } from "$lib/db/cr-sqlite/types";

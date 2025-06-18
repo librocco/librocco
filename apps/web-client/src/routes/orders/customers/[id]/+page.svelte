@@ -1,20 +1,19 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import { filter, scan } from "rxjs";
-	import {
-		BookUp,
-		X,
-		Trash2,
-		Mail,
-		FileEdit,
-		ReceiptEuro,
-		UserCircle,
-		MoreVertical,
-		ArrowRight,
-		ClockArrowUp,
-		PencilLine,
-		Phone
-	} from "lucide-svelte";
+	import BookUp from "$lucide/book-up";
+	import X from "$lucide/x";
+	import Trash2 from "$lucide/trash-2";
+	import Mail from "$lucide/mail";
+	import FileEdit from "$lucide/file-edit";
+	import ReceiptEuro from "$lucide/receipt-euro";
+	import UserCircle from "$lucide/user-circle";
+	import MoreVertical from "$lucide/more-vertical";
+	import ArrowRight from "$lucide/arrow-right";
+	import ClockArrowUp from "$lucide/clock-arrow-up";
+	import PencilLine from "$lucide/pencil-line";
+	import Phone from "$lucide/phone";
+
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -233,7 +232,7 @@
 							<div class="flex w-full flex-col gap-y-4 py-6">
 								{#if data?.customer}
 									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-										<div class="max-w-96 flex flex-col gap-y-4">
+										<div class="flex max-w-96 flex-col gap-y-4">
 											<div class="flex gap-x-3">
 												<dt>
 													<span class="sr-only">Customer name</span>

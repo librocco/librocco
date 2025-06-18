@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
 
-	import { QrCode, Loader2 as Loader, Search } from "lucide-svelte";
+	import QrCode from "$lucide/qr-code";
 
 	import type { PageData } from "./$types";
 
@@ -93,8 +93,8 @@
 		<div class="flex w-full items-center justify-between">
 			<div class="flex max-w-md flex-col">
 				<div class="relative block w-full p-2">
-					<div class="flex flex-row items-center gap-x-2 text-base-content">
-						<h1 class="text-2xl font-bold leading-7 text-base-content">{displayName}</h1>
+					<div class="text-base-content flex flex-row items-center gap-x-2">
+						<h1 class="text-base-content text-2xl font-bold leading-7">{displayName}</h1>
 					</div>
 				</div>
 

@@ -5,7 +5,12 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Edit, Table2, Trash2, HousePlus, Layers, SquarePercent } from "lucide-svelte";
+	import Edit from "$lucide/edit";
+	import Table2 from "$lucide/table-2";
+	import Trash2 from "$lucide/trash-2";
+	import HousePlus from "$lucide/house-plus";
+	import Layers from "$lucide/layers";
+	import SquarePercent from "$lucide/square-percent";
 
 	import { entityListView, testId } from "@librocco/shared";
 
@@ -130,14 +135,14 @@
 				{#each warehouses as { id, displayName, discount }}
 					{@const href = appPath("warehouses", id)}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a data-sveltekit-preload-data="hover" {href} class="entity-list-text-lg text-base-content hover:underline focus:underline"
 								>{displayName}</a
 							>
 
-							<div class="flex flex-row gap-x-8 gap-y-2 max-xs:flex-col">
-								<div class="entity-list-text-sm flex items-center gap-x-2 text-sm text-base-content">
+							<div class="max-xs:flex-col flex flex-row gap-x-8 gap-y-2">
+								<div class="entity-list-text-sm text-base-content flex items-center gap-x-2 text-sm">
 									<Layers size={18} />
 
 									<div>
@@ -151,7 +156,7 @@
 								</div>
 
 								{#if discount}
-									<div class="flex items-center gap-x-2 text-sm text-base-content">
+									<div class="text-base-content flex items-center gap-x-2 text-sm">
 										<SquarePercent size={18} />
 
 										<span class="entity-list-text-sm">{discount}% discount</span>
@@ -176,19 +181,19 @@
 									on:m-keydown={() => {
 										warehouseToEdit = { name: displayName, discount, id };
 									}}
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
+									class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Edit aria-hidden size={18} />
 									<span>Edit</span>
 								</div>
 
-								<div {...separator} use:separator.action class="h-[1px] bg-base-300"></div>
+								<div {...separator} use:separator.action class="bg-base-300 h-[1px]"></div>
 
 								<a
 									{href}
 									{...item}
 									use:item.action
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
+									class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Table2 aria-hidden size={18} />
 									<span>View Stock</span>
@@ -204,7 +209,7 @@
 									on:m-keydown={() => {
 										warehouseToDelete = { id, displayName };
 									}}
-									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error"
+									class="data-[highlighted]:bg-error flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Trash2 class="text-error-content" size={18} />
 									<span class="text-error-content">Delete</span>

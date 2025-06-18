@@ -6,7 +6,10 @@
 	import { superForm, numberProxy, stringProxy } from "sveltekit-superforms/client";
 
 	import { createCombobox, melt, type ComboboxOptionProps } from "@melt-ui/svelte";
-	import { Check, ChevronUp, ChevronDown, Euro } from "lucide-svelte";
+	import Check from "$lucide/check";
+	import ChevronUp from "$lucide/chevron-up";
+	import ChevronDown from "$lucide/chevron-down";
+	import Euro from "$lucide/euro";
 
 	import { testId } from "@librocco/shared";
 
@@ -182,12 +185,12 @@
 				{#if $open}
 					<ul
 						use:melt={$menu}
-						class="absolute z-[200] mt-1 max-h-60 w-full overflow-auto rounded-md bg-base-100 py-1 text-base shadow-md"
+						class="bg-base-100 absolute z-[200] mt-1 max-h-60 w-full overflow-auto rounded-md py-1 text-base shadow-md"
 						transition:fly|global={{ duration: 150, y: -5 }}
 					>
 						{#each $selectedStates as { publisher, isSelected, isHighlighted }}
 							<li
-								class="relative cursor-pointer select-none py-2 pl-10 pr-4 text-base-content data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
+								class="text-base-content data-[highlighted]:bg-primary data-[highlighted]:text-primary-content relative cursor-pointer select-none py-2 pl-10 pr-4"
 								use:melt={$option(toOption(publisher))}
 							>
 								<span class="block truncate {isSelected ? 'font-medium' : 'font-normal'}">{publisher}</span>

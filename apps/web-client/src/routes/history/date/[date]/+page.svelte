@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Library, ArrowLeft, ArrowRight } from "lucide-svelte";
+	import Library from "$lucide/library";
+	import ArrowLeft from "$lucide/arrow-left";
+	import ArrowRight from "$lucide/arrow-right";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 	import { invalidate } from "$app/navigation";
 
@@ -117,12 +119,12 @@
 				</h2>
 
 				<div id="history-table" class="w-full">
-					<ul class="w-full divide-y divide-base-300">
+					<ul class="divide-base-300 w-full divide-y">
 						{#each bookList as { isbn, title, quantity, warehouseName, committedAt, noteType, noteName, noteId }}
 							<li
-								class="entity-list-row grid w-full grid-cols-2 items-center gap-x-4 gap-y-3 py-6 text-base-content sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
+								class="entity-list-row text-base-content grid w-full grid-cols-2 items-center gap-x-4 gap-y-3 py-6 sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
 							>
-								<p data-property="isbn" class="text-xl font-medium leading-none text-base-content lg:col-span-3 xl:col-span-2">{isbn}</p>
+								<p data-property="isbn" class="text-base-content text-xl font-medium leading-none lg:col-span-3 xl:col-span-2">{isbn}</p>
 								<p
 									data-property="title"
 									class="col-span-2 overflow-hidden whitespace-nowrap text-xl font-medium lg:col-span-5 xl:col-span-3"
@@ -145,7 +147,7 @@
 										href={appPath("history/notes/archive", noteId)}
 										class="{noteType === 'outbound'
 											? 'text-error'
-											: 'text-success'} mx-4 flex items-center rounded-sm border bg-base-200 px-3 py-0.5 hover:font-semibold"
+											: 'text-success'} bg-base-200 mx-4 flex items-center rounded-sm border px-3 py-0.5 hover:font-semibold"
 									>
 										{#if noteType === "inbound"}
 											<p><ArrowLeft size={16} /></p>
@@ -193,7 +195,7 @@
 		@apply pointer-events-none opacity-40;
 	}
 	[data-melt-calendar-cell][data-unavailable] {
-		@apply pointer-events-none text-error line-through;
+		@apply text-error pointer-events-none line-through;
 	}
 
 	[data-melt-calendar-cell][data-selected] {

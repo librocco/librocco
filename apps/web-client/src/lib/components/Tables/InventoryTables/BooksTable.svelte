@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Writable } from "svelte/store";
-	import { ChevronDown, ChevronUp } from "lucide-svelte";
+	import ChevronDown from "$lucide/chevron-down";
+	import ChevronUp from "$lucide/chevron-up";
 
 	import { type createTable } from "$lib/actions";
 

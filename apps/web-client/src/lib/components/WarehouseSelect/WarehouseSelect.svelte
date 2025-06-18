@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount, tick } from "svelte";
+	import { createEventDispatcher } from "svelte";
 
 	import { createSelect } from "@melt-ui/svelte";
-	import { Check, ChevronsUpDown, RefreshCcwDot } from "lucide-svelte";
+	import Check from "$lucide/check";
+	import ChevronsUpDown from "$lucide/chevrons-up-down";
+	import RefreshCcwDot from "$lucide/refresh-ccw-dot";
 
 	import { testId } from "@librocco/shared";
 
@@ -62,7 +64,7 @@
 <button
 	data-testid={testId("dropdown-control")}
 	data-open={open}
-	class="border-base flex w-full gap-x-2 rounded border-2 bg-transparent p-2 shadow focus:border-primary focus:outline-none focus:ring-0"
+	class="border-base focus:border-primary flex w-full gap-x-2 rounded border-2 bg-transparent p-2 shadow focus:outline-none focus:ring-0"
 	{...$trigger}
 	use:trigger
 	aria-label="Warehouse"
@@ -80,14 +82,14 @@
 {#if $open}
 	<div
 		data-testid={testId("dropdown-menu")}
-		class="z-10 flex max-h-[300px] flex-col gap-y-1.5 overflow-y-auto rounded-lg bg-base-100 p-1 text-base-content shadow-md focus:!ring-0"
+		class="bg-base-100 text-base-content z-10 flex max-h-[300px] flex-col gap-y-1.5 overflow-y-auto rounded-lg p-1 shadow-md focus:!ring-0"
 		{...$menu}
 		use:menu
 	>
 		{#each options as warehouse}
 			{@const { label, value } = warehouse}
 			<div
-				class="relative flex cursor-pointer items-center justify-between rounded p-1 focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
+				class="data-[highlighted]:bg-primary data-[highlighted]:text-primary-content relative flex cursor-pointer items-center justify-between rounded p-1 focus:z-10"
 				{...$option(warehouse)}
 				use:option
 			>

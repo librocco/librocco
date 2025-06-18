@@ -13,7 +13,9 @@
 </script>
 
 <script lang="ts">
-	import { Building2, Hash, CalendarClock } from "lucide-svelte";
+	import Building2 from "$lucide/building-2";
+	import Hash from "$lucide/hash";
+	import CalendarClock from "$lucide/calendar-clock";
 	import type { Writable } from "svelte/store";
 
 	import { HeadCol, BodyMultiRow } from "../Cells";

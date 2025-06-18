@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { superForm } from "sveltekit-superforms/client";
-	import { QrCode } from "lucide-svelte";
+	import QrCode from "$lucide/qr-code";
 
 	import { testId } from "@librocco/shared";
 
