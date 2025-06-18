@@ -455,7 +455,7 @@
 							};
 						}}
 					>
-						<span class="button-text">Commit</span>
+						<span class="button-text">{tOutbound.labels.commit()}</span>
 					</button>
 
 					<DropdownWrapper let:item>
@@ -473,7 +473,7 @@
 							}}
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
 						>
-							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">Commit</span>
+							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tOutbound.labels.commit()}</span>
 						</div>
 						<div
 							{...item}
@@ -481,7 +481,7 @@
 							on:m-click={handlePrintReceipt}
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 						>
-							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">Print</span>
+							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tOutbound.labels.print()}</span>
 						</div>
 						<div
 							{...item}
@@ -539,7 +539,7 @@
 			<div class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/4">
 					<!-- Start entity list placeholder -->
-					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
+					<PlaceholderBox title={tOutbound.placeholder.scan_title()} description={tOutbound.placeholder.scan_description()}>
 						<QrCode slot="icon" />
 					</PlaceholderBox>
 					<!-- End entity list placeholder -->
@@ -548,7 +548,7 @@
 							use:melt={$customItemDialogTrigger}
 							on:m-click={() => openCustomItemForm()}
 							on:m-keydown={() => openCustomItemForm()}
-							class="btn-neutral btn">Custom item</button
+							class="btn-neutral btn">{tOutbound.labels.custom_item()}</button
 						>
 					</div>
 				</div>
@@ -628,7 +628,7 @@
 						use:melt={$customItemDialogTrigger}
 						on:m-click={() => openCustomItemForm()}
 						on:m-keydown={() => openCustomItemForm()}
-						class="btn-neutral btn">Custom item</button
+						class="btn-neutral btn">{tOutbound.labels.custom_item()}</button
 					>
 				</div>
 

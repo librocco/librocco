@@ -66,6 +66,7 @@
 
 	let dialogContent: DialogContent | null = null;
 	$: tOutboundPage = $LL.sale_page;
+	$: tCommon = $LL.common;
 </script>
 
 <Page title="Outbound" view="outbound" {db} {plugins}>
@@ -96,7 +97,7 @@
 					<div class="flex grow justify-center">
 						<div class="mx-auto max-w-xl translate-y-1/2">
 							<!-- Start entity list placeholder -->
-							<PlaceholderBox title="No open sales" description="Get started by adding a new sale">
+							<PlaceholderBox title={tOutboundPage.labels.no_open_sales()} description={tOutboundPage.labels.get_started()}>
 								<FilePlus slot="icon" />
 								<button slot="actions" on:click={handleCreateNote} class="btn-primary btn w-full">
 									{tOutboundPage.labels.new_sale()}
