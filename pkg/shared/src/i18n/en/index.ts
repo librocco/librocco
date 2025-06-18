@@ -136,8 +136,14 @@ const inventory_page = {
 		}
 	},
 	warehouses_tab: {
+		title: "Warehouses",
 		labels: {
-			button_create_purchase: "New purchase"
+			button_create_purchase: "New purchase",
+			create_warehouse: "Create warehouse"
+		},
+		placeholder: {
+			title: "No warehouses",
+			description: "Get started by creating a warehouse"
 		}
 	}
 };
@@ -178,6 +184,10 @@ const purchase_note = {
 		edit_row: "Edit row",
 		print_book_label: "Print book label",
 		delete_row: "Delete row"
+	},
+	placeholder: {
+		scan_title: "Scan to add books",
+		scan_description: "Plugin your barcode scanner and pull the trigger"
 	}
 };
 
@@ -299,13 +309,20 @@ const suppliers_page = {
 };
 
 const warehouse_list_page = {
+	title: "Warehouses",
 	stats: {
 		books: "books",
 		discount: "discount"
 	},
 	labels: {
 		new_note: "New note",
-		view_stock: "View Stock"
+		view_stock: "View Stock",
+		edit: "Edit",
+		delete: "Delete"
+	},
+	placeholder: {
+		title: "No warehouses",
+		description: "Get started by creating a warehouse"
 	}
 };
 
@@ -329,6 +346,10 @@ const warehouse_page = {
 		print_book_label: "Print book label",
 		edit_book_details: "Edit book details",
 		manually_edit_book_details: "Manually edit book details"
+	},
+	placeholder: {
+		title: "Add new purchase note",
+		description: "Get started by adding a new note"
 	}
 };
 
