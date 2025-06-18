@@ -19,7 +19,8 @@ const search = {
 	empty: {
 		title: "Search for stock",
 		description: "Get started by searching by title, author, ISBN"
-	}
+	},
+	placeholder: "Search stock by ISBN"
 };
 
 const history_page = {
@@ -375,7 +376,16 @@ const common = {
 	create_database_dialog: {
 		title: "Create new database",
 		description: "Please type in the name for the new database"
-	}
+	},
+	actions: {
+		cancel: "Cancel",
+		confirm: "Confirm"
+	},
+	placeholders: {
+		no_results: "No results",
+		search_found_no_results: "Search found no results"
+	},
+	loading: "Loading"
 };
 const sale_note = {
 	delete_dialog: {
@@ -421,7 +431,14 @@ const stock_page = {
 		edit_book_details: "Edit book details",
 		manually_edit_book_details: "Manually edit book details",
 		edit_row: "Edit row",
-		print_book_label: "Print book label"
+		print_book_label: "Print book label",
+		popover_control: "Row actions"
+	},
+	placeholder_box: {
+		no_results: {
+			title: "No results",
+			description: "Search found no results"
+		}
 	}
 };
 
@@ -599,6 +616,41 @@ const misc_components = {
 	}
 };
 
+const layout = {
+	mobile_nav: {
+		trigger: {
+			aria_label: "Open mobile navigation"
+		},
+		dialog: {
+			title: "Mobile Navigation",
+			description: "Navigate through the application"
+		}
+	},
+	sync_dialog: {
+		title: "Sync in progress",
+		description: {
+			in_progress: "The initial DB sync is in progress. This might take a while",
+			progress: "Progress ({nProcessed}/{nTotal}):",
+			warning: "Please don't navigate away while the sync is in progress as it will result in broken DB and the sync will need to be restarted."
+		}
+	},
+	error_dialog: {
+		schema_mismatch: {
+			title: "Error: DB Schema mismatch",
+			description: "Your DB's schema version doesn't match the latest schema version. Click automigrate to migrate to the latest version.",
+			latest_version: "Latest schema version: {wantVersion}",
+			your_version: "Your DB schema version: {gotVersion}",
+			button: "Automigrate"
+		},
+		corrupted: {
+			title: "Error: DB corrupted",
+			description: "The only way to use the app seems to be to delete it and start fresh.",
+			note: "Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page (after reinitialisation)",
+			button: "Click to delete the DB"
+		}
+	}
+};
+
 const en = {
 	nav,
 	search,
@@ -622,7 +674,8 @@ const en = {
 	order_list_page,
 	supplier_orders_component,
 	table_components,
-	misc_components
+	misc_components,
+	layout
 } satisfies BaseTranslation;
 
 export default en;

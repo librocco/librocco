@@ -92,15 +92,15 @@
 		forceVisible: true
 	});
 
-	$: ({ search: tSearch } = $LL);
+	$: ({ search: tSearch, stock_page: tStockPage, common: tCommon } = $LL);
 </script>
 
-<Page title="Search" view="stock" {db} {plugins}>
+<Page title={tSearch.title()} view="stock" {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col gap-y-6">
 		<div class="p-4">
 			<ScannerForm
 				bind:input={searchField}
-				placeholder="Search stock by ISBN"
+				placeholder={tSearch.placeholder()}
 				data={defaults(zod(scannerSchema))}
 				options={{
 					SPA: true,
@@ -136,7 +136,7 @@
 			{:then}
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/4">
-						<PlaceholderBox title="No results" description="Search found no results">
+						<PlaceholderBox title={tCommon.placeholders.no_results()} description={tCommon.placeholders.search_found_no_results()}>
 							<Search slot="icon" />
 						</PlaceholderBox>
 					</div>
@@ -179,7 +179,7 @@
 													use:trigger.action
 													class="btn-neutral btn-outline btn-sm btn px-0.5"
 												>
-													<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
+													<span class="sr-only">{tStockPage.labels.edit_row()} {rowIx}</span>
 													<span class="aria-hidden">
 														<MoreVertical />
 													</span>
@@ -194,7 +194,7 @@
 														}}
 														class="btn-secondary btn-sm btn"
 													>
-														<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
+														<span class="sr-only">{tStockPage.labels.edit_row()} {rowIx}</span>
 														<span class="aria-hidden">
 															<FileEdit />
 														</span>
@@ -205,7 +205,7 @@
 														data-testid={testId("print-book-label")}
 														on:click={handlePrintLabel(row)}
 													>
-														<span class="sr-only">{$LL.stock_page.labels.print_book_label()} {rowIx}</span>
+														<span class="sr-only">{tStockPage.labels.print_book_label()} {rowIx}</span>
 														<span class="aria-hidden">
 															<Printer />
 														</span>
@@ -246,9 +246,9 @@
 		>
 			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
 				<div>
-					<h2 use:melt={$title} class="text-lg font-medium">{$LL.stock_page.labels.edit_book_details()}</h2>
+					<h2 use:melt={$title} class="text-lg font-medium">{tStockPage.labels.edit_book_details()}</h2>
 					<p use:melt={$description} class="leading-normal">
-						{$LL.stock_page.labels.manually_edit_book_details()}
+						{tStockPage.labels.manually_edit_book_details()}
 					</p>
 				</div>
 				<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
