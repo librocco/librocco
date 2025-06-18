@@ -280,13 +280,13 @@
 					</ul>
 
 					<div class="flex justify-end gap-x-2 px-4 py-6">
-						<button on:click={nukeAndResyncDB} type="button" class="btn-secondary btn"> Nuke and resync </button>
+						<button on:click={nukeAndResyncDB} type="button" class="btn-secondary btn">{tSettings.actions.nuke_and_resync()}</button>
 						<button on:click={toggleImport} type="button" class="btn-secondary btn">
-							{importOn ? tCommon.actions.cancel() : "Import"}
+							{importOn ? tCommon.actions.cancel() : tCommon.actions.import()}
 						</button>
-						<button on:click={toggleSelection} type="button" class="btn {!selectionOn ? 'btn-secondary btn-outline' : 'btn-primary'}"
-							>Select</button
-						>
+						<button on:click={toggleSelection} type="button" class="btn {!selectionOn ? 'btn-secondary btn-outline' : 'btn-primary'}">
+							{tCommon.actions.select()}
+						</button>
 						<button
 							use:melt={$trigger}
 							on:m-click={() => {
