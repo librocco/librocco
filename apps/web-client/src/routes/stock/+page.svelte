@@ -7,7 +7,11 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Search, FileEdit, X, Printer, MoreVertical } from "lucide-svelte";
+	import Search from "$lucide/search";
+	import FileEdit from "$lucide/file-edit";
+	import X from "$lucide/x";
+	import Printer from "$lucide/printer";
+	import MoreVertical from "$lucide/more-vertical";
 
 	import type { BookData } from "@librocco/shared";
 	import { testId } from "@librocco/shared";
@@ -236,15 +240,15 @@
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 		<div
 			use:melt={$content}
-			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
-				bg-base-200 shadow-lg focus:outline-none"
+			class="divide-y-secondary bg-base-200 fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
+				overflow-y-auto shadow-lg focus:outline-none"
 			transition:fly|global={{
 				x: 350,
 				duration: 300,
 				opacity: 1
 			}}
 		>
-			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
+			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
 				<div>
 					<h2 use:melt={$title} class="text-lg font-medium">{$LL.stock_page.labels.edit_book_details()}</h2>
 					<p use:melt={$description} class="leading-normal">

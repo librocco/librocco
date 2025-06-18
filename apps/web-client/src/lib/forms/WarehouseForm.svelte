@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Percent } from "lucide-svelte";
+	import Percent from "$lucide/percent";
 	import { superForm, numberProxy } from "sveltekit-superforms/client";
 
 	import { Input } from "$lib/components/FormControls";

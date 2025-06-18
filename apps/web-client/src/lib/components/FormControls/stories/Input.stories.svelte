@@ -10,7 +10,7 @@
 
 <script lang="ts">
 	import { Story } from "@storybook/addon-svelte-csf";
-	import { Mail } from "lucide-svelte";
+	import Mail from "$lucide/mail";
 </script>
 
 <Story name="Default">

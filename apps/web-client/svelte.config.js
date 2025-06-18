@@ -13,7 +13,8 @@ const config = {
 	preprocess: sequence([preprocess(), preprocessMeltUI()]),
 	kit: {
 		alias: {
-			"$i18n/*": "./src/i18n/*"
+			"$i18n/*": "./src/i18n/*",
+			$lucide: "node_modules/lucide-svelte/dist/icons"
 		},
 		serviceWorker: {
 			register: false
