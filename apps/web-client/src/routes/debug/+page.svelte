@@ -288,7 +288,7 @@
 </script>
 
 <div id="content" class="h-full w-full overflow-y-auto">
-	<header class="border-base-content flex h-16 items-center justify-between border-b">
+	<header class="flex h-16 items-center justify-between border-b border-base-content">
 		<h2 class="pl-[70px] text-lg font-medium lg:pl-5">Debug</h2>
 	</header>
 

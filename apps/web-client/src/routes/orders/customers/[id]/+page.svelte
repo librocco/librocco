@@ -232,7 +232,7 @@
 							<div class="flex w-full flex-col gap-y-4 py-6">
 								{#if data?.customer}
 									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-										<div class="flex max-w-96 flex-col gap-y-4">
+										<div class="max-w-96 flex flex-col gap-y-4">
 											<div class="flex gap-x-3">
 												<dt>
 													<span class="sr-only">Customer name</span>

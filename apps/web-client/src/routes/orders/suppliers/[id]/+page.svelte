@@ -98,7 +98,7 @@
 			<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 				<div class="card h-full">
 					<div class="card-body gap-y-2 p-0">
-						<div class="bg-base-100 sticky top-0 flex flex-col gap-y-2 pb-3">
+						<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
 							<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
 								<h2 class="prose">#{supplier?.id}</h2>
 							</div>
@@ -108,7 +108,7 @@
 							<dl class="flex flex-col">
 								<div class="flex w-full flex-col gap-y-4 py-6">
 									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-										<div class="flex max-w-96 flex-col gap-y-4">
+										<div class="max-w-96 flex flex-col gap-y-4">
 											<div class="flex gap-x-3">
 												<dt>
 													<span class="sr-only">{t.details.supplier_name()}</span>
@@ -179,7 +179,7 @@
 								</thead>
 								<tbody>
 									{#each assignedPublishers as publisher}
-										<tr class="hover focus-within:bg-base-200 flex w-full justify-between">
+										<tr class="hover flex w-full justify-between focus-within:bg-base-200">
 											<td class="px-2">{publisher}</td>
 											<td class="px-2 text-end"
 												><button
@@ -270,7 +270,7 @@
 							</thead>
 							<tbody>
 								{#each assignedPublishers as publisher}
-									<tr class="hover focus-within:bg-base-200 flex w-full justify-between">
+									<tr class="hover flex w-full justify-between focus-within:bg-base-200">
 										<td class="px-2">{publisher}</td>
 										<td class="px-2 text-end"
 											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"

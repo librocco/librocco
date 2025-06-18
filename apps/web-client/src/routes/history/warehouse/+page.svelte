@@ -59,7 +59,7 @@
 					{@const href = appPath("history/warehouse", warehouse.id)}
 					{@const warehouseDiscount = warehouse.discount}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
@@ -78,7 +78,7 @@
 
 								{#if warehouseDiscount}
 									<div class="flex items-center gap-x-1">
-										<div class="border-base-content border p-[1px]">
+										<div class="border border-base-content p-[1px]">
 											<Percent class="text-base-content" size={14} />
 										</div>
 										<span class="entity-list-text-sm text-base-content">{warehouseDiscount}% {t.stats.discount()}</span>

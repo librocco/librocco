@@ -80,8 +80,8 @@
 			{/key}
 		</div>
 
-		<div class="text-base-content w-full">
-			<h1 class="text-base-content mb-1 mt-2 text-sm font-semibold leading-none">{isbn}</h1>
+		<div class="w-full text-base-content">
+			<h1 class="mb-1 mt-2 text-sm font-semibold leading-none text-base-content">{isbn}</h1>
 			{#if bookData}
 				<p class="mb-1 min-h-[32px] text-2xl">
 					{#if bookData.title}<span class="font-bold">{bookData.title}, </span>{/if}
@@ -98,8 +98,8 @@
 
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 			<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
-				<div class="border-base-300 border-b">
-					<h2 class="border-base-300 border-b px-4 py-4 pt-8 text-xl font-semibold">{t.titles.stock()}</h2>
+				<div class="border-b border-base-300">
+					<h2 class="border-b border-base-300 px-4 py-4 pt-8 text-xl font-semibold">{t.titles.stock()}</h2>
 
 					<div data-testid={testId("history-stock-report")} class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
 						{#each stock as s}
@@ -113,7 +113,7 @@
 									<span data-property="warehouse" class="entity-list-text-sm mr-4">{s.warehouseName}</span>
 								</p>
 
-								<p data-property="quantity" class="border-base-300 bg-base-200 rounded border px-2 py-0.5">{s.quantity}</p>
+								<p data-property="quantity" class="rounded border border-base-300 bg-base-200 px-2 py-0.5">{s.quantity}</p>
 							</div>
 						{/each}
 					</div>
@@ -127,14 +127,14 @@
 					</div>
 				{:else}
 					<div class="sticky top-0">
-						<h2 class="border-base-300 bg-base-100 border-b px-4 py-4 pt-8 text-xl font-semibold">
+						<h2 class="border-b border-base-300 bg-base-100 px-4 py-4 pt-8 text-xl font-semibold">
 							{$LL.history_page.isbn_tab.titles.transactions()}
 						</h2>
 					</div>
-					<ul id="history-table" class="divide-base-300 grid w-full grid-cols-12 divide-y">
+					<ul id="history-table" class="grid w-full grid-cols-12 divide-y divide-base-300">
 						{#each transactions as { quantity, noteId, noteName, noteType, committedAt, warehouseName }}
 							<li class="col-span-12 grid grid-cols-12">
-								<div class="entity-list-row text-base-content col-span-8 grid grid-cols-8 items-center">
+								<div class="entity-list-row col-span-8 grid grid-cols-8 items-center text-base-content">
 									<p data-property="committedAt" class="col-span-2">
 										{generateUpdatedAtString(committedAt)}
 									</p>
@@ -172,14 +172,14 @@
 
 {#if $open && entries?.length}
 	<div use:dropdown>
-		<ul data-testid={testId("search-completions-container")} class="bg-base-100 w-full divide-y overflow-y-auto rounded border shadow-2xl">
+		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-base-100 shadow-2xl">
 			{#each entries as { isbn, title, authors, year, publisher }}
 				<li
 					data-testid={testId("search-completion")}
 					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
 					class="w-full cursor-pointer px-4 py-3"
 				>
-					<p data-property="isbn" class="text-base-content mt-2 text-sm font-semibold leading-none">{isbn}</p>
+					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-base-content">{isbn}</p>
 					<p data-property="title" class="text-xl font-medium">{title}</p>
 					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
 				</li>
