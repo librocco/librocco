@@ -1,3 +1,4 @@
+#@ load("github.lib.yml", "checkout")
 #@ load("cache.lib.yml", "cache_node")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
@@ -27,7 +28,7 @@ jobs:
         shardIndex: [1, 2, 3, 4, 5, 6]
         shardTotal: [6]
     steps:
-      - uses: actions/checkout@v4
+      -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -59,7 +60,7 @@ jobs:
       contents: read
       checks: write
     steps:
-      - uses: actions/checkout@v4
+      -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -82,7 +83,7 @@ jobs:
       contents: read
       checks: write
     steps:
-      - uses: actions/checkout@v4
+      -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -97,9 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -114,7 +113,7 @@ jobs:
     name: Deploy web-client app to bunny cdn
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -155,7 +154,7 @@ jobs:
     needs: [e2e-test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
