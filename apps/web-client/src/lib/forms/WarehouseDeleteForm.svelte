@@ -46,7 +46,9 @@
 	</div>
 
 	<div class="flex w-full justify-end gap-x-2 p-4">
-		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">{$LL.forms.warehouse_delete.labels.cancel_button()}</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button"
+			>{$LL.forms.warehouse_delete.labels.cancel_button()}</button
+		>
 		<button class="btn-error btn" type="submit">{$LL.forms.warehouse_delete.labels.confirm_button()}</button>
 	</div>
 </form>

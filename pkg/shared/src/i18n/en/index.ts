@@ -752,7 +752,8 @@ const layout = {
 		description: {
 			in_progress: "The initial DB sync is in progress. This might take a while",
 			progress: "Progress ({nProcessed}/{nTotal}):",
-			warning: "Please don't navigate away while the sync is in progress as it will result in broken DB and the sync will need to be restarted."
+			warning:
+				"Please don't navigate away while the sync is in progress as it will result in broken DB and the sync will need to be restarted."
 		}
 	},
 	error_dialog: {

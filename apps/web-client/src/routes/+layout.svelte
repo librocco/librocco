@@ -246,8 +246,8 @@
 	<!-- flex flex-1 flex-col justify-items-center overflow-y-auto -->
 	<main class="h-full w-full overflow-y-auto">
 		{#if !$mobileNavOpen}
-			<button 
-				use:melt={$mobileNavTrigger} 
+			<button
+				use:melt={$mobileNavTrigger}
 				class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden"
 				aria-label={tLayout.mobile_nav.trigger.aria_label()}
 			>

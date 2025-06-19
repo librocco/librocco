@@ -68,7 +68,9 @@
 
 	<div class="stretch flex w-full gap-x-4 p-6">
 		<div class="basis-fit">
-			<button on:click={onCancel} class="btn-secondary btn-outline btn-lg btn" type="button">{$LL.forms.supplier_meta.labels.cancel_button()}</button>
+			<button on:click={onCancel} class="btn-secondary btn-outline btn-lg btn" type="button"
+				>{$LL.forms.supplier_meta.labels.cancel_button()}</button
+			>
 		</div>
 		<div class="grow">
 			<button type="submit" class="btn-primary btn-lg btn w-full" disabled={!hasChanges}>

@@ -47,9 +47,12 @@
 		<div class="flex items-center gap-x-2">
 			<span class="w-10 text-center {$active ? '' : 'font-bold text-error'}">{$LL.forms.sync_settings.labels.connection_status.off()}</span>
 			<input type="checkbox" bind:checked={$active} class="toggle" />
-			<span class="w-10 text-center {$active ? 'font-bold text-success' : ''}">{$LL.forms.sync_settings.labels.connection_status.on()}</span>
+			<span class="w-10 text-center {$active ? 'font-bold text-success' : ''}">{$LL.forms.sync_settings.labels.connection_status.on()}</span
+			>
 		</div>
 
-		<button type="submit" class="btn-primary btn disabled:btn-disabled" disabled={!hasChanges}>{$LL.forms.sync_settings.labels.save_reload()}</button>
+		<button type="submit" class="btn-primary btn disabled:btn-disabled" disabled={!hasChanges}
+			>{$LL.forms.sync_settings.labels.save_reload()}</button
+		>
 	</div>
 </form>
