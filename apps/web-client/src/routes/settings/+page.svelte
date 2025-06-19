@@ -163,7 +163,7 @@
 		// Reset the sync
 		syncActive.set(true);
 	};
-	
+
 	$: ({ settings_page: tSettings, common: tCommon } = $LL);
 </script>
 

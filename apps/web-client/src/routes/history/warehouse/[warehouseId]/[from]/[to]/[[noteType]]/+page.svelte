@@ -171,10 +171,7 @@
 			{#if !transactions?.length}
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
-						<PlaceholderBox
-							title={t.placeholder.title()}
-							description={t.placeholder.description()}
-						/>
+						<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()} />
 					</div>
 				</div>
 			{:else}

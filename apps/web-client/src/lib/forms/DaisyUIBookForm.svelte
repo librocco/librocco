@@ -38,7 +38,15 @@
 	<div class="flex justify-between">
 		<label class="input-bordered input flex items-center gap-2">
 			{$LL.forms.daisy_ui_book_form.labels.isbn()}
-			<input bind:value={$formStore.isbn} name="isbn" type="text" class="grow" placeholder={$LL.forms.daisy_ui_book_form.placeholders.isbn()} {...$constraints.isbn} disabled />
+			<input
+				bind:value={$formStore.isbn}
+				name="isbn"
+				type="text"
+				class="grow"
+				placeholder={$LL.forms.daisy_ui_book_form.placeholders.isbn()}
+				{...$constraints.isbn}
+				disabled
+			/>
 		</label>
 		<button disabled={!isExtensionAvailable} type="button" class="btn-secondary btn" on:click={() => onFetch($formStore.isbn, formStore)}>
 			{$LL.forms.daisy_ui_book_form.labels.fill_details()}

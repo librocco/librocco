@@ -48,13 +48,23 @@
 				</span>
 				<span class="input-bordered input flex items-center gap-2">
 					<Euro class="text-base-content/50" />
-					<input bind:value={$priceProxy} name="price" placeholder={$LL.forms.custom_item_form.placeholders.price()} type="number" step="any" required class="w-1/2" />
+					<input
+						bind:value={$priceProxy}
+						name="price"
+						placeholder={$LL.forms.custom_item_form.placeholders.price()}
+						type="number"
+						step="any"
+						required
+						class="w-1/2"
+					/>
 				</span>
 			</label>
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">{$LL.forms.custom_item_form.labels.cancel_button()}</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button"
+			>{$LL.forms.custom_item_form.labels.cancel_button()}</button
+		>
 		<button class="btn-primary btn disabled:bg-gray-400" type="submit">{$LL.forms.custom_item_form.labels.save_button()}</button>
 	</div>
 </form>

@@ -43,7 +43,9 @@
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">{$LL.forms.database_create.labels.cancel_button()}</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button"
+			>{$LL.forms.database_create.labels.cancel_button()}</button
+		>
 		<button class="btn-primary btn disabled:bg-gray-400" type="submit">{$LL.forms.database_create.labels.save_button()}</button>
 	</div>
 </form>

@@ -129,7 +129,10 @@
 		{#if !$search.length && !entries?.length}
 			<div class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/4">
-					<PlaceholderBox title={$LL.books_page.placeholder.empty_database.title()} description={$LL.books_page.placeholder.empty_database.description()}>
+					<PlaceholderBox
+						title={$LL.books_page.placeholder.empty_database.title()}
+						description={$LL.books_page.placeholder.empty_database.description()}
+					>
 						<Search slot="icon" />
 					</PlaceholderBox>
 				</div>
@@ -146,7 +149,10 @@
 			{:then}
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/4">
-						<PlaceholderBox title={$LL.books_page.placeholder.no_results.title()} description={$LL.books_page.placeholder.no_results.description()}>
+						<PlaceholderBox
+							title={$LL.books_page.placeholder.no_results.title()}
+							description={$LL.books_page.placeholder.no_results.description()}
+						>
 							<Search slot="icon" />
 						</PlaceholderBox>
 					</div>
