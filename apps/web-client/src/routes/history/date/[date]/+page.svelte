@@ -168,6 +168,9 @@
 	</div>
 </HistoryPage>
 
+<!-- * Svelte check is not aware of the classes that melt adds to the calendar components
+ * so in this case we know more than it, and should tell it to quiet down-->
+<!-- svelte-ignore css-unused-selector -->
 <style lang="postcss">
 	[data-melt-calendar-prevbutton][data-disabled] {
 		@apply pointer-events-none rounded-lg p-1 opacity-40;
