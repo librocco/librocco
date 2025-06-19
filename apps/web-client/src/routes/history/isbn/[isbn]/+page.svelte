@@ -73,7 +73,7 @@
 		<div>
 			<Search />
 			{#key isbn}
-				<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" class="w-full" />
+				<input data-testid={testId("search-input")} use:input placeholder="Search" class="w-full" />
 			{/key}
 		</div>
 
@@ -171,14 +171,16 @@
 	<div use:dropdown>
 		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-base-100 shadow-2xl">
 			{#each entries as { isbn, title, authors, year, publisher }}
-				<li
-					data-testid={testId("search-completion")}
-					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
-					class="w-full cursor-pointer px-4 py-3"
-				>
-					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-base-content">{isbn}</p>
-					<p data-property="title" class="text-xl font-medium">{title}</p>
-					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
+				<li>
+					<button
+						data-testid={testId("search-completion")}
+						on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
+						class="w-full cursor-pointer px-4 py-3"
+					>
+						<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-base-content">{isbn}</p>
+						<p data-property="title" class="text-xl font-medium">{title}</p>
+						<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
+					</button>
 				</li>
 			{/each}
 		</ul>
