@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd "$(dirname "$0")"/..
+
 mkdir -p dist
 
 # This env variable is required by the crsql build process
@@ -11,10 +13,9 @@ export CRSQLITE_COMMIT_SHA="$(git rev-parse HEAD)"
 cd ../emsdk
 ./emsdk install 3.1.45
 ./emsdk activate 3.1.45
-source ./emsdk_env.sh
+export PATH=$PWD/upstream/emscripten:$PATH
 
 cd ../wa-sqlite
 make
 cp dist/crsqlite.wasm ../crsqlite-wasm/dist/crsqlite.wasm
 cp dist/crsqlite.mjs ../crsqlite-wasm/src/crsqlite.mjs
-
