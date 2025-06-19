@@ -118,7 +118,7 @@
 		{:else if !entries.length}
 			<div class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/2">
-					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
+					<PlaceholderBox title={$LL.purchase_note.placeholder.scan_title()} description={$LL.purchase_note.placeholder.scan_description()}>
 						<QrCode slot="icon" />
 					</PlaceholderBox>
 				</div>
