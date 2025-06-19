@@ -44,6 +44,9 @@ const history_page = {
 			transactions: "Transactions",
 			history: "History"
 		},
+		search: {
+			placeholder: "Search"
+		},
 		isbn_id: {
 			titles: {
 				stock: "Stock"
@@ -81,6 +84,10 @@ const history_page = {
 				edited_by: "edited_by",
 				out_of_print: "out_of_print"
 			}
+		},
+		placeholder: {
+			title: "No notes found",
+			description: "No notes seem to have been committed on that date"
 		}
 	},
 	warehouse_tab: {
@@ -111,6 +118,10 @@ const history_page = {
 			},
 			titles: {
 				transactions: "Transactions"
+			},
+			placeholder: {
+				title: "No transactions found",
+				description: "There seem to be no transactions going in/out for the selected date range"
 			}
 		},
 		stats: {

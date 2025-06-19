@@ -75,7 +75,7 @@
 			{#if !notes.length}
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
-						<PlaceholderBox title="No notes found" description="No notes seem to have been committed on that date" />
+						<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()} />
 					</div>
 				</div>
 			{:else}
