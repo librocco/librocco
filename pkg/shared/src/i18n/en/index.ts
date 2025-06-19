@@ -355,6 +355,47 @@ const warehouse_page = {
 	}
 };
 
+const books_page = {
+	title: "Known books",
+	placeholder: {
+		empty_database: {
+			title: "No results",
+			description: "Book database is empty. Start by adding some books to stock."
+		},
+		no_results: {
+			title: "No results",
+			description: "Search found no results"
+		}
+	},
+	labels: {
+		popover_control: "Row actions",
+		edit_row: "Edit row",
+		print_book_label: "Print book label",
+		edit_book_details: "Edit book details",
+		manually_edit_book_details: "Manually edit book details"
+	}
+};
+
+const debug_page = {
+	title: "Debug",
+	actions: {
+		populate_database: "Populate Database",
+		reset_database: "Reset Database",
+		upsert_100_books: "Upsert 100 Books",
+		run_query: "Run Query",
+		executing: "Executing..."
+	},
+	query_interface: {
+		title: "Database Query Interface",
+		results_title: "Query Results:",
+		no_results: "No results found."
+	},
+	table: {
+		title: "Table",
+		number_of_objects: "Number of objects"
+	}
+};
+
 const common = {
 	delete_dialog: {
 		title: `Permenantly delete {entity}?`,
@@ -719,7 +760,9 @@ const en = {
 	table_components,
 	misc_components,
 	layout,
-	error_page
+	error_page,
+	books_page,
+	debug_page
 } satisfies BaseTranslation;
 
 export default en;
