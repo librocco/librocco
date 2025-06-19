@@ -2,11 +2,6 @@
 
 cd "$(dirname "$0")"/..
 
-[ -f ./dist/crsqlite.wasm ] && {
-  echo ./dist/crsqlite.wasm file found - skipping compilation
-  exit 0
-}
-
 mkdir -p dist
 
 # This env variable is required by the crsql build process
