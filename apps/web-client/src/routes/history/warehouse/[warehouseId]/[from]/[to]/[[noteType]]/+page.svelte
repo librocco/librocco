@@ -172,8 +172,8 @@
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
 						<PlaceholderBox
-							title="No transactions found"
-							description="There seem to be no transactions going in/out for the selected date range"
+							title={t.placeholder.title()}
+							description={t.placeholder.description()}
 						/>
 					</div>
 				</div>

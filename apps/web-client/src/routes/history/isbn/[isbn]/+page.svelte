@@ -29,7 +29,7 @@
 
 	$: isbn = $page.params.isbn;
 
-	$: t = $LL.history_page.isbn_tab.isbn_id;
+	$: t = $LL.history_page.isbn_tab;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -73,7 +73,7 @@
 		<div>
 			<Search />
 			{#key isbn}
-				<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" class="w-full" />
+				<input data-testid={testId("search-input")} autofocus use:input placeholder={t.search.placeholder()} class="w-full" />
 			{/key}
 		</div>
 
@@ -96,7 +96,7 @@
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 			<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 				<div class="border-b border-base-300">
-					<h2 class="border-b border-base-300 px-4 py-4 pt-8 text-xl font-semibold">{t.titles.stock()}</h2>
+					<h2 class="border-b border-base-300 px-4 py-4 pt-8 text-xl font-semibold">{t.isbn_id.titles.stock()}</h2>
 
 					<div data-testid={testId("history-stock-report")} class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
 						{#each stock as s}
@@ -119,13 +119,13 @@
 				{#if !transactions?.length}
 					<div class="flex grow justify-center">
 						<div class="mx-auto max-w-xl translate-y-1/2">
-							<PlaceholderBox title={t.placeholder_box.title()} description={t.placeholder_box.description()} />
+							<PlaceholderBox title={t.isbn_id.placeholder_box.title()} description={t.isbn_id.placeholder_box.description()} />
 						</div>
 					</div>
 				{:else}
 					<div class="sticky top-0">
 						<h2 class="border-b border-base-300 bg-base-100 px-4 py-4 pt-8 text-xl font-semibold">
-							{$LL.history_page.isbn_tab.titles.transactions()}
+							{t.titles.transactions()}
 						</h2>
 					</div>
 					<ul id="history-table" class="grid w-full grid-cols-12 divide-y divide-base-300">
