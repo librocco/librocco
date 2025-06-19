@@ -2,6 +2,11 @@
 
 cd "$(dirname "$0")"/..
 
+[ -f ./dist/crsqlite.wasm ] && {
+  echo ./dist/crsqlite.wasm file found - skipping compilation
+  exit 0
+}
+
 mkdir -p dist
 
 # This env variable is required by the crsql build process
@@ -11,11 +16,15 @@ mkdir -p dist
 export CRSQLITE_COMMIT_SHA="$(git rev-parse HEAD)"
 
 cd ../emsdk
-./emsdk install 3.1.45
+# We redirect stderr to stout (with `2>&1`) so that rush doesn't think there were any warnings:
+# in case it detects any it will fail the build
+./emsdk install 3.1.45 2>&1
 ./emsdk activate 3.1.45
 export PATH=$PWD/upstream/emscripten:$PATH
 
 cd ../wa-sqlite
-make
+# We redirect stderr to stout (with `2>&1`) so that rush doesn't think there were any warnings:
+# in case it detects any it will fail the build
+make 2>&1
 cp dist/crsqlite.wasm ../crsqlite-wasm/dist/crsqlite.wasm
 cp dist/crsqlite.mjs ../crsqlite-wasm/src/crsqlite.mjs
