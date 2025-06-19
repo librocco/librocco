@@ -80,7 +80,7 @@
 	<div slot="main" class="flex flex-col gap-y-6 overflow-x-auto py-2">
 		{#if !customerOrders.length}
 			<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-				<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
+				<p class="text-center text-base-content/70">{t.placeholder.no_orders()}</p>
 				<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 					<Plus size={20} />
 					{t.labels.new_order()}

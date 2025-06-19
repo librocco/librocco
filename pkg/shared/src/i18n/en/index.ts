@@ -220,6 +220,9 @@ const customer_orders_page = {
 		customer: "Customer",
 		order_id: "Order ID",
 		customer_details: "Customer Details"
+	},
+	placeholder: {
+		no_orders: "No customer orders yet. Create your first order to get started."
 	}
 };
 const new_order_page = {
@@ -247,19 +250,27 @@ const order_list_page = {
 	labels: {
 		remove_publisher: "Remove publisher",
 		create_new_order: "Create new order",
-		add_to_supplier: "Add to supplier"
+		add_to_supplier: "Add to supplier",
+		reassign_publisher: "Re-assign to supplier"
 	},
 	details: {
 		supplier_page: "Supplier page",
 		supplier_name: "Supplier name",
-		supplier_address: "Supplier address",
 		supplier_email: "Supplier email",
+		supplier_address: "Supplier address",
 		supplier_customerId: "Supplier customer ID"
 	},
 	table: {
 		publisher_name: "Publisher name",
 		assigned_publishers: "Assigned publishers",
-		unassigned_publishers: "Unassigned publishers"
+		unassigned_publishers: "Unassigned publishers",
+		other_supplier_publishers: "Other Supplier Publishers"
+	},
+	dialogs: {
+		reassign_publisher: {
+			title: "Re-assign publisher",
+			description: "Are you sure you want to remove {publisher} from its previous supplier and assign it to {supplier}?"
+		}
 	}
 };
 const reconciled_list_page = {
@@ -291,7 +302,8 @@ const reconcile_page = {
 		created: "Created",
 		last_updated: "Last Updated",
 		includes_supplier_orders: "Includes supplier orders",
-		total_delivered: "Total delivered"
+		total_delivered: "Total delivered",
+		finalized_at: "Finalized At"
 	},
 	placeholder: {
 		description: "Scan or enter the ISBNs of the delivered books to begin reconciliation."
@@ -306,6 +318,20 @@ const reconcile_page = {
 	delete_dialog: {
 		title: "Delete Reconciliation Order",
 		description: "Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines."
+	},
+	steps: {
+		populate: {
+			title: "Populate",
+			description: "Delivered books"
+		},
+		compare: {
+			title: "Compare",
+			description: "To ordered"
+		},
+		commit: {
+			title: "Commit",
+			description: "Notify customers"
+		}
 	}
 };
 const suppliers_page = {
