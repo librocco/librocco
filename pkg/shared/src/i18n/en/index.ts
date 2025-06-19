@@ -772,6 +772,172 @@ const layout = {
 	}
 };
 
+const forms = {
+	sync_settings: {
+		labels: {
+			database_name: "Database Name (this will probably change in the future)",
+			remote_sync_url: "Remote Sync Database URL",
+			save_reload: "Save and Reload",
+			connection_status: {
+				on: "ON",
+				off: "OFF"
+			}
+		},
+		aria: {
+			form: "Edit remote database connection config"
+		}
+	},
+	device_settings: {
+		labels: {
+			label_printer_url: "Label Printer URL",
+			receipt_printer_url: "Receipt Printer URL",
+			save_reload: "Save and Reload"
+		},
+		aria: {
+			form: "Edit remote database connection config"
+		}
+	},
+	database_delete: {
+		labels: {
+			confirm_typing: "Confirm by typing database name",
+			type_instruction: "Type '{matchConfirmation}'",
+			confirm_button: "Confirm"
+		}
+	},
+	warehouse_delete: {
+		labels: {
+			confirm_typing: "Confirm by typing warehouse name",
+			type_instruction: "Type '{matchConfirmation}'",
+			confirm_button: "Confirm",
+			cancel_button: "Cancel"
+		}
+	},
+	supplier_meta: {
+		labels: {
+			name: "Name",
+			email: "Email",
+			address: "Address",
+			customer_id: "Customer ID",
+			cancel_button: "Cancel"
+		},
+		aria: {
+			form: "Edit customer order name, email or deposit"
+		}
+	},
+	book_form: {
+		labels: {
+			isbn: "ISBN",
+			fill_details: "Fill details",
+			title: "Title",
+			price: "Price",
+			year: "Year",
+			authors: "Authors",
+			publisher: "Publisher",
+			edited_by: "Edited by",
+			category: "Category",
+			out_of_print: "Out of Print",
+			out_of_print_help: "This book is no longer available from the publisher",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			isbn: "0000000000"
+		},
+		aria: {
+			form: "Edit book details"
+		}
+	},
+	daisy_ui_book_form: {
+		labels: {
+			isbn: "ISBN",
+			fill_details: "Fill details",
+			title: "Title",
+			price: "Price",
+			year: "Year",
+			authors: "Authors",
+			publisher: "Publisher",
+			edited_by: "Edited by",
+			category: "Category",
+			out_of_print: "Out of Print",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			isbn: "0000000000"
+		},
+		aria: {
+			form: "Edit book details"
+		}
+	},
+	scanner_form: {
+		placeholders: {
+			isbn: "Enter ISBN of ordered books"
+		}
+	},
+	daisy_ui_scanner_form: {
+		placeholders: {
+			isbn: "Enter ISBN of ordered books"
+		}
+	},
+	customer_order_meta: {
+		labels: {
+			display_id: "Display ID",
+			name: "Name",
+			email: "Email",
+			deposit: "Deposit",
+			phone1: "Phone 1",
+			phone2: "Phone 2",
+			cancel_button: "Cancel"
+		},
+		aria: {
+			form: "Edit customer order name, email or deposit"
+		}
+	},
+	database_create: {
+		labels: {
+			name: "Name",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			name: "Database name"
+		},
+		aria: {
+			form: "Create new database"
+		}
+	},
+	warehouse_form: {
+		labels: {
+			name: "Name",
+			discount: "Discount",
+			discount_help: "Applied to book prices",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			name: "Warehouse name",
+			discount: "0"
+		},
+		aria: {
+			form: "Edit warehouse details"
+		}
+	},
+	custom_item_form: {
+		labels: {
+			title: "Title",
+			price: "Price",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			price: "0"
+		},
+		aria: {
+			form: "Edit book details"
+		}
+	}
+};
+
 const en = {
 	nav,
 	search,
@@ -799,7 +965,8 @@ const en = {
 	layout,
 	error_page,
 	books_page,
-	debug_page
+	debug_page,
+	forms
 } satisfies BaseTranslation;
 
 export default en;

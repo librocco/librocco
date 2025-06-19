@@ -13,6 +13,7 @@
 	import type { BookFormSchema } from "$lib/forms/schemas";
 
 	import { Input, Checkbox } from "$lib/components/FormControls";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let data: SuperValidated<BookFormSchema>;
 	export let options: FormOptions<BookFormSchema>;
@@ -92,7 +93,7 @@
 
 <form
 	class="divide-y-secondary flex flex-col gap-y-10 px-4 py-4"
-	aria-label="Edit book details"
+	aria-label={$LL.forms.book_form.aria.form()}
 	use:enhance
 	method="POST"
 	id={testId("book-form")}
@@ -102,12 +103,12 @@
 			<div id="isbn-field-container" class="flex basis-full items-center gap-x-4">
 				<label class="form-control grow">
 					<div class="label">
-						<span class="label-text">ISBN</span>
+						<span class="label-text">{$LL.forms.book_form.labels.isbn()}</span>
 					</div>
 					<input
 						bind:value={$formStore.isbn}
 						name="isbn"
-						placeholder="0000000000"
+						placeholder={$LL.forms.book_form.placeholders.isbn()}
 						{...$constraints.isbn}
 						disabled
 						class="input-bordered input w-full"
@@ -119,13 +120,13 @@
 					class={["btn-secondary btn self-end", `${!isExtensionAvailable && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`].join(" ")}
 					on:click={() => onFetch($formStore.isbn, formStore)}
 				>
-					Fill details
+					{$LL.forms.book_form.labels.fill_details()}
 				</button>
 			</div>
 
 			<label class="form-control basis-full" id="title-field-container">
 				<div class="label">
-					<span class="label-text">Title</span>
+					<span class="label-text">{$LL.forms.book_form.labels.title()}</span>
 				</div>
 				<input bind:value={$formStore.title} name="title" placeholder="" {...$constraints.title} class="input-bordered input w-full" />
 			</label>
@@ -133,7 +134,7 @@
 			<div class="flex basis-full gap-x-2">
 				<label class="form-control basis-1/2" id="price-field-container">
 					<span class="label">
-						<span class="label-text">Price</span>
+						<span class="label-text">{$LL.forms.book_form.labels.price()}</span>
 					</span>
 					<span class="input-bordered input flex items-center gap-2">
 						<Euro class="text-base-content/50" />
@@ -143,7 +144,7 @@
 
 				<label class="form-control basis-1/2" id="year-field-container">
 					<div class="label">
-						<span class="label-text">Year</span>
+						<span class="label-text">{$LL.forms.book_form.labels.year()}</span>
 					</div>
 					<input bind:value={$formStore.year} name="year" placeholder="" {...$constraints.year} class="input-bordered input w-full" />
 				</label>
@@ -151,7 +152,7 @@
 
 			<label class="form-control basis-1/2" id="authors-field-container">
 				<div class="label">
-					<span class="label-text">Authors</span>
+					<span class="label-text">{$LL.forms.book_form.labels.authors()}</span>
 				</div>
 				<input
 					bind:value={$formStore.authors}
@@ -165,7 +166,7 @@
 			<div id="publisher-field-container" class="relative basis-full">
 				<label class="form-control basis-1/2" id="year-field-container">
 					<span class="label">
-						<span class="label-text">Publisher</span>
+						<span class="label-text">{$LL.forms.book_form.labels.publisher()}</span>
 					</span>
 					<span class="input-bordered input flex items-center gap-2">
 						<input name="publisher" autocomplete="off" use:melt={$input} bind:value={$formStore.publisher} class="w-full" />
@@ -199,7 +200,7 @@
 							</li>
 						{:else}
 							<li class="relative cursor-default select-none py-2 pl-10 pr-4">
-								<span class="block truncate font-normal">No results found</span>
+								<span class="block truncate font-normal">{$LL.common.placeholders.no_results()}</span>
 							</li>
 						{/each}
 					</ul>
@@ -208,7 +209,7 @@
 
 			<label class="form-control basis-full" id="editedBy-field-container">
 				<div class="label">
-					<span class="label-text">Edited by</span>
+					<span class="label-text">{$LL.forms.book_form.labels.edited_by()}</span>
 				</div>
 				<input
 					bind:value={$formStore.editedBy}
@@ -221,7 +222,7 @@
 
 			<label class="form-control basis-full" id="category-field-container">
 				<div class="label">
-					<span class="label-text">Category</span>
+					<span class="label-text">{$LL.forms.book_form.labels.category()}</span>
 				</div>
 				<input
 					bind:value={$formStore.category}
@@ -237,15 +238,15 @@
 					bind:checked={$formStore.outOfPrint}
 					id="outOfPrint"
 					name="outOfPrint"
-					label="Out of Print"
-					helpText="This book is no longer available from the publisher"
+					label={$LL.forms.book_form.labels.out_of_print()}
+					helpText={$LL.forms.book_form.labels.out_of_print_help()}
 					{...$constraints.outOfPrint}
 				/>
 			</div>
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">Cancel</button>
-		<button class="btn-primary btn disabled:bg-gray-400" type="submit">Save</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">{$LL.forms.book_form.labels.cancel_button()}</button>
+		<button class="btn-primary btn disabled:bg-gray-400" type="submit">{$LL.forms.book_form.labels.save_button()}</button>
 	</div>
 </form>
