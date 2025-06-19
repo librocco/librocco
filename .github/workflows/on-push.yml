@@ -13,7 +13,10 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -50,7 +53,10 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -80,7 +86,10 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -117,7 +126,10 @@ jobs:
         shardTotal:
         - 6
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -158,7 +170,10 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -190,7 +205,10 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -215,9 +233,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -242,7 +261,10 @@ jobs:
     name: Deploy web-client app to bunny cdn
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -295,7 +317,10 @@ jobs:
     - e2e-test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
