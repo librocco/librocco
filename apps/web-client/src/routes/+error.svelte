@@ -9,7 +9,7 @@
 
 	$: ({ plugins } = data);
 	$: db = data.dbCtx?.db;
-	
+
 	$: ({ error_page: tErrorPage, common: tCommon } = $LL);
 </script>
 

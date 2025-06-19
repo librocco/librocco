@@ -41,6 +41,8 @@
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button type="submit" class="btn-primary btn disabled:btn-disabled" disabled={!hasChanges}>{$LL.forms.device_settings.labels.save_reload()}</button>
+		<button type="submit" class="btn-primary btn disabled:btn-disabled" disabled={!hasChanges}
+			>{$LL.forms.device_settings.labels.save_reload()}</button
+		>
 	</div>
 </form>

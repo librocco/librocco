@@ -130,13 +130,13 @@
 				{#each warehouses as { id, displayName, discount }}
 					{@const href = appPath("warehouses", id)}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a data-sveltekit-preload-data="hover" {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">
 								{displayName}
 							</a>
-							<div class="max-xs:flex-col flex flex-row gap-x-8 gap-y-2">
-								<div class="entity-list-text-sm text-base-content flex items-center gap-x-2 text-sm">
+							<div class="flex flex-row gap-x-8 gap-y-2 max-xs:flex-col">
+								<div class="entity-list-text-sm flex items-center gap-x-2 text-sm text-base-content">
 									<Layers size={18} />
 
 									<div>
@@ -150,7 +150,7 @@
 								</div>
 
 								{#if discount}
-									<div class="text-base-content flex items-center gap-x-2 text-sm">
+									<div class="flex items-center gap-x-2 text-sm text-base-content">
 										<SquarePercent size={18} />
 
 										<span class="entity-list-text-sm">{discount}% {tWarehouse.stats.discount()}</span>
@@ -175,19 +175,19 @@
 									on:m-keydown={() => {
 										warehouseToEdit = { name: displayName, discount, id };
 									}}
-									class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 								>
 									<Edit aria-hidden size={18} />
 									<span>{tWarehouse.labels.edit()}</span>
 								</div>
 
-								<div {...separator} use:separator.action class="bg-base-300 h-[1px]"></div>
+								<div {...separator} use:separator.action class="h-[1px] bg-base-300"></div>
 
 								<a
 									{href}
 									{...item}
 									use:item.action
-									class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 								>
 									<Table2 aria-hidden size={18} />
 									<span>{tWarehouse.labels.view_stock()}</span>
@@ -203,7 +203,7 @@
 									on:m-keydown={() => {
 										warehouseToDelete = { id, displayName };
 									}}
-									class="data-[highlighted]:bg-error flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
+									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error"
 								>
 									<Trash2 class="text-error-content" size={18} />
 									<span class="text-error-content">{tWarehouse.labels.delete()}</span>

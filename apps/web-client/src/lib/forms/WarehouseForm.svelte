@@ -22,7 +22,13 @@
 	const discountProxy = numberProxy(formStore, "discount", { empty: "undefined" });
 </script>
 
-<form class="flex max-w-lg flex-col gap-y-6" aria-label={$LL.forms.warehouse_form.aria.form()} use:enhance method="POST" id="warehouse-form">
+<form
+	class="flex max-w-lg flex-col gap-y-6"
+	aria-label={$LL.forms.warehouse_form.aria.form()}
+	use:enhance
+	method="POST"
+	id="warehouse-form"
+>
 	<div class="flex flex-col justify-between gap-y-6 p-4">
 		<input type="hidden" name="id" value={$formStore.id} />
 		<div class="basis-full">
@@ -45,7 +51,13 @@
 					<span class="label-text">{$LL.forms.warehouse_form.labels.discount()}</span>
 				</span>
 				<span class="input-bordered input flex items-center gap-2">
-					<input bind:value={$discountProxy} name="discount" placeholder={$LL.forms.warehouse_form.placeholders.discount()} type="number" step="any" />
+					<input
+						bind:value={$discountProxy}
+						name="discount"
+						placeholder={$LL.forms.warehouse_form.placeholders.discount()}
+						type="number"
+						step="any"
+					/>
 					<Percent class="text-base-content/50" />
 				</span>
 				<span class="label">
@@ -55,7 +67,9 @@
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2 p-4">
-		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">{$LL.forms.warehouse_form.labels.cancel_button()}</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button"
+			>{$LL.forms.warehouse_form.labels.cancel_button()}</button
+		>
 		<button class="btn-primary btn disabled:bg-gray-400" type="submit">{$LL.forms.warehouse_form.labels.save_button()}</button>
 	</div>
 </form>
