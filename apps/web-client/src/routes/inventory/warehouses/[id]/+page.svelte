@@ -8,7 +8,12 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { FileEdit, X, Loader2 as Loader, Printer, MoreVertical, FilePlus } from "lucide-svelte";
+	import FileEdit from "$lucide/file-edit";
+	import X from "$lucide/x";
+	import Loader from "$lucide/loader-2";
+	import Printer from "$lucide/printer";
+	import MoreVertical from "$lucide/more-vertical";
+	import FilePlus from "$lucide/file-plus";
 
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";

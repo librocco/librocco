@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
-	import { Settings, Plus } from "lucide-svelte";
+	import Settings from "$lucide/settings";
+	import Plus from "$lucide/plus";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";

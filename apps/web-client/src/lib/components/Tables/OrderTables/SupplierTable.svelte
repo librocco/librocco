@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Building2, Hash, CalendarClock } from "lucide-svelte";
+	import Building2 from "$lucide/building-2";
+
 	import type { Writable } from "svelte/store";
 
 	import type { SupplierExtended } from "$lib/db/cr-sqlite/types";

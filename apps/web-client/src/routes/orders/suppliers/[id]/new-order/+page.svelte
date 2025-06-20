@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import { Truck } from "lucide-svelte";
+	import Truck from "$lucide/truck";
 
 	import { invalidate } from "$app/navigation";
 
