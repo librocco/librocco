@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 	import { expoInOut } from "svelte/easing";
-	import { X } from "lucide-svelte";
+	import X from "$lucide/x";
 
 	import { melt } from "@melt-ui/svelte";
 	import type { Dialog } from "@melt-ui/svelte";

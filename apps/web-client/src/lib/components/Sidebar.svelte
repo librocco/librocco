@@ -1,19 +1,17 @@
 <script lang="ts">
-	import {
-		BookCopy,
-		Library,
-		PackageMinus,
-		Search,
-		Settings,
-		PersonStanding,
-		Book,
-		Truck,
-		ChevronDown,
-		Moon,
-		Sun,
-		Globe,
-		CalendarClock
-	} from "lucide-svelte";
+	import BookCopy from "$lucide/book-copy";
+	import Library from "$lucide/library";
+	import PackageMinus from "$lucide/package-minus";
+	import Search from "$lucide/search";
+	import Settings from "$lucide/settings";
+	import PersonStanding from "$lucide/person-standing";
+	import Book from "$lucide/book";
+	import Truck from "$lucide/truck";
+	import ChevronDown from "$lucide/chevron-down";
+	import Moon from "$lucide/moon";
+	import Sun from "$lucide/sun";
+	import Globe from "$lucide/globe";
+	import CalendarClock from "$lucide/calendar-clock";
 
 	import { LL } from "@librocco/shared/i18n-svelte";
 
