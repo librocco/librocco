@@ -100,7 +100,7 @@
 		<div class="p-4">
 			<CustomerSearchForm
 				bind:input={searchField}
-				placeholder="Search for customers by name"
+				placeholder={t.placeholder.search()}
 				data={defaults(zod(customerSearchSchema))}
 				options={{
 					SPA: true,
@@ -123,29 +123,10 @@
 				</button>
 			</div>
 		{:else}
-			<div class="flex justify-between gap-2 px-2" role="group" aria-label="Filter orders by status">
-				<div class="flex gap-x-2">
-					<button
-						class="btn-sm btn {orderFilterStatus === 'in_progress' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("in_progress")}
-						aria-pressed={orderFilterStatus === "in_progress"}
-					>
-						{t.tabs.in_progress()}
-					</button>
-					<button
-						class="btn-sm btn {orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("completed")}
-						aria-pressed={orderFilterStatus === "completed"}
-						disabled={!hasCompletedOrders}
-					>
-						{t.tabs.completed()}
-					</button>
-				</div>
-				<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-					<Plus size={20} />
-					{t.labels.new_order()}
-				</button>
-			</div>
+			<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+				<Plus size={20} />
+				{t.labels.new_order()}
+			</button>
 			<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<table class="table-lg table">
 					<thead>

@@ -212,16 +212,13 @@ const customer_orders_page = {
 		update_order: "Update Order",
 		update: "Update"
 	},
-	tabs: {
-		in_progress: "In Progress",
-		completed: "Completed"
-	},
 	table: {
 		customer: "Customer",
 		order_id: "Order ID",
 		customer_details: "Customer Details"
 	},
 	placeholder: {
+		search: "Search for customers by name",
 		no_orders: "No customer orders yet. Create your first order to get started."
 	}
 };

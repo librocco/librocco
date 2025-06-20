@@ -449,16 +449,6 @@ type RootTranslation = {
 			 */
 			update: string
 		}
-		tabs: {
-			/**
-			 * I​n​ ​P​r​o​g​r​e​s​s
-			 */
-			in_progress: string
-			/**
-			 * C​o​m​p​l​e​t​e​d
-			 */
-			completed: string
-		}
 		table: {
 			/**
 			 * C​u​s​t​o​m​e​r
@@ -474,6 +464,10 @@ type RootTranslation = {
 			customer_details: string
 		}
 		placeholder: {
+			/**
+			 * S​e​a​r​c​h​ ​f​o​r​ ​c​u​s​t​o​m​e​r​s​ ​b​y​ ​n​a​m​e
+			 */
+			search: string
 			/**
 			 * N​o​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​s​ ​y​e​t​.​ ​C​r​e​a​t​e​ ​y​o​u​r​ ​f​i​r​s​t​ ​o​r​d​e​r​ ​t​o​ ​g​e​t​ ​s​t​a​r​t​e​d​.
 			 */
@@ -2891,16 +2885,6 @@ export type TranslationFunctions = {
 			 */
 			update: () => LocalizedString
 		}
-		tabs: {
-			/**
-			 * In Progress
-			 */
-			in_progress: () => LocalizedString
-			/**
-			 * Completed
-			 */
-			completed: () => LocalizedString
-		}
 		table: {
 			/**
 			 * Customer
@@ -2916,6 +2900,10 @@ export type TranslationFunctions = {
 			customer_details: () => LocalizedString
 		}
 		placeholder: {
+			/**
+			 * Search for customers by name
+			 */
+			search: () => LocalizedString
 			/**
 			 * No customer orders yet. Create your first order to get started.
 			 */
