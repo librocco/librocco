@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { UserRound, Hash, CalendarClock } from "lucide-svelte";
+	import UserRound from "$lucide/user-round";
+	import Hash from "$lucide/hash";
+	import CalendarClock from "$lucide/calendar-clock";
 
 	import { HeadCol, BodyMultiRow } from "../Cells";
 
