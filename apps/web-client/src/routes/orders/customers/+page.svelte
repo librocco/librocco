@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Plus } from "lucide-svelte";
+	import Plus from "$lucide/plus";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -11,8 +11,6 @@
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema } from "$lib/forms";
 	import { appPath, appHash } from "$lib/paths";
-
-	import { base } from "$app/paths";
 
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { Page } from "$lib/controllers";

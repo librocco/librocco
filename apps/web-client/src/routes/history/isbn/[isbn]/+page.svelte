@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
 	import { writable } from "svelte/store";
-	import { Search, Library, ArrowLeft, ArrowRight } from "lucide-svelte";
-	import { invalidate } from "$app/navigation";
+	import Search from "$lucide/search";
+	import Library from "$lucide/library";
+	import ArrowLeft from "$lucide/arrow-left";
+	import ArrowRight from "$lucide/arrow-right";
 
+	import { invalidate } from "$app/navigation";
 	import { page } from "$app/stores";
 
 	import { entityListView, testId, type BookData } from "@librocco/shared";
