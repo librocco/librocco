@@ -14,7 +14,7 @@
 <script lang="ts">
 	import { Story } from "@storybook/addon-svelte-csf";
 
-	import { UserRound } from "lucide-svelte";
+	import UserRound from "$lucide/user-round";
 </script>
 
 <Story name="Head Column Cell">
