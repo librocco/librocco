@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ListTodo } from "lucide-svelte";
+	import ListTodo from "$lucide/list-todo";
 	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 	import { goto } from "$lib/utils/navigation";
 	import { base } from "$app/paths";

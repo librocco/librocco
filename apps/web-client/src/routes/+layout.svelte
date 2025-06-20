@@ -9,7 +9,7 @@
 
 	import { Subscription } from "rxjs";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Menu } from "lucide-svelte";
+	import Menu from "$lucide/menu";
 
 	import { afterNavigate } from "$app/navigation";
 	import { browser } from "$app/environment";
@@ -383,5 +383,10 @@
 	:global(body) {
 		height: 100%;
 		padding: 0;
+	}
+	@media print {
+		#mobile-nav-trigger {
+			display: none;
+		}
 	}
 </style>

@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { Plus, RotateCcw, Play, BookPlus } from "lucide-svelte";
+	import Plus from "$lucide/plus";
+	import RotateCcw from "$lucide/rotate-ccw";
+	import Play from "$lucide/play";
+	import BookPlus from "$lucide/book-plus";
+
 	import { onMount } from "svelte";
 
 	import { wrapIter } from "@librocco/shared";
