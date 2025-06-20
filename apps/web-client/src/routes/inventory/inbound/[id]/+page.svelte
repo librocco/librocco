@@ -8,7 +8,13 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, FileCheck } from "lucide-svelte";
+	import Printer from "$lucide/printer";
+	import QrCode from "$lucide/qr-code";
+	import Trash2 from "$lucide/trash-2";
+	import FileEdit from "$lucide/file-edit";
+	import MoreVertical from "$lucide/more-vertical";
+	import X from "$lucide/x";
+	import FileCheck from "$lucide/file-check";
 
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";

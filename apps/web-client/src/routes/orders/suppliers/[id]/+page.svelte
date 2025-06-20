@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import { Mail, UserCircle, PencilLine, Plus } from "lucide-svelte";
+	import Mail from "$lucide/mail";
+	import UserCircle from "$lucide/user-circle";
+	import PencilLine from "$lucide/pencil-line";
+	import Plus from "$lucide/plus";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
