@@ -480,7 +480,8 @@ const common = {
 		confirm: "Confirm",
 		import: "Import",
 		select: "Select",
-		reload: "Reload"
+		reload: "Reload",
+		print: "Print table"
 	},
 	placeholders: {
 		no_results: "No results",

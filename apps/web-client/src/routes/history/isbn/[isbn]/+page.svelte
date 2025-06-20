@@ -33,6 +33,7 @@
 	$: isbn = $page.params.isbn;
 
 	$: t = $LL.history_page.isbn_tab;
+	$: tCommon = $LL.common;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -86,8 +87,8 @@
 					{/key}
 				</label>
 			</div>
-			<button class="btn-neutral btn ml-2 hidden xs:block" on:click={handlePrint} aria-label="Print Table">
-				<span class="button-text ml-1">Print Table</span>
+			<button class="btn-neutral btn ml-2 hidden xs:block" on:click={handlePrint}>
+				<span class="button-text ml-1">{tCommon.actions.print()}</span>
 			</button>
 		</div>
 

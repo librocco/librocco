@@ -28,6 +28,7 @@
 	$: db = data.dbCtx?.db;
 
 	$: t = $LL.history_page.notes_tab.archive;
+	$: tCommon = $LL.common;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -110,7 +111,7 @@
 
 			<div id="button-container" class="ml-auto flex items-center gap-x-2">
 				<button on:click={handleExportCsv} class="btn-primary btn">{t.export_csv()}</button>
-				<button on:click={handlePrint} class="btn-primary btn">Print Table</button>
+				<button on:click={handlePrint} class="btn-primary btn">{tCommon.actions.print()}</button>
 			</div>
 		</div>
 		{#if loading}
