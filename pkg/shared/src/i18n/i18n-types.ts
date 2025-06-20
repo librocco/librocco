@@ -1027,6 +1027,10 @@ type RootTranslation = {
 			 * R​e​l​o​a​d
 			 */
 			reload: string
+			/**
+			 * P​r​i​n​t​ ​t​a​b​l​e
+			 */
+			print: string
 		}
 		placeholders: {
 			/**
@@ -3454,6 +3458,10 @@ export type TranslationFunctions = {
 			 * Reload
 			 */
 			reload: () => LocalizedString
+			/**
+			 * Print table
+			 */
+			print: () => LocalizedString
 		}
 		placeholders: {
 			/**

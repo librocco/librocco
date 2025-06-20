@@ -287,8 +287,8 @@
 					>
 						<span class="button-text">{tInbound.labels.commit()}</span>
 					</button>
-					<button class="btn-neutral btn-sm btn hidden xs:block" on:click={handlePrint} aria-label="Print Table">
-						<span class="button-text ml-1">Print Table</span>
+					<button class="btn-neutral btn-sm btn hidden xs:block" on:click={handlePrint}>
+						<span class="button-text ml-1">{tCommon.actions.print()}</span>
 					</button>
 
 					<DropdownWrapper let:item>
