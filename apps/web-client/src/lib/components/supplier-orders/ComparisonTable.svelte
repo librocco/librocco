@@ -6,7 +6,19 @@
 	import type { ReconciliationUnmatchedBookLine, ReconciliationProcessedLine } from "./utils";
 	import LL from "@librocco/shared/i18n-svelte";
 
-	export let linesBookedWithSupplier: Writable<string[]>;
+	export let linesBookedWithSupplier: Writable<Map<string, number>>;
+
+	// NOTE: we're using an internal list here and marshaling [isbn, supplierId] pairs into strings
+	// in order to be able to use the `bind:group` directive with checkboxes.
+	let _linesBookedWithSupplier: string[] = [];
+	const marshalIsbnSupplierPair = (isbn: string, supplierId: number) => `${isbn}___${supplierId}`;
+	const unmarshalIsbnSupplierPair = (str: string): [string, number] => {
+		const [isbn, supplierId] = str.split("___");
+		return [isbn, parseInt(supplierId)];
+	};
+
+	// Unmarshaling the (internal) _linesBookedWithSupplier to a Map -- for caller convenience.
+	$: $linesBookedWithSupplier = new Map(_linesBookedWithSupplier.map(unmarshalIsbnSupplierPair));
 
 	export let reconciledBooks: { processedLines: ReconciliationProcessedLine[]; unmatchedBooks: ReconciliationUnmatchedBookLine[] } = {
 		processedLines: [],
@@ -71,7 +83,7 @@
 			</thead>
 
 			<tbody>
-				{#each reconciledBooksList as { isbn, title, authors, price, deliveredQuantity, orderedQuantity }}
+				{#each reconciledBooksList as { isbn, title, authors, price, deliveredQuantity, orderedQuantity, supplier_id }}
 					{@const fullyDelivered = deliveredQuantity >= orderedQuantity}
 					<tr>
 						<td>{isbn}</td>
@@ -87,7 +99,12 @@
 						<td class="text-center">
 							{#if !fullyDelivered}
 								<!-- checking this marks the line as booked with the supplier, see: https://github.com/librocco/librocco/issues/936 -->
-								<input bind:group={$linesBookedWithSupplier} value={isbn} type="checkbox" class="checkbox" />
+								<input
+									bind:group={_linesBookedWithSupplier}
+									value={marshalIsbnSupplierPair(isbn, supplier_id)}
+									type="checkbox"
+									class="checkbox"
+								/>
 							{/if}
 						</td>
 					</tr>

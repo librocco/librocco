@@ -132,15 +132,11 @@
 	 * We use this to mark those lines so as to prevent over-ordering in the future,
 	 * see: https://github.com/librocco/librocco/issues/936
 	 */
-	const linesBookedWithSupplier = writable<string[]>([]);
+	const linesBookedWithSupplier = writable(new Map<string, number>());
 
 	async function handleCommit() {
-		// TODO: take these into account when committing
-		// TODO: maybe make sure that fully delivered books aren't part of this list (edge case, but possible)
-		console.log($linesBookedWithSupplier);
-
 		commitDialogOpen.set(false);
-		await finalizeReconciliationOrder(db, parseInt($page.params.id));
+		await finalizeReconciliationOrder(db, parseInt($page.params.id), $linesBookedWithSupplier);
 		await goto(appPath("supplier_orders"));
 	}
 
