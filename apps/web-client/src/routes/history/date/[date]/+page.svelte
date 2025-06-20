@@ -26,6 +26,7 @@
 	$: db = data.dbCtx?.db;
 
 	$: t = $LL.history_page.date_tab;
+	$: tCommon = $LL.common;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -72,8 +73,8 @@
 			<div class="flex w-full flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
 			</div>
-			<button class="btn-neutral btn-sm btn hidden xs:block" on:click={handlePrint} aria-label="Print Table">
-				<span class="button-text ml-1">Print Table</span>
+			<button class="btn-neutral btn-sm btn hidden xs:block" on:click={handlePrint}>
+				<span class="button-text ml-1">{tCommon.actions.print()}</span>
 			</button>
 		</div>
 		<!-- Start entity list contaier -->

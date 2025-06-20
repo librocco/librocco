@@ -467,9 +467,9 @@
 					>
 						<span class="button-text">{tOutbound.labels.commit()}</span>
 					</button>
-					<button on:click={() => handlePrint()} on:keydown={() => handlePrint()} class="btn-primary btn-sm btn hidden xs:block"
-						>Print</button
-					>
+					<button on:click={() => handlePrint()} on:keydown={() => handlePrint()} class="btn-primary btn-sm btn hidden xs:block">
+						{tCommon.actions.print()}
+					</button>
 
 					<DropdownWrapper let:item>
 						<div
