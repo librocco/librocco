@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { ArrowRight, ClockArrowUp, Check, MinusCircle, PlusCircle, Trash } from "lucide-svelte";
+	import ArrowRight from "$lucide/arrow-right";
+	import ClockArrowUp from "$lucide/clock-arrow-up";
+	import Check from "$lucide/check";
+	import MinusCircle from "$lucide/minus-circle";
+	import PlusCircle from "$lucide/plus-circle";
+	import Trash from "$lucide/trash";
 	import { filter, scan } from "rxjs";
 	import { onDestroy, onMount } from "svelte";
 

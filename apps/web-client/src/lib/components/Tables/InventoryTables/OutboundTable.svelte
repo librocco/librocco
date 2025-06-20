@@ -123,7 +123,7 @@
 			{:else}
 				{@const { rowIx, title, price } = row}
 				<tr use:table.tableRow={{ position: rowIx }}>
-					<th scope="row" data-property="custom-item" class="table-cell-max">
+					<th scope="row" id="custom-item" data-property="custom-item" class="table-cell-max">
 						<CustomItemHeadCell data={{ title, price }} />
 					</th>
 
@@ -152,4 +152,10 @@
 
 <style>
 	@import "./table.css";
+
+	@media print {
+		#custom-item {
+			display: none;
+		}
+	}
 </style>

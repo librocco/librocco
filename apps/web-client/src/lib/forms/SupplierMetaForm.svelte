@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { superForm } from "sveltekit-superforms/client";
-	import { Save } from "lucide-svelte";
+	import Save from "$lucide/save";
 
 	import { FormFieldProxy, TextControl } from "$lib/forms/controls";
 
