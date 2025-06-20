@@ -2,7 +2,8 @@
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 	import { get } from "svelte/store";
-	import { Download, Trash } from "lucide-svelte";
+	import Download from "$lucide/download";
+	import Trash from "$lucide/trash";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { zod } from "sveltekit-superforms/adapters";
 
@@ -213,14 +214,14 @@
 								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbid)}
 								{#if selectionOn}
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
-									<li
-										on:click={handleSelect(file)}
-										data-active={active}
-										class="group flex h-16 cursor-pointer items-center justify-between px-4 py-3 {active
-											? 'bg-green-300'
-											: 'hover:bg-gray-50'}"
-									>
-										<span>{file}</span>
+									<li>
+										<button>
+											on:click={handleSelect(file)}
+											data-active={active}
+											class="group flex h-16 cursor-pointer items-center justify-between px-4 py-3 {active
+												? "bg-green-300"
+												: "hover:bg-gray-50"}" > file
+										</button>
 									</li>
 								{:else}
 									<li

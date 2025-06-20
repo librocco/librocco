@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Save } from "lucide-svelte";
+	import Save from "$lucide/save";
 	import { createEventDispatcher } from "svelte";
 
 	const dispatch = createEventDispatcher<{ cancel: void; confirm: void }>();

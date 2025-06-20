@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Plus, SearchIcon } from "lucide-svelte";
+	import Plus from "$lucide/plus";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -12,13 +12,10 @@
 	import { createCustomerOrderSchema, customerSearchSchema } from "$lib/forms";
 	import { appPath, appHash } from "$lib/paths";
 
-	import { base } from "$app/paths";
+	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
-	import { getCustomerDisplayIdSeq, getCustomerOrderList, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { Page } from "$lib/controllers";
-
 	import type { Customer, CustomerOrderListItem } from "$lib/db/cr-sqlite/types";
-	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";
 
@@ -116,8 +113,8 @@
 			/>
 		</div>
 		{#if !customerOrders.length}
-			<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-				<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
+			<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
+				<p class="text-base-content/70 text-center">No customer orders yet. Create your first order to get started.</p>
 				<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 					<Plus size={20} />
 					{t.labels.new_order()}

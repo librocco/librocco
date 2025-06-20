@@ -6,7 +6,10 @@
 	import { superForm, numberProxy, stringProxy } from "sveltekit-superforms/client";
 
 	import { createCombobox, melt, type ComboboxOptionProps } from "@melt-ui/svelte";
-	import { Check, ChevronUp, ChevronDown, Euro } from "lucide-svelte";
+	import Check from "$lucide/check";
+	import ChevronUp from "$lucide/chevron-up";
+	import ChevronDown from "$lucide/chevron-down";
+	import Euro from "$lucide/euro";
 
 	import { testId } from "@librocco/shared";
 
