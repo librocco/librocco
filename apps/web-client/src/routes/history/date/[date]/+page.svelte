@@ -40,6 +40,10 @@
 	});
 	$: goto = racefreeGoto(disposer);
 
+	const handlePrint = () => {
+		window.print();
+	};
+
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
 		if (!a || !b) return false;
@@ -64,23 +68,26 @@
 
 <HistoryPage view="history/date" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div class="flex w-full justify-between">
+		<div id="calendar-container" class="flex w-full justify-between">
 			<div class="flex w-full flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
 			</div>
+			<button class="btn-neutral btn-sm btn hidden xs:block" on:click={handlePrint} aria-label="Print Table">
+				<span class="button-text ml-1">Print Table</span>
+			</button>
 		</div>
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 			{#if !bookList?.length}
-				<div class="flex grow justify-center">
+				<div id="empty" class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
 						<PlaceholderBox title="No Books on that date" description="Try selecting a different date." />
 					</div>
 				</div>
 			{:else}
-				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">{t.stats.title()}</h2>
+				<h2 id="stats-title" class="px-4 py-4 pt-8 text-xl font-semibold">{t.stats.title()}</h2>
 
 				<div data-testid={testId("history-date-stats")}>
 					<div class="flex flex-row text-sm">
@@ -114,7 +121,7 @@
 					</div>
 				</div>
 
-				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">
+				<h2 id="stats-total" class="px-4 py-4 pt-8 text-xl font-semibold">
 					{t.transactions.title()}: <span data-property="transactions">{stats.totalOutboundBookCount}</span>
 				</h2>
 
@@ -211,5 +218,19 @@
 
 	[data-melt-calendar-cell][data-outside-month] {
 		@apply pointer-events-none cursor-default opacity-0;
+	}
+	@media print {
+		[data-testid="history-date-stats"] {
+			display: none;
+		}
+		#calendar-container {
+			display: none;
+		}
+		#stats-total {
+			display: none;
+		}
+		#stats-title {
+			display: none;
+		}
 	}
 </style>
