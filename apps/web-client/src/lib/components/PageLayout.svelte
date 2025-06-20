@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Search, ScanBarcode } from "lucide-svelte";
+	import Search from "$lucide/search";
+	import ScanBarcode from "$lucide/scan-barcode";
 
 	import { testId, type WebClientView } from "@librocco/shared";
 	import LL from "@librocco/shared/i18n-svelte";

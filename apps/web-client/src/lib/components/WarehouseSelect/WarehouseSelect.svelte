@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount, tick } from "svelte";
+	import { createEventDispatcher } from "svelte";
 
 	import { createSelect } from "@melt-ui/svelte";
-	import { Check, ChevronsUpDown, RefreshCcwDot } from "lucide-svelte";
+	import Check from "$lucide/check";
+	import ChevronsUpDown from "$lucide/chevrons-up-down";
+	import RefreshCcwDot from "$lucide/refresh-ccw-dot";
 
 	import { testId } from "@librocco/shared";
 
