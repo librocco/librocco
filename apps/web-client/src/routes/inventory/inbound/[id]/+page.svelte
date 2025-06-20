@@ -8,7 +8,13 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, FileCheck } from "lucide-svelte";
+	import Printer from "$lucide/printer";
+	import QrCode from "$lucide/qr-code";
+	import Trash2 from "$lucide/trash-2";
+	import FileEdit from "$lucide/file-edit";
+	import MoreVertical from "$lucide/more-vertical";
+	import X from "$lucide/x";
+	import FileCheck from "$lucide/file-check";
 
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";
@@ -94,6 +100,11 @@
 		await deleteNote(db, noteId);
 		closeDialog();
 	};
+
+	const handlePrint = () => {
+		window.print();
+	};
+
 	// #region note-actions
 
 	// #region infinite-scroll
@@ -233,7 +244,7 @@
 
 <Page title={displayName} view="inbound-note" {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
-		<div class="flex flex-col gap-y-4 px-6 py-4">
+		<div id="inbound-header" class="flex flex-col gap-y-4 px-6 py-4">
 			<Breadcrumbs links={breadcrumbs} />
 			<div class="flex w-full flex-wrap items-center justify-between gap-2">
 				<div class="flex max-w-md flex-col">
@@ -275,6 +286,9 @@
 						}}
 					>
 						<span class="button-text">{tInbound.labels.commit()}</span>
+					</button>
+					<button class="btn-neutral btn-sm btn hidden xs:block" on:click={handlePrint} aria-label="Print Table">
+						<span class="button-text ml-1">Print Table</span>
 					</button>
 
 					<DropdownWrapper let:item>
@@ -369,13 +383,13 @@
 			</div>
 		</div>
 		{#if loading}
-			<div class="flex grow justify-center">
+			<div id="spinner" class="flex grow justify-center">
 				<div class="mx-auto translate-y-1/2">
 					<span class="loading loading-spinner loading-lg text-primary"></span>
 				</div>
 			</div>
 		{:else if !entries.length}
-			<div class="flex grow justify-center">
+			<div id="empty" class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/4">
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
@@ -389,7 +403,7 @@
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
 					<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
-						<div slot="row-actions" let:row let:rowIx>
+						<div id="row-actions" slot="row-actions" let:row let:rowIx>
 							<PopoverWrapper
 								options={{
 									forceVisible: true,
@@ -539,3 +553,20 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	@media print {
+		#inbound-header {
+			display: none;
+		}
+		#spinner {
+			display: none;
+		}
+		#row-actions {
+			display: none;
+		}
+		#empty {
+			display: none;
+		}
+	}
+</style>

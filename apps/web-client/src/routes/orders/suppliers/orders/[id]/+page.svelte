@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import { ArrowRight, ListTodo } from "lucide-svelte";
+	import ArrowRight from "$lucide/arrow-right";
+	import ListTodo from "$lucide/list-todo";
 
 	import type { PageData } from "./$types";
 

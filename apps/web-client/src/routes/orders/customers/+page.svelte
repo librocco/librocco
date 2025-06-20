@@ -1,22 +1,23 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Plus } from "lucide-svelte";
+	import Plus from "$lucide/plus";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
+
+	import LL from "@librocco/shared/i18n-svelte";
+
 	import { invalidate } from "$app/navigation";
 	import { racefreeGoto } from "$lib/utils/navigation";
-
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema, customerSearchSchema } from "$lib/forms";
 	import { appPath, appHash } from "$lib/paths";
 
-	import { getCustomerDisplayIdSeq, getCustomerOrderList, upsertCustomer } from "$lib/db/cr-sqlite/customers";
-	import { Page } from "$lib/controllers";
+	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
+	import { Page } from "$lib/controllers";
 	import type { Customer, CustomerOrderListItem } from "$lib/db/cr-sqlite/types";
-	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";
 

@@ -9,7 +9,7 @@
 
 	import { Subscription } from "rxjs";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Menu } from "lucide-svelte";
+	import Menu from "$lucide/menu";
 
 	import { afterNavigate } from "$app/navigation";
 	import { browser } from "$app/environment";
@@ -244,7 +244,7 @@
 	<main class="h-full w-full overflow-y-auto">
 		{#if !$mobileNavOpen}
 			<!--TODO:  add aria-label to dict-->
-			<button use:melt={$mobileNavTrigger} class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden">
+			<button id="mobile-nav-trigger" use:melt={$mobileNavTrigger} class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden">
 				<Menu size={24} aria-hidden />
 			</button>
 		{/if}
@@ -367,5 +367,10 @@
 	:global(body) {
 		height: 100%;
 		padding: 0;
+	}
+	@media print {
+		#mobile-nav-trigger {
+			display: none;
+		}
 	}
 </style>
