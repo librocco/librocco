@@ -436,6 +436,7 @@ async function _createSupplierOrder(
 	id: number,
 	supplierId: number | null,
 	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
+	// isContinuationOrder = false
 ) {
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
 
