@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick } from "svelte";
-	import { PencilLine } from "lucide-svelte";
+	import PencilLine from "$lucide/pencil-line";
 	import { clickOutside } from "$lib/actions";
 	import { createEventDispatcher } from "svelte";
 	import { testId } from "@librocco/shared";

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Building, Plus, CopyPlus } from "lucide-svelte";
+	import Building from "$lucide/building";
+	import Plus from "$lucide/plus";
+	import CopyPlus from "$lucide/copy-plus";
 
 	import { page } from "$app/stores";
 

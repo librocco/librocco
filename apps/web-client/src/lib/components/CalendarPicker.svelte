@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { getLocalTimeZone, now, type DateValue } from "@internationalized/date";
 	import { createDatePicker, melt } from "@melt-ui/svelte";
-	import { Calendar, ChevronLeft, ChevronRight } from "lucide-svelte";
+	import Calendar from "$lucide/calendar";
+	import ChevronLeft from "$lucide/chevron-left";
+	import ChevronRight from "$lucide/chevron-right";
 	import { fade } from "svelte/transition";
 
 	import { testId, type TestId } from "@librocco/shared";

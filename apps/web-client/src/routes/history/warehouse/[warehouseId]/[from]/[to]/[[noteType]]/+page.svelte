@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { ArrowLeft, ArrowRight } from "lucide-svelte";
+	import ArrowLeft from "$lucide/arrow-left";
+	import ArrowRight from "$lucide/arrow-right";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 	import { browser } from "$app/environment";

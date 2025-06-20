@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Library, ArrowLeft, ArrowRight } from "lucide-svelte";
+	import Library from "$lucide/library";
+	import ArrowLeft from "$lucide/arrow-left";
+	import ArrowRight from "$lucide/arrow-right";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 	import { invalidate } from "$app/navigation";
 
@@ -175,6 +177,9 @@
 	</div>
 </HistoryPage>
 
+<!-- * Svelte check is not aware of the classes that melt adds to the calendar components
+ * so in this case we know more than it, and should tell it to quiet down-->
+<!-- svelte-ignore css-unused-selector -->
 <style lang="postcss">
 	[data-melt-calendar-prevbutton][data-disabled] {
 		@apply pointer-events-none rounded-lg p-1 opacity-40;
