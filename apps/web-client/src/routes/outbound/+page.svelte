@@ -4,7 +4,12 @@
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Plus, Trash, Library, FilePlus, Layers, ClockArrowUp } from "lucide-svelte";
+	import Plus from "$lucide/plus";
+	import Trash from "$lucide/trash";
+	import Library from "$lucide/library";
+	import FilePlus from "$lucide/file-plus";
+	import Layers from "$lucide/layers";
+	import ClockArrowUp from "$lucide/clock-arrow-up";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 

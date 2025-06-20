@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { writable } from "svelte/store";
-	import { Search } from "lucide-svelte";
+	import Search from "$lucide/search";
 
 	import { entityListView, testId, type BookData } from "@librocco/shared";
 

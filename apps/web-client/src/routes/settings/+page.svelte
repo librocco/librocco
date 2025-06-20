@@ -2,7 +2,8 @@
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 	import { get } from "svelte/store";
-	import { Download, Trash } from "lucide-svelte";
+	import Download from "$lucide/download";
+	import Trash from "$lucide/trash";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { zod } from "sveltekit-superforms/adapters";
 

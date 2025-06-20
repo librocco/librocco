@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
 
-	import { QrCode, Loader2 as Loader, Search } from "lucide-svelte";
+	import QrCode from "$lucide/qr-code";
 
 	import type { PageData } from "./$types";
 
