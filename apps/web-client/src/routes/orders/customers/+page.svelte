@@ -4,9 +4,11 @@
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
+
+	import LL from "@librocco/shared/i18n-svelte";
+
 	import { invalidate } from "$app/navigation";
 	import { racefreeGoto } from "$lib/utils/navigation";
-
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema, customerSearchSchema } from "$lib/forms";
