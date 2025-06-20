@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { superForm, numberProxy } from "sveltekit-superforms/client";
-	import { Euro } from "lucide-svelte";
+	import Euro from "$lucide/euro";
 
 	import { testId } from "@librocco/shared";
 

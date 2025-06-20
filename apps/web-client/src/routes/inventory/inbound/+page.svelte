@@ -4,7 +4,11 @@
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { ClockArrowUp, FilePlus, Layers, Library, Trash } from "lucide-svelte";
+	import ClockArrowUp from "$lucide/clock-arrow-up";
+	import FilePlus from "$lucide/file-plus";
+	import Layers from "$lucide/layers";
+	import Library from "$lucide/library";
+	import Trash from "$lucide/trash";
 
 	import { entityListView, testId } from "@librocco/shared";
 

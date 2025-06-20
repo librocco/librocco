@@ -363,6 +363,7 @@ export const markCustomerOrderLinesAsCollected = async (db: DB, ids: number[]): 
 		[timestamp, ...ids]
 	);
 };
+
 export const upsertCustomer = timed(_upsertCustomer);
 export const getCustomerOrderList = timed(_getCustomerOrderList);
 export const getCustomerOrderLineHistory = timed(_getCustomerOrderLineHistory);

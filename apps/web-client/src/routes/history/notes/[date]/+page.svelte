@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Library } from "lucide-svelte";
+	import Library from "$lucide/library";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 	import { browser } from "$app/environment";
 	import { invalidate } from "$app/navigation";

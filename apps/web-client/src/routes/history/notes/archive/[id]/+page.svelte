@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
 
-	import { QrCode, Loader2 as Loader, Search } from "lucide-svelte";
+	import QrCode from "$lucide/qr-code";
 
 	import type { PageData } from "./$types";
 
@@ -64,6 +64,9 @@
 	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
 
+	const handlePrint = () => {
+		window.print();
+	};
 	// #region csv
 	const handleExportCsv = () => {
 		const csvConfig = mkConfig({
@@ -105,8 +108,9 @@
 				</div>
 			</div>
 
-			<div class="ml-auto flex items-center gap-x-2">
+			<div id="button-container" class="ml-auto flex items-center gap-x-2">
 				<button on:click={handleExportCsv} class="btn-primary btn">{t.export_csv()}</button>
+				<button on:click={handlePrint} class="btn-primary btn">Print Table</button>
 			</div>
 		</div>
 		{#if loading}
@@ -142,3 +146,11 @@
 		{/if}
 	</div>
 </HistoryPage>
+
+<style>
+	@media print {
+		#button-container {
+			display: none;
+		}
+	}
+</style>

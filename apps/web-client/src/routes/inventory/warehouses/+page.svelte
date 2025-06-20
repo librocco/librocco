@@ -5,7 +5,12 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Edit, Table2, Trash2, HousePlus, Layers, SquarePercent } from "lucide-svelte";
+	import Edit from "$lucide/edit";
+	import Table2 from "$lucide/table-2";
+	import Trash2 from "$lucide/trash-2";
+	import HousePlus from "$lucide/house-plus";
+	import Layers from "$lucide/layers";
+	import SquarePercent from "$lucide/square-percent";
 
 	import { entityListView, testId } from "@librocco/shared";
 

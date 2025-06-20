@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick } from "svelte";
-	import { PencilLine } from "lucide-svelte";
+	import PencilLine from "$lucide/pencil-line";
 	import { clickOutside } from "$lib/actions";
 
 	export let name: string;
