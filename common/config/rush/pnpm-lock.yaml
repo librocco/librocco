@@ -346,7 +346,7 @@ importers:
         version: 5.8.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.11(@types/node@16.18.126)
+        version: 6.0.11(tsx@4.20.3)
 
   ../../pkg/scaffold:
     dependencies:
@@ -432,6 +432,9 @@ importers:
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2
+      tsx:
+        specifier: ^4.20.3
+        version: 4.20.3
       typesafe-i18n:
         specifier: ~5.26.2
         version: 5.26.2(typescript@5.8.2)
@@ -440,10 +443,10 @@ importers:
         version: 5.8.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.11(@types/node@16.18.126)
+        version: 6.0.11(tsx@4.20.3)
       vitest:
         specifier: ~3.0.4
-        version: 3.0.9(@vitest/ui@3.0.9)
+        version: 3.0.9(@vitest/ui@3.0.9)(tsx@4.20.3)
 
   ../../plugins/book-data-extension:
     devDependencies:
@@ -530,7 +533,7 @@ importers:
         version: 5.8.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.11(@types/node@16.18.126)
+        version: 6.0.11(tsx@4.20.3)
 
   ../../plugins/open-library-api:
     devDependencies:
@@ -560,7 +563,7 @@ importers:
         version: 5.8.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.11(@types/node@16.18.126)
+        version: 6.0.11(tsx@4.20.3)
 
 packages:
 
@@ -12485,6 +12488,17 @@ packages:
     optionalDependencies:
       fsevents: 2.3.3
 
+  /tsx@4.20.3:
+    resolution: {integrity: sha512-qjbnuR9Tr+FJOMBqJCW5ehvIo/buZq7vH7qD7JziU98h6l3qGy0a/yPFjwO+y0/T7GFpNgNAvEcPPVfyT8rrPQ==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
+    dependencies:
+      esbuild: 0.25.1
+      get-tsconfig: 4.10.0
+    optionalDependencies:
+      fsevents: 2.3.3
+    dev: true
+
   /tunnel-agent@0.6.0:
     resolution: {integrity: sha512-McnNiV1l8RYeY8tBgEpuodCC1mLUdbSN+CYBL7kJsJNInOP8UjDDEwdk6Mw60vdLLrr5NHKZhMAOSrR2NZuQ+w==}
     dependencies:
@@ -12783,31 +12797,6 @@ packages:
     engines: {node: '>= 0.8'}
     dev: true
 
-  /vite-node@3.0.9:
-    resolution: {integrity: sha512-w3Gdx7jDcuT9cNn9jExXgOyKmf5UOTb6WMHz8LGAm54eS1Elf5OuBhCxl6zJxGhEeIkgsE1WbHuoL0mj/UXqXg==}
-    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
-    hasBin: true
-    dependencies:
-      cac: 6.7.14
-      debug: 4.4.0
-      es-module-lexer: 1.6.0
-      pathe: 2.0.3
-      vite: 6.0.11(@types/node@16.18.126)
-    transitivePeerDependencies:
-      - '@types/node'
-      - jiti
-      - less
-      - lightningcss
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - yaml
-    dev: true
-
   /vite-node@3.0.9(@types/node@16.18.126):
     resolution: {integrity: sha512-w3Gdx7jDcuT9cNn9jExXgOyKmf5UOTb6WMHz8LGAm54eS1Elf5OuBhCxl6zJxGhEeIkgsE1WbHuoL0mj/UXqXg==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
@@ -12843,6 +12832,31 @@ packages:
       es-module-lexer: 1.6.0
       pathe: 2.0.3
       vite: 6.0.11(tsx@4.19.3)
+    transitivePeerDependencies:
+      - '@types/node'
+      - jiti
+      - less
+      - lightningcss
+      - sass
+      - sass-embedded
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+      - tsx
+      - yaml
+    dev: true
+
+  /vite-node@3.0.9(tsx@4.20.3):
+    resolution: {integrity: sha512-w3Gdx7jDcuT9cNn9jExXgOyKmf5UOTb6WMHz8LGAm54eS1Elf5OuBhCxl6zJxGhEeIkgsE1WbHuoL0mj/UXqXg==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+    hasBin: true
+    dependencies:
+      cac: 6.7.14
+      debug: 4.4.0
+      es-module-lexer: 1.6.0
+      pathe: 2.0.3
+      vite: 6.0.11(tsx@4.20.3)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -12952,6 +12966,54 @@ packages:
       tsx: 4.19.3
     optionalDependencies:
       fsevents: 2.3.3
+
+  /vite@6.0.11(tsx@4.20.3):
+    resolution: {integrity: sha512-4VL9mQPKoHy4+FE0NnRE/kbY51TOfaknxAjt3fJbGJxhIpBZiqVzlZDEesWWsuREXHwNdAoOFZ9MkPEVXczHwg==}
+    engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': ^18.0.0 || ^20.0.0 || >=22.0.0
+      jiti: '>=1.21.0'
+      less: '*'
+      lightningcss: ^1.21.0
+      sass: '*'
+      sass-embedded: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.16.0
+      tsx: ^4.8.1
+      yaml: ^2.4.2
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      jiti:
+        optional: true
+      less:
+        optional: true
+      lightningcss:
+        optional: true
+      sass:
+        optional: true
+      sass-embedded:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+      tsx:
+        optional: true
+      yaml:
+        optional: true
+    dependencies:
+      esbuild: 0.24.2
+      postcss: 8.4.49
+      rollup: 4.36.0
+      tsx: 4.20.3
+    optionalDependencies:
+      fsevents: 2.3.3
+    dev: true
 
   /vitefu@1.0.6(vite@6.0.11):
     resolution: {integrity: sha512-+Rex1GlappUyNN6UfwbVZne/9cYC4+R2XDk9xkNXBKMw6HQagdX9PgZ8V2v1WUSK1wfBLp7qbI1+XSNIlB1xmA==}
@@ -13093,7 +13155,7 @@ packages:
       - yaml
     dev: true
 
-  /vitest@3.0.9(@vitest/ui@3.0.9):
+  /vitest@3.0.9(@vitest/ui@3.0.9)(tsx@4.20.3):
     resolution: {integrity: sha512-BbcFDqNyBlfSpATmTtXOAOj71RNKDDvjBM/uPfnxxVGrG+FSH2RQIwgeEngTaTkuU/h0ScFvf+tRcKfYXzBybQ==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
@@ -13139,8 +13201,8 @@ packages:
       tinyexec: 0.3.2
       tinypool: 1.0.2
       tinyrainbow: 2.0.0
-      vite: 6.0.11(@types/node@16.18.126)
-      vite-node: 3.0.9
+      vite: 6.0.11(tsx@4.20.3)
+      vite-node: 3.0.9(tsx@4.20.3)
       why-is-node-running: 2.3.0
     transitivePeerDependencies:
       - jiti
