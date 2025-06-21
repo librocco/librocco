@@ -1,12 +1,12 @@
 /* eslint-disable */
-import type { Translation } from '../i18n-types.js'
+import type { Translation } from '../i18n-types'
 
 const it = {
 	nav: {
 		search: 'Ricerca magazzino',
 		books: 'Dati dei libri',
 		inventory: 'Gestione magazzini',
-		sale: 'Sale',
+		sale: 'Vendita',
 		purchase: 'Acquisto',
 		settings: 'Impostazioni',
 		history: 'Storico',

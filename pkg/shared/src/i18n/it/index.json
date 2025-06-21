@@ -1,25 +1,25 @@
 {
-    "nav": {
-        "search": "Ricerca magazzino",
-        "books": "Dati dei libri",
-        "inventory": "Gestione magazzini",
-        "sale": "Vendita",
-        "purchase": "Acquisto",
-        "settings": "Impostazioni",
-        "history": "Storico",
-        "supplier_orders": "Ordini fornitori"
-    },
-    "search": {
-        "title": "Ricerca",
-        "empty": {
-            "title": "Cerca nei magazzini",
-            "description": "Ricerca per titolo, autore o ISBN"
-        }
-    },
-    "history_page": {
-        "date_tab": {
-            "stats": {
-                "title": "Statistiche",
+	"nav": {
+		"search": "Ricerca magazzino",
+		"books": "Dati dei libri",
+		"inventory": "Gestione magazzini",
+		"sale": "Vendita",
+		"purchase": "Acquisto",
+		"settings": "Impostazioni",
+		"history": "Storico",
+		"supplier_orders": "Ordini fornitori"
+	},
+	"search": {
+		"title": "Ricerca",
+		"empty": {
+			"title": "Cerca nei magazzini",
+			"description": "Ricerca per titolo, autore o ISBN"
+		}
+	},
+	"history_page": {
+		"date_tab": {
+			"stats": {
+				"title": "Statistiche",
 				"total_purchase_book_count": "Purchase Book Count",
 				"total_purchase_cover_price": "Purchase Cover Price",
 				"total_purchase_discounted_price": "Purchase Discounted Price",
