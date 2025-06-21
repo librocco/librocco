@@ -187,7 +187,7 @@ jobs:
     timeout-minutes: 10
     permissions:
       id-token: write
-      contents: read
+      contents: write
       checks: write
     steps:
     - uses: actions/checkout@v4
@@ -207,10 +207,17 @@ jobs:
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
       run: rush update
+    - name: Import translations (.json → .ts)
+      run: cd pkg/shared && rushx typesafe-i18n-sync
     - name: Build packages
       run: rush build
     - name: Run the check
       run: cd apps/web-client && rushx typesafe-i18n-check
+    - name: Auto-commit generated .ts files
+      uses: stefanzweifel/git-auto-commit-action@v5
+      with:
+        commit_message: "chore(i18n): sync .ts from .json [skip ci]"
+        file_pattern: pkg/shared/src/i18n/**/*.ts
   perform-monorepo-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
