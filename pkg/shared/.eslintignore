@@ -20,6 +20,7 @@ svelte.config.ts
 
 # Skip linting i18n files
 formatters.ts
+i18n-svelte.ts
 i18n-types.ts
 i18n-util.async.ts
 i18n-util.sync.ts
