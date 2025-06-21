@@ -1,21 +1,21 @@
 {
-    "nav": {
-        "search": "Bestände suchen",
-        "books": "View known books",
-        "inventory": "Inventar verwalten",
-        "sale": "Sale",
-        "purchase": "Purchase",
-        "settings": "Einstellungen",
-        "history": "Verlauf",
-        "supplier_orders": "Lieferantenbestellungen"
-    },
-    "search": {
-        "title": "Suche",
-        "empty": {
-            "title": "Nach Beständen suchen",
-            "description": "Beginnen Sie mit der Suche nach Titel, Autor, ISBN"
-        }
-    },
+	"nav": {
+		"search": "Bestände suchen",
+		"books": "View known books",
+		"inventory": "Inventar verwalten",
+		"sale": "Sale",
+		"purchase": "Purchase",
+		"settings": "Einstellungen",
+		"history": "Verlauf",
+		"supplier_orders": "Lieferantenbestellungen"
+	},
+	"search": {
+		"title": "Suche",
+		"empty": {
+			"title": "Nach Beständen suchen",
+			"description": "Beginnen Sie mit der Suche nach Titel, Autor, ISBN"
+		}
+	},
 	"history_page": {
 		"date_tab": {
 			"stats": {
