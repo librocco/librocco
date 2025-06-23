@@ -24,6 +24,7 @@
 	import CustomerSearchForm from "$lib/forms/CustomerSearchForm.svelte";
 	import { writable } from "svelte/store";
 	import { createIntersectionObserver } from "$lib/actions";
+	import { normalizeName } from "$lib/utils/misc";
 
 	export let data: PageData;
 
@@ -42,12 +43,15 @@
 	const scroll = createIntersectionObserver(seeMore);
 	let maxResults = 10;
 
-	$: filteredOrders = customerOrders
-		.filter(({ completed }) => completed === (orderFilterStatus === "completed"))
-		.filter(({ fullname, displayId }) => {
-			if (!$search) return true;
-			return fullname.toLowerCase().includes($search.toLowerCase()) || displayId.toLowerCase().includes($search.toLowerCase());
-		});
+	$: filteredOrders = customerOrders.filter(({ fullname, displayId }) => {
+		if (!$search) return true;
+
+		// Normalize the search query
+		const normalizedSearch = normalizeName($search.toLowerCase());
+
+		// Check against both fullname and displayId
+		return normalizeName(fullname.toLowerCase()).includes(normalizedSearch) || displayId.toLowerCase().includes($search.toLowerCase());
+	});
 
 	$: tableStore.set(filteredOrders.slice(0, maxResults));
 	// #region reactivity

@@ -30,3 +30,13 @@ export const extractBookData = <T extends BookData>(entry: T): BookData => ({
 	editedBy: entry.editedBy,
 	outOfPrint: entry.outOfPrint
 });
+
+export function normalizeName(name: string) {
+	// Remove commas and extra spaces, then sort name parts alphabetically
+	return name
+		.replace(/,/g, "") // Remove commas
+		.split(/\s+/) // Split on whitespace
+		.sort() // Sort parts alphabetically
+		.join(" ") // Rejoin with single spaces
+		.trim();
+}
