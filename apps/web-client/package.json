@@ -27,6 +27,13 @@
 		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)"
 	},
 	"dependencies": {
+		"@vlcn.io/crsqlite": "file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz",
+		"@vlcn.io/crsqlite-wasm": "file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz",
+		"@vlcn.io/rx-tbl": "file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz",
+		"@vlcn.io/ws-browserdb": "file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz",
+		"@vlcn.io/ws-client": "file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz",
+		"@vlcn.io/ws-common": "file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz",
+		"@vlcn.io/ws-server": "file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz",
 		"lucide-svelte": "^0.475.0",
 		"export-to-csv": "~1.3.0",
 		"rxjs": "~7.8.0",
