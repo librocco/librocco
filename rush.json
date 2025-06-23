@@ -391,14 +391,6 @@
 		{
 			"packageName": "@librocco/open-library-api-plugin",
 			"projectFolder": "plugins/open-library-api"
-		},
-		{
-			"packageName": "@vlcn.io/wa-sqlite",
-			"projectFolder": "3rd-party/wa-sqlite"
-		},
-		{
-			"packageName": "@vlcn.io/crsqlite-wasm",
-			"projectFolder": "3rd-party/crsqlite-wasm"
 		}
 	]
 }
