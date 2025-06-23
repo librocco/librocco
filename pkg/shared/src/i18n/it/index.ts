@@ -177,7 +177,7 @@ const it = {
 	customer_orders_page: {
 		title: 'Customer Orders',
 		labels: {
-			new_order: 'New Order',
+			new_order: 'Nuovo Ordine',
 			update_order: 'Update Order',
 			update: 'Update',
 		},
