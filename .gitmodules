@@ -1,9 +1,6 @@
-[submodule "3rd-party/wa-sqlite"]
-	path = 3rd-party/wa-sqlite
-	url = git@github.com:librocco/wa-sqlite
-[submodule "3rd-party/cr-sqlite"]
-	path = 3rd-party/cr-sqlite
-	url = git@github.com:librocco/cr-sqlite
-[submodule "3rd-party/emsdk"]
-	path = 3rd-party/emsdk
-	url = git@github.com:emscripten-core/emsdk
+[submodule "3rd-party/js"]
+	path = 3rd-party/js
+	url = git@github.com:vlcn-io/js
+[submodule "3rd-party/typed-sql"]
+	path = 3rd-party/typed-sql
+	url = git@github.com:vlcn-io/typed-sql

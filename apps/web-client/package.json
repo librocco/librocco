@@ -27,11 +27,6 @@
 		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)"
 	},
 	"dependencies": {
-		"@vlcn.io/crsqlite-wasm": "workspace:*",
-		"@vlcn.io/ws-browserdb": "~0.2.0",
-		"@vlcn.io/ws-client": "~0.2.0",
-		"@vlcn.io/ws-common": "~0.2.0",
-		"@vlcn.io/rx-tbl": "~0.15.0",
 		"lucide-svelte": "^0.475.0",
 		"export-to-csv": "~1.3.0",
 		"rxjs": "~7.8.0",
@@ -99,9 +94,7 @@
 		"daisyui": "~4.12.13",
 		"@tailwindcss/typography": "~0.5.15",
 		"tsx": "~4.19.1",
-		"@vlcn.io/ws-server": "^0.2.3",
 		"express": "^4.18.2",
-		"@vlcn.io/crsqlite": "~0.16.3",
 		"better-sqlite3": "~11.4.0",
 		"cors": "~2.8.5",
 		"pm2": "~6.0.5"
