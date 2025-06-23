@@ -3,6 +3,7 @@ name: Checks
   push:
     branches-ignore:
     - ci-debug/*
+    - wip/**
 jobs:
   js-search-test:
     name: JS-Search Tests

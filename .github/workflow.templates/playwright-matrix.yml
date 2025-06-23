@@ -10,6 +10,7 @@ name: PlaywrightMatrix
   push:
     branches:
       - "playwright-matrix/**"
+
   schedule:
     - cron: "30 5 * * 1,3"
 
