@@ -303,16 +303,7 @@ This parameter is used to provide the debug context and pass it all the way back
 
 ## 2. Development
 
-In development, we're using a local, in-browser, instance of PouchDB (as we do in production) with additinal CouchDB instance to sync with in real time. The CouchDB is ran inside the container (on `localhost:5000`).
-
-To start the dev server (and dev docker environment), we run
-
-```shell
-docker compose up -d
-rushx start
-```
-
-_Note: CouchDB instance is populated with test data, which will get replicated to the browser when the app starts. This data is being reset each time we stop the container (`docker compose down`), whereas the data inside the browser is persisted. If you wish to reset the changes made to the dev db, you can do so by clearing the IndexedDB (found in 'application' section of dev tools) and restarting the container (`docker compose down && docker compose up -d`)_
+This documentation is somewhat stale and the update is WIP. For now, we only feature the [db stack](./src/lib/db/README.md) documentation.
 
 ## 3. Plugins
 
