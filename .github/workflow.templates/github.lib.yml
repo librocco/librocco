@@ -1,0 +1,6 @@
+#@ def checkout():
+name: Checkout repository and submodules
+uses: actions/checkout@v4
+with:
+  submodules: "recursive"
+#@ end
