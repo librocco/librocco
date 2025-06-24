@@ -1,4 +1,6 @@
 #@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "load_artefacts")
+#@ load("github.lib.yml", "cache_artefacts")
 #@ load("cache.lib.yml", "cache_node")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
@@ -12,6 +14,7 @@
 name: #@ name
 runs-on: ubuntu-latest
 timeout-minutes: 10
+needs: build-cr-sqlite
 permissions:
   id-token: write
   contents: read
@@ -21,6 +24,8 @@ steps:
   - uses: actions/setup-node@v4
     with:
       node-version: "20"
+  -  #@ load_artefacts()
+  -  #@ cache_artefacts()
   -  #@ cache_node()
   -  #@ rush_add_path()
   -  #@ rush_install()
