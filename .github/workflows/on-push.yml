@@ -22,16 +22,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Install Rust 1.70.0
+      - name: Install Rust 1.83.0
         # I was getting this:
         # error: older versions of the `wasm-bindgen` crate are incompatible with current versions of Rust; please update to `wasm-bindgen` v0.2.88
         # and for now I decided to downgrade rust instead of upgrading wasm-bindgen
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.70.0
+          toolchain: 1.83.0
           override: true
-      - name: install wasm-pack 0.10.2
-        run: cargo install wasm-pack --version 0.10.2
+      - name: install wasm-pack
+        run: cargo install wasm-pack
       - name: Build cr-sqlite
         run: ./build_vlcn.sh
       - name: Check that the build went fine
