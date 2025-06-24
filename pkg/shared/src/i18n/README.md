@@ -26,12 +26,12 @@ rushx typesafe-i18n
 
 This auto-generates the required i18n support files:
 
-* i18n-types.ts
-* i18n-util.ts
-* i18n-util.sync.ts
-* i18n-util.async.ts
-* i18n-svelte.ts
-* formatters.ts
+- i18n-types.ts
+- i18n-util.ts
+- i18n-util.sync.ts
+- i18n-util.async.ts
+- i18n-svelte.ts
+- formatters.ts
 
 These ensure type safety and autocompletion throughout your app.
 
@@ -45,10 +45,10 @@ rushx typesafe-i18n-sync
 
 This script will:
 
-* Create missing `.json` files for new locales
-* Add any missing translation keys from `en/index.ts` with empty values
-* Remove keys that no longer exist in `en/index.ts`
-* Preserve all existing translations
+- Create missing `.json` files for new locales
+- Add any missing translation keys from `en/index.ts` with empty values
+- Remove keys that no longer exist in `en/index.ts`
+- Preserve all existing translations
 
 ### 4. Adding a New Locale
 
@@ -57,14 +57,14 @@ Create a new directory under `src/i18n/`, using the locale code (e.g., `fr`) to 
 Create a `index.ts` file like the following:
 
 ```ts
-import { extendDictionary } from '../i18n-util'
-import { prepareTranslations } from '../utils'
-import en from '../en'
-import frJson from './index.json'
+import { extendDictionary } from "../i18n-util";
+import { prepareTranslations } from "../utils";
+import en from "../en";
+import frJson from "./index.json";
 
-const fr = extendDictionary(en, prepareTranslations(en, frJson))
+const fr = extendDictionary(en, prepareTranslations(en, frJson));
 
-export default fr
+export default fr;
 ```
 
 Then run:
@@ -80,7 +80,7 @@ It will also update all relevant `typesafe-i18n` files with the new locale.
 
 Weblate is used by translators to work on `.json` files for each locale.
 
-* Weblate is updated via webhook on push to the repository
-* Weblate commits translations back to the repo
-* The `.ts` files import the `.json` files and filter out empty values using the `prepareTranslations` utility function
-* The `extendDictionary` function merges the base English translations and provides fallbacks when translations are missing
+- Weblate is updated via webhook on push to the repository
+- Weblate commits translations back to the repo
+- The `.ts` files import the `.json` files and filter out empty values using the `prepareTranslations` utility function
+- The `extendDictionary` function merges the base English translations and provides fallbacks when translations are missing
