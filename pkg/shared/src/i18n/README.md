@@ -60,7 +60,7 @@ Create a `index.ts` file like the following:
 import { extendDictionary } from "../i18n-util";
 import { prepareTranslations } from "../utils";
 import en from "../en";
-import frJson from "./index.json";
+import frJson from "./index.json" assert { type: "json" };
 
 const fr = extendDictionary(en, prepareTranslations(en, frJson));
 
