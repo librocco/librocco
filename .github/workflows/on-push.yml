@@ -32,6 +32,8 @@ jobs:
           override: true
       - name: install wasm-pack
         run: cargo install wasm-pack
+      - name: install pnpm
+        run: npm install -g 'pnpm@<9'
       - name: Build cr-sqlite
         run: ./build_vlcn.sh
       - name: Check that the build went fine
