@@ -15,6 +15,11 @@ jobs:
         submodules: recursive
         lfs: true
         fetch-depth: 0
+    - name: Cache cr-sqlite artefacts
+      uses: actions/cache@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts/version.txt') }}
     - name: Test if artefacts are stale
       id: ts
       shell: bash
@@ -35,12 +40,12 @@ jobs:
         # `git diff` exits with 0 if there are no changes, which means `rebuild` should be `no`.
         # However, setting it to `no` causes the build to fail.
         # For some reason, the inverted logic works correctly.
-        if git diff 3rd-party/artefacts/version.txt; then
-          echo "not rebuilding: the file 3rd-party/artefacts/version.txt is in line with the submodules"
+        if diff 3rd-party/artefacts/version.txt 3rd-party/artefacts/version-cached.txt || git diff 3rd-party/artefacts/version.txt; then
           echo "rebuild=yes" >>"$GITHUB_OUTPUT"
-        else
           echo "rebuilding: the file 3rd-party/artefacts/version.txt is out of sync wrt the submodules"
+        else
           echo "rebuild=no"  >>"$GITHUB_OUTPUT"
+          echo "not rebuilding: the file 3rd-party/artefacts/version.txt is in line with the submodules"
         fi
     - uses: actions/setup-node@v4
       if: steps.ts.outputs.rebuild == 'yes'
@@ -69,6 +74,8 @@ jobs:
       with:
         name: built-vlcn-artefacts
         path: 3rd-party/artefacts/
+    - name: Mark cached version
+      run: cp 3rd-party/artefacts/version.txt 3rd-party/artefacts/version-cached.txt
   js-search-test:
     name: JS-Search Tests
     runs-on: ubuntu-latest
