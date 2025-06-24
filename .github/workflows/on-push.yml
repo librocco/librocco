@@ -30,8 +30,8 @@ jobs:
         with:
           toolchain: 1.70.0
           override: true
-      - name: install build dependencies
-        run: cargo install wasm-pack --version 0.10.3
+      - name: install wasm-pack 0.10.2
+        run: cargo install wasm-pack --version 0.10.2
       - name: Build cr-sqlite
         run: ./build_vlcn.sh
       - name: Check that the build went fine
