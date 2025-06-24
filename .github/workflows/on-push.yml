@@ -5,8 +5,61 @@ name: Checks
       - ci-debug/*
       - wip/**
 jobs:
-  compile-cr-sqlite:
-    name: Compile cr-sqlite
+  artefact_check:
+    runs-on: ubuntu-latest
+    outputs:
+      rebuild: ${{ steps.ts.outputs.rebuild }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+      - name: Test if artefacts are stale
+        id: ts
+        shell: bash
+        run: |
+          file_ts=$(git log -1 --format=%ct 3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz || echo 0)
+          sub_ts=$(git -C 3rd-party/js log -1 --format=%ct)
+          if [[ $sub_ts -gt $file_ts ]]; then
+            echo "rebuild=yes" >>"$GITHUB_OUTPUT"
+          else
+            echo "rebuild=no"  >>"$GITHUB_OUTPUT"
+          fi
+      - uses: actions/setup-node@v4
+        if: steps.ts.outputs.rebuild == 'yes'
+        with:
+          node-version: "20"
+      - name: Install Rust 1.83.0
+        if: steps.ts.outputs.rebuild == 'yes'
+        # I was getting this:
+        # error: older versions of the `wasm-bindgen` crate are incompatible with current versions of Rust; please update to `wasm-bindgen` v0.2.88
+        # and for now I decided to downgrade rust instead of upgrading wasm-bindgen
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.83.0
+          override: true
+      - name: install wasm-pack
+        if: steps.ts.outputs.rebuild == 'yes'
+        run: cargo install wasm-pack
+      - name: install pnpm
+        if: steps.ts.outputs.rebuild == 'yes'
+        run: npm install -g 'pnpm@<9'
+      - name: Build cr-sqlite
+        if: steps.ts.outputs.rebuild == 'yes'
+        run: ./build_vlcn.sh
+      - name: Check that the build went fine
+        # Let's leave this without an `if`: it won't hurt and might help debugging
+        run: git status; ls -l 3rd-party/artefacts/
+      - name: upload to later jobs
+        if: steps.ts.outputs.rebuild == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: built-vlcn-tgz
+          path: 3rd-party/artefacts/*.tgz
+
+  client-tests:
+    needs: artefact_check
+    name: Web client tests
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -18,25 +71,14 @@ jobs:
         with:
           submodules: recursive
           lfs: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: built-vlcn-tgz
+          path: 3rd-party/artefacts
+        if: ${{ !cancelled() && needs.artefact_check.outputs.rebuild == 'yes' }}
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Install Rust 1.83.0
-        # I was getting this:
-        # error: older versions of the `wasm-bindgen` crate are incompatible with current versions of Rust; please update to `wasm-bindgen` v0.2.88
-        # and for now I decided to downgrade rust instead of upgrading wasm-bindgen
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.83.0
-          override: true
-      - name: install wasm-pack
-        run: cargo install wasm-pack
-      - name: install pnpm
-        run: npm install -g 'pnpm@<9'
-      - name: Build cr-sqlite
-        run: ./build_vlcn.sh
-      - name: Check that the build went fine
-        run: git status; ls -l 3rd-party/artefacts/
       - name: Cache node modules
         uses: actions/cache@v4
         with:
