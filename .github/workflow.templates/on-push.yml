@@ -1,6 +1,6 @@
 #@ load("github.lib.yml", "checkout")
 #@ load("github.lib.yml", "load_artefacts")
-#@ load("github.lib.yml", "cache_artefacts")
+#@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("cache.lib.yml", "cache_node")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
@@ -26,41 +26,30 @@ jobs:
           submodules: recursive
           lfs: true
           fetch-depth: 0 #! We need all the history to check artifact date
+      - name: Compute desired compiled artifact version
+        run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
+      - name: Cache cr-sqlite artefacts
+        uses: actions/cache@v4
+        with:
+          path: 3rd-party/artefacts
+          key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
       - name: Test if artefacts are stale
         id: ts
         shell: bash
-        run: |
-          git log -1 3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
-          git -C 3rd-party/js log -1
-          file_ts=$(git log -1 --format=%ct 3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz || echo 0)
-          sub_ts=$(git -C 3rd-party/js log -1 --format=%ct)
-          echo "artefact commit: $file_ts"
-          echo "sub-repo commit:  $sub_ts"
-
-          echo "artefact commit: $(date -u -d "@$file_ts" +"%Y-%m-%d %H:%M:%S UTC")"
-          echo "sub-repo commit:  $(date -u -d "@$sub_ts"  +"%Y-%m-%d %H:%M:%S UTC")"
-          # Recalculate the version of the cr-sqlite artefact that should be here and
-          # compare wit what's in the git repo. If they differ, rebuild.
-          scripts/compute_artefacts_version.sh
-          if git diff --quiet 3rd-party/artefacts/version.txt; then
-            echo "not rebuilding: the file 3rd-party/artefacts/version.txt is in line with the submodules"
-            echo "rebuild=no" >>"$GITHUB_OUTPUT"
-          else
-            echo "rebuilding: the file 3rd-party/artefacts/version.txt is out of sync wrt the submodules"
-            echo "rebuild=yes"  >>"$GITHUB_OUTPUT"
-          fi
+        #! The script will output either `rebuild=yes` or `rebuild=no` on stdout
+        run: scripts/compare_artefacts_version.sh >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         if: steps.ts.outputs.rebuild == 'yes'
         with:
           node-version: "20"
-      - name: Install Rust 1.83.0
+      - name: Install Rust 1.85.0
         if: steps.ts.outputs.rebuild == 'yes'
         #! I was getting this:
         #! error: older versions of the `wasm-bindgen` crate are incompatible with current versions of Rust; please update to `wasm-bindgen` v0.2.88
         #! and for now I decided to downgrade rust instead of upgrading wasm-bindgen
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.83.0
+          toolchain: 1.85.0
           override: true
       - name: install wasm-pack
         if: steps.ts.outputs.rebuild == 'yes'
@@ -70,7 +59,7 @@ jobs:
         run: npm install -g 'pnpm@<9'
       - name: Build cr-sqlite
         if: steps.ts.outputs.rebuild == 'yes'
-        run: ./build_vlcn.sh
+        run: ./scripts/build_vlcn.sh
       - name: Check that the build went fine
         #! Let's leave this without an `if`: it won't hurt and might help debugging
         run: git status; ls -l 3rd-party/artefacts/
@@ -80,6 +69,8 @@ jobs:
         with:
           name: built-vlcn-artefacts
           path: 3rd-party/artefacts/
+      - name: Mark cached version
+        run: cp 3rd-party/artefacts_version.txt 3rd-party/artefacts/version-cached.txt
 
   js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
 
@@ -101,8 +92,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Compute desired compiled artifact version
+        run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
       -  #@ load_artefacts()
-      -  #@ cache_artefacts()
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
@@ -189,8 +182,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: compute desired compiled artifact version
+        run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
       -  #@ load_artefacts()
-      -  #@ cache_artefacts()
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
