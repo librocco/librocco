@@ -33,15 +33,18 @@ jobs:
           git -C 3rd-party/js log -1
           file_ts=$(git log -1 --format=%ct 3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz || echo 0)
           sub_ts=$(git -C 3rd-party/js log -1 --format=%ct)
-          echo "artefact commit: $date"
-          echo "sub-repo commit:  $date"
+          echo "artefact commit: $file_ts"
+          echo "sub-repo commit:  $sub_ts"
 
           echo "artefact commit: $(date -u -d "@$file_ts" +"%Y-%m-%d %H:%M:%S UTC")"
           echo "sub-repo commit:  $(date -u -d "@$sub_ts"  +"%Y-%m-%d %H:%M:%S UTC")"
-          if [[ $sub_ts -gt $file_ts ]]; then
-            echo "rebuild=yes" >>"$GITHUB_OUTPUT"
+          # Recalculate the version of the cr-sqlite artefact that should be here and
+          # compare wit what's in the git repo. If they differ, rebuild.
+          scripts/compute_artefacts_version.sh
+          if git diff 3rd-party/artefacts/version.txt; then
+            echo "rebuild=no" >>"$GITHUB_OUTPUT"
           else
-            echo "rebuild=no"  >>"$GITHUB_OUTPUT"
+            echo "rebuild=yes"  >>"$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-node@v4
         if: steps.ts.outputs.rebuild == 'yes'
