@@ -6,6 +6,7 @@
 
 	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
 	import type { ScannerSchema } from "$lib/forms/schemas";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let icon = QrCode;
 	export let placeholder = "Scan to add books";
