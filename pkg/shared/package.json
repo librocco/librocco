@@ -50,7 +50,7 @@
 		"typecheck": "tsc --noEmit",
 		"typesafe-i18n": "typesafe-i18n",
 		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)",
-		"typesafe-i18n-sync": "typesafe-i18n --no-watch && tsx ./src/i18n/importer.ts"
+		"typesafe-i18n-sync": "typesafe-i18n --no-watch && tsx ./src/i18n/export-json.ts"
 	},
 	"devDependencies": {
 		"@typescript-eslint/eslint-plugin": "^7.17.1",

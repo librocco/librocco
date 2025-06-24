@@ -259,8 +259,6 @@ jobs:
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
       run: rush update
-    - name: Import translations (.json → .ts)
-      run: cd pkg/shared && rushx typesafe-i18n-sync
     - name: Build packages
       run: rush build
     - name: Build web-client app using prefix ${{ github.head_ref || github.ref_name }}
