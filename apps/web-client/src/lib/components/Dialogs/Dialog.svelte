@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { type createDialog, melt } from "@melt-ui/svelte";
 
+	import LL from "@librocco/shared/i18n-svelte";
+
 	export let type: "commit" | "delete";
 	export let dialog: ReturnType<typeof createDialog>;
 	export let onConfirm: (closeDialog: () => void) => void = () => {};
@@ -12,6 +14,8 @@
 	} = dialog;
 
 	const closeDialog = () => open.set(false);
+
+	$: tCommon = $LL.common;
 </script>
 
 <div class="modal-box flex max-w-fit flex-col gap-y-4 rounded-md" use:melt={$content}>
@@ -32,14 +36,14 @@
 		<div>
 			<slot name="secondary-button">
 				<button class="btn-secondary btn-outline btn" use:melt={$close} type="button" on:click={() => onCancel(closeDialog)}>
-					<span class="button-text"> Cancel </span>
+					<span class="button-text"> {tCommon.actions.cancel()} </span>
 				</button>
 			</slot>
 		</div>
 		<div>
 			<slot name="confirm-button">
 				<button class="btn {type === 'commit' ? 'btn-primary' : 'btn-error'}" type="button" on:click={() => onConfirm(closeDialog)}>
-					Confirm
+					{tCommon.actions.confirm()}
 				</button>
 			</slot>
 		</div>
