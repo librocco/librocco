@@ -33,13 +33,17 @@ jobs:
 
         echo "artefact commit: $(date -u -d "@$file_ts" +"%Y-%m-%d %H:%M:%S UTC")"
         echo "sub-repo commit:  $(date -u -d "@$sub_ts"  +"%Y-%m-%d %H:%M:%S UTC")"
+        echo 3rd-party/artefacts/version.txt contents:
+        cat 3rd-party/artefacts/version.txt
+        echo 3rd-party/artefacts/version-cached.txt contents:
+        cat 3rd-party/artefacts/version-cached.txt
         # Recalculate the version of the cr-sqlite artefact that should be here and
         # compare wit what's in the git repo. If they differ, rebuild.
         scripts/compute_artefacts_version.sh
         # The logic below is counter-intuitive but it works.
         # `git diff` exits with 0 if there are no changes, which means `rebuild` should be `no`.
-        # However, setting it to `no` causes the build to fail.
-        # For some reason, the inverted logic works correctly.
+        # However, for some reason, the inverted logic works correctly.
+        # `diff` works as expected.
         if diff 3rd-party/artefacts/version.txt 3rd-party/artefacts/version-cached.txt || git diff 3rd-party/artefacts/version.txt; then
           echo "rebuild=yes" >>"$GITHUB_OUTPUT"
           echo "rebuilding: the file 3rd-party/artefacts/version.txt is out of sync wrt the submodules"
