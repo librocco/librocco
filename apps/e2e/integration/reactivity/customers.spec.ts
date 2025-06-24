@@ -3,7 +3,7 @@ import { expect } from "@playwright/test";
 import { appHash } from "@/constants";
 
 import { getDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
-import { depends, testOrders } from "@/helpers/fixtures";
+import { testOrders } from "@/helpers/fixtures";
 
 testOrders("customer list: updates the list as customer orders are added or updated", async ({ page, customers }) => {
 	await page.goto(appHash("customers"));
