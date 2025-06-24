@@ -2,8 +2,16 @@
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 cd $SCRIPT_DIR/..
-echo Note that this script will happily misreport on a dirty repo:
-echo "don't commit after running on a dirty repo"
+git diff --quiet 3rd-party/js || {
+    echo Repository 3rd-party/js is dirty - only run this script on clean submodules
+    exit 1
+}
+git diff --quiet 3rd-party/typed-sql || {
+    echo Repository 3rd-party/typed-sql is dirty - only run this script on clean submodules
+    exit 1
+}
+
+
 echo js repo hash: $(git -C 3rd-party/js log -1 --format=%H)
 echo typed-sql repo hash: $(git -C 3rd-party/typed-sql log -1 --format=%H)
 
