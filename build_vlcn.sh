@@ -35,8 +35,8 @@ process_package() {
     # Use a subshell to avoid changing the script's working directory
     (
         cd "$package_path"
-        pnpm install --frozen-lockfile
-        pnpm pack
+        npx --yes 'pnpm@<9' install --frozen-lockfile
+        npx --yes 'pnpm@<9' pack
         cp *.tgz "$ARTEFACTS_DIR"
         rm *.tgz # Let's make sure we don't make `git` feel dirty!
     )
