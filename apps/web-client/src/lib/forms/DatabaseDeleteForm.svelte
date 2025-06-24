@@ -7,6 +7,7 @@
 
 	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
 	import type { createDialog } from "@melt-ui/svelte";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let dialog: ReturnType<typeof createDialog>;
 	export let dialogTitle: string;
@@ -41,7 +42,7 @@
 		<div class="mt-4">
 			<label class="form-control">
 				<div class="label">
-					<span class="label-text">Confirm by typing database name</span>
+					<span class="label-text">{$LL.forms.database_delete.labels.confirm_typing()}</span>
 				</div>
 				<input
 					bind:value={$formStore.confirmation}
@@ -52,7 +53,7 @@
 					class="input-bordered input w-full"
 				/>
 				<div class="label">
-					<span class="label-text-alt">Type '{matchConfirmation}'</span>
+					<span class="label-text-alt">{$LL.forms.database_delete.labels.type_instruction({ matchConfirmation })}</span>
 				</div>
 			</label>
 		</div>
@@ -60,7 +61,7 @@
 
 		<svelte:fragment slot="confirm-button">
 			<button class="btn-error btn" type="submit">
-				<span>Confirm</span>
+				<span>{$LL.forms.database_delete.labels.confirm_button()}</span>
 			</button>
 		</svelte:fragment>
 	</Dialog>

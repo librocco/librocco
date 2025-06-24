@@ -37,6 +37,7 @@
 	import { timeLogger } from "$lib/utils/timer";
 
 	import type { SyncProgress } from "$lib/workers/sync-transport-control";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let data: LayoutData;
 
@@ -233,6 +234,8 @@
 		// NOTE: commented out so we can observe the errors before navigating away, TODO: uncomment when stable
 		window.location.reload();
 	};
+
+	$: ({ layout: tLayout, common: tCommon } = $LL);
 </script>
 
 <div class="flex h-full bg-base-200 lg:divide-x lg:divide-base-content">
@@ -243,8 +246,11 @@
 	<!-- flex flex-1 flex-col justify-items-center overflow-y-auto -->
 	<main class="h-full w-full overflow-y-auto">
 		{#if !$mobileNavOpen}
-			<!--TODO:  add aria-label to dict-->
-			<button id="mobile-nav-trigger" use:melt={$mobileNavTrigger} class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden">
+			<button
+				use:melt={$mobileNavTrigger}
+				class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden"
+				aria-label={tLayout.mobile_nav.trigger.aria_label()}
+			>
 				<Menu size={24} aria-hidden />
 			</button>
 		{/if}
@@ -267,11 +273,11 @@
 			}}
 		>
 			<h2 class="sr-only" use:melt={$mobileNavTitle}>
-				<!-- TODO: add dialog title to dict-->
+				{tLayout.mobile_nav.dialog.title()}
 			</h2>
 
 			<p class="sr-only" use:melt={$mobileNavDescription}>
-				<!-- TODO: add dialog description to dict -->
+				{tLayout.mobile_nav.dialog.description()}
 			</p>
 			<Sidebar />
 		</div>
@@ -293,20 +299,19 @@
 			use:melt={$syncDialogContent}
 		>
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
-				<h2 use:melt={$syncDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">Sync in progress</h2>
+				<h2 use:melt={$syncDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">{tLayout.sync_dialog.title()}</h2>
 
 				<div class="mb-4 text-sm leading-6 text-gray-600" use:melt={$syncDialogDescription}>
-					<p class="mb-8">The initial DB sync is in progress. This might take a while</p>
+					<p class="mb-8">{tLayout.sync_dialog.description.in_progress()}</p>
 
-					<p class="mb-2">Progress ({$progress.nProcessed}/{$progress.nTotal}):</p>
+					<p class="mb-2">{tLayout.sync_dialog.description.progress({ nProcessed: $progress.nProcessed, nTotal: $progress.nTotal })}</p>
 					<div class="mb-8 h-3 w-full overflow-hidden rounded">
 						<div use:progressBar={progress} class="h-full bg-cyan-300"></div>
 					</div>
 
 					<p>
-						Please don't navigate away while the sync is in progress as it will result in broken DB and the sync will need to be restarted.
+						{tLayout.sync_dialog.description.warning()}
 					</p>
-					<!-- TODO: try and make the sync stop on unload (to avoid broken DB) -->
 				</div>
 			</div>
 		</div>
@@ -324,32 +329,43 @@
 		>
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
 				{#if error.name === ErrDBSchemaMismatch.name}
-					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">Error: DB Schema mismatch</h2>
+					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
+						{tLayout.error_dialog.schema_mismatch.title()}
+					</h2>
 
 					<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
-						<span class="mb-2 block"
-							>Your DB's schema version doesn't match the latest schema version. Click automigrate to migrate to the latest version.</span
-						>
-						<span class="ml-4 block">Latest schema version: {(error as ErrDBSchemaMismatch).wantVersion}</span>
-						<span class="ml-4 block">Your DB schema version: {(error as ErrDBSchemaMismatch).gotVersion}</span>
-					</p>
-
-					<div class="w-full text-end">
-						<button on:click={automigrateDB} type="button" class="btn-secondary btn">Automigrate</button>
-					</div>
-				{:else}
-					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">Error: DB corrupted</h2>
-
-					<p class="mb-2 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
-						<span class="mb-2 block">The only way to use the app seems to be to delete it and start fresh.</span>
-						<span class="mb-4 block">
-							Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page
-							(after reinitialisation)
+						<span class="mb-2 block">
+							{tLayout.error_dialog.schema_mismatch.description()}
+						</span>
+						<span class="ml-4 block">
+							{tLayout.error_dialog.schema_mismatch.latest_version({ wantVersion: (error as ErrDBSchemaMismatch).wantVersion })}
+						</span>
+						<span class="ml-4 block">
+							{tLayout.error_dialog.schema_mismatch.your_version({ gotVersion: (error as ErrDBSchemaMismatch).gotVersion })}
 						</span>
 					</p>
 
 					<div class="w-full text-end">
-						<button on:click={nukeDB} type="button" class="btn-secondary btn">Click to delete the DB</button>
+						<button on:click={automigrateDB} type="button" class="btn-secondary btn">
+							{tLayout.error_dialog.schema_mismatch.button()}
+						</button>
+					</div>
+				{:else}
+					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
+						{tLayout.error_dialog.corrupted.title()}
+					</h2>
+
+					<p class="mb-2 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
+						<span class="mb-2 block">{tLayout.error_dialog.corrupted.description()}</span>
+						<span class="mb-4 block">
+							{tLayout.error_dialog.corrupted.note()}
+						</span>
+					</p>
+
+					<div class="w-full text-end">
+						<button on:click={nukeDB} type="button" class="btn-secondary btn">
+							{tLayout.error_dialog.corrupted.button()}
+						</button>
 					</div>
 				{/if}
 			</div>

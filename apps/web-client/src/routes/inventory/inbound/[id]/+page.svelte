@@ -287,8 +287,8 @@
 					>
 						<span class="button-text">{tInbound.labels.commit()}</span>
 					</button>
-					<button class="btn-neutral btn-sm btn hidden xs:block" on:click={handlePrint} aria-label="Print Table">
-						<span class="button-text ml-1">Print Table</span>
+					<button class="btn-neutral btn-sm btn hidden xs:block" on:click={handlePrint}>
+						<span class="button-text ml-1">{tCommon.actions.print()}</span>
 					</button>
 
 					<DropdownWrapper let:item>
@@ -392,7 +392,7 @@
 			<div id="empty" class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/4">
 					<!-- Start entity list placeholder -->
-					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
+					<PlaceholderBox title={tInbound.placeholder.scan_title()} description={tInbound.placeholder.scan_description()}>
 						<QrCode slot="icon" />
 					</PlaceholderBox>
 					<!-- End entity list placeholder -->

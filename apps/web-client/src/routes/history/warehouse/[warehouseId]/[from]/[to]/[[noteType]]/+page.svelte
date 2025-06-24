@@ -45,6 +45,7 @@
 	$: goto = racefreeGoto(disposer);
 
 	$: t = $LL.history_page.warehouse_tab.note_table;
+	$: tCommon = $LL.common;
 
 	let tt: { [option: string]: () => LocalizedString };
 	LL.subscribe((LL) => {
@@ -137,7 +138,7 @@
 
 			<button on:click={handleExportCsv} class="btn-primary btn order-2 whitespace-nowrap xl:order-3">{t.heading.export_csv()}</button>
 
-			<button on:click={handlePrint} class="btn-primary btn order-2 whitespace-nowrap xl:order-3">Print Table</button>
+			<button on:click={handlePrint} class="btn-primary btn order-2 whitespace-nowrap xl:order-3">{tCommon.actions.print()}</button>
 
 			<div class="order-3 w-full items-center gap-3 md:flex xl:order-2 xl:justify-center">
 				<p>{t.heading.from()}:</p>
@@ -178,10 +179,7 @@
 			{#if !transactions?.length}
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
-						<PlaceholderBox
-							title="No transactions found"
-							description="There seem to be no transactions going in/out for the selected date range"
-						/>
+						<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()} />
 					</div>
 				</div>
 			{:else}

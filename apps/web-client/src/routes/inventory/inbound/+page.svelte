@@ -37,6 +37,7 @@
 	$: db = data.dbCtx?.db;
 
 	$: t = $LL.inventory_page.purchase_tab;
+	$: tPurchase = $LL.purchase_note;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -134,7 +135,7 @@
 						</div>
 
 						<div class="entity-list-actions">
-							<a {href} class="btn-secondary btn-outline btn-sm btn">Edit</a>
+							<a {href} class="btn-secondary btn-outline btn-sm btn">{tPurchase.labels.edit()}</a>
 							<button
 								use:melt={$trigger}
 								class="btn-secondary btn-sm btn"

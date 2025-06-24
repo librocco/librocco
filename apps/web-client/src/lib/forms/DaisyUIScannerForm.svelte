@@ -6,6 +6,8 @@
 	import { scannerSchema } from "$lib/forms/schemas";
 	import { zod } from "sveltekit-superforms/adapters";
 
+	import { LL } from "@librocco/shared/i18n-svelte";
+
 	export let onSubmit: (isbn: string) => void | Promise<void>;
 
 	let input: HTMLInputElement | undefined = undefined;
@@ -40,7 +42,7 @@
 			type="text"
 			class="grow"
 			bind:value={$formStore.isbn}
-			placeholder="Enter ISBN of ordered books"
+			placeholder={$LL.forms.daisy_ui_scanner_form.placeholders.isbn()}
 			required
 			autocomplete="off"
 		/>

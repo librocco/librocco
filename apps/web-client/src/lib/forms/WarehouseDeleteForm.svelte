@@ -5,6 +5,7 @@
 	import { warehouseDeleteSchema, type WarehouseDeleteFormSchema } from "$lib/forms/schemas";
 
 	import type { FormOptions } from "sveltekit-superforms";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let displayName: string;
 	const matchConfirmation = displayName
@@ -29,7 +30,7 @@
 	<div class="flex flex-col justify-between gap-y-6 p-4">
 		<label class="form-control basis-1/2" id="year-field-container">
 			<div class="label">
-				<span class="label-text">Confirm by typing warehouse name</span>
+				<span class="label-text">{$LL.forms.warehouse_delete.labels.confirm_typing()}</span>
 			</div>
 			<input
 				bind:value={$formStore.confirmation}
@@ -39,13 +40,15 @@
 				class="input-bordered input w-full"
 			/>
 			<div class="label">
-				<span class="label-text-alt">Type '{matchConfirmation}'</span>
+				<span class="label-text-alt">{$LL.forms.warehouse_delete.labels.type_instruction({ matchConfirmation })}</span>
 			</div>
 		</label>
 	</div>
 
 	<div class="flex w-full justify-end gap-x-2 p-4">
-		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">Cancel</button>
-		<button class="btn-error btn" type="submit">Confirm</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button"
+			>{$LL.forms.warehouse_delete.labels.cancel_button()}</button
+		>
+		<button class="btn-error btn" type="submit">{$LL.forms.warehouse_delete.labels.confirm_button()}</button>
 	</div>
 </form>
