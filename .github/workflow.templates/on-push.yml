@@ -1,5 +1,6 @@
 #@ load("github.lib.yml", "checkout")
 #@ load("github.lib.yml", "load_artefacts")
+#@ load("github.lib.yml", "cache_artefacts")
 #@ load("cache.lib.yml", "cache_node")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
@@ -41,12 +42,12 @@ jobs:
           # Recalculate the version of the cr-sqlite artefact that should be here and
           # compare wit what's in the git repo. If they differ, rebuild.
           scripts/compute_artefacts_version.sh
-          if git diff 3rd-party/artefacts/version.txt; then
-            echo not rebuilding: the file 3rd-party/artefacts/version.txt is in line with the submodules
-            echo "rebuild=yes" >>"$GITHUB_OUTPUT"
+          if git diff --quiet 3rd-party/artefacts/version.txt; then
+            echo "not rebuilding: the file 3rd-party/artefacts/version.txt is in line with the submodules"
+            echo "rebuild=no" >>"$GITHUB_OUTPUT"
           else
-            echo rebuilding: the file 3rd-party/artefacts/version.txt is out of sync wrt the submodules
-            echo "rebuild=no"  >>"$GITHUB_OUTPUT"
+            echo "rebuilding: the file 3rd-party/artefacts/version.txt is out of sync wrt the submodules"
+            echo "rebuild=yes"  >>"$GITHUB_OUTPUT"
           fi
       - uses: actions/setup-node@v4
         if: steps.ts.outputs.rebuild == 'yes'
@@ -77,8 +78,8 @@ jobs:
         if: steps.ts.outputs.rebuild == 'yes'
         uses: actions/upload-artifact@v4
         with:
-          name: built-vlcn-tgz
-          path: 3rd-party/artefacts/*.tgz
+          name: built-vlcn-artefacts
+          path: 3rd-party/artefacts/
 
   js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
 
@@ -101,6 +102,7 @@ jobs:
         with:
           node-version: "20"
       -  #@ load_artefacts()
+      -  #@ cache_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
@@ -188,6 +190,7 @@ jobs:
         with:
           node-version: "20"
       -  #@ load_artefacts()
+      -  #@ cache_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
