@@ -24,6 +24,7 @@ jobs:
         with:
           submodules: recursive
           lfs: true
+          fetch-depth: 0 #! We need all the history to check artifact date
       - name: Test if artefacts are stale
         id: ts
         shell: bash
