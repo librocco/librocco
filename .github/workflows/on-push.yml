@@ -22,6 +22,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: install build dependencies
+        run: cargo install wasm-pack
       - name: Build cr-sqlite
         run: ./build_vlcn.sh
       - name: Check that the build went fine
