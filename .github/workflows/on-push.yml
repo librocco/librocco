@@ -18,8 +18,13 @@ jobs:
       id: ts
       shell: bash
       run: |
+        git log -1 3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
+        git -C 3rd-party/js log -1
         file_ts=$(git log -1 --format=%ct 3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz || echo 0)
         sub_ts=$(git -C 3rd-party/js log -1 --format=%ct)
+        echo "artefact commit: $date"
+        echo "sub-repo commit:  $date"
+
         echo "artefact commit: $(date -u -d "@$file_ts" +"%Y-%m-%d %H:%M:%S UTC")"
         echo "sub-repo commit:  $(date -u -d "@$sub_ts"  +"%Y-%m-%d %H:%M:%S UTC")"
         if [[ $sub_ts -gt $file_ts ]]; then
