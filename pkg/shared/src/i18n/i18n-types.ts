@@ -431,86 +431,6 @@ type RootTranslation = {
 			create_sale_note: string
 		}
 	}
-	supplier_orders_page: {
-		title: {
-			/**
-			 * S​u​p​p​l​i​e​r​ ​O​r​d​e​r​s
-			 */
-			supplier_orders: string
-		}
-		labels: {
-			/**
-			 * S​u​p​p​l​i​e​r​s
-			 */
-			suppliers: string
-		}
-		tabs: {
-			/**
-			 * U​n​o​r​d​e​r​e​d
-			 */
-			unordered: string
-			/**
-			 * O​r​d​e​r​e​d
-			 */
-			ordered: string
-			/**
-			 * R​e​c​o​n​c​i​l​i​n​g
-			 */
-			reconciling: string
-			/**
-			 * C​o​m​p​l​e​t​e​d
-			 */
-			completed: string
-		}
-		placeholder: {
-			/**
-			 * N​o​ ​u​n​o​r​d​e​r​e​d​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s​ ​a​v​a​i​l​a​b​l​e​.​ ​C​r​e​a​t​e​ ​a​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​ ​f​i​r​s​t​ ​t​o​ ​g​e​n​e​r​a​t​e​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s​.
-			 */
-			description: string
-			/**
-			 * N​e​w​ ​C​u​s​t​o​m​e​r​ ​O​r​d​e​r
-			 */
-			button: string
-		}
-	}
-	purchase_note: {
-		stats: {
-			/**
-			 * L​a​s​t​ ​u​p​d​a​t​e​d
-			 */
-			last_updated: string
-		}
-		labels: {
-			/**
-			 * C​o​m​m​i​t
-			 */
-			commit: string
-			/**
-			 * P​r​i​n​t
-			 */
-			print: string
-			/**
-			 * A​u​t​o​ ​p​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l​s
-			 */
-			auto_print_book_labels: string
-			/**
-			 * D​e​l​e​t​e
-			 */
-			'delete': string
-			/**
-			 * E​d​i​t​ ​r​o​w
-			 */
-			edit_row: string
-			/**
-			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
-			 */
-			print_book_label: string
-			/**
-			 * D​e​l​e​t​e​ ​r​o​w
-			 */
-			delete_row: string
-		}
-	}
 	customer_orders_page: {
 		/**
 		 * C​u​s​t​o​m​e​r​ ​O​r​d​e​r​s
@@ -553,234 +473,6 @@ type RootTranslation = {
 			 * N​o​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​s​ ​y​e​t​.​ ​C​r​e​a​t​e​ ​y​o​u​r​ ​f​i​r​s​t​ ​o​r​d​e​r​ ​t​o​ ​g​e​t​ ​s​t​a​r​t​e​d​.
 			 */
 			no_orders: string
-		}
-	}
-	new_order_page: {
-		stats: {
-			/**
-			 * T​o​t​a​l​ ​b​o​o​k​s
-			 */
-			total_books: string
-			/**
-			 * T​o​t​a​l​ ​v​a​l​u​e
-			 */
-			total_value: string
-			/**
-			 * S​e​l​e​c​t​e​d​ ​b​o​o​k​s
-			 */
-			selected_books: string
-		}
-		table: {
-			/**
-			 * O​r​d​e​r​e​d​ ​q​u​a​n​t​i​t​y
-			 */
-			ordered_quantity: string
-			/**
-			 * T​o​t​a​l
-			 */
-			total: string
-			/**
-			 * S​e​l​e​c​t​e​d​ ​q​u​a​n​t​i​t​y
-			 */
-			selected_quantity: string
-			/**
-			 * B​o​o​k​s
-			 */
-			books: string
-			/**
-			 * I​S​B​N
-			 */
-			isbn: string
-			/**
-			 * T​i​t​l​e
-			 */
-			title: string
-			/**
-			 * A​u​t​h​o​r​s
-			 */
-			authors: string
-		}
-		labels: {
-			/**
-			 * S​e​l​e​c​t
-			 */
-			select: string
-			/**
-			 * P​l​a​c​e​ ​O​r​d​e​r
-			 */
-			place_order: string
-		}
-	}
-	order_list_page: {
-		labels: {
-			/**
-			 * R​e​m​o​v​e​ ​p​u​b​l​i​s​h​e​r
-			 */
-			remove_publisher: string
-			/**
-			 * C​r​e​a​t​e​ ​n​e​w​ ​o​r​d​e​r
-			 */
-			create_new_order: string
-			/**
-			 * A​d​d​ ​t​o​ ​s​u​p​p​l​i​e​r
-			 */
-			add_to_supplier: string
-		}
-		details: {
-			/**
-			 * S​u​p​p​l​i​e​r​ ​p​a​g​e
-			 */
-			supplier_page: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​n​a​m​e
-			 */
-			supplier_name: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​a​d​d​r​e​s​s
-			 */
-			supplier_address: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​e​m​a​i​l
-			 */
-			supplier_email: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​c​u​s​t​o​m​e​r​ ​I​D
-			 */
-			supplier_customerId: string
-		}
-		table: {
-			/**
-			 * P​u​b​l​i​s​h​e​r​ ​n​a​m​e
-			 */
-			publisher_name: string
-			/**
-			 * A​s​s​i​g​n​e​d​ ​p​u​b​l​i​s​h​e​r​s
-			 */
-			assigned_publishers: string
-			/**
-			 * U​n​a​s​s​i​g​n​e​d​ ​p​u​b​l​i​s​h​e​r​s
-			 */
-			unassigned_publishers: string
-		}
-	}
-	reconciled_list_page: {
-		labels: {
-			/**
-			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
-			 */
-			view_reconciliation: string
-			/**
-			 * R​e​c​o​n​c​i​l​e
-			 */
-			reconcile: string
-			/**
-			 * P​r​i​n​t​ ​O​r​d​e​r
-			 */
-			print_order: string
-		}
-		stats: {
-			/**
-			 * T​o​t​a​l​ ​b​o​o​k​s
-			 */
-			total_books: string
-			/**
-			 * O​r​d​e​r​e​d
-			 */
-			ordered: string
-			/**
-			 * T​o​t​a​l​ ​v​a​l​u​e
-			 */
-			total_value: string
-		}
-		table: {
-			/**
-			 * B​o​o​k​s
-			 */
-			books: string
-			/**
-			 * I​S​B​N
-			 */
-			isbn: string
-			/**
-			 * T​i​t​l​e
-			 */
-			title: string
-			/**
-			 * A​u​t​h​o​r​s
-			 */
-			authors: string
-			/**
-			 * Q​u​a​n​t​i​t​y
-			 */
-			quantity: string
-			/**
-			 * T​o​t​a​l​ ​P​r​i​c​e
-			 */
-			total_price: string
-		}
-	}
-	reconcile_page: {
-		title: {
-			/**
-			 * R​e​c​o​n​c​i​l​e​ ​D​e​l​i​v​e​r​i​e​s
-			 */
-			reconcile_deliveries: string
-		}
-		stats: {
-			/**
-			 * C​r​e​a​t​e​d
-			 */
-			created: string
-			/**
-			 * L​a​s​t​ ​U​p​d​a​t​e​d
-			 */
-			last_updated: string
-			/**
-			 * I​n​c​l​u​d​e​s​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s
-			 */
-			includes_supplier_orders: string
-			/**
-			 * T​o​t​a​l​ ​d​e​l​i​v​e​r​e​d
-			 */
-			total_delivered: string
-		}
-		placeholder: {
-			/**
-			 * S​c​a​n​ ​o​r​ ​e​n​t​e​r​ ​t​h​e​ ​I​S​B​N​s​ ​o​f​ ​t​h​e​ ​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​t​o​ ​b​e​g​i​n​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n​.
-			 */
-			description: string
-		}
-		table: {
-			/**
-			 * I​S​B​N
-			 */
-			isbn: string
-			/**
-			 * T​i​t​l​e
-			 */
-			title: string
-			/**
-			 * A​u​t​h​o​r​s
-			 */
-			authors: string
-			/**
-			 * Q​u​a​n​t​i​t​y
-			 */
-			quantity: string
-			/**
-			 * P​r​i​c​e
-			 */
-			price: string
-		}
-		delete_dialog: {
-			/**
-			 * D​e​l​e​t​e​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n​ ​O​r​d​e​r
-			 */
-			title: string
-			/**
-			 * A​r​e​ ​y​o​u​ ​s​u​r​e​ ​y​o​u​ ​w​a​n​t​ ​t​o​ ​d​e​l​e​t​e​ ​t​h​i​s​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n​ ​o​r​d​e​r​?​ ​T​h​i​s​ ​a​c​t​i​o​n​ ​w​i​l​l​ ​d​e​l​e​t​e​ ​a​l​l​ ​t​h​e​ ​s​c​a​n​n​e​d​ ​l​i​n​e​s​.
-			 */
-			description: string
 		}
 	}
 	suppliers_page: {
@@ -1356,57 +1048,122 @@ type RootTranslation = {
 		 */
 		loading: string
 	}
-	sale_note: {
-		delete_dialog: {
+	supplier_orders_page: {
+		title: {
 			/**
-			 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​f​o​r​ ​e​a​c​h​ ​o​f​ ​t​h​e​ ​f​o​l​l​o​w​i​n​g​ ​t​r​a​n​s​a​c​t​i​o​n​s
+			 * S​u​p​p​l​i​e​r​ ​O​r​d​e​r​s
 			 */
-			select_warehouse: string
-		}
-		reconcile_dialog: {
-			/**
-			 * P​l​e​a​s​e​ ​r​e​v​i​e​w​ ​t​h​e​ ​f​o​l​l​o​w​i​n​g​ ​t​r​a​n​s​a​c​t​i​o​n​s
-			 */
-			review_transaction: string
-			/**
-			 * q​u​a​n​t​i​t​y​ ​f​o​r​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n
-			 */
-			quantity: string
+			supplier_orders: string
 		}
 		labels: {
 			/**
-			 * N​e​w​ ​N​o​t​e
+			 * S​u​p​p​l​i​e​r​s
 			 */
-			new_note: string
+			suppliers: string
+		}
+		tabs: {
 			/**
-			 * E​d​i​t
+			 * U​n​o​r​d​e​r​e​d
 			 */
-			edit: string
+			unordered: string
 			/**
-			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
+			 * O​r​d​e​r​e​d
 			 */
-			print_book_label: string
+			ordered: string
 			/**
-			 * D​e​l​e​t​e​ ​r​o​w
+			 * R​e​c​o​n​c​i​l​i​n​g
 			 */
-			delete_row: string
+			reconciling: string
 			/**
-			 * E​d​i​t​ ​r​o​w
+			 * C​o​m​p​l​e​t​e​d
 			 */
-			edit_row: string
+			completed: string
+		}
+		placeholder: {
 			/**
-			 * D​e​l​e​t​e
+			 * N​o​ ​u​n​o​r​d​e​r​e​d​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s​ ​a​v​a​i​l​a​b​l​e​.​ ​C​r​e​a​t​e​ ​a​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​ ​f​i​r​s​t​ ​t​o​ ​g​e​n​e​r​a​t​e​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s​.
 			 */
-			'delete': string
+			description: string
+			/**
+			 * N​e​w​ ​C​u​s​t​o​m​e​r​ ​O​r​d​e​r
+			 */
+			button: string
+		}
+	}
+	new_order_page: {
+		stats: {
+			/**
+			 * T​o​t​a​l​ ​b​o​o​k​s
+			 */
+			total_books: string
+			/**
+			 * T​o​t​a​l​ ​v​a​l​u​e
+			 */
+			total_value: string
+			/**
+			 * S​e​l​e​c​t​e​d​ ​b​o​o​k​s
+			 */
+			selected_books: string
+		}
+		table: {
+			/**
+			 * O​r​d​e​r​e​d​ ​q​u​a​n​t​i​t​y
+			 */
+			ordered_quantity: string
+			/**
+			 * T​o​t​a​l
+			 */
+			total: string
+			/**
+			 * S​e​l​e​c​t​e​d​ ​q​u​a​n​t​i​t​y
+			 */
+			selected_quantity: string
+			/**
+			 * B​o​o​k​s
+			 */
+			books: string
+			/**
+			 * I​S​B​N
+			 */
+			isbn: string
+			/**
+			 * T​i​t​l​e
+			 */
+			title: string
+			/**
+			 * A​u​t​h​o​r​s
+			 */
+			authors: string
+		}
+		labels: {
+			/**
+			 * S​e​l​e​c​t
+			 */
+			select: string
+			/**
+			 * P​l​a​c​e​ ​O​r​d​e​r
+			 */
+			place_order: string
+		}
+	}
+	reconcile_page: {
+		title: {
+			/**
+			 * R​e​c​o​n​c​i​l​e​ ​D​e​l​i​v​e​r​i​e​s
+			 */
+			reconcile_deliveries: string
 		}
 		stats: {
 			/**
-			 * L​a​s​t​ ​u​p​d​a​t​e​d
+			 * C​r​e​a​t​e​d
+			 */
+			created: string
+			/**
+			 * L​a​s​t​ ​U​p​d​a​t​e​d
 			 */
 			last_updated: string
 			/**
-			 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}
-			 * @param {string | number | boolean} bookCount
+			 * I​n​c​l​u​d​e​s​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s
 			 */
 			includes_supplier_orders: string
 			/**
@@ -1420,13 +1177,41 @@ type RootTranslation = {
 		}
 		placeholder: {
 			/**
-			 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e
+			 * S​c​a​n​ ​o​r​ ​e​n​t​e​r​ ​t​h​e​ ​I​S​B​N​s​ ​o​f​ ​t​h​e​ ​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​t​o​ ​b​e​g​i​n​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n​.
 			 */
-			select_warehouse: string
+			description: string
+		}
+		table: {
 			/**
-			 * N​o​ ​a​v​a​i​l​a​b​l​e​ ​w​a​r​e​h​o​u​s​e​s
+			 * I​S​B​N
 			 */
-			no_warehouses: string
+			isbn: string
+			/**
+			 * T​i​t​l​e
+			 */
+			title: string
+			/**
+			 * A​u​t​h​o​r​s
+			 */
+			authors: string
+			/**
+			 * Q​u​a​n​t​i​t​y
+			 */
+			quantity: string
+			/**
+			 * P​r​i​c​e
+			 */
+			price: string
+		}
+		delete_dialog: {
+			/**
+			 * D​e​l​e​t​e​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n​ ​O​r​d​e​r
+			 */
+			title: string
+			/**
+			 * A​r​e​ ​y​o​u​ ​s​u​r​e​ ​y​o​u​ ​w​a​n​t​ ​t​o​ ​d​e​l​e​t​e​ ​t​h​i​s​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n​ ​o​r​d​e​r​?​ ​T​h​i​s​ ​a​c​t​i​o​n​ ​w​i​l​l​ ​d​e​l​e​t​e​ ​a​l​l​ ​t​h​e​ ​s​c​a​n​n​e​d​ ​l​i​n​e​s​.
+			 */
+			description: string
 		}
 		steps: {
 			populate: {
@@ -1461,107 +1246,66 @@ type RootTranslation = {
 			}
 		}
 	}
-	sale_page: {
-		/**
-		 * S​a​l​e
-		 */
-		heading: string
-		stats: {
-			/**
-			 * L​a​s​t​ ​u​p​d​a​t​e​d
-			 */
-			last_updated: string
-			/**
-			 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}
-			 * @param {string | number | boolean} bookCount
-			 */
-			books: RequiredParams<'bookCount'>
-		}
+	reconciled_list_page: {
 		labels: {
 			/**
-			 * N​e​w​ ​S​a​l​e
+			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
-			new_sale: string
+			view_reconciliation: string
 			/**
-			 * E​d​i​t
+			 * R​e​c​o​n​c​i​l​e
 			 */
-			edit: string
+			reconcile: string
 			/**
-			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
+			 * P​r​i​n​t​ ​O​r​d​e​r
 			 */
-			print_book_label: string
-			/**
-			 * D​e​l​e​t​e​ ​r​o​w
-			 */
-			delete_row: string
-		}
-	}
-	stock_page: {
-		labels: {
-			/**
-			 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
-			 */
-			edit_book_details: string
-			/**
-			 * M​a​n​u​a​l​l​y​ ​e​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
-			 */
-			manually_edit_book_details: string
-			/**
-			 * E​d​i​t​ ​r​o​w
-			 */
-			edit_row: string
-			/**
-			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
-			 */
-			print_book_label: string
-		}
-	}
-	settings_page: {
-		headings: {
-			/**
-			 * S​e​t​t​i​n​g​s
-			 */
-			settings: string
-			/**
-			 * D​e​v​i​c​e​ ​s​e​t​t​i​n​g​s
-			 */
-			device_settings: string
-			/**
-			 * S​y​n​c​ ​s​e​t​t​i​n​g​s
-			 */
-			sync_settings: string
-			/**
-			 * D​a​t​a​b​a​s​e​ ​m​a​n​a​g​e​m​e​n​t
-			 */
-			db_management: string
-		}
-		descriptions: {
-			/**
-			 * M​a​n​a​g​e​ ​D​B​ ​n​a​m​e​,​ ​s​y​n​c​ ​U​R​L​ ​a​n​d​ ​t​h​e​ ​c​o​n​n​e​c​t​i​o​n​.​ ​N​o​t​e​:​ ​T​h​i​s​ ​w​i​l​l​ ​b​e​ ​m​e​r​g​e​d​ ​w​i​t​h​ ​D​B​ ​s​e​l​e​c​t​i​o​n​ ​i​n​ ​t​h​e​ ​f​u​t​u​r​e
-			 */
-			sync_settings: string
-			/**
-			 * U​s​e​ ​t​h​i​s​ ​s​e​c​t​i​o​n​ ​t​o​ ​c​r​e​a​t​e​,​ ​s​e​l​e​c​t​,​ ​i​m​p​o​r​t​,​ ​e​x​p​o​r​t​ ​o​r​ ​d​e​l​e​t​e​ ​a​ ​d​a​t​a​b​a​s​e
-			 */
-			db_management: string
-			/**
-			 * D​r​a​g​ ​a​n​d​ ​d​r​o​p​ ​y​o​u​r​ ​.​s​q​l​i​t​e​3​ ​f​i​l​e​ ​h​e​r​e​ ​t​o​ ​i​m​p​o​r​t
-			 */
-			'import': string
-			/**
-			 * M​a​n​a​g​e​ ​c​o​n​n​e​c​t​i​o​n​s​ ​t​o​ ​e​x​t​e​r​n​a​l​ ​d​e​v​i​c​e​s
-			 */
-			device_settings: string
+			print_order: string
 		}
 		stats: {
 			/**
-			 * V​e​r​s​i​o​n
+			 * T​o​t​a​l​ ​b​o​o​k​s
 			 */
-			version: string
+			total_books: string
+			/**
+			 * O​r​d​e​r​e​d
+			 */
+			ordered: string
+			/**
+			 * T​o​t​a​l​ ​v​a​l​u​e
+			 */
+			total_value: string
 		}
+		table: {
+			/**
+			 * B​o​o​k​s
+			 */
+			books: string
+			/**
+			 * I​S​B​N
+			 */
+			isbn: string
+			/**
+			 * T​i​t​l​e
+			 */
+			title: string
+			/**
+			 * A​u​t​h​o​r​s
+			 */
+			authors: string
+			/**
+			 * Q​u​a​n​t​i​t​y
+			 */
+			quantity: string
+			/**
+			 * T​o​t​a​l​ ​P​r​i​c​e
+			 */
+			total_price: string
+		}
+	}
+	order_list_page: {
 		labels: {
 			/**
-			 * N​e​w
+			 * R​e​m​o​v​e​ ​p​u​b​l​i​s​h​e​r
 			 */
 			remove_publisher: string
 			/**
@@ -3127,86 +2871,6 @@ export type TranslationFunctions = {
 			create_sale_note: () => LocalizedString
 		}
 	}
-	supplier_orders_page: {
-		title: {
-			/**
-			 * Supplier Orders
-			 */
-			supplier_orders: () => LocalizedString
-		}
-		labels: {
-			/**
-			 * Suppliers
-			 */
-			suppliers: () => LocalizedString
-		}
-		tabs: {
-			/**
-			 * Unordered
-			 */
-			unordered: () => LocalizedString
-			/**
-			 * Ordered
-			 */
-			ordered: () => LocalizedString
-			/**
-			 * Reconciling
-			 */
-			reconciling: () => LocalizedString
-			/**
-			 * Completed
-			 */
-			completed: () => LocalizedString
-		}
-		placeholder: {
-			/**
-			 * No unordered supplier orders available. Create a customer order first to generate supplier orders.
-			 */
-			description: () => LocalizedString
-			/**
-			 * New Customer Order
-			 */
-			button: () => LocalizedString
-		}
-	}
-	purchase_note: {
-		stats: {
-			/**
-			 * Last updated
-			 */
-			last_updated: () => LocalizedString
-		}
-		labels: {
-			/**
-			 * Commit
-			 */
-			commit: () => LocalizedString
-			/**
-			 * Print
-			 */
-			print: () => LocalizedString
-			/**
-			 * Auto print book labels
-			 */
-			auto_print_book_labels: () => LocalizedString
-			/**
-			 * Delete
-			 */
-			'delete': () => LocalizedString
-			/**
-			 * Edit row
-			 */
-			edit_row: () => LocalizedString
-			/**
-			 * Print book label
-			 */
-			print_book_label: () => LocalizedString
-			/**
-			 * Delete row
-			 */
-			delete_row: () => LocalizedString
-		}
-	}
 	customer_orders_page: {
 		/**
 		 * Customer Orders
@@ -3249,234 +2913,6 @@ export type TranslationFunctions = {
 			 * No customer orders yet. Create your first order to get started.
 			 */
 			no_orders: () => LocalizedString
-		}
-	}
-	new_order_page: {
-		stats: {
-			/**
-			 * Total books
-			 */
-			total_books: () => LocalizedString
-			/**
-			 * Total value
-			 */
-			total_value: () => LocalizedString
-			/**
-			 * Selected books
-			 */
-			selected_books: () => LocalizedString
-		}
-		table: {
-			/**
-			 * Ordered quantity
-			 */
-			ordered_quantity: () => LocalizedString
-			/**
-			 * Total
-			 */
-			total: () => LocalizedString
-			/**
-			 * Selected quantity
-			 */
-			selected_quantity: () => LocalizedString
-			/**
-			 * Books
-			 */
-			books: () => LocalizedString
-			/**
-			 * ISBN
-			 */
-			isbn: () => LocalizedString
-			/**
-			 * Title
-			 */
-			title: () => LocalizedString
-			/**
-			 * Authors
-			 */
-			authors: () => LocalizedString
-		}
-		labels: {
-			/**
-			 * Select
-			 */
-			select: () => LocalizedString
-			/**
-			 * Place Order
-			 */
-			place_order: () => LocalizedString
-		}
-	}
-	order_list_page: {
-		labels: {
-			/**
-			 * Remove publisher
-			 */
-			remove_publisher: () => LocalizedString
-			/**
-			 * Create new order
-			 */
-			create_new_order: () => LocalizedString
-			/**
-			 * Add to supplier
-			 */
-			add_to_supplier: () => LocalizedString
-		}
-		details: {
-			/**
-			 * Supplier page
-			 */
-			supplier_page: () => LocalizedString
-			/**
-			 * Supplier name
-			 */
-			supplier_name: () => LocalizedString
-			/**
-			 * Supplier address
-			 */
-			supplier_address: () => LocalizedString
-			/**
-			 * Supplier email
-			 */
-			supplier_email: () => LocalizedString
-			/**
-			 * Supplier customer ID
-			 */
-			supplier_customerId: () => LocalizedString
-		}
-		table: {
-			/**
-			 * Publisher name
-			 */
-			publisher_name: () => LocalizedString
-			/**
-			 * Assigned publishers
-			 */
-			assigned_publishers: () => LocalizedString
-			/**
-			 * Unassigned publishers
-			 */
-			unassigned_publishers: () => LocalizedString
-		}
-	}
-	reconciled_list_page: {
-		labels: {
-			/**
-			 * View Reconciliation
-			 */
-			view_reconciliation: () => LocalizedString
-			/**
-			 * Reconcile
-			 */
-			reconcile: () => LocalizedString
-			/**
-			 * Print Order
-			 */
-			print_order: () => LocalizedString
-		}
-		stats: {
-			/**
-			 * Total books
-			 */
-			total_books: () => LocalizedString
-			/**
-			 * Ordered
-			 */
-			ordered: () => LocalizedString
-			/**
-			 * Total value
-			 */
-			total_value: () => LocalizedString
-		}
-		table: {
-			/**
-			 * Books
-			 */
-			books: () => LocalizedString
-			/**
-			 * ISBN
-			 */
-			isbn: () => LocalizedString
-			/**
-			 * Title
-			 */
-			title: () => LocalizedString
-			/**
-			 * Authors
-			 */
-			authors: () => LocalizedString
-			/**
-			 * Quantity
-			 */
-			quantity: () => LocalizedString
-			/**
-			 * Total Price
-			 */
-			total_price: () => LocalizedString
-		}
-	}
-	reconcile_page: {
-		title: {
-			/**
-			 * Reconcile Deliveries
-			 */
-			reconcile_deliveries: () => LocalizedString
-		}
-		stats: {
-			/**
-			 * Created
-			 */
-			created: () => LocalizedString
-			/**
-			 * Last Updated
-			 */
-			last_updated: () => LocalizedString
-			/**
-			 * Includes supplier orders
-			 */
-			includes_supplier_orders: () => LocalizedString
-			/**
-			 * Total delivered
-			 */
-			total_delivered: () => LocalizedString
-		}
-		placeholder: {
-			/**
-			 * Scan or enter the ISBNs of the delivered books to begin reconciliation.
-			 */
-			description: () => LocalizedString
-		}
-		table: {
-			/**
-			 * ISBN
-			 */
-			isbn: () => LocalizedString
-			/**
-			 * Title
-			 */
-			title: () => LocalizedString
-			/**
-			 * Authors
-			 */
-			authors: () => LocalizedString
-			/**
-			 * Quantity
-			 */
-			quantity: () => LocalizedString
-			/**
-			 * Price
-			 */
-			price: () => LocalizedString
-		}
-		delete_dialog: {
-			/**
-			 * Delete Reconciliation Order
-			 */
-			title: () => LocalizedString
-			/**
-			 * Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines.
-			 */
-			description: () => LocalizedString
 		}
 	}
 	suppliers_page: {
@@ -4043,56 +3479,122 @@ export type TranslationFunctions = {
 		 */
 		loading: () => LocalizedString
 	}
-	sale_note: {
-		delete_dialog: {
+	supplier_orders_page: {
+		title: {
 			/**
-			 * Please select a warehouse for each of the following transactions
+			 * Supplier Orders
 			 */
-			select_warehouse: () => LocalizedString
-		}
-		reconcile_dialog: {
-			/**
-			 * Please review the following transactions
-			 */
-			review_transaction: () => LocalizedString
-			/**
-			 * quantity for reconciliation
-			 */
-			quantity: () => LocalizedString
+			supplier_orders: () => LocalizedString
 		}
 		labels: {
 			/**
-			 * New Note
+			 * Suppliers
 			 */
-			new_note: () => LocalizedString
+			suppliers: () => LocalizedString
+		}
+		tabs: {
 			/**
-			 * Edit
+			 * Unordered
 			 */
-			edit: () => LocalizedString
+			unordered: () => LocalizedString
 			/**
-			 * Print book label
+			 * Ordered
 			 */
-			print_book_label: () => LocalizedString
+			ordered: () => LocalizedString
 			/**
-			 * Delete row
+			 * Reconciling
 			 */
-			delete_row: () => LocalizedString
+			reconciling: () => LocalizedString
 			/**
-			 * Edit row
+			 * Completed
 			 */
-			edit_row: () => LocalizedString
+			completed: () => LocalizedString
+		}
+		placeholder: {
 			/**
-			 * Delete
+			 * No unordered supplier orders available. Create a customer order first to generate supplier orders.
 			 */
-			'delete': () => LocalizedString
+			description: () => LocalizedString
+			/**
+			 * New Customer Order
+			 */
+			button: () => LocalizedString
+		}
+	}
+	new_order_page: {
+		stats: {
+			/**
+			 * Total books
+			 */
+			total_books: () => LocalizedString
+			/**
+			 * Total value
+			 */
+			total_value: () => LocalizedString
+			/**
+			 * Selected books
+			 */
+			selected_books: () => LocalizedString
+		}
+		table: {
+			/**
+			 * Ordered quantity
+			 */
+			ordered_quantity: () => LocalizedString
+			/**
+			 * Total
+			 */
+			total: () => LocalizedString
+			/**
+			 * Selected quantity
+			 */
+			selected_quantity: () => LocalizedString
+			/**
+			 * Books
+			 */
+			books: () => LocalizedString
+			/**
+			 * ISBN
+			 */
+			isbn: () => LocalizedString
+			/**
+			 * Title
+			 */
+			title: () => LocalizedString
+			/**
+			 * Authors
+			 */
+			authors: () => LocalizedString
+		}
+		labels: {
+			/**
+			 * Select
+			 */
+			select: () => LocalizedString
+			/**
+			 * Place Order
+			 */
+			place_order: () => LocalizedString
+		}
+	}
+	reconcile_page: {
+		title: {
+			/**
+			 * Reconcile Deliveries
+			 */
+			reconcile_deliveries: () => LocalizedString
 		}
 		stats: {
 			/**
-			 * Last updated
+			 * Created
+			 */
+			created: () => LocalizedString
+			/**
+			 * Last Updated
 			 */
 			last_updated: () => LocalizedString
 			/**
-			 * {bookCount} book{{s}}
+			 * Includes supplier orders
 			 */
 			includes_supplier_orders: () => LocalizedString
 			/**
@@ -4106,13 +3608,41 @@ export type TranslationFunctions = {
 		}
 		placeholder: {
 			/**
-			 * Please select a warehouse
+			 * Scan or enter the ISBNs of the delivered books to begin reconciliation.
 			 */
-			select_warehouse: () => LocalizedString
+			description: () => LocalizedString
+		}
+		table: {
 			/**
-			 * No available warehouses
+			 * ISBN
 			 */
-			no_warehouses: () => LocalizedString
+			isbn: () => LocalizedString
+			/**
+			 * Title
+			 */
+			title: () => LocalizedString
+			/**
+			 * Authors
+			 */
+			authors: () => LocalizedString
+			/**
+			 * Quantity
+			 */
+			quantity: () => LocalizedString
+			/**
+			 * Price
+			 */
+			price: () => LocalizedString
+		}
+		delete_dialog: {
+			/**
+			 * Delete Reconciliation Order
+			 */
+			title: () => LocalizedString
+			/**
+			 * Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines.
+			 */
+			description: () => LocalizedString
 		}
 		steps: {
 			populate: {
@@ -4147,106 +3677,66 @@ export type TranslationFunctions = {
 			}
 		}
 	}
-	sale_page: {
-		/**
-		 * Sale
-		 */
-		heading: () => LocalizedString
-		stats: {
-			/**
-			 * Last updated
-			 */
-			last_updated: () => LocalizedString
-			/**
-			 * {bookCount} book{{s}}
-			 */
-			books: (arg: { bookCount: string | number | boolean }) => LocalizedString
-		}
+	reconciled_list_page: {
 		labels: {
 			/**
-			 * New Sale
+			 * View Reconciliation
 			 */
-			new_sale: () => LocalizedString
+			view_reconciliation: () => LocalizedString
 			/**
-			 * Edit
+			 * Reconcile
 			 */
-			edit: () => LocalizedString
+			reconcile: () => LocalizedString
 			/**
-			 * Print book label
+			 * Print Order
 			 */
-			print_book_label: () => LocalizedString
-			/**
-			 * Delete row
-			 */
-			delete_row: () => LocalizedString
-		}
-	}
-	stock_page: {
-		labels: {
-			/**
-			 * Edit book details
-			 */
-			edit_book_details: () => LocalizedString
-			/**
-			 * Manually edit book details
-			 */
-			manually_edit_book_details: () => LocalizedString
-			/**
-			 * Edit row
-			 */
-			edit_row: () => LocalizedString
-			/**
-			 * Print book label
-			 */
-			print_book_label: () => LocalizedString
-		}
-	}
-	settings_page: {
-		headings: {
-			/**
-			 * Settings
-			 */
-			settings: () => LocalizedString
-			/**
-			 * Device settings
-			 */
-			device_settings: () => LocalizedString
-			/**
-			 * Sync settings
-			 */
-			sync_settings: () => LocalizedString
-			/**
-			 * Database management
-			 */
-			db_management: () => LocalizedString
-		}
-		descriptions: {
-			/**
-			 * Manage DB name, sync URL and the connection. Note: This will be merged with DB selection in the future
-			 */
-			sync_settings: () => LocalizedString
-			/**
-			 * Use this section to create, select, import, export or delete a database
-			 */
-			db_management: () => LocalizedString
-			/**
-			 * Drag and drop your .sqlite3 file here to import
-			 */
-			'import': () => LocalizedString
-			/**
-			 * Manage connections to external devices
-			 */
-			device_settings: () => LocalizedString
+			print_order: () => LocalizedString
 		}
 		stats: {
 			/**
-			 * Version
+			 * Total books
 			 */
-			version: () => LocalizedString
+			total_books: () => LocalizedString
+			/**
+			 * Ordered
+			 */
+			ordered: () => LocalizedString
+			/**
+			 * Total value
+			 */
+			total_value: () => LocalizedString
 		}
+		table: {
+			/**
+			 * Books
+			 */
+			books: () => LocalizedString
+			/**
+			 * ISBN
+			 */
+			isbn: () => LocalizedString
+			/**
+			 * Title
+			 */
+			title: () => LocalizedString
+			/**
+			 * Authors
+			 */
+			authors: () => LocalizedString
+			/**
+			 * Quantity
+			 */
+			quantity: () => LocalizedString
+			/**
+			 * Total Price
+			 */
+			total_price: () => LocalizedString
+		}
+	}
+	order_list_page: {
 		labels: {
 			/**
-			 * New
+			 * Remove publisher
 			 */
 			remove_publisher: () => LocalizedString
 			/**
