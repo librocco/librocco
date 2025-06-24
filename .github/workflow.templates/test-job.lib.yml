@@ -1,5 +1,6 @@
 #@ load("github.lib.yml", "checkout")
 #@ load("github.lib.yml", "load_artefacts")
+#@ load("github.lib.yml", "cache_artefacts")
 #@ load("cache.lib.yml", "cache_node")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
@@ -23,8 +24,9 @@ steps:
   - uses: actions/setup-node@v4
     with:
       node-version: "20"
-  -  #@ cache_node()
   -  #@ load_artefacts()
+  -  #@ cache_artefacts()
+  -  #@ cache_node()
   -  #@ rush_add_path()
   -  #@ rush_install()
   -  #@ rush_build()
