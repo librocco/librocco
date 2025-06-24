@@ -1,9 +1,8 @@
 import { extendDictionary } from '../i18n-util'
-import { removeEmptyStrings } from '../utils'
+import { prepareTranslations } from '../utils'
 import en from '../en'
 import deJson from './index.json'
 
-const cleanedDe = removeEmptyStrings(deJson)
-const de = extendDictionary(en, cleanedDe)
+const de = extendDictionary(en, prepareTranslations(en, deJson))
 
 export default de
