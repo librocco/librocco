@@ -5,3 +5,11 @@ with:
   submodules: "recursive"
   lfs: true
 #@ end
+
+#@ def load_artefacts():
+uses: actions/download-artifact@v4
+with:
+  name: built-vlcn-tgz
+  path: 3rd-party/artefacts
+if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+#@ end
