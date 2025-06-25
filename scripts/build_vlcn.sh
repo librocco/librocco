@@ -8,6 +8,8 @@ TRD_PARTY="$SCRIPT_DIR/3rd-party"
 VLCN_ROOT="$TRD_PARTY/js"
 ARTEFACTS_DIR="$TRD_PARTY/artefacts"
 
+cd $SCRIPT_DIR/..
+
 # 2. Check if npx is installed
 if ! command -v npx &> /dev/null; then
     echo "npx is required but it's not installed. Aborting." >&2

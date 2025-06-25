@@ -42,7 +42,7 @@ jobs:
       run: npm install -g 'pnpm@<9'
     - name: Build cr-sqlite
       if: steps.ts.outputs.rebuild == 'yes'
-      run: ./build_vlcn.sh
+      run: ./scripts/build_vlcn.sh
     - name: Check that the build went fine
       run: git status; ls -l 3rd-party/artefacts/
     - name: upload to later jobs
