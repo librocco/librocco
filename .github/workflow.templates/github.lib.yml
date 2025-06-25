@@ -16,11 +16,3 @@ with:
   path: 3rd-party/artefacts
 if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
 #@ end
-
-#@ def cache_artefacts():
-name: Cache cr-sqlite artefacts
-uses: actions/cache@v4
-with:
-  path: 3rd-party/artefacts
-  key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts/version.txt') }}
-#@ end

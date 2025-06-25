@@ -15,6 +15,8 @@ jobs:
         submodules: recursive
         lfs: true
         fetch-depth: 0
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
     - name: Cache cr-sqlite artefacts
       uses: actions/cache@v4
       with:
@@ -71,16 +73,18 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
     - uses: actions/download-artifact@v4
       with:
         name: built-vlcn-artefacts
         path: 3rd-party/artefacts
       if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
-    - name: Cache cr-sqlite artefacts
-      uses: actions/cache@v4
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
       with:
         path: 3rd-party/artefacts
-        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts/version.txt') }}
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
@@ -123,16 +127,18 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
     - uses: actions/download-artifact@v4
       with:
         name: built-vlcn-artefacts
         path: 3rd-party/artefacts
       if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
-    - name: Cache cr-sqlite artefacts
-      uses: actions/cache@v4
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
       with:
         path: 3rd-party/artefacts
-        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts/version.txt') }}
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
@@ -168,16 +174,18 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
     - uses: actions/download-artifact@v4
       with:
         name: built-vlcn-artefacts
         path: 3rd-party/artefacts
       if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
-    - name: Cache cr-sqlite artefacts
-      uses: actions/cache@v4
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
       with:
         path: 3rd-party/artefacts
-        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts/version.txt') }}
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
@@ -220,16 +228,18 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
     - uses: actions/download-artifact@v4
       with:
         name: built-vlcn-artefacts
         path: 3rd-party/artefacts
       if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
-    - name: Cache cr-sqlite artefacts
-      uses: actions/cache@v4
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
       with:
         path: 3rd-party/artefacts
-        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts/version.txt') }}
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
@@ -370,16 +380,18 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
     - uses: actions/download-artifact@v4
       with:
         name: built-vlcn-artefacts
         path: 3rd-party/artefacts
       if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
-    - name: Cache cr-sqlite artefacts
-      uses: actions/cache@v4
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
       with:
         path: 3rd-party/artefacts
-        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts/version.txt') }}
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
