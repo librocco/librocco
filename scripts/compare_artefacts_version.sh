@@ -27,7 +27,6 @@
 #   --------------------
 #   • `set -euo pipefail`  – safer shell defaults.
 #   • All user-visible errors funnel through `fatal` helper for consistency.
-#   • We leave no dirty files behind (`git restore`) when reporting rebuild=no.
 #   • Colours are TTY-gated; avoids `tput` failures in dumb terminals.
 #   • Stick to repo-root-relative paths after a single `cd` for predictability.
 #
@@ -80,7 +79,6 @@ fi
 
 if cmp -s "$CACHE_FILE" "$WORK_FILE"; then
     echo "🟢 Cache matches current submodule hashes – rebuild not required" >&2
-    git restore --quiet -- "$WORK_FILE"
     echo "rebuild=no"
     exit 0
 fi
