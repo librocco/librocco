@@ -1,25 +1,92 @@
-#!/bin/bash
+#!/usr/bin/env bash
+#
+#   compare_artefacts_version.sh
+#
+#   CI helper – decides whether compiled artefacts must be rebuilt.
+#
+#   ──────────────────────────────────────────────────────────────────────────
+#   Decision matrix (see README-ci.md for the big picture)
+#
+#   1.  If the *submodules* (3rd-party/js, 3rd-party/typed-sql) OR the file
+#       3rd-party/artefacts_version.txt are dirty            ⇒ hard fail.
+#
+#   2.  Re-compute artefacts_version.txt with compute_artefacts_version.sh.
+#
+#   3.  If the file did **not** change                        ⇒ rebuild=no
+#
+#   4.  Else, look for 3rd-party/artefacts/cached_version.txt
+#           a.  Missing                                       ⇒ rebuild=yes
+#           b.  Present but mismatch                          ⇒ **CI ERROR**
+#           c.  Present and identical                         ⇒ rebuild=no
+#
+#   This script prints *only*  one line to STDOUT:  rebuild=yes|no
+#   Everything else goes to STDERR for CI logs.
+#   ──────────────────────────────────────────────────────────────────────────
+#
+#   IMPLEMENTATION NOTES
+#   --------------------
+#   • `set -euo pipefail`  – safer shell defaults.
+#   • All user-visible errors funnel through `fatal` helper for consistency.
+#   • We leave no dirty files behind (`git restore`) when reporting rebuild=no.
+#   • Colours are TTY-gated; avoids `tput` failures in dumb terminals.
+#   • Stick to repo-root-relative paths after a single `cd` for predictability.
+#
 
-# This scrpipt checks the current state of assets.
-# It's meant to be run in the CI.
-# It needs to answer the question:
-# Do compiled assets need to be rebuilt? Or are they in sync with the submodules in `3rd-party/`?
-# The script will output any info/debug string to stderr. At the end it outputs either
-# `rebuild=yes` or `rebuild=no` depending on the result of its investigation
+set -euo pipefail
 
+# ───────────────────────────── helpers ──────────────────────────────
+fatal() { echo "ERROR: $*" >&2; exit 1; }
 
-# First: let's check if the file 3rd-party/artefacts_version.txt is up to date.
-# To do that we:
-#   * first check that `3rd-party/typed-sql` and `3rd-party/js` are checked out and not dirty
-#   * also check that `3rd-party/artefacts_version.txt` is not dirty
-#   * run compute_artefacts_version.sh
-#   * check if `3rd-party/artefacts_version.txt` is dirty
-#   * if it's not dirty,  output `rebuild=no` on stdout and exit
-#   * If it's dirty do one more check: does the file `3rd-party/artefacts/cached_version.txt` exist? if not output `rebuild=yes` on stdout and exit
-#   * If it exists, is it the same as the current (script generated) `3rd-party/artefacts_version.txt`?
-#   * if it is not the same, output a bold red error message (this should not happen - if the file is there it should be up to date) and exit non 0
-#   * If it is the same, output `rebuild=no` on stdout and exit
+# Colours only if we’re on a tty (tput may explode in dumb terminals)
+if [[ -t 2 ]]; then
+    BOLD=$(tput bold); RED=$(tput setaf 1); RESET=$(tput sgr0)
+else
+    BOLD=""; RED=""; RESET=""
+fi
 
+# ─────────────────── enter repo root so paths are stable ────────────
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+cd "${SCRIPT_DIR}/.."  # repo root
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)  # The script lives in the `scripts/` directory
-cd $SCRIPT_DIR/..  # We like to start working in the repository root
+# ───────────────────── step 1: sanity-check repo ────────────────────
+echo "🔍 Verifying cleanliness of submodules / version file…" >&2
+
+for path in 3rd-party/js 3rd-party/typed-sql 3rd-party/artefacts_version.txt; do
+    git diff --quiet -- "$path" || fatal "$path is dirty – run only on clean working tree"
+done
+
+# ────────────────── step 2: (re)generate version file ───────────────
+echo "🔄 Recomputing artefacts_version.txt…" >&2
+"${SCRIPT_DIR}/compute_artefacts_version.sh" >/dev/null
+
+# ────────────────── step 3: did anything actually change? ───────────
+if git diff --quiet -- 3rd-party/artefacts_version.txt; then
+    echo "🟢 artefacts_version.txt already up-to-date" >&2
+    echo "rebuild=no"
+    exit 0
+fi
+
+# ────────────────── step 4: consult the cache ───────────────────────
+CACHE_FILE=3rd-party/artefacts/cached_version.txt
+WORK_FILE=3rd-party/artefacts_version.txt
+
+echo "⚠️  artefacts_version.txt changed – probing cache…" >&2
+
+if [[ ! -f "$CACHE_FILE" ]]; then
+    echo "ℹ️  Cache file missing → artefacts must be rebuilt" >&2
+    echo "rebuild=yes"
+    exit 0
+fi
+
+if cmp -s "$CACHE_FILE" "$WORK_FILE"; then
+    echo "🟢 Cache matches current submodule hashes – rebuild not required" >&2
+    git restore --quiet -- "$WORK_FILE"
+    echo "rebuild=no"
+    exit 0
+fi
+
+# ────────────────── inconsistency!  cache ≠ expected ────────────────
+echo "${BOLD}${RED}❌ Inconsistent cache detected!${RESET}" >&2
+echo "    $CACHE_FILE differs from freshly computed $WORK_FILE" >&2
+echo "    CI cache is stale or corrupted – manual intervention required." >&2
+exit 1
