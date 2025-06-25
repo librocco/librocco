@@ -1,4 +1,4 @@
 js repo hash: c3625733109ee5e2d35c931dfb4abc7b25e7a633
 typed-sql repo hash: 86dd9e354ab77af4b7a1d15d907faf4d4b38bb97
 invalid
-But compiled with rust 1.87.0
+But compiled with rust 1.85.0
