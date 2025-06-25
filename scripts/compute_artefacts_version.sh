@@ -15,5 +15,5 @@ git diff --quiet 3rd-party/typed-sql || {
 echo js repo hash: $(git -C 3rd-party/js log -1 --format=%H)
 echo typed-sql repo hash: $(git -C 3rd-party/typed-sql log -1 --format=%H)
 
-echo js repo hash: $(git -C 3rd-party/js log -1 --format=%H) > 3rd-party/artefacts/version.txt
-echo typed-sql repo hash: $(git -C 3rd-party/typed-sql log -1 --format=%H) >> 3rd-party/artefacts/version.txt
+echo js repo hash: $(git -C 3rd-party/js log -1 --format=%H) > 3rd-party/artefacts_version.txt
+echo typed-sql repo hash: $(git -C 3rd-party/typed-sql log -1 --format=%H) >> 3rd-party/artefacts_version.txt
