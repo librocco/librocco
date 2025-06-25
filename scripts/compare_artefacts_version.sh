@@ -50,7 +50,7 @@ cd "${SCRIPT_DIR}/.."  # repo root
 # ───────────────────── step 1: sanity-check repo ────────────────────
 echo "🔍 Verifying cleanliness of submodules / version file…" >&2
 
-for path in 3rd-party/js 3rd-party/typed-sql 3rd-party/artefacts_version.txt; do
+for path in 3rd-party/js 3rd-party/typed-sql; do
     git diff --quiet -- "$path" || fatal "$path is dirty – run only on clean working tree"
 done
 

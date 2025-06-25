@@ -4,7 +4,7 @@ set -e
 
 # 1. Use script's directory, not the current working directory ($PWD)
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
-TRD_PARTY="$SCRIPT_DIR/3rd-party"
+TRD_PARTY="$SCRIPT_DIR/../3rd-party"
 VLCN_ROOT="$TRD_PARTY/js"
 ARTEFACTS_DIR="$TRD_PARTY/artefacts"
 
