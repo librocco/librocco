@@ -32,7 +32,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: 3rd-party/artefacts
-          key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts/version.txt') }}
+          key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
       - name: Test if artefacts are stale
         id: ts
         shell: bash
