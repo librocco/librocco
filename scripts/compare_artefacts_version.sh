@@ -1,14 +1,9 @@
 #!/usr/bin/env bash
-#
-#   compare_artefacts_version.sh
-#
 #   CI helper – decides whether compiled artefacts must be rebuilt.
 #
 #   ──────────────────────────────────────────────────────────────────────────
-#   Decision matrix (see README-ci.md for the big picture)
-#
-#   1.  If the *submodules* (3rd-party/js, 3rd-party/typed-sql) OR the file
-#       3rd-party/artefacts_version.txt are dirty            ⇒ hard fail.
+#   1.  If the *submodules* (3rd-party/js, 3rd-party/typed-sql) are dirty
+#                                                             ⇒ hard fail.
 #
 #   2.  Re-compute artefacts_version.txt with compute_artefacts_version.sh.
 #
