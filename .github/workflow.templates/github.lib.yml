@@ -1,7 +1,18 @@
-#@ def checkout():
+#@ def checkout(deep=None):
 name: Checkout repository and submodules
 uses: actions/checkout@v4
 with:
   submodules: "recursive"
   lfs: true
+  #@ if deep!=None:
+  fetch-depth: 0  #! Enables full clone, with all history
+  #@ end
+#@ end
+
+#@ def load_artefacts():
+uses: actions/download-artifact@v4
+with:
+  name: built-vlcn-artefacts
+  path: 3rd-party/artefacts
+if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
 #@ end
