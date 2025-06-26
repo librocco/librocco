@@ -1,4 +1,6 @@
 #@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "load_artefacts")
+#@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("cache.lib.yml", "cache_node")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
@@ -12,6 +14,7 @@
 name: #@ name
 runs-on: ubuntu-latest
 timeout-minutes: 10
+needs: build-cr-sqlite
 permissions:
   id-token: write
   contents: read
@@ -21,6 +24,10 @@ steps:
   - uses: actions/setup-node@v4
     with:
       node-version: "20"
+  - name: Compute desired compiled artifact version
+    run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
+  -  #@ load_artefacts()
+  -  #@ load_cached_artefacts()
   -  #@ cache_node()
   -  #@ rush_add_path()
   -  #@ rush_install()
