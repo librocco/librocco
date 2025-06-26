@@ -66,8 +66,155 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: compile-assets
+  js-search-test:
+    name: JS-Search Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-cr-sqlite
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - uses: actions/download-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts
+      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Run tests
+      run: cd pkg/js-search && rushx test:ci
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: JS-Search Tests
+        path: pkg/js-search/junit.xml
+        reporter: jest-junit
+  book-data-extension-test:
+    name: Book data extension Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-cr-sqlite
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - uses: actions/download-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts
+      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Run tests
+      run: cd plugins/book-data-extension && rushx test:ci
+  web-client-test:
+    name: Web Client Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: build-cr-sqlite
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - uses: actions/download-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts
+      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Run tests
+      run: cd apps/web-client && rushx test:ci
   e2e-test:
-    if: false
     timeout-minutes: 60
     runs-on: ubuntu-latest
     needs: build-cr-sqlite
@@ -171,7 +318,6 @@ jobs:
       if: success() || failure()
       run: rush typecheck
   check-i18n-sync:
-    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -205,7 +351,6 @@ jobs:
     - name: Run the check
       run: cd apps/web-client && rushx typesafe-i18n-check
   perform-monorepo-checks:
-    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -235,7 +380,6 @@ jobs:
     - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
       run: rush check-workspace-projects
   deploy-production:
-    if: false
     name: Deploy web-client app to bunny cdn
     runs-on: ubuntu-latest
     needs: build-cr-sqlite
