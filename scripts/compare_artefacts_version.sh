@@ -9,7 +9,7 @@
 #
 #   3.  If the file did **not** change                        ⇒ rebuild=no
 #
-#   4.  Else, look for 3rd-party/artefacts/cached_version.txt
+#   4.  Else, look for 3rd-party/artefacts/version-cached.txt
 #           a.  Missing                                       ⇒ rebuild=yes
 #           b.  Present but mismatch                          ⇒ **CI ERROR**
 #           c.  Present and identical                         ⇒ rebuild=no
@@ -61,7 +61,7 @@ if git diff --quiet -- 3rd-party/artefacts_version.txt; then
 fi
 
 # ────────────────── step 4: consult the cache ───────────────────────
-CACHE_FILE=3rd-party/artefacts/cached_version.txt
+CACHE_FILE=3rd-party/artefacts/version-cached.txt
 WORK_FILE=3rd-party/artefacts_version.txt
 
 echo "⚠️  artefacts_version.txt changed – probing cache…" >&2
