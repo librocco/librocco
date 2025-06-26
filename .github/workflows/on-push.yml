@@ -270,6 +270,7 @@ jobs:
         path: apps/e2e/blob-report
         retention-days: 2
   lint-and-typecheck:
+    needs: build-cr-sqlite
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
