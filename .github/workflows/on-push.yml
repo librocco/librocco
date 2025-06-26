@@ -7,6 +7,8 @@ name: Checks
 jobs:
   build-cr-sqlite:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       rebuild: ${{ steps.ts.outputs.rebuild }}
     steps:
