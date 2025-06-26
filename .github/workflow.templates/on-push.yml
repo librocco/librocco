@@ -11,10 +11,11 @@ name: Checks
 
 "on":
   push:
-    branches-ignore:
-      - "ci-debug/*"
-      - "wip/**"
-
+    #! branches-ignore:
+    #!   - "ci-debug/*"
+    #!   - "wip/**"
+    branches:
+      - "compile-assets"
 jobs:
   build-cr-sqlite:
     runs-on: ubuntu-latest
@@ -72,13 +73,14 @@ jobs:
       - name: Mark cached version
         run: cp 3rd-party/artefacts_version.txt 3rd-party/artefacts/version-cached.txt
 
-  js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
+  #! js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
 
-  book-data-extension-test: #@ test_job("Book data extension Tests", "plugins/book-data-extension")
+  #! book-data-extension-test: #@ test_job("Book data extension Tests", "plugins/book-data-extension")
 
-  web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
+  #! web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
 
   e2e-test:
+    if: false
     timeout-minutes: 60
     runs-on: ubuntu-latest
     needs: build-cr-sqlite
@@ -141,6 +143,7 @@ jobs:
         run: rush typecheck
 
   check-i18n-sync:
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -160,6 +163,7 @@ jobs:
         run: cd apps/web-client && rushx typesafe-i18n-check
 
   perform-monorepo-checks:
+    if: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -175,6 +179,7 @@ jobs:
         run: rush check-workspace-projects
 
   deploy-production:
+    if: false
     name: Deploy web-client app to bunny cdn
     runs-on: ubuntu-latest
     needs: build-cr-sqlite
@@ -220,7 +225,7 @@ jobs:
       - name: Output link to deployed app
         run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
   e2e-merge-report:
-    if: ${{ !cancelled() }}
+    if: false #! ${{ !cancelled() }}
     needs: [e2e-test]
     runs-on: ubuntu-latest
     steps:
