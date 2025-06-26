@@ -44,6 +44,16 @@
 	const mapWarehousesToOptions = (warehouseList: Omit<Warehouse, "discount">[]) =>
 		[...warehouseList].map(({ id, displayName }) => ({ value: id, label: displayName }));
 
+	const mapAvailableWarehousesToOptions = (
+		warehouseList: Map<
+			number,
+			{
+				displayName: string;
+				quantity: number;
+			}
+		>
+	) => [...warehouseList].map(([id, { displayName, quantity }]) => ({ value: id, label: `${displayName}: ${quantity} ` }));
+
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
 	 */
@@ -54,7 +64,8 @@
 	// We're allowing all warehouses for selection.
 	// Out of stock situations are handled in the row (painting it red) or
 	// when committing the note (prompting for reconciliation)
-	$: options = mapWarehousesToOptions(warehouseList);
+	// $: options = mapWarehousesToOptions(warehouseList);
+	$: options = mapAvailableWarehousesToOptions(availableWarehouses);
 
 	$: t = $LL.misc_components.warehouse_select;
 </script>

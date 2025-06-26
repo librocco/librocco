@@ -54,6 +54,17 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 
 	// Get availability by ISBN
 	const isbns = _entries.map(({ isbn }) => isbn);
+	/**
+	Map {
+  "978-3-16-148410-0" => Map {
+    1 => { displayName: "Main Warehouse", quantity: 10 },
+    2 => { displayName: "Downtown Branch", quantity: 5 }
+  },
+  "978-1-40-289462-6" => Map {
+    1 => { displayName: "Main Warehouse", quantity: 8 }
+  }
+}
+	 */
 	const isbnAvailability = new Map(isbns.map((isbn) => [isbn, new Map<number, { displayName: string; quantity: number }>()]));
 
 	// NOTE: we're skipping this part as it's completely unnecessary if there are no entries,
