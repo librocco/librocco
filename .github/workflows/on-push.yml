@@ -55,6 +55,15 @@ jobs:
         path: 3rd-party/artefacts/
     - name: Mark cached version
       run: cp 3rd-party/artefacts_version.txt 3rd-party/artefacts/version-cached.txt
+    - name: Commit updated assets
+      if: github.ref == 'refs/heads/compile-assets'
+      run: bash scripts/commit-artefacts.sh
+    - name: Push changes
+      if: github.ref == 'refs/heads/compile-assets'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: compile-assets
   e2e-test:
     if: false
     timeout-minutes: 60
