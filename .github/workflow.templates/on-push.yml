@@ -11,11 +11,12 @@ name: Checks
 
 "on":
   push:
-    #! branches-ignore:
-    #!   - "ci-debug/*"
-    #!   - "wip/**"
-    branches:
-      - "compile-assets"
+    branches-ignore:
+      - "ci-debug/*"
+      - "wip/**"
+    #! branches:
+    #!   - "compile-assets"
+
 jobs:
   build-cr-sqlite:
     runs-on: ubuntu-latest
