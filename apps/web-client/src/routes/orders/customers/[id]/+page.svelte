@@ -7,12 +7,12 @@
 	import Mail from "$lucide/mail";
 	import FileEdit from "$lucide/file-edit";
 	import ReceiptEuro from "$lucide/receipt-euro";
-	import UserCircle from "$lucide/user-circle";
 	import MoreVertical from "$lucide/more-vertical";
-	import ArrowRight from "$lucide/arrow-right";
 	import ClockArrowUp from "$lucide/clock-arrow-up";
 	import PencilLine from "$lucide/pencil-line";
 	import Phone from "$lucide/phone";
+	import IdCard from "$lucide/id-card";
+	import Printer from "$lucide/printer";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
@@ -22,20 +22,19 @@
 	import { fade, fly } from "svelte/transition";
 
 	import { testId, stripNulls, type BookData } from "@librocco/shared";
+	import LL from "@librocco/shared/i18n-svelte";
 
-	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
 	import { PopoverWrapper, Dialog } from "$lib/components";
-
-	import type { PageData } from "./$types";
-
-	import { type DialogContent } from "$lib/types";
-
-	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
+	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
 	import { DaisyUIBookForm, bookSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+
 	import { Page } from "$lib/controllers";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { type DialogContent } from "$lib/types";
+	import { mergeBookData } from "$lib/utils/misc";
 
 	import {
 		addBooksToCustomer,
@@ -44,14 +43,10 @@
 		upsertCustomer,
 		markCustomerOrderLinesAsCollected
 	} from "$lib/db/cr-sqlite/customers";
-
+	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 
-	import { mergeBookData } from "$lib/utils/misc";
-	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
-	import LL from "@librocco/shared/i18n-svelte";
-
-	// import { createIntersectionObserver } from "$lib/actions";
+	import type { PageData } from "./$types";
 
 	export let data: PageData;
 
@@ -82,15 +77,6 @@
 	$: totalAmount = customerOrderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
 
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
-
-	// #region infinite-scroll
-	// let maxResults = 20;
-	// // Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
-	// const seeMore = () => (maxResults += 20);
-	// // We're using in intersection observer to create an infinite scroll effect
-	// const scroll = createIntersectionObserver(seeMore);
-
-	// #endregion infinite-scroll
 
 	// #region dialog
 	const customerMetaDialog = createDialog(defaultDialogConfig);
@@ -205,41 +191,37 @@
 </script>
 
 <Page title="Customer Orders" view="orders/customers/id" {db} {plugins}>
-	<div slot="main" class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+	<div slot="main" class="flex h-full flex-col gap-y-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
-			<div class="card h-full">
+			<div class="card md:h-full">
 				{#if customer}
 					<div class="card-body gap-y-2 p-0">
-						<div class="sticky top-0 flex flex-col gap-y-2 pb-3">
-							<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-								<h2 class="prose">#{customer.displayId}</h2>
+						<div class="bg-base-200 flex flex-col gap-y-2 border-b px-4 py-2.5 max-md:sticky max-md:top-0">
+							<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
+								<h2 class="text-2xl font-medium">{customer.fullname}</h2>
 
-								<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
+								<span class="badge-accent badge-outline badge badge-md gap-x-2">
 									<span class="sr-only">Last updated</span>
 									<ClockArrowUp size={16} aria-hidden />
-									<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}
-										>{new Date(data?.customer?.updatedAt || "").toLocaleString()}</time
-									>
+									<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}>
+										{new Date(data?.customer?.updatedAt || "").toLocaleString()}
+									</time>
 								</span>
 							</div>
 						</div>
-						<dl class="flex flex-col">
-							<div class="border-b py-4 font-bold">
-								<dt class="max-md:sr-only">Total amount</dt>
-								<dd class="mt-1">€{totalAmount}</dd>
-							</div>
-
-							<div class="flex w-full flex-col gap-y-4 py-6">
+						<dl class="hidden border-b p-4 md:flex md:flex-col">
+							<div class="flex w-full flex-col gap-y-4">
 								{#if data?.customer}
 									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-										<div class="max-w-96 flex flex-col gap-y-4">
+										<div class="flex max-w-96 flex-col gap-y-4">
 											<div class="flex gap-x-3">
 												<dt>
-													<span class="sr-only">Customer name</span>
-													<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
+													<span class="sr-only">Customer ID</span>
+													<IdCard aria-hidden="true" class="h-6 w-5 text-gray-400" />
 												</dt>
-												<dd class="truncate">{data?.customer?.fullname || ""}</dd>
+												<dd class="truncate">{customer?.displayId || ""}</dd>
 											</div>
+
 											<div class="flex gap-x-3">
 												<dt>
 													<span class="sr-only">Customer email</span>
@@ -274,25 +256,23 @@
 											<dd>€{data?.customer?.deposit || 0} deposit</dd>
 										</div>
 									</div>
-
-									<div class="w-full pr-2">
-										<button
-											class="btn-secondary btn-outline btn-xs btn w-full"
-											type="button"
-											aria-label="Edit customer order name, email or deposit"
-											on:click={() => customerMetaDialogOpen.set(true)}
-											disabled={!data?.customer}
-										>
-											<PencilLine aria-hidden size={16} />
-										</button>
-									</div>
 								{/if}
 							</div>
 						</dl>
-						<div class="card-actions border-t py-6 md:mb-20">
-							<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled>
+						<div class="card-actions w-full flex-col p-4 md:mb-20">
+							<button
+								class="btn-secondary btn-outline btn-sm btn w-full"
+								type="button"
+								aria-label="Edit customer order name, email or deposit"
+								on:click={() => customerMetaDialogOpen.set(true)}
+								disabled={!data?.customer}
+							>
+								Edit customer
+								<PencilLine aria-hidden size={16} />
+							</button>
+							<button class="btn-secondary btn-outline btn-sm btn w-full" type="button" disabled>
 								Print receipt
-								<ArrowRight aria-hidden size={20} />
+								<Printer aria-hidden size={20} />
 							</button>
 						</div>
 					</div>
@@ -300,16 +280,23 @@
 			</div>
 		</div>
 
-		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
-			<div class="prose flex w-full max-w-full flex-col gap-y-3 md:px-4">
-				<h3 class="max-md:divider-start max-md:divider">Books</h3>
+		<div class="flex h-full w-full flex-col gap-y-6 px-4 md:overflow-y-auto">
+			<div class="top-o sticky flex w-full max-w-full flex-col gap-y-3">
+				<div class="flex items-center justify-between pb-2 pt-4">
+					<h3 class="text-xl font-medium">Books</h3>
+
+					<div class="badge badge-primary badge-lg gap-x-2">
+						<span>Total:</span>
+						<span class="font-bold">€{totalAmount}</span>
+					</div>
+				</div>
 
 				<DaisyUiScannerForm onSubmit={handleAddLine} />
 			</div>
 
 			<div class="h-full overflow-x-auto">
 				<div class="h-full">
-					<table class="table-pin-rows table">
+					<table class="table">
 						<thead>
 							<tr>
 								<th>ISBN</th>
@@ -544,16 +531,3 @@
 		labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	/>
 </PageCenterDialog>
-
-<style global>
-	:global(html) {
-		overflow-x: hidden;
-		height: 100%;
-		margin-right: calc(-1 * (100vw - 100%));
-	}
-
-	:global(body) {
-		height: 100%;
-		padding: 0;
-	}
-</style>
