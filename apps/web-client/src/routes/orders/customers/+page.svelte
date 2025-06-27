@@ -134,7 +134,7 @@
 				</div>
 			{:else}
 				<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-					<table class="table-sm table-zebra table">
+					<table class="table-zebra table-sm table">
 						<thead>
 							<tr>
 								<th scope="col">{t.table_columns.order_id()}</th>
@@ -157,7 +157,7 @@
 										{email === "N/A" ? "-" : email}
 									</td>
 									<td>
-										<span class="badge badge-primary badge-outline gap-x-2">
+										<span class="badge-primary badge-outline badge gap-x-2">
 											<ClockArrowUp size={16} />
 											<time dateTime={new Date(updatedAt).toISOString()}>{new Date(updatedAt).toLocaleString()}</time>
 										</span>
