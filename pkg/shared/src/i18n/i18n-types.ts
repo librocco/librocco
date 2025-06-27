@@ -442,37 +442,192 @@ type RootTranslation = {
 			 */
 			new_order: string
 			/**
-			 * U​p​d​a​t​e​ ​O​r​d​e​r
+			 * E​d​i​t
 			 */
-			update_order: string
+			edit: string
 			/**
-			 * U​p​d​a​t​e
+			 * S​a​v​e
 			 */
-			update: string
+			save: string
+			/**
+			 * E​d​i​t​ ​c​u​s​t​o​m​e​r
+			 */
+			edit_customer: string
+			/**
+			 * P​r​i​n​t​ ​r​e​c​e​i​p​t
+			 */
+			print_receipt: string
+			/**
+			 * E​d​i​t​ ​l​i​n​e
+			 */
+			edit_line: string
+			/**
+			 * C​o​l​l​e​c​t
+			 */
+			collect: string
+			/**
+			 * D​e​l​e​t​e​ ​r​o​w
+			 */
+			delete_row: string
+			/**
+			 * E​d​i​t​ ​r​o​w
+			 */
+			edit_row: string
 		}
-		table: {
+		table_columns: {
 			/**
-			 * C​u​s​t​o​m​e​r
-			 */
-			customer: string
-			/**
-			 * O​r​d​e​r​ ​I​D
+			 * I​D
 			 */
 			order_id: string
 			/**
-			 * C​u​s​t​o​m​e​r​ ​D​e​t​a​i​l​s
+			 * N​a​m​e
 			 */
-			customer_details: string
+			name: string
+			/**
+			 * E​m​a​i​l
+			 */
+			email: string
+			/**
+			 * U​p​d​a​t​e​d
+			 */
+			updated: string
+			/**
+			 * A​c​t​i​o​n​s
+			 */
+			actions: string
+			/**
+			 * I​S​B​N
+			 */
+			isbn: string
+			/**
+			 * T​i​t​l​e
+			 */
+			title: string
+			/**
+			 * A​u​t​h​o​r​s
+			 */
+			authors: string
+			/**
+			 * P​r​i​c​e
+			 */
+			price: string
+			/**
+			 * P​u​b​l​i​s​h​e​r
+			 */
+			publisher: string
+			/**
+			 * S​t​a​t​u​s
+			 */
+			status: string
 		}
 		placeholder: {
 			/**
 			 * S​e​a​r​c​h​ ​f​o​r​ ​c​u​s​t​o​m​e​r​s​ ​b​y​ ​n​a​m​e
 			 */
 			search: string
+			no_orders: {
+				/**
+				 * N​o​ ​c​u​s​t​o​m​e​r​s
+				 */
+				title: string
+				/**
+				 * G​e​t​ ​s​t​a​r​t​e​d​ ​b​y​ ​c​r​e​a​t​i​n​g​ ​a​ ​n​e​w​ ​o​r​d​e​r
+				 */
+				description: string
+			}
 			/**
-			 * N​o​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​s​ ​y​e​t​.​ ​C​r​e​a​t​e​ ​y​o​u​r​ ​f​i​r​s​t​ ​o​r​d​e​r​ ​t​o​ ​g​e​t​ ​s​t​a​r​t​e​d​.
+			 * S​c​a​n​ ​t​o​ ​a​d​d​ ​b​o​o​k​s
 			 */
-			no_orders: string
+			scan_title: string
+			/**
+			 * P​l​u​g​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
+			 */
+			scan_description: string
+		}
+		new_customer_dialog: {
+			/**
+			 * n​e​w​ ​c​u​s​t​o​m​e​r​ ​f​o​r​m​ ​d​i​a​l​o​g
+			 */
+			title: string
+			/**
+			 * e​n​t​e​r​ ​n​e​w​ ​c​u​s​t​o​m​e​r​ ​d​e​t​a​i​l​s
+			 */
+			description: string
+		}
+		customer_details: {
+			/**
+			 * L​a​s​t​ ​u​p​d​a​t​e​d
+			 */
+			last_updated: string
+			/**
+			 * C​u​s​t​o​m​e​r​ ​I​D
+			 */
+			customer_id: string
+			/**
+			 * C​u​s​t​o​m​e​r​ ​e​m​a​i​l
+			 */
+			customer_email: string
+			/**
+			 * C​u​s​t​o​m​e​r​ ​p​h​o​n​e
+			 */
+			customer_phone: string
+			/**
+			 * S​e​c​o​n​d​a​r​y​ ​p​h​o​n​e
+			 */
+			secondary_phone: string
+			/**
+			 * D​e​p​o​s​i​t
+			 */
+			deposit: string
+			/**
+			 * €​{​a​m​o​u​n​t​}​ ​d​e​p​o​s​i​t
+			 * @param {unknown} amount
+			 */
+			deposit_amount: RequiredParams<'amount'>
+			/**
+			 * B​o​o​k​s
+			 */
+			books_heading: string
+			/**
+			 * T​o​t​a​l​:
+			 */
+			total: string
+		}
+		status: {
+			/**
+			 * C​o​l​l​e​c​t​e​d
+			 */
+			collected: string
+			/**
+			 * D​e​l​i​v​e​r​e​d
+			 */
+			delivered: string
+			/**
+			 * P​l​a​c​e​d
+			 */
+			placed: string
+			/**
+			 * P​e​n​d​i​n​g
+			 */
+			pending: string
+		}
+		dialogs: {
+			edit_customer: {
+				/**
+				 * E​d​i​t​ ​c​u​s​t​o​m​e​r​ ​d​e​t​a​i​l​s
+				 */
+				title: string
+			}
+			non_unique_id: {
+				/**
+				 * N​o​n​ ​u​n​i​q​u​e​ ​c​u​s​t​o​m​e​r​ ​I​D
+				 */
+				title: string
+				/**
+				 * T​h​e​r​e​'​s​ ​a​t​ ​l​e​a​s​t​ ​o​n​e​ ​m​o​r​e​ ​o​r​d​e​r​ ​w​i​t​h​ ​t​h​e​ ​s​a​m​e​ ​I​D​.​ ​P​l​e​a​s​e​ ​c​o​n​f​i​r​m​ ​y​o​u​'​r​e​ ​o​k​ ​w​i​t​h​ ​t​h​i​s​?
+				 */
+				description: string
+			}
 		}
 	}
 	suppliers_page: {
@@ -2882,37 +3037,191 @@ export type TranslationFunctions = {
 			 */
 			new_order: () => LocalizedString
 			/**
-			 * Update Order
+			 * Edit
 			 */
-			update_order: () => LocalizedString
+			edit: () => LocalizedString
 			/**
-			 * Update
+			 * Save
 			 */
-			update: () => LocalizedString
+			save: () => LocalizedString
+			/**
+			 * Edit customer
+			 */
+			edit_customer: () => LocalizedString
+			/**
+			 * Print receipt
+			 */
+			print_receipt: () => LocalizedString
+			/**
+			 * Edit line
+			 */
+			edit_line: () => LocalizedString
+			/**
+			 * Collect
+			 */
+			collect: () => LocalizedString
+			/**
+			 * Delete row
+			 */
+			delete_row: () => LocalizedString
+			/**
+			 * Edit row
+			 */
+			edit_row: () => LocalizedString
 		}
-		table: {
+		table_columns: {
 			/**
-			 * Customer
-			 */
-			customer: () => LocalizedString
-			/**
-			 * Order ID
+			 * ID
 			 */
 			order_id: () => LocalizedString
 			/**
-			 * Customer Details
+			 * Name
 			 */
-			customer_details: () => LocalizedString
+			name: () => LocalizedString
+			/**
+			 * Email
+			 */
+			email: () => LocalizedString
+			/**
+			 * Updated
+			 */
+			updated: () => LocalizedString
+			/**
+			 * Actions
+			 */
+			actions: () => LocalizedString
+			/**
+			 * ISBN
+			 */
+			isbn: () => LocalizedString
+			/**
+			 * Title
+			 */
+			title: () => LocalizedString
+			/**
+			 * Authors
+			 */
+			authors: () => LocalizedString
+			/**
+			 * Price
+			 */
+			price: () => LocalizedString
+			/**
+			 * Publisher
+			 */
+			publisher: () => LocalizedString
+			/**
+			 * Status
+			 */
+			status: () => LocalizedString
 		}
 		placeholder: {
 			/**
 			 * Search for customers by name
 			 */
 			search: () => LocalizedString
+			no_orders: {
+				/**
+				 * No customers
+				 */
+				title: () => LocalizedString
+				/**
+				 * Get started by creating a new order
+				 */
+				description: () => LocalizedString
+			}
 			/**
-			 * No customer orders yet. Create your first order to get started.
+			 * Scan to add books
 			 */
-			no_orders: () => LocalizedString
+			scan_title: () => LocalizedString
+			/**
+			 * Plugin your barcode scanner and pull the trigger
+			 */
+			scan_description: () => LocalizedString
+		}
+		new_customer_dialog: {
+			/**
+			 * new customer form dialog
+			 */
+			title: () => LocalizedString
+			/**
+			 * enter new customer details
+			 */
+			description: () => LocalizedString
+		}
+		customer_details: {
+			/**
+			 * Last updated
+			 */
+			last_updated: () => LocalizedString
+			/**
+			 * Customer ID
+			 */
+			customer_id: () => LocalizedString
+			/**
+			 * Customer email
+			 */
+			customer_email: () => LocalizedString
+			/**
+			 * Customer phone
+			 */
+			customer_phone: () => LocalizedString
+			/**
+			 * Secondary phone
+			 */
+			secondary_phone: () => LocalizedString
+			/**
+			 * Deposit
+			 */
+			deposit: () => LocalizedString
+			/**
+			 * €{amount} deposit
+			 */
+			deposit_amount: (arg: { amount: unknown }) => LocalizedString
+			/**
+			 * Books
+			 */
+			books_heading: () => LocalizedString
+			/**
+			 * Total:
+			 */
+			total: () => LocalizedString
+		}
+		status: {
+			/**
+			 * Collected
+			 */
+			collected: () => LocalizedString
+			/**
+			 * Delivered
+			 */
+			delivered: () => LocalizedString
+			/**
+			 * Placed
+			 */
+			placed: () => LocalizedString
+			/**
+			 * Pending
+			 */
+			pending: () => LocalizedString
+		}
+		dialogs: {
+			edit_customer: {
+				/**
+				 * Edit customer details
+				 */
+				title: () => LocalizedString
+			}
+			non_unique_id: {
+				/**
+				 * Non unique customer ID
+				 */
+				title: () => LocalizedString
+				/**
+				 * There's at least one more order with the same ID. Please confirm you're ok with this?
+				 */
+				description: () => LocalizedString
+			}
 		}
 	}
 	suppliers_page: {
