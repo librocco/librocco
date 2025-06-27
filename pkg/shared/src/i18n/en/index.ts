@@ -209,12 +209,14 @@ const customer_orders_page = {
 
 	labels: {
 		new_order: "New Order",
-		update: "Edit",
+		edit: "Edit",
+		save: "Save",
 		edit_customer: "Edit customer",
 		print_receipt: "Print receipt",
 		edit_line: "Edit line",
 		collect: "Collect",
-		delete_row: "Delete row"
+		delete_row: "Delete row",
+		edit_row: "Edit row"
 	},
 	table_columns: {
 		order_id: "ID",
@@ -261,8 +263,7 @@ const customer_orders_page = {
 	},
 	dialogs: {
 		edit_customer: {
-			title: "Update customer details",
-			save_label: "Update"
+			title: "Edit customer details"
 		},
 		non_unique_id: {
 			title: "Non unique customer ID",
