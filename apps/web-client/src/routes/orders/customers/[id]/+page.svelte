@@ -332,19 +332,19 @@
 									<td>
 										{#if status === OrderLineStatus.Collected}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												Collected <time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
+												Collected - <time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
 											</div>
 										{:else if status === OrderLineStatus.Received}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												Delivered <time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
+												Delivered - <time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
 											</div>
 										{:else if status === OrderLineStatus.Placed}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												Placed <time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
+												Placed - <time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
 											</div>
 										{:else}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												Pending <time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
+												Pending - <time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
 											</div>
 										{/if}
 									</td>
