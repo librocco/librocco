@@ -107,11 +107,15 @@
 				options={{
 					SPA: true,
 					dataType: "json",
+					invalidateAll: false,
+					resetForm: false,
 					validators: zod(customerSearchSchema),
-					validationMethod: "submit-only",
-					onUpdate: async ({ form }) => {
-						const { fullname } = form?.data as CustomerOrderListItem;
-						search.set(fullname);
+					validationMethod: "oninput",
+					onChange: async (event) => {
+						const [fullNamePath] = event.paths;
+						const fullName = event.get(fullNamePath);
+
+						search.set(fullName); // reactively update the store on input change
 					}
 				}}
 			/>
