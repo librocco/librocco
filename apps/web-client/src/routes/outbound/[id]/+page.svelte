@@ -20,7 +20,7 @@
 	import { type BookData } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
-	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem } from "$lib/db/cr-sqlite/types";
+	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem, Warehouse } from "$lib/db/cr-sqlite/types";
 
 	import { OutOfStockError, NoWarehouseSelectedError } from "$lib/db/cr-sqlite/errors";
 
@@ -244,6 +244,21 @@
 		await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
 	};
 
+	const openForceWithdrawal = async (
+		e: MouseEvent & {
+			currentTarget: EventTarget & HTMLButtonElement;
+		},
+		data: InventoryTableData<"book">
+	) => {
+		const unavailableWarehouses = warehouses.filter((w) => {
+			const stockInfo = data.availableWarehouses?.get(w.id);
+			return !stockInfo || stockInfo.quantity <= 0;
+		});
+
+		forceWithdrawalDialogData = { row: data, unavailableWarehouses };
+		forceWithdrawalDialogOpen.set(true);
+	};
+
 	const deleteRow = (rowIx: number) => async () => {
 		const row = entries[rowIx];
 		if (isBookRow(row)) {
@@ -343,6 +358,18 @@
 	};
 
 	// Create individual dialogs for each type
+	let forceWithdrawalDialogData: { row: InventoryTableData<"book">; unavailableWarehouses: Warehouse[] } | null = null;
+	const forceWithdrawalDialog = createDialog(defaultDialogConfig);
+	const {
+		elements: {
+			trigger: forceWithdrawalDialogTrigger,
+			overlay: forceWithdrawalDialogOverlay,
+			portalled: forceWithdrawalDialogPortalled,
+			content: forceWithdrawalDialogContent
+		},
+		states: { open: forceWithdrawalDialogOpen }
+	} = forceWithdrawalDialog;
+
 	const confirmActionDialog = createDialog(defaultDialogConfig);
 	const {
 		elements: { trigger: confirmDialogTrigger, overlay: confirmDialogOverlay, portalled: confirmDialogPortalled },
@@ -575,6 +602,7 @@
 						warehouseList={warehouses}
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
 						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
+						on:open-force-withdrawal-dialog={({ detail: { event, row } }) => openForceWithdrawal(event, row)}
 					>
 						<div id="row-actions" slot="row-actions" let:row let:rowIx>
 							{@const editTrigger = isBookRow(row) ? $editBookDialogTrigger : $customItemDialogTrigger}
@@ -654,6 +682,39 @@
 	</div>
 </Page>
 
+{#if $forceWithdrawalDialogOpen}
+	{#if forceWithdrawalDialogData}
+		{@const { row, unavailableWarehouses } = forceWithdrawalDialogData}
+		<div use:melt={$forceWithdrawalDialogPortalled}>
+			<div
+				use:melt={$forceWithdrawalDialogOverlay}
+				class="fixed inset-0
+z-50 bg-black/50"
+				transition:fade|global={{ duration: 100 }}
+			></div>
+			<div
+				class="fixed left-[50%] top-[50%] z-50 w-full max-w-md
+translate-x-[-50%] translate-y-[-50%]"
+			>
+				<Dialog dialog={forceWithdrawalDialog} type="commit" onConfirm={() => console.log("Force withdrawal confirmed")}>
+					<svelte:fragment slot="title"
+						>Force withdrawal for
+						{row.isbn}</svelte:fragment
+					>
+					<svelte:fragment slot="description">
+						<p class="mb-4">This book is out of stock. Select a warehouse to perform a force withdrawal.</p>
+						<select class="select-bordered select w-full">
+							<option disabled selected>Select a warehouse</option>
+							{#each unavailableWarehouses as warehouse}
+								<option value={warehouse.id}>{warehouse.displayName}</option>
+							{/each}
+						</select>
+					</svelte:fragment>
+				</Dialog>
+			</div>
+		</div>
+	{/if}
+{/if}
 {#if $confirmDialogOpen}
 	{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 

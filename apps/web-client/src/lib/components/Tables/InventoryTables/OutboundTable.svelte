@@ -17,6 +17,7 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
+	import type { DialogContent } from "$lib/types";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 	export let warehouseList: Warehouse[];
@@ -28,7 +29,9 @@
 	$: rowCount = rows.length + 1;
 
 	const dispatch = createEventDispatcher<OutboundTableEvents>();
-	const { editQuantity, editWarehouse } = createOutboundTableEvents(dispatch);
+	const { editQuantity, editWarehouse, openForceWithdrawalDialog } = createOutboundTableEvents(dispatch);
+
+	let dialogContent: DialogContent & { type: "commit" | "delete" };
 
 	// TODO: this is a duplicate
 	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
@@ -110,7 +113,8 @@
 					</td>
 					<td data-property="warehouseName" class="table-cell-max">
 						<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
-					</td>
+						<button on:click={(e) => openForceWithdrawalDialog(e, row)}>Force Withdrawal</button></td
+					>
 					<td data-property="category" class="show-col-md table-cell-max">
 						{category}
 					</td>
