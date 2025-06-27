@@ -209,17 +209,25 @@ const customer_orders_page = {
 
 	labels: {
 		new_order: "New Order",
-		update_order: "Update Order",
-		update: "Update"
+		update: "Edit"
 	},
-	table: {
-		customer: "Customer",
-		order_id: "Order ID",
-		customer_details: "Customer Details"
+	table_columns: {
+		order_id: "ID",
+		name: "Name",
+		email: "Email",
+		updated: "Updated",
+		actions: "Actions"
 	},
 	placeholder: {
 		search: "Search for customers by name",
-		no_orders: "No customer orders yet. Create your first order to get started."
+		no_orders: {
+			title: "No customers",
+			description: "Get started by creating a new order"
+		}
+	},
+	new_customer_dialog: {
+		title: "new customer form dialog",
+		description: "enter new customer details"
 	}
 };
 const new_order_page = {
