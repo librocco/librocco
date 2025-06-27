@@ -246,6 +246,22 @@
 		await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
 	};
 
+	const forceUpdateRowWarehouse = async (data: InventoryTableData<"book">) => {
+		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
+		const { id: nextWarehouseId } = selectedWarehouse as Warehouse;
+		// Number form control validation means this string->number conversion should yield a valid result
+		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
+
+		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
+		if (currentWarehouseId === nextWarehouseId) {
+			return;
+		}
+
+		await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
+		forceWithdrawalDialogOpen.set(false);
+		selectedWarehouse = null;
+	};
+
 	const openForceWithdrawal = async (
 		e: MouseEvent & {
 			currentTarget: EventTarget & HTMLButtonElement;
@@ -693,7 +709,7 @@
 				class="fixed left-[50%] top-[50%] z-50 w-full max-w-md
 translate-x-[-50%] translate-y-[-50%]"
 			>
-				<Dialog dialog={forceWithdrawalDialog} type="commit" onConfirm={() => console.log("Force withdrawal confirmed")}>
+				<Dialog dialog={forceWithdrawalDialog} type="commit" onConfirm={() => forceUpdateRowWarehouse(row)}>
 					<svelte:fragment slot="title"
 						>Force withdrawal for
 						{row.isbn}</svelte:fragment
