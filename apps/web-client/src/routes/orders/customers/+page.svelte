@@ -146,7 +146,7 @@
 						</thead>
 						<tbody>
 							{#each $tableStore as { id, fullname, email, updatedAt, displayId }}
-								<tr class="hover focus-within:bg-base-200">
+								<tr class="hover focus-within:bg-base-200 hover:cursor-pointer" on:click={() => goto(appPath("customers", id))}>
 									<th>
 										<span class="font-medium">#{displayId}</span>
 									</th>
@@ -163,7 +163,7 @@
 										</span>
 									</td>
 									<td>
-										<a href={appPath("customers", id)} class="btn-outline btn-sm btn">{t.labels.update()}</a>
+										<a href={appPath("customers", id)} class="btn-outline btn-sm btn">{t.labels.edit()}</a>
 									</td>
 								</tr>
 							{/each}
