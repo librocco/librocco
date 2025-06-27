@@ -27,8 +27,7 @@
 	import { PopoverWrapper, Dialog } from "$lib/components";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
-	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
-	import { DaisyUIBookForm, bookSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
+	import { ScannerForm, DaisyUIBookForm, bookSchema, scannerSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	import { Page } from "$lib/controllers";
@@ -291,7 +290,21 @@
 					</div>
 				</div>
 
-				<DaisyUiScannerForm onSubmit={handleAddLine} />
+				<ScannerForm
+					data={defaults(zod(scannerSchema))}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(scannerSchema),
+						validationMethod: "submit-only",
+						resetForm: true,
+						onUpdated: async ({ form }) => {
+							const { isbn } = form?.data;
+
+							await handleAddLine(isbn);
+						}
+					}}
+				/>
 			</div>
 
 			<div class="h-full overflow-x-auto">
