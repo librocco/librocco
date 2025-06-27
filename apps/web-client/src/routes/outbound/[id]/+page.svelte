@@ -107,6 +107,8 @@
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: publisherList = data.publisherList;
 
+	$: selectedWarehouse = null;
+
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
 
@@ -686,12 +688,7 @@
 	{#if forceWithdrawalDialogData}
 		{@const { row, unavailableWarehouses } = forceWithdrawalDialogData}
 		<div use:melt={$forceWithdrawalDialogPortalled}>
-			<div
-				use:melt={$forceWithdrawalDialogOverlay}
-				class="fixed inset-0
-z-50 bg-black/50"
-				transition:fade|global={{ duration: 100 }}
-			></div>
+			<div use:melt={$forceWithdrawalDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 			<div
 				class="fixed left-[50%] top-[50%] z-50 w-full max-w-md
 translate-x-[-50%] translate-y-[-50%]"
@@ -703,18 +700,24 @@ translate-x-[-50%] translate-y-[-50%]"
 					>
 					<svelte:fragment slot="description">
 						<p class="mb-4">This book is out of stock. Select a warehouse to perform a force withdrawal.</p>
-						<select class="select-bordered select w-full">
+						<select bind:value={selectedWarehouse} class="select-bordered select w-full">
 							<option disabled selected>Select a warehouse</option>
 							{#each unavailableWarehouses as warehouse}
-								<option value={warehouse.id}>{warehouse.displayName}</option>
+								<option value={warehouse}>{warehouse.displayName}</option>
 							{/each}
 						</select>
+						<p>
+							{selectedWarehouse
+								? ` A reconciliation note will be created for ${row.quantity} books in ${selectedWarehouse.displayName}`
+								: "No warehouse selected"}
+						</p>
 					</svelte:fragment>
 				</Dialog>
 			</div>
 		</div>
 	{/if}
 {/if}
+
 {#if $confirmDialogOpen}
 	{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
