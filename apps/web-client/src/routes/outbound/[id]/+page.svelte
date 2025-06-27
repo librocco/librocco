@@ -176,17 +176,17 @@
 	// #region note-actions
 
 	// #region transaction-actions
-	const handleAddTransaction = async (isbn: string) => {
+	const handleAddTransaction = async (isbn: string, quantity = 1) => {
 		const stock = await getStock(db, { isbns: [isbn] });
 
 		const warehouseOptions = stock.map((st) => ({ warehouseId: st.warehouseId, warehouseName: st.warehouseName }));
 
 		if (warehouseOptions.length === 1) {
-			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: warehouseOptions[0].warehouseId });
-		} else if ((!warehouseOptions.length && defaultWarehouse) || warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
-			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: defaultWarehouse });
+			await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: warehouseOptions[0].warehouseId });
+		} else if (warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
+			await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: defaultWarehouse });
 		} else {
-			await addVolumesToNote(db, noteId, { isbn, quantity: 1 });
+			await addVolumesToNote(db, noteId, { isbn, quantity });
 		}
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
@@ -218,16 +218,31 @@
 			.subscribe((b) => upsertBook(db, b));
 	};
 
-	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: VolumeStock) => {
+	const updateRowQuantity = async (
+		e: SubmitEvent,
+		{ isbn, warehouseId, quantity: currentQty, availableWarehouses }: InventoryTableData<"book">
+	) => {
+		const warehouse = availableWarehouses.get(warehouseId);
+
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
 
-		const transaction = { isbn, warehouseId };
-
 		if (currentQty == nextQty) {
 			return;
 		}
+		// does the proposed warehouse contain the proposed quantity?
+		if (warehouse && nextQty > warehouse.quantity) {
+			const remainderQuantity = nextQty - warehouse.quantity;
+			console.log({ remainderQuantity });
+			// await addVolumesToNote(db, noteId, { isbn, quantity: remainderQuantity, warehouseId });
+
+			handleAddTransaction(isbn, remainderQuantity);
+			// insert new row for remainderQuantity with no wh assigned
+			return;
+		}
+
+		const transaction = { isbn, warehouseId };
 
 		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextQty });
 	};

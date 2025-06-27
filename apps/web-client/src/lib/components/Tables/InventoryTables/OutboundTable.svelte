@@ -84,11 +84,7 @@
 				{@const outOfStock = quantityInWarehouse < quantity}
 				<!-- This back and forth is necessary for TS + Svelte to recognise the object as book variant (not custom item) -->
 				<!-- Require action takes precedence over out of stock -->
-				<tr
-					class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""}
-					use:table.tableRow={{ position: rowIx }}
-					use:table.tableRow={{ position: rowIx }}
-				>
+				<tr class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }}>
 					<th scope="row" data-property="book" class="table-cell-max">
 						<BookHeadCell data={{ isbn, title, authors, year }} />
 					</th>
