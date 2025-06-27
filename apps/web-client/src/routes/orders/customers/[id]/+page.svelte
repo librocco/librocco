@@ -99,9 +99,6 @@
 	} = nonUniqueIdDialog;
 	let submittingCustomer: Customer | null = null;
 
-	const nonUniqueIdDialogHeading = "Non unique customer ID";
-	const nonUniqueIdDialogDescription = "There's at least one more order with the same ID. Please confirm you're ok with this?";
-
 	const handleOpenNonUniqueIdDialog = (data: Customer) => {
 		submittingCustomer = data;
 		nonUniqueIdDialogOpen.set(true);
@@ -189,7 +186,7 @@
 	let dialogContent: DialogContent & { type: "delete" | "edit-row" };
 </script>
 
-<Page title="Customer Orders" view="orders/customers/id" {db} {plugins}>
+<Page title={$LL.customer_orders_page.title()} view="orders/customers/id" {db} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card md:h-full">
@@ -200,7 +197,7 @@
 								<h2 class="text-2xl font-medium">{customer.fullname}</h2>
 
 								<span class="badge-accent badge-outline badge badge-md gap-x-2">
-									<span class="sr-only">Last updated</span>
+									<span class="sr-only">{$LL.customer_orders_page.customer_details.last_updated()}</span>
 									<ClockArrowUp size={16} aria-hidden />
 									<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}>
 										{new Date(data?.customer?.updatedAt || "").toLocaleString()}
@@ -215,7 +212,7 @@
 										<div class="flex max-w-96 flex-col gap-y-4">
 											<div class="flex gap-x-3">
 												<dt>
-													<span class="sr-only">Customer ID</span>
+													<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_id()}</span>
 													<IdCard aria-hidden="true" class="h-6 w-5 text-gray-400" />
 												</dt>
 												<dd class="truncate">{customer?.displayId || ""}</dd>
@@ -223,14 +220,14 @@
 
 											<div class="flex gap-x-3">
 												<dt>
-													<span class="sr-only">Customer email</span>
+													<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_email()}</span>
 													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 												</dt>
 												<dd class="truncate">{data?.customer?.email || ""}</dd>
 											</div>
 											<div class="flex gap-x-3">
 												<dt>
-													<span class="sr-only">Customer phone</span>
+													<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_phone()}</span>
 													<Phone aria-hidden="true" class="h-6 w-5 text-gray-400" />
 												</dt>
 												<dd class="truncate">
@@ -241,7 +238,7 @@
 											</div>
 											<div class="flex gap-x-3">
 												<dt>
-													<span class="sr-only">Secondary phone</span>
+													<span class="sr-only">{$LL.customer_orders_page.customer_details.secondary_phone()}</span>
 													<Phone aria-hidden="true" class="h-6 w-5 text-gray-400" />
 												</dt>
 												<dd class="truncate">{data?.customer?.phone?.split(",")[1] || ""}</dd>
@@ -249,10 +246,10 @@
 										</div>
 										<div class="flex gap-x-3">
 											<dt>
-												<span class="sr-only">Deposit</span>
+												<span class="sr-only">{$LL.customer_orders_page.customer_details.deposit()}</span>
 												<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
 											</dt>
-											<dd>€{data?.customer?.deposit || 0} deposit</dd>
+											<dd>{$LL.customer_orders_page.customer_details.deposit_amount({ amount: data?.customer?.deposit || 0 })}</dd>
 										</div>
 									</div>
 								{/if}
@@ -262,15 +259,15 @@
 							<button
 								class="btn-secondary btn-outline btn-sm btn w-full"
 								type="button"
-								aria-label="Edit customer order name, email or deposit"
+								aria-label={$LL.forms.customer_order_meta.aria.form()}
 								on:click={() => customerMetaDialogOpen.set(true)}
 								disabled={!data?.customer}
 							>
-								Edit customer
+								{$LL.customer_orders_page.labels.edit_customer()}
 								<PencilLine aria-hidden size={16} />
 							</button>
 							<button class="btn-secondary btn-outline btn-sm btn w-full" type="button" disabled>
-								Print receipt
+								{$LL.customer_orders_page.labels.print_receipt()}
 								<Printer aria-hidden size={20} />
 							</button>
 						</div>
@@ -282,10 +279,10 @@
 		<div class="flex h-full w-full flex-col gap-y-6 px-4 md:overflow-y-auto">
 			<div class="top-o sticky flex w-full max-w-full flex-col gap-y-3">
 				<div class="flex items-center justify-between pb-2 pt-4">
-					<h3 class="text-xl font-medium">Books</h3>
+					<h3 class="text-xl font-medium">{$LL.customer_orders_page.customer_details.books_heading()}</h3>
 
 					<div class="badge badge-primary badge-lg gap-x-2">
-						<span>Total:</span>
+						<span>{$LL.customer_orders_page.customer_details.total()}</span>
 						<span class="font-bold">€{totalAmount}</span>
 					</div>
 				</div>
@@ -312,13 +309,13 @@
 					<table class="table">
 						<thead>
 							<tr>
-								<th>ISBN</th>
-								<th>Title</th>
-								<th>Authors</th>
-								<th>Price</th>
-								<th>Publisher</th>
-								<th>Status</th>
-								<th>Actions</th>
+								<th>{$LL.customer_orders_page.table_columns.isbn()}</th>
+								<th>{$LL.customer_orders_page.table_columns.title()}</th>
+								<th>{$LL.customer_orders_page.table_columns.authors()}</th>
+								<th>{$LL.customer_orders_page.table_columns.price()}</th>
+								<th>{$LL.customer_orders_page.table_columns.publisher()}</th>
+								<th>{$LL.customer_orders_page.table_columns.status()}</th>
+								<th>{$LL.table_components.inventory_tables.outbound_table.row_actions()}</th>
 							</tr>
 						</thead>
 						<tbody>
@@ -332,19 +329,19 @@
 									<td>
 										{#if status === OrderLineStatus.Collected}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												Collected - <time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
+												{$LL.customer_orders_page.status.collected()} - <time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
 											</div>
 										{:else if status === OrderLineStatus.Received}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												Delivered - <time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
+												{$LL.customer_orders_page.status.delivered()} - <time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
 											</div>
 										{:else if status === OrderLineStatus.Placed}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												Placed - <time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
+												{$LL.customer_orders_page.status.placed()} - <time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
 											</div>
 										{:else}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												Pending - <time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
+												{$LL.customer_orders_page.status.pending()} - <time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
 											</div>
 										{/if}
 									</td>
@@ -365,7 +362,7 @@
 												use:trigger.action
 												class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 											>
-												<span class="sr-only">Edit line</span>
+												<span class="sr-only">{$LL.customer_orders_page.labels.edit_line()}</span>
 												<span class="aria-hidden">
 													<MoreVertical />
 												</span>
@@ -395,7 +392,7 @@
 														};
 													}}
 												>
-													<span class="sr-only">Edit row</span>
+													<span class="sr-only">{$LL.customer_orders_page.labels.edit_row()}</span>
 													<span class="aria-hidden">
 														<FileEdit />
 													</span>
@@ -407,7 +404,7 @@
 														data-testid={testId("collect-row")}
 														on:click={() => handleCollect(id)}
 													>
-														<span class="sr-only">Collect</span>
+														<span class="sr-only">{$LL.customer_orders_page.labels.collect()}</span>
 														<span class="aria-hidden">
 															<BookUp />
 														</span>
@@ -420,7 +417,7 @@
 														data-testid={testId("delete-row")}
 														on:click={() => handleDeleteLine(id)}
 													>
-														<span class="sr-only">Delete row</span>
+														<span class="sr-only">{$LL.customer_orders_page.labels.delete_row()}</span>
 														<span class="aria-hidden">
 															<Trash2 />
 														</span>
@@ -512,8 +509,8 @@
 
 <PageCenterDialog dialog={customerMetaDialog} title="" description="">
 	<CustomerOrderMetaForm
-		heading="Update customer details"
-		saveLabel="Update"
+		heading={$LL.customer_orders_page.dialogs.edit_customer.title()}
+		saveLabel={$LL.customer_orders_page.dialogs.edit_customer.save_label()}
 		kind="update"
 		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema("update")))}
 		options={{
@@ -539,8 +536,8 @@
 	<ConfirmDialog
 		on:confirm={handleConfirmNonUniqueIdDialog}
 		on:cancel={() => nonUniqueIdDialogOpen.set(false)}
-		heading={nonUniqueIdDialogHeading}
-		description={nonUniqueIdDialogDescription}
-		labels={{ confirm: "Confirm", cancel: "Cancel" }}
+		heading={$LL.customer_orders_page.dialogs.non_unique_id.title()}
+		description={$LL.customer_orders_page.dialogs.non_unique_id.description()}
+		labels={{ confirm: $LL.common.actions.confirm(), cancel: $LL.common.actions.cancel() }}
 	/>
 </PageCenterDialog>
