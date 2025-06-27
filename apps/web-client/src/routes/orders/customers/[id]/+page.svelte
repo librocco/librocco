@@ -329,19 +329,23 @@
 									<td>
 										{#if status === OrderLineStatus.Collected}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												{$LL.customer_orders_page.status.collected()} - <time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
+												{$LL.customer_orders_page.status.collected()} -
+												<time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
 											</div>
 										{:else if status === OrderLineStatus.Received}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												{$LL.customer_orders_page.status.delivered()} - <time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
+												{$LL.customer_orders_page.status.delivered()} -
+												<time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
 											</div>
 										{:else if status === OrderLineStatus.Placed}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												{$LL.customer_orders_page.status.placed()} - <time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
+												{$LL.customer_orders_page.status.placed()} -
+												<time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
 											</div>
 										{:else}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
-												{$LL.customer_orders_page.status.pending()} - <time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
+												{$LL.customer_orders_page.status.pending()} -
+												<time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
 											</div>
 										{/if}
 									</td>
@@ -510,7 +514,7 @@
 <PageCenterDialog dialog={customerMetaDialog} title="" description="">
 	<CustomerOrderMetaForm
 		heading={$LL.customer_orders_page.dialogs.edit_customer.title()}
-		saveLabel={$LL.customer_orders_page.dialogs.edit_customer.save_label()}
+		saveLabel={$LL.customer_orders_page.labels.save()}
 		kind="update"
 		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema("update")))}
 		options={{
