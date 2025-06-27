@@ -1,0 +1,912 @@
+{
+    "nav": {
+        "search": "Ricerca magazzino",
+        "books": "Dati dei libri",
+        "inventory": "Gestione magazzini",
+        "sale": "Vendita",
+        "purchase": "Acquisto",
+        "settings": "Impostazioni",
+        "history": "Storico",
+        "supplier_orders": "Ordini fornitori"
+    },
+    "search": {
+        "title": "Ricerca",
+        "empty": {
+            "title": "Cerca nei magazzini",
+            "description": "Ricerca per titolo, autore o ISBN"
+        },
+        "placeholder": ""
+    },
+    "history_page": {
+        "date_tab": {
+            "stats": {
+                "title": "Statistiche",
+                "total_purchase_book_count": "",
+                "total_purchase_cover_price": "",
+                "total_purchase_discounted_price": "",
+                "total_sale_book_count": "",
+                "total_sale_cover_price": "",
+                "total_sale_discounted_price": ""
+            },
+            "transactions": {
+                "title": "",
+                "committed": ""
+            }
+        },
+        "isbn_tab": {
+            "titles": {
+                "transactions": "",
+                "history": ""
+            },
+            "search": {
+                "placeholder": ""
+            },
+            "isbn_id": {
+                "titles": {
+                    "stock": ""
+                },
+                "placeholder_box": {
+                    "title": "",
+                    "description": ""
+                }
+            },
+            "placeholder_box": {
+                "title": "",
+                "description": ""
+            }
+        },
+        "notes_tab": {
+            "date": {
+                "history": "",
+                "books": "",
+                "total_cover_price": "",
+                "committed": "",
+                "total_discounted_price": ""
+            },
+            "archive": {
+                "committed_at": "",
+                "export_csv": "",
+                "column_headers": {
+                    "quantity": "",
+                    "isbn": "",
+                    "title": "",
+                    "publisher": "",
+                    "authors": "",
+                    "year": "",
+                    "price": "",
+                    "category": "",
+                    "edited_by": "",
+                    "out_of_print": ""
+                }
+            },
+            "placeholder": {
+                "title": "",
+                "description": ""
+            }
+        },
+        "warehouse_tab": {
+            "note_table": {
+                "filter_options": {
+                    "all": "",
+                    "purchase": "",
+                    "sale": ""
+                },
+                "column_headers": {
+                    "quantity": "",
+                    "isbn": "",
+                    "title": "",
+                    "publisher": "",
+                    "authors": "",
+                    "year": "",
+                    "price": "",
+                    "category": "",
+                    "edited_by": "",
+                    "out_of_print": ""
+                },
+                "heading": {
+                    "history": "",
+                    "export_csv": "",
+                    "from": "",
+                    "to": "",
+                    "filter": ""
+                },
+                "titles": {
+                    "transactions": ""
+                },
+                "placeholder": {
+                    "title": "",
+                    "description": ""
+                }
+            },
+            "stats": {
+                "books": "",
+                "discount": ""
+            }
+        }
+    },
+    "inventory_page": {
+        "purchase_tab": {
+            "placeholder_box": {
+                "title": "",
+                "description": ""
+            },
+            "stats": {
+                "back_to_warehouses": "",
+                "books": "",
+                "last_updated": ""
+            },
+            "labels": {
+                "button_edit": "",
+                "button_delete": ""
+            }
+        },
+        "warehouses_tab": {
+            "title": "",
+            "labels": {
+                "button_create_purchase": "",
+                "create_warehouse": ""
+            },
+            "placeholder": {
+                "title": "",
+                "description": ""
+            }
+        }
+    },
+    "orders_page": {
+        "labels": {
+            "checkout": "",
+            "create_sale_note": ""
+        }
+    },
+    "customer_orders_page": {
+        "title": "",
+        "labels": {
+            "new_order": "Nuovo Ordine",
+            "update_order": "",
+            "update": "Aggiorna"
+        },
+        "table": {
+            "customer": "",
+            "order_id": "",
+            "customer_details": ""
+        },
+        "placeholder": {
+            "search": "",
+            "no_orders": ""
+        }
+    },
+    "suppliers_page": {
+        "labels": {
+            "new_supplier": ""
+        },
+        "title": {
+            "suppliers": ""
+        },
+        "table": {
+            "delete": "",
+            "edit": ""
+        }
+    },
+    "warehouse_list_page": {
+        "title": "",
+        "stats": {
+            "books": "",
+            "discount": ""
+        },
+        "labels": {
+            "new_note": "",
+            "view_stock": "",
+            "edit": "",
+            "delete": ""
+        },
+        "placeholder": {
+            "title": "",
+            "description": ""
+        }
+    },
+    "warehouse_page": {
+        "table": {
+            "quantity": "",
+            "isbn": "",
+            "title": "",
+            "publisher": "",
+            "authors": "",
+            "year": "",
+            "price": "",
+            "category": "",
+            "edited_by": "",
+            "out_of_print": ""
+        },
+        "labels": {
+            "export_to_csv": "",
+            "new_note": "",
+            "edit_row": "",
+            "print_book_label": "",
+            "edit_book_details": "",
+            "manually_edit_book_details": ""
+        },
+        "placeholder": {
+            "title": "",
+            "description": ""
+        }
+    },
+    "sale_note": {
+        "delete_dialog": {
+            "select_warehouse": ""
+        },
+        "reconcile_dialog": {
+            "review_transaction": "",
+            "quantity": ""
+        },
+        "labels": {
+            "new_note": "",
+            "edit": "",
+            "print_book_label": "",
+            "delete_row": "",
+            "edit_row": "",
+            "delete": "",
+            "commit": "",
+            "print": "",
+            "custom_item": ""
+        },
+        "stats": {
+            "last_updated": "",
+            "books": ""
+        },
+        "placeholder": {
+            "select_warehouse": "",
+            "no_warehouses": "",
+            "scan_title": "",
+            "scan_description": ""
+        }
+    },
+    "sale_page": {
+        "heading": "",
+        "stats": {
+            "last_updated": "",
+            "books": ""
+        },
+        "labels": {
+            "new_sale": "",
+            "edit": "",
+            "print_book_label": "",
+            "delete_row": "",
+            "no_open_sales": "",
+            "get_started": ""
+        }
+    },
+    "purchase_note": {
+        "stats": {
+            "last_updated": ""
+        },
+        "labels": {
+            "commit": "",
+            "print": "",
+            "auto_print_book_labels": "",
+            "delete": "",
+            "edit_row": "",
+            "print_book_label": "",
+            "delete_row": "",
+            "edit": ""
+        },
+        "placeholder": {
+            "scan_title": "",
+            "scan_description": ""
+        }
+    },
+    "settings_page": {
+        "headings": {
+            "settings": "",
+            "device_settings": "",
+            "sync_settings": "",
+            "db_management": ""
+        },
+        "descriptions": {
+            "sync_settings": "",
+            "db_management": "",
+            "import": "",
+            "device_settings": ""
+        },
+        "actions": {
+            "nuke_and_resync": ""
+        },
+        "stats": {
+            "version": ""
+        },
+        "labels": {
+            "new": ""
+        }
+    },
+    "stock_page": {
+        "labels": {
+            "edit_book_details": "",
+            "manually_edit_book_details": "",
+            "edit_row": "",
+            "print_book_label": "",
+            "popover_control": ""
+        },
+        "placeholder_box": {
+            "no_results": {
+                "title": "",
+                "description": ""
+            }
+        }
+    },
+    "common": {
+        "delete_dialog": {
+            "title": "",
+            "description": ""
+        },
+        "commit_purchase_dialog": {
+            "title": "",
+            "description": ""
+        },
+        "commit_sale_dialog": {
+            "title": "",
+            "description": ""
+        },
+        "no_warehouse_dialog": {
+            "title": "",
+            "description": ""
+        },
+        "reconcile_sale_dialog": {
+            "title": "",
+            "description": ""
+        },
+        "edit_book_dialog": {
+            "title": "",
+            "description": ""
+        },
+        "create_custom_item_dialog": {
+            "title": ""
+        },
+        "edit_custom_item_dialog": {
+            "title": ""
+        },
+        "edit_warehouse_dialog": {
+            "title": "",
+            "description": ""
+        },
+        "delete_warehouse_dialog": {
+            "description": ""
+        },
+        "delete_database_dialog": {
+            "description": ""
+        },
+        "create_database_dialog": {
+            "title": "",
+            "description": ""
+        },
+        "actions": {
+            "cancel": "",
+            "confirm": "",
+            "import": "",
+            "select": "",
+            "reload": "",
+            "print": ""
+        },
+        "placeholders": {
+            "no_results": "",
+            "search_found_no_results": ""
+        },
+        "loading": ""
+    },
+    "supplier_orders_page": {
+        "title": {
+            "supplier_orders": ""
+        },
+        "labels": {
+            "suppliers": ""
+        },
+        "tabs": {
+            "unordered": "",
+            "ordered": "",
+            "reconciling": "",
+            "completed": ""
+        },
+        "placeholder": {
+            "description": "",
+            "button": ""
+        }
+    },
+    "new_order_page": {
+        "stats": {
+            "total_books": "",
+            "total_value": "",
+            "selected_books": ""
+        },
+        "table": {
+            "ordered_quantity": "",
+            "total": "",
+            "selected_quantity": "",
+            "books": "",
+            "isbn": "",
+            "title": "",
+            "authors": ""
+        },
+        "labels": {
+            "select": "",
+            "place_order": ""
+        }
+    },
+    "reconcile_page": {
+        "title": {
+            "reconcile_deliveries": ""
+        },
+        "stats": {
+            "created": "",
+            "last_updated": "",
+            "includes_supplier_orders": "",
+            "total_delivered": "",
+            "finalized_at": ""
+        },
+        "placeholder": {
+            "description": ""
+        },
+        "table": {
+            "isbn": "",
+            "title": "",
+            "authors": "",
+            "quantity": "",
+            "price": ""
+        },
+        "delete_dialog": {
+            "title": "",
+            "description": ""
+        },
+        "steps": {
+            "populate": {
+                "title": "",
+                "description": ""
+            },
+            "compare": {
+                "title": "",
+                "description": ""
+            },
+            "commit": {
+                "title": "",
+                "description": ""
+            }
+        }
+    },
+    "reconciled_list_page": {
+        "labels": {
+            "view_reconciliation": "",
+            "reconcile": "",
+            "print_order": ""
+        },
+        "stats": {
+            "total_books": "",
+            "ordered": "",
+            "total_value": ""
+        },
+        "table": {
+            "books": "",
+            "isbn": "",
+            "title": "",
+            "authors": "",
+            "quantity": "",
+            "total_price": ""
+        }
+    },
+    "order_list_page": {
+        "labels": {
+            "remove_publisher": "",
+            "create_new_order": "",
+            "add_to_supplier": "",
+            "reassign_publisher": ""
+        },
+        "details": {
+            "supplier_page": "",
+            "supplier_name": "",
+            "supplier_email": "",
+            "supplier_address": "",
+            "supplier_customerId": ""
+        },
+        "table": {
+            "publisher_name": "",
+            "assigned_publishers": "",
+            "unassigned_publishers": "",
+            "other_supplier_publishers": ""
+        },
+        "dialogs": {
+            "reassign_publisher": {
+                "title": "",
+                "description": ""
+            }
+        }
+    },
+    "supplier_orders_component": {
+        "commit_dialog": {
+            "heading": "",
+            "delivered_book_count": "",
+            "rejected_book_count": "",
+            "cancel": "",
+            "confirm": ""
+        },
+        "comparison_table": {
+            "isbn": "",
+            "title": "",
+            "authors": "",
+            "price": "",
+            "ordered_quantity": "",
+            "delivered_quantity": "",
+            "unmatched_books": ""
+        },
+        "completed_table": {
+            "supplier": "",
+            "books": "",
+            "placed": "",
+            "actions": "",
+            "view_order": "",
+            "view_reconciliation": ""
+        },
+        "ordered_table": {
+            "supplier": "",
+            "books": "",
+            "placed": "",
+            "actions": "",
+            "selected_orders_summary": "",
+            "selected_orders": "",
+            "reconcile_selected": "",
+            "view_order": "",
+            "reconcile": "",
+            "view_reconciliation": ""
+        },
+        "reconciling_table": {
+            "order_id": "",
+            "supplier_orders": "",
+            "last_updated": "",
+            "update_order": "",
+            "continue": ""
+        },
+        "unordered_table": {
+            "supplier": "",
+            "books": "",
+            "place_order": ""
+        }
+    },
+    "table_components": {
+        "inventory_tables": {
+            "book_price_cell": {
+                "discounted_price": "",
+                "original_price": "",
+                "percentage_discount": ""
+            },
+            "inbound_table": {
+                "isbn": "",
+                "book": "",
+                "title": "",
+                "authors": "",
+                "price": "",
+                "quantity": "",
+                "publisher": "",
+                "year": "",
+                "edited_by": "",
+                "op": "",
+                "category": "",
+                "delivered_quantity": "",
+                "unmatched_books": ""
+            },
+            "stock_table": {
+                "isbn": "",
+                "book": "",
+                "title": "",
+                "authors": "",
+                "price": "",
+                "quantity": "",
+                "publisher": "",
+                "year": "",
+                "edited_by": "",
+                "op": "",
+                "category": "",
+                "delivered_quantity": "",
+                "unmatched_books": ""
+            },
+            "outbound_table": {
+                "isbn": "",
+                "book": "",
+                "title": "",
+                "authors": "",
+                "price": "",
+                "quantity": "",
+                "publisher": "",
+                "year": "",
+                "warehouse": "",
+                "category": "",
+                "row_actions": ""
+            }
+        },
+        "order_tables": {
+            "order_line_table": {
+                "isbn": "",
+                "book": "",
+                "title": "",
+                "status": "",
+                "authors": "",
+                "price": "",
+                "publisher": "",
+                "year": "",
+                "discounted_price": "",
+                "original_price": "",
+                "percentage_discount": ""
+            },
+            "supplier_order_table": {
+                "supplier": "",
+                "total_books": "",
+                "ordered": "",
+                "order_no": "",
+                "edit": "",
+                "manage": ""
+            },
+            "supplier_table": {
+                "labels": {
+                    "name": "",
+                    "email": "",
+                    "address": "",
+                    "assigned_publishers": "",
+                    "row_actions": ""
+                }
+            }
+        }
+    },
+    "misc_components": {
+        "extension_banner": {
+            "book_data_extension": "",
+            "remote_db": ""
+        },
+        "page_layout": {
+            "stock": "",
+            "checkout": ""
+        },
+        "warehouse_select": {
+            "label": "",
+            "default_option": ""
+        }
+    },
+    "layout": {
+        "mobile_nav": {
+            "trigger": {
+                "aria_label": ""
+            },
+            "dialog": {
+                "title": "",
+                "description": ""
+            }
+        },
+        "sync_dialog": {
+            "title": "",
+            "description": {
+                "in_progress": "",
+                "progress": "",
+                "warning": ""
+            }
+        },
+        "error_dialog": {
+            "schema_mismatch": {
+                "title": "",
+                "description": "",
+                "latest_version": "",
+                "your_version": "",
+                "button": ""
+            },
+            "corrupted": {
+                "title": "",
+                "description": "",
+                "note": "",
+                "button": ""
+            }
+        }
+    },
+    "error_page": {
+        "title": "",
+        "message": {
+            "title": "",
+            "description": ""
+        }
+    },
+    "books_page": {
+        "title": "",
+        "placeholder": {
+            "empty_database": {
+                "title": "",
+                "description": ""
+            },
+            "no_results": {
+                "title": "",
+                "description": ""
+            }
+        },
+        "labels": {
+            "popover_control": "",
+            "edit_row": "",
+            "print_book_label": "",
+            "edit_book_details": "",
+            "manually_edit_book_details": ""
+        }
+    },
+    "debug_page": {
+        "title": "",
+        "actions": {
+            "populate_database": "",
+            "reset_database": "",
+            "upsert_100_books": "",
+            "run_query": "",
+            "executing": ""
+        },
+        "query_interface": {
+            "title": "",
+            "results_title": "",
+            "no_results": ""
+        },
+        "table": {
+            "title": "",
+            "number_of_objects": ""
+        }
+    },
+    "forms": {
+        "sync_settings": {
+            "labels": {
+                "database_name": "",
+                "remote_sync_url": "",
+                "save_reload": "",
+                "connection_status": {
+                    "on": "",
+                    "off": ""
+                }
+            },
+            "aria": {
+                "form": ""
+            }
+        },
+        "device_settings": {
+            "labels": {
+                "label_printer_url": "",
+                "receipt_printer_url": "",
+                "save_reload": ""
+            },
+            "aria": {
+                "form": ""
+            }
+        },
+        "database_delete": {
+            "labels": {
+                "confirm_typing": "",
+                "type_instruction": "",
+                "confirm_button": ""
+            }
+        },
+        "warehouse_delete": {
+            "labels": {
+                "confirm_typing": "",
+                "type_instruction": "",
+                "confirm_button": "",
+                "cancel_button": ""
+            }
+        },
+        "supplier_meta": {
+            "labels": {
+                "name": "",
+                "email": "",
+                "address": "",
+                "customer_id": "",
+                "cancel_button": ""
+            },
+            "aria": {
+                "form": ""
+            }
+        },
+        "book_form": {
+            "labels": {
+                "isbn": "",
+                "fill_details": "",
+                "title": "",
+                "price": "",
+                "year": "",
+                "authors": "",
+                "publisher": "",
+                "edited_by": "",
+                "category": "",
+                "out_of_print": "",
+                "out_of_print_help": "",
+                "cancel_button": "",
+                "save_button": ""
+            },
+            "placeholders": {
+                "isbn": ""
+            },
+            "aria": {
+                "form": ""
+            }
+        },
+        "daisy_ui_book_form": {
+            "labels": {
+                "isbn": "",
+                "fill_details": "",
+                "title": "",
+                "price": "",
+                "year": "",
+                "authors": "",
+                "publisher": "",
+                "edited_by": "",
+                "category": "",
+                "out_of_print": "",
+                "cancel_button": "",
+                "save_button": ""
+            },
+            "placeholders": {
+                "isbn": ""
+            },
+            "aria": {
+                "form": ""
+            }
+        },
+        "scanner_form": {
+            "placeholders": {
+                "isbn": ""
+            }
+        },
+        "daisy_ui_scanner_form": {
+            "placeholders": {
+                "isbn": ""
+            }
+        },
+        "customer_order_meta": {
+            "labels": {
+                "display_id": "",
+                "name": "",
+                "email": "",
+                "deposit": "",
+                "phone1": "",
+                "phone2": "",
+                "cancel_button": ""
+            },
+            "aria": {
+                "form": ""
+            }
+        },
+        "database_create": {
+            "labels": {
+                "name": "",
+                "cancel_button": "",
+                "save_button": ""
+            },
+            "placeholders": {
+                "name": ""
+            },
+            "aria": {
+                "form": ""
+            }
+        },
+        "warehouse_form": {
+            "labels": {
+                "name": "",
+                "discount": "",
+                "discount_help": "",
+                "cancel_button": "",
+                "save_button": ""
+            },
+            "placeholders": {
+                "name": "",
+                "discount": ""
+            },
+            "aria": {
+                "form": ""
+            }
+        },
+        "custom_item_form": {
+            "labels": {
+                "title": "",
+                "price": "",
+                "cancel_button": "",
+                "save_button": ""
+            },
+            "placeholders": {
+                "price": ""
+            },
+            "aria": {
+                "form": ""
+            }
+        }
+    }
+}
