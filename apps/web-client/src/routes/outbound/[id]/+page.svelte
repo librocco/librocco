@@ -20,7 +20,7 @@
 	import { type BookData } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
-	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem, Warehouse } from "$lib/db/cr-sqlite/types";
+	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem, Warehouse, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 	import { OutOfStockError, NoWarehouseSelectedError } from "$lib/db/cr-sqlite/errors";
 
@@ -111,6 +111,15 @@
 
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
+
+	$: bookRows = new Map((data.entries as NoteEntriesItem[]).map(({ isbn }) => [isbn, new Map()]));
+	$: {
+		for (const { isbn, warehouseId, quantity } of data.entries as NoteEntriesItem[]) {
+			bookRows.get(isbn)?.set(warehouseId, quantity);
+		}
+	}
+
+	$: alertMessage = "";
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -222,6 +231,8 @@
 		e: SubmitEvent,
 		{ isbn, warehouseId, quantity: currentQty, availableWarehouses }: InventoryTableData<"book">
 	) => {
+		alertMessage = "";
+
 		const warehouse = availableWarehouses.get(warehouseId);
 
 		const data = new FormData(e.currentTarget as HTMLFormElement);
@@ -234,10 +245,9 @@
 		// does the proposed warehouse contain the proposed quantity?
 		if (warehouse && nextQty > warehouse.quantity) {
 			const remainderQuantity = nextQty - warehouse.quantity;
-			console.log({ remainderQuantity });
 			// await addVolumesToNote(db, noteId, { isbn, quantity: remainderQuantity, warehouseId });
 
-			handleAddTransaction(isbn, remainderQuantity);
+			await handleAddTransaction(isbn, remainderQuantity);
 			// insert new row for remainderQuantity with no wh assigned
 			return;
 		}
@@ -248,7 +258,9 @@
 	};
 
 	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
-		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
+		alertMessage = "";
+
+		const { isbn, quantity, warehouseId: currentWarehouseId, availableWarehouses } = data;
 		const { warehouseId: nextWarehouseId } = e.detail;
 		// Number form control validation means this string->number conversion should yield a valid result
 		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
@@ -257,11 +269,40 @@
 		if (currentWarehouseId === nextWarehouseId) {
 			return;
 		}
+		// calculate how much is left in this warehouse
+		// 3 scanned in wh1 => 2 available in wh2
+		// wh1 to wh2
+		// I want to assign 2 to wh2 (the available quantity)
+		// for the remainder I want to create a new transaction/row
 
-		await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
+		const nextWarehouseAvailableQuantity = availableWarehouses.get(nextWarehouseId)?.quantity;
+
+		//account for scanned quantity
+		const currentWarehouseScannedQuantity = quantity;
+
+		const totalScanned = bookRows.get(isbn)?.get(nextWarehouseId) + currentWarehouseScannedQuantity;
+
+		if (totalScanned > nextWarehouseAvailableQuantity) {
+			alertMessage =
+				"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse";
+			/** @TODO don't update the dropdown value to the selected wh  */
+		} else if (nextWarehouseAvailableQuantity < currentWarehouseScannedQuantity) {
+			const remainder = currentWarehouseScannedQuantity - nextWarehouseAvailableQuantity;
+			await updateNoteTxn(
+				db,
+				noteId,
+				{ isbn, warehouseId: currentWarehouseId },
+				{ quantity: nextWarehouseAvailableQuantity, warehouseId: nextWarehouseId }
+			);
+
+			await handleAddTransaction(isbn, remainder);
+		} else {
+			await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
+		}
 	};
 
 	const forceUpdateRowWarehouse = async (data: InventoryTableData<"book">) => {
+		alertMessage = "";
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
 		const { id: nextWarehouseId } = selectedWarehouse as Warehouse;
 		// Number form control validation means this string->number conversion should yield a valid result
@@ -627,6 +668,19 @@
 				</div>
 			</div>
 		{:else}
+			{#if alertMessage}
+				<div role="alert" class="alert alert-error">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
+					</svg>
+					<span>{alertMessage}</span>
+				</div>
+			{/if}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>

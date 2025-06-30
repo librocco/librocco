@@ -30,7 +30,17 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 			warehouses: [] as Warehouse[],
 			entries: [] as NoteEntriesItem[],
 			customItems: [] as NoteCustomItem[],
-			publisherList: [] as string[]
+			publisherList: [] as string[],
+			isbnAvailability: Map<
+				string,
+				Map<
+					number,
+					{
+						displayName: string;
+						quantity: number;
+					}
+				>
+			>
 		};
 	}
 
@@ -57,11 +67,11 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	/**
 	Map {
   "978-3-16-148410-0" => Map {
-    1 => { displayName: "Main Warehouse", quantity: 10 },
-    2 => { displayName: "Downtown Branch", quantity: 5 }
+    111 => { displayName: "Warehouse111", quantity: 10 },
+    222 => { displayName: "Warehouse222", quantity: 5 }
   },
   "978-1-40-289462-6" => Map {
-    1 => { displayName: "Main Warehouse", quantity: 8 }
+    111 => { displayName: "Warehouse111", quantity: 8 }
   }
 }
 	 */
@@ -76,7 +86,7 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	}
 	const entries = _entries.map((e) => ({ ...e, availableWarehouses: isbnAvailability.get(e.isbn) }));
 
-	return { dbCtx, ...note, warehouses, entries, customItems, publisherList };
+	return { dbCtx, ...note, warehouses, entries, customItems, publisherList, isbnAvailability };
 };
 
 export const load: PageLoad = timed(_load);
