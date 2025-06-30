@@ -20,7 +20,7 @@
 	import { type BookData } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
-	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem } from "$lib/db/cr-sqlite/types";
+	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem, Warehouse, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 	import { OutOfStockError, NoWarehouseSelectedError } from "$lib/db/cr-sqlite/errors";
 
@@ -107,8 +107,19 @@
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: publisherList = data.publisherList;
 
+	$: selectedWarehouse = null;
+
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
+
+	$: bookRows = new Map((data.entries as NoteEntriesItem[]).map(({ isbn }) => [isbn, new Map()]));
+	$: {
+		for (const { isbn, warehouseId, quantity } of data.entries as NoteEntriesItem[]) {
+			bookRows.get(isbn)?.set(warehouseId, quantity);
+		}
+	}
+
+	$: alertMessage = "";
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -174,17 +185,17 @@
 	// #region note-actions
 
 	// #region transaction-actions
-	const handleAddTransaction = async (isbn: string) => {
+	const handleAddTransaction = async (isbn: string, quantity = 1) => {
 		const stock = await getStock(db, { isbns: [isbn] });
 
 		const warehouseOptions = stock.map((st) => ({ warehouseId: st.warehouseId, warehouseName: st.warehouseName }));
 
 		if (warehouseOptions.length === 1) {
-			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: warehouseOptions[0].warehouseId });
-		} else if ((!warehouseOptions.length && defaultWarehouse) || warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
-			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: defaultWarehouse });
+			await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: warehouseOptions[0].warehouseId });
+		} else if (warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
+			await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: defaultWarehouse });
 		} else {
-			await addVolumesToNote(db, noteId, { isbn, quantity: 1 });
+			await addVolumesToNote(db, noteId, { isbn, quantity });
 		}
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
@@ -216,23 +227,84 @@
 			.subscribe((b) => upsertBook(db, b));
 	};
 
-	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: VolumeStock) => {
+	const updateRowQuantity = async (
+		e: SubmitEvent,
+		{ isbn, warehouseId, quantity: currentQty, availableWarehouses }: InventoryTableData<"book">
+	) => {
+		alertMessage = "";
+
+		const warehouse = availableWarehouses.get(warehouseId);
+
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
 
-		const transaction = { isbn, warehouseId };
-
 		if (currentQty == nextQty) {
 			return;
 		}
+		// does the proposed warehouse contain the proposed quantity?
+		if (warehouse && nextQty > warehouse.quantity) {
+			const remainderQuantity = nextQty - warehouse.quantity;
+			// await addVolumesToNote(db, noteId, { isbn, quantity: remainderQuantity, warehouseId });
+
+			await handleAddTransaction(isbn, remainderQuantity);
+			// insert new row for remainderQuantity with no wh assigned
+			return;
+		}
+
+		const transaction = { isbn, warehouseId };
 
 		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextQty });
 	};
 
 	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
-		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
+		alertMessage = "";
+
+		const { isbn, quantity, warehouseId: currentWarehouseId, availableWarehouses } = data;
 		const { warehouseId: nextWarehouseId } = e.detail;
+		// Number form control validation means this string->number conversion should yield a valid result
+		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
+
+		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
+		if (currentWarehouseId === nextWarehouseId) {
+			return;
+		}
+		// calculate how much is left in this warehouse
+		// 3 scanned in wh1 => 2 available in wh2
+		// wh1 to wh2
+		// I want to assign 2 to wh2 (the available quantity)
+		// for the remainder I want to create a new transaction/row
+
+		const nextWarehouseAvailableQuantity = availableWarehouses.get(nextWarehouseId)?.quantity;
+
+		//account for scanned quantity
+		const currentWarehouseScannedQuantity = quantity;
+
+		const totalScanned = bookRows.get(isbn)?.get(nextWarehouseId) + currentWarehouseScannedQuantity;
+
+		if (totalScanned > nextWarehouseAvailableQuantity) {
+			alertMessage =
+				"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse";
+			/** @TODO don't update the dropdown value to the selected wh  */
+		} else if (nextWarehouseAvailableQuantity < currentWarehouseScannedQuantity) {
+			const remainder = currentWarehouseScannedQuantity - nextWarehouseAvailableQuantity;
+			await updateNoteTxn(
+				db,
+				noteId,
+				{ isbn, warehouseId: currentWarehouseId },
+				{ quantity: nextWarehouseAvailableQuantity, warehouseId: nextWarehouseId }
+			);
+
+			await handleAddTransaction(isbn, remainder);
+		} else {
+			await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
+		}
+	};
+
+	const forceUpdateRowWarehouse = async (data: InventoryTableData<"book">) => {
+		alertMessage = "";
+		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
+		const { id: nextWarehouseId } = selectedWarehouse as Warehouse;
 		// Number form control validation means this string->number conversion should yield a valid result
 		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
@@ -242,6 +314,23 @@
 		}
 
 		await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
+		forceWithdrawalDialogOpen.set(false);
+		selectedWarehouse = null;
+	};
+
+	const openForceWithdrawal = async (
+		e: MouseEvent & {
+			currentTarget: EventTarget & HTMLButtonElement;
+		},
+		data: InventoryTableData<"book">
+	) => {
+		const unavailableWarehouses = warehouses.filter((w) => {
+			const stockInfo = data.availableWarehouses?.get(w.id);
+			return !stockInfo || stockInfo.quantity <= 0;
+		});
+
+		forceWithdrawalDialogData = { row: data, unavailableWarehouses };
+		forceWithdrawalDialogOpen.set(true);
 	};
 
 	const deleteRow = (rowIx: number) => async () => {
@@ -343,6 +432,18 @@
 	};
 
 	// Create individual dialogs for each type
+	let forceWithdrawalDialogData: { row: InventoryTableData<"book">; unavailableWarehouses: Warehouse[] } | null = null;
+	const forceWithdrawalDialog = createDialog(defaultDialogConfig);
+	const {
+		elements: {
+			trigger: forceWithdrawalDialogTrigger,
+			overlay: forceWithdrawalDialogOverlay,
+			portalled: forceWithdrawalDialogPortalled,
+			content: forceWithdrawalDialogContent
+		},
+		states: { open: forceWithdrawalDialogOpen }
+	} = forceWithdrawalDialog;
+
 	const confirmActionDialog = createDialog(defaultDialogConfig);
 	const {
 		elements: { trigger: confirmDialogTrigger, overlay: confirmDialogOverlay, portalled: confirmDialogPortalled },
@@ -567,6 +668,19 @@
 				</div>
 			</div>
 		{:else}
+			{#if alertMessage}
+				<div role="alert" class="alert alert-error">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							stroke-width="2"
+							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+						/>
+					</svg>
+					<span>{alertMessage}</span>
+				</div>
+			{/if}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
@@ -575,6 +689,7 @@
 						warehouseList={warehouses}
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
 						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
+						on:open-force-withdrawal-dialog={({ detail: { event, row } }) => openForceWithdrawal(event, row)}
 					>
 						<div id="row-actions" slot="row-actions" let:row let:rowIx>
 							{@const editTrigger = isBookRow(row) ? $editBookDialogTrigger : $customItemDialogTrigger}
@@ -653,6 +768,40 @@
 		{/if}
 	</div>
 </Page>
+
+{#if $forceWithdrawalDialogOpen}
+	{#if forceWithdrawalDialogData}
+		{@const { row, unavailableWarehouses } = forceWithdrawalDialogData}
+		<div use:melt={$forceWithdrawalDialogPortalled}>
+			<div use:melt={$forceWithdrawalDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+			<div
+				class="fixed left-[50%] top-[50%] z-50 w-full max-w-md
+translate-x-[-50%] translate-y-[-50%]"
+			>
+				<Dialog dialog={forceWithdrawalDialog} type="commit" onConfirm={() => forceUpdateRowWarehouse(row)}>
+					<svelte:fragment slot="title"
+						>Force withdrawal for
+						{row.isbn}</svelte:fragment
+					>
+					<svelte:fragment slot="description">
+						<p class="mb-4">This book is out of stock. Select a warehouse to perform a force withdrawal.</p>
+						<select bind:value={selectedWarehouse} class="select-bordered select w-full">
+							<option disabled selected>Select a warehouse</option>
+							{#each unavailableWarehouses as warehouse}
+								<option value={warehouse}>{warehouse.displayName}</option>
+							{/each}
+						</select>
+						<p>
+							{selectedWarehouse
+								? ` A reconciliation note will be created for ${row.quantity} books in ${selectedWarehouse.displayName}`
+								: "No warehouse selected"}
+						</p>
+					</svelte:fragment>
+				</Dialog>
+			</div>
+		</div>
+	{/if}
+{/if}
 
 {#if $confirmDialogOpen}
 	{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}

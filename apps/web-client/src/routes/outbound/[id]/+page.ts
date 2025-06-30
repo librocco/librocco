@@ -30,7 +30,17 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 			warehouses: [] as Warehouse[],
 			entries: [] as NoteEntriesItem[],
 			customItems: [] as NoteCustomItem[],
-			publisherList: [] as string[]
+			publisherList: [] as string[],
+			isbnAvailability: Map<
+				string,
+				Map<
+					number,
+					{
+						displayName: string;
+						quantity: number;
+					}
+				>
+			>
 		};
 	}
 
@@ -54,6 +64,17 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 
 	// Get availability by ISBN
 	const isbns = _entries.map(({ isbn }) => isbn);
+	/**
+	Map {
+  "978-3-16-148410-0" => Map {
+    111 => { displayName: "Warehouse111", quantity: 10 },
+    222 => { displayName: "Warehouse222", quantity: 5 }
+  },
+  "978-1-40-289462-6" => Map {
+    111 => { displayName: "Warehouse111", quantity: 8 }
+  }
+}
+	 */
 	const isbnAvailability = new Map(isbns.map((isbn) => [isbn, new Map<number, { displayName: string; quantity: number }>()]));
 
 	// NOTE: we're skipping this part as it's completely unnecessary if there are no entries,
@@ -65,7 +86,7 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	}
 	const entries = _entries.map((e) => ({ ...e, availableWarehouses: isbnAvailability.get(e.isbn) }));
 
-	return { dbCtx, ...note, warehouses, entries, customItems, publisherList };
+	return { dbCtx, ...note, warehouses, entries, customItems, publisherList, isbnAvailability };
 };
 
 export const load: PageLoad = timed(_load);

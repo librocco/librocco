@@ -17,6 +17,7 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
+	import type { DialogContent } from "$lib/types";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 	export let warehouseList: Warehouse[];
@@ -28,7 +29,9 @@
 	$: rowCount = rows.length + 1;
 
 	const dispatch = createEventDispatcher<OutboundTableEvents>();
-	const { editQuantity, editWarehouse } = createOutboundTableEvents(dispatch);
+	const { editQuantity, editWarehouse, openForceWithdrawalDialog } = createOutboundTableEvents(dispatch);
+
+	let dialogContent: DialogContent & { type: "commit" | "delete" };
 
 	// TODO: this is a duplicate
 	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
@@ -81,11 +84,7 @@
 				{@const outOfStock = quantityInWarehouse < quantity}
 				<!-- This back and forth is necessary for TS + Svelte to recognise the object as book variant (not custom item) -->
 				<!-- Require action takes precedence over out of stock -->
-				<tr
-					class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""}
-					use:table.tableRow={{ position: rowIx }}
-					use:table.tableRow={{ position: rowIx }}
-				>
+				<tr class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }}>
 					<th scope="row" data-property="book" class="table-cell-max">
 						<BookHeadCell data={{ isbn, title, authors, year }} />
 					</th>
@@ -110,7 +109,8 @@
 					</td>
 					<td data-property="warehouseName" class="table-cell-max">
 						<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
-					</td>
+						<button on:click={(e) => openForceWithdrawalDialog(e, row)}>Force Withdrawal</button></td
+					>
 					<td data-property="category" class="show-col-md table-cell-max">
 						{category}
 					</td>
