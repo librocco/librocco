@@ -59,6 +59,9 @@
 	});
 
 	$: {
+		// TEMP: debug
+		console.log("[layout.svelte]: dbCtx:", dbCtx);
+
 		// Register (and update on each change) the db and some db handlers to the window object.
 		// This is used for e2e tests (easier setup through direct access to the db).
 		// Additionally, we're doing this in debug mode - in case we want to interact with the DB directly (using dev console)
@@ -66,6 +69,9 @@
 			window["db_ready"] = true;
 			window["_db"] = dbCtx.db;
 			window.dispatchEvent(new Event("db_ready"));
+
+			// TEMP: debug
+			console.log("[layout.svelte]: db ready!");
 
 			window["books"] = books;
 			window["customers"] = customers;
