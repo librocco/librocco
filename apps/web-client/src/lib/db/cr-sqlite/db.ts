@@ -34,6 +34,7 @@ async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null>
 
 export async function getDB(dbname: string): Promise<_DB> {
 	const sqlite = await initWasm(() => wasmUrl);
+	console.log("[getDB] initialised, opening...");
 	return sqlite.open(dbname);
 }
 
@@ -89,6 +90,7 @@ export class ErrDBSchemaMismatch extends Error {
  */
 const checkAndInitializeDB = async (db: _DB) => {
 	// Integrity check
+	console.log("[checkAndInitializeDB] checking integrity...");
 	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
 	if (res !== "ok") {
 		throw new ErrDBCorrupted(res);
@@ -106,6 +108,8 @@ const checkAndInitializeDB = async (db: _DB) => {
 	if (name !== schemaName || version !== schemaVersion) {
 		throw new ErrDBSchemaMismatch({ wantName: schemaName, wantVersion: schemaVersion, gotName: name, gotVersion: version });
 	}
+
+	console.log("[checkAndInitializeDB] DB is initialised and schema matches, returning...");
 
 	return db;
 };
