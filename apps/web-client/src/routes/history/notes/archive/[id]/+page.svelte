@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
 
-	import { QrCode, Loader2 as Loader, Search } from "lucide-svelte";
+	import QrCode from "$lucide/qr-code";
 
 	import type { PageData } from "./$types";
 
@@ -28,6 +28,7 @@
 	$: db = data.dbCtx?.db;
 
 	$: t = $LL.history_page.notes_tab.archive;
+	$: tCommon = $LL.common;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -64,6 +65,9 @@
 	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
 
+	const handlePrint = () => {
+		window.print();
+	};
 	// #region csv
 	const handleExportCsv = () => {
 		const csvConfig = mkConfig({
@@ -105,8 +109,9 @@
 				</div>
 			</div>
 
-			<div class="ml-auto flex items-center gap-x-2">
+			<div id="button-container" class="ml-auto flex items-center gap-x-2">
 				<button on:click={handleExportCsv} class="btn-primary btn">{t.export_csv()}</button>
+				<button on:click={handlePrint} class="btn-primary btn">{tCommon.actions.print()}</button>
 			</div>
 		</div>
 		{#if loading}
@@ -118,7 +123,7 @@
 		{:else if !entries.length}
 			<div class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/2">
-					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
+					<PlaceholderBox title={$LL.purchase_note.placeholder.scan_title()} description={$LL.purchase_note.placeholder.scan_description()}>
 						<QrCode slot="icon" />
 					</PlaceholderBox>
 				</div>
@@ -142,3 +147,11 @@
 		{/if}
 	</div>
 </HistoryPage>
+
+<style>
+	@media print {
+		#button-container {
+			display: none;
+		}
+	}
+</style>

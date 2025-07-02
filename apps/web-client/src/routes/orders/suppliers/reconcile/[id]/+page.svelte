@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { ArrowRight, ClockArrowUp, Check, MinusCircle, PlusCircle, Trash } from "lucide-svelte";
+	import ArrowRight from "$lucide/arrow-right";
+	import ClockArrowUp from "$lucide/clock-arrow-up";
+	import Check from "$lucide/check";
+	import MinusCircle from "$lucide/minus-circle";
+	import PlusCircle from "$lucide/plus-circle";
+	import Trash from "$lucide/trash";
 	import { filter, scan } from "rxjs";
 	import { onDestroy, onMount } from "svelte";
 
@@ -166,7 +171,7 @@
 							</span>
 							{#if data?.reconciliationOrder.finalized}
 								<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-									<span class="sr-only">Finalized At</span>
+									<span class="sr-only">{t.stats.finalized_at()}</span>
 									<ClockArrowUp size={16} aria-hidden />
 									<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
 										>{new Date(data?.reconciliationOrder.updatedAt).toLocaleString()}</time
@@ -208,7 +213,7 @@
 			<div class="prose flex w-full max-w-full flex-col gap-y-3">
 				<nav aria-label="Progress">
 					<ol role="list" class="flex list-none items-center justify-between divide-x border pl-0">
-						{#each [{ title: "Populate", description: "Delivered books" }, { title: "Compare", description: "To ordered" }, { title: "Commit", description: "Notify customers" }] as { title, description }, index}
+						{#each [{ title: t.steps.populate.title(), description: t.steps.populate.description() }, { title: t.steps.compare.title(), description: t.steps.compare.description() }, { title: t.steps.commit.title(), description: t.steps.commit.description() }] as { title, description }, index}
 							{@const step = index + 1}
 							{@const isCompleted = step < currentStep}
 							{@const isCurrent = step === currentStep}

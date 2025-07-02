@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { superForm } from "sveltekit-superforms/client";
-	import { QrCode } from "lucide-svelte";
+	import QrCode from "$lucide/qr-code";
 
 	import { testId } from "@librocco/shared";
 
 	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
 	import type { ScannerSchema } from "$lib/forms/schemas";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let icon = QrCode;
 	export let placeholder = "Scan to add books";

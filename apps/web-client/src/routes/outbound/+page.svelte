@@ -4,7 +4,12 @@
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Plus, Trash, Library, FilePlus, Layers, ClockArrowUp } from "lucide-svelte";
+	import Plus from "$lucide/plus";
+	import Trash from "$lucide/trash";
+	import Library from "$lucide/library";
+	import FilePlus from "$lucide/file-plus";
+	import Layers from "$lucide/layers";
+	import ClockArrowUp from "$lucide/clock-arrow-up";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
@@ -66,6 +71,7 @@
 
 	let dialogContent: DialogContent | null = null;
 	$: tOutboundPage = $LL.sale_page;
+	$: tCommon = $LL.common;
 </script>
 
 <Page title="Outbound" view="outbound" {db} {plugins}>
@@ -96,7 +102,7 @@
 					<div class="flex grow justify-center">
 						<div class="mx-auto max-w-xl translate-y-1/2">
 							<!-- Start entity list placeholder -->
-							<PlaceholderBox title="No open sales" description="Get started by adding a new sale">
+							<PlaceholderBox title={tOutboundPage.labels.no_open_sales()} description={tOutboundPage.labels.get_started()}>
 								<FilePlus slot="icon" />
 								<button slot="actions" on:click={handleCreateNote} class="btn-primary btn w-full">
 									{tOutboundPage.labels.new_sale()}

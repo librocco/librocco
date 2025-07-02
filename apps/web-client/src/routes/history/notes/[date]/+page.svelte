@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Library } from "lucide-svelte";
+	import Library from "$lucide/library";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 	import { browser } from "$app/environment";
 	import { invalidate } from "$app/navigation";
@@ -75,7 +75,7 @@
 			{#if !notes.length}
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
-						<PlaceholderBox title="No notes found" description="No notes seem to have been committed on that date" />
+						<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()} />
 					</div>
 				</div>
 			{:else}

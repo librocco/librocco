@@ -67,6 +67,10 @@ export const scannerSchema = z.object({
 	isbn: z.string()
 });
 
+export type CustomerSearchSchema = Infer<typeof customerSearchSchema>;
+export const customerSearchSchema = z.object({
+	fullname: z.string()
+});
 export type CustomerOrderSchema = Infer<ReturnType<typeof createCustomerOrderSchema>>;
 export const createCustomerOrderSchema = (kind: "create" | "update") => {
 	const isUpdate = kind === "update";

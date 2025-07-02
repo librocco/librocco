@@ -19,7 +19,8 @@ const search = {
 	empty: {
 		title: "Search for stock",
 		description: "Get started by searching by title, author, ISBN"
-	}
+	},
+	placeholder: "Search stock by ISBN"
 };
 
 const history_page = {
@@ -42,6 +43,9 @@ const history_page = {
 		titles: {
 			transactions: "Transactions",
 			history: "History"
+		},
+		search: {
+			placeholder: "Search"
 		},
 		isbn_id: {
 			titles: {
@@ -80,6 +84,10 @@ const history_page = {
 				edited_by: "edited_by",
 				out_of_print: "out_of_print"
 			}
+		},
+		placeholder: {
+			title: "No notes found",
+			description: "No notes seem to have been committed on that date"
 		}
 	},
 	warehouse_tab: {
@@ -110,6 +118,10 @@ const history_page = {
 			},
 			titles: {
 				transactions: "Transactions"
+			},
+			placeholder: {
+				title: "No transactions found",
+				description: "There seem to be no transactions going in/out for the selected date range"
 			}
 		},
 		stats: {
@@ -131,12 +143,19 @@ const inventory_page = {
 			last_updated: "Updated"
 		},
 		labels: {
-			button_edit: "Edit"
+			button_edit: "Edit",
+			button_delete: "Delete"
 		}
 	},
 	warehouses_tab: {
+		title: "Warehouses",
 		labels: {
-			button_create_purchase: "New purchase"
+			button_create_purchase: "New purchase",
+			create_warehouse: "Create warehouse"
+		},
+		placeholder: {
+			title: "No warehouses",
+			description: "Get started by creating a warehouse"
 		}
 	}
 };
@@ -176,7 +195,12 @@ const purchase_note = {
 		delete: "Delete",
 		edit_row: "Edit row",
 		print_book_label: "Print book label",
-		delete_row: "Delete row"
+		delete_row: "Delete row",
+		edit: "Edit"
+	},
+	placeholder: {
+		scan_title: "Scan to add books",
+		scan_description: "Plugin your barcode scanner and pull the trigger"
 	}
 };
 
@@ -188,14 +212,14 @@ const customer_orders_page = {
 		update_order: "Update Order",
 		update: "Update"
 	},
-	tabs: {
-		in_progress: "In Progress",
-		completed: "Completed"
-	},
 	table: {
 		customer: "Customer",
 		order_id: "Order ID",
 		customer_details: "Customer Details"
+	},
+	placeholder: {
+		search: "Search for customers by name",
+		no_orders: "No customer orders yet. Create your first order to get started."
 	}
 };
 const new_order_page = {
@@ -223,19 +247,27 @@ const order_list_page = {
 	labels: {
 		remove_publisher: "Remove publisher",
 		create_new_order: "Create new order",
-		add_to_supplier: "Add to supplier"
+		add_to_supplier: "Add to supplier",
+		reassign_publisher: "Re-assign to supplier"
 	},
 	details: {
 		supplier_page: "Supplier page",
 		supplier_name: "Supplier name",
-		supplier_address: "Supplier address",
 		supplier_email: "Supplier email",
+		supplier_address: "Supplier address",
 		supplier_customerId: "Supplier customer ID"
 	},
 	table: {
 		publisher_name: "Publisher name",
 		assigned_publishers: "Assigned publishers",
-		unassigned_publishers: "Unassigned publishers"
+		unassigned_publishers: "Unassigned publishers",
+		other_supplier_publishers: "Other Supplier Publishers"
+	},
+	dialogs: {
+		reassign_publisher: {
+			title: "Re-assign publisher",
+			description: "Are you sure you want to remove {publisher} from its previous supplier and assign it to {supplier}?"
+		}
 	}
 };
 const reconciled_list_page = {
@@ -267,7 +299,8 @@ const reconcile_page = {
 		created: "Created",
 		last_updated: "Last Updated",
 		includes_supplier_orders: "Includes supplier orders",
-		total_delivered: "Total delivered"
+		total_delivered: "Total delivered",
+		finalized_at: "Finalized At"
 	},
 	placeholder: {
 		description: "Scan or enter the ISBNs of the delivered books to begin reconciliation."
@@ -282,6 +315,20 @@ const reconcile_page = {
 	delete_dialog: {
 		title: "Delete Reconciliation Order",
 		description: "Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines."
+	},
+	steps: {
+		populate: {
+			title: "Populate",
+			description: "Delivered books"
+		},
+		compare: {
+			title: "Compare",
+			description: "To ordered"
+		},
+		commit: {
+			title: "Commit",
+			description: "Notify customers"
+		}
 	}
 };
 const suppliers_page = {
@@ -298,13 +345,20 @@ const suppliers_page = {
 };
 
 const warehouse_list_page = {
+	title: "Warehouses",
 	stats: {
 		books: "books",
 		discount: "discount"
 	},
 	labels: {
 		new_note: "New note",
-		view_stock: "View Stock"
+		view_stock: "View Stock",
+		edit: "Edit",
+		delete: "Delete"
+	},
+	placeholder: {
+		title: "No warehouses",
+		description: "Get started by creating a warehouse"
 	}
 };
 
@@ -328,6 +382,51 @@ const warehouse_page = {
 		print_book_label: "Print book label",
 		edit_book_details: "Edit book details",
 		manually_edit_book_details: "Manually edit book details"
+	},
+	placeholder: {
+		title: "Add new purchase note",
+		description: "Get started by adding a new note"
+	}
+};
+
+const books_page = {
+	title: "Known books",
+	placeholder: {
+		empty_database: {
+			title: "No results",
+			description: "Book database is empty. Start by adding some books to stock."
+		},
+		no_results: {
+			title: "No results",
+			description: "Search found no results"
+		}
+	},
+	labels: {
+		popover_control: "Row actions",
+		edit_row: "Edit row",
+		print_book_label: "Print book label",
+		edit_book_details: "Edit book details",
+		manually_edit_book_details: "Manually edit book details"
+	}
+};
+
+const debug_page = {
+	title: "Debug",
+	actions: {
+		populate_database: "Populate Database",
+		reset_database: "Reset Database",
+		upsert_100_books: "Upsert 100 Books",
+		run_query: "Run Query",
+		executing: "Executing..."
+	},
+	query_interface: {
+		title: "Database Query Interface",
+		results_title: "Query Results:",
+		no_results: "No results found."
+	},
+	table: {
+		title: "Table",
+		number_of_objects: "Number of objects"
 	}
 };
 
@@ -375,7 +474,20 @@ const common = {
 	create_database_dialog: {
 		title: "Create new database",
 		description: "Please type in the name for the new database"
-	}
+	},
+	actions: {
+		cancel: "Cancel",
+		confirm: "Confirm",
+		import: "Import",
+		select: "Select",
+		reload: "Reload",
+		print: "Print table"
+	},
+	placeholders: {
+		no_results: "No results",
+		search_found_no_results: "Search found no results"
+	},
+	loading: "Loading"
 };
 const sale_note = {
 	delete_dialog: {
@@ -391,7 +503,10 @@ const sale_note = {
 		print_book_label: "Print book label",
 		delete_row: "Delete row",
 		edit_row: "Edit row",
-		delete: "Delete"
+		delete: "Delete",
+		commit: "Commit",
+		print: "Print",
+		custom_item: "Custom item"
 	},
 	stats: {
 		last_updated: "Last updated",
@@ -399,7 +514,9 @@ const sale_note = {
 	},
 	placeholder: {
 		select_warehouse: "Please select a warehouse",
-		no_warehouses: "No available warehouses"
+		no_warehouses: "No available warehouses",
+		scan_title: "Scan to add books",
+		scan_description: "Plugin your barcode scanner and pull the trigger"
 	}
 };
 
@@ -413,7 +530,9 @@ const sale_page = {
 		new_sale: "New Sale",
 		edit: "Edit",
 		print_book_label: "Print book label",
-		delete_row: "Delete row"
+		delete_row: "Delete row",
+		no_open_sales: "No open sales",
+		get_started: "Get started by adding a new sale"
 	}
 };
 const stock_page = {
@@ -421,7 +540,14 @@ const stock_page = {
 		edit_book_details: "Edit book details",
 		manually_edit_book_details: "Manually edit book details",
 		edit_row: "Edit row",
-		print_book_label: "Print book label"
+		print_book_label: "Print book label",
+		popover_control: "Row actions"
+	},
+	placeholder_box: {
+		no_results: {
+			title: "No results",
+			description: "Search found no results"
+		}
 	}
 };
 
@@ -438,7 +564,9 @@ const settings_page = {
 		import: "Drag and drop your .sqlite3 file here to import",
 		device_settings: "Manage connections to external devices"
 	},
-
+	actions: {
+		nuke_and_resync: "Nuke and resync"
+	},
 	stats: {
 		version: "Version"
 	},
@@ -599,6 +727,216 @@ const misc_components = {
 	}
 };
 
+const error_page = {
+	title: "Error",
+	message: {
+		title: "Something crashed!",
+		description: "Try checking your internet connection if you're using an online database."
+	}
+};
+
+const layout = {
+	mobile_nav: {
+		trigger: {
+			aria_label: "Open mobile navigation"
+		},
+		dialog: {
+			title: "Mobile Navigation",
+			description: "Navigate through the application"
+		}
+	},
+	sync_dialog: {
+		title: "Sync in progress",
+		description: {
+			in_progress: "The initial DB sync is in progress. This might take a while",
+			progress: "Progress ({nProcessed}/{nTotal}):",
+			warning:
+				"Please don't navigate away while the sync is in progress as it will result in broken DB and the sync will need to be restarted."
+		}
+	},
+	error_dialog: {
+		schema_mismatch: {
+			title: "Error: DB Schema mismatch",
+			description: "Your DB's schema version doesn't match the latest schema version. Click automigrate to migrate to the latest version.",
+			latest_version: "Latest schema version: {wantVersion}",
+			your_version: "Your DB schema version: {gotVersion}",
+			button: "Automigrate"
+		},
+		corrupted: {
+			title: "Error: DB corrupted",
+			description: "The only way to use the app seems to be to delete it and start fresh.",
+			note: "Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page (after reinitialisation)",
+			button: "Click to delete the DB"
+		}
+	}
+};
+
+const forms = {
+	sync_settings: {
+		labels: {
+			database_name: "Database Name (this will probably change in the future)",
+			remote_sync_url: "Remote Sync Database URL",
+			save_reload: "Save and Reload",
+			connection_status: {
+				on: "ON",
+				off: "OFF"
+			}
+		},
+		aria: {
+			form: "Edit remote database connection config"
+		}
+	},
+	device_settings: {
+		labels: {
+			label_printer_url: "Label Printer URL",
+			receipt_printer_url: "Receipt Printer URL",
+			save_reload: "Save and Reload"
+		},
+		aria: {
+			form: "Edit remote database connection config"
+		}
+	},
+	database_delete: {
+		labels: {
+			confirm_typing: "Confirm by typing database name",
+			type_instruction: "Type '{matchConfirmation}'",
+			confirm_button: "Confirm"
+		}
+	},
+	warehouse_delete: {
+		labels: {
+			confirm_typing: "Confirm by typing warehouse name",
+			type_instruction: "Type '{matchConfirmation}'",
+			confirm_button: "Confirm",
+			cancel_button: "Cancel"
+		}
+	},
+	supplier_meta: {
+		labels: {
+			name: "Name",
+			email: "Email",
+			address: "Address",
+			customer_id: "Customer ID",
+			cancel_button: "Cancel"
+		},
+		aria: {
+			form: "Edit customer order name, email or deposit"
+		}
+	},
+	book_form: {
+		labels: {
+			isbn: "ISBN",
+			fill_details: "Fill details",
+			title: "Title",
+			price: "Price",
+			year: "Year",
+			authors: "Authors",
+			publisher: "Publisher",
+			edited_by: "Edited by",
+			category: "Category",
+			out_of_print: "Out of Print",
+			out_of_print_help: "This book is no longer available from the publisher",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			isbn: "0000000000"
+		},
+		aria: {
+			form: "Edit book details"
+		}
+	},
+	daisy_ui_book_form: {
+		labels: {
+			isbn: "ISBN",
+			fill_details: "Fill details",
+			title: "Title",
+			price: "Price",
+			year: "Year",
+			authors: "Authors",
+			publisher: "Publisher",
+			edited_by: "Edited by",
+			category: "Category",
+			out_of_print: "Out of Print",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			isbn: "0000000000"
+		},
+		aria: {
+			form: "Edit book details"
+		}
+	},
+	scanner_form: {
+		placeholders: {
+			isbn: "Enter ISBN of ordered books"
+		}
+	},
+	daisy_ui_scanner_form: {
+		placeholders: {
+			isbn: "Enter ISBN of ordered books"
+		}
+	},
+	customer_order_meta: {
+		labels: {
+			display_id: "Display ID",
+			name: "Name",
+			email: "Email",
+			deposit: "Deposit",
+			phone1: "Phone 1",
+			phone2: "Phone 2",
+			cancel_button: "Cancel"
+		},
+		aria: {
+			form: "Edit customer order name, email or deposit"
+		}
+	},
+	database_create: {
+		labels: {
+			name: "Name",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			name: "Database name"
+		},
+		aria: {
+			form: "Create new database"
+		}
+	},
+	warehouse_form: {
+		labels: {
+			name: "Name",
+			discount: "Discount",
+			discount_help: "Applied to book prices",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			name: "Warehouse name",
+			discount: "0"
+		},
+		aria: {
+			form: "Edit warehouse details"
+		}
+	},
+	custom_item_form: {
+		labels: {
+			title: "Title",
+			price: "Price",
+			cancel_button: "Cancel",
+			save_button: "Save"
+		},
+		placeholders: {
+			price: "0"
+		},
+		aria: {
+			form: "Edit book details"
+		}
+	}
+};
+
 const en = {
 	nav,
 	search,
@@ -622,7 +960,12 @@ const en = {
 	order_list_page,
 	supplier_orders_component,
 	table_components,
-	misc_components
+	misc_components,
+	layout,
+	error_page,
+	books_page,
+	debug_page,
+	forms
 } satisfies BaseTranslation;
 
 export default en;
