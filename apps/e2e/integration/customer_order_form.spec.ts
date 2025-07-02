@@ -161,7 +161,12 @@ testOrders("customer page: update: submits the form with all fields changed", as
 	const { forms: tForms } = t;
 
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: tCustomers.labels.edit() }).click();
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: tCustomers.labels.edit() })
+		.click();
 
 	const updatedCustomer = {
 		[tForms.customer_order_meta.labels.display_id()]: "John's Id",
@@ -192,7 +197,12 @@ testOrders("customer page: update: submits the form with only name updated", asy
 	const { forms: tForms } = t;
 
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: tCustomers.labels.edit() }).click();
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: tCustomers.labels.edit() })
+		.click();
 
 	const updatedCustomer = {
 		[tForms.customer_order_meta.labels.name()]: "John Doe (Updated)"
@@ -220,7 +230,12 @@ testOrders("customer page: update: submits the form with only displayId updated"
 	const { forms: tForms } = t;
 
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: tCustomers.labels.edit() }).click();
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: tCustomers.labels.edit() })
+		.click();
 
 	const updatedCustomer = {
 		[tForms.customer_order_meta.labels.display_id()]: "John's Id"
@@ -248,7 +263,12 @@ testOrders("customer page: update: submits the form with only email updated", as
 	const { forms: tForms } = t;
 
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: tCustomers.labels.edit() }).click();
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: tCustomers.labels.edit() })
+		.click();
 
 	const updatedCustomer = {
 		[tForms.customer_order_meta.labels.email()]: "new-email@gmail.com"
@@ -276,7 +296,12 @@ testOrders("customer page: update: submits the form with only deposit updated", 
 	const { forms: tForms } = t;
 
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: tCustomers.labels.edit() }).click();
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: tCustomers.labels.edit() })
+		.click();
 
 	const updatedCustomer = {
 		[tForms.customer_order_meta.labels.deposit()]: "12"
@@ -304,7 +329,12 @@ testOrders("customer page: update: doesn't allow for blank name field update", a
 	const { forms: tForms } = t;
 
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: tCustomers.labels.edit() }).click();
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: tCustomers.labels.edit() })
+		.click();
 
 	const dialog = page.getByRole("dialog");
 
@@ -349,7 +379,12 @@ testOrders("customer page: update: doesn't allow for submission with invalid ema
 	const { forms: tForms } = t;
 
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: tCustomers.labels.edit() }).click();
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: tCustomers.labels.edit() })
+		.click();
 
 	const customer = {
 		[tForms.customer_order_meta.labels.email()]: "not-an-email-string"
