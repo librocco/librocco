@@ -14,7 +14,7 @@ if (IS_CI) {
 export default defineConfig({
 	testDir: "./integration",
 	/* Run tests in files in parallel */
-	fullyParallel: true,
+	fullyParallel: false,
 	/* Fail the build on CI if you accidentally left test.only in the source code. */
 	forbidOnly: IS_CI,
 	/* Retry for local test run (normally, the tests ran using the UI will not be flaky, but headless tests might take a toll on the CPU, resulting in flaky tests) */
@@ -41,12 +41,12 @@ export default defineConfig({
 	projects: [
 		{
 			name: "chromium",
-			use: { ...devices["Desktop Chrome"] }
+			use: { ...devices["Desktop Chrome"], locale: "en" }
 		},
 
 		{
 			name: "firefox",
-			use: { ...devices["Desktop Firefox"] }
+			use: { ...devices["Desktop Firefox"], locale: "en" }
 		}
 
 		// Skipped as some tests are failing on webkit in CI. The functionality is there and we wish to still
