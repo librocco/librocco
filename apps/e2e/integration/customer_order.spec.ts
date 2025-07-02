@@ -68,7 +68,6 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 });
 
 testOrders("should update a customer details", async ({ page, customers, t }) => {
-	const { customer_orders_page: tCustomers } = t;
 	const { forms: tForms } = t;
 
 	await page.goto(appHash("customers", "1"));
@@ -94,9 +93,7 @@ testOrders("should update a customer details", async ({ page, customers, t }) =>
 	await expect(page.getByText(`€${newCustomer.deposit} deposit`)).toBeVisible();
 });
 
-testOrders("should add books to a customer order", async ({ page, customers, books, t }) => {
-	const { forms: tForms } = t;
-
+testOrders("should add books to a customer order", async ({ page, customers, books }) => {
 	await page.goto(appHash("customers", "1"));
 
 	await expect(page.getByText(customers[0].fullname)).toBeVisible();
@@ -114,7 +111,7 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
 
-	await expect(firstRow.getByRole("cell", { name: /Pending [A-Za-z]{3} [A-Za-z]{3} \d{1,2} \d{4}/ })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: /Pending - [A-Za-z]{3} [A-Za-z]{3} \d{1,2} \d{4}/ })).toBeVisible();
 	isbnField.fill(books[2].isbn);
 	isbnField.press("Enter");
 
@@ -126,8 +123,7 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(secondRow.getByRole("cell", { name: "Pending" })).toBeVisible();
 });
 
-testOrders("should delete books from a customer order", async ({ page, books, t }) => {
-	const { customer_orders_page: tCustomers } = t;
+testOrders("should delete books from a customer order", async ({ page, books }) => {
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
