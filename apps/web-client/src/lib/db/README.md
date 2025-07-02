@@ -67,7 +67,6 @@ It exposes two useful artifacts:
   ```
 
   Internally, it:
-
   - loads the WASM binary and the JS glue code (from [vlcn.io/wa-sqlite], more below)
   - registers the `IDBBatchAtomicVFS` (IndexedDB) as the default VFS adapter
   - wraps the code with aforementioned `SQLite3` wrapper
@@ -170,7 +169,6 @@ flowchart TD
 Let's break this down:
 
 - Inbound change:
-
   1. A change happens somewhere else (most often the server - either directly, or as a proxy for a change on another node)
   2. The change is communicated through the transport object (default: `WebSocketTransport`)
   3. The change is passed through the `InboundStream` - an internal of the sync process
@@ -711,12 +709,14 @@ To break this down:
 - `room`:
   - this is a bit of a tricky one
   - it is used to identify the DB on the server, i.e.
+
   ```ts
   // The server does something like this
   import Database from "better-sqlite3";
   const dbPath = [config.dbFolder, room].join("/");
   const db = new Datebase(dbPath);
   ```
+
   - it doesn't have to match any dbid (dbname), but if we want to sync two (or more) clients, they have to use the same `room`
   - for our purposes it makes the most sense to use `dbid` (db name) for both the local DB file as well as the on-server DB (baked into the code), making sure all the client nodes always use the same "master" DB (server room)
 
