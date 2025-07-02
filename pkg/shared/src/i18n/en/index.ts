@@ -209,17 +209,70 @@ const customer_orders_page = {
 
 	labels: {
 		new_order: "New Order",
-		update_order: "Update Order",
-		update: "Update"
+		edit: "Edit",
+		save: "Save",
+		create: "Create",
+		edit_customer: "Edit customer",
+		print_receipt: "Print receipt",
+		edit_line: "Edit line",
+		collect: "Collect",
+		delete_row: "Delete row",
+		edit_row: "Edit row"
 	},
-	table: {
-		customer: "Customer",
-		order_id: "Order ID",
-		customer_details: "Customer Details"
+	table_columns: {
+		order_id: "ID",
+		name: "Name",
+		email: "Email",
+		updated: "Updated",
+		actions: "Actions",
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		price: "Price",
+		publisher: "Publisher",
+		status: "Status"
 	},
 	placeholder: {
 		search: "Search for customers by name",
-		no_orders: "No customer orders yet. Create your first order to get started."
+		no_orders: {
+			title: "No customers",
+			description: "Get started by creating a new order"
+		},
+		scan_title: "Scan to add books",
+		scan_description: "Plugin your barcode scanner and pull the trigger"
+	},
+	new_customer_dialog: {
+		title: "new customer form dialog",
+		description: "enter new customer details"
+	},
+	customer_details: {
+		last_updated: "Last updated",
+		customer_id: "Customer ID",
+		customer_email: "Customer email",
+		customer_phone: "Customer phone",
+		secondary_phone: "Secondary phone",
+		deposit: "Deposit",
+		deposit_amount: "€{amount} deposit",
+		books_heading: "Books",
+		total: "Total:"
+	},
+	status: {
+		collected: "Collected",
+		delivered: "Delivered",
+		placed: "Placed",
+		pending: "Pending"
+	},
+	dialogs: {
+		new_customer: {
+			title: "Create new order"
+		},
+		edit_customer: {
+			title: "Edit customer details"
+		},
+		non_unique_id: {
+			title: "Non unique customer ID",
+			description: "There's at least one more order with the same ID. Please confirm you're ok with this?"
+		}
 	}
 };
 const new_order_page = {
