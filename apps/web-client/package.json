@@ -41,7 +41,7 @@
 		"nanoid": "^5.0.5",
 		"svelte-local-storage-store": "~0.6.4",
 		"typesafe-i18n": "~5.26.2",
-		"@sentry/sveltekit": "~9.10.1"
+		"@sentry/sveltekit": "~9.34.0"
 	},
 	"devDependencies": {
 		"@librocco/book-data-extension": "workspace:*",
