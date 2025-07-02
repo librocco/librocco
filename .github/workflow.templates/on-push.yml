@@ -18,6 +18,8 @@ name: Checks
 jobs:
   build-cr-sqlite:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     outputs:
       rebuild: ${{ steps.ts.outputs.rebuild }}
     steps:
@@ -71,6 +73,15 @@ jobs:
           path: 3rd-party/artefacts/
       - name: Mark cached version
         run: cp 3rd-party/artefacts_version.txt 3rd-party/artefacts/version-cached.txt
+      - name: Commit updated assets
+        if: github.ref == 'refs/heads/compile-assets'
+        run: bash scripts/commit-artefacts.sh
+      - name: Push changes
+        if: github.ref == 'refs/heads/compile-assets'
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: compile-assets
 
   js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
 
@@ -117,6 +128,7 @@ jobs:
           retention-days: 2
 
   lint-and-typecheck:
+    needs: build-cr-sqlite
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
