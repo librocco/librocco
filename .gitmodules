@@ -1,0 +1,8 @@
+[submodule "3rd-party/js"]
+	path = 3rd-party/js
+	url = git@github.com:librocco/vlcn-js
+	branch = feat/track-wa-sqlite-efforts
+[submodule "3rd-party/typed-sql"]
+	path = 3rd-party/typed-sql
+	url = git@github.com:vlcn-io/typed-sql
+	branch = main

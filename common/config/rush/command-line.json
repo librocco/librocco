@@ -11,6 +11,13 @@
    * "rush my-global-command --help".
    */
   "commands": [
+    {
+      "commandKind": "bulk",
+      "name": "build",
+      "summary": "Builds all projects, skipping any that don't have a 'build' script.",
+      "enableParallelism": true,
+      "ignoreMissingScript": true
+    },
     // {
     //   /**
     //    * (Required) Determines the type of custom command.
