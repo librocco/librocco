@@ -185,8 +185,8 @@
 
 <PageCenterDialog dialog={newOrderDialog} title="" description="">
 	<CustomerOrderMetaForm
-		heading="Create new order"
-		saveLabel="Create"
+		heading={t.dialogs.new_customer.title()}
+		saveLabel={t.labels.create()}
 		kind="create"
 		data={defaults(zod(createCustomerOrderSchema("create")))}
 		options={{

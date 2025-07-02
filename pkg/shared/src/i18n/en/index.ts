@@ -211,6 +211,7 @@ const customer_orders_page = {
 		new_order: "New Order",
 		edit: "Edit",
 		save: "Save",
+		create: "Create",
 		edit_customer: "Edit customer",
 		print_receipt: "Print receipt",
 		edit_line: "Edit line",
@@ -262,6 +263,9 @@ const customer_orders_page = {
 		pending: "Pending"
 	},
 	dialogs: {
+		new_customer: {
+			title: "Create new order"
+		},
 		edit_customer: {
 			title: "Edit customer details"
 		},
