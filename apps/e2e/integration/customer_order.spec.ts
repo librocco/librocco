@@ -27,12 +27,53 @@ test("should create a new customer order", async ({ page, t }) => {
 	await expect(page.getByText("new@example.com")).toBeVisible();
 });
 
-testOrders("should show list of In Progress orders", async ({ page, customers }) => {
-	await page.goto(appHash("customers"));
-	page.getByRole("button", { name: "In Progress" });
+testOrders("should allow customer search", async ({ page, customers, t }) => {
+	const { customer_orders_page: tCustomers } = t;
 
-	await expect(page.getByText(customers[0].fullname)).toBeVisible();
-	await expect(page.getByText(customers[0].email)).toBeVisible();
+	await page.goto(appHash("customers"));
+
+	const searchInput = await page.getByPlaceholder(tCustomers.placeholder.search());
+
+	// Get every row in the table: customer rows + head
+	const baseRowCount = customers.length + 1;
+
+	const customerRows = page.getByRole("table").getByRole("row");
+
+	// The table should show all customers
+	await expect(customerRows).toHaveCount(baseRowCount);
+
+	// Get the first 4 characters of customer 1's name - "John"
+	const searchTerm1 = customers[0].fullname.slice(0, 4);
+
+	// Search without pressing enter, to check "onChange" will filter
+	await searchInput.fill(searchTerm1);
+
+	// The search term should not be cleared
+	await expect(searchInput).toHaveValue(searchTerm1);
+
+	// and the table should already be filtered
+	// This is the expected customer row + 1 (for head row)
+	await expect(customerRows).toHaveCount(2);
+
+	// Clear the search
+	await searchInput.fill("");
+
+	await expect(searchInput).toHaveValue("");
+	await expect(customerRows).toHaveCount(baseRowCount);
+
+	// Get the first 2 characters of customer 1's name - "Jo"
+	// We expect this to match "John" and "Joe"
+	const searchTerm2 = customers[0].fullname.slice(0, 2);
+
+	// Search and press enter this time
+	await searchInput.fill(searchTerm2);
+	await searchInput.press("Enter");
+
+	// The search term should not be cleared
+	await expect(searchInput).toHaveValue(searchTerm2);
+
+	// This is the expected customer rows + 1 (for head row)
+	await expect(customerRows).toHaveCount(3);
 });
 
 testOrders("should allow navigation to a specific order", async ({ page, customers, books, t }) => {
