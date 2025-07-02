@@ -120,24 +120,31 @@ testOrders("customer list: new: doesn't allow for submission with invalid email 
 	await expect(dialog.getByLabel("Email", { exact: true })).toBeFocused();
 });
 
-testOrders("customer page: update: doesn't submit the form without any changes made", async ({ page, customers }) => {
+testOrders("customer page: update: doesn't submit the form without any changes made", async ({ page, customers, t }) => {
+	const { customer_orders_page: tCustomers } = t;
+
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click({});
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: tCustomers.labels.edit() })
+		.click({});
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.waitFor();
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
 	// Try and submit
-	await expect(dialog.getByRole("button", { name: "Update" })).toBeDisabled();
+	await expect(dialog.getByRole("button", { name: tCustomers.labels.save() })).toBeDisabled();
 });
 
 testOrders("customer page: update: submits the form with all fields changed", async ({ page, customers }) => {
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Edit" }).click();
 
 	const updatedCustomer = {
 		"Display ID": "John's Id",
@@ -148,15 +155,15 @@ testOrders("customer page: update: submits the form with all fields changed", as
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	for (const [key, value] of Object.entries(updatedCustomer)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
+	await dialog.getByRole("button", { name: "Save" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -165,7 +172,7 @@ testOrders("customer page: update: submits the form with all fields changed", as
 
 testOrders("customer page: update: submits the form with only name updated", async ({ page, customers }) => {
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Edit" }).click();
 
 	const updatedCustomer = {
 		Name: "John Doe (Updated)"
@@ -173,15 +180,15 @@ testOrders("customer page: update: submits the form with only name updated", asy
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	for (const [key, value] of Object.entries(updatedCustomer)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
+	await dialog.getByRole("button", { name: "Save" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -190,7 +197,7 @@ testOrders("customer page: update: submits the form with only name updated", asy
 
 testOrders("customer page: update: submits the form with only displayId updated", async ({ page, customers }) => {
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Edit" }).click();
 
 	const updatedCustomer = {
 		"Display ID": "John's Id"
@@ -198,15 +205,15 @@ testOrders("customer page: update: submits the form with only displayId updated"
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	for (const [key, value] of Object.entries(updatedCustomer)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
+	await dialog.getByRole("button", { name: "Save" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -215,7 +222,7 @@ testOrders("customer page: update: submits the form with only displayId updated"
 
 testOrders("customer page: update: submits the form with only email updated", async ({ page, customers }) => {
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Edit" }).click();
 
 	const updatedCustomer = {
 		Email: "new-email@gmail.com"
@@ -223,15 +230,15 @@ testOrders("customer page: update: submits the form with only email updated", as
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	for (const [key, value] of Object.entries(updatedCustomer)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
+	await dialog.getByRole("button", { name: "Save" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -240,7 +247,7 @@ testOrders("customer page: update: submits the form with only email updated", as
 
 testOrders("customer page: update: submits the form with only deposit updated", async ({ page, customers }) => {
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Edit" }).click();
 
 	const updatedCustomer = {
 		Deposit: "12"
@@ -248,15 +255,15 @@ testOrders("customer page: update: submits the form with only deposit updated", 
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	for (const [key, value] of Object.entries(updatedCustomer)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
+	await dialog.getByRole("button", { name: "Save" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -265,17 +272,17 @@ testOrders("customer page: update: submits the form with only deposit updated", 
 
 testOrders("customer page: update: doesn't allow for blank name field update", async ({ page, customers }) => {
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Edit" }).click();
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	await dialog.getByLabel("Name", { exact: true }).clear();
 
-	await dialog.getByRole("button", { name: "Update" }).click();
+	await dialog.getByRole("button", { name: "Save" }).click();
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Name", { exact: true })).toBeFocused();
 });
@@ -286,25 +293,25 @@ testOrders("customer page: update: doesn't allow for blank displayId field updat
 		.getByRole("table")
 		.getByRole("row")
 		.filter({ hasText: customers[0].fullname })
-		.getByRole("link", { name: "Update" })
+		.getByRole("link", { name: "Edit" })
 		.click({ force: true });
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	await dialog.getByLabel("Display ID", { exact: true }).clear();
 
-	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
+	await dialog.getByRole("button", { name: "Save" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Display ID", { exact: true })).toBeFocused();
 });
 
 testOrders("customer page: update: doesn't allow for submission with invalid email field", async ({ page, customers }) => {
 	await page.goto(appHash("customers"));
-	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Edit" }).click();
 
 	const customer = {
 		Email: "not-an-email-string"
@@ -312,15 +319,15 @@ testOrders("customer page: update: doesn't allow for submission with invalid ema
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	for (const [key, value] of Object.entries(customer)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
+	await dialog.getByRole("button", { name: "Save" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Email", { exact: true })).toBeFocused();
 });
@@ -334,7 +341,7 @@ testOrders("customer page: update: allows updates to customer an email (previous
 		.getByRole("table")
 		.getByRole("row")
 		.filter({ hasText: customers[2].fullname })
-		.getByRole("link", { name: "Update" })
+		.getByRole("link", { name: "Edit" })
 		.click({ force: true });
 
 	const customer = {
@@ -343,15 +350,15 @@ testOrders("customer page: update: allows updates to customer an email (previous
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	for (const [key, value] of Object.entries(customer)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
+	await dialog.getByRole("button", { name: "Save" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
@@ -364,7 +371,7 @@ testOrders("customer page: update: allows for blank email string", async ({ page
 		.getByRole("table")
 		.getByRole("row")
 		.filter({ hasText: customers[0].fullname })
-		.getByRole("link", { name: "Update" })
+		.getByRole("link", { name: "Edit" })
 		.click({ force: true });
 
 	const customer = {
@@ -373,15 +380,15 @@ testOrders("customer page: update: allows for blank email string", async ({ page
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit customer order" }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: "Edit customer" }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Update customer details").waitFor();
+	await dialog.getByText("Edit customer details").waitFor();
 
 	for (const [key, value] of Object.entries(customer)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
-	await dialog.getByRole("button", { name: "Update" }).click({ force: true });
+	await dialog.getByRole("button", { name: "Save" }).click({ force: true });
 
 	// At this point we're validating the form was closed and considering it a good enough
 	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
