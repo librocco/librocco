@@ -8,6 +8,7 @@ export type BaseLocale = 'en'
 export type Locales =
 	| 'de'
 	| 'en'
+	| 'it'
 
 export type Translation = RootTranslation
 
@@ -63,6 +64,10 @@ type RootTranslation = {
 			 */
 			description: string
 		}
+		/**
+		 * S​e​a​r​c​h​ ​s​t​o​c​k​ ​b​y​ ​I​S​B​N
+		 */
+		placeholder: string
 	}
 	history_page: {
 		date_tab: {
@@ -117,6 +122,12 @@ type RootTranslation = {
 				 * H​i​s​t​o​r​y
 				 */
 				history: string
+			}
+			search: {
+				/**
+				 * S​e​a​r​c​h
+				 */
+				placeholder: string
 			}
 			isbn_id: {
 				titles: {
@@ -222,6 +233,16 @@ type RootTranslation = {
 					out_of_print: string
 				}
 			}
+			placeholder: {
+				/**
+				 * N​o​ ​n​o​t​e​s​ ​f​o​u​n​d
+				 */
+				title: string
+				/**
+				 * N​o​ ​n​o​t​e​s​ ​s​e​e​m​ ​t​o​ ​h​a​v​e​ ​b​e​e​n​ ​c​o​m​m​i​t​t​e​d​ ​o​n​ ​t​h​a​t​ ​d​a​t​e
+				 */
+				description: string
+			}
 		}
 		warehouse_tab: {
 			note_table: {
@@ -309,6 +330,16 @@ type RootTranslation = {
 					 */
 					transactions: string
 				}
+				placeholder: {
+					/**
+					 * N​o​ ​t​r​a​n​s​a​c​t​i​o​n​s​ ​f​o​u​n​d
+					 */
+					title: string
+					/**
+					 * T​h​e​r​e​ ​s​e​e​m​ ​t​o​ ​b​e​ ​n​o​ ​t​r​a​n​s​a​c​t​i​o​n​s​ ​g​o​i​n​g​ ​i​n​/​o​u​t​ ​f​o​r​ ​t​h​e​ ​s​e​l​e​c​t​e​d​ ​d​a​t​e​ ​r​a​n​g​e
+					 */
+					description: string
+				}
 			}
 			stats: {
 				/**
@@ -355,14 +386,36 @@ type RootTranslation = {
 				 * E​d​i​t
 				 */
 				button_edit: string
+				/**
+				 * D​e​l​e​t​e
+				 */
+				button_delete: string
 			}
 		}
 		warehouses_tab: {
+			/**
+			 * W​a​r​e​h​o​u​s​e​s
+			 */
+			title: string
 			labels: {
 				/**
 				 * N​e​w​ ​p​u​r​c​h​a​s​e
 				 */
 				button_create_purchase: string
+				/**
+				 * C​r​e​a​t​e​ ​w​a​r​e​h​o​u​s​e
+				 */
+				create_warehouse: string
+			}
+			placeholder: {
+				/**
+				 * N​o​ ​w​a​r​e​h​o​u​s​e​s
+				 */
+				title: string
+				/**
+				 * G​e​t​ ​s​t​a​r​t​e​d​ ​b​y​ ​c​r​e​a​t​i​n​g​ ​a​ ​w​a​r​e​h​o​u​s​e
+				 */
+				description: string
 			}
 		}
 	}
@@ -397,16 +450,6 @@ type RootTranslation = {
 			 */
 			update: string
 		}
-		tabs: {
-			/**
-			 * I​n​ ​P​r​o​g​r​e​s​s
-			 */
-			in_progress: string
-			/**
-			 * C​o​m​p​l​e​t​e​d
-			 */
-			completed: string
-		}
 		table: {
 			/**
 			 * C​u​s​t​o​m​e​r
@@ -420,6 +463,16 @@ type RootTranslation = {
 			 * C​u​s​t​o​m​e​r​ ​D​e​t​a​i​l​s
 			 */
 			customer_details: string
+		}
+		placeholder: {
+			/**
+			 * S​e​a​r​c​h​ ​f​o​r​ ​c​u​s​t​o​m​e​r​s​ ​b​y​ ​n​a​m​e
+			 */
+			search: string
+			/**
+			 * N​o​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​s​ ​y​e​t​.​ ​C​r​e​a​t​e​ ​y​o​u​r​ ​f​i​r​s​t​ ​o​r​d​e​r​ ​t​o​ ​g​e​t​ ​s​t​a​r​t​e​d​.
+			 */
+			no_orders: string
 		}
 	}
 	suppliers_page: {
@@ -447,6 +500,10 @@ type RootTranslation = {
 		}
 	}
 	warehouse_list_page: {
+		/**
+		 * W​a​r​e​h​o​u​s​e​s
+		 */
+		title: string
 		stats: {
 			/**
 			 * b​o​o​k​s
@@ -466,6 +523,24 @@ type RootTranslation = {
 			 * V​i​e​w​ ​S​t​o​c​k
 			 */
 			view_stock: string
+			/**
+			 * E​d​i​t
+			 */
+			edit: string
+			/**
+			 * D​e​l​e​t​e
+			 */
+			'delete': string
+		}
+		placeholder: {
+			/**
+			 * N​o​ ​w​a​r​e​h​o​u​s​e​s
+			 */
+			title: string
+			/**
+			 * G​e​t​ ​s​t​a​r​t​e​d​ ​b​y​ ​c​r​e​a​t​i​n​g​ ​a​ ​w​a​r​e​h​o​u​s​e
+			 */
+			description: string
 		}
 	}
 	warehouse_page: {
@@ -537,6 +612,16 @@ type RootTranslation = {
 			 */
 			manually_edit_book_details: string
 		}
+		placeholder: {
+			/**
+			 * A​d​d​ ​n​e​w​ ​p​u​r​c​h​a​s​e​ ​n​o​t​e
+			 */
+			title: string
+			/**
+			 * G​e​t​ ​s​t​a​r​t​e​d​ ​b​y​ ​a​d​d​i​n​g​ ​a​ ​n​e​w​ ​n​o​t​e
+			 */
+			description: string
+		}
 	}
 	sale_note: {
 		delete_dialog: {
@@ -580,6 +665,18 @@ type RootTranslation = {
 			 * D​e​l​e​t​e
 			 */
 			'delete': string
+			/**
+			 * C​o​m​m​i​t
+			 */
+			commit: string
+			/**
+			 * P​r​i​n​t
+			 */
+			print: string
+			/**
+			 * C​u​s​t​o​m​ ​i​t​e​m
+			 */
+			custom_item: string
 		}
 		stats: {
 			/**
@@ -601,6 +698,14 @@ type RootTranslation = {
 			 * N​o​ ​a​v​a​i​l​a​b​l​e​ ​w​a​r​e​h​o​u​s​e​s
 			 */
 			no_warehouses: string
+			/**
+			 * S​c​a​n​ ​t​o​ ​a​d​d​ ​b​o​o​k​s
+			 */
+			scan_title: string
+			/**
+			 * P​l​u​g​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
+			 */
+			scan_description: string
 		}
 	}
 	sale_page: {
@@ -636,6 +741,14 @@ type RootTranslation = {
 			 * D​e​l​e​t​e​ ​r​o​w
 			 */
 			delete_row: string
+			/**
+			 * N​o​ ​o​p​e​n​ ​s​a​l​e​s
+			 */
+			no_open_sales: string
+			/**
+			 * G​e​t​ ​s​t​a​r​t​e​d​ ​b​y​ ​a​d​d​i​n​g​ ​a​ ​n​e​w​ ​s​a​l​e
+			 */
+			get_started: string
 		}
 	}
 	purchase_note: {
@@ -674,6 +787,20 @@ type RootTranslation = {
 			 * D​e​l​e​t​e​ ​r​o​w
 			 */
 			delete_row: string
+			/**
+			 * E​d​i​t
+			 */
+			edit: string
+		}
+		placeholder: {
+			/**
+			 * S​c​a​n​ ​t​o​ ​a​d​d​ ​b​o​o​k​s
+			 */
+			scan_title: string
+			/**
+			 * P​l​u​g​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
+			 */
+			scan_description: string
 		}
 	}
 	settings_page: {
@@ -713,6 +840,12 @@ type RootTranslation = {
 			 */
 			device_settings: string
 		}
+		actions: {
+			/**
+			 * N​u​k​e​ ​a​n​d​ ​r​e​s​y​n​c
+			 */
+			nuke_and_resync: string
+		}
 		stats: {
 			/**
 			 * V​e​r​s​i​o​n
@@ -744,6 +877,22 @@ type RootTranslation = {
 			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
 			 */
 			print_book_label: string
+			/**
+			 * R​o​w​ ​a​c​t​i​o​n​s
+			 */
+			popover_control: string
+		}
+		placeholder_box: {
+			no_results: {
+				/**
+				 * N​o​ ​r​e​s​u​l​t​s
+				 */
+				title: string
+				/**
+				 * S​e​a​r​c​h​ ​f​o​u​n​d​ ​n​o​ ​r​e​s​u​l​t​s
+				 */
+				description: string
+			}
 		}
 	}
 	common: {
@@ -858,6 +1007,46 @@ type RootTranslation = {
 			 */
 			description: string
 		}
+		actions: {
+			/**
+			 * C​a​n​c​e​l
+			 */
+			cancel: string
+			/**
+			 * C​o​n​f​i​r​m
+			 */
+			confirm: string
+			/**
+			 * I​m​p​o​r​t
+			 */
+			'import': string
+			/**
+			 * S​e​l​e​c​t
+			 */
+			select: string
+			/**
+			 * R​e​l​o​a​d
+			 */
+			reload: string
+			/**
+			 * P​r​i​n​t​ ​t​a​b​l​e
+			 */
+			print: string
+		}
+		placeholders: {
+			/**
+			 * N​o​ ​r​e​s​u​l​t​s
+			 */
+			no_results: string
+			/**
+			 * S​e​a​r​c​h​ ​f​o​u​n​d​ ​n​o​ ​r​e​s​u​l​t​s
+			 */
+			search_found_no_results: string
+		}
+		/**
+		 * L​o​a​d​i​n​g
+		 */
+		loading: string
 	}
 	supplier_orders_page: {
 		title: {
@@ -981,6 +1170,10 @@ type RootTranslation = {
 			 * T​o​t​a​l​ ​d​e​l​i​v​e​r​e​d
 			 */
 			total_delivered: string
+			/**
+			 * F​i​n​a​l​i​z​e​d​ ​A​t
+			 */
+			finalized_at: string
 		}
 		placeholder: {
 			/**
@@ -1019,6 +1212,38 @@ type RootTranslation = {
 			 * A​r​e​ ​y​o​u​ ​s​u​r​e​ ​y​o​u​ ​w​a​n​t​ ​t​o​ ​d​e​l​e​t​e​ ​t​h​i​s​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n​ ​o​r​d​e​r​?​ ​T​h​i​s​ ​a​c​t​i​o​n​ ​w​i​l​l​ ​d​e​l​e​t​e​ ​a​l​l​ ​t​h​e​ ​s​c​a​n​n​e​d​ ​l​i​n​e​s​.
 			 */
 			description: string
+		}
+		steps: {
+			populate: {
+				/**
+				 * P​o​p​u​l​a​t​e
+				 */
+				title: string
+				/**
+				 * D​e​l​i​v​e​r​e​d​ ​b​o​o​k​s
+				 */
+				description: string
+			}
+			compare: {
+				/**
+				 * C​o​m​p​a​r​e
+				 */
+				title: string
+				/**
+				 * T​o​ ​o​r​d​e​r​e​d
+				 */
+				description: string
+			}
+			commit: {
+				/**
+				 * C​o​m​m​i​t
+				 */
+				title: string
+				/**
+				 * N​o​t​i​f​y​ ​c​u​s​t​o​m​e​r​s
+				 */
+				description: string
+			}
 		}
 	}
 	reconciled_list_page: {
@@ -1091,6 +1316,10 @@ type RootTranslation = {
 			 * A​d​d​ ​t​o​ ​s​u​p​p​l​i​e​r
 			 */
 			add_to_supplier: string
+			/**
+			 * R​e​-​a​s​s​i​g​n​ ​t​o​ ​s​u​p​p​l​i​e​r
+			 */
+			reassign_publisher: string
 		}
 		details: {
 			/**
@@ -1102,13 +1331,13 @@ type RootTranslation = {
 			 */
 			supplier_name: string
 			/**
-			 * S​u​p​p​l​i​e​r​ ​a​d​d​r​e​s​s
-			 */
-			supplier_address: string
-			/**
 			 * S​u​p​p​l​i​e​r​ ​e​m​a​i​l
 			 */
 			supplier_email: string
+			/**
+			 * S​u​p​p​l​i​e​r​ ​a​d​d​r​e​s​s
+			 */
+			supplier_address: string
 			/**
 			 * S​u​p​p​l​i​e​r​ ​c​u​s​t​o​m​e​r​ ​I​D
 			 */
@@ -1127,6 +1356,24 @@ type RootTranslation = {
 			 * U​n​a​s​s​i​g​n​e​d​ ​p​u​b​l​i​s​h​e​r​s
 			 */
 			unassigned_publishers: string
+			/**
+			 * O​t​h​e​r​ ​S​u​p​p​l​i​e​r​ ​P​u​b​l​i​s​h​e​r​s
+			 */
+			other_supplier_publishers: string
+		}
+		dialogs: {
+			reassign_publisher: {
+				/**
+				 * R​e​-​a​s​s​i​g​n​ ​p​u​b​l​i​s​h​e​r
+				 */
+				title: string
+				/**
+				 * A​r​e​ ​y​o​u​ ​s​u​r​e​ ​y​o​u​ ​w​a​n​t​ ​t​o​ ​r​e​m​o​v​e​ ​{​p​u​b​l​i​s​h​e​r​}​ ​f​r​o​m​ ​i​t​s​ ​p​r​e​v​i​o​u​s​ ​s​u​p​p​l​i​e​r​ ​a​n​d​ ​a​s​s​i​g​n​ ​i​t​ ​t​o​ ​{​s​u​p​p​l​i​e​r​}​?
+				 * @param {unknown} publisher
+				 * @param {unknown} supplier
+				 */
+				description: RequiredParams<'publisher' | 'supplier'>
+			}
 		}
 	}
 	supplier_orders_component: {
@@ -1593,6 +1840,620 @@ type RootTranslation = {
 			default_option: string
 		}
 	}
+	layout: {
+		mobile_nav: {
+			trigger: {
+				/**
+				 * O​p​e​n​ ​m​o​b​i​l​e​ ​n​a​v​i​g​a​t​i​o​n
+				 */
+				aria_label: string
+			}
+			dialog: {
+				/**
+				 * M​o​b​i​l​e​ ​N​a​v​i​g​a​t​i​o​n
+				 */
+				title: string
+				/**
+				 * N​a​v​i​g​a​t​e​ ​t​h​r​o​u​g​h​ ​t​h​e​ ​a​p​p​l​i​c​a​t​i​o​n
+				 */
+				description: string
+			}
+		}
+		sync_dialog: {
+			/**
+			 * S​y​n​c​ ​i​n​ ​p​r​o​g​r​e​s​s
+			 */
+			title: string
+			description: {
+				/**
+				 * T​h​e​ ​i​n​i​t​i​a​l​ ​D​B​ ​s​y​n​c​ ​i​s​ ​i​n​ ​p​r​o​g​r​e​s​s​.​ ​T​h​i​s​ ​m​i​g​h​t​ ​t​a​k​e​ ​a​ ​w​h​i​l​e
+				 */
+				in_progress: string
+				/**
+				 * P​r​o​g​r​e​s​s​ ​(​{​n​P​r​o​c​e​s​s​e​d​}​/​{​n​T​o​t​a​l​}​)​:
+				 * @param {unknown} nProcessed
+				 * @param {unknown} nTotal
+				 */
+				progress: RequiredParams<'nProcessed' | 'nTotal'>
+				/**
+				 * P​l​e​a​s​e​ ​d​o​n​'​t​ ​n​a​v​i​g​a​t​e​ ​a​w​a​y​ ​w​h​i​l​e​ ​t​h​e​ ​s​y​n​c​ ​i​s​ ​i​n​ ​p​r​o​g​r​e​s​s​ ​a​s​ ​i​t​ ​w​i​l​l​ ​r​e​s​u​l​t​ ​i​n​ ​b​r​o​k​e​n​ ​D​B​ ​a​n​d​ ​t​h​e​ ​s​y​n​c​ ​w​i​l​l​ ​n​e​e​d​ ​t​o​ ​b​e​ ​r​e​s​t​a​r​t​e​d​.
+				 */
+				warning: string
+			}
+		}
+		error_dialog: {
+			schema_mismatch: {
+				/**
+				 * E​r​r​o​r​:​ ​D​B​ ​S​c​h​e​m​a​ ​m​i​s​m​a​t​c​h
+				 */
+				title: string
+				/**
+				 * Y​o​u​r​ ​D​B​'​s​ ​s​c​h​e​m​a​ ​v​e​r​s​i​o​n​ ​d​o​e​s​n​'​t​ ​m​a​t​c​h​ ​t​h​e​ ​l​a​t​e​s​t​ ​s​c​h​e​m​a​ ​v​e​r​s​i​o​n​.​ ​C​l​i​c​k​ ​a​u​t​o​m​i​g​r​a​t​e​ ​t​o​ ​m​i​g​r​a​t​e​ ​t​o​ ​t​h​e​ ​l​a​t​e​s​t​ ​v​e​r​s​i​o​n​.
+				 */
+				description: string
+				/**
+				 * L​a​t​e​s​t​ ​s​c​h​e​m​a​ ​v​e​r​s​i​o​n​:​ ​{​w​a​n​t​V​e​r​s​i​o​n​}
+				 * @param {unknown} wantVersion
+				 */
+				latest_version: RequiredParams<'wantVersion'>
+				/**
+				 * Y​o​u​r​ ​D​B​ ​s​c​h​e​m​a​ ​v​e​r​s​i​o​n​:​ ​{​g​o​t​V​e​r​s​i​o​n​}
+				 * @param {unknown} gotVersion
+				 */
+				your_version: RequiredParams<'gotVersion'>
+				/**
+				 * A​u​t​o​m​i​g​r​a​t​e
+				 */
+				button: string
+			}
+			corrupted: {
+				/**
+				 * E​r​r​o​r​:​ ​D​B​ ​c​o​r​r​u​p​t​e​d
+				 */
+				title: string
+				/**
+				 * T​h​e​ ​o​n​l​y​ ​w​a​y​ ​t​o​ ​u​s​e​ ​t​h​e​ ​a​p​p​ ​s​e​e​m​s​ ​t​o​ ​b​e​ ​t​o​ ​d​e​l​e​t​e​ ​i​t​ ​a​n​d​ ​s​t​a​r​t​ ​f​r​e​s​h​.
+				 */
+				description: string
+				/**
+				 * N​o​t​e​:​ ​T​h​i​s​ ​w​o​n​'​t​ ​r​e​s​y​n​c​ ​t​h​e​ ​d​a​t​a​b​a​s​e​.​ ​I​f​ ​y​o​u​ ​w​a​n​t​ ​t​o​ ​s​y​n​c​ ​u​p​ ​t​h​e​ ​D​B​ ​w​i​t​h​ ​t​h​e​ ​r​e​m​o​t​e​ ​o​n​e​,​ ​p​l​e​a​s​e​ ​d​o​ ​s​o​ ​o​n​ ​t​h​e​ ​s​e​t​t​i​n​g​s​ ​p​a​g​e​ ​(​a​f​t​e​r​ ​r​e​i​n​i​t​i​a​l​i​s​a​t​i​o​n​)
+				 */
+				note: string
+				/**
+				 * C​l​i​c​k​ ​t​o​ ​d​e​l​e​t​e​ ​t​h​e​ ​D​B
+				 */
+				button: string
+			}
+		}
+	}
+	error_page: {
+		/**
+		 * E​r​r​o​r
+		 */
+		title: string
+		message: {
+			/**
+			 * S​o​m​e​t​h​i​n​g​ ​c​r​a​s​h​e​d​!
+			 */
+			title: string
+			/**
+			 * T​r​y​ ​c​h​e​c​k​i​n​g​ ​y​o​u​r​ ​i​n​t​e​r​n​e​t​ ​c​o​n​n​e​c​t​i​o​n​ ​i​f​ ​y​o​u​'​r​e​ ​u​s​i​n​g​ ​a​n​ ​o​n​l​i​n​e​ ​d​a​t​a​b​a​s​e​.
+			 */
+			description: string
+		}
+	}
+	books_page: {
+		/**
+		 * K​n​o​w​n​ ​b​o​o​k​s
+		 */
+		title: string
+		placeholder: {
+			empty_database: {
+				/**
+				 * N​o​ ​r​e​s​u​l​t​s
+				 */
+				title: string
+				/**
+				 * B​o​o​k​ ​d​a​t​a​b​a​s​e​ ​i​s​ ​e​m​p​t​y​.​ ​S​t​a​r​t​ ​b​y​ ​a​d​d​i​n​g​ ​s​o​m​e​ ​b​o​o​k​s​ ​t​o​ ​s​t​o​c​k​.
+				 */
+				description: string
+			}
+			no_results: {
+				/**
+				 * N​o​ ​r​e​s​u​l​t​s
+				 */
+				title: string
+				/**
+				 * S​e​a​r​c​h​ ​f​o​u​n​d​ ​n​o​ ​r​e​s​u​l​t​s
+				 */
+				description: string
+			}
+		}
+		labels: {
+			/**
+			 * R​o​w​ ​a​c​t​i​o​n​s
+			 */
+			popover_control: string
+			/**
+			 * E​d​i​t​ ​r​o​w
+			 */
+			edit_row: string
+			/**
+			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
+			 */
+			print_book_label: string
+			/**
+			 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+			 */
+			edit_book_details: string
+			/**
+			 * M​a​n​u​a​l​l​y​ ​e​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+			 */
+			manually_edit_book_details: string
+		}
+	}
+	debug_page: {
+		/**
+		 * D​e​b​u​g
+		 */
+		title: string
+		actions: {
+			/**
+			 * P​o​p​u​l​a​t​e​ ​D​a​t​a​b​a​s​e
+			 */
+			populate_database: string
+			/**
+			 * R​e​s​e​t​ ​D​a​t​a​b​a​s​e
+			 */
+			reset_database: string
+			/**
+			 * U​p​s​e​r​t​ ​1​0​0​ ​B​o​o​k​s
+			 */
+			upsert_100_books: string
+			/**
+			 * R​u​n​ ​Q​u​e​r​y
+			 */
+			run_query: string
+			/**
+			 * E​x​e​c​u​t​i​n​g​.​.​.
+			 */
+			executing: string
+		}
+		query_interface: {
+			/**
+			 * D​a​t​a​b​a​s​e​ ​Q​u​e​r​y​ ​I​n​t​e​r​f​a​c​e
+			 */
+			title: string
+			/**
+			 * Q​u​e​r​y​ ​R​e​s​u​l​t​s​:
+			 */
+			results_title: string
+			/**
+			 * N​o​ ​r​e​s​u​l​t​s​ ​f​o​u​n​d​.
+			 */
+			no_results: string
+		}
+		table: {
+			/**
+			 * T​a​b​l​e
+			 */
+			title: string
+			/**
+			 * N​u​m​b​e​r​ ​o​f​ ​o​b​j​e​c​t​s
+			 */
+			number_of_objects: string
+		}
+	}
+	forms: {
+		sync_settings: {
+			labels: {
+				/**
+				 * D​a​t​a​b​a​s​e​ ​N​a​m​e​ ​(​t​h​i​s​ ​w​i​l​l​ ​p​r​o​b​a​b​l​y​ ​c​h​a​n​g​e​ ​i​n​ ​t​h​e​ ​f​u​t​u​r​e​)
+				 */
+				database_name: string
+				/**
+				 * R​e​m​o​t​e​ ​S​y​n​c​ ​D​a​t​a​b​a​s​e​ ​U​R​L
+				 */
+				remote_sync_url: string
+				/**
+				 * S​a​v​e​ ​a​n​d​ ​R​e​l​o​a​d
+				 */
+				save_reload: string
+				connection_status: {
+					/**
+					 * O​N
+					 */
+					on: string
+					/**
+					 * O​F​F
+					 */
+					off: string
+				}
+			}
+			aria: {
+				/**
+				 * E​d​i​t​ ​r​e​m​o​t​e​ ​d​a​t​a​b​a​s​e​ ​c​o​n​n​e​c​t​i​o​n​ ​c​o​n​f​i​g
+				 */
+				form: string
+			}
+		}
+		device_settings: {
+			labels: {
+				/**
+				 * L​a​b​e​l​ ​P​r​i​n​t​e​r​ ​U​R​L
+				 */
+				label_printer_url: string
+				/**
+				 * R​e​c​e​i​p​t​ ​P​r​i​n​t​e​r​ ​U​R​L
+				 */
+				receipt_printer_url: string
+				/**
+				 * S​a​v​e​ ​a​n​d​ ​R​e​l​o​a​d
+				 */
+				save_reload: string
+			}
+			aria: {
+				/**
+				 * E​d​i​t​ ​r​e​m​o​t​e​ ​d​a​t​a​b​a​s​e​ ​c​o​n​n​e​c​t​i​o​n​ ​c​o​n​f​i​g
+				 */
+				form: string
+			}
+		}
+		database_delete: {
+			labels: {
+				/**
+				 * C​o​n​f​i​r​m​ ​b​y​ ​t​y​p​i​n​g​ ​d​a​t​a​b​a​s​e​ ​n​a​m​e
+				 */
+				confirm_typing: string
+				/**
+				 * T​y​p​e​ ​'​{​m​a​t​c​h​C​o​n​f​i​r​m​a​t​i​o​n​}​'
+				 * @param {unknown} matchConfirmation
+				 */
+				type_instruction: RequiredParams<'matchConfirmation'>
+				/**
+				 * C​o​n​f​i​r​m
+				 */
+				confirm_button: string
+			}
+		}
+		warehouse_delete: {
+			labels: {
+				/**
+				 * C​o​n​f​i​r​m​ ​b​y​ ​t​y​p​i​n​g​ ​w​a​r​e​h​o​u​s​e​ ​n​a​m​e
+				 */
+				confirm_typing: string
+				/**
+				 * T​y​p​e​ ​'​{​m​a​t​c​h​C​o​n​f​i​r​m​a​t​i​o​n​}​'
+				 * @param {unknown} matchConfirmation
+				 */
+				type_instruction: RequiredParams<'matchConfirmation'>
+				/**
+				 * C​o​n​f​i​r​m
+				 */
+				confirm_button: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+			}
+		}
+		supplier_meta: {
+			labels: {
+				/**
+				 * N​a​m​e
+				 */
+				name: string
+				/**
+				 * E​m​a​i​l
+				 */
+				email: string
+				/**
+				 * A​d​d​r​e​s​s
+				 */
+				address: string
+				/**
+				 * C​u​s​t​o​m​e​r​ ​I​D
+				 */
+				customer_id: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+			}
+			aria: {
+				/**
+				 * E​d​i​t​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​ ​n​a​m​e​,​ ​e​m​a​i​l​ ​o​r​ ​d​e​p​o​s​i​t
+				 */
+				form: string
+			}
+		}
+		book_form: {
+			labels: {
+				/**
+				 * I​S​B​N
+				 */
+				isbn: string
+				/**
+				 * F​i​l​l​ ​d​e​t​a​i​l​s
+				 */
+				fill_details: string
+				/**
+				 * T​i​t​l​e
+				 */
+				title: string
+				/**
+				 * P​r​i​c​e
+				 */
+				price: string
+				/**
+				 * Y​e​a​r
+				 */
+				year: string
+				/**
+				 * A​u​t​h​o​r​s
+				 */
+				authors: string
+				/**
+				 * P​u​b​l​i​s​h​e​r
+				 */
+				publisher: string
+				/**
+				 * E​d​i​t​e​d​ ​b​y
+				 */
+				edited_by: string
+				/**
+				 * C​a​t​e​g​o​r​y
+				 */
+				category: string
+				/**
+				 * O​u​t​ ​o​f​ ​P​r​i​n​t
+				 */
+				out_of_print: string
+				/**
+				 * T​h​i​s​ ​b​o​o​k​ ​i​s​ ​n​o​ ​l​o​n​g​e​r​ ​a​v​a​i​l​a​b​l​e​ ​f​r​o​m​ ​t​h​e​ ​p​u​b​l​i​s​h​e​r
+				 */
+				out_of_print_help: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+				/**
+				 * S​a​v​e
+				 */
+				save_button: string
+			}
+			placeholders: {
+				/**
+				 * 0​0​0​0​0​0​0​0​0​0
+				 */
+				isbn: string
+			}
+			aria: {
+				/**
+				 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+				 */
+				form: string
+			}
+		}
+		daisy_ui_book_form: {
+			labels: {
+				/**
+				 * I​S​B​N
+				 */
+				isbn: string
+				/**
+				 * F​i​l​l​ ​d​e​t​a​i​l​s
+				 */
+				fill_details: string
+				/**
+				 * T​i​t​l​e
+				 */
+				title: string
+				/**
+				 * P​r​i​c​e
+				 */
+				price: string
+				/**
+				 * Y​e​a​r
+				 */
+				year: string
+				/**
+				 * A​u​t​h​o​r​s
+				 */
+				authors: string
+				/**
+				 * P​u​b​l​i​s​h​e​r
+				 */
+				publisher: string
+				/**
+				 * E​d​i​t​e​d​ ​b​y
+				 */
+				edited_by: string
+				/**
+				 * C​a​t​e​g​o​r​y
+				 */
+				category: string
+				/**
+				 * O​u​t​ ​o​f​ ​P​r​i​n​t
+				 */
+				out_of_print: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+				/**
+				 * S​a​v​e
+				 */
+				save_button: string
+			}
+			placeholders: {
+				/**
+				 * 0​0​0​0​0​0​0​0​0​0
+				 */
+				isbn: string
+			}
+			aria: {
+				/**
+				 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+				 */
+				form: string
+			}
+		}
+		scanner_form: {
+			placeholders: {
+				/**
+				 * E​n​t​e​r​ ​I​S​B​N​ ​o​f​ ​o​r​d​e​r​e​d​ ​b​o​o​k​s
+				 */
+				isbn: string
+			}
+		}
+		daisy_ui_scanner_form: {
+			placeholders: {
+				/**
+				 * E​n​t​e​r​ ​I​S​B​N​ ​o​f​ ​o​r​d​e​r​e​d​ ​b​o​o​k​s
+				 */
+				isbn: string
+			}
+		}
+		customer_order_meta: {
+			labels: {
+				/**
+				 * D​i​s​p​l​a​y​ ​I​D
+				 */
+				display_id: string
+				/**
+				 * N​a​m​e
+				 */
+				name: string
+				/**
+				 * E​m​a​i​l
+				 */
+				email: string
+				/**
+				 * D​e​p​o​s​i​t
+				 */
+				deposit: string
+				/**
+				 * P​h​o​n​e​ ​1
+				 */
+				phone1: string
+				/**
+				 * P​h​o​n​e​ ​2
+				 */
+				phone2: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+			}
+			aria: {
+				/**
+				 * E​d​i​t​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​ ​n​a​m​e​,​ ​e​m​a​i​l​ ​o​r​ ​d​e​p​o​s​i​t
+				 */
+				form: string
+			}
+		}
+		database_create: {
+			labels: {
+				/**
+				 * N​a​m​e
+				 */
+				name: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+				/**
+				 * S​a​v​e
+				 */
+				save_button: string
+			}
+			placeholders: {
+				/**
+				 * D​a​t​a​b​a​s​e​ ​n​a​m​e
+				 */
+				name: string
+			}
+			aria: {
+				/**
+				 * C​r​e​a​t​e​ ​n​e​w​ ​d​a​t​a​b​a​s​e
+				 */
+				form: string
+			}
+		}
+		warehouse_form: {
+			labels: {
+				/**
+				 * N​a​m​e
+				 */
+				name: string
+				/**
+				 * D​i​s​c​o​u​n​t
+				 */
+				discount: string
+				/**
+				 * A​p​p​l​i​e​d​ ​t​o​ ​b​o​o​k​ ​p​r​i​c​e​s
+				 */
+				discount_help: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+				/**
+				 * S​a​v​e
+				 */
+				save_button: string
+			}
+			placeholders: {
+				/**
+				 * W​a​r​e​h​o​u​s​e​ ​n​a​m​e
+				 */
+				name: string
+				/**
+				 * 0
+				 */
+				discount: string
+			}
+			aria: {
+				/**
+				 * E​d​i​t​ ​w​a​r​e​h​o​u​s​e​ ​d​e​t​a​i​l​s
+				 */
+				form: string
+			}
+		}
+		custom_item_form: {
+			labels: {
+				/**
+				 * T​i​t​l​e
+				 */
+				title: string
+				/**
+				 * P​r​i​c​e
+				 */
+				price: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+				/**
+				 * S​a​v​e
+				 */
+				save_button: string
+			}
+			placeholders: {
+				/**
+				 * 0
+				 */
+				price: string
+			}
+			aria: {
+				/**
+				 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+				 */
+				form: string
+			}
+		}
+	}
 }
 
 export type TranslationFunctions = {
@@ -1645,6 +2506,10 @@ export type TranslationFunctions = {
 			 */
 			description: () => LocalizedString
 		}
+		/**
+		 * Search stock by ISBN
+		 */
+		placeholder: () => LocalizedString
 	}
 	history_page: {
 		date_tab: {
@@ -1699,6 +2564,12 @@ export type TranslationFunctions = {
 				 * History
 				 */
 				history: () => LocalizedString
+			}
+			search: {
+				/**
+				 * Search
+				 */
+				placeholder: () => LocalizedString
 			}
 			isbn_id: {
 				titles: {
@@ -1804,6 +2675,16 @@ export type TranslationFunctions = {
 					out_of_print: () => LocalizedString
 				}
 			}
+			placeholder: {
+				/**
+				 * No notes found
+				 */
+				title: () => LocalizedString
+				/**
+				 * No notes seem to have been committed on that date
+				 */
+				description: () => LocalizedString
+			}
 		}
 		warehouse_tab: {
 			note_table: {
@@ -1891,6 +2772,16 @@ export type TranslationFunctions = {
 					 */
 					transactions: () => LocalizedString
 				}
+				placeholder: {
+					/**
+					 * No transactions found
+					 */
+					title: () => LocalizedString
+					/**
+					 * There seem to be no transactions going in/out for the selected date range
+					 */
+					description: () => LocalizedString
+				}
 			}
 			stats: {
 				/**
@@ -1935,14 +2826,36 @@ export type TranslationFunctions = {
 				 * Edit
 				 */
 				button_edit: () => LocalizedString
+				/**
+				 * Delete
+				 */
+				button_delete: () => LocalizedString
 			}
 		}
 		warehouses_tab: {
+			/**
+			 * Warehouses
+			 */
+			title: () => LocalizedString
 			labels: {
 				/**
 				 * New purchase
 				 */
 				button_create_purchase: () => LocalizedString
+				/**
+				 * Create warehouse
+				 */
+				create_warehouse: () => LocalizedString
+			}
+			placeholder: {
+				/**
+				 * No warehouses
+				 */
+				title: () => LocalizedString
+				/**
+				 * Get started by creating a warehouse
+				 */
+				description: () => LocalizedString
 			}
 		}
 	}
@@ -1977,16 +2890,6 @@ export type TranslationFunctions = {
 			 */
 			update: () => LocalizedString
 		}
-		tabs: {
-			/**
-			 * In Progress
-			 */
-			in_progress: () => LocalizedString
-			/**
-			 * Completed
-			 */
-			completed: () => LocalizedString
-		}
 		table: {
 			/**
 			 * Customer
@@ -2000,6 +2903,16 @@ export type TranslationFunctions = {
 			 * Customer Details
 			 */
 			customer_details: () => LocalizedString
+		}
+		placeholder: {
+			/**
+			 * Search for customers by name
+			 */
+			search: () => LocalizedString
+			/**
+			 * No customer orders yet. Create your first order to get started.
+			 */
+			no_orders: () => LocalizedString
 		}
 	}
 	suppliers_page: {
@@ -2027,6 +2940,10 @@ export type TranslationFunctions = {
 		}
 	}
 	warehouse_list_page: {
+		/**
+		 * Warehouses
+		 */
+		title: () => LocalizedString
 		stats: {
 			/**
 			 * books
@@ -2046,6 +2963,24 @@ export type TranslationFunctions = {
 			 * View Stock
 			 */
 			view_stock: () => LocalizedString
+			/**
+			 * Edit
+			 */
+			edit: () => LocalizedString
+			/**
+			 * Delete
+			 */
+			'delete': () => LocalizedString
+		}
+		placeholder: {
+			/**
+			 * No warehouses
+			 */
+			title: () => LocalizedString
+			/**
+			 * Get started by creating a warehouse
+			 */
+			description: () => LocalizedString
 		}
 	}
 	warehouse_page: {
@@ -2117,6 +3052,16 @@ export type TranslationFunctions = {
 			 */
 			manually_edit_book_details: () => LocalizedString
 		}
+		placeholder: {
+			/**
+			 * Add new purchase note
+			 */
+			title: () => LocalizedString
+			/**
+			 * Get started by adding a new note
+			 */
+			description: () => LocalizedString
+		}
 	}
 	sale_note: {
 		delete_dialog: {
@@ -2160,6 +3105,18 @@ export type TranslationFunctions = {
 			 * Delete
 			 */
 			'delete': () => LocalizedString
+			/**
+			 * Commit
+			 */
+			commit: () => LocalizedString
+			/**
+			 * Print
+			 */
+			print: () => LocalizedString
+			/**
+			 * Custom item
+			 */
+			custom_item: () => LocalizedString
 		}
 		stats: {
 			/**
@@ -2180,6 +3137,14 @@ export type TranslationFunctions = {
 			 * No available warehouses
 			 */
 			no_warehouses: () => LocalizedString
+			/**
+			 * Scan to add books
+			 */
+			scan_title: () => LocalizedString
+			/**
+			 * Plugin your barcode scanner and pull the trigger
+			 */
+			scan_description: () => LocalizedString
 		}
 	}
 	sale_page: {
@@ -2214,6 +3179,14 @@ export type TranslationFunctions = {
 			 * Delete row
 			 */
 			delete_row: () => LocalizedString
+			/**
+			 * No open sales
+			 */
+			no_open_sales: () => LocalizedString
+			/**
+			 * Get started by adding a new sale
+			 */
+			get_started: () => LocalizedString
 		}
 	}
 	purchase_note: {
@@ -2252,6 +3225,20 @@ export type TranslationFunctions = {
 			 * Delete row
 			 */
 			delete_row: () => LocalizedString
+			/**
+			 * Edit
+			 */
+			edit: () => LocalizedString
+		}
+		placeholder: {
+			/**
+			 * Scan to add books
+			 */
+			scan_title: () => LocalizedString
+			/**
+			 * Plugin your barcode scanner and pull the trigger
+			 */
+			scan_description: () => LocalizedString
 		}
 	}
 	settings_page: {
@@ -2291,6 +3278,12 @@ export type TranslationFunctions = {
 			 */
 			device_settings: () => LocalizedString
 		}
+		actions: {
+			/**
+			 * Nuke and resync
+			 */
+			nuke_and_resync: () => LocalizedString
+		}
 		stats: {
 			/**
 			 * Version
@@ -2322,6 +3315,22 @@ export type TranslationFunctions = {
 			 * Print book label
 			 */
 			print_book_label: () => LocalizedString
+			/**
+			 * Row actions
+			 */
+			popover_control: () => LocalizedString
+		}
+		placeholder_box: {
+			no_results: {
+				/**
+				 * No results
+				 */
+				title: () => LocalizedString
+				/**
+				 * Search found no results
+				 */
+				description: () => LocalizedString
+			}
 		}
 	}
 	common: {
@@ -2429,6 +3438,46 @@ export type TranslationFunctions = {
 			 */
 			description: () => LocalizedString
 		}
+		actions: {
+			/**
+			 * Cancel
+			 */
+			cancel: () => LocalizedString
+			/**
+			 * Confirm
+			 */
+			confirm: () => LocalizedString
+			/**
+			 * Import
+			 */
+			'import': () => LocalizedString
+			/**
+			 * Select
+			 */
+			select: () => LocalizedString
+			/**
+			 * Reload
+			 */
+			reload: () => LocalizedString
+			/**
+			 * Print table
+			 */
+			print: () => LocalizedString
+		}
+		placeholders: {
+			/**
+			 * No results
+			 */
+			no_results: () => LocalizedString
+			/**
+			 * Search found no results
+			 */
+			search_found_no_results: () => LocalizedString
+		}
+		/**
+		 * Loading
+		 */
+		loading: () => LocalizedString
 	}
 	supplier_orders_page: {
 		title: {
@@ -2552,6 +3601,10 @@ export type TranslationFunctions = {
 			 * Total delivered
 			 */
 			total_delivered: () => LocalizedString
+			/**
+			 * Finalized At
+			 */
+			finalized_at: () => LocalizedString
 		}
 		placeholder: {
 			/**
@@ -2590,6 +3643,38 @@ export type TranslationFunctions = {
 			 * Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines.
 			 */
 			description: () => LocalizedString
+		}
+		steps: {
+			populate: {
+				/**
+				 * Populate
+				 */
+				title: () => LocalizedString
+				/**
+				 * Delivered books
+				 */
+				description: () => LocalizedString
+			}
+			compare: {
+				/**
+				 * Compare
+				 */
+				title: () => LocalizedString
+				/**
+				 * To ordered
+				 */
+				description: () => LocalizedString
+			}
+			commit: {
+				/**
+				 * Commit
+				 */
+				title: () => LocalizedString
+				/**
+				 * Notify customers
+				 */
+				description: () => LocalizedString
+			}
 		}
 	}
 	reconciled_list_page: {
@@ -2662,6 +3747,10 @@ export type TranslationFunctions = {
 			 * Add to supplier
 			 */
 			add_to_supplier: () => LocalizedString
+			/**
+			 * Re-assign to supplier
+			 */
+			reassign_publisher: () => LocalizedString
 		}
 		details: {
 			/**
@@ -2673,13 +3762,13 @@ export type TranslationFunctions = {
 			 */
 			supplier_name: () => LocalizedString
 			/**
-			 * Supplier address
-			 */
-			supplier_address: () => LocalizedString
-			/**
 			 * Supplier email
 			 */
 			supplier_email: () => LocalizedString
+			/**
+			 * Supplier address
+			 */
+			supplier_address: () => LocalizedString
 			/**
 			 * Supplier customer ID
 			 */
@@ -2698,6 +3787,22 @@ export type TranslationFunctions = {
 			 * Unassigned publishers
 			 */
 			unassigned_publishers: () => LocalizedString
+			/**
+			 * Other Supplier Publishers
+			 */
+			other_supplier_publishers: () => LocalizedString
+		}
+		dialogs: {
+			reassign_publisher: {
+				/**
+				 * Re-assign publisher
+				 */
+				title: () => LocalizedString
+				/**
+				 * Are you sure you want to remove {publisher} from its previous supplier and assign it to {supplier}?
+				 */
+				description: (arg: { publisher: unknown, supplier: unknown }) => LocalizedString
+			}
 		}
 	}
 	supplier_orders_component: {
@@ -3158,6 +4263,614 @@ export type TranslationFunctions = {
 			 * Select a warehouse
 			 */
 			default_option: () => LocalizedString
+		}
+	}
+	layout: {
+		mobile_nav: {
+			trigger: {
+				/**
+				 * Open mobile navigation
+				 */
+				aria_label: () => LocalizedString
+			}
+			dialog: {
+				/**
+				 * Mobile Navigation
+				 */
+				title: () => LocalizedString
+				/**
+				 * Navigate through the application
+				 */
+				description: () => LocalizedString
+			}
+		}
+		sync_dialog: {
+			/**
+			 * Sync in progress
+			 */
+			title: () => LocalizedString
+			description: {
+				/**
+				 * The initial DB sync is in progress. This might take a while
+				 */
+				in_progress: () => LocalizedString
+				/**
+				 * Progress ({nProcessed}/{nTotal}):
+				 */
+				progress: (arg: { nProcessed: unknown, nTotal: unknown }) => LocalizedString
+				/**
+				 * Please don't navigate away while the sync is in progress as it will result in broken DB and the sync will need to be restarted.
+				 */
+				warning: () => LocalizedString
+			}
+		}
+		error_dialog: {
+			schema_mismatch: {
+				/**
+				 * Error: DB Schema mismatch
+				 */
+				title: () => LocalizedString
+				/**
+				 * Your DB's schema version doesn't match the latest schema version. Click automigrate to migrate to the latest version.
+				 */
+				description: () => LocalizedString
+				/**
+				 * Latest schema version: {wantVersion}
+				 */
+				latest_version: (arg: { wantVersion: unknown }) => LocalizedString
+				/**
+				 * Your DB schema version: {gotVersion}
+				 */
+				your_version: (arg: { gotVersion: unknown }) => LocalizedString
+				/**
+				 * Automigrate
+				 */
+				button: () => LocalizedString
+			}
+			corrupted: {
+				/**
+				 * Error: DB corrupted
+				 */
+				title: () => LocalizedString
+				/**
+				 * The only way to use the app seems to be to delete it and start fresh.
+				 */
+				description: () => LocalizedString
+				/**
+				 * Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page (after reinitialisation)
+				 */
+				note: () => LocalizedString
+				/**
+				 * Click to delete the DB
+				 */
+				button: () => LocalizedString
+			}
+		}
+	}
+	error_page: {
+		/**
+		 * Error
+		 */
+		title: () => LocalizedString
+		message: {
+			/**
+			 * Something crashed!
+			 */
+			title: () => LocalizedString
+			/**
+			 * Try checking your internet connection if you're using an online database.
+			 */
+			description: () => LocalizedString
+		}
+	}
+	books_page: {
+		/**
+		 * Known books
+		 */
+		title: () => LocalizedString
+		placeholder: {
+			empty_database: {
+				/**
+				 * No results
+				 */
+				title: () => LocalizedString
+				/**
+				 * Book database is empty. Start by adding some books to stock.
+				 */
+				description: () => LocalizedString
+			}
+			no_results: {
+				/**
+				 * No results
+				 */
+				title: () => LocalizedString
+				/**
+				 * Search found no results
+				 */
+				description: () => LocalizedString
+			}
+		}
+		labels: {
+			/**
+			 * Row actions
+			 */
+			popover_control: () => LocalizedString
+			/**
+			 * Edit row
+			 */
+			edit_row: () => LocalizedString
+			/**
+			 * Print book label
+			 */
+			print_book_label: () => LocalizedString
+			/**
+			 * Edit book details
+			 */
+			edit_book_details: () => LocalizedString
+			/**
+			 * Manually edit book details
+			 */
+			manually_edit_book_details: () => LocalizedString
+		}
+	}
+	debug_page: {
+		/**
+		 * Debug
+		 */
+		title: () => LocalizedString
+		actions: {
+			/**
+			 * Populate Database
+			 */
+			populate_database: () => LocalizedString
+			/**
+			 * Reset Database
+			 */
+			reset_database: () => LocalizedString
+			/**
+			 * Upsert 100 Books
+			 */
+			upsert_100_books: () => LocalizedString
+			/**
+			 * Run Query
+			 */
+			run_query: () => LocalizedString
+			/**
+			 * Executing...
+			 */
+			executing: () => LocalizedString
+		}
+		query_interface: {
+			/**
+			 * Database Query Interface
+			 */
+			title: () => LocalizedString
+			/**
+			 * Query Results:
+			 */
+			results_title: () => LocalizedString
+			/**
+			 * No results found.
+			 */
+			no_results: () => LocalizedString
+		}
+		table: {
+			/**
+			 * Table
+			 */
+			title: () => LocalizedString
+			/**
+			 * Number of objects
+			 */
+			number_of_objects: () => LocalizedString
+		}
+	}
+	forms: {
+		sync_settings: {
+			labels: {
+				/**
+				 * Database Name (this will probably change in the future)
+				 */
+				database_name: () => LocalizedString
+				/**
+				 * Remote Sync Database URL
+				 */
+				remote_sync_url: () => LocalizedString
+				/**
+				 * Save and Reload
+				 */
+				save_reload: () => LocalizedString
+				connection_status: {
+					/**
+					 * ON
+					 */
+					on: () => LocalizedString
+					/**
+					 * OFF
+					 */
+					off: () => LocalizedString
+				}
+			}
+			aria: {
+				/**
+				 * Edit remote database connection config
+				 */
+				form: () => LocalizedString
+			}
+		}
+		device_settings: {
+			labels: {
+				/**
+				 * Label Printer URL
+				 */
+				label_printer_url: () => LocalizedString
+				/**
+				 * Receipt Printer URL
+				 */
+				receipt_printer_url: () => LocalizedString
+				/**
+				 * Save and Reload
+				 */
+				save_reload: () => LocalizedString
+			}
+			aria: {
+				/**
+				 * Edit remote database connection config
+				 */
+				form: () => LocalizedString
+			}
+		}
+		database_delete: {
+			labels: {
+				/**
+				 * Confirm by typing database name
+				 */
+				confirm_typing: () => LocalizedString
+				/**
+				 * Type '{matchConfirmation}'
+				 */
+				type_instruction: (arg: { matchConfirmation: unknown }) => LocalizedString
+				/**
+				 * Confirm
+				 */
+				confirm_button: () => LocalizedString
+			}
+		}
+		warehouse_delete: {
+			labels: {
+				/**
+				 * Confirm by typing warehouse name
+				 */
+				confirm_typing: () => LocalizedString
+				/**
+				 * Type '{matchConfirmation}'
+				 */
+				type_instruction: (arg: { matchConfirmation: unknown }) => LocalizedString
+				/**
+				 * Confirm
+				 */
+				confirm_button: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+			}
+		}
+		supplier_meta: {
+			labels: {
+				/**
+				 * Name
+				 */
+				name: () => LocalizedString
+				/**
+				 * Email
+				 */
+				email: () => LocalizedString
+				/**
+				 * Address
+				 */
+				address: () => LocalizedString
+				/**
+				 * Customer ID
+				 */
+				customer_id: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+			}
+			aria: {
+				/**
+				 * Edit customer order name, email or deposit
+				 */
+				form: () => LocalizedString
+			}
+		}
+		book_form: {
+			labels: {
+				/**
+				 * ISBN
+				 */
+				isbn: () => LocalizedString
+				/**
+				 * Fill details
+				 */
+				fill_details: () => LocalizedString
+				/**
+				 * Title
+				 */
+				title: () => LocalizedString
+				/**
+				 * Price
+				 */
+				price: () => LocalizedString
+				/**
+				 * Year
+				 */
+				year: () => LocalizedString
+				/**
+				 * Authors
+				 */
+				authors: () => LocalizedString
+				/**
+				 * Publisher
+				 */
+				publisher: () => LocalizedString
+				/**
+				 * Edited by
+				 */
+				edited_by: () => LocalizedString
+				/**
+				 * Category
+				 */
+				category: () => LocalizedString
+				/**
+				 * Out of Print
+				 */
+				out_of_print: () => LocalizedString
+				/**
+				 * This book is no longer available from the publisher
+				 */
+				out_of_print_help: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+				/**
+				 * Save
+				 */
+				save_button: () => LocalizedString
+			}
+			placeholders: {
+				/**
+				 * 0000000000
+				 */
+				isbn: () => LocalizedString
+			}
+			aria: {
+				/**
+				 * Edit book details
+				 */
+				form: () => LocalizedString
+			}
+		}
+		daisy_ui_book_form: {
+			labels: {
+				/**
+				 * ISBN
+				 */
+				isbn: () => LocalizedString
+				/**
+				 * Fill details
+				 */
+				fill_details: () => LocalizedString
+				/**
+				 * Title
+				 */
+				title: () => LocalizedString
+				/**
+				 * Price
+				 */
+				price: () => LocalizedString
+				/**
+				 * Year
+				 */
+				year: () => LocalizedString
+				/**
+				 * Authors
+				 */
+				authors: () => LocalizedString
+				/**
+				 * Publisher
+				 */
+				publisher: () => LocalizedString
+				/**
+				 * Edited by
+				 */
+				edited_by: () => LocalizedString
+				/**
+				 * Category
+				 */
+				category: () => LocalizedString
+				/**
+				 * Out of Print
+				 */
+				out_of_print: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+				/**
+				 * Save
+				 */
+				save_button: () => LocalizedString
+			}
+			placeholders: {
+				/**
+				 * 0000000000
+				 */
+				isbn: () => LocalizedString
+			}
+			aria: {
+				/**
+				 * Edit book details
+				 */
+				form: () => LocalizedString
+			}
+		}
+		scanner_form: {
+			placeholders: {
+				/**
+				 * Enter ISBN of ordered books
+				 */
+				isbn: () => LocalizedString
+			}
+		}
+		daisy_ui_scanner_form: {
+			placeholders: {
+				/**
+				 * Enter ISBN of ordered books
+				 */
+				isbn: () => LocalizedString
+			}
+		}
+		customer_order_meta: {
+			labels: {
+				/**
+				 * Display ID
+				 */
+				display_id: () => LocalizedString
+				/**
+				 * Name
+				 */
+				name: () => LocalizedString
+				/**
+				 * Email
+				 */
+				email: () => LocalizedString
+				/**
+				 * Deposit
+				 */
+				deposit: () => LocalizedString
+				/**
+				 * Phone 1
+				 */
+				phone1: () => LocalizedString
+				/**
+				 * Phone 2
+				 */
+				phone2: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+			}
+			aria: {
+				/**
+				 * Edit customer order name, email or deposit
+				 */
+				form: () => LocalizedString
+			}
+		}
+		database_create: {
+			labels: {
+				/**
+				 * Name
+				 */
+				name: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+				/**
+				 * Save
+				 */
+				save_button: () => LocalizedString
+			}
+			placeholders: {
+				/**
+				 * Database name
+				 */
+				name: () => LocalizedString
+			}
+			aria: {
+				/**
+				 * Create new database
+				 */
+				form: () => LocalizedString
+			}
+		}
+		warehouse_form: {
+			labels: {
+				/**
+				 * Name
+				 */
+				name: () => LocalizedString
+				/**
+				 * Discount
+				 */
+				discount: () => LocalizedString
+				/**
+				 * Applied to book prices
+				 */
+				discount_help: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+				/**
+				 * Save
+				 */
+				save_button: () => LocalizedString
+			}
+			placeholders: {
+				/**
+				 * Warehouse name
+				 */
+				name: () => LocalizedString
+				/**
+				 * 0
+				 */
+				discount: () => LocalizedString
+			}
+			aria: {
+				/**
+				 * Edit warehouse details
+				 */
+				form: () => LocalizedString
+			}
+		}
+		custom_item_form: {
+			labels: {
+				/**
+				 * Title
+				 */
+				title: () => LocalizedString
+				/**
+				 * Price
+				 */
+				price: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+				/**
+				 * Save
+				 */
+				save_button: () => LocalizedString
+			}
+			placeholders: {
+				/**
+				 * 0
+				 */
+				price: () => LocalizedString
+			}
+			aria: {
+				/**
+				 * Edit book details
+				 */
+				form: () => LocalizedString
+			}
 		}
 	}
 }

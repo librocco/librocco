@@ -8,7 +8,12 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { FileEdit, X, Loader2 as Loader, Printer, MoreVertical, FilePlus } from "lucide-svelte";
+	import FileEdit from "$lucide/file-edit";
+	import X from "$lucide/x";
+	import Loader from "$lucide/loader-2";
+	import Printer from "$lucide/printer";
+	import MoreVertical from "$lucide/more-vertical";
+	import FilePlus from "$lucide/file-plus";
 
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";
@@ -46,6 +51,9 @@
 
 	$: tColumnHeaders = $LL.warehouse_page.table;
 	$: tLabels = $LL.warehouse_page.labels;
+	$: tPlaceholder = $LL.warehouse_page.placeholder;
+	$: tCommon = $LL.common;
+	$: tStock = $LL.stock_page.labels;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -185,7 +193,7 @@
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
 						<!-- Start entity list placeholder -->
-						<PlaceholderBox title="Add new purchase note" description="Get started by adding a new note">
+						<PlaceholderBox title={tPlaceholder.title()} description={tPlaceholder.description()}>
 							<FilePlus slot="icon" />
 							<button slot="actions" on:click={handleCreateInboundNote} class="btn-primary btn w-full">
 								{tLabels.new_note()}
@@ -278,9 +286,9 @@
 		>
 			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
 				<div>
-					<h2 use:melt={$title} class="text-lg font-medium">{$LL.stock_page.labels.edit_book_details()}</h2>
+					<h2 use:melt={$title} class="text-lg font-medium">{tLabels.edit_book_details()}</h2>
 					<p use:melt={$description} class="leading-normal">
-						{$LL.stock_page.labels.manually_edit_book_details()}
+						{tLabels.manually_edit_book_details()}
 					</p>
 				</div>
 				<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">

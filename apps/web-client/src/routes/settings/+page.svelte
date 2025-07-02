@@ -2,7 +2,8 @@
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 	import { get } from "svelte/store";
-	import { Download, Trash } from "lucide-svelte";
+	import Download from "$lucide/download";
+	import Trash from "$lucide/trash";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { zod } from "sveltekit-superforms/adapters";
 
@@ -163,19 +164,21 @@
 		// Reset the sync
 		syncActive.set(true);
 	};
+
+	$: ({ settings_page: tSettings, common: tCommon } = $LL);
 </script>
 
-<Page title="Settings" view="settings" {db} {plugins}>
+<Page title={tSettings.headings.settings()} view="settings" {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		<div class="p-4">
-			<h4>{$LL.settings_page.stats.version()} {VERSION}</h4>
+			<h4>{tSettings.stats.version()} {VERSION}</h4>
 		</div>
 		<div class="flex h-full flex-col space-y-12 overflow-y-auto p-6">
 			<div class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
-					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.sync_settings()}</h2>
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{tSettings.headings.sync_settings()}</h2>
 					<p class="mt-1 text-sm leading-6 text-gray-600">
-						{$LL.settings_page.descriptions.sync_settings()}
+						{tSettings.descriptions.sync_settings()}
 					</p>
 				</div>
 
@@ -202,8 +205,8 @@
 
 			<div data-testid={testId("database-management-container")} class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
-					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.db_management()}</h2>
-					<p class="mt-1 text-sm leading-6 text-gray-600">{$LL.settings_page.descriptions.db_management()}</p>
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{tSettings.headings.db_management()}</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.db_management()}</p>
 				</div>
 
 				<div class="w-full basis-2/3">
@@ -213,14 +216,14 @@
 								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbid)}
 								{#if selectionOn}
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
-									<li
-										on:click={handleSelect(file)}
-										data-active={active}
-										class="group flex h-16 cursor-pointer items-center justify-between px-4 py-3 {active
-											? 'bg-green-300'
-											: 'hover:bg-gray-50'}"
-									>
-										<span>{file}</span>
+									<li>
+										<button>
+											on:click={handleSelect(file)}
+											data-active={active}
+											class="group flex h-16 cursor-pointer items-center justify-between px-4 py-3 {active
+												? "bg-green-300"
+												: "hover:bg-gray-50"}" > file
+										</button>
 									</li>
 								{:else}
 									<li
@@ -243,8 +246,8 @@
 													deleteDatabase = { name: file };
 													dialogContent = {
 														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-														title: $LL.common.delete_dialog.title({ entity: file }),
-														description: $LL.common.delete_database_dialog.description(),
+														title: tCommon.delete_dialog.title({ entity: file }),
+														description: tCommon.delete_database_dialog.description(),
 														type: "delete"
 													};
 												}}
@@ -252,8 +255,8 @@
 													deleteDatabase = { name: file };
 													dialogContent = {
 														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-														title: $LL.common.delete_dialog.title({ entity: file }),
-														description: $LL.common.delete_database_dialog.description(),
+														title: tCommon.delete_dialog.title({ entity: file }),
+														description: tCommon.delete_database_dialog.description(),
 														type: "delete"
 													};
 												}}
@@ -272,39 +275,39 @@
 								aria-label="Drop zone"
 								on:dragover={handleDragOver}
 							>
-								<p>{$LL.settings_page.descriptions.import()}</p>
+								<p>{tSettings.descriptions.import()}</p>
 							</div>
 						{/if}
 					</ul>
 
 					<div class="flex justify-end gap-x-2 px-4 py-6">
-						<button on:click={nukeAndResyncDB} type="button" class="btn-secondary btn"> Nuke and resync </button>
+						<button on:click={nukeAndResyncDB} type="button" class="btn-secondary btn">{tSettings.actions.nuke_and_resync()}</button>
 						<button on:click={toggleImport} type="button" class="btn-secondary btn">
-							{importOn ? "Cancel" : "Import"}
+							{importOn ? tCommon.actions.cancel() : tCommon.actions.import()}
 						</button>
-						<button on:click={toggleSelection} type="button" class="btn {!selectionOn ? 'btn-secondary btn-outline' : 'btn-primary'}"
-							>Select</button
-						>
+						<button on:click={toggleSelection} type="button" class="btn {!selectionOn ? 'btn-secondary btn-outline' : 'btn-primary'}">
+							{tCommon.actions.select()}
+						</button>
 						<button
 							use:melt={$trigger}
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-									title: $LL.common.create_database_dialog.title(),
-									description: $LL.common.create_database_dialog.description(),
+									title: tCommon.create_database_dialog.title(),
+									description: tCommon.create_database_dialog.description(),
 									type: "create"
 								};
 							}}
 							on:m-keydown={() => {
 								dialogContent = {
 									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-									title: $LL.common.create_database_dialog.title(),
-									description: $LL.common.create_database_dialog.description(),
+									title: tCommon.create_database_dialog.title(),
+									description: tCommon.create_database_dialog.description(),
 									type: "create"
 								};
 							}}
 							type="button"
-							class="btn-primary btn">{$LL.settings_page.labels.new()}</button
+							class="btn-primary btn">{tSettings.labels.new()}</button
 						>
 					</div>
 				</div>
@@ -312,8 +315,8 @@
 
 			<div class="flex flex-col gap-6 px-4 pb-20 md:flex-row">
 				<div class="basis-1/3">
-					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.device_settings()}</h2>
-					<p class="mt-1 text-sm leading-6 text-gray-600">{$LL.settings_page.descriptions.device_settings()}</p>
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{tSettings.headings.device_settings()}</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.device_settings()}</p>
 				</div>
 				<div class="w-full basis-2/3">
 					<DeviceSettingsForm

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { Library, Percent } from "lucide-svelte";
+	import Library from "$lucide/library";
+	import Percent from "$lucide/percent";
 	import { invalidate } from "$app/navigation";
 
 	import { entityListView, testId } from "@librocco/shared";

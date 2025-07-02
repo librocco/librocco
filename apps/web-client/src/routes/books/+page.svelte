@@ -7,7 +7,11 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
+	import Search from "$lucide/search";
+	import FileEdit from "$lucide/file-edit";
+	import X from "$lucide/x";
+	import Printer from "$lucide/printer";
+	import MoreVertical from "$lucide/more-vertical";
 
 	import type { BookData } from "@librocco/shared";
 	import { testId } from "@librocco/shared";
@@ -105,12 +109,12 @@
 	});
 </script>
 
-<Page title="Known books" view="stock" {db} {plugins}>
+<Page title={$LL.books_page.title()} view="stock" {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col gap-y-6">
 		<div class="p-4">
 			<ScannerForm
 				bind:input={searchField}
-				placeholder="Search stock by ISBN"
+				placeholder={$LL.search.placeholder()}
 				data={defaults(zod(scannerSchema))}
 				options={{
 					SPA: true,
@@ -129,7 +133,10 @@
 		{#if !$search.length && !entries?.length}
 			<div class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/4">
-					<PlaceholderBox title="No results" description="Book database is empty. Start by adding some books to stock.">
+					<PlaceholderBox
+						title={$LL.books_page.placeholder.empty_database.title()}
+						description={$LL.books_page.placeholder.empty_database.description()}
+					>
 						<Search slot="icon" />
 					</PlaceholderBox>
 				</div>
@@ -146,7 +153,10 @@
 			{:then}
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/4">
-						<PlaceholderBox title="No results" description="Search found no results">
+						<PlaceholderBox
+							title={$LL.books_page.placeholder.no_results.title()}
+							description={$LL.books_page.placeholder.no_results.description()}
+						>
 							<Search slot="icon" />
 						</PlaceholderBox>
 					</div>
@@ -176,7 +186,7 @@
 												use:trigger.action
 												class="btn-neutral btn-outline btn-sm btn px-0.5"
 											>
-												<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
+												<span class="sr-only">{$LL.books_page.labels.edit_row()} {rowIx}</span>
 												<span class="aria-hidden">
 													<MoreVertical />
 												</span>
@@ -191,14 +201,14 @@
 													}}
 													class="btn-secondary btn-sm btn"
 												>
-													<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
+													<span class="sr-only">{$LL.books_page.labels.edit_row()} {rowIx}</span>
 													<span class="aria-hidden">
 														<FileEdit />
 													</span>
 												</button>
 
 												<button class="btn-secondary btn-sm btn" data-testid={testId("print-book-label")} on:click={handlePrintLabel(row)}>
-													<span class="sr-only">{$LL.stock_page.labels.print_book_label()} {rowIx}</span>
+													<span class="sr-only">{$LL.books_page.labels.print_book_label()} {rowIx}</span>
 													<span class="aria-hidden">
 														<Printer />
 													</span>
@@ -236,9 +246,9 @@
 		>
 			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
 				<div>
-					<h2 use:melt={$title} class="text-lg font-medium">{$LL.stock_page.labels.edit_book_details()}</h2>
+					<h2 use:melt={$title} class="text-lg font-medium">{$LL.books_page.labels.edit_book_details()}</h2>
 					<p use:melt={$description} class="leading-normal">
-						{$LL.stock_page.labels.manually_edit_book_details()}
+						{$LL.books_page.labels.manually_edit_book_details()}
 					</p>
 				</div>
 				<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">

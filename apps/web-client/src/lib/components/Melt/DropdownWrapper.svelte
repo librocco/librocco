@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { fly } from "svelte/transition";
 
-	import { MoreVertical } from "lucide-svelte";
+	import MoreVertical from "$lucide/more-vertical";
+
 	import { createDropdownMenu, melt } from "@melt-ui/svelte";
 	import { testId } from "@librocco/shared";
 

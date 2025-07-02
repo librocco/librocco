@@ -18,7 +18,7 @@
 	import { writable } from "svelte/store";
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 	import type { Supplier } from "$lib/db/cr-sqlite/types";
-	import { Plus } from "lucide-svelte";
+	import Plus from "$lucide/plus";
 	import { appHash, appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
 

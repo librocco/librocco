@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Book, Calendar, Search } from "lucide-svelte";
+	import Book from "$lucide/book";
+	import Calendar from "$lucide/calendar";
 
 	import { browser } from "$app/environment";
 	import { page } from "$app/stores";
@@ -46,7 +47,7 @@
 
 <Page title="History" {view} {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col">
-		<div class="tabs tabs-bordered w-full py-4">
+		<div id="history-tabs" class="tabs tabs-bordered w-full py-4">
 			{#each tabs as { label, icon, href }}
 				{@const active = $page.url.hash.startsWith(href)}
 
@@ -60,3 +61,11 @@
 		<slot name="main" />
 	</div>
 </Page>
+
+<style>
+	@media print {
+		#history-tabs {
+			display: none;
+		}
+	}
+</style>

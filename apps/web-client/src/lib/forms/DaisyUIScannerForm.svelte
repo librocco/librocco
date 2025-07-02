@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { defaults } from "sveltekit-superforms";
-	import type { FormOptions } from "sveltekit-superforms";
 	import { superForm } from "sveltekit-superforms/client";
+	import QrCode from "$lucide/qr-code";
 
-	import { scannerSchema, type ScannerSchema } from "$lib/forms/schemas";
+	import { scannerSchema } from "$lib/forms/schemas";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { QrCode } from "lucide-svelte";
+
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let onSubmit: (isbn: string) => void | Promise<void>;
 
@@ -41,7 +42,7 @@
 			type="text"
 			class="grow"
 			bind:value={$formStore.isbn}
-			placeholder="Enter ISBN of ordered books"
+			placeholder={$LL.forms.daisy_ui_scanner_form.placeholders.isbn()}
 			required
 			autocomplete="off"
 		/>

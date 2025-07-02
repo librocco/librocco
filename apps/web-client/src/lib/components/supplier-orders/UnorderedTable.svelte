@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Truck } from "lucide-svelte";
+	import Truck from "$lucide/truck";
 
 	export let orders: Array<{
 		supplier_name: string;

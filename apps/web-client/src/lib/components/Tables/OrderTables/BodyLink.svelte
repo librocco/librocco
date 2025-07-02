@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronRight } from "lucide-svelte";
+	import ChevronRight from "$lucide/chevron-right";
 
 	export let link: string;
 	export let label: string;
