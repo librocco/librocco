@@ -185,18 +185,33 @@
 	// #region note-actions
 
 	// #region transaction-actions
-	const handleAddTransaction = async (isbn: string, quantity = 1) => {
+	const shouldAssignTransaction = async (isbn: string, quantity: number) => {
 		const stock = await getStock(db, { isbns: [isbn] });
 
-		const warehouseOptions = stock.map((st) => ({ warehouseId: st.warehouseId, warehouseName: st.warehouseName }));
+		const warehouseOptions = stock
+			.filter((st) => {
+				const totalScanned = bookRows.get(isbn)?.get(st.warehouseId) || 0;
+				return st.quantity >= quantity + totalScanned;
+			})
+			.map((st) => {
+				return { warehouseId: st.warehouseId, warehouseName: st.warehouseName };
+			});
 
 		if (warehouseOptions.length === 1) {
-			await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: warehouseOptions[0].warehouseId });
+			return warehouseOptions[0].warehouseId;
 		} else if (warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
-			await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: defaultWarehouse });
+			return defaultWarehouse;
 		} else {
-			await addVolumesToNote(db, noteId, { isbn, quantity });
+			return null;
 		}
+	};
+
+	const handleAddTransaction = async (isbn: string, quantity = 1, warehouseId?: number) => {
+		if (!warehouseId) {
+			await addVolumesToNote(db, noteId, { isbn, quantity });
+			return;
+		}
+		await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId });
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
 		//
@@ -243,15 +258,23 @@
 			return;
 		}
 		// does the proposed warehouse contain the proposed quantity?
+		// check for scanned quantity if it's less than available quantity
+		// if the available > scanned => update the transaction first before creating a new transaction
+		const totalScanned = bookRows.get(isbn)?.get(warehouseId) || 0;
+		const availableNonScannedQuantity = warehouse.quantity - totalScanned;
+
 		if (warehouse && nextQty > warehouse.quantity) {
 			const remainderQuantity = nextQty - warehouse.quantity;
-			// await addVolumesToNote(db, noteId, { isbn, quantity: remainderQuantity, warehouseId });
 
-			await handleAddTransaction(isbn, remainderQuantity);
 			// insert new row for remainderQuantity with no wh assigned
+			if (availableNonScannedQuantity) {
+				const transaction = { isbn, warehouseId };
+
+				await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: availableNonScannedQuantity + currentQty });
+			}
+			await handleAddTransaction(isbn, remainderQuantity);
 			return;
 		}
-
 		const transaction = { isbn, warehouseId };
 
 		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextQty });
@@ -280,22 +303,26 @@
 		//account for scanned quantity
 		const currentWarehouseScannedQuantity = quantity;
 
-		const totalScanned = bookRows.get(isbn)?.get(nextWarehouseId) + currentWarehouseScannedQuantity;
+		const totalScanned = bookRows.get(isbn)?.get(nextWarehouseId) || 0 + currentWarehouseScannedQuantity;
 
 		if (totalScanned > nextWarehouseAvailableQuantity) {
 			alertMessage =
 				"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse";
 			/** @TODO don't update the dropdown value to the selected wh  */
+			// 2 < 3
 		} else if (nextWarehouseAvailableQuantity < currentWarehouseScannedQuantity) {
 			const remainder = currentWarehouseScannedQuantity - nextWarehouseAvailableQuantity;
 			await updateNoteTxn(
 				db,
 				noteId,
 				{ isbn, warehouseId: currentWarehouseId },
-				{ quantity: nextWarehouseAvailableQuantity, warehouseId: nextWarehouseId }
+				{ quantity: Math.min(nextWarehouseAvailableQuantity, currentWarehouseScannedQuantity), warehouseId: nextWarehouseId }
 			);
 
-			await handleAddTransaction(isbn, remainder);
+			const warehouseId = await shouldAssignTransaction(isbn, remainder);
+
+			// if another row already exists for this isbn and no wh => move over remainder
+			await handleAddTransaction(isbn, remainder, warehouseId);
 		} else {
 			await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
 		}
@@ -636,7 +663,8 @@
 						resetForm: true,
 						onUpdated: async ({ form }) => {
 							const { isbn } = form?.data;
-							await handleAddTransaction(isbn);
+							const warehouseId = await shouldAssignTransaction(isbn, 1);
+							await handleAddTransaction(isbn, 1, warehouseId);
 						}
 					}}
 				/>

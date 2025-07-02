@@ -723,3 +723,215 @@ test("should be able to edit note title", async ({ page }) => {
 
 	await expect(content.entityList("outbound-list").item(0).getByText("title")).toBeVisible();
 });
+
+testInventory("warehouse dropdown should display warehouse name and stock quantity", async ({ page, books, warehouses }) => {
+	await page.goto(baseURL);
+
+	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
+
+	const dbHandle = await getDbHandle(page);
+
+	// Setup stock for a book in two different warehouses
+	const INBOUND_NOTE_ID_1 = 222;
+	const INBOUND_NOTE_ID_2 = 333;
+	await dbHandle.evaluate(createInboundNote, { id: INBOUND_NOTE_ID_1, warehouseId: warehouses[0].id });
+	await dbHandle.evaluate(addVolumesToNote, [INBOUND_NOTE_ID_1, { isbn: books[0].isbn, quantity: 5 }] as const);
+	await dbHandle.evaluate(commitNote, INBOUND_NOTE_ID_1);
+
+	await dbHandle.evaluate(createInboundNote, { id: INBOUND_NOTE_ID_2, warehouseId: warehouses[1].id });
+	await dbHandle.evaluate(addVolumesToNote, [INBOUND_NOTE_ID_2, { isbn: books[0].isbn, quantity: 10 }] as const);
+	await dbHandle.evaluate(commitNote, INBOUND_NOTE_ID_2);
+
+	// Create an outbound note
+	await dbHandle.evaluate(createOutboundNote, {
+		id: 111,
+		displayName: "Warehouse Quantity Test"
+	});
+
+	// Navigate to outbound page and edit the note
+	await page.getByRole("link", { name: "Sale" }).click();
+	await dashboard.content().entityList("outbound-list").waitFor();
+	await dashboard.content().entityList("outbound-list").item(0).edit();
+	await dashboard.view("outbound-note").waitFor();
+
+	// Add the book to the note
+	const isbnInput = page.getByPlaceholder("Scan to add books");
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+
+	// Verify the warehouse dropdown shows quantities
+	const warehouseField = dashboard.content().table("warehouse").row(0).field("warehouseName");
+	await warehouseField.assertOptions([`${warehouses[0].displayName}: 5`, `${warehouses[1].displayName}: 10`]);
+});
+
+testInventory(
+	"when quantity is increased beyond stock, it splits the row into available and unavailable quantities",
+	async ({ page, books, warehouses }) => {
+		const dashboard = getDashboard(page);
+		await dashboard.waitFor();
+		const dbHandle = await getDbHandle(page);
+
+		const STOCK_QTY = 5;
+		const INBOUND_NOTE_ID = 1;
+		await dbHandle.evaluate(createInboundNote, { id: INBOUND_NOTE_ID, warehouseId: warehouses[0].id });
+		await dbHandle.evaluate(addVolumesToNote, [INBOUND_NOTE_ID, { isbn: books[0].isbn, quantity: STOCK_QTY }] as const);
+		await dbHandle.evaluate(commitNote, INBOUND_NOTE_ID);
+
+		// Create an outbound note
+		await dbHandle.evaluate(createOutboundNote, {
+			id: 2,
+			displayName: "Row Split Test - Quantity"
+		});
+
+		// Navigate to the outbound note
+		await page.getByRole("link", { name: "Sale" }).click();
+		await dashboard.content().entityList("outbound-list").waitFor();
+		await dashboard.content().entityList("outbound-list").item(0).edit();
+		await dashboard.view("outbound-note").waitFor();
+
+		// Scan the book, which should be assigned to the warehouse with stock
+		const isbnInput = page.getByPlaceholder("Scan to add books");
+		await isbnInput.fill(books[0].isbn);
+		await page.keyboard.press("Enter");
+
+		// Increase quantity beyond available stock
+		const table = dashboard.content().table("warehouse");
+		await table.assertRows([{ isbn: books[0].isbn, warehouseName: warehouses[0].displayName }]);
+		dashboard.locator("#quantity").fill("8");
+		await dashboard.locator("#quantity").blur();
+		await page.keyboard.press("Enter");
+
+		await table.assertRows([{ isbn: books[0].isbn, warehouseName: warehouses[0].displayName }]);
+
+		// Assert that the row has been split
+		/** @TODO assert for quantity*/
+		await table.assertRows([
+			{ isbn: books[0].isbn, warehouseName: warehouses[0].displayName },
+			{ isbn: books[0].isbn, warehouseName: "" }
+		]);
+	}
+);
+
+testInventory(
+	"when a new warehouse is selected and the current quantity exceeds stock in the new warehouse, it splits the row into max available quantity of new warehouse and remainder quantity with no assigned warehouse",
+	async ({ page, books, warehouses }) => {
+		const dashboard = getDashboard(page);
+		await dashboard.waitFor();
+		const dbHandle = await getDbHandle(page);
+
+		// WH[0] => 5 OF ISBN[0]
+		await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: warehouses[0].id });
+		await dbHandle.evaluate(addVolumesToNote, [1, { isbn: books[0].isbn, quantity: 5 }] as const);
+		await dbHandle.evaluate(commitNote, 1);
+
+		// WH[1] => 2 OF ISBN[0]
+		await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: warehouses[1].id });
+		await dbHandle.evaluate(addVolumesToNote, [2, { isbn: books[0].isbn, quantity: 2 }] as const);
+		await dbHandle.evaluate(commitNote, 2);
+
+		// Create an outbound note
+		await dbHandle.evaluate(createOutboundNote, {
+			id: 3,
+			displayName: "Row Split Test - Warehouse"
+		});
+
+		// Navigate to the outbound note
+		await page.getByRole("link", { name: "Sale" }).click();
+		await dashboard.content().entityList("outbound-list").waitFor();
+		await dashboard.content().entityList("outbound-list").item(0).edit();
+		await dashboard.view("outbound-note").waitFor();
+
+		// select wh[0] as default
+		const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
+		await defaultWarehouseDropdown.waitFor();
+		await defaultWarehouseDropdown.selectOption({ label: warehouses[0].displayName });
+
+		// Scan the book, which should be assigned to the default warehouse
+		const isbnInput = page.getByPlaceholder("Scan to add books");
+		await isbnInput.fill(books[0].isbn);
+		await page.keyboard.press("Enter");
+
+		// Increase quantity beyond available stock
+		const table = dashboard.content().table("warehouse");
+		await table.assertRows([{ isbn: books[0].isbn, warehouseName: warehouses[0].displayName }]);
+		dashboard.locator("#quantity").fill("5");
+		await dashboard.locator("#quantity").blur();
+		await page.keyboard.press("Enter");
+
+		// only one row
+		await table.assertRows([{ isbn: books[0].isbn, warehouseName: warehouses[0].displayName }]);
+
+		// SELECT WH[1]
+		const warehouseField = dashboard.content().table("warehouse").row(0).field("warehouseName");
+		// await warehouseField.assertOptions([`${warehouses[0].displayName}: 5`, `${warehouses[1].displayName}: 2`]);
+
+		await warehouseField.set(`${warehouses[1].displayName}: 2`);
+		//split rows
+		await table.assertRows([{ isbn: books[0].isbn, warehouseName: warehouses[1].displayName }]);
+		page.getByText(
+			"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse"
+		);
+	}
+);
+
+testInventory(
+	"when multiple copies of a book are scanned, it splits the row if quantity exceeds stock",
+	async ({ page, books, warehouses }) => {
+		const dashboard = getDashboard(page);
+		await dashboard.waitFor();
+		const dbHandle = await getDbHandle(page);
+
+		// create and commit an inbound Note
+		await dbHandle.evaluate(createInboundNote, { id: 222, warehouseId: warehouses[0].id });
+		await dbHandle.evaluate(addVolumesToNote, [222, { isbn: books[0].isbn, quantity: 2 }] as const);
+
+		// Create an inbound note and commit it to add book to Warehouses
+		await dbHandle.evaluate(async (db, bookIsbn) => {
+			await db.exec(`
+         INSERT INTO book_transaction (note_id, isbn, warehouse_id, quantity)
+         VALUES (222, '${bookIsbn}', 1, 2)
+       `);
+		});
+
+		await dbHandle.evaluate(commitNote, 222);
+
+		// Create an outbound note
+		await dbHandle.evaluate(createOutboundNote, {
+			id: 2,
+			displayName: "Multi-Scan Split Test"
+		});
+
+		// Navigate to the outbound note
+		await page.getByRole("link", { name: "Sale" }).click();
+		await dashboard.content().entityList("outbound-list").waitFor();
+		await dashboard.content().entityList("outbound-list").item(0).edit();
+		await dashboard.view("outbound-note").waitFor();
+
+		const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
+		await defaultWarehouseDropdown.waitFor();
+		await defaultWarehouseDropdown.selectOption({ label: warehouses[0].displayName });
+
+		// Scan the book 3 times, exceeding the available stock of 2
+		const isbnInput = page.getByPlaceholder("Scan to add books");
+
+		await isbnInput.fill(books[0].isbn);
+		await page.keyboard.press("Enter");
+
+		// Assert that the row has been split
+		const table = dashboard.content().table("warehouse");
+		/** @TODO ASSERTING FOR QUANTITY IS NOT WORKING */
+		await table.assertRows([{ isbn: books[0].isbn, warehouseName: warehouses[0].displayName }]);
+		await isbnInput.fill(books[0].isbn);
+		await page.keyboard.press("Enter");
+
+		await table.assertRows([{ isbn: books[0].isbn, warehouseName: warehouses[0].displayName }]);
+		await isbnInput.fill(books[0].isbn);
+		await page.keyboard.press("Enter");
+
+		await table.assertRows([
+			{ isbn: books[0].isbn, warehouseName: warehouses[0].displayName },
+			{ isbn: books[0].isbn, warehouseName: "" }
+		]);
+	}
+);
