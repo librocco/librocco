@@ -40,7 +40,6 @@ The main (and currently the only) top level view is the inventory. It is the mai
 #### 1.1.1. Views
 
 - `/stock`:
-
   - **default view**
   - this is the view of the entire stock with full text search functionality
   - due to the number of entries in stock, nothing is rendered until some (search) filter is applied
@@ -48,38 +47,30 @@ The main (and currently the only) top level view is the inventory. It is the mai
   - when there's too many results to show, the dynamic loading is performed using the intersection observer
 
 - `/inventory`:
-
   - the inventory view shows warehouses and notes (as a way to organise inventory)
   - it features two sub-views:
     - warehouses
     - inbound
 
 - `/inventory/warehouses`:
-
   - displays a list of warehouses (and quick edit operations: warehouse name, discount)
 
 - `/inventory/warehouses/[...warehouseId]`:
-
   - inspect stock for a particular warehouse
 
 - `/inventory/inbound`:
-
   - displays a list of inbound notes
 
 - `/inventory/inbound/[...noteId]`:
-
   - inspect / edit note (stock, meta data, etc.)
 
 - `/outbound`:
-
   - displays a list of inbound notes
 
 - `/outbound/[...noteId]`:
-
   - inspect / edit note (stock, meta data, etc.)
 
 - `/settings`
-
   - edit settings (currently only the sync options)
 
 #### 1.1.2. Data flows
