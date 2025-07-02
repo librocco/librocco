@@ -1,9 +1,12 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
 	import { writable } from "svelte/store";
-	import { Search, Library, ArrowLeft, ArrowRight } from "lucide-svelte";
-	import { invalidate } from "$app/navigation";
+	import Search from "$lucide/search";
+	import Library from "$lucide/library";
+	import ArrowLeft from "$lucide/arrow-left";
+	import ArrowRight from "$lucide/arrow-right";
 
+	import { invalidate } from "$app/navigation";
 	import { page } from "$app/stores";
 
 	import { entityListView, testId, type BookData } from "@librocco/shared";
@@ -29,7 +32,8 @@
 
 	$: isbn = $page.params.isbn;
 
-	$: t = $LL.history_page.isbn_tab.isbn_id;
+	$: t = $LL.history_page.isbn_tab;
+	$: tCommon = $LL.common;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -62,6 +66,10 @@
 		entries = [];
 	}
 
+	const handlePrint = () => {
+		window.print();
+	};
+
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
 	$: $search = $value;
@@ -70,11 +78,18 @@
 
 <HistoryPage view="history/isbn" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div>
-			<Search />
-			{#key isbn}
-				<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" class="w-full" />
-			{/key}
+		<div id="search-container" class="flex w-full p-4">
+			<div class="flex w-full">
+				<label class="input-bordered input flex flex-1 items-center gap-2">
+					<Search />
+					{#key isbn}
+						<input data-testid={testId("search-input")} use:input placeholder={t.search.placeholder()} class="w-full" />
+					{/key}
+				</label>
+			</div>
+			<button class="btn-neutral btn ml-2 hidden xs:block" on:click={handlePrint}>
+				<span class="button-text ml-1">{tCommon.actions.print()}</span>
+			</button>
 		</div>
 
 		<div class="w-full text-base-content">
@@ -96,7 +111,7 @@
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 			<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 				<div class="border-b border-base-300">
-					<h2 class="border-b border-base-300 px-4 py-4 pt-8 text-xl font-semibold">{t.titles.stock()}</h2>
+					<h2 id="stock-heading" class="border-b border-base-300 px-4 py-4 pt-8 text-xl font-semibold">{t.isbn_id.titles.stock()}</h2>
 
 					<div data-testid={testId("history-stock-report")} class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
 						{#each stock as s}
@@ -117,15 +132,15 @@
 				</div>
 
 				{#if !transactions?.length}
-					<div class="flex grow justify-center">
+					<div id="empty" class="flex grow justify-center">
 						<div class="mx-auto max-w-xl translate-y-1/2">
-							<PlaceholderBox title={t.placeholder_box.title()} description={t.placeholder_box.description()} />
+							<PlaceholderBox title={t.isbn_id.placeholder_box.title()} description={t.isbn_id.placeholder_box.description()} />
 						</div>
 					</div>
 				{:else}
-					<div class="sticky top-0">
+					<div id="history-table-header" class="sticky top-0">
 						<h2 class="border-b border-base-300 bg-base-100 px-4 py-4 pt-8 text-xl font-semibold">
-							{$LL.history_page.isbn_tab.titles.transactions()}
+							{t.titles.transactions()}
 						</h2>
 					</div>
 					<ul id="history-table" class="grid w-full grid-cols-12 divide-y divide-base-300">
@@ -171,16 +186,35 @@
 	<div use:dropdown>
 		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-base-100 shadow-2xl">
 			{#each entries as { isbn, title, authors, year, publisher }}
-				<li
-					data-testid={testId("search-completion")}
-					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
-					class="w-full cursor-pointer px-4 py-3"
-				>
-					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-base-content">{isbn}</p>
-					<p data-property="title" class="text-xl font-medium">{title}</p>
-					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
+				<li>
+					<button
+						data-testid={testId("search-completion")}
+						on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
+						class="w-full cursor-pointer px-4 py-3"
+					>
+						<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-base-content">{isbn}</p>
+						<p data-property="title" class="text-xl font-medium">{title}</p>
+						<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
+					</button>
 				</li>
 			{/each}
 		</ul>
 	</div>
 {/if}
+
+<style>
+	@media print {
+		#history-table-header {
+			display: none;
+		}
+		#empty {
+			display: none;
+		}
+		#search-container {
+			display: none;
+		}
+		#stock-heading {
+			display: none;
+		}
+	}
+</style>

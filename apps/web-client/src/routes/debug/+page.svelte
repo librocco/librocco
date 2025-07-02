@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { Plus, RotateCcw, Play, BookPlus } from "lucide-svelte";
+	import Plus from "$lucide/plus";
+	import RotateCcw from "$lucide/rotate-ccw";
+	import Play from "$lucide/play";
+	import BookPlus from "$lucide/book-plus";
+
 	import { onMount } from "svelte";
 
 	import { wrapIter } from "@librocco/shared";
@@ -16,6 +20,7 @@
 	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
 	import { debugData as dd } from "$lib/__testData__/debugData";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let data: LayoutData;
 
@@ -285,7 +290,7 @@
 
 <div id="content" class="h-full w-full overflow-y-auto">
 	<header class="flex h-16 items-center justify-between border-b border-base-content">
-		<h2 class="pl-[70px] text-lg font-medium lg:pl-5">Debug</h2>
+		<h2 class="pl-[70px] text-lg font-medium lg:pl-5">{$LL.debug_page.title()}</h2>
 	</header>
 
 	<div class="flex h-full w-full flex-col px-4">
@@ -293,39 +298,39 @@
 			<div class="gap-2">
 				<button class="btn-primary btn" on:click={() => populateDatabase()}>
 					<Plus size={20} />
-					Populate Database
+					{$LL.debug_page.actions.populate_database()}
 				</button>
 				<button class="btn-primary btn" on:click={() => resetDatabase()}>
 					<RotateCcw size={20} />
-					Reset Database
+					{$LL.debug_page.actions.reset_database()}
 				</button>
 				<button class="btn-primary btn" on:click={() => upsert100Books()}>
 					<BookPlus size={20} />
-					Upsert 100 Books
+					{$LL.debug_page.actions.upsert_100_books()}
 				</button>
 			</div>
 		</div>
 
 		<div class="flex py-2">
 			<div class="mr-5 flex-auto overflow-x-auto py-2">
-				<h2 class="prose font-bold">Database Query Interface</h2>
+				<h2 class="prose font-bold">{$LL.debug_page.query_interface.title()}</h2>
 				<div class="mr-5 flex flex-col py-2">
 					<textarea bind:value={query} id="query"></textarea>
 
 					<button class="btn-primary btn" on:click={executeQuery} disabled={isLoading}>
 						<Play size={20} />
-						{isLoading ? "Executing..." : "Run Query"}
+						{isLoading ? $LL.debug_page.actions.executing() : $LL.debug_page.actions.run_query()}
 					</button>
 
 					{#if queryResult || errorMessage}
-						<h2 class="prose mt-3 font-bold">Query Results:</h2>
+						<h2 class="prose mt-3 font-bold">{$LL.debug_page.query_interface.results_title()}</h2>
 
 						{#if errorMessage}
 							<div class="mt-4 rounded-lg bg-red-500 p-3 text-white shadow">
 								{errorMessage}
 							</div>
 						{:else if queryResult.length === 0}
-							<p>No results found.</p>
+							<p>{$LL.debug_page.query_interface.no_results()}</p>
 						{:else}
 							<table class="table">
 								<thead>
@@ -353,8 +358,8 @@
 				<table class="table">
 					<thead>
 						<tr>
-							<th scope="col">Table</th>
-							<th scope="col">Number of objects</th>
+							<th scope="col">{$LL.debug_page.table.title()}</th>
+							<th scope="col">{$LL.debug_page.table.number_of_objects()}</th>
 						</tr>
 					</thead>
 					<tbody>

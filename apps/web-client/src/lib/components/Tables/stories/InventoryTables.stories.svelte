@@ -12,7 +12,7 @@
 	import { Story } from "@storybook/addon-svelte-csf";
 
 	import { writable } from "svelte/store";
-	import { FileEdit } from "lucide-svelte";
+	import FileEdit from "$lucide/file-edit";
 
 	import { createTable } from "$lib/actions";
 

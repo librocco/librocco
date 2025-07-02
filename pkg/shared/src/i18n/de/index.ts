@@ -1,27 +1,8 @@
-import type { BaseTranslation } from "../i18n-types.js";
+import { extendDictionary } from "../i18n-util";
+import { prepareTranslations } from "../utils";
+import en from "../en";
+import deJson from "./index.json" assert { type: "json" };
 
-const nav = {
-	search: "Bestände suchen",
-	inventory: "Inventar verwalten",
-	outbound: "Ausgehend",
-	inbound: "Eingehend",
-	settings: "Einstellungen",
-	history: "Verlauf",
-
-	supplier_orders: "Lieferantenbestellungen"
-};
-
-const search = {
-	title: "Suche",
-	empty: {
-		title: "Nach Beständen suchen",
-		description: "Beginnen Sie mit der Suche nach Titel, Autor, ISBN"
-	}
-};
-
-const de = {
-	nav,
-	search
-} satisfies BaseTranslation;
+const de = extendDictionary(en, prepareTranslations(en, deJson));
 
 export default de;

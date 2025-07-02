@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { ArrowLeft, ArrowRight } from "lucide-svelte";
+	import ArrowLeft from "$lucide/arrow-left";
+	import ArrowRight from "$lucide/arrow-right";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 	import { browser } from "$app/environment";
@@ -44,6 +45,7 @@
 	$: goto = racefreeGoto(disposer);
 
 	$: t = $LL.history_page.warehouse_tab.note_table;
+	$: tCommon = $LL.common;
 
 	let tt: { [option: string]: () => LocalizedString };
 	LL.subscribe((LL) => {
@@ -77,6 +79,10 @@
 		return date > now(getLocalTimeZone());
 	};
 	// #endregion date picker
+
+	const handlePrint = () => {
+		window.print();
+	};
 
 	// #region dropdown
 	const options = [
@@ -124,13 +130,15 @@
 
 <HistoryPage view="history/date" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
+		<div id="container" class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
 			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-base-content">
 				{displayName || ""}
 				{t.heading.history()}
 			</h1>
 
 			<button on:click={handleExportCsv} class="btn-primary btn order-2 whitespace-nowrap xl:order-3">{t.heading.export_csv()}</button>
+
+			<button on:click={handlePrint} class="btn-primary btn order-2 whitespace-nowrap xl:order-3">{tCommon.actions.print()}</button>
 
 			<div class="order-3 w-full items-center gap-3 md:flex xl:order-2 xl:justify-center">
 				<p>{t.heading.from()}:</p>
@@ -171,10 +179,7 @@
 			{#if !transactions?.length}
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
-						<PlaceholderBox
-							title="No transactions found"
-							description="There seem to be no transactions going in/out for the selected date range"
-						/>
+						<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()} />
 					</div>
 				</div>
 			{:else}
@@ -225,3 +230,11 @@
 		<!-- End entity list contaier -->
 	</div>
 </HistoryPage>
+
+<style>
+	@media print {
+		#container {
+			display: none;
+		}
+	}
+</style>

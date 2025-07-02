@@ -8,7 +8,13 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Plus } from "lucide-svelte";
+	import Printer from "$lucide/printer";
+	import QrCode from "$lucide/qr-code";
+	import Trash2 from "$lucide/trash-2";
+	import FileEdit from "$lucide/file-edit";
+	import MoreVertical from "$lucide/more-vertical";
+	import X from "$lucide/x";
+	import FileCheck from "$lucide/file-check";
 
 	import { desc, testId } from "@librocco/shared";
 	import { type BookData } from "@librocco/shared";
@@ -127,6 +133,10 @@
 	const openReconciliationDialog = (invalidTransactions: OutOfStockTransaction[]) => {
 		reconcileDialogData = invalidTransactions;
 		reconcileDialogOpen.set(true);
+	};
+
+	const handlePrint = () => {
+		window.print();
 	};
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
@@ -396,7 +406,7 @@
 
 <Page title={displayName} view="outbound-note" {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
-		<div class="flex flex-col gap-y-4 px-6 py-4">
+		<div id="header" class="flex flex-col gap-y-4 px-6 py-4">
 			<Breadcrumbs links={breadcrumbs} />
 			<div class="flex w-full items-center justify-between">
 				<div class="flex max-w-md flex-col">
@@ -455,7 +465,10 @@
 							};
 						}}
 					>
-						<span class="button-text">Commit</span>
+						<span class="button-text">{tOutbound.labels.commit()}</span>
+					</button>
+					<button on:click={() => handlePrint()} on:keydown={() => handlePrint()} class="btn-primary btn-sm btn hidden xs:block">
+						{tCommon.actions.print()}
 					</button>
 
 					<DropdownWrapper let:item>
@@ -473,7 +486,7 @@
 							}}
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
 						>
-							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">Commit</span>
+							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tOutbound.labels.commit()}</span>
 						</div>
 						<div
 							{...item}
@@ -481,7 +494,7 @@
 							on:m-click={handlePrintReceipt}
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 						>
-							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">Print</span>
+							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tOutbound.labels.print()}</span>
 						</div>
 						<div
 							{...item}
@@ -530,16 +543,16 @@
 		</div>
 
 		{#if loading}
-			<div class="flex grow justify-center">
+			<div id="spinner" class="flex grow justify-center">
 				<div class="mx-auto translate-y-1/2">
 					<span class="loading loading-spinner loading-lg text-primary"></span>
 				</div>
 			</div>
 		{:else if !entries.length}
-			<div class="flex grow justify-center">
+			<div id="empty" class="flex grow justify-center">
 				<div class="mx-auto max-w-xl translate-y-1/4">
 					<!-- Start entity list placeholder -->
-					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
+					<PlaceholderBox title={tOutbound.placeholder.scan_title()} description={tOutbound.placeholder.scan_description()}>
 						<QrCode slot="icon" />
 					</PlaceholderBox>
 					<!-- End entity list placeholder -->
@@ -548,7 +561,7 @@
 							use:melt={$customItemDialogTrigger}
 							on:m-click={() => openCustomItemForm()}
 							on:m-keydown={() => openCustomItemForm()}
-							class="btn-neutral btn">Custom item</button
+							class="btn-neutral btn">{tOutbound.labels.custom_item()}</button
 						>
 					</div>
 				</div>
@@ -563,7 +576,7 @@
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
 						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
 					>
-						<div slot="row-actions" let:row let:rowIx>
+						<div id="row-actions" slot="row-actions" let:row let:rowIx>
 							{@const editTrigger = isBookRow(row) ? $editBookDialogTrigger : $customItemDialogTrigger}
 
 							<PopoverWrapper
@@ -623,12 +636,12 @@
 					</OutboundTable>
 				</div>
 
-				<div class="flex h-24 w-full items-center justify-start px-8">
+				<div id="button-container" class="flex h-24 w-full items-center justify-start px-8">
 					<button
 						use:melt={$customItemDialogTrigger}
 						on:m-click={() => openCustomItemForm()}
 						on:m-keydown={() => openCustomItemForm()}
-						class="btn-neutral btn">Custom item</button
+						class="btn-neutral btn mx-2">{tOutbound.labels.custom_item()}</button
 					>
 				</div>
 
@@ -807,3 +820,23 @@
 		</div>
 	</div>
 {/if}
+
+<style>
+	@media print {
+		#header {
+			display: none;
+		}
+		#spinner {
+			display: none;
+		}
+		#row-actions {
+			display: none;
+		}
+		#empty {
+			display: none;
+		}
+		#button-container {
+			display: none;
+		}
+	}
+</style>
