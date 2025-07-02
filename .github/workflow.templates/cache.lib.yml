@@ -9,3 +9,11 @@ with:
     ./common/temp/node_modules/
   key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
 #@ end
+
+#@ def load_cached_artefacts():
+name: Load cached cr-sqlite artefacts
+uses: actions/cache/restore@v4
+with:
+  path: 3rd-party/artefacts
+  key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+#@ end

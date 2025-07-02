@@ -3,20 +3,99 @@ name: Checks
   push:
     branches-ignore:
     - ci-debug/*
+    - wip/**
 jobs:
+  build-cr-sqlite:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      rebuild: ${{ steps.ts.outputs.rebuild }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
+        fetch-depth: 0
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - name: Cache cr-sqlite artefacts
+      uses: actions/cache@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+    - name: Test if artefacts are stale
+      id: ts
+      shell: bash
+      run: scripts/compare_artefacts_version.sh >> "$GITHUB_OUTPUT"
+    - uses: actions/setup-node@v4
+      if: steps.ts.outputs.rebuild == 'yes'
+      with:
+        node-version: "20"
+    - name: Install Rust 1.85.0
+      if: steps.ts.outputs.rebuild == 'yes'
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: 1.85.0
+        override: true
+    - name: install wasm-pack
+      if: steps.ts.outputs.rebuild == 'yes'
+      run: cargo install wasm-pack
+    - name: install pnpm
+      if: steps.ts.outputs.rebuild == 'yes'
+      run: npm install -g 'pnpm@<9'
+    - name: Build cr-sqlite
+      if: steps.ts.outputs.rebuild == 'yes'
+      run: ./scripts/build_vlcn.sh
+    - name: Check that the build went fine
+      run: git status; ls -l 3rd-party/artefacts/
+    - name: upload to later jobs
+      if: steps.ts.outputs.rebuild == 'yes'
+      uses: actions/upload-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts/
+    - name: Mark cached version
+      run: cp 3rd-party/artefacts_version.txt 3rd-party/artefacts/version-cached.txt
+    - name: Commit updated assets
+      if: github.ref == 'refs/heads/compile-assets'
+      run: bash scripts/commit-artefacts.sh
+    - name: Push changes
+      if: github.ref == 'refs/heads/compile-assets'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: compile-assets
   js-search-test:
     name: JS-Search Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-cr-sqlite
     permissions:
       id-token: write
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - uses: actions/download-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts
+      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
@@ -45,15 +124,32 @@ jobs:
     name: Book data extension Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-cr-sqlite
     permissions:
       id-token: write
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - uses: actions/download-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts
+      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
@@ -75,15 +171,32 @@ jobs:
     name: Web Client Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-cr-sqlite
     permissions:
       id-token: write
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - uses: actions/download-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts
+      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
@@ -104,6 +217,7 @@ jobs:
   e2e-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    needs: build-cr-sqlite
     strategy:
       fail-fast: false
       matrix:
@@ -117,10 +231,26 @@ jobs:
         shardTotal:
         - 6
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - uses: actions/download-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts
+      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
@@ -151,6 +281,7 @@ jobs:
         path: apps/e2e/blob-report
         retention-days: 2
   lint-and-typecheck:
+    needs: build-cr-sqlite
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -158,7 +289,11 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -190,7 +325,11 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -215,9 +354,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
       with:
-        fetch-depth: 0
+        submodules: recursive
+        lfs: true
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
@@ -241,11 +382,28 @@ jobs:
   deploy-production:
     name: Deploy web-client app to bunny cdn
     runs-on: ubuntu-latest
+    needs: build-cr-sqlite
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
+    - name: compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - uses: actions/download-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts
+      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
     - name: Cache node modules
       uses: actions/cache@v4
       with:
@@ -295,7 +453,11 @@ jobs:
     - e2e-test
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
     - uses: actions/setup-node@v4
       with:
         node-version: "20"
