@@ -449,6 +449,10 @@ type RootTranslation = {
 			 */
 			save: string
 			/**
+			 * C​r​e​a​t​e
+			 */
+			create: string
+			/**
 			 * E​d​i​t​ ​c​u​s​t​o​m​e​r
 			 */
 			edit_customer: string
@@ -611,6 +615,12 @@ type RootTranslation = {
 			pending: string
 		}
 		dialogs: {
+			new_customer: {
+				/**
+				 * C​r​e​a​t​e​ ​n​e​w​ ​o​r​d​e​r
+				 */
+				title: string
+			}
 			edit_customer: {
 				/**
 				 * E​d​i​t​ ​c​u​s​t​o​m​e​r​ ​d​e​t​a​i​l​s
@@ -3044,6 +3054,10 @@ export type TranslationFunctions = {
 			 */
 			save: () => LocalizedString
 			/**
+			 * Create
+			 */
+			create: () => LocalizedString
+			/**
 			 * Edit customer
 			 */
 			edit_customer: () => LocalizedString
@@ -3205,6 +3219,12 @@ export type TranslationFunctions = {
 			pending: () => LocalizedString
 		}
 		dialogs: {
+			new_customer: {
+				/**
+				 * Create new order
+				 */
+				title: () => LocalizedString
+			}
 			edit_customer: {
 				/**
 				 * Edit customer details
