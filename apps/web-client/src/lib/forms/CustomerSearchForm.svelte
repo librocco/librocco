@@ -15,9 +15,7 @@
 
 	export let input: HTMLElement | undefined = undefined;
 
-	const form = superForm(data, {
-		...options
-	});
+	const form = superForm(data, options);
 
 	const { form: formStore, enhance } = form;
 </script>
@@ -27,6 +25,7 @@
 		<svelte:component this={icon} />
 		<input
 			name="fullname"
+			class="w-full"
 			id="fullname"
 			autocomplete="off"
 			data-testid={testId("customer-search-form")}
