@@ -106,7 +106,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 
 	// Edit the book data for the first (and only) row
 	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
-	await content.table("outbound-note").row(0).getByRole("button").click();
+	await content.table("outbound-note").row(0).getByRole("button").nth(1).click();
 	await page.getByTestId("edit-row").click();
 
 	const bookForm = dashboard.bookForm();
@@ -139,7 +139,7 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 
 	// Edit the book data for the first (and only) row
 	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
-	await content.table("outbound-note").row(0).getByRole("button").click();
+	await content.table("outbound-note").row(0).getByRole("button").nth(1).click();
 	await page.getByTestId("edit-row").click();
 
 	const bookForm = dashboard.bookForm();

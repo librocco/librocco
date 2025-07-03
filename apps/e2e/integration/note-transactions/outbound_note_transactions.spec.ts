@@ -198,7 +198,7 @@ test("should delete the transaction from the note when when selected for deletio
 
 	// Delete the second transaction
 	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
-	await entries.row(1).getByRole("button").click();
+	await entries.row(1).getByRole("button").nth(1).click();
 	await page.getByTestId("delete-row").click();
 
 	// Check that the second transaction was deleted
@@ -253,7 +253,8 @@ test("transaction should allow for warehouse selection if there is more than one
 	// Assert relevant fields (isbn, quantity and warehouseName)
 	await row.assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "" });
 	// Check row's available warehouses
-	await row.field("warehouseName").assertOptions(["Warehouse 1", "Warehouse 2", "Warehouse 3"]);
+	await row.field("warehouseName").assertOptions(["Warehouse 1: 1", "Warehouse 2: 1"]);
+	/** @TODO assert that the rest of warehouses are inside the force withdrawal button*/
 });
 
 test("if there's one transaction for the isbn with specified warehouse, should add a new transaction (with unspecified warehouse) on 'Add'", async ({
@@ -296,7 +297,7 @@ test("if there's one transaction for the isbn with specified warehouse, should a
 	]);
 });
 
-test("if there are two transactions, one with specified and one with unspecified warehouse should aggregate the one with unspecified warehouse on 'Add'", async ({
+test("if there are two transactions, one with specified and one with unspecified warehouse, on 'Add' should add a new transaction and assign it to the first warehouse with available stock", async ({
 	page
 }) => {
 	// Setup: Create two warehouses with the book in stock
@@ -328,8 +329,9 @@ test("if there are two transactions, one with specified and one with unspecified
 	await scanField.add("1234567890");
 
 	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 2, warehouseName: "" },
-		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
+		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
+		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" },
+		{ isbn: "1234567890", quantity: 1 }
 	]);
 });
 
@@ -344,6 +346,10 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 	// Add two transactions to the note, one belonging to the first warehouse  and one belonging to the second warehouse (both specified)
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 2 }] as const);
+
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 5, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 
 	const entries = getDashboard(page).content().table("outbound-note");
 
@@ -488,8 +494,14 @@ test("should check validity of the transactions and commit the note on 'commit' 
 
 	// "22222222" - reverse order than order of adding/aggregating
 	await entries.row(2).field("warehouseName").set("Warehouse 1");
-	// "44444444"
-	await entries.row(0).field("warehouseName").set("Warehouse 2");
+
+	await entries.row(0).getByRole("button", { name: "Force Withdrawal" }).click();
+	const forceWithdrawalDialog = page.getByRole("dialog", {
+		name: `Force withdrawal for
+	44444444`
+	});
+	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({ label: "Warehouse 2" });
+	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
 
 	await entries.assertRows([
 		// Out of stock - the book doesn't exist in warehouse
