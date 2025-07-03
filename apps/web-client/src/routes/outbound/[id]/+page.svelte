@@ -261,7 +261,7 @@
 		// check for scanned quantity if it's less than available quantity
 		// if the available > scanned => update the transaction first before creating a new transaction
 		const totalScanned = bookRows.get(isbn)?.get(warehouseId) || 0;
-		const availableNonScannedQuantity = warehouse.quantity - totalScanned;
+		const availableNonScannedQuantity = warehouse?.quantity - totalScanned || 0;
 
 		if (warehouse && nextQty > warehouse.quantity) {
 			const remainderQuantity = nextQty - warehouse.quantity;
@@ -797,38 +797,36 @@
 	</div>
 </Page>
 
-{#if $forceWithdrawalDialogOpen}
-	{#if forceWithdrawalDialogData}
-		{@const { row, unavailableWarehouses } = forceWithdrawalDialogData}
-		<div use:melt={$forceWithdrawalDialogPortalled}>
-			<div use:melt={$forceWithdrawalDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
-			<div
-				class="fixed left-[50%] top-[50%] z-50 w-full max-w-md
+{#if $forceWithdrawalDialogOpen && forceWithdrawalDialogData}
+	{@const { row, unavailableWarehouses } = forceWithdrawalDialogData}
+	<div use:melt={$forceWithdrawalDialogPortalled}>
+		<div use:melt={$forceWithdrawalDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+		<div
+			class="fixed left-[50%] top-[50%] z-50 w-full max-w-md
 translate-x-[-50%] translate-y-[-50%]"
-			>
-				<Dialog dialog={forceWithdrawalDialog} type="commit" onConfirm={() => forceUpdateRowWarehouse(row)}>
-					<svelte:fragment slot="title"
-						>Force withdrawal for
-						{row.isbn}</svelte:fragment
-					>
-					<svelte:fragment slot="description">
-						<p class="mb-4">This book is out of stock. Select a warehouse to perform a force withdrawal.</p>
-						<select bind:value={selectedWarehouse} class="select-bordered select w-full">
-							<option disabled selected>Select a warehouse</option>
-							{#each unavailableWarehouses as warehouse}
-								<option value={warehouse}>{warehouse.displayName}</option>
-							{/each}
-						</select>
-						<p>
-							{selectedWarehouse
-								? ` A reconciliation note will be created for ${row.quantity} books in ${selectedWarehouse.displayName}`
-								: "No warehouse selected"}
-						</p>
-					</svelte:fragment>
-				</Dialog>
-			</div>
+		>
+			<Dialog dialog={forceWithdrawalDialog} type="commit" onConfirm={() => forceUpdateRowWarehouse(row)}>
+				<svelte:fragment slot="title"
+					>Force withdrawal for
+					{row.isbn}</svelte:fragment
+				>
+				<svelte:fragment slot="description">
+					<p class="mb-4">This book is out of stock. Select a warehouse to perform a force withdrawal.</p>
+					<select id="warehouse-force-withdrawal" bind:value={selectedWarehouse} class="select-bordered select w-full">
+						<option disabled selected>Select a warehouse</option>
+						{#each unavailableWarehouses as warehouse}
+							<option value={warehouse}>{warehouse.displayName}</option>
+						{/each}
+					</select>
+					<p>
+						{selectedWarehouse
+							? ` A reconciliation note will be created for ${row.quantity} books in ${selectedWarehouse.displayName}`
+							: "No warehouse selected"}
+					</p>
+				</svelte:fragment>
+			</Dialog>
 		</div>
-	{/if}
+	</div>
 {/if}
 
 {#if $confirmDialogOpen}
