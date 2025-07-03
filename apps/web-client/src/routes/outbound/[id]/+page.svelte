@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from "svelte";
+	import { onMount, onDestroy, createEventDispatcher } from "svelte";
 	import { fade, fly } from "svelte/transition";
 	import { writable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
@@ -78,6 +78,10 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
+	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
+	import { createOutboundTableEvents, type OutboundTableEvents } from "$lib/components/Tables/InventoryTables/events";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+	import { Save } from "$lucide";
 
 	export let data: PageData;
 
@@ -97,6 +101,9 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+
+	const dispatch = createEventDispatcher<OutboundTableEvents>();
+	const { editWarehouse } = createOutboundTableEvents(dispatch);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
@@ -332,8 +339,6 @@
 		alertMessage = "";
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
 		const { id: nextWarehouseId } = selectedWarehouse as Warehouse;
-		// Number form control validation means this string->number conversion should yield a valid result
-		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
 		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
 		if (currentWarehouseId === nextWarehouseId) {
@@ -345,12 +350,7 @@
 		selectedWarehouse = null;
 	};
 
-	const openForceWithdrawal = async (
-		e: MouseEvent & {
-			currentTarget: EventTarget & HTMLButtonElement;
-		},
-		data: InventoryTableData<"book">
-	) => {
+	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
 		const unavailableWarehouses = warehouses.filter((w) => {
 			const stockInfo = data.availableWarehouses?.get(w.id);
 			return !stockInfo || stockInfo.quantity <= 0;
@@ -776,6 +776,23 @@
 								</div>
 							</PopoverWrapper>
 						</div>
+						<WarehouseSelect
+							slot="warehouse-select"
+							warehouseList={warehouses}
+							let:row
+							data={row}
+							on:change={(event) => editWarehouse(event, row)}
+						>
+							<button
+								let:open
+								use:melt={$forceWithdrawalDialogTrigger}
+								slot="force-withdrawal"
+								on:m-click={() => {
+									openForceWithdrawal(row);
+									open.set(false);
+								}}>Force Withdrawal</button
+							>
+						</WarehouseSelect>
 					</OutboundTable>
 				</div>
 
@@ -817,6 +834,20 @@
 					? ` A reconciliation note will be created for ${row.quantity} books in ${selectedWarehouse.displayName}`
 					: "No warehouse selected"}
 			</p>
+		</div>
+		<div class="stretch flex w-full gap-x-4 p-6">
+			<div class="basis-fit">
+				<button on:click={() => forceWithdrawalDialogOpen.set(false)} class="btn-secondary btn-outline btn-lg btn" type="button"
+					>Cancel</button
+				>
+			</div>
+
+			<div class="grow">
+				<button on:click={() => forceUpdateRowWarehouse(row)} class="btn-primary btn-lg btn w-full">
+					<Save aria-hidden="true" focusable="false" size={20} />
+					Confirm
+				</button>
+			</div>
 		</div>
 	</PageCenterDialog>
 {/if}

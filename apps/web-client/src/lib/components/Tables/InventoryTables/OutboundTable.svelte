@@ -108,9 +108,9 @@
 						{year}
 					</td>
 					<td data-property="warehouseName" class="table-cell-max">
-						<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
-						<button on:click={(e) => openForceWithdrawalDialog(e, row)}>Force Withdrawal</button></td
-					>
+						<!-- <WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} /> -->
+						<slot {row} {rowIx} name="warehouse-select"></slot>
+					</td>
 					<td data-property="category" class="show-col-md table-cell-max">
 						{category}
 					</td>
