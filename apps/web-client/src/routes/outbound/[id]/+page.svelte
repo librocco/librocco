@@ -36,7 +36,7 @@
 		type WarehouseChangeDetail
 	} from "$lib/components";
 	import { Page } from "$lib/controllers";
-	import { defaultDialogConfig } from "$lib/components/Melt";
+	import { defaultDialogConfig, PageCenterDialog } from "$lib/components/Melt";
 
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import {
@@ -799,34 +799,26 @@
 
 {#if $forceWithdrawalDialogOpen && forceWithdrawalDialogData}
 	{@const { row, unavailableWarehouses } = forceWithdrawalDialogData}
-	<div use:melt={$forceWithdrawalDialogPortalled}>
-		<div use:melt={$forceWithdrawalDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
-		<div
-			class="fixed left-[50%] top-[50%] z-50 w-full max-w-md
-translate-x-[-50%] translate-y-[-50%]"
-		>
-			<Dialog dialog={forceWithdrawalDialog} type="commit" onConfirm={() => forceUpdateRowWarehouse(row)}>
-				<svelte:fragment slot="title"
-					>Force withdrawal for
-					{row.isbn}</svelte:fragment
-				>
-				<svelte:fragment slot="description">
-					<p class="mb-4">This book is out of stock. Select a warehouse to perform a force withdrawal.</p>
-					<select id="warehouse-force-withdrawal" bind:value={selectedWarehouse} class="select-bordered select w-full">
-						<option disabled selected>Select a warehouse</option>
-						{#each unavailableWarehouses as warehouse}
-							<option value={warehouse}>{warehouse.displayName}</option>
-						{/each}
-					</select>
-					<p>
-						{selectedWarehouse
-							? ` A reconciliation note will be created for ${row.quantity} books in ${selectedWarehouse.displayName}`
-							: "No warehouse selected"}
-					</p>
-				</svelte:fragment>
-			</Dialog>
+	<PageCenterDialog dialog={forceWithdrawalDialog} title="" description="">
+		<div>
+			Force withdrawal for
+			{row.isbn}
 		</div>
-	</div>
+		<div>
+			<p class="mb-4">This book is out of stock. Select a warehouse to perform a force withdrawal.</p>
+			<select id="warehouse-force-withdrawal" bind:value={selectedWarehouse} class="select-bordered select w-full">
+				<option disabled selected>Select a warehouse</option>
+				{#each unavailableWarehouses as warehouse}
+					<option value={warehouse}>{warehouse.displayName}</option>
+				{/each}
+			</select>
+			<p>
+				{selectedWarehouse
+					? ` A reconciliation note will be created for ${row.quantity} books in ${selectedWarehouse.displayName}`
+					: "No warehouse selected"}
+			</p>
+		</div>
+	</PageCenterDialog>
 {/if}
 
 {#if $confirmDialogOpen}
