@@ -119,5 +119,6 @@
 				{/if}
 			</div>
 		{/each}
+		<slot {open} name="force-withdrawal"></slot>
 	</div>
 {/if}
