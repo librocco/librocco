@@ -13,6 +13,7 @@ import { base } from "$app/paths";
 
 import { loadLocaleAsync } from "@librocco/shared/i18n-util.async";
 import { setLocale } from "@librocco/shared/i18n-svelte";
+import { loadedLocales } from "@librocco/shared/i18n-util";
 import { locales } from "@librocco/shared/i18n-util";
 
 import { appPath } from "$lib/paths";
@@ -46,6 +47,10 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
+		// No need to `await` this here: it's ok if it completes later
+		// Actually, maybe I'm being paranoid, but awaiting means we're guaranteed the
+		// overrides will be ready before the first paint
+		await loadTranslationsOverrides();
 		// For debug purposes and manual overrides (e.g. 'schema_version')
 		window["getDB"] = getDB;
 
@@ -77,3 +82,28 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	return { dbCtx: null, plugins, error: null };
 };
+
+async function loadTranslationsOverrides() {
+	const urlParams = new URLSearchParams(window.location.search);
+	const overrideTranslationsIt = urlParams.get("override-translations-it");
+	if (overrideTranslationsIt !== null) {
+		console.log("Loading Italian translation overrides");
+		const response = await fetch(overrideTranslationsIt);
+		const overrides = await response.json();
+		deepMergeInPlace(loadedLocales.it, overrides);
+	}
+}
+
+function deepMergeInPlace(target, source) {
+	Object.keys(source).forEach((key) => {
+		if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+			if (!target[key] || typeof target[key] !== "object") {
+				target[key] = {};
+			}
+			deepMergeInPlace(target[key], source[key]);
+		} else {
+			target[key] = source[key];
+		}
+	});
+	return target;
+}
