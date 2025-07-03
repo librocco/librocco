@@ -52,6 +52,7 @@ process_package "$VLCN_ROOT/packages/ws-browserdb"
 process_package "$VLCN_ROOT/packages/ws-server"
 process_package "$VLCN_ROOT/packages/rx-tbl"
 process_package "$VLCN_ROOT/deps/cr-sqlite/core"
+process_package "$VLCN_ROOT/deps/wa-sqlite"
 echo '::endgroup::'
 
 echo "All packages built and copied to $ARTEFACTS_DIR"
