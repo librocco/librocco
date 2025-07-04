@@ -13,8 +13,15 @@
 
 	import { dbid, syncConfig, syncActive } from "$lib/db";
 
-	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
-	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
+	import {
+		DeviceSettingsForm,
+		SyncSettingsForm,
+		DatabaseDeleteForm,
+		databaseCreateSchema,
+		DatabaseCreateForm,
+		DevSettingsForm
+	} from "$lib/forms";
+	import { deviceSettingsSchema, devSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 	import { Page } from "$lib/controllers";
 
 	import { type DialogContent } from "$lib/types";
@@ -22,6 +29,7 @@
 	import { VERSION } from "$lib/constants";
 	import { invalidateAll } from "$app/navigation";
 	import { deviceSettingsStore } from "$lib/stores/app";
+	import { devSettingsStore, customTranslationsActive } from "$lib/stores/dev";
 	import { LL } from "@librocco/shared/i18n-svelte";
 	import { clearDb } from "$lib/db/cr-sqlite/db";
 
@@ -310,6 +318,32 @@
 							class="btn-primary btn">{tSettings.labels.new()}</button
 						>
 					</div>
+				</div>
+			</div>
+
+			<div class="flex flex-col gap-6 px-4 pb-20 md:flex-row">
+				<div class="basis-1/3">
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{tSettings.headings.development()}</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.development()}</p>
+				</div>
+				<div class="w-full basis-2/3">
+					<DevSettingsForm
+						active={customTranslationsActive}
+						data={data.devSettingsForm}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: zod(devSettingsSchema),
+							validationMethod: "submit-only",
+							onUpdated: ({ form: { data, valid } }) => {
+								if (valid) {
+									devSettingsStore.set(data);
+									// Invalidating all in order to refresh the form data (done within the load function)
+									invalidateAll();
+								}
+							}
+						}}
+					/>
 				</div>
 			</div>
 

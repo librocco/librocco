@@ -986,6 +986,10 @@ type RootTranslation = {
 			 * D​a​t​a​b​a​s​e​ ​m​a​n​a​g​e​m​e​n​t
 			 */
 			db_management: string
+			/**
+			 * D​e​v​e​l​o​p​m​e​n​t
+			 */
+			development: string
 		}
 		descriptions: {
 			/**
@@ -1004,6 +1008,10 @@ type RootTranslation = {
 			 * M​a​n​a​g​e​ ​c​o​n​n​e​c​t​i​o​n​s​ ​t​o​ ​e​x​t​e​r​n​a​l​ ​d​e​v​i​c​e​s
 			 */
 			device_settings: string
+			/**
+			 * M​a​n​a​g​e​ ​d​e​v​e​l​o​p​m​e​n​t​ ​s​e​t​t​i​n​g​s
+			 */
+			development: string
 		}
 		actions: {
 			/**
@@ -2238,6 +2246,42 @@ type RootTranslation = {
 			aria: {
 				/**
 				 * E​d​i​t​ ​r​e​m​o​t​e​ ​d​a​t​a​b​a​s​e​ ​c​o​n​n​e​c​t​i​o​n​ ​c​o​n​f​i​g
+				 */
+				form: string
+			}
+		}
+		dev_settings: {
+			labels: {
+				/**
+				 * W​e​b​l​a​t​e​ ​c​o​m​p​o​n​e​n​t​ ​U​R​L
+				 */
+				translations_url: string
+				/**
+				 * U​R​L​ ​t​o​ ​a​ ​w​e​b​l​a​t​e​ ​c​o​m​p​o​n​e​n​t​.​ ​L​i​k​e​ ​h​t​t​p​s​:​/​/​w​e​b​l​a​t​e​.​c​o​d​e​m​y​r​i​a​d​.​i​o​/​p​r​o​j​e​c​t​s​/​l​i​b​r​o​c​c​o​/​w​e​b​-​c​l​i​e​n​t​/​.
+				 */
+				translations_url_description_line1: string
+				/**
+				 * I​t​ ​w​i​l​l​ ​b​e​ ​u​s​e​d​ ​t​o​ ​i​n​f​e​r​ ​t​r​a​n​s​l​a​t​i​o​n​ ​U​R​L​s​ ​f​o​r​ ​e​a​c​h​ ​l​a​n​g​u​a​g​e
+				 */
+				translations_url_description_line2: string
+				/**
+				 * S​a​v​e
+				 */
+				save: string
+				custom_translations_status: {
+					/**
+					 * O​N
+					 */
+					enabled: string
+					/**
+					 * O​F​F
+					 */
+					disabled: string
+				}
+			}
+			aria: {
+				/**
+				 * E​d​i​t​ ​d​e​v​ ​s​e​t​t​i​n​g​s
 				 */
 				form: string
 			}
@@ -3588,6 +3632,10 @@ export type TranslationFunctions = {
 			 * Database management
 			 */
 			db_management: () => LocalizedString
+			/**
+			 * Development
+			 */
+			development: () => LocalizedString
 		}
 		descriptions: {
 			/**
@@ -3606,6 +3654,10 @@ export type TranslationFunctions = {
 			 * Manage connections to external devices
 			 */
 			device_settings: () => LocalizedString
+			/**
+			 * Manage development settings
+			 */
+			development: () => LocalizedString
 		}
 		actions: {
 			/**
@@ -4823,6 +4875,42 @@ export type TranslationFunctions = {
 			aria: {
 				/**
 				 * Edit remote database connection config
+				 */
+				form: () => LocalizedString
+			}
+		}
+		dev_settings: {
+			labels: {
+				/**
+				 * Weblate component URL
+				 */
+				translations_url: () => LocalizedString
+				/**
+				 * URL to a weblate component. Like https://weblate.codemyriad.io/projects/librocco/web-client/.
+				 */
+				translations_url_description_line1: () => LocalizedString
+				/**
+				 * It will be used to infer translation URLs for each language
+				 */
+				translations_url_description_line2: () => LocalizedString
+				/**
+				 * Save
+				 */
+				save: () => LocalizedString
+				custom_translations_status: {
+					/**
+					 * ON
+					 */
+					enabled: () => LocalizedString
+					/**
+					 * OFF
+					 */
+					disabled: () => LocalizedString
+				}
+			}
+			aria: {
+				/**
+				 * Edit dev settings
 				 */
 				form: () => LocalizedString
 			}

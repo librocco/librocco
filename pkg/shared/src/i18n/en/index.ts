@@ -609,13 +609,15 @@ const settings_page = {
 		settings: "Settings",
 		device_settings: "Device settings",
 		sync_settings: "Sync settings",
-		db_management: "Database management"
+		db_management: "Database management",
+		development: "Development"
 	},
 	descriptions: {
 		sync_settings: "Manage DB name, sync URL and the connection. Note: This will be merged with DB selection in the future",
 		db_management: "Use this section to create, select, import, export or delete a database",
 		import: "Drag and drop your .sqlite3 file here to import",
-		device_settings: "Manage connections to external devices"
+		device_settings: "Manage connections to external devices",
+		development: "Manage development settings"
 	},
 	actions: {
 		nuke_and_resync: "Nuke and resync"
@@ -837,6 +839,21 @@ const forms = {
 		},
 		aria: {
 			form: "Edit remote database connection config"
+		}
+	},
+	dev_settings: {
+		labels: {
+			translations_url: "Weblate component URL",
+			translations_url_description_line1: "URL to a weblate component. Like https://weblate.codemyriad.io/projects/librocco/web-client/.",
+			translations_url_description_line2:  "It will be used to infer translation URLs for each language",
+			save: "Save",
+			custom_translations_status: {
+				enabled: "ON",
+				disabled: "OFF"
+			}
+		},
+		aria: {
+			form: "Edit dev settings"
 		}
 	},
 	device_settings: {
