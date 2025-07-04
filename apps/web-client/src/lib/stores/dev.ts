@@ -12,4 +12,3 @@ export const customTranslationsActive = writable(false);
 devSettingsStore.subscribe(({ customTranslations }) => {
 	customTranslationsActive.set(customTranslations);
 });
-

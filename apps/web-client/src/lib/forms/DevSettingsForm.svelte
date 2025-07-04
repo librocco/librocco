@@ -36,9 +36,13 @@
 
 	<div class="flex items-center justify-between gap-x-2">
 		<div class="flex items-center gap-x-2">
-			<span class="w-10 text-center {$active ? '' : 'font-bold text-error'}">{$LL.forms.dev_settings.labels.custom_translations_status.disabled()}</span>
+			<span class="w-10 text-center {$active ? '' : 'font-bold text-error'}"
+				>{$LL.forms.dev_settings.labels.custom_translations_status.disabled()}</span
+			>
 			<input type="checkbox" bind:checked={$active} class="toggle" />
-			<span class="w-10 text-center {$active ? 'font-bold text-success' : ''}">{$LL.forms.dev_settings.labels.custom_translations_status.enabled()}</span>
+			<span class="w-10 text-center {$active ? 'font-bold text-success' : ''}"
+				>{$LL.forms.dev_settings.labels.custom_translations_status.enabled()}</span
+			>
 		</div>
 
 		<button type="submit" class="btn-primary btn disabled:btn-disabled" disabled={!hasChanges}>
