@@ -844,6 +844,7 @@ const forms = {
 	dev_settings: {
 		labels: {
 			translations_url: "Weblate component URL",
+			translations_api_key: "Weblate API key (optional, rate limited to 100 per day if not provided)",
 			translations_url_description_line1: "URL to a weblate component. Like https://weblate.codemyriad.io/projects/librocco/web-client/.",
 			translations_url_description_line2:  "It will be used to infer translation URLs for each language",
 			save: "Save",
