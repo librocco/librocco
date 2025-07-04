@@ -714,7 +714,6 @@
 				<div>
 					<OutboundTable
 						{table}
-						warehouseList={warehouses}
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
 						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
 						on:open-force-withdrawal-dialog={({ detail: { event, row } }) => openForceWithdrawal(event, row)}
@@ -776,23 +775,19 @@
 								</div>
 							</PopoverWrapper>
 						</div>
-						<WarehouseSelect
-							slot="warehouse-select"
-							warehouseList={warehouses}
-							let:row
-							data={row}
-							on:change={(event) => editWarehouse(event, row)}
-						>
-							<button
-								let:open
-								use:melt={$forceWithdrawalDialogTrigger}
-								slot="force-withdrawal"
-								on:m-click={() => {
-									openForceWithdrawal(row);
-									open.set(false);
-								}}>Force Withdrawal</button
-							>
-						</WarehouseSelect>
+						<div slot="warehouse-select" let:row let:rowIx>
+							<WarehouseSelect warehouseList={warehouses} data={row} on:change={(event) => editWarehouse(event, row)}>
+								<button
+									let:open
+									use:melt={$forceWithdrawalDialogTrigger}
+									slot="force-withdrawal"
+									on:m-click={() => {
+										openForceWithdrawal(row);
+										open.set(false);
+									}}>Force Withdrawal</button
+								>
+							</WarehouseSelect>
+						</div>
 					</OutboundTable>
 				</div>
 
