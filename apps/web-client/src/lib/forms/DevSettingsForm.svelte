@@ -33,13 +33,23 @@
 			</label>
 		</div>
 	</div>
+	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
+		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
+			<label class="form-control basis-full">
+				<div class="label">
+					<span class="label-text">{$LL.forms.dev_settings.labels.translations_api_key()}</span>
+				</div>
+				<input id="url" name="translationsAPIKey" bind:value={$formStore.translationsAPIKey} class="input-bordered input w-full" />
+			</label>
+		</div>
+	</div>
 
 	<div class="flex items-center justify-between gap-x-2">
 		<div class="flex items-center gap-x-2">
 			<span class="w-10 text-center {$active ? '' : 'font-bold text-error'}"
 				>{$LL.forms.dev_settings.labels.custom_translations_status.disabled()}</span
 			>
-			<input type="checkbox" bind:checked={$active} class="toggle" />
+			<input name="customTranslations" type="checkbox" bind:checked={$active} class="toggle" />
 			<span class="w-10 text-center {$active ? 'font-bold text-success' : ''}"
 				>{$LL.forms.dev_settings.labels.custom_translations_status.enabled()}</span
 			>

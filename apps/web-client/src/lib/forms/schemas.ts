@@ -10,6 +10,7 @@ export const deviceSettingsSchema = z.object({
 export type DevSettingsSchema = Infer<typeof devSettingsSchema>;
 export const devSettingsSchema = z.object({
 	translationsUrl: z.string(),
+	translationsAPIKey: z.string(),
 	customTranslations: z.boolean()
 });
 

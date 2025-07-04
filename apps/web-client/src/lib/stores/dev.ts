@@ -4,6 +4,7 @@ import { writable } from "svelte/store";
 
 export const devSettingsStore = persisted<DevSettingsSchema>("dev-settings", {
 	translationsUrl: "",
+	translationsAPIKey: "",
 	customTranslations: false
 });
 
