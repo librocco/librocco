@@ -20,7 +20,6 @@
 	import type { DialogContent } from "$lib/types";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
-	export let warehouseList: Warehouse[];
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
