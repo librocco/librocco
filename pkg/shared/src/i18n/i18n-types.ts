@@ -2257,6 +2257,10 @@ type RootTranslation = {
 				 */
 				translations_url: string
 				/**
+				 * W​e​b​l​a​t​e​ ​A​P​I​ ​k​e​y​ ​(​o​p​t​i​o​n​a​l​,​ ​r​a​t​e​ ​l​i​m​i​t​e​d​ ​t​o​ ​1​0​0​ ​p​e​r​ ​d​a​y​ ​i​f​ ​n​o​t​ ​p​r​o​v​i​d​e​d​)
+				 */
+				translations_api_key: string
+				/**
 				 * U​R​L​ ​t​o​ ​a​ ​w​e​b​l​a​t​e​ ​c​o​m​p​o​n​e​n​t​.​ ​L​i​k​e​ ​h​t​t​p​s​:​/​/​w​e​b​l​a​t​e​.​c​o​d​e​m​y​r​i​a​d​.​i​o​/​p​r​o​j​e​c​t​s​/​l​i​b​r​o​c​c​o​/​w​e​b​-​c​l​i​e​n​t​/​.
 				 */
 				translations_url_description_line1: string
@@ -4885,6 +4889,10 @@ export type TranslationFunctions = {
 				 * Weblate component URL
 				 */
 				translations_url: () => LocalizedString
+				/**
+				 * Weblate API key (optional, rate limited to 100 per day if not provided)
+				 */
+				translations_api_key: () => LocalizedString
 				/**
 				 * URL to a weblate component. Like https://weblate.codemyriad.io/projects/librocco/web-client/.
 				 */
