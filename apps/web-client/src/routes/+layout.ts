@@ -13,7 +13,6 @@ import { base } from "$app/paths";
 
 import { loadLocaleAsync } from "@librocco/shared/i18n-util.async";
 import { setLocale } from "@librocco/shared/i18n-svelte";
-import { loadedLocales } from "@librocco/shared/i18n-util";
 import { locales } from "@librocco/shared/i18n-util";
 
 import { appPath } from "$lib/paths";

@@ -3,7 +3,7 @@ import { devSettingsStore } from "$lib/stores/dev";
 
 async function loadTranslationsOverrides(value) {
 	const { translationsAPIKey, customTranslations, translationsUrl } = value;
-	console.log("Ignoring customTranslations for now: it's not persisted because of a form bug (I think)");
+	console.log("Ignoring customTranslations for now: it's not persisted because of a form bug (I think)", customTranslations);
 	if (!translationsUrl) {
 		return;
 	}
@@ -38,7 +38,8 @@ async function loadTranslationsOverrides(value) {
 }
 
 export async function initTranslationsOverrides() {
-	const unsubscribe = devSettingsStore.subscribe(loadTranslationsOverrides);
+	// const unsubscribe =
+	devSettingsStore.subscribe(loadTranslationsOverrides);
 	// HElp! When do I unsubscribe?
 }
 
@@ -72,6 +73,7 @@ export function getLanguageUrl(baseUrl: string, language: string) {
 		return new URL(newPath, url.origin).href;
 	} catch (e) {
 		// Invalid URL will throw, so catch and return empty string
+		console.error(e);
 		return "";
 	}
 }
