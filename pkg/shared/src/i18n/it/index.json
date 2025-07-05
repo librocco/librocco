@@ -399,8 +399,8 @@
             "suppliers": ""
         },
         "tabs": {
-            "unordered": "",
-            "ordered": "",
+            "unordered": "Da ordinare",
+            "ordered": "Ordinati",
             "reconciling": "",
             "completed": ""
         },
