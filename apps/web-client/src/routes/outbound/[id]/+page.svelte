@@ -713,7 +713,7 @@
 						{table}
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
 						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
-						on:open-force-withdrawal-dialog={({ detail: { event, row } }) => openForceWithdrawal(event, row)}
+						on:open-force-withdrawal-dialog={({ detail: { row } }) => openForceWithdrawal(row)}
 					>
 						<div id="row-actions" slot="row-actions" let:row let:rowIx>
 							{@const editTrigger = isBookRow(row) ? $editBookDialogTrigger : $customItemDialogTrigger}
@@ -773,17 +773,19 @@
 							</PopoverWrapper>
 						</div>
 						<svelte:fragment slot="warehouse-select" let:editWarehouse let:row let:rowIx>
-							<WarehouseSelect {row} {rowIx} warehouseList={warehouses} on:change={(event) => editWarehouse(event, row)}>
-								<button
-									let:open
-									use:melt={$forceWithdrawalDialogTrigger}
-									slot="force-withdrawal"
-									on:m-click={() => {
-										openForceWithdrawal(row);
-										open.set(false);
-									}}>{tOutbound.labels.force_withdrawal()}</button
-								>
-							</WarehouseSelect>
+							{#if isBookRow(row)}
+								<WarehouseSelect {row} {rowIx} warehouseList={warehouses} on:change={(event) => editWarehouse(event, row)}>
+									<button
+										let:open
+										use:melt={$forceWithdrawalDialogTrigger}
+										slot="force-withdrawal"
+										on:m-click={() => {
+											openForceWithdrawal(row);
+											open.set(false);
+										}}>{tOutbound.labels.force_withdrawal()}</button
+									>
+								</WarehouseSelect>
+							{/if}
 						</svelte:fragment>
 					</OutboundTable>
 				</div>
