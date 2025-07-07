@@ -108,7 +108,9 @@
 					</td>
 					<td data-property="warehouseName" class="table-cell-max">
 						<!-- <WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} /> -->
-						<slot {row} {rowIx} name="warehouse-select"></slot>
+						{#if $$slots["warehouse-select"]}
+							<slot {editWarehouse} {row} {rowIx} name="warehouse-select"></slot>
+						{/if}
 					</td>
 					<td data-property="category" class="show-col-md table-cell-max">
 						{category}
