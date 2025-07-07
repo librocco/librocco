@@ -34,6 +34,8 @@ This auto-generates the required i18n support files:
 - formatters.ts
 
 These ensure type safety and autocompletion throughout your app.
+For these changes to be picked up in other packages besides `shared`,
+you need to run `rushx build` in this package.
 
 ### 3. Export JSON for Translators
 
