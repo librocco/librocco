@@ -310,8 +310,8 @@
 		const totalScanned = bookRows.get(isbn)?.get(nextWarehouseId) || 0 + currentWarehouseScannedQuantity;
 
 		if (totalScanned > nextWarehouseAvailableQuantity) {
-			alertMessage =
-				"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse";
+			alertMessage = $LL.sale_note.alerts.insufficient_quantity();
+			// "The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse";
 			/** @TODO don't update the dropdown value to the selected wh  */
 			// 2 < 3
 		} else if (nextWarehouseAvailableQuantity < currentWarehouseScannedQuantity) {
@@ -781,7 +781,7 @@
 									on:m-click={() => {
 										openForceWithdrawal(row);
 										open.set(false);
-									}}>Force Withdrawal</button
+									}}>{tOutbound.labels.force_withdrawal()}</button
 								>
 							</WarehouseSelect>
 						</svelte:fragment>
@@ -810,11 +810,10 @@
 	{@const { row, unavailableWarehouses } = forceWithdrawalDialogData}
 	<PageCenterDialog dialog={forceWithdrawalDialog} title="" description="">
 		<div>
-			Force withdrawal for
-			{row.isbn}
+			{`${tOutbound.force_withdrawal_dialog.title()} 	${row.isbn}`}
 		</div>
 		<div>
-			<p class="mb-4">This book is out of stock. Select a warehouse to perform a force withdrawal.</p>
+			<p class="mb-4">{tOutbound.force_withdrawal_dialog.description()}</p>
 			<select id="warehouse-force-withdrawal" bind:value={selectedWarehouse} class="select-bordered select w-full">
 				<option disabled selected>Select a warehouse</option>
 				{#each unavailableWarehouses as warehouse}
@@ -823,21 +822,24 @@
 			</select>
 			<p>
 				{selectedWarehouse
-					? ` A reconciliation note will be created for ${row.quantity} books in ${selectedWarehouse.displayName}`
-					: "No warehouse selected"}
+					? tOutbound.force_withdrawal_dialog.selected_warehouse_message({
+							quantity: row.quantity,
+							displayName: selectedWarehouse.displayName
+						})
+					: tOutbound.force_withdrawal_dialog.no_warehouse_selected()}
 			</p>
 		</div>
 		<div class="stretch flex w-full gap-x-4 p-6">
 			<div class="basis-fit">
 				<button on:click={() => forceWithdrawalDialogOpen.set(false)} class="btn-secondary btn-outline btn-lg btn" type="button"
-					>Cancel</button
+					>{tOutbound.force_withdrawal_dialog.cancel()}</button
 				>
 			</div>
 
 			<div class="grow">
 				<button on:click={() => forceUpdateRowWarehouse(row)} class="btn-primary btn-lg btn w-full">
 					<Save aria-hidden="true" focusable="false" size={20} />
-					Confirm
+					{tOutbound.force_withdrawal_dialog.confirm()}
 				</button>
 			</div>
 		</div>

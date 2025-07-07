@@ -105,7 +105,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
-	// TODO: quick fix for a failing step. Both buttons should be iy accessible label
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
 	await content.table("outbound-note").row(0).getByRole("button").click();
 	await page.getByTestId("edit-row").click();
 

@@ -639,6 +639,34 @@ type RootTranslation = {
 			 */
 			quantity: string
 		}
+		force_withdrawal_dialog: {
+			/**
+			 * F​o​r​c​e​ ​w​i​t​h​d​r​a​w​a​l​ ​f​o​r
+			 */
+			title: string
+			/**
+			 * C​a​n​c​e​l
+			 */
+			cancel: string
+			/**
+			 * C​o​n​f​i​r​m
+			 */
+			confirm: string
+			/**
+			 * T​h​i​s​ ​b​o​o​k​ ​i​s​ ​o​u​t​ ​o​f​ ​s​t​o​c​k​.​ ​S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​p​e​r​f​o​r​m​ ​a​ ​f​o​r​c​e​ ​w​i​t​h​d​r​a​w​a​l​.
+			 */
+			description: string
+			/**
+			 *  ​A​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n​ ​n​o​t​e​ ​w​i​l​l​ ​b​e​ ​c​r​e​a​t​e​d​ ​f​o​r​ ​{​q​u​a​n​t​i​t​y​}​ ​b​o​o​k​s​ ​i​n​ ​{​d​i​s​p​l​a​y​N​a​m​e​}
+			 * @param {unknown} displayName
+			 * @param {unknown} quantity
+			 */
+			selected_warehouse_message: RequiredParams<'displayName' | 'quantity'>
+			/**
+			 * N​o​ ​w​a​r​e​h​o​u​s​e​ ​s​e​l​e​c​t​e​d
+			 */
+			no_warehouse_selected: string
+		}
 		labels: {
 			/**
 			 * N​e​w​ ​N​o​t​e
@@ -676,6 +704,10 @@ type RootTranslation = {
 			 * C​u​s​t​o​m​ ​i​t​e​m
 			 */
 			custom_item: string
+			/**
+			 * F​o​r​c​e​ ​W​i​t​h​d​r​a​w​a​l
+			 */
+			force_withdrawal: string
 		}
 		stats: {
 			/**
@@ -705,6 +737,12 @@ type RootTranslation = {
 			 * P​l​u​g​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
 			 */
 			scan_description: string
+		}
+		alerts: {
+			/**
+			 * T​h​e​ ​w​a​r​e​h​o​u​s​e​ ​y​o​u​'​r​e​ ​a​t​t​e​m​p​t​i​n​g​ ​t​o​ ​a​s​s​i​g​n​ ​t​o​ ​h​a​s​ ​n​o​ ​m​o​r​e​ ​a​v​a​i​l​a​b​l​e​ ​q​u​a​n​t​i​t​y​,​ ​c​l​i​c​k​ ​F​o​r​c​e​ ​W​i​t​h​d​r​a​w​a​l​ ​t​o​ ​s​e​l​e​c​t​ ​a​n​o​t​h​e​r​ ​w​a​r​e​h​o​u​s​e
+			 */
+			insufficient_quantity: string
 		}
 	}
 	sale_page: {
@@ -3079,6 +3117,32 @@ export type TranslationFunctions = {
 			 */
 			quantity: () => LocalizedString
 		}
+		force_withdrawal_dialog: {
+			/**
+			 * Force withdrawal for
+			 */
+			title: () => LocalizedString
+			/**
+			 * Cancel
+			 */
+			cancel: () => LocalizedString
+			/**
+			 * Confirm
+			 */
+			confirm: () => LocalizedString
+			/**
+			 * This book is out of stock. Select a warehouse to perform a force withdrawal.
+			 */
+			description: () => LocalizedString
+			/**
+			 *  A reconciliation note will be created for {quantity} books in {displayName}
+			 */
+			selected_warehouse_message: (arg: { displayName: unknown, quantity: unknown }) => LocalizedString
+			/**
+			 * No warehouse selected
+			 */
+			no_warehouse_selected: () => LocalizedString
+		}
 		labels: {
 			/**
 			 * New Note
@@ -3116,6 +3180,10 @@ export type TranslationFunctions = {
 			 * Custom item
 			 */
 			custom_item: () => LocalizedString
+			/**
+			 * Force Withdrawal
+			 */
+			force_withdrawal: () => LocalizedString
 		}
 		stats: {
 			/**
@@ -3144,6 +3212,12 @@ export type TranslationFunctions = {
 			 * Plugin your barcode scanner and pull the trigger
 			 */
 			scan_description: () => LocalizedString
+		}
+		alerts: {
+			/**
+			 * The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse
+			 */
+			insufficient_quantity: () => LocalizedString
 		}
 	}
 	sale_page: {
