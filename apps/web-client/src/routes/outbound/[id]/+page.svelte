@@ -102,9 +102,6 @@
 		disposer?.();
 	});
 
-	const dispatch = createEventDispatcher<OutboundTableEvents>();
-	const { editWarehouse } = createOutboundTableEvents(dispatch);
-
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !db;
@@ -775,8 +772,8 @@
 								</div>
 							</PopoverWrapper>
 						</div>
-						<div slot="warehouse-select" let:row let:rowIx>
-							<WarehouseSelect warehouseList={warehouses} data={row} on:change={(event) => editWarehouse(event, row)}>
+						<svelte:fragment slot="warehouse-select" let:editWarehouse let:row let:rowIx>
+							<WarehouseSelect {row} {rowIx} warehouseList={warehouses} on:change={(event) => editWarehouse(event, row)}>
 								<button
 									let:open
 									use:melt={$forceWithdrawalDialogTrigger}
@@ -787,7 +784,7 @@
 									}}>Force Withdrawal</button
 								>
 							</WarehouseSelect>
-						</div>
+						</svelte:fragment>
 					</OutboundTable>
 				</div>
 

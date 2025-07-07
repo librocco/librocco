@@ -13,7 +13,7 @@
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
-	export let data: InventoryTableData<"book">;
+	export let row: InventoryTableData<"book">;
 	export let rowIx: number;
 	export let warehouseList: Omit<Warehouse, "discount">[];
 
@@ -39,7 +39,7 @@
 		}
 	});
 
-	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = data);
+	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = row);
 
 	const mapWarehousesToOptions = (warehouseList: Omit<Warehouse, "discount">[]) =>
 		[...warehouseList].map(({ id, displayName }) => ({ value: id, label: displayName }));
