@@ -1133,7 +1133,9 @@ describe("Reconciliation order deletion", () => {
 					supplier_name: null,
 					total_book_number: 1,
 					total_book_price: 0,
-					reconciliation_order_id: null
+					reconciliation_order_id: null,
+					// There is no associated reconciliation order => no updatedAt
+					reconciliation_last_updated_at: null
 				}
 			]);
 
