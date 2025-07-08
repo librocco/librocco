@@ -64,7 +64,7 @@
 			{#each orders as { supplier_name, created, id, reconciled = false }}
 				{@const placed = new Date(created)}
 
-				<tr class="hover focus-within:bg-base-200 hover:cursor-pointer">
+				<tr>
 					<td class="text-center align-middle">
 						<input
 							disabled={reconciled}
