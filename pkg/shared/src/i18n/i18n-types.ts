@@ -531,11 +531,11 @@ type RootTranslation = {
 			search: string
 			no_orders: {
 				/**
-				 * N​o​ ​c​u​s​t​o​m​e​r​s
+				 * T​h​e​r​e​ ​a​r​e​ ​n​o​ ​c​u​s​t​o​m​e​r​s
 				 */
 				title: string
 				/**
-				 * G​e​t​ ​s​t​a​r​t​e​d​ ​b​y​ ​c​r​e​a​t​i​n​g​ ​a​ ​n​e​w​ ​o​r​d​e​r
+				 * C​r​e​a​t​e​ ​a​ ​n​e​w​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​ ​t​o​ ​g​e​t​ ​s​t​a​r​t​e​d
 				 */
 				description: string
 			}
@@ -1246,7 +1246,11 @@ type RootTranslation = {
 		}
 		placeholder: {
 			/**
-			 * N​o​ ​u​n​o​r​d​e​r​e​d​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s​ ​a​v​a​i​l​a​b​l​e​.​ ​C​r​e​a​t​e​ ​a​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​ ​f​i​r​s​t​ ​t​o​ ​g​e​n​e​r​a​t​e​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s​.
+			 * T​h​e​r​e​ ​a​r​e​ ​n​o​ ​p​e​n​d​i​n​g​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s
+			 */
+			title: string
+			/**
+			 * C​r​e​a​t​e​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​s​ ​t​o​ ​g​e​n​e​r​a​t​e​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s
 			 */
 			description: string
 			/**
@@ -3136,11 +3140,11 @@ export type TranslationFunctions = {
 			search: () => LocalizedString
 			no_orders: {
 				/**
-				 * No customers
+				 * There are no customers
 				 */
 				title: () => LocalizedString
 				/**
-				 * Get started by creating a new order
+				 * Create a new customer order to get started
 				 */
 				description: () => LocalizedString
 			}
@@ -3841,7 +3845,11 @@ export type TranslationFunctions = {
 		}
 		placeholder: {
 			/**
-			 * No unordered supplier orders available. Create a customer order first to generate supplier orders.
+			 * There are no pending supplier orders
+			 */
+			title: () => LocalizedString
+			/**
+			 * Create customer orders to generate supplier orders
 			 */
 			description: () => LocalizedString
 			/**
