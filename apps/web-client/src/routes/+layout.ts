@@ -1,6 +1,6 @@
 import { get } from "svelte/store";
 import { redirect } from "@sveltejs/kit";
-import { navigatorDetector } from "typesafe-i18n/detectors";
+import { detectLocale, navigatorDetector, localStorageDetector } from "typesafe-i18n/detectors";
 
 import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
@@ -13,7 +13,8 @@ import { base } from "$app/paths";
 
 import { loadLocaleAsync } from "@librocco/shared/i18n-util.async";
 import { setLocale } from "@librocco/shared/i18n-svelte";
-import { detectLocale } from "@librocco/shared/i18n-util";
+import { loadedLocales } from "@librocco/shared/i18n-util";
+import { locales } from "@librocco/shared/i18n-util";
 
 import { appPath } from "$lib/paths";
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
@@ -31,17 +32,12 @@ export const load: LayoutLoad = async ({ url }) => {
 		redirect(307, appPath("stock"));
 	}
 
-	// Check for navigator locale or fallback to default defined on the server
-	// ... then load the locale dict
-	// because this is an SPA, the default english dict will be loaded first
-	// then will flash update to user preference lang (as long as we've defined it)
-	// we could look to use /[[lang]] in our routes if we want to change that, see:
-	// - https://kit.svelte.dev/docs/hooks#universal-hooks-reroute
-	// - https://github.com/ivanhofer/typesafe-i18n-demo-sveltekit/tree/main/src/routes
+	// Check for locale stored in localstorage 'lang' key, fallback to the
+	// navigator locale or fallback to default hardcoded in $lib/constants
 	let locale = DEFAULT_LOCALE;
 
 	if (browser) {
-		locale = detectLocale(navigatorDetector);
+		locale = detectLocale(DEFAULT_LOCALE, locales, localStorageDetector, navigatorDetector);
 	}
 
 	await loadLocaleAsync(locale);
@@ -51,6 +47,10 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
+		// No need to `await` this here: it's ok if it completes later
+		// Actually, maybe I'm being paranoid, but awaiting means we're guaranteed the
+		// overrides will be ready before the first paint
+		await loadTranslationsOverrides();
 		// For debug purposes and manual overrides (e.g. 'schema_version')
 		window["getDB"] = getDB;
 
@@ -82,3 +82,28 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	return { dbCtx: null, plugins, error: null };
 };
+
+async function loadTranslationsOverrides() {
+	const urlParams = new URLSearchParams(window.location.search);
+	const overrideTranslationsIt = urlParams.get("override-translations-it");
+	if (overrideTranslationsIt !== null) {
+		console.log("Loading Italian translation overrides");
+		const response = await fetch(overrideTranslationsIt);
+		const overrides = await response.json();
+		deepMergeInPlace(loadedLocales.it, overrides);
+	}
+}
+
+function deepMergeInPlace(target, source) {
+	Object.keys(source).forEach((key) => {
+		if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
+			if (!target[key] || typeof target[key] !== "object") {
+				target[key] = {};
+			}
+			deepMergeInPlace(target[key], source[key]);
+		} else {
+			target[key] = source[key];
+		}
+	});
+	return target;
+}

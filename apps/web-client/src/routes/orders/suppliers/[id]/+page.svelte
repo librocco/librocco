@@ -46,7 +46,6 @@
 		disposer?.();
 	});
 	// #endregion reactivity
-
 	$: goto = racefreeGoto(disposer);
 
 	$: db = data.dbCtx?.db;
@@ -220,12 +219,12 @@
 					</div>
 
 					<div class="w-full">
-						<h2 class="text-lg">Other Supplier Publishers</h2>
+						<h2 class="text-lg">{t.table.other_supplier_publishers()}</h2>
 						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
 							<table class="!my-0 flex-col items-stretch overflow-hidden">
 								<thead>
 									<tr>
-										<th scope="col" class="px-2 py-2">Publisher name</th>
+										<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
 									</tr>
 								</thead>
 								<tbody>
@@ -238,7 +237,7 @@
 														confirmationPublisher = publisher;
 														confirmationDialogOpen.set(true);
 													}}
-													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">Re-assign to supplier</button
+													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">{t.labels.reassign_publisher()}</button
 												></td
 											>
 										</tr>
@@ -310,12 +309,12 @@
 				</div>
 
 				<div class="w-full">
-					<h2 class="text-lg">Other Supplier Publishers</h2>
+					<h2 class="text-lg">{t.table.other_supplier_publishers()}</h2>
 					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
 						<table class="!my-0 flex-col items-stretch overflow-hidden">
 							<thead>
 								<tr>
-									<th scope="col" class="px-2 py-2">Publisher name</th>
+									<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -328,7 +327,7 @@
 													confirmationPublisher = publisher;
 													confirmationDialogOpen.set(true);
 												}}
-												class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">Re-assign to supplier</button
+												class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">{t.labels.reassign_publisher()}</button
 											></td
 										>
 									</tr>
@@ -377,8 +376,8 @@
 			confirmationDialogOpen.set(false);
 		}}
 		on:cancel={() => confirmationDialogOpen.set(false)}
-		heading="Re-assign publisher"
-		description="Are you sure you want to remove {confirmationPublisher} from its previous supplier and assign it to {supplier.name}?"
+		heading={t.dialogs.reassign_publisher.title()}
+		description={t.dialogs.reassign_publisher.description({ publisher: confirmationPublisher, supplier: supplier.name })}
 	/>
 </PageCenterDialog>
 

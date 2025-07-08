@@ -119,6 +119,11 @@ const supplierOrders: FixtureSupplierOrder[] = [
 	}
 ];
 
+type BaseTestFixture = {
+	t: TranslationFunctions;
+	locale: Locales;
+};
+
 type InventoryTestFixture = {
 	dbHandle: JSHandle<DB>;
 
@@ -135,8 +140,6 @@ type InventoryTestFixture = {
 	 */
 	books: BookData[];
 	warehouses: Warehouse[];
-	t: TranslationFunctions;
-	locale: Locales;
 };
 type OrderTestFixture = {
 	dbHandle: JSHandle<DB>;
@@ -242,7 +245,7 @@ type OrderTestFixture = {
 	locale: Locales;
 };
 
-export const testBase = test.extend({
+export const testBase = test.extend<BaseTestFixture>({
 	page: async ({ page }, use) => {
 		// Make sure the DB schema is initialised before running any tests
 		// This is here to prevent partial initialisation (and subsequent conflicts when reinitialising the, partially initialised, schema)
@@ -267,6 +270,13 @@ export const testBase = test.extend({
 		};
 
 		await use(page);
+	},
+	t: ({ locale }, use) => {
+		loadLocale(locale);
+
+		const t = i18nObject(locale);
+
+		use(t);
 	}
 });
 
@@ -291,13 +301,6 @@ export const testInventory = testBase.extend<InventoryTestFixture>({
 			await dbHandle.evaluate(upsertWarehouse, warehouse);
 		}
 		await use(warehouses);
-	},
-	t: ({ locale }, use) => {
-		loadLocale(locale);
-
-		const t = i18nObject(locale);
-
-		use(t);
 	}
 });
 

@@ -19,8 +19,12 @@ yarn.lock
 /dist
 /package
 
-# Ignore generated i18n type definitions
+# Ignore generated i18n type definitions and sources
+formatters.ts
+i18n-svelte.ts
 i18n-types.ts
 i18n-util.async.ts
 i18n-util.sync.ts
 i18n-util.ts
+src/i18n/**/*.ts
+src/i18n/**/*.json

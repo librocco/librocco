@@ -1633,7 +1633,7 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 
 	// navigate to customer order view
 	await page.goto(appHash("customers"));
-	await table.getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+	await table.getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Edit" }).click();
 
 	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
 	await expect(table.getByText("Delivered")).toHaveCount(2);
@@ -1922,7 +1922,7 @@ testOrders(
 		// await page.goto(`${baseURL}orders/customers/${customers[0].id}/`);
 		await page.goto(appHash("customers"));
 		await page.getByText(customers[0].fullname).waitFor();
-		await table.getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+		await table.getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Edit" }).click();
 
 		await l1.getByRole("cell", { name: "Pending" }).waitFor();
 		await l2.getByRole("cell", { name: "Placed" }).waitFor();
@@ -1944,7 +1944,7 @@ testOrders(
 		// await page.goto(`${baseURL}orders/customers/${customers[1].id}/`);
 		await page.goto(appHash("customers"));
 		await page.getByText(customers[1].fullname).waitFor();
-		await table.getByRole("row").filter({ hasText: customers[1].fullname }).getByRole("link", { name: "Update" }).click();
+		await table.getByRole("row").filter({ hasText: customers[1].fullname }).getByRole("link", { name: "Edit" }).click();
 
 		await l2.getByRole("cell", { name: "Pending" }).waitFor(); // Rejected
 		await expect(lNotAffected).toHaveCount(3);
@@ -1965,7 +1965,7 @@ testOrders(
 		// await page.goto(`${baseURL}orders/customers/${customers[2].id}/`);
 		await page.goto(appHash("customers"));
 		await page.getByText(customers[2].fullname).waitFor();
-		await table.getByRole("row").filter({ hasText: customers[2].fullname }).getByRole("link", { name: "Update" }).click();
+		await table.getByRole("row").filter({ hasText: customers[2].fullname }).getByRole("link", { name: "Edit" }).click();
 
 		await l1.getByRole("cell", { name: "Pending" }).waitFor();
 		await expect(lNotAffected).toHaveCount(1);

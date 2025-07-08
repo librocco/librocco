@@ -6,13 +6,14 @@ import type { LocaleDetector } from 'typesafe-i18n/detectors'
 import type { LocaleTranslationFunctions, TranslateByString } from 'typesafe-i18n'
 import { detectLocale as detectLocaleFn } from 'typesafe-i18n/detectors'
 import { initExtendDictionary } from 'typesafe-i18n/utils'
-import type { Formatters, Locales, Translations, TranslationFunctions } from './i18n-types'
+import type { Formatters, Locales, Translations, TranslationFunctions } from './i18n-types.js'
 
 export const baseLocale: Locales = 'en'
 
 export const locales: Locales[] = [
 	'de',
-	'en'
+	'en',
+	'it'
 ]
 
 export const isLocale = (locale: string): locale is Locales => locales.includes(locale as Locales)

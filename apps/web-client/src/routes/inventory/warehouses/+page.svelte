@@ -41,8 +41,9 @@
 	$: ({ warehouses, plugins } = data);
 	$: db = data.dbCtx?.db;
 
+	$: tWarehouse = $LL.warehouse_list_page;
+	$: tInventory = $LL.inventory_page.warehouses_tab;
 	$: tCommon = $LL.common;
-	$: tWarehouses = $LL.inventory_page.warehouses_tab;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -117,30 +118,28 @@
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")}>
-			{#if !warehouses.length}
+			{#if !warehouses?.length}
 				<div class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
 						<!-- Start entity list placeholder -->
-						<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse">
+						<PlaceholderBox title={tWarehouse.placeholder.title()} description={tWarehouse.placeholder.description()}>
 							<HousePlus slot="icon" />
 							<button slot="actions" on:click={handleCreateWarehouse} class="btn-primary btn w-full">
-								<span class="button-text">New warehouse</span>
+								{tInventory.labels.create_warehouse()}
 							</button>
 						</PlaceholderBox>
 						<!-- End entity list placeholder -->
 					</div>
 				</div>
 			{:else}
-				<!-- Start entity list -->
 				{#each warehouses as { id, displayName, discount }}
 					{@const href = appPath("warehouses", id)}
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
-							<a data-sveltekit-preload-data="hover" {href} class="entity-list-text-lg text-base-content hover:underline focus:underline"
-								>{displayName}</a
-							>
-
+							<a data-sveltekit-preload-data="hover" {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">
+								{displayName}
+							</a>
 							<div class="flex flex-row gap-x-8 gap-y-2 max-xs:flex-col">
 								<div class="entity-list-text-sm flex items-center gap-x-2 text-sm text-base-content">
 									<Layers size={18} />
@@ -151,7 +150,7 @@
 										{:then warehouseTotals}
 											<span class="">{warehouseTotals.get(id)}</span>
 										{/await}
-										books
+										{tWarehouse.stats.books()}
 									</div>
 								</div>
 
@@ -159,7 +158,7 @@
 									<div class="flex items-center gap-x-2 text-sm text-base-content">
 										<SquarePercent size={18} />
 
-										<span class="entity-list-text-sm">{discount}% discount</span>
+										<span class="entity-list-text-sm">{discount}% {tWarehouse.stats.discount()}</span>
 									</div>
 								{/if}
 							</div>
@@ -167,7 +166,7 @@
 
 						<div class="entity-list-actions">
 							<button on:click={handleCreateInboundNote(id)} class="btn-primary btn-sm btn">
-								<span class="button-text"> {tWarehouses.labels.button_create_purchase()} </span>
+								<span class="button-text"> {tInventory.labels.button_create_purchase()} </span>
 							</button>
 
 							<DropdownWrapper let:separator let:item>
@@ -184,7 +183,7 @@
 									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 								>
 									<Edit aria-hidden size={18} />
-									<span>Edit</span>
+									<span>{tWarehouse.labels.edit()}</span>
 								</div>
 
 								<div {...separator} use:separator.action class="h-[1px] bg-base-300"></div>
@@ -196,7 +195,7 @@
 									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 								>
 									<Table2 aria-hidden size={18} />
-									<span>View Stock</span>
+									<span>{tWarehouse.labels.view_stock()}</span>
 								</a>
 
 								<div
@@ -212,16 +211,14 @@
 									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error"
 								>
 									<Trash2 class="text-error-content" size={18} />
-									<span class="text-error-content">Delete</span>
+									<span class="text-error-content">{tWarehouse.labels.delete()}</span>
 								</div>
 							</DropdownWrapper>
 						</div>
 					</div>
 				{/each}
-				<!-- End entity list -->
 			{/if}
 		</ul>
-		<!-- End entity list contaier -->
 	{/if}
 </InventoryManagementPage>
 
