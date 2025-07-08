@@ -46,7 +46,7 @@
 							</time>
 						</span>
 					</td>
-					<td class="flex items-center justify-evenly gap-x-2 text-right">
+					<td class="whitespace-nowrap text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}>
 							{t.view_order()}
 						</button>

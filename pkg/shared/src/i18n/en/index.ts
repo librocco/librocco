@@ -646,8 +646,8 @@ const supplier_orders_component = {
 		unmatched_books: "Unmatched Books"
 	},
 	completed_table: {
-		supplier_id: "ID",
-		supplier: "Supplier",
+		supplier_id: "Order ID",
+		supplier: "Supplier Name",
 		books: "Books",
 		finalized: "Finalised",
 		actions: "Actions",
@@ -655,16 +655,14 @@ const supplier_orders_component = {
 		view_reconciliation: "View Reconciliation"
 	},
 	ordered_table: {
-		supplier: "Supplier",
-		books: "Books",
+		order_id: "Order ID",
+		select: "Select",
+		supplier: "Supplier Name",
 		placed: "Placed",
 		actions: "Actions",
-		selected_orders_summary: "Selected orders summary",
-		selected_orders: "{ selectedOrders } orders selected",
-		reconcile_selected: "Reconcile Selected",
+		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
-		reconcile: "Reconcile",
-		view_reconciliation: "View Reconciliation"
+		reconcile: "Reconcile"
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",
@@ -675,9 +673,9 @@ const supplier_orders_component = {
 		actions: "Actions"
 	},
 	unordered_table: {
-		supplier_id: "ID",
-		supplier: "Supplier",
-		books: "Books",
+		supplier_id: "Supplier ID",
+		supplier: "Supplier Name",
+		books: "No. of Books",
 		place_order: "Place Order",
 		actions: "Actions"
 	}

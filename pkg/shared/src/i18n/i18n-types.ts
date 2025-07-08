@@ -1602,11 +1602,11 @@ type RootTranslation = {
 		}
 		completed_table: {
 			/**
-			 * I​D
+			 * O​r​d​e​r​ ​I​D
 			 */
 			supplier_id: string
 			/**
-			 * S​u​p​p​l​i​e​r
+			 * S​u​p​p​l​i​e​r​ ​N​a​m​e
 			 */
 			supplier: string
 			/**
@@ -1632,13 +1632,17 @@ type RootTranslation = {
 		}
 		ordered_table: {
 			/**
-			 * S​u​p​p​l​i​e​r
+			 * O​r​d​e​r​ ​I​D
+			 */
+			order_id: string
+			/**
+			 * S​e​l​e​c​t
+			 */
+			select: string
+			/**
+			 * S​u​p​p​l​i​e​r​ ​N​a​m​e
 			 */
 			supplier: string
-			/**
-			 * B​o​o​k​s
-			 */
-			books: string
 			/**
 			 * P​l​a​c​e​d
 			 */
@@ -1648,18 +1652,10 @@ type RootTranslation = {
 			 */
 			actions: string
 			/**
-			 * S​e​l​e​c​t​e​d​ ​o​r​d​e​r​s​ ​s​u​m​m​a​r​y
+			 * R​e​c​o​n​c​i​l​e​ ​{​c​o​u​n​t​}​ ​o​r​d​e​r​{​{​s​}​}
+			 * @param {number} count
 			 */
-			selected_orders_summary: string
-			/**
-			 * {​s​e​l​e​c​t​e​d​O​r​d​e​r​s​}​ ​o​r​d​e​r​s​ ​s​e​l​e​c​t​e​d
-			 * @param {unknown} selectedOrders
-			 */
-			selected_orders: RequiredParams<'selectedOrders'>
-			/**
-			 * R​e​c​o​n​c​i​l​e​ ​S​e​l​e​c​t​e​d
-			 */
-			reconcile_selected: string
+			reconcile_selected: RequiredParams<'count'>
 			/**
 			 * V​i​e​w​ ​O​r​d​e​r
 			 */
@@ -1668,10 +1664,6 @@ type RootTranslation = {
 			 * R​e​c​o​n​c​i​l​e
 			 */
 			reconcile: string
-			/**
-			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
-			 */
-			view_reconciliation: string
 		}
 		reconciling_table: {
 			/**
@@ -1701,15 +1693,15 @@ type RootTranslation = {
 		}
 		unordered_table: {
 			/**
-			 * I​D
+			 * S​u​p​p​l​i​e​r​ ​I​D
 			 */
 			supplier_id: string
 			/**
-			 * S​u​p​p​l​i​e​r
+			 * S​u​p​p​l​i​e​r​ ​N​a​m​e
 			 */
 			supplier: string
 			/**
-			 * B​o​o​k​s
+			 * N​o​.​ ​o​f​ ​B​o​o​k​s
 			 */
 			books: string
 			/**
@@ -4213,11 +4205,11 @@ export type TranslationFunctions = {
 		}
 		completed_table: {
 			/**
-			 * ID
+			 * Order ID
 			 */
 			supplier_id: () => LocalizedString
 			/**
-			 * Supplier
+			 * Supplier Name
 			 */
 			supplier: () => LocalizedString
 			/**
@@ -4243,13 +4235,17 @@ export type TranslationFunctions = {
 		}
 		ordered_table: {
 			/**
-			 * Supplier
+			 * Order ID
+			 */
+			order_id: () => LocalizedString
+			/**
+			 * Select
+			 */
+			select: () => LocalizedString
+			/**
+			 * Supplier Name
 			 */
 			supplier: () => LocalizedString
-			/**
-			 * Books
-			 */
-			books: () => LocalizedString
 			/**
 			 * Placed
 			 */
@@ -4259,17 +4255,9 @@ export type TranslationFunctions = {
 			 */
 			actions: () => LocalizedString
 			/**
-			 * Selected orders summary
+			 * Reconcile {count} order{{s}}
 			 */
-			selected_orders_summary: () => LocalizedString
-			/**
-			 * {selectedOrders} orders selected
-			 */
-			selected_orders: (arg: { selectedOrders: unknown }) => LocalizedString
-			/**
-			 * Reconcile Selected
-			 */
-			reconcile_selected: () => LocalizedString
+			reconcile_selected: (arg: { count: number }) => LocalizedString
 			/**
 			 * View Order
 			 */
@@ -4278,10 +4266,6 @@ export type TranslationFunctions = {
 			 * Reconcile
 			 */
 			reconcile: () => LocalizedString
-			/**
-			 * View Reconciliation
-			 */
-			view_reconciliation: () => LocalizedString
 		}
 		reconciling_table: {
 			/**
@@ -4311,15 +4295,15 @@ export type TranslationFunctions = {
 		}
 		unordered_table: {
 			/**
-			 * ID
+			 * Supplier ID
 			 */
 			supplier_id: () => LocalizedString
 			/**
-			 * Supplier
+			 * Supplier Name
 			 */
 			supplier: () => LocalizedString
 			/**
-			 * Books
+			 * No. of Books
 			 */
 			books: () => LocalizedString
 			/**
