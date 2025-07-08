@@ -49,7 +49,7 @@
 						</span>
 					</td>
 					<td class="text-right">
-						<button class="btn-primary btn-sm btn gap-x-2.5" on:click={() => handleUpdateOrder(id)}>
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleUpdateOrder(id)}>
 							{t.continue()}
 							<ListTodo aria-hidden focusable="false" size={20} />
 						</button>

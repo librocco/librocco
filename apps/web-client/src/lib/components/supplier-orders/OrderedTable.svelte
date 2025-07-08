@@ -1,11 +1,14 @@
 <script lang="ts">
-	import ListTodo from "$lucide/list-todo";
-	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
-	import { goto } from "$lib/utils/navigation";
-	import { base } from "$app/paths";
-	import { appHash } from "$lib/paths";
 	import { createEventDispatcher } from "svelte";
+
+	import ListTodo from "$lucide/list-todo";
+
+	import { goto } from "$lib/utils/navigation";
+	import { appHash } from "$lib/paths";
+
 	import LL from "@librocco/shared/i18n-svelte";
+
+	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 
 	export let orders: Array<PlacedSupplierOrder & { reconciled?: boolean }>;
 
@@ -26,100 +29,75 @@
 	async function handleReconcile(supplierOrderIds: number[]) {
 		/** @TODO replace with SOIds */
 		dispatch("reconcile", { supplierOrderIds: supplierOrderIds });
-		// goto(appHash("reconcile", supplierOrderIds));
-		// goto(`${base}/orders/suppliers/reconcile?ids=${supplierId}`);
 	}
+
 	function handleView(supplierOrderId: number) {
 		goto(appHash("supplier_orders", supplierOrderId));
 	}
-	function handleViewReconcileOrder(id: number) {
-		goto(appHash("reconcile", id));
-	}
+
+	$: t = $LL.supplier_orders_component.ordered_table;
 </script>
 
-<div class="overflow-x-auto">
-	<table class="table-pin-rows table-lg table whitespace-nowrap">
+<div class="relative h-full overflow-x-auto">
+	{#if hasSelectedOrders}
+		<div class="absolute right-0 top-0 z-10 w-fit justify-end sm:right-3">
+			<button class="btn-primary btn-sm btn flex-nowrap gap-x-2" on:click={() => handleReconcile(selectedOrders)}>
+				{t.reconcile_selected({ count: selectedOrders.length })}
+				<ListTodo aria-hidden focusable="false" size={20} />
+			</button>
+		</div>
+	{/if}
+
+	<table class="table-sm table-zebra table">
 		<thead>
-			<tr>
-				<th scope="col" class="w-16">
-					<span class="sr-only">Select</span>
+			<tr class="relative">
+				<th scope="col" class="sr-only"> {t.select()} </th>
+				<th scope="col"> {t.order_id()} </th>
+				<th scope="col">{t.supplier()}</th>
+				<th scope="col">{t.placed()}</th>
+				<th scope="col" class="sr-only">
+					{t.actions()}
 				</th>
-				<th scope="col">{$LL.supplier_orders_component.ordered_table.supplier()}</th>
-				<th scope="col">{$LL.supplier_orders_component.ordered_table.books()}</th>
-				<th scope="col">{$LL.supplier_orders_component.ordered_table.placed()}</th>
-				<th scope="col"><span class="sr-only">{$LL.supplier_orders_component.ordered_table.actions()}</span></th>
 			</tr>
 		</thead>
 		<tbody>
-			{#if hasSelectedOrders}
-				<tr aria-live="polite" aria-atomic="true" class="bg-base-200">
-					<td role="cell"></td>
-					<th role="columnheader" scope="row">
-						<span class="sr-only">{$LL.supplier_orders_component.ordered_table.selected_orders_summary()}: </span>
-						{$LL.supplier_orders_component.ordered_table.selected_orders({ selectedOrders: selectedOrders.length })}
-					</th>
-					<td role="cell"></td>
-					<td role="cell"></td>
-					<td role="cell" class="text-right">
-						<button
-							class="btn-primary btn-sm btn flex-nowrap gap-x-2"
-							on:click={() => handleReconcile(selectedOrders)}
-							aria-label="Reconcile {selectedOrders.length} selected orders"
-						>
-							<ListTodo aria-hidden focusable="false" size={20} />
+			{#each orders as { supplier_name, created, id, reconciled = false }}
+				{@const placed = new Date(created)}
 
-							{$LL.supplier_orders_component.ordered_table.reconcile_selected()}
-						</button>
-					</td>
-				</tr>
-			{/if}
-			{#each orders as { supplier_name, total_book_number, created, id, reconciled = false, reconciliation_order_id }}
-				<tr class="hover focus-within:bg-base-200">
-					<td>
+				<tr class="hover focus-within:bg-base-200 hover:cursor-pointer">
+					<td class="text-center align-middle">
 						<input
 							disabled={reconciled}
 							type="checkbox"
-							class="checkbox"
+							class="checkbox checkbox-xs"
 							checked={selectedOrders.includes(id)}
 							on:change={() => toggleOrderSelection(id)}
 						/>
 					</td>
+					<th>
+						<span class="font-medium">#{id}</span>
+					</th>
 					<td>{supplier_name}</td>
-					<td>{total_book_number}</td>
 					<td>
 						<span class="badge-primary badge-outline badge">
-							{new Date(created).toLocaleString()}
+							<time dateTime={placed.toISOString()}>{placed.toLocaleString()}</time>
 						</span>
 					</td>
-					<td class="flex items-center justify-evenly text-right">
+					<td class="whitespace-nowrap text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}>
-							{$LL.supplier_orders_component.ordered_table.view_order()}
+							{t.view_order()}
 						</button>
-						{#if !hasSelectedOrders && !reconciled}
-							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile([id])}>
-								<ListTodo aria-hidden focusable="false" size={20} />
-								{$LL.supplier_orders_component.ordered_table.reconcile()}
-							</button>
-						{/if}
-						{#if !hasSelectedOrders && reconciled}
-							<button
-								class="btn-primary btn-sm btn flex-nowrap gap-x-2.5"
-								on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
-							>
-								<ListTodo aria-hidden focusable="false" size={20} />
-								{$LL.supplier_orders_component.ordered_table.view_reconciliation()}
-							</button>
-						{/if}
+						<button
+							class="btn-primary btn-sm btn flex-nowrap gap-x-2.5"
+							on:click={() => handleReconcile([id])}
+							disabled={hasSelectedOrders}
+						>
+							{t.reconcile()}
+							<ListTodo aria-hidden focusable="false" size={20} />
+						</button>
 					</td>
 				</tr>
 			{/each}
 		</tbody>
 	</table>
 </div>
-
-<style>
-	.table-lg td {
-		padding-top: 1rem;
-		padding-bottom: 1rem;
-	}
-</style>
