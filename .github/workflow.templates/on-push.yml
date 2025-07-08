@@ -16,7 +16,42 @@ name: Checks
       - "wip/**"
 
 jobs:
+  test-cr-sqlite:
+    name: Test wa-sqlite (crdt variant)
+    if: contains(github.event.head_commit.message, '[test-wa-sqlite]')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      rebuild: ${{ steps.ts.outputs.rebuild }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+          fetch-depth: 0 #! We need all the history to check artifact date
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install Rust 1.85.0
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: 1.85.0
+          override: true
+      - name: install wasm-pack
+        run: cargo install wasm-pack
+      - name: install pnpm
+        run: npm install -g 'pnpm@<9'
+      - name: Build cr-sqlite
+        run: ./scripts/build_vlcn.sh
+      - name: Check that the build went fine
+        #! Let's leave this without an `if`: it won't hurt and might help debugging
+        run: git status; ls -l 3rd-party/artefacts/
+      - name: Run wa-sqlite tests
+        run: cd 3rd-party/js/deps/wa-sqlite && pnpm test
+
   build-cr-sqlite:
+    name: Build cr-sqlite
     runs-on: ubuntu-latest
     permissions:
       contents: write
