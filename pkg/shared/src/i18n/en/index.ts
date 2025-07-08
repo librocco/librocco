@@ -666,11 +666,12 @@ const supplier_orders_component = {
 		view_reconciliation: "View Reconciliation"
 	},
 	reconciling_table: {
-		order_id: "Order Id",
+		order_id: "Reconciliation ID",
 		supplier_orders: "Supplier Orders",
 		last_updated: "Last Updated",
 		update_order: "Update order",
-		continue: "Continue"
+		continue: "Continue",
+		actions: "Actions"
 	},
 	unordered_table: {
 		supplier_id: "ID",

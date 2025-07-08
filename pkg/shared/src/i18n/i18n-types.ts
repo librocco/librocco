@@ -1671,7 +1671,7 @@ type RootTranslation = {
 		}
 		reconciling_table: {
 			/**
-			 * O​r​d​e​r​ ​I​d
+			 * R​e​c​o​n​c​i​l​i​a​t​i​o​n​ ​I​D
 			 */
 			order_id: string
 			/**
@@ -1690,6 +1690,10 @@ type RootTranslation = {
 			 * C​o​n​t​i​n​u​e
 			 */
 			'continue': string
+			/**
+			 * A​c​t​i​o​n​s
+			 */
+			actions: string
 		}
 		unordered_table: {
 			/**
@@ -4273,7 +4277,7 @@ export type TranslationFunctions = {
 		}
 		reconciling_table: {
 			/**
-			 * Order Id
+			 * Reconciliation ID
 			 */
 			order_id: () => LocalizedString
 			/**
@@ -4292,6 +4296,10 @@ export type TranslationFunctions = {
 			 * Continue
 			 */
 			'continue': () => LocalizedString
+			/**
+			 * Actions
+			 */
+			actions: () => LocalizedString
 		}
 		unordered_table: {
 			/**
