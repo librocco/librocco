@@ -646,9 +646,10 @@ const supplier_orders_component = {
 		unmatched_books: "Unmatched Books"
 	},
 	completed_table: {
+		supplier_id: "ID",
 		supplier: "Supplier",
 		books: "Books",
-		placed: "Placed",
+		finalized: "Finalised",
 		actions: "Actions",
 		view_order: "View Order",
 		view_reconciliation: "View Reconciliation"
