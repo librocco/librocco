@@ -1693,6 +1693,10 @@ type RootTranslation = {
 		}
 		unordered_table: {
 			/**
+			 * I​D
+			 */
+			supplier_id: string
+			/**
 			 * S​u​p​p​l​i​e​r
 			 */
 			supplier: string
@@ -1704,6 +1708,10 @@ type RootTranslation = {
 			 * P​l​a​c​e​ ​O​r​d​e​r
 			 */
 			place_order: string
+			/**
+			 * A​c​t​i​o​n​s
+			 */
+			actions: string
 		}
 	}
 	table_components: {
@@ -4287,6 +4295,10 @@ export type TranslationFunctions = {
 		}
 		unordered_table: {
 			/**
+			 * ID
+			 */
+			supplier_id: () => LocalizedString
+			/**
 			 * Supplier
 			 */
 			supplier: () => LocalizedString
@@ -4298,6 +4310,10 @@ export type TranslationFunctions = {
 			 * Place Order
 			 */
 			place_order: () => LocalizedString
+			/**
+			 * Actions
+			 */
+			actions: () => LocalizedString
 		}
 	}
 	table_components: {
