@@ -1602,6 +1602,10 @@ type RootTranslation = {
 		}
 		completed_table: {
 			/**
+			 * I​D
+			 */
+			supplier_id: string
+			/**
 			 * S​u​p​p​l​i​e​r
 			 */
 			supplier: string
@@ -1610,9 +1614,9 @@ type RootTranslation = {
 			 */
 			books: string
 			/**
-			 * P​l​a​c​e​d
+			 * F​i​n​a​l​i​s​e​d
 			 */
-			placed: string
+			finalized: string
 			/**
 			 * A​c​t​i​o​n​s
 			 */
@@ -4209,6 +4213,10 @@ export type TranslationFunctions = {
 		}
 		completed_table: {
 			/**
+			 * ID
+			 */
+			supplier_id: () => LocalizedString
+			/**
 			 * Supplier
 			 */
 			supplier: () => LocalizedString
@@ -4217,9 +4225,9 @@ export type TranslationFunctions = {
 			 */
 			books: () => LocalizedString
 			/**
-			 * Placed
+			 * Finalised
 			 */
-			placed: () => LocalizedString
+			finalized: () => LocalizedString
 			/**
 			 * Actions
 			 */

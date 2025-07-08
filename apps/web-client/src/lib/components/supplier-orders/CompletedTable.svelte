@@ -1,9 +1,10 @@
 <script lang="ts">
-	import ListTodo from "$lucide/list-todo";
-	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 	import { goto } from "$lib/utils/navigation";
-	import LL from "@librocco/shared/i18n-svelte";
 	import { appHash } from "$lib/paths";
+
+	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
+
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let orders: PlacedSupplierOrder[];
 
@@ -13,40 +14,45 @@
 	function handleViewReconcileOrder(id: number) {
 		goto(appHash("reconcile", id));
 	}
+
+	$: t = $LL.supplier_orders_component.completed_table;
 </script>
 
 <div class="overflow-x-auto">
-	<table class="table-pin-rows table-lg table whitespace-nowrap">
+	<table class="table-sm table-zebra table">
 		<thead>
 			<tr>
-				<th scope="col">{$LL.supplier_orders_component.completed_table.supplier()}</th>
-				<th scope="col">{$LL.supplier_orders_component.completed_table.books()}</th>
-				<th scope="col">{$LL.supplier_orders_component.completed_table.placed()}</th>
-				<th scope="col"><span class="sr-only">{$LL.supplier_orders_component.completed_table.actions()}</span></th>
+				<th scope="col">{t.supplier_id()}</th>
+				<th scope="col">{t.supplier()}</th>
+				<th scope="col">{t.finalized()}</th>
+				<th scope="col" class="sr-only">{t.actions()}</th>
 			</tr>
 		</thead>
 
 		<tbody>
-			{#each orders as { supplier_name, total_book_number, created, id, reconciliation_order_id }}
+			{#each orders as { id, supplier_name, reconciliation_order_id, reconciliation_last_updated_at }}
+				<!-- We take the last updatedAt of the reconciliation order as the date it was finalised -->
+				{@const finalized = new Date(reconciliation_last_updated_at)}
+
 				<tr class="hover focus-within:bg-base-200">
-					<td>{supplier_name}</td>
-
-					<td>{total_book_number}</td>
-
+					<th>
+						<span class="font-medium">#{id}</span>
+					</th>
+					<td class="whitespace-nowrap">{supplier_name}</td>
 					<td>
 						<span class="badge-primary badge-outline badge">
-							{new Date(created).toLocaleString()}
+							<time dateTime={finalized.toISOString()}>
+								{finalized.toLocaleString()}
+							</time>
 						</span>
 					</td>
-
-					<td class="flex items-center justify-evenly text-right">
-						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}
-							>{$LL.supplier_orders_component.completed_table.view_order()}</button
-						>
+					<td class="flex items-center justify-evenly gap-x-2 text-right">
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}>
+							{t.view_order()}
+						</button>
 
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleViewReconcileOrder(reconciliation_order_id)}>
-							<ListTodo aria-hidden focusable="false" size={20} />
-							{$LL.supplier_orders_component.completed_table.view_reconciliation()}
+							{t.view_reconciliation()}
 						</button>
 					</td>
 				</tr>
@@ -54,10 +60,3 @@
 		</tbody>
 	</table>
 </div>
-
-<style>
-	.table-lg td {
-		padding-top: 1rem;
-		padding-bottom: 1rem;
-	}
-</style>
