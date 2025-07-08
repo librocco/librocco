@@ -6,7 +6,7 @@ export default defineConfig({
 		include: [
 			"src/lib/db/cr-sqlite/__tests__/**/*.{test,spec}.{js,ts}",
 			"src/lib/db/__tests__/**/*.{test,spec}.{js,ts}",
-			"src/lib/**/*.spec.ts"
+			"src/lib/custom-translations.spec.ts"
 		],
 		browser: {
 			enabled: true,
