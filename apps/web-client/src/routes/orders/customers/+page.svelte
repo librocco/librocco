@@ -126,7 +126,7 @@
 		</div>
 		<div class="h-full p-4">
 			{#if !customerOrders.length}
-				<div class="mx-auto max-w-xl translate-y-1/2">
+				<div class="mx-auto w-fit max-w-xl translate-y-1/2">
 					<PlaceholderBox title={t.placeholder.no_orders.title()} description={t.placeholder.no_orders.description()}>
 						<User slot="icon" />
 
