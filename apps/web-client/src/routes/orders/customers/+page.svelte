@@ -97,7 +97,7 @@
 	};
 </script>
 
-<Page title="Customer Orders" view="orders/customers" {db} {plugins}>
+<Page title={t.title()} view="orders/customers" {db} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-2 divide-y">
 		<div class="flex flex-row gap-x-2 p-4">
 			<CustomerSearchForm
