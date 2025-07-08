@@ -180,7 +180,8 @@ const supplier_orders_page = {
 		completed: "Completed"
 	},
 	placeholder: {
-		description: "No unordered supplier orders available. Create a customer order first to generate supplier orders.",
+		title: "There are no pending supplier orders",
+		description: "Create customer orders to generate supplier orders",
 		button: "New Customer Order"
 	}
 };
@@ -235,8 +236,8 @@ const customer_orders_page = {
 	placeholder: {
 		search: "Search for customers by name",
 		no_orders: {
-			title: "No customers",
-			description: "Get started by creating a new order"
+			title: "There are no customers",
+			description: "Create a new customer order to get started"
 		},
 		scan_title: "Scan to add books",
 		scan_description: "Plugin your barcode scanner and pull the trigger"
