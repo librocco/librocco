@@ -14,26 +14,32 @@
 	function handlePlaceOrder(supplierId: number) {
 		goto(appHash("suppliers", supplierId, "new-order"));
 	}
+
+	$: t = $LL.supplier_orders_component.unordered_table;
 </script>
 
 <div class="overflow-x-auto">
-	<table class="table-lg table whitespace-nowrap">
+	<table class="table-sm table-zebra table">
 		<thead>
 			<tr>
-				<th scope="col">{$LL.supplier_orders_component.unordered_table.supplier()}</th>
-				<th scope="col">{$LL.supplier_orders_component.unordered_table.books()}</th>
-				<th scope="col"><span class="sr-only">{$LL.supplier_orders_component.unordered_table.place_order()}</span></th>
+				<th scope="col">{t.supplier_id()}</th>
+				<th scope="col">{t.supplier()}</th>
+				<th scope="col">{t.books()}</th>
+				<th scope="col" class="sr-only">{t.actions()}</th>
 			</tr>
 		</thead>
 		<tbody>
 			{#each orders as { supplier_name, supplier_id, total_book_number }}
-				<tr class="hover focus-within:bg-base-200">
+				<tr class="hover focus-within:bg-base-200 hover:cursor-pointer" on:click={() => handlePlaceOrder(supplier_id)}>
+					<th>
+						<span class="font-medium">#{supplier_id}</span>
+					</th>
 					<td>{supplier_name}</td>
 					<td>{total_book_number}</td>
 					<td class="text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handlePlaceOrder(supplier_id)}>
+							{t.place_order()}
 							<Truck aria-hidden focusable="false" size={20} />
-							{$LL.supplier_orders_component.unordered_table.place_order()}
 						</button>
 					</td>
 				</tr>
@@ -41,10 +47,3 @@
 		</tbody>
 	</table>
 </div>
-
-<style>
-	.table-lg td {
-		padding-top: 1rem;
-		padding-bottom: 1rem;
-	}
-</style>

@@ -673,9 +673,11 @@ const supplier_orders_component = {
 		continue: "Continue"
 	},
 	unordered_table: {
+		supplier_id: "ID",
 		supplier: "Supplier",
 		books: "Books",
-		place_order: "Place Order"
+		place_order: "Place Order",
+		actions: "Actions"
 	}
 };
 
