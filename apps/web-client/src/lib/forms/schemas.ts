@@ -7,6 +7,13 @@ export const deviceSettingsSchema = z.object({
 	receiptPrinterUrl: z.string()
 });
 
+export type DevSettingsSchema = Infer<typeof devSettingsSchema>;
+export const devSettingsSchema = z.object({
+	translationsUrl: z.string(),
+	translationsAPIKey: z.string(),
+	customTranslations: z.boolean()
+});
+
 export type SyncSettingsSchema = Infer<typeof syncSettingsSchema>;
 export const syncSettingsSchema = z.object({
 	dbid: z.string().min(1),
