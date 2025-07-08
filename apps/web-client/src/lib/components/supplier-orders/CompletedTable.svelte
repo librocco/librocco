@@ -34,7 +34,7 @@
 				<!-- We take the last updatedAt of the reconciliation order as the date it was finalised -->
 				{@const finalized = new Date(reconciliation_last_updated_at)}
 
-				<tr class="hover focus-within:bg-base-200">
+				<tr>
 					<th>
 						<span class="font-medium">#{id}</span>
 					</th>
