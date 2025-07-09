@@ -83,7 +83,7 @@ testOrders(
 		// Check total price (1 x book price)
 		await possibleOrderLineRow
 			.filter({ hasText: books[0].isbn })
-			.getByRole("cell", { name: `€${books[0].price}`, exact: true })
+			.getByRole("cell", { name: `€${books[0].price.toFixed(2)}`, exact: true })
 			.waitFor();
 
 		// Add a second book to the customer order
@@ -93,18 +93,18 @@ testOrders(
 		// Check total price (1 x book price)
 		await possibleOrderLineRow
 			.filter({ hasText: books[2].isbn })
-			.getByRole("cell", { name: `€${books[2].price}`, exact: true })
+			.getByRole("cell", { name: `€${books[2].price.toFixed(2)}`, exact: true })
 			.waitFor();
 
 		// Change book data for books[0]
 		await dbHandle.evaluate(upsertBook, { isbn: books[0].isbn, title: "Book 1 New Title", authors: "Updated authors", price: 1000 });
 		await possibleOrderLineRow.filter({ hasText: "Book 1 New Title" }).getByRole("cell", { name: "Updated authors" }).waitFor();
-		await possibleOrderLineRow.filter({ hasText: "Book 1 New Title" }).getByRole("cell", { name: "€1000", exact: true }).waitFor(); // Price cell
+		await possibleOrderLineRow.filter({ hasText: "Book 1 New Title" }).getByRole("cell", { name: "€1000.00", exact: true }).waitFor(); // Price cell
 
 		// Add one more of books[0] to customers[1] - shold also appear, with adjusted quantity and total price
 		await dbHandle.evaluate(addBooksToCustomer, { customerId: customers[1].id, bookIsbns: [books[0].isbn] });
 		await possibleOrderLineRow.filter({ hasText: "Book 1 New Title" }).getByRole("cell", { name: "2", exact: true }).waitFor();
-		await possibleOrderLineRow.filter({ hasText: "Book 1 New Title" }).getByRole("cell", { name: "€2000", exact: true }).waitFor(); // Price cell
+		await possibleOrderLineRow.filter({ hasText: "Book 1 New Title" }).getByRole("cell", { name: "€2000.00", exact: true }).waitFor(); // Price cell
 
 		// Add books[1] to customers[1] - should not appear yet (before associating the publisher with the supplier)
 		await dbHandle.evaluate(addBooksToCustomer, { customerId: customers[1].id, bookIsbns: [books[1].isbn] });
