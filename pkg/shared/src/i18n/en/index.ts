@@ -684,7 +684,8 @@ const supplier_orders_component = {
 		actions: "Actions",
 		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
-		reconcile: "Reconcile"
+		reconcile: "Reconcile",
+		view_reconciliation: "View Reconciliation"
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",
