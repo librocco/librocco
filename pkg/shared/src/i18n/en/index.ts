@@ -398,15 +398,25 @@ const reconcile_page = {
 	}
 };
 const suppliers_page = {
+	title: "Suppliers",
+	placeholder: {
+		title: "There are no suppliers",
+		description: "Create a new supplier to manage publisher catalogues"
+	},
+	dialog: {
+		new_order_title: "Create new supplier"
+	},
 	labels: {
-		new_supplier: "New Supplier"
-	},
-	title: {
-		suppliers: "Suppliers"
-	},
-	table: {
-		delete: "Delete",
+		save: "Create",
+		new_supplier: "New Supplier",
 		edit: "Edit"
+	},
+	columns: {
+		name: "Name",
+		email: "Email",
+		address: "Address",
+		assigned_publishers: "Assigned Publishers",
+		actions: "Actions"
 	}
 };
 
@@ -766,16 +776,6 @@ const table_components = {
 			order_no: "Order no.",
 			edit: "Edit",
 			manage: "Manage"
-		},
-		supplier_table: {
-			labels: {
-				name: "Name",
-				email: "Email",
-				address: "Address",
-
-				assigned_publishers: "Assigned Publishers",
-				row_actions: "Row Actions"
-			}
 		}
 	}
 };
