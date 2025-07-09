@@ -641,27 +641,61 @@ type RootTranslation = {
 		}
 	}
 	suppliers_page: {
+		/**
+		 * S​u​p​p​l​i​e​r​s
+		 */
+		title: string
+		placeholder: {
+			/**
+			 * T​h​e​r​e​ ​a​r​e​ ​n​o​ ​s​u​p​p​l​i​e​r​s
+			 */
+			title: string
+			/**
+			 * C​r​e​a​t​e​ ​a​ ​n​e​w​ ​s​u​p​p​l​i​e​r​ ​t​o​ ​m​a​n​a​g​e​ ​p​u​b​l​i​s​h​e​r​ ​c​a​t​a​l​o​g​u​e​s
+			 */
+			description: string
+		}
+		dialog: {
+			/**
+			 * C​r​e​a​t​e​ ​n​e​w​ ​s​u​p​p​l​i​e​r
+			 */
+			new_order_title: string
+		}
 		labels: {
+			/**
+			 * C​r​e​a​t​e
+			 */
+			save: string
 			/**
 			 * N​e​w​ ​S​u​p​p​l​i​e​r
 			 */
 			new_supplier: string
-		}
-		title: {
-			/**
-			 * S​u​p​p​l​i​e​r​s
-			 */
-			suppliers: string
-		}
-		table: {
-			/**
-			 * D​e​l​e​t​e
-			 */
-			'delete': string
 			/**
 			 * E​d​i​t
 			 */
 			edit: string
+		}
+		columns: {
+			/**
+			 * N​a​m​e
+			 */
+			name: string
+			/**
+			 * E​m​a​i​l
+			 */
+			email: string
+			/**
+			 * A​d​d​r​e​s​s
+			 */
+			address: string
+			/**
+			 * A​s​s​i​g​n​e​d​ ​P​u​b​l​i​s​h​e​r​s
+			 */
+			assigned_publishers: string
+			/**
+			 * A​c​t​i​o​n​s
+			 */
+			actions: string
 		}
 	}
 	warehouse_list_page: {
@@ -1970,30 +2004,6 @@ type RootTranslation = {
 				 */
 				manage: string
 			}
-			supplier_table: {
-				labels: {
-					/**
-					 * N​a​m​e
-					 */
-					name: string
-					/**
-					 * E​m​a​i​l
-					 */
-					email: string
-					/**
-					 * A​d​d​r​e​s​s
-					 */
-					address: string
-					/**
-					 * A​s​s​i​g​n​e​d​ ​P​u​b​l​i​s​h​e​r​s
-					 */
-					assigned_publishers: string
-					/**
-					 * R​o​w​ ​A​c​t​i​o​n​s
-					 */
-					row_actions: string
-				}
-			}
 		}
 	}
 	misc_components: {
@@ -3269,27 +3279,61 @@ export type TranslationFunctions = {
 		}
 	}
 	suppliers_page: {
+		/**
+		 * Suppliers
+		 */
+		title: () => LocalizedString
+		placeholder: {
+			/**
+			 * There are no suppliers
+			 */
+			title: () => LocalizedString
+			/**
+			 * Create a new supplier to manage publisher catalogues
+			 */
+			description: () => LocalizedString
+		}
+		dialog: {
+			/**
+			 * Create new supplier
+			 */
+			new_order_title: () => LocalizedString
+		}
 		labels: {
+			/**
+			 * Create
+			 */
+			save: () => LocalizedString
 			/**
 			 * New Supplier
 			 */
 			new_supplier: () => LocalizedString
-		}
-		title: {
-			/**
-			 * Suppliers
-			 */
-			suppliers: () => LocalizedString
-		}
-		table: {
-			/**
-			 * Delete
-			 */
-			'delete': () => LocalizedString
 			/**
 			 * Edit
 			 */
 			edit: () => LocalizedString
+		}
+		columns: {
+			/**
+			 * Name
+			 */
+			name: () => LocalizedString
+			/**
+			 * Email
+			 */
+			email: () => LocalizedString
+			/**
+			 * Address
+			 */
+			address: () => LocalizedString
+			/**
+			 * Assigned Publishers
+			 */
+			assigned_publishers: () => LocalizedString
+			/**
+			 * Actions
+			 */
+			actions: () => LocalizedString
 		}
 	}
 	warehouse_list_page: {
@@ -4583,30 +4627,6 @@ export type TranslationFunctions = {
 				 * Manage
 				 */
 				manage: () => LocalizedString
-			}
-			supplier_table: {
-				labels: {
-					/**
-					 * Name
-					 */
-					name: () => LocalizedString
-					/**
-					 * Email
-					 */
-					email: () => LocalizedString
-					/**
-					 * Address
-					 */
-					address: () => LocalizedString
-					/**
-					 * Assigned Publishers
-					 */
-					assigned_publishers: () => LocalizedString
-					/**
-					 * Row Actions
-					 */
-					row_actions: () => LocalizedString
-				}
 			}
 		}
 	}
