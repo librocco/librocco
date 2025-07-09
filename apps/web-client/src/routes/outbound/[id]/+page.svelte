@@ -119,7 +119,12 @@
 	$: bookRows = new Map((data.entries as NoteEntriesItem[]).map(({ isbn }) => [isbn, new Map()]));
 	$: {
 		for (const { isbn, warehouseId, quantity } of data.entries as NoteEntriesItem[]) {
-			bookRows.get(isbn)?.set(warehouseId, quantity);
+			const preExistingQuantity = bookRows.get(isbn)?.get(warehouseId);
+			if (preExistingQuantity) {
+				bookRows.get(isbn)?.set(warehouseId, preExistingQuantity + quantity);
+			} else {
+				bookRows.get(isbn)?.set(warehouseId, quantity);
+			}
 		}
 	}
 
@@ -246,49 +251,30 @@
 			.subscribe((b) => upsertBook(db, b));
 	};
 
-	const updateRowQuantity = async (
-		e: SubmitEvent,
-		{ isbn, warehouseId, quantity: currentQty, availableWarehouses }: InventoryTableData<"book">
-	) => {
-		alertMessage = "";
-
-		const warehouse = availableWarehouses.get(warehouseId);
-
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: VolumeStock) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
 
+		const transaction = { isbn, warehouseId };
+
 		if (currentQty == nextQty) {
 			return;
 		}
-		// does the proposed warehouse contain the proposed quantity?
-		// check for scanned quantity if it's less than available quantity
-		// if the available > scanned => update the transaction first before creating a new transaction
-		const totalScanned = bookRows.get(isbn)?.get(warehouseId) || 0;
-		const availableNonScannedQuantity = warehouse?.quantity - totalScanned || 0;
 
-		if (warehouse && nextQty > warehouse.quantity) {
-			const remainderQuantity = nextQty - warehouse.quantity;
+		// calculate difference between total scanned quantity and next quantity
+		const totalScannedQuantity = bookRows.get(isbn)?.get(warehouseId) || 0;
+		const difference = nextQty - currentQty;
+		const nextTotalQuantity = totalScannedQuantity + difference;
+		console.log(bookRows.get(isbn)?.get(warehouseId));
+		console.log({ totalScannedQuantity, difference, nextTotalQuantity });
 
-			// insert new row for remainderQuantity with no wh assigned
-			if (availableNonScannedQuantity) {
-				const transaction = { isbn, warehouseId };
-
-				await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: availableNonScannedQuantity + currentQty });
-			}
-			await handleAddTransaction(isbn, remainderQuantity);
-			return;
-		}
-		const transaction = { isbn, warehouseId };
-
-		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextQty });
+		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextTotalQuantity });
 	};
 
-	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
-		alertMessage = "";
-
-		const { isbn, quantity, warehouseId: currentWarehouseId, availableWarehouses } = data;
-		const { warehouseId: nextWarehouseId } = e.detail;
+	const updateRowWarehouse = async (data: InventoryTableData<"book">, e?: CustomEvent<WarehouseChangeDetail>) => {
+		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
+		const { warehouseId: nextWarehouseId } = e.detail || selectedWarehouse;
 		// Number form control validation means this string->number conversion should yield a valid result
 		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
@@ -296,55 +282,25 @@
 		if (currentWarehouseId === nextWarehouseId) {
 			return;
 		}
-		// calculate how much is left in this warehouse
-		// 3 scanned in wh1 => 2 available in wh2
-		// wh1 to wh2
-		// I want to assign 2 to wh2 (the available quantity)
-		// for the remainder I want to create a new transaction/row
+		// if assigning from wh1 to wh2 and wh2 has no more stock (all scanned)
+		// we should end up with the total quantity of both
+		// with wh1 containing the max available stock and the rest is forced
 
-		const nextWarehouseAvailableQuantity = availableWarehouses.get(nextWarehouseId)?.quantity;
+		const totalQuantityCurrentWarehouse = bookRows.get(isbn)?.get(currentWarehouseId);
+		const totalQuantityNextWarehouse = bookRows.get(isbn)?.get(nextWarehouseId);
+		const difference = totalQuantityCurrentWarehouse - quantity;
 
-		//account for scanned quantity
-		const currentWarehouseScannedQuantity = quantity;
-
-		const totalScanned = bookRows.get(isbn)?.get(nextWarehouseId) || 0 + currentWarehouseScannedQuantity;
-
-		if (totalScanned > nextWarehouseAvailableQuantity) {
-			alertMessage = $LL.sale_note.alerts.insufficient_quantity();
-			// "The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse";
-			/** @TODO don't update the dropdown value to the selected wh  */
-			// 2 < 3
-		} else if (nextWarehouseAvailableQuantity < currentWarehouseScannedQuantity) {
-			const remainder = currentWarehouseScannedQuantity - nextWarehouseAvailableQuantity;
-			await updateNoteTxn(
-				db,
-				noteId,
-				{ isbn, warehouseId: currentWarehouseId },
-				{ quantity: Math.min(nextWarehouseAvailableQuantity, currentWarehouseScannedQuantity), warehouseId: nextWarehouseId }
-			);
-
-			const warehouseId = await shouldAssignTransaction(isbn, remainder);
-
-			// if another row already exists for this isbn and no wh => move over remainder
-			await handleAddTransaction(isbn, remainder, warehouseId);
-		} else {
-			await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
+		if (difference > 0) {
+			await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity: difference, warehouseId: currentWarehouseId });
+		} else if (difference === 0) {
+			await removeNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId });
 		}
-	};
-
-	const forceUpdateRowWarehouse = async (data: InventoryTableData<"book">) => {
-		alertMessage = "";
-		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
-		const { id: nextWarehouseId } = selectedWarehouse as Warehouse;
-
-		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
-		if (currentWarehouseId === nextWarehouseId) {
-			return;
-		}
-
-		await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
-		forceWithdrawalDialogOpen.set(false);
-		selectedWarehouse = null;
+		await updateNoteTxn(
+			db,
+			noteId,
+			{ isbn, warehouseId: nextWarehouseId },
+			{ quantity: quantity + totalQuantityNextWarehouse, warehouseId: nextWarehouseId }
+		);
 	};
 
 	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
@@ -359,9 +315,16 @@
 
 	const deleteRow = (rowIx: number) => async () => {
 		const row = entries[rowIx];
+
 		if (isBookRow(row)) {
-			const { isbn, warehouseId } = row;
-			await removeNoteTxn(db, noteId, { isbn, warehouseId });
+			const { isbn, warehouseId, quantity } = row;
+			const remainingQuantity = bookRows.get(isbn)?.get(warehouseId) - quantity;
+			if (remainingQuantity === 0) {
+				await removeNoteTxn(db, noteId, { isbn, warehouseId });
+				return;
+			}
+			await updateNoteTxn(db, noteId, { isbn, warehouseId }, { quantity: remainingQuantity, warehouseId });
+			return;
 		} else {
 			await removeNoteCustomItem(db, noteId, row.id);
 		}
@@ -712,7 +675,7 @@
 					<OutboundTable
 						{table}
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
-						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
+						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(row, event)}
 						on:open-force-withdrawal-dialog={({ detail: { row } }) => openForceWithdrawal(row)}
 					>
 						<div id="row-actions" slot="row-actions" let:row let:rowIx>
@@ -839,7 +802,7 @@
 			</div>
 
 			<div class="grow">
-				<button on:click={() => forceUpdateRowWarehouse(row)} class="btn-primary btn-lg btn w-full">
+				<button on:click={() => updateRowWarehouse(row)} class="btn-primary btn-lg btn w-full">
 					<Save aria-hidden="true" focusable="false" size={20} />
 					{tOutbound.force_withdrawal_dialog.confirm()}
 				</button>
