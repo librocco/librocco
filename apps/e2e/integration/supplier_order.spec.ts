@@ -183,6 +183,104 @@ testOrders.skip(
 );
 
 testOrders(
+	"new order: selects fractions based on price + uses row checkbox to toggle between full and empty state for the line",
+	async ({ page, books, suppliersWithPublishers, customerOrderLines, t }) => {
+		const { new_order_page: tNewOrder, supplier_orders_component: tSupplierOrdersComponent } = t;
+		depends(customerOrderLines);
+
+		const suppliers = suppliersWithPublishers;
+
+		const table = page.getByRole("table");
+
+		await page.goto(appHash("supplier_orders"));
+
+		// NOTE: this should be unnecessary once the reactivity fix is in
+		await page.reload();
+		await page.waitForTimeout(500);
+
+		// Use supplier 1 for the test
+		await table
+			.getByRole("row")
+			.filter({ hasText: suppliers[0].name })
+			.getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() })
+			.click();
+
+		// The state should show all possible order lines, with ordered quantity/total price and selected quantity/total price
+		const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
+		const possibleOrderRow = table.getByRole("row").filter({ hasText: isbnRegex });
+
+		// NOTE: at the time of this writing, this is the state
+		//
+		// books[0] - isbn: "1234", title: "title1", authors: "author1", price: 10, quantity: 2
+		// books[2] - isbn: "5678", title: "title3", authors: "author3", price: 30, quantity: 2
+		// books[6] - isbn: "7777", title: "title7", authors: "author7", price: 70, quantity: 1
+		// books[4] - isbn: "9999", title: "title5", authors: "author5", price: 50, quantity: 1
+		//
+		// Total possible price = (2 * 10) + (2 * 30) + (1 * 70) + (1 * 50) = 200
+		await expect(possibleOrderRow).toHaveCount(4);
+		
+		// All checkboxes should be checked by default
+		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked();
+		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked();
+		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).toBeChecked();
+		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).toBeChecked();
+
+		// Select 1/4 = total price (200) / 4 = 50
+		await page.getByText(tNewOrder.labels.select() + " 1/4").click();
+
+		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
+		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked();
+
+		// books[2] - isbn: "5678", ordered: 2 selected: 0 -- not selected
+		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).not.toBeChecked();
+
+		// books[6] - isbn: "7777", ordered: 1, selected: 0
+		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).not.toBeChecked();
+
+		// books[4] - isbn: "9999", ordered: 1, selected 0
+		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked();
+
+		// Select 1/2 = total price (200) / 2 = 100
+		await page.getByText(tNewOrder.labels.select() + " 1/2").click();
+
+		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
+		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked();
+
+		// books[2] - isbn: "5678", ordered: 2 selected: 2 -- running total price: 80
+		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked();
+
+		// books[6] - isbn: "7777", ordered: 1, selected: 0 -- adding next one would make the total price 150 (>100) -- STOP HERE
+		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).not.toBeChecked();
+
+		// books[4] - isbn: "9999", ordered: 1, selected 0
+		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked();
+
+		// Select 3/4 = total price (200) * 3 / 4 = 150
+		await page.getByText(tNewOrder.labels.select() + " 3/4").click();
+
+		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
+		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked();
+
+		// books[2] - isbn: "5678", ordered: 2 selected: 2 -- running total price: 80
+		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked();
+
+		// books[6] - isbn: "7777", ordered: 1, selected: 1 -- running total price: 150 (END HERE)
+		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).toBeChecked();
+
+		// books[4] - isbn: "9999", ordered: 1, selected 0
+		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked();
+
+		// Toggle checkbox for a row - should deselect it
+		await possibleOrderRow.nth(1).getByRole("checkbox").click();
+		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).not.toBeChecked();
+
+		// Toggle checkbox again - should select it
+		await possibleOrderRow.nth(1).getByRole("checkbox").click();
+		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked();
+	}
+);
+
+testOrders(
 	"should view reconciliation controls for orders already in reconciliation",
 	async ({ page, suppliers: [supplier], books, t }) => {
 		const { supplier_orders_component: tSupplierOrdersComponent } = t;
@@ -361,7 +459,7 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	// books[0] - isbn: "1234", title: "title1", authors: "author1", price: 10, quantity: 2
 	//
 	// NOTE: cells are offset by 1 - checkbox
-	await expect(possibleOrderRow.nth(0).getByRole("checkbox")).not.toBeChecked();
+	await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked();
 	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(1)).toHaveText(books[0].isbn);
 	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(2)).toHaveText(books[0].title);
 	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(3)).toHaveText(books[0].authors);
@@ -374,7 +472,7 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	// books[2] - isbn: "5678", title: "title3", authors: "author3", price: 30, quantity: 2
 	//
 	// NOTE: cells are offset by 1 - checkbox
-	await expect(possibleOrderRow.nth(1).getByRole("checkbox")).not.toBeChecked();
+	await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked();
 	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(1)).toHaveText(books[2].isbn);
 	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(2)).toHaveText(books[2].title);
 	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(3)).toHaveText(books[2].authors);
@@ -387,7 +485,7 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	// books[6] - isbn: "7777", title: "title7", authors: "author7", price: 70, quantity: 1
 	//
 	// NOTE: cells are offset by 1 - checkbox
-	await expect(possibleOrderRow.nth(2).getByRole("checkbox")).not.toBeChecked();
+	await expect(possibleOrderRow.nth(2).getByRole("checkbox")).toBeChecked();
 	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(1)).toHaveText(books[6].isbn);
 	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(2)).toHaveText(books[6].title);
 	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(3)).toHaveText(books[6].authors);
@@ -400,7 +498,7 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	// books[4] - isbn: "9999", title: "title5", authors: "author5", price: 50, quantity: 1
 	//
 	// NOTE: cells are offset by 1 - checkbox
-	await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked();
+	await expect(possibleOrderRow.nth(3).getByRole("checkbox")).toBeChecked();
 	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(1)).toHaveText(books[4].isbn);
 	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(2)).toHaveText(books[4].title);
 	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(3)).toHaveText(books[4].authors);
@@ -410,190 +508,6 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(4)).toHaveText(book4OrderedQuantity.toString());
 	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(5)).toHaveText(`€${book4OrderedPrice}`);
 });
-
-testOrders(
-	"new order: selects fractions based on price + uses row checkbox to toggle between full and empty state for the line",
-	async ({ page, books, suppliersWithPublishers, customerOrderLines, t }) => {
-		const { new_order_page: tNewOrder, supplier_orders_component: tSupplierOrdersComponent } = t;
-		depends(customerOrderLines);
-
-		const suppliers = suppliersWithPublishers;
-
-		const table = page.getByRole("table");
-
-		await page.goto(appHash("supplier_orders"));
-
-		// NOTE: this should be unnecessary once the reactivity fix is in
-		await page.reload();
-		await page.waitForTimeout(500);
-
-		// Use supplier 1 for the test
-		await table
-			.getByRole("row")
-			.filter({ hasText: suppliers[0].name })
-			.getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() })
-			.click();
-
-		// The state should show all possible order lines, with ordered quantity/total price and selected quantity/total price (currently 0)
-		const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
-		const possibleOrderRow = table.getByRole("row").filter({ hasText: isbnRegex });
-
-		// NOTE: at the time of this writing, this is the state
-		//
-		// books[0] - isbn: "1234", title: "title1", authors: "author1", price: 10, quantity: 2
-		// books[2] - isbn: "5678", title: "title3", authors: "author3", price: 30, quantity: 2
-		// books[6] - isbn: "7777", title: "title7", authors: "author7", price: 70, quantity: 1
-		// books[4] - isbn: "9999", title: "title5", authors: "author5", price: 50, quantity: 1
-		//
-		// Total possible price = (2 * 10) + (2 * 30) + (1 * 70) + (1 * 50) = 200
-		await expect(possibleOrderRow).toHaveCount(4);
-
-		// Select 1/4 = total price (200) / 4 = 50
-		await page.getByText(tNewOrder.labels.select() + " 1/4").click();
-
-		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
-		let book1SelectedQuantity = 2;
-		let book1SelectedPrice = (book1SelectedQuantity * books[0].price).toFixed(2);
-		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
-		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// books[2] - isbn: "5678", ordered: 2 selected: 1 -- running total price: 50 (END HERE)
-		let book2SelectedQuantity = 1;
-		let book2SelectedPrice = (book2SelectedQuantity * books[2].price).toFixed(2);
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
-		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).not.toBeChecked(); // Partial selection
-
-		// books[6] - isbn: "7777", ordered: 1, selected: 0
-		let book3SelectedQuantity = 0;
-		let book3SelectedPrice = (book3SelectedQuantity * books[6].price).toFixed(2);
-		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
-		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).not.toBeChecked(); // Empty selection
-
-		// books[4] - isbn: "9999", ordered: 1, selected 0
-		let book4SelectedQuantity = 0;
-		let book4SelectedPrice = (book4SelectedQuantity * books[4].price).toFixed(2);
-		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
-		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked(); // Empty selection
-
-		// Select 1/2 = total price (200) / 2 = 100
-		await page.getByText(tNewOrder.labels.select() + " 1/2").click();
-
-		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
-		book1SelectedQuantity = 2;
-		book1SelectedPrice = (book1SelectedQuantity * books[0].price).toFixed(2);
-		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
-		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// books[2] - isbn: "5678", ordered: 2 selected: 2 -- running total price: 80
-		book2SelectedQuantity = 2;
-		book2SelectedPrice = (book2SelectedQuantity * books[2].price).toFixed(2);
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
-		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// books[6] - isbn: "7777", ordered: 1, selected: 0 -- adding next one would make the total price 150 (>100) -- STOP HERE
-		book3SelectedQuantity = 0;
-		book3SelectedPrice = (book3SelectedQuantity * books[6].price).toFixed(2);
-		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
-		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).not.toBeChecked(); // Empty selection
-
-		// books[4] - isbn: "9999", ordered: 1, selected 0
-		book4SelectedQuantity = 0;
-		book4SelectedPrice = (book4SelectedQuantity * books[4].price).toFixed(2);
-		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
-		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked(); // Empty selection
-
-		// Select 3/4 = total price (200) * 3 / 4 = 150
-		await page.getByText(tNewOrder.labels.select() + " 3/4").click();
-
-		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
-		book1SelectedQuantity = 2;
-		book1SelectedPrice = (book1SelectedQuantity * books[0].price).toFixed(2);
-		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
-		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// books[2] - isbn: "5678", ordered: 2 selected: 2 -- running total price: 80
-		book2SelectedQuantity = 2;
-		book2SelectedPrice = (book2SelectedQuantity * books[2].price).toFixed(2);
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
-		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// books[6] - isbn: "7777", ordered: 1, selected: 1 -- running total price: 150 (END HERE)
-		book3SelectedQuantity = 1;
-		book3SelectedPrice = (book3SelectedQuantity * books[6].price).toFixed(2);
-		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
-		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// books[4] - isbn: "9999", ordered: 1, selected 0
-		book4SelectedQuantity = 0;
-		book4SelectedPrice = (book4SelectedQuantity * books[4].price).toFixed(2);
-		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
-		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked(); // Empty selection
-
-		// Select All
-		await page.getByText(tNewOrder.labels.select() + " All").click();
-
-		// books[0] - isbn: "1234", ordered: 2, selected: 2
-		book1SelectedQuantity = 2;
-		book1SelectedPrice = (book1SelectedQuantity * books[0].price).toFixed(2);
-		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
-		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// books[2] - isbn: "5678", ordered: 2 selected: 2
-		book2SelectedQuantity = 2;
-		book2SelectedPrice = (book2SelectedQuantity * books[2].price).toFixed(2);
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
-		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// books[6] - isbn: "7777", ordered: 1, selected: 1
-		book3SelectedQuantity = 1;
-		book3SelectedPrice = (book3SelectedQuantity * books[6].price).toFixed(2);
-		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
-		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// books[4] - isbn: "9999", ordered: 1, selected 1
-		book4SelectedQuantity = 1;
-		book4SelectedPrice = (book4SelectedQuantity * books[4].price).toFixed(2);
-		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
-		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
-		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).toBeChecked(); // Full selection
-
-		// Go back to 1/4 selection -- test checkbox functionality
-		//
-		// Yielding the following state:
-		//
-		// books[0] - isbn: "1234", ordered quantity: 2, selected: 2
-		// books[2] - isbn: "5678", ordered quantity: 2, selected: 1
-		// books[6] - isbn: "7777", ordered quantity: 1, selected: 0
-		// books[4] - isbn: "9999", ordered quantity: 1, selected: 0
-		await page.getByText(tNewOrder.labels.select() + " 1/4").click();
-
-		// Line 2, ISBN: "5678", ordered: 2, selected: 1 -- checkbox should not be checked
-		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).not.toBeChecked();
-
-		// Toggle checkbox -- should select full ordered quantity
-		await possibleOrderRow.nth(1).getByRole("checkbox").click();
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText("2");
-
-		// Toggle checkbox -- should select 0
-		await possibleOrderRow.nth(1).getByRole("checkbox").click();
-		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText("0");
-	}
-);
 
 testOrders("supplier order page: view + reactivity", async ({ page, books, supplierOrders, t }) => {
 	const {
