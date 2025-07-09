@@ -276,16 +276,20 @@ const customer_orders_page = {
 		}
 	}
 };
+
 const new_order_page = {
+	title: "New Supplier Order",
+	aria: {
+		last_updated: "Last updated"
+	},
 	stats: {
 		total_books: "Total books",
 		total_value: "Total value",
 		selected_books: "Selected books"
 	},
 	table: {
-		ordered_quantity: "Ordered quantity",
+		quantity: "Quantity",
 		total: "Total",
-		selected_quantity: "Selected quantity",
 		books: "Books",
 		isbn: "ISBN",
 		title: "Title",
@@ -324,6 +328,14 @@ const order_list_page = {
 		}
 	}
 };
+
+// The "placed order" page seems to have been setup
+// to use the same strings as the following "reconcilied_list_page"
+// so as not to disturbe to many things, I've kept it that way, and have added additional strings here
+const order_page = {
+	title: "Supplier Order"
+};
+
 const reconciled_list_page = {
 	labels: {
 		view_reconciliation: "View Reconciliation",
@@ -1012,6 +1024,7 @@ const en = {
 	supplier_orders_page,
 	new_order_page,
 	reconcile_page,
+	order_page,
 	reconciled_list_page,
 	order_list_page,
 	supplier_orders_component,
