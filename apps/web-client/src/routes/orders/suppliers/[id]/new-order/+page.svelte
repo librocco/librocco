@@ -36,13 +36,21 @@
 	$: [orderLine] = orderLines;
 	$: ({ supplier_id, supplier_name } = orderLine);
 
-	// NOTE: might go out of sync, we don't care
-	let selectedBooksLookup: { [isbn: string]: number } = {};
+	// Initialize with all books selected
+	let selectedBooksLookup: { [isbn: string]: boolean } = {};
+	
+	// Initialize all books as selected by default
+	$: if (orderLines && Object.keys(selectedBooksLookup).length === 0) {
+		selectedBooksLookup = orderLines.reduce((acc, { isbn }) => {
+			acc[isbn] = true;
+			return acc;
+		}, {} as { [isbn: string]: boolean });
+	}
 
 	$: linesWithSelection = orderLines.map((line) => ({
 		...line,
-		selectedQuantity: selectedBooksLookup[line.isbn] || 0,
-		selected_line_price: line.price * (selectedBooksLookup[line.isbn] || 0)
+		selectedQuantity: selectedBooksLookup[line.isbn] ? line.quantity : 0,
+		selected_line_price: selectedBooksLookup[line.isbn] ? line.line_price : 0
 	}));
 
 	$: totalPossiblePrice = orderLines.reduce((acc, { line_price }) => acc + line_price, 0);
@@ -77,22 +85,23 @@
 
 	function selectPortion(portion: number) {
 		let budget = Math.floor(totalPossiblePrice * portion);
-		const selected: { [isbn: string]: number } = {};
+		const selected: { [isbn: string]: boolean } = {};
 
+		// Initialize all as unselected
 		for (const line of orderLines) {
-			// Calc max quantity we can select, given the remaining budget
-			const maxQuantity = Math.floor(budget / line.price);
+			selected[line.isbn] = false;
+		}
 
-			// If there are more possible lines than we can handle,
-			// select the max possible and terminate here
-			if (maxQuantity < line.quantity) {
-				selected[line.isbn] = maxQuantity;
-				break;
+		// Select books within budget
+		for (const line of orderLines) {
+			// If this line fits in the budget, select it
+			if (line.line_price <= budget) {
+				selected[line.isbn] = true;
+				budget -= line.line_price;
+			} else {
+				// If this line doesn't fit, skip it
+				selected[line.isbn] = false;
 			}
-
-			// Otherwise, select all of the line and continue
-			selected[line.isbn] = line.quantity;
-			budget -= line.price * line.quantity;
 		}
 
 		selectedBooksLookup = selected;
@@ -139,7 +148,6 @@
 							<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(0.25)}>{t.labels.select()} 1/4</button>
 							<button class="btn-outline btn-sm btn border-dashed" on:click={() => selectPortion(0.5)}>{t.labels.select()} 1/2</button>
 							<button class="btn-outline btn-sm btn" on:click={() => selectPortion(0.75)}>{t.labels.select()} 3/4</button>
-							<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(1)}>{t.labels.select()} All</button>
 						</div>
 					</div>
 				</div>
@@ -160,8 +168,8 @@
 
 					<tbody>
 						{#each linesWithSelection as orderLine}
-							{@const { isbn, title, authors, line_price, quantity, selectedQuantity, selected_line_price } = orderLine}
-							{@const isChecked = quantity === selectedQuantity}
+							{@const { isbn, title, authors, line_price, quantity, selectedQuantity } = orderLine}
+							{@const isChecked = selectedBooksLookup[isbn]}
 							<tr>
 								<td>
 									<input
@@ -169,7 +177,7 @@
 										class="checkbox checkbox-sm"
 										checked={isChecked}
 										on:change={() => {
-											selectedBooksLookup[isbn] = isChecked ? 0 : quantity;
+											selectedBooksLookup[isbn] = !isChecked;
 											// eslint-disable-next-line no-self-assign
 											selectedBooksLookup = selectedBooksLookup;
 										}}
