@@ -23,8 +23,8 @@
 		"test": "vitest --ui",
 		"test:ci": "npx playwright install --with-deps && CI=true vitest --",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold error",
-		"typesafe-i18n": "typesafe-i18n",
-		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)"
+		"typesafe-i18n": "echo please run this in ../../pkg/shared ; exit 1",
+		"typesafe-i18n-check": "echo please run this in ../../pkg/shared ; exit 1"
 	},
 	"dependencies": {
 		"@vlcn.io/crsqlite": "0.16.1",
