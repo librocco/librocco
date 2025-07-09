@@ -1710,6 +1710,10 @@ type RootTranslation = {
 			 * R​e​c​o​n​c​i​l​e
 			 */
 			reconcile: string
+			/**
+			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
+			 */
+			view_reconciliation: string
 		}
 		reconciling_table: {
 			/**
@@ -4334,6 +4338,10 @@ export type TranslationFunctions = {
 			 * Reconcile
 			 */
 			reconcile: () => LocalizedString
+			/**
+			 * View Reconciliation
+			 */
+			view_reconciliation: () => LocalizedString
 		}
 		reconciling_table: {
 			/**

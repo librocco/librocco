@@ -35,6 +35,10 @@
 		goto(appHash("supplier_orders", supplierOrderId));
 	}
 
+	function handleViewReconcileOrder(id: number) {
+		goto(appHash("reconcile", id));
+	}
+
 	$: t = $LL.supplier_orders_component.ordered_table;
 </script>
 
@@ -61,7 +65,7 @@
 			</tr>
 		</thead>
 		<tbody>
-			{#each orders as { supplier_name, created, id, reconciled = false }}
+			{#each orders as { supplier_name, created, id, reconciliation_order_id, reconciled = false }}
 				{@const placed = new Date(created)}
 
 				<tr>
@@ -87,14 +91,22 @@
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}>
 							{t.view_order()}
 						</button>
-						<button
-							class="btn-primary btn-sm btn flex-nowrap gap-x-2.5"
-							on:click={() => handleReconcile([id])}
-							disabled={hasSelectedOrders}
-						>
-							{t.reconcile()}
-							<ListTodo aria-hidden focusable="false" size={20} />
-						</button>
+						{#if !hasSelectedOrders}
+							{#if !reconciled}
+								<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile([id])}>
+									{t.reconcile()}
+									<ListTodo aria-hidden focusable="false" size={20} />
+								</button>
+							{:else}
+								<button
+									class="btn-primary btn-sm btn flex-nowrap gap-x-2.5"
+									on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
+								>
+									{t.view_reconciliation()}
+									<ListTodo aria-hidden focusable="false" size={20} />
+								</button>
+							{/if}
+						{/if}
 					</td>
 				</tr>
 			{/each}
