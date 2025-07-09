@@ -192,7 +192,7 @@
 			<div class="card md:h-full">
 				{#if customer}
 					<div class="card-body gap-y-2 p-0">
-						<div class="bg-base-200 flex flex-col gap-y-2 border-b px-4 py-2.5 max-md:sticky max-md:top-0">
+						<div class="flex flex-col gap-y-2 border-b bg-base-200 px-4 py-2.5 max-md:sticky max-md:top-0">
 							<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
 								<h2 class="text-2xl font-medium">{customer.fullname}</h2>
 
@@ -209,7 +209,7 @@
 							<div class="flex w-full flex-col gap-y-4">
 								{#if data?.customer}
 									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-										<div class="flex max-w-96 flex-col gap-y-4">
+										<div class="max-w-96 flex flex-col gap-y-4">
 											<div class="flex gap-x-3">
 												<dt>
 													<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_id()}</span>

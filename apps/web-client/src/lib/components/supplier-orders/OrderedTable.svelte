@@ -48,7 +48,7 @@
 		</div>
 	{/if}
 
-	<table class="table-sm table-zebra table">
+	<table class="table-zebra table-sm table">
 		<thead>
 			<tr class="relative">
 				<th scope="col" class="sr-only"> {t.select()} </th>
