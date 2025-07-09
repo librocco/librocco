@@ -84,7 +84,31 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	for (const { isbn, warehouseId, warehouseName, quantity } of stock) {
 		isbnAvailability.get(isbn)?.set(warehouseId, { displayName: warehouseName, quantity });
 	}
-	const entries = _entries.map((e) => ({ ...e, availableWarehouses: isbnAvailability.get(e.isbn) }));
+	// for each entry compare quantity with available quantity in warehouse
+	// assign min(available quantity, quantity) to entry
+	// assign remainder (quantity - available) to forcedEntries\
+	const entries: (NoteEntriesItem & { type: "normal" | "forced" } & {
+		availableWarehouses: Map<number, { displayName: string; quantity: number }>;
+	})[] = [];
+
+	for (const entry of _entries) {
+		const available = isbnAvailability.get(entry.isbn)?.get(entry.warehouseId)?.quantity;
+		if (available && available === entry.quantity) {
+			entries.push({ ...entry, quantity: available, availableWarehouses: isbnAvailability.get(entry.isbn), type: "normal" });
+		} else if (!available || (available && available < entry.quantity)) {
+			if (available > 0) {
+				entries.push({ ...entry, quantity: available, availableWarehouses: isbnAvailability.get(entry.isbn), type: "normal" });
+			}
+			entries.push({
+				...entry,
+				quantity: entry.quantity - (available || 0),
+				availableWarehouses: isbnAvailability.get(entry.isbn),
+				type: "forced"
+			});
+		} else if (!available || available > entry.quantity) {
+			entries.push({ ...entry, availableWarehouses: isbnAvailability.get(entry.isbn), type: "normal" });
+		}
+	}
 
 	return { dbCtx, ...note, warehouses, entries, customItems, publisherList, isbnAvailability };
 };

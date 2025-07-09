@@ -53,6 +53,8 @@
 			</th>
 			<th scope="col">{$LL.table_components.inventory_tables.outbound_table.warehouse()} </th>
 			<th scope="col" class="show-col-md"> {$LL.table_components.inventory_tables.outbound_table.category()} </th>
+			<th scope="col" class="show-col-md"> Type </th>
+
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit">
 					<HeadCol label={$LL.table_components.inventory_tables.outbound_table.row_actions()} srOnly />
@@ -73,7 +75,8 @@
 					title = "N/A",
 					publisher = "",
 					warehouseDiscount,
-					category = ""
+					category = "",
+					type = "normal"
 				} = row}
 				{@const { warehouseId, warehouseName, availableWarehouses } = row}
 				{@const quantityInWarehouse = availableWarehouses?.get(warehouseId)?.quantity || 0}
@@ -114,6 +117,9 @@
 					</td>
 					<td data-property="category" class="show-col-md table-cell-max">
 						{category}
+					</td>
+					<td data-property="type" class="show-col-md table-cell-max">
+						{type}
 					</td>
 					{#if $$slots["row-actions"]}
 						<td class="table-cell-fit">
