@@ -13,13 +13,14 @@ import {
 } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
 
-testOrders("order tabs (filters): shows completed orders under 'completed' tab", async ({ page, supplierOrders }) => {
+testOrders("order tabs (filters): shows completed orders under 'completed' tab", async ({ page, supplierOrders, t }) => {
+	const { supplier_orders_page: tSupplierOrders } = t;
 	await page.goto(appHash("supplier_orders"));
 
 	const dbHandle = await getDbHandle(page);
 
 	// The tab should be disabled - no completed orders
-	await expect(page.getByRole("button", { name: "Completed", exact: true })).toBeDisabled();
+	await expect(page.getByRole("button", { name: tSupplierOrders.tabs.completed(), exact: true })).toBeDisabled();
 
 	// Complete two orders - create a reconciliation order and finalize it
 	const [o1, o2] = supplierOrders;
@@ -27,18 +28,19 @@ testOrders("order tabs (filters): shows completed orders under 'completed' tab",
 	await dbHandle.evaluate(finalizeReconciliationOrder, 1);
 
 	// Check the 'Completed' view
-	await page.getByRole("button", { name: "Completed", exact: true }).click();
+	await page.getByRole("button", { name: tSupplierOrders.tabs.completed(), exact: true }).click();
 
 	await page.getByRole("table").getByRole("row").nth(2).waitFor();
 });
 
-testOrders("should show empty state when no customer orders exist", async ({ page }) => {
+testOrders("should show empty state when no customer orders exist", async ({ page, t }) => {
+	const { supplier_orders_page: tSupplierOrders } = t;
 	await page.goto(appHash("supplier_orders"));
 
 	await expect(page.getByRole("table")).not.toBeVisible();
-	await expect(page.getByText("No unordered supplier orders available")).toBeVisible();
+	await expect(page.getByText(tSupplierOrders.placeholder.title())).toBeVisible();
 
-	const createOrderButton = page.getByRole("button", { name: "New Customer Order" });
+	const createOrderButton = page.getByRole("button", { name: tSupplierOrders.placeholder.button() });
 	await expect(createOrderButton).toBeVisible();
 
 	await createOrderButton.click();
@@ -46,7 +48,8 @@ testOrders("should show empty state when no customer orders exist", async ({ pag
 	await expect(page.getByRole("dialog")).toBeVisible();
 });
 
-testOrders("should show list of unordered orders", async ({ page, suppliers: [supplier], books }) => {
+testOrders("should show list of unordered orders", async ({ page, suppliers: [supplier], books, t }) => {
+	const { supplier_orders_page: tSupplierOrders } = t;
 	await page.goto(appHash("supplier_orders"));
 
 	const dbHandle = await getDbHandle(page);
@@ -55,7 +58,7 @@ testOrders("should show list of unordered orders", async ({ page, suppliers: [su
 	await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisher: "pub1" });
 
 	await page.goto(appHash("supplier_orders"));
-	page.getByRole("button", { name: "Unordered" });
+	page.getByRole("button", { name: tSupplierOrders.tabs.unordered() });
 
 	await expect(page.getByText(supplier.name)).toBeVisible();
 	const table = page.getByRole("table");
@@ -179,7 +182,8 @@ testOrders.skip(
 	}
 );
 
-testOrders("should view reconciliation controls for orders already in reconciliation", async ({ page, suppliers: [supplier], books }) => {
+testOrders("should view reconciliation controls for orders already in reconciliation", async ({ page, suppliers: [supplier], books, t }) => {
+	const { supplier_orders_component: tSupplierOrdersComponent } = t;
 	await page.goto(appHash("supplier_orders"));
 
 	const dbHandle = await getDbHandle(page);
@@ -228,18 +232,19 @@ testOrders("should view reconciliation controls for orders already in reconcilia
 	// First order (in reconciliation) should have disabled controls
 	const reconciledRow = rows.nth(2);
 
-	await expect(reconciledRow.getByRole("button", { name: "View Reconciliation" })).toBeVisible();
+	await expect(reconciledRow.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.view_reconciliation() })).toBeVisible();
 	await expect(reconciledRow.getByRole("checkbox")).toBeDisabled();
 
 	// Second order (not in reconciliation) should have enabled controls
 	const normalRow = rows.nth(1);
 	await expect(normalRow.getByRole("checkbox")).toBeEnabled();
-	await expect(normalRow.getByRole("button", { name: "Reconcile" })).toBeEnabled();
+	await expect(normalRow.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.reconcile() })).toBeEnabled();
 });
 
 testOrders(
 	"should show correct batch reconciliation state with mixed reconciliation status",
-	async ({ page, suppliers: [supplier], books }) => {
+	async ({ page, suppliers: [supplier], books, t }) => {
+		const { supplier_orders_component: tSupplierOrdersComponent } = t;
 		await page.goto(appHash("supplier_orders"));
 
 		const dbHandle = await getDbHandle(page);
@@ -305,7 +310,7 @@ testOrders(
 		await rows.nth(3).getByRole("checkbox").click();
 
 		// Verify batch reconciliation button appears and is enabled
-		const batchReconcileButton = page.getByLabel("Reconcile 2 selected orders");
+		const batchReconcileButton = page.getByLabel(tSupplierOrdersComponent.ordered_table.reconcile_selected({ count: 2 }));
 		await expect(batchReconcileButton).toBeVisible();
 		await expect(batchReconcileButton).toBeEnabled();
 
@@ -314,7 +319,8 @@ testOrders(
 	}
 );
 
-testOrders("new order: empty state", async ({ page, books, suppliersWithPublishers, customerOrderLines }) => {
+testOrders("new order: empty state", async ({ page, books, suppliersWithPublishers, customerOrderLines, t }) => {
+	const { new_order_page: tNewOrder, supplier_orders_component: tSupplierOrdersComponent } = t;
 	const suppliers = suppliersWithPublishers;
 
 	const table = page.getByRole("table");
@@ -326,7 +332,7 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	await page.waitForTimeout(500);
 
 	// Use supplier 1 for the test
-	await table.getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("button", { name: "Place Order" }).click();
+	await table.getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() }).click();
 
 	// The state should show all possible order lines, with ordered quantity/total price and selected quantity/total price (currently 0)
 	const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
@@ -415,7 +421,8 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 
 testOrders(
 	"new order: selects fractions based on price + uses row checkbox to toggle between full and empty state for the line",
-	async ({ page, books, suppliersWithPublishers, customerOrderLines }) => {
+	async ({ page, books, suppliersWithPublishers, customerOrderLines, t }) => {
+		const { new_order_page: tNewOrder, supplier_orders_component: tSupplierOrdersComponent } = t;
 		depends(customerOrderLines);
 
 		const suppliers = suppliersWithPublishers;
@@ -429,7 +436,7 @@ testOrders(
 		await page.waitForTimeout(500);
 
 		// Use supplier 1 for the test
-		await table.getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("button", { name: "Place Order" }).click();
+		await table.getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() }).click();
 
 		// The state should show all possible order lines, with ordered quantity/total price and selected quantity/total price (currently 0)
 		const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
@@ -446,7 +453,7 @@ testOrders(
 		await expect(possibleOrderRow).toHaveCount(4);
 
 		// Select 1/4 = total price (200) / 4 = 50
-		await page.getByText("Select 1/4").click();
+		await page.getByText(tNewOrder.labels.select() + " 1/4").click();
 
 		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
 		let book1SelectedQuantity = 2;
@@ -477,7 +484,7 @@ testOrders(
 		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked(); // Empty selection
 
 		// Select 1/2 = total price (200) / 2 = 100
-		await page.getByText("Select 1/2").click();
+		await page.getByText(tNewOrder.labels.select() + " 1/2").click();
 
 		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
 		book1SelectedQuantity = 2;
@@ -508,7 +515,7 @@ testOrders(
 		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked(); // Empty selection
 
 		// Select 3/4 = total price (200) * 3 / 4 = 150
-		await page.getByText("Select 3/4").click();
+		await page.getByText(tNewOrder.labels.select() + " 3/4").click();
 
 		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
 		book1SelectedQuantity = 2;
@@ -539,7 +546,7 @@ testOrders(
 		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked(); // Empty selection
 
 		// Select All
-		await page.getByText("Select All").click();
+		await page.getByText(tNewOrder.labels.select() + " All").click();
 
 		// books[0] - isbn: "1234", ordered: 2, selected: 2
 		book1SelectedQuantity = 2;
@@ -577,7 +584,7 @@ testOrders(
 		// books[2] - isbn: "5678", ordered quantity: 2, selected: 1
 		// books[6] - isbn: "7777", ordered quantity: 1, selected: 0
 		// books[4] - isbn: "9999", ordered quantity: 1, selected: 0
-		await page.getByText("Select 1/4").click();
+		await page.getByText(tNewOrder.labels.select() + " 1/4").click();
 
 		// Line 2, ISBN: "5678", ordered: 2, selected: 1 -- checkbox should not be checked
 		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).not.toBeChecked();
@@ -592,12 +599,13 @@ testOrders(
 	}
 );
 
-testOrders("supplier order page: view + reactivity", async ({ page, books, supplierOrders }) => {
+testOrders("supplier order page: view + reactivity", async ({ page, books, supplierOrders, t }) => {
+	const { reconciled_list_page: tReconciledList, supplier_orders_component: tSupplierOrdersComponent } = t;
 	await page.goto(appHash("supplier_orders"));
 
 	const table = page.getByRole("table");
 
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+	await page.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.order_id() }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order, lines } = supplierOrders[0];
@@ -605,7 +613,7 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 		.getByRole("row")
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("button", { name: "View Order" })
+		.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.view_order() })
 		.click();
 
 	// Wait for navigation
@@ -653,8 +661,8 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 	await orderLineRow.nth(0).getByRole("cell").nth(4).getByText(l1PriceUpdated).waitFor();
 
 	// The reconciliation button reads "Reconcile" -- not yet reconciled
-	await page.getByRole("button", { name: "View Reconciliation", exact: true }).waitFor({ state: "detached" });
-	await page.getByRole("button", { name: "Reconcile", exact: true }).click();
+	await page.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.view_reconciliation() }).waitFor({ state: "detached" });
+	await page.getByRole("button", { name: tReconciledList.labels.reconcile() }).click();
 
 	// The reconciliation order should be created
 	await page.waitForURL(appHash("reconcile", "**"));
@@ -662,13 +670,13 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 
 	// Navigate back to the order (now the reconciliation order had been created)
 	await page.goto(appHash("supplier_orders"));
-	await page.getByRole("button", { name: "Reconciling", exact: true }).click();
+	await page.getByRole("button", { name: "Reconciling" }).click();
 	await page.getByText(`#${order.id}`).click();
 	await page.waitForURL(appHash("supplier_orders", order.id));
 
 	// The reconciliation button now reads 'View Reconciliation'
-	await page.getByRole("button", { name: "Reconcile", exact: true }).waitFor({ state: "detached" });
-	await page.getByRole("button", { name: "View Reconciliation", exact: true }).click();
+	await page.getByRole("button", { name: tReconciledList.labels.reconcile() }).waitFor({ state: "detached" });
+	await page.getByRole("button", { name: tReconciledList.labels.view_reconciliation() }).click();
 
 	// Should navigate to (existing) reconciliation order
 	await page.waitForURL(appHash("reconcile", reconOrderId));
@@ -677,17 +685,17 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 	//
 	// Go back to the supplier order
 	await page.goto(appHash("supplier_orders"));
-	await page.getByRole("button", { name: "Reconciling", exact: true }).click();
+	await page.getByRole("button", { name: "Reconciling" }).click();
 	await page.getByText(`#${order.id}`).click();
 
 	// The reconciliation button reads 'View Reconciliation' (reconciliation order exists)
-	await page.getByRole("button", { name: "Reconcile", exact: true }).waitFor({ state: "detached" });
-	await page.getByRole("button", { name: "View Reconciliation", exact: true }).waitFor();
+	await page.getByRole("button", { name: tReconciledList.labels.reconcile() }).waitFor({ state: "detached" });
+	await page.getByRole("button", { name: tReconciledList.labels.view_reconciliation() }).waitFor();
 
 	// Delete the reconciliation order (programatically, testing db reactivity)
 	await (await getDbHandle(page)).evaluate(deleteReconciliationOrder, Number(reconOrderId));
 
 	// The reconciliation button reads 'Reconcile' (reconciliation was removed)
-	await page.getByRole("button", { name: "Reconcile", exact: true }).waitFor();
-	await page.getByRole("button", { name: "View Reconciliation", exact: true }).waitFor({ state: "detached" });
+	await page.getByRole("button", { name: tReconciledList.labels.reconcile() }).waitFor();
+	await page.getByRole("button", { name: tReconciledList.labels.view_reconciliation() }).waitFor({ state: "detached" });
 });
