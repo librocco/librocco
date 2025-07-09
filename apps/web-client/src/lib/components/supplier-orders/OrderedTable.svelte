@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
+	import ListChecks from "$lucide/list-checks";
 	import ListTodo from "$lucide/list-todo";
 
 	import { goto } from "$lib/utils/navigation";
@@ -91,21 +92,24 @@
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}>
 							{t.view_order()}
 						</button>
-						{#if !hasSelectedOrders}
-							{#if !reconciled}
-								<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile([id])}>
-									{t.reconcile()}
-									<ListTodo aria-hidden focusable="false" size={20} />
-								</button>
-							{:else}
-								<button
-									class="btn-primary btn-sm btn flex-nowrap gap-x-2.5"
-									on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
-								>
-									{t.view_reconciliation()}
-									<ListTodo aria-hidden focusable="false" size={20} />
-								</button>
-							{/if}
+						{#if !reconciled}
+							<button
+								class="btn-primary btn-sm btn flex-nowrap gap-x-2.5"
+								on:click={() => handleReconcile([id])}
+								disabled={hasSelectedOrders}
+							>
+								{t.reconcile()}
+								<ListTodo aria-hidden focusable="false" size={20} />
+							</button>
+						{:else}
+							<button
+								class="btn-primary btn-sm btn flex-nowrap gap-x-2.5"
+								on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
+								disabled={hasSelectedOrders}
+							>
+								{t.view_reconciliation()}
+								<ListChecks aria-hidden focusable="false" size={20} />
+							</button>
 						{/if}
 					</td>
 				</tr>
