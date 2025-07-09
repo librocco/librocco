@@ -72,19 +72,19 @@
 			<div class="card md:h-full">
 				<div class="card-body gap-y-2 p-0">
 					<div
-						class="bg-base-200 flex flex-row items-center justify-between gap-y-2 border-b px-4 py-2.5 max-md:sticky max-md:top-0 md:flex-col md:items-start"
+						class="flex flex-row items-center justify-between gap-y-2 border-b bg-base-200 px-4 py-2.5 max-md:sticky max-md:top-0 md:flex-col md:items-start"
 					>
 						<h2 class="text-2xl font-medium">{supplier_order_id}</h2>
 
 						<div class="flex flex-row items-center justify-between">
-							<a class="badge badge-lg badge-primary hover:badge-outline gap-x-2" href={appHash("suppliers", supplier_id)}>
+							<a class="badge-primary badge-lg badge gap-x-2 hover:badge-outline" href={appHash("suppliers", supplier_id)}>
 								{supplier_name}
 								<SquareArrow size={12} />
 							</a>
 						</div>
 					</div>
 					<dl class="flex w-full border-b px-4 md:flex-col">
-						<div class="stats md:stats-vertical bg-base-200 w-full">
+						<div class="stats w-full bg-base-200 md:stats-vertical">
 							<div class="stat max-md:p-2 md:px-1">
 								<dt class="stat-title">{t.stats.total_books()}</dt>
 								<dd class="stat-value text-2xl">{total_book_number}</dd>
@@ -134,7 +134,7 @@
 			</div>
 
 			<div class="relative h-full overflow-x-auto">
-				<table class="table-sm table-zebra table">
+				<table class="table-zebra table-sm table">
 					<thead>
 						<tr>
 							<th>{t.table.isbn()}</th>

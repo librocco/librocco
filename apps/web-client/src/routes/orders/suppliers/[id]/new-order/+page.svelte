@@ -104,7 +104,7 @@
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card md:h-full">
 				<div class="card-body gap-y-2 p-0">
-					<div class="bg-base-200 flex flex-col gap-y-2 border-b px-4 py-2.5 max-md:sticky max-md:top-0">
+					<div class="flex flex-col gap-y-2 border-b bg-base-200 px-4 py-2.5 max-md:sticky max-md:top-0">
 						<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
 							<h2 class="text-2xl font-medium">{supplier_name}</h2>
 
@@ -115,7 +115,7 @@
 					</div>
 
 					<dl class="flex w-full border-b px-4 md:flex-col">
-						<div class="stats stats-horizontal md:stats-vertical bg-base-200 w-full">
+						<div class="stats stats-horizontal w-full bg-base-200 md:stats-vertical">
 							<div class="stat max-md:p-2 md:px-1">
 								<dt class="stat-title">{t.stats.total_books()}</dt>
 								<dd class="stat-value text-2xl">{totalPossibleBooks}</dd>
@@ -146,7 +146,7 @@
 			</div>
 
 			<div class="relative h-full overflow-x-auto">
-				<table class="table-sm table-zebra table">
+				<table class="table-zebra table-sm table">
 					<thead>
 						<tr>
 							<th scope="col" class="sr-only"> {t.labels.select()} </th>
@@ -188,15 +188,15 @@
 
 				{#if canPlaceOrder}
 					<div class="card absolute bottom-4 left-0 z-10 flex w-full flex-row bg-transparent">
-						<div class="bg-base-300 mx-2 flex w-full flex-row justify-between px-4 py-2 shadow-lg">
+						<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
 							<dl class="stats flex">
-								<div class="stat bg-base-300 flex shrink flex-row place-items-center py-2 max-md:px-4">
+								<div class="stat flex shrink flex-row place-items-center bg-base-300 py-2 max-md:px-4">
 									<div class="stat-title">{t.stats.selected_books()}:</div>
 									<div class="stat-value text-lg">
 										{totalSelectedBooks}
 									</div>
 								</div>
-								<div class="stat bg-base-300 flex place-items-center py-2 max-md:px-4">
+								<div class="stat flex place-items-center bg-base-300 py-2 max-md:px-4">
 									<div class="stat-title sr-only">{t.table.total()}</div>
 									<div class="stat-value text-lg">€{totalSelectedPrice.toFixed(2)}</div>
 								</div>

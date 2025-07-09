@@ -19,7 +19,7 @@
 </script>
 
 <div class="overflow-x-auto">
-	<table class="table-sm table-zebra table">
+	<table class="table-zebra table-sm table">
 		<thead>
 			<tr>
 				<th scope="col">{t.supplier_id()}</th>
