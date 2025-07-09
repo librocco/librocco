@@ -17,7 +17,7 @@
 </script>
 
 <div class="overflow-x-auto">
-	<table class="table-sm table-zebra table">
+	<table class="table-zebra table-sm table">
 		<thead>
 			<tr>
 				<th scope="col">{t.order_id()}</th>
@@ -35,7 +35,7 @@
 					<td>
 						<div class="flex flex-wrap gap-1">
 							{#each supplierOrderIds as supplier_id}
-								<a class="badge badge-primary hover:badge-outline gap-x-2" href={appHash("supplier_orders", supplier_id)}>
+								<a class="badge-primary badge gap-x-2 hover:badge-outline" href={appHash("supplier_orders", supplier_id)}>
 									#{supplier_id}
 									<SquareArrow size={12} />
 								</a>
