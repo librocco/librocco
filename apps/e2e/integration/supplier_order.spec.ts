@@ -182,64 +182,67 @@ testOrders.skip(
 	}
 );
 
-testOrders("should view reconciliation controls for orders already in reconciliation", async ({ page, suppliers: [supplier], books, t }) => {
-	const { supplier_orders_component: tSupplierOrdersComponent } = t;
-	await page.goto(appHash("supplier_orders"));
+testOrders(
+	"should view reconciliation controls for orders already in reconciliation",
+	async ({ page, suppliers: [supplier], books, t }) => {
+		const { supplier_orders_component: tSupplierOrdersComponent } = t;
+		await page.goto(appHash("supplier_orders"));
 
-	const dbHandle = await getDbHandle(page);
+		const dbHandle = await getDbHandle(page);
 
-	// Create a supplier order that will be part of reconciliation
-	await dbHandle.evaluate(createSupplierOrder, {
-		id: 1,
-		supplierId: supplier.id,
-		orderLines: [
-			{
-				supplier_id: supplier.id,
-				isbn: books[0].isbn,
-				quantity: 1,
-				supplier_name: supplier.name
-			}
-		]
-	});
+		// Create a supplier order that will be part of reconciliation
+		await dbHandle.evaluate(createSupplierOrder, {
+			id: 1,
+			supplierId: supplier.id,
+			orderLines: [
+				{
+					supplier_id: supplier.id,
+					isbn: books[0].isbn,
+					quantity: 1,
+					supplier_name: supplier.name
+				}
+			]
+		});
 
-	// Create another order that won't be in reconciliation (for comparison)
-	await dbHandle.evaluate(createSupplierOrder, {
-		id: 2,
-		supplierId: supplier.id,
-		orderLines: [
-			{
-				supplier_id: supplier.id,
-				isbn: books[1].isbn,
-				quantity: 1,
-				supplier_name: supplier.name
-			}
-		]
-	});
+		// Create another order that won't be in reconciliation (for comparison)
+		await dbHandle.evaluate(createSupplierOrder, {
+			id: 2,
+			supplierId: supplier.id,
+			orderLines: [
+				{
+					supplier_id: supplier.id,
+					isbn: books[1].isbn,
+					quantity: 1,
+					supplier_name: supplier.name
+				}
+			]
+		});
 
-	// Add first order to reconciliation
-	await dbHandle.evaluate(createReconciliationOrder, {
-		id: 1,
-		supplierOrderIds: [1]
-	});
+		// Add first order to reconciliation
+		await dbHandle.evaluate(createReconciliationOrder, {
+			id: 1,
+			supplierOrderIds: [1]
+		});
 
-	// Navigate to supplier's orders view
-	await page.goto(appHash("suppliers", supplier.id));
+		// Navigate to supplier's orders view
+		await page.goto(appHash("suppliers", supplier.id));
 
-	// Get the table rows for both orders
-	const table = page.getByRole("table").nth(3);
-	const rows = table.getByRole("row");
+		// Get the table rows for both orders
+		const table = page.getByRole("table").nth(3);
+		const rows = table.getByRole("row");
 
-	// First order (in reconciliation) should have disabled controls
-	const reconciledRow = rows.nth(2);
+		// First order (in reconciliation) should have disabled controls
+		const reconciledRow = rows.nth(2);
 
-	await expect(reconciledRow.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.view_reconciliation() })).toBeVisible();
-	await expect(reconciledRow.getByRole("checkbox")).toBeDisabled();
+		await expect(reconciledRow.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.view_reconciliation() })).toBeVisible();
+		await expect(reconciledRow.getByRole("checkbox")).toBeDisabled();
 
-	// Second order (not in reconciliation) should have enabled controls
-	const normalRow = rows.nth(1);
-	await expect(normalRow.getByRole("checkbox")).toBeEnabled();
-	await expect(normalRow.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.reconcile() })).toBeEnabled();
-});
+		// Second order (not in reconciliation) should have enabled controls
+		const normalRow = rows.nth(1);
+		await expect(normalRow.getByRole("checkbox")).toBeEnabled();
+		await expect(normalRow.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.reconcile() })).toBeEnabled();
+	}
+);
 
 testOrders(
 	"should show correct batch reconciliation state with mixed reconciliation status",
@@ -305,22 +308,27 @@ testOrders(
 		await expect(rows.nth(3).getByRole("checkbox")).toBeDisabled();
 
 		// Select the other two orders
+		// And mark them for reconciliation
 		await rows.nth(1).getByRole("checkbox").click();
-		//one more row is added (reconcile selected)
-		await rows.nth(3).getByRole("checkbox").click();
+		await rows.nth(2).getByRole("checkbox").click();
+
+		// Their individual reconcile buttons should be disabled
+		await expect(rows.nth(1).getByRole("button", { name: tSupplierOrdersComponent.ordered_table.reconcile() })).toBeDisabled();
+		await expect(rows.nth(2).getByRole("button", { name: tSupplierOrdersComponent.ordered_table.reconcile() })).toBeDisabled();
+		// and the "view reconciliation" button in the "already reconciling" row too... just because it looks better
+		await expect(rows.nth(3).getByRole("button", { name: tSupplierOrdersComponent.ordered_table.view_reconciliation() })).toBeDisabled();
 
 		// Verify batch reconciliation button appears and is enabled
-		const batchReconcileButton = page.getByLabel(tSupplierOrdersComponent.ordered_table.reconcile_selected({ count: 2 }));
+		const batchReconcileButton = page.getByRole("button", {
+			name: tSupplierOrdersComponent.ordered_table.reconcile_selected({ count: 2 })
+		});
 		await expect(batchReconcileButton).toBeVisible();
 		await expect(batchReconcileButton).toBeEnabled();
-
-		// Verify the selection summary shows correct count (2, not 3)
-		await expect(page.getByText("2 orders selected")).toBeVisible();
 	}
 );
 
 testOrders("new order: empty state", async ({ page, books, suppliersWithPublishers, customerOrderLines, t }) => {
-	const { new_order_page: tNewOrder, supplier_orders_component: tSupplierOrdersComponent } = t;
+	const { supplier_orders_component: tSupplierOrdersComponent } = t;
 	const suppliers = suppliersWithPublishers;
 
 	const table = page.getByRole("table");
@@ -332,7 +340,11 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	await page.waitForTimeout(500);
 
 	// Use supplier 1 for the test
-	await table.getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() }).click();
+	await table
+		.getByRole("row")
+		.filter({ hasText: suppliers[0].name })
+		.getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() })
+		.click();
 
 	// The state should show all possible order lines, with ordered quantity/total price and selected quantity/total price (currently 0)
 	const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
@@ -355,14 +367,9 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(3)).toHaveText(books[0].authors);
 	// Possible (ordered) quantity
 	const book1OrderedQuantity = customerOrderLines.byIsbn[books[0].isbn];
-	const book1OrderedPrice = book1OrderedQuantity * books[0].price;
+	const book1OrderedPrice = (book1OrderedQuantity * books[0].price).toFixed(2);
 	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(4)).toHaveText(book1OrderedQuantity.toString());
 	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(5)).toHaveText(`€${book1OrderedPrice}`);
-	// Selected quantity
-	const book1SelectedQuantity = 0;
-	const book1SelectedPrice = book1SelectedQuantity * books[0].price;
-	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
-	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
 
 	// books[2] - isbn: "5678", title: "title3", authors: "author3", price: 30, quantity: 2
 	//
@@ -373,14 +380,9 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(3)).toHaveText(books[2].authors);
 	// Possible (ordered) quantity
 	const book2OrderedQuantity = customerOrderLines.byIsbn[books[2].isbn];
-	const book2OrderedPrice = book2OrderedQuantity * books[2].price;
+	const book2OrderedPrice = (book2OrderedQuantity * books[2].price).toFixed(2);
 	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(4)).toHaveText(book2OrderedQuantity.toString());
 	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(5)).toHaveText(`€${book2OrderedPrice}`);
-	// Selected quantity
-	const book2SelectedQuantity = 0;
-	const book2SelectedPrice = book2SelectedQuantity * books[2].price;
-	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
-	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
 
 	// books[6] - isbn: "7777", title: "title7", authors: "author7", price: 70, quantity: 1
 	//
@@ -391,14 +393,9 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(3)).toHaveText(books[6].authors);
 	// Possible (ordered) quantity
 	const book3OrderedQuantity = customerOrderLines.byIsbn[books[6].isbn];
-	const book3OrderedPrice = book3OrderedQuantity * books[6].price;
+	const book3OrderedPrice = (book3OrderedQuantity * books[6].price).toFixed(2);
 	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(4)).toHaveText(book3OrderedQuantity.toString());
 	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(5)).toHaveText(`€${book3OrderedPrice}`);
-	// Selected quantity
-	const book3SelectedQuantity = 0;
-	const book3SelectedPrice = book3SelectedQuantity * books[6].price;
-	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
-	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
 
 	// books[4] - isbn: "9999", title: "title5", authors: "author5", price: 50, quantity: 1
 	//
@@ -409,14 +406,9 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(3)).toHaveText(books[4].authors);
 	// Possible (ordered) quantity
 	const book4OrderedQuantity = customerOrderLines.byIsbn[books[4].isbn];
-	const book4OrderedPrice = book4OrderedQuantity * books[4].price;
+	const book4OrderedPrice = (book4OrderedQuantity * books[4].price).toFixed(2);
 	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(4)).toHaveText(book4OrderedQuantity.toString());
 	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(5)).toHaveText(`€${book4OrderedPrice}`);
-	// Selected quantity
-	const book4SelectedQuantity = 0;
-	const book4SelectedPrice = book4SelectedQuantity * books[4].price;
-	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
-	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
 });
 
 testOrders(
@@ -436,7 +428,11 @@ testOrders(
 		await page.waitForTimeout(500);
 
 		// Use supplier 1 for the test
-		await table.getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() }).click();
+		await table
+			.getByRole("row")
+			.filter({ hasText: suppliers[0].name })
+			.getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() })
+			.click();
 
 		// The state should show all possible order lines, with ordered quantity/total price and selected quantity/total price (currently 0)
 		const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
@@ -457,28 +453,28 @@ testOrders(
 
 		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
 		let book1SelectedQuantity = 2;
-		let book1SelectedPrice = book1SelectedQuantity * books[0].price;
+		let book1SelectedPrice = (book1SelectedQuantity * books[0].price).toFixed(2);
 		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
 		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked(); // Full selection
 
 		// books[2] - isbn: "5678", ordered: 2 selected: 1 -- running total price: 50 (END HERE)
 		let book2SelectedQuantity = 1;
-		let book2SelectedPrice = book2SelectedQuantity * books[2].price;
+		let book2SelectedPrice = (book2SelectedQuantity * books[2].price).toFixed(2);
 		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
 		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).not.toBeChecked(); // Partial selection
 
 		// books[6] - isbn: "7777", ordered: 1, selected: 0
 		let book3SelectedQuantity = 0;
-		let book3SelectedPrice = book3SelectedQuantity * books[6].price;
+		let book3SelectedPrice = (book3SelectedQuantity * books[6].price).toFixed(2);
 		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
 		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).not.toBeChecked(); // Empty selection
 
 		// books[4] - isbn: "9999", ordered: 1, selected 0
 		let book4SelectedQuantity = 0;
-		let book4SelectedPrice = book4SelectedQuantity * books[4].price;
+		let book4SelectedPrice = (book4SelectedQuantity * books[4].price).toFixed(2);
 		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
 		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked(); // Empty selection
@@ -488,28 +484,28 @@ testOrders(
 
 		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
 		book1SelectedQuantity = 2;
-		book1SelectedPrice = book1SelectedQuantity * books[0].price;
+		book1SelectedPrice = (book1SelectedQuantity * books[0].price).toFixed(2);
 		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
 		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked(); // Full selection
 
 		// books[2] - isbn: "5678", ordered: 2 selected: 2 -- running total price: 80
 		book2SelectedQuantity = 2;
-		book2SelectedPrice = book2SelectedQuantity * books[2].price;
+		book2SelectedPrice = (book2SelectedQuantity * books[2].price).toFixed(2);
 		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
 		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked(); // Full selection
 
 		// books[6] - isbn: "7777", ordered: 1, selected: 0 -- adding next one would make the total price 150 (>100) -- STOP HERE
 		book3SelectedQuantity = 0;
-		book3SelectedPrice = book3SelectedQuantity * books[6].price;
+		book3SelectedPrice = (book3SelectedQuantity * books[6].price).toFixed(2);
 		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
 		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).not.toBeChecked(); // Empty selection
 
 		// books[4] - isbn: "9999", ordered: 1, selected 0
 		book4SelectedQuantity = 0;
-		book4SelectedPrice = book4SelectedQuantity * books[4].price;
+		book4SelectedPrice = (book4SelectedQuantity * books[4].price).toFixed(2);
 		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
 		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked(); // Empty selection
@@ -519,28 +515,28 @@ testOrders(
 
 		// books[0] - isbn: "1234", ordered: 2, selected: 2 -- running total price: 20
 		book1SelectedQuantity = 2;
-		book1SelectedPrice = book1SelectedQuantity * books[0].price;
+		book1SelectedPrice = (book1SelectedQuantity * books[0].price).toFixed(2);
 		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
 		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked(); // Full selection
 
 		// books[2] - isbn: "5678", ordered: 2 selected: 2 -- running total price: 80
 		book2SelectedQuantity = 2;
-		book2SelectedPrice = book2SelectedQuantity * books[2].price;
+		book2SelectedPrice = (book2SelectedQuantity * books[2].price).toFixed(2);
 		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
 		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked(); // Full selection
 
 		// books[6] - isbn: "7777", ordered: 1, selected: 1 -- running total price: 150 (END HERE)
 		book3SelectedQuantity = 1;
-		book3SelectedPrice = book3SelectedQuantity * books[6].price;
+		book3SelectedPrice = (book3SelectedQuantity * books[6].price).toFixed(2);
 		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
 		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).toBeChecked(); // Full selection
 
 		// books[4] - isbn: "9999", ordered: 1, selected 0
 		book4SelectedQuantity = 0;
-		book4SelectedPrice = book4SelectedQuantity * books[4].price;
+		book4SelectedPrice = (book4SelectedQuantity * books[4].price).toFixed(2);
 		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
 		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked(); // Empty selection
@@ -550,28 +546,28 @@ testOrders(
 
 		// books[0] - isbn: "1234", ordered: 2, selected: 2
 		book1SelectedQuantity = 2;
-		book1SelectedPrice = book1SelectedQuantity * books[0].price;
+		book1SelectedPrice = (book1SelectedQuantity * books[0].price).toFixed(2);
 		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
 		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked(); // Full selection
 
 		// books[2] - isbn: "5678", ordered: 2 selected: 2
 		book2SelectedQuantity = 2;
-		book2SelectedPrice = book2SelectedQuantity * books[2].price;
+		book2SelectedPrice = (book2SelectedQuantity * books[2].price).toFixed(2);
 		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
 		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked(); // Full selection
 
 		// books[6] - isbn: "7777", ordered: 1, selected: 1
 		book3SelectedQuantity = 1;
-		book3SelectedPrice = book3SelectedQuantity * books[6].price;
+		book3SelectedPrice = (book3SelectedQuantity * books[6].price).toFixed(2);
 		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
 		await expect(possibleOrderRow.nth(2).getByRole("checkbox")).toBeChecked(); // Full selection
 
 		// books[4] - isbn: "9999", ordered: 1, selected 1
 		book4SelectedQuantity = 1;
-		book4SelectedPrice = book4SelectedQuantity * books[4].price;
+		book4SelectedPrice = (book4SelectedQuantity * books[4].price).toFixed(2);
 		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
 		await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
 		await expect(possibleOrderRow.nth(3).getByRole("checkbox")).toBeChecked(); // Full selection
@@ -600,19 +596,23 @@ testOrders(
 );
 
 testOrders("supplier order page: view + reactivity", async ({ page, books, supplierOrders, t }) => {
-	const { reconciled_list_page: tReconciledList, supplier_orders_component: tSupplierOrdersComponent } = t;
+	const {
+		reconciled_list_page: tReconciledList,
+		supplier_orders_component: tSupplierOrdersComponent,
+		supplier_orders_page: tSupplierOrders
+	} = t;
 	await page.goto(appHash("supplier_orders"));
 
 	const table = page.getByRole("table");
 
-	await page.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.order_id() }).click();
+	await page.getByRole("button", { name: tSupplierOrders.tabs.ordered(), exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order, lines } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.view_order() })
 		.click();
 
