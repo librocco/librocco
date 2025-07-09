@@ -1260,6 +1260,16 @@ type RootTranslation = {
 		}
 	}
 	new_order_page: {
+		/**
+		 * N​e​w​ ​S​u​p​p​l​i​e​r​ ​O​r​d​e​r
+		 */
+		title: string
+		aria: {
+			/**
+			 * L​a​s​t​ ​u​p​d​a​t​e​d
+			 */
+			last_updated: string
+		}
 		stats: {
 			/**
 			 * T​o​t​a​l​ ​b​o​o​k​s
@@ -1276,17 +1286,13 @@ type RootTranslation = {
 		}
 		table: {
 			/**
-			 * O​r​d​e​r​e​d​ ​q​u​a​n​t​i​t​y
+			 * Q​u​a​n​t​i​t​y
 			 */
-			ordered_quantity: string
+			quantity: string
 			/**
 			 * T​o​t​a​l
 			 */
 			total: string
-			/**
-			 * S​e​l​e​c​t​e​d​ ​q​u​a​n​t​i​t​y
-			 */
-			selected_quantity: string
 			/**
 			 * B​o​o​k​s
 			 */
@@ -1414,6 +1420,12 @@ type RootTranslation = {
 				description: string
 			}
 		}
+	}
+	order_page: {
+		/**
+		 * S​u​p​p​l​i​e​r​ ​O​r​d​e​r
+		 */
+		title: string
 	}
 	reconciled_list_page: {
 		labels: {
@@ -3867,6 +3879,16 @@ export type TranslationFunctions = {
 		}
 	}
 	new_order_page: {
+		/**
+		 * New Supplier Order
+		 */
+		title: () => LocalizedString
+		aria: {
+			/**
+			 * Last updated
+			 */
+			last_updated: () => LocalizedString
+		}
 		stats: {
 			/**
 			 * Total books
@@ -3883,17 +3905,13 @@ export type TranslationFunctions = {
 		}
 		table: {
 			/**
-			 * Ordered quantity
+			 * Quantity
 			 */
-			ordered_quantity: () => LocalizedString
+			quantity: () => LocalizedString
 			/**
 			 * Total
 			 */
 			total: () => LocalizedString
-			/**
-			 * Selected quantity
-			 */
-			selected_quantity: () => LocalizedString
 			/**
 			 * Books
 			 */
@@ -4021,6 +4039,12 @@ export type TranslationFunctions = {
 				description: () => LocalizedString
 			}
 		}
+	}
+	order_page: {
+		/**
+		 * Supplier Order
+		 */
+		title: () => LocalizedString
 	}
 	reconciled_list_page: {
 		labels: {
