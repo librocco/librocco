@@ -82,7 +82,11 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	// query in case of fully populated database
 	const stock = await getStock(dbCtx.db, { isbns });
 	for (const { isbn, warehouseId, warehouseName, quantity } of stock) {
-		isbnAvailability.get(isbn)?.set(warehouseId, { displayName: warehouseName, quantity });
+		const warehouseExists = warehouses.find((wh) => wh.id === warehouseId);
+
+		if (warehouseExists) {
+			isbnAvailability.get(isbn)?.set(warehouseId, { displayName: warehouseName, quantity });
+		}
 	}
 	// for each entry compare quantity with available quantity in warehouse
 	// assign min(available quantity, quantity) to entry
