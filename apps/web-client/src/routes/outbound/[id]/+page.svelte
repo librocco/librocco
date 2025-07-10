@@ -266,15 +266,22 @@
 		const totalScannedQuantity = bookRows.get(isbn)?.get(warehouseId) || 0;
 		const difference = nextQty - currentQty;
 		const nextTotalQuantity = totalScannedQuantity + difference;
-		console.log(bookRows.get(isbn)?.get(warehouseId));
-		console.log({ totalScannedQuantity, difference, nextTotalQuantity });
 
 		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextTotalQuantity });
+
+		forceWithdrawalDialogOpen.set(false);
 	};
 
 	const updateRowWarehouse = async (data: InventoryTableData<"book">, e?: CustomEvent<WarehouseChangeDetail>) => {
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
-		const { warehouseId: nextWarehouseId } = e.detail || selectedWarehouse;
+		let nextWarehouseId: number;
+		if (e) {
+			const { warehouseId } = e?.detail;
+			nextWarehouseId = warehouseId;
+		} else {
+			const { id } = selectedWarehouse;
+			nextWarehouseId = id;
+		}
 		// Number form control validation means this string->number conversion should yield a valid result
 		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
@@ -287,20 +294,36 @@
 		// with wh1 containing the max available stock and the rest is forced
 
 		const totalQuantityCurrentWarehouse = bookRows.get(isbn)?.get(currentWarehouseId);
-		const totalQuantityNextWarehouse = bookRows.get(isbn)?.get(nextWarehouseId);
+		const totalQuantityNextWarehouse = currentWarehouseId ? bookRows.get(isbn)?.get(nextWarehouseId) : 0;
 		const difference = totalQuantityCurrentWarehouse - quantity;
+		forceWithdrawalDialogOpen.set(false);
 
+		// to save ourselves from two operations
+		if (totalQuantityCurrentWarehouse === totalQuantityNextWarehouse) {
+			await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
+			return;
+		}
+
+		// in case of updating only a part of a transaction
 		if (difference > 0) {
 			await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity: difference, warehouseId: currentWarehouseId });
-		} else if (difference === 0) {
+		} else if (difference === 0 && currentWarehouseId) {
 			await removeNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId });
 		}
-		await updateNoteTxn(
-			db,
-			noteId,
-			{ isbn, warehouseId: nextWarehouseId },
-			{ quantity: quantity + totalQuantityNextWarehouse, warehouseId: nextWarehouseId }
-		);
+
+		// wh1 has 1 stock and 10 are scanned
+		// user clicks on the sub-transaction that's in stock and re-assigns a different warehouse
+		// decrement quantity by said amount and in case of a non-pre-existing warehouse create a new transaction
+		if (!totalQuantityNextWarehouse) {
+			await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: nextWarehouseId });
+		} else {
+			await updateNoteTxn(
+				db,
+				noteId,
+				{ isbn, warehouseId: currentWarehouseId ? nextWarehouseId : 0 },
+				{ quantity: quantity + totalQuantityNextWarehouse, warehouseId: nextWarehouseId }
+			);
+		}
 	};
 
 	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
