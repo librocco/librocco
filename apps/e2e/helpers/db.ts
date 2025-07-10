@@ -26,7 +26,7 @@ export function getDbHandle(page: Page) {
 			} else {
 				// Creating a separate function, as we want to run the listener only once and then remove it
 				const finalise = () => {
-					window.removeEventListener("db_ready", finalise), res();
+					(window.removeEventListener("db_ready", finalise), res());
 				};
 				window.addEventListener("db_ready", finalise);
 			}
