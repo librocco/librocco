@@ -38,13 +38,16 @@
 
 	// Initialize with all books selected
 	let selectedBooksLookup: { [isbn: string]: boolean } = {};
-	
+
 	// Initialize all books as selected by default
 	$: if (orderLines && Object.keys(selectedBooksLookup).length === 0) {
-		selectedBooksLookup = orderLines.reduce((acc, { isbn }) => {
-			acc[isbn] = true;
-			return acc;
-		}, {} as { [isbn: string]: boolean });
+		selectedBooksLookup = orderLines.reduce(
+			(acc, { isbn }) => {
+				acc[isbn] = true;
+				return acc;
+			},
+			{} as { [isbn: string]: boolean }
+		);
 	}
 
 	$: linesWithSelection = orderLines.map((line) => ({
@@ -113,7 +116,7 @@
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card md:h-full">
 				<div class="card-body gap-y-2 p-0">
-					<div class="flex flex-col gap-y-2 border-b bg-base-200 px-4 py-2.5 max-md:sticky max-md:top-0">
+					<div class="flex flex-col gap-y-2 border-b bg-base-100 px-4 py-2.5 max-md:sticky max-md:top-0">
 						<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
 							<h2 class="text-2xl font-medium">{supplier_name}</h2>
 
@@ -124,12 +127,12 @@
 					</div>
 
 					<dl class="flex w-full border-b px-4 md:flex-col">
-						<div class="stats stats-horizontal w-full bg-base-200 md:stats-vertical">
+						<div class="stats stats-horizontal w-full bg-base-100 md:stats-vertical">
 							<div class="stat max-md:p-2 md:px-1">
 								<dt class="stat-title">{t.stats.total_books()}</dt>
 								<dd class="stat-value text-2xl">{totalPossibleBooks}</dd>
 							</div>
-							<div class="stat bg-base-200 max-md:py-2 md:px-1">
+							<div class="stat bg-base-100 max-md:py-2 md:px-1">
 								<dt class="stat-title">{t.stats.total_value()}</dt>
 								<dd class="stat-value text-2xl">€{totalPossiblePrice.toFixed(2)}</dd>
 							</div>
@@ -154,7 +157,7 @@
 			</div>
 
 			<div class="relative h-full overflow-x-auto">
-				<table class="table-zebra table-sm table">
+				<table class="table-sm table">
 					<thead>
 						<tr>
 							<th scope="col" class="sr-only"> {t.labels.select()} </th>

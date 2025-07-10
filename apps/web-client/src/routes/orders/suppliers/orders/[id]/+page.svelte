@@ -72,7 +72,7 @@
 			<div class="card md:h-full">
 				<div class="card-body gap-y-2 p-0">
 					<div
-						class="flex flex-row items-center justify-between gap-y-2 border-b bg-base-200 px-4 py-2.5 max-md:sticky max-md:top-0 md:flex-col md:items-start"
+						class="flex flex-row items-center justify-between gap-y-2 border-b bg-base-100 px-4 py-2.5 max-md:sticky max-md:top-0 md:flex-col md:items-start"
 					>
 						<h2 class="text-2xl font-medium">{supplier_order_id}</h2>
 
@@ -84,16 +84,16 @@
 						</div>
 					</div>
 					<dl class="flex w-full border-b px-4 md:flex-col">
-						<div class="stats w-full bg-base-200 md:stats-vertical">
+						<div class="stats w-full bg-base-100 md:stats-vertical">
 							<div class="stat max-md:p-2 md:px-1">
 								<dt class="stat-title">{t.stats.total_books()}</dt>
 								<dd class="stat-value text-2xl">{total_book_number}</dd>
 							</div>
-							<div class="stat bg-base-200 max-md:py-2 md:px-1">
+							<div class="stat bg-base-100 max-md:py-2 md:px-1">
 								<dt class="stat-title">{t.stats.total_value()}</dt>
 								<dd class="stat-value text-2xl">€{total_book_price.toFixed(2)}</dd>
 							</div>
-							<div class="stat bg-base-200 max-md:py-2 md:px-1">
+							<div class="stat bg-base-100 max-md:py-2 md:px-1">
 								<dt class="stat-title">{t.stats.ordered()}</dt>
 								<dd class="stat-value text-2xl">
 									<time dateTime={createdDate.toString()}>{createdDate.toLocaleDateString()}</time>
@@ -134,7 +134,7 @@
 			</div>
 
 			<div class="relative h-full overflow-x-auto">
-				<table class="table-zebra table-sm table">
+				<table class="table-sm table">
 					<thead>
 						<tr>
 							<th>{t.table.isbn()}</th>

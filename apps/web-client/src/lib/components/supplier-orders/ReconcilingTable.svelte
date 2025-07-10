@@ -17,7 +17,7 @@
 </script>
 
 <div class="overflow-x-auto">
-	<table class="table-zebra table-sm table">
+	<table class="table-sm table">
 		<thead>
 			<tr>
 				<th scope="col">{t.order_id()}</th>
