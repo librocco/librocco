@@ -15,8 +15,8 @@ testOrders("create: single order: on row button click", async ({ page, supplierO
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("button", { name: "Reconcile" })
 		.click();
 
@@ -63,8 +63,8 @@ testOrders("create: adds the created reconciliation order to (active) 'Reconcili
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("button", { name: "Reconcile" })
 		.click();
 
@@ -128,8 +128,8 @@ testOrders("delete: doesn't delete the reconciliation order on cancel", async ({
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -182,8 +182,8 @@ testOrders("delete: deletes the order (and navigates back to supplier orders) on
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -233,8 +233,8 @@ testOrders("delete: allows deletion of an empty reconciliation order", async ({ 
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -267,12 +267,11 @@ testOrders("populate: initial state", async ({ page, supplierOrders }) => {
 	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: checking for initial state using all 3 supplier orders
-	for (const order of supplierOrders) {
-		const totalBooks = order.lines.reduce((acc, { quantity }) => acc + quantity, 0);
+	for (const { order } of supplierOrders) {
 		await table
 			.getByRole("row")
-			.filter({ hasText: order.order.supplier_name })
-			.filter({ has: page.getByRole("cell", { name: totalBooks.toString(), exact: true }) })
+			.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
+			.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
 			.getByRole("checkbox")
 			.click();
 	}
@@ -363,8 +362,8 @@ testOrders("populate: adjusts quantity using the +/- buttons", async ({ page, bo
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -421,8 +420,8 @@ testOrders("populate: removes a line when quantity drops to 0", async ({ page, b
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -464,8 +463,8 @@ testOrders("populate: sorts books by ISBN", async ({ page, books, supplierOrders
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -542,8 +541,8 @@ testOrders(
 		const { order } = supplierOrders[0];
 		await table
 			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 			.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-			.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 			.getByRole("checkbox")
 			.click();
 
@@ -595,8 +594,8 @@ testOrders(
 		const { order } = supplierOrders[0];
 		await table
 			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 			.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-			.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 			.getByRole("checkbox")
 			.click();
 
@@ -800,8 +799,8 @@ testOrders(
 		const { order } = supplierOrders[0];
 		await table
 			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 			.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-			.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 			.getByRole("checkbox")
 			.click();
 
@@ -862,8 +861,8 @@ testOrders("compare: overdelivered books should be shown in the 'Unmatched' sect
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -928,8 +927,8 @@ testOrders("compare: single order: fully filled", async ({ page, supplierOrders 
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -979,8 +978,8 @@ testOrders("compare: single order: overdelivery", async ({ page, supplierOrders 
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -1033,8 +1032,8 @@ testOrders("compare: single order: partial delivery: no additional books", async
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -1079,8 +1078,8 @@ testOrders("compare: single order: partial delivery: 1 line overdelivered", asyn
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -1120,8 +1119,8 @@ testOrders("compare: single order: partial delivery: 1 unmatched book", async ({
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -1588,8 +1587,8 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 	const { order } = supplierOrders[0];
 	await table
 		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 		.getByRole("checkbox")
 		.click();
 
@@ -1852,8 +1851,8 @@ testOrders(
 		const { order } = supplierOrders[0];
 		await table
 			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: `#${order.id}`, exact: true }) })
 			.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-			.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
 			.getByRole("checkbox")
 			.click();
 
