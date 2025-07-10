@@ -80,7 +80,7 @@
 	use:trigger
 	aria-label="Warehouse"
 >
-	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-success' : 'bg-error'}"></span>
+	<span class="rounded-full p-0.5 {row.type !== 'forced' ? 'bg-success' : 'bg-error'}"></span>
 	{#if $selectedLabel}
 		<span class="truncate">
 			{$selectedLabel === "not-found" ? t.default_option() : $selectedLabel}
