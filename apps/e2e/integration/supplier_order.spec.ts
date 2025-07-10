@@ -13,6 +13,22 @@ import {
 } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
 
+testOrders("should show empty state when no supplier orders exist", async ({ page, t }) => {
+	const { supplier_orders_page: tSupplierOrders } = t;
+	await page.goto(appHash("supplier_orders"));
+
+	await expect(page.getByRole("table")).not.toBeVisible();
+	await expect(page.getByText(tSupplierOrders.placeholder.title())).toBeVisible();
+	await expect(page.getByText(tSupplierOrders.placeholder.description())).toBeVisible();
+
+	const createOrderButton = page.getByRole("button", { name: tSupplierOrders.placeholder.button() });
+	await expect(createOrderButton).toBeVisible();
+
+	await createOrderButton.click();
+
+	await expect(page.getByRole("dialog")).toBeVisible();
+});
+
 testOrders("order tabs (filters): shows completed orders under 'completed' tab", async ({ page, supplierOrders, t }) => {
 	const { supplier_orders_page: tSupplierOrders } = t;
 	await page.goto(appHash("supplier_orders"));
@@ -31,21 +47,6 @@ testOrders("order tabs (filters): shows completed orders under 'completed' tab",
 	await page.getByRole("button", { name: tSupplierOrders.tabs.completed(), exact: true }).click();
 
 	await page.getByRole("table").getByRole("row").nth(2).waitFor();
-});
-
-testOrders("should show empty state when no customer orders exist", async ({ page, t }) => {
-	const { supplier_orders_page: tSupplierOrders } = t;
-	await page.goto(appHash("supplier_orders"));
-
-	await expect(page.getByRole("table")).not.toBeVisible();
-	await expect(page.getByText(tSupplierOrders.placeholder.title())).toBeVisible();
-
-	const createOrderButton = page.getByRole("button", { name: tSupplierOrders.placeholder.button() });
-	await expect(createOrderButton).toBeVisible();
-
-	await createOrderButton.click();
-
-	await expect(page.getByRole("dialog")).toBeVisible();
 });
 
 testOrders("should show list of unordered orders", async ({ page, suppliers: [supplier], books, t }) => {
@@ -218,7 +219,7 @@ testOrders(
 		//
 		// Total possible price = (2 * 10) + (2 * 30) + (1 * 70) + (1 * 50) = 200
 		await expect(possibleOrderRow).toHaveCount(4);
-		
+
 		// All checkboxes should be checked by default
 		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).toBeChecked();
 		await expect(possibleOrderRow.nth(1).getByRole("checkbox")).toBeChecked();

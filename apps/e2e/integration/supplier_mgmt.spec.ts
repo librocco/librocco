@@ -7,7 +7,23 @@ import { associatePublisher, removePublisherFromSupplier, upsertBook } from "@/h
 import { depends, testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
 
-test.describe("Supplier publisher lists", () => {
+test.describe("The supplier list view", () => {
+	test("should show empty state when no suppliers exist", async ({ page, t }) => {
+		const { suppliers_page: tSuppliers } = t;
+		await page.goto(appHash("suppliers"));
+
+		await expect(page.getByRole("table")).not.toBeVisible();
+		await expect(page.getByText(tSuppliers.placeholder.title())).toBeVisible();
+		await expect(page.getByText(tSuppliers.placeholder.description())).toBeVisible();
+
+		// There is a button in the top right of the view, but we target the one in the placeholder box
+		await page.getByRole("button", { name: tSuppliers.labels.new_supplier() }).nth(1).click();
+
+		await expect(page.getByRole("dialog")).toBeVisible();
+	});
+});
+
+test.describe("Supplier publisher config", () => {
 	testOrders("displays three different lists of publishers correctly", async ({ page, suppliers, books, suppliersWithPublishers }) => {
 		depends(books);
 		depends(suppliersWithPublishers);
