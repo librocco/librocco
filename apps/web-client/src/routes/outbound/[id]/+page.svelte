@@ -294,36 +294,22 @@
 		// with wh1 containing the max available stock and the rest is forced
 
 		const totalQuantityCurrentWarehouse = bookRows.get(isbn)?.get(currentWarehouseId);
-		const totalQuantityNextWarehouse = currentWarehouseId ? bookRows.get(isbn)?.get(nextWarehouseId) : 0;
+		const totalQuantityNextWarehouse = bookRows.get(isbn)?.get(nextWarehouseId) || 0;
 		const difference = totalQuantityCurrentWarehouse - quantity;
 		forceWithdrawalDialogOpen.set(false);
 
-		// to save ourselves from two operations
-		if (totalQuantityCurrentWarehouse === totalQuantityNextWarehouse) {
-			await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
+		if (quantity === totalQuantityCurrentWarehouse) {
+			await updateNoteTxn(db, noteId, transaction, { warehouseId: nextWarehouseId, quantity });
 			return;
 		}
-
-		// in case of updating only a part of a transaction
-		if (difference > 0) {
-			await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity: difference, warehouseId: currentWarehouseId });
-		} else if (difference === 0 && currentWarehouseId) {
-			await removeNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId });
-		}
+		await updateNoteTxn(db, noteId, transaction, { warehouseId: currentWarehouseId, quantity: difference });
+		await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: nextWarehouseId });
 
 		// wh1 has 1 stock and 10 are scanned
-		// user clicks on the sub-transaction that's in stock and re-assigns a different warehouse
-		// decrement quantity by said amount and in case of a non-pre-existing warehouse create a new transaction
-		if (!totalQuantityNextWarehouse) {
-			await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: nextWarehouseId });
-		} else {
-			await updateNoteTxn(
-				db,
-				noteId,
-				{ isbn, warehouseId: currentWarehouseId ? nextWarehouseId : 0 },
-				{ quantity: quantity + totalQuantityNextWarehouse, warehouseId: nextWarehouseId }
-			);
-		}
+		// user clicks on the sub-transaction that's in stock
+		// and re-assigns a different warehouse
+		// decrement quantity by said amount and in case of a
+		// non-pre-existing warehouse create a new transaction
 	};
 
 	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
