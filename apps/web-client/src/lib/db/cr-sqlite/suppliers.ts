@@ -323,7 +323,8 @@ async function _getPlacedSupplierOrders(
 			SELECT
 				reconciliation_order.id,
 				CAST (value AS INTEGER) as supplier_order_id,
-				reconciliation_order.finalized
+				reconciliation_order.finalized,
+				reconciliation_order.updatedAt
 			FROM reconciliation_order
 			CROSS JOIN json_each(supplier_order_ids)
 		)
@@ -338,7 +339,8 @@ async function _getPlacedSupplierOrders(
             so.created,
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
-			ro.id as reconciliation_order_id
+			ro.id as reconciliation_order_id,
+			ro.updatedAt as reconciliation_last_updated_at
         FROM supplier_order so
 		LEFT JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id

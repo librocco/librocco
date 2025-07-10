@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ClockArrowUp from "$lucide/clock-arrow-up";
-	import Scan from "$lucide/scan";
+	import ListTodo from "$lucide/list-todo";
+	import SquareArrow from "$lucide/square-arrow-out-up-right";
 
 	import { goto } from "$lib/utils/navigation";
 	import type { ReconciliationOrder } from "$lib/db/cr-sqlite/types";
@@ -11,41 +12,46 @@
 		goto(appHash("reconcile", reconciliationOrderId));
 	}
 	export let orders: Array<ReconciliationOrder>;
+
+	$: t = $LL.supplier_orders_component.reconciling_table;
 </script>
 
 <div class="overflow-x-auto">
-	<table class="table-lg table whitespace-nowrap">
+	<table class="table-sm table">
 		<thead>
 			<tr>
-				<th scope="col">{$LL.supplier_orders_component.reconciling_table.order_id()}</th>
-				<th scope="col">{$LL.supplier_orders_component.reconciling_table.supplier_orders()}</th>
-				<th scope="col">{$LL.supplier_orders_component.reconciling_table.last_updated()}</th>
-				<th scope="col"></th>
-				<th scope="col"><span class="sr-only">{$LL.supplier_orders_component.reconciling_table.update_order()}</span></th>
+				<th scope="col">{t.order_id()}</th>
+				<th scope="col">{t.supplier_orders()}</th>
+				<th scope="col">{t.last_updated()}</th>
+				<th scope="col" class="sr-only">{t.actions()}</th>
 			</tr>
 		</thead>
 		<tbody>
-			{#each orders as { id, supplierOrderIds, created, updatedAt }}
-				<tr class="hover focus-within:bg-base-200">
-					<td>{id}</td>
-					<!-- @TODO replace with supplierOrderIds parse array??? -->
+			{#each orders as { id, supplierOrderIds, updatedAt }}
+				<tr class="hover focus-within:bg-base-200 hover:cursor-pointer" on:click={() => handleUpdateOrder(id)}>
+					<th>
+						<span class="font-medium">#{id}</span>
+					</th>
 					<td>
-						{#each supplierOrderIds as supplier_id}
-							<a class="hover:underline" href={appHash("supplier_orders", supplier_id)}>#{supplier_id} </a>
-						{/each}
+						<div class="flex flex-wrap gap-1">
+							{#each supplierOrderIds as supplier_id}
+								<a class="badge-primary badge gap-x-2 hover:badge-outline" href={appHash("supplier_orders", supplier_id)}>
+									#{supplier_id}
+									<SquareArrow size={12} />
+								</a>
+							{/each}
+						</div>
 					</td>
 					<td>
-						<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-							<span class="sr-only">{$LL.supplier_orders_component.reconciling_table.last_updated()}</span>
+						<span class="badge-primary badge-outline badge badge-md gap-x-2 py-2.5">
 							<ClockArrowUp size={16} aria-hidden />
 							<time dateTime={new Date(updatedAt).toISOString()}>{new Date(updatedAt).toLocaleString()}</time>
-						</span></td
-					>
-					<td> </td>
+						</span>
+					</td>
 					<td class="text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleUpdateOrder(id)}>
-							<Scan aria-hidden focusable="false" size={20} />
-							{$LL.supplier_orders_component.reconciling_table.continue()}
+							{t.continue()}
+							<ListTodo aria-hidden focusable="false" size={20} />
 						</button>
 					</td>
 				</tr>
@@ -53,10 +59,3 @@
 		</tbody>
 	</table>
 </div>
-
-<style>
-	.table-lg td {
-		padding-top: 1rem;
-		padding-bottom: 1rem;
-	}
-</style>

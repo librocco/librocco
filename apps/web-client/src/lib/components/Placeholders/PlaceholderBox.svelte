@@ -4,7 +4,7 @@
 </script>
 
 <div class="card-bordered card border-base-content">
-	<div class="card-body gap-y-4">
+	<div class="card-body gap-y-6">
 		<div class="flex flex-col gap-y-2">
 			<div class="card-title flex items-center gap-x-4">
 				<slot name="icon" />

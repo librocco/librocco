@@ -2,12 +2,52 @@ import { expect } from "@playwright/test";
 
 import { appHash } from "@/constants";
 
-import { testBase as test } from "@/helpers/fixtures";
 import { associatePublisher, removePublisherFromSupplier, upsertBook } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
 
-test.describe("Supplier publisher lists", () => {
+testOrders.describe("The supplier list view", () => {
+	testOrders("should show empty state when no suppliers exist", async ({ page, t }) => {
+		const { suppliers_page: tSuppliers } = t;
+
+		await page.goto(appHash("suppliers"));
+
+		await expect(page.getByRole("table")).not.toBeVisible();
+		await expect(page.getByText(tSuppliers.placeholder.title())).toBeVisible();
+		await expect(page.getByText(tSuppliers.placeholder.description())).toBeVisible();
+
+		// There is a button in the top right of the view, but we target the one in the placeholder box
+		await page.getByRole("button", { name: tSuppliers.labels.new_supplier() }).nth(1).click();
+
+		await expect(page.getByRole("dialog")).toBeVisible();
+	});
+
+	testOrders("should allow navigation to an individual supplier view", async ({ page, t, suppliers }) => {
+		depends(suppliers);
+
+		// TODO: this needs to be renamed when working on the page
+		const { order_list_page: tSupplier } = t;
+
+		await page.goto(appHash("suppliers"));
+
+		// Can navigate view the edit link
+		// nth(1) ignores header row
+		await page.getByRole("table").getByRole("row").nth(1).getByRole("link", { name: "Edit" }).click();
+
+		// TODO: also needs to be updated
+		await expect(page.getByRole("heading", { level: 1, name: tSupplier.details.supplier_page() })).toBeVisible();
+
+		await page.goto(appHash("suppliers"));
+
+		// Or clicking the row
+		await page.getByRole("table").getByRole("row").nth(1).click();
+
+		// TODO: also needs to be updated
+		await expect(page.getByRole("heading", { level: 1, name: tSupplier.details.supplier_page() })).toBeVisible();
+	});
+});
+
+testOrders.describe("Supplier publisher config", () => {
 	testOrders("displays three different lists of publishers correctly", async ({ page, suppliers, books, suppliersWithPublishers }) => {
 		depends(books);
 		depends(suppliersWithPublishers);
