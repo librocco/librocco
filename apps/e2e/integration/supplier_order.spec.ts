@@ -586,7 +586,7 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 	// Navigate back to the order (now the reconciliation order had been created)
 	await page.goto(appHash("supplier_orders"));
 	await page.getByRole("button", { name: "Reconciling" }).click();
-	await page.getByText(`#${order.id}`).click();
+	await page.getByRole("link", { name: `#${order.id}` }).click();
 	await page.waitForURL(appHash("supplier_orders", order.id));
 
 	// The reconciliation button now reads 'View Reconciliation'
@@ -601,7 +601,7 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 	// Go back to the supplier order
 	await page.goto(appHash("supplier_orders"));
 	await page.getByRole("button", { name: "Reconciling" }).click();
-	await page.getByText(`#${order.id}`).click();
+	await page.getByRole("link", { name: `#${order.id}` }).click();
 
 	// The reconciliation button reads 'View Reconciliation' (reconciliation order exists)
 	await page.getByRole("button", { name: tReconciledList.labels.reconcile() }).waitFor({ state: "detached" });
