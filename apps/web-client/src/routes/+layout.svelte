@@ -238,7 +238,7 @@
 	$: ({ layout: tLayout, common: tCommon } = $LL);
 </script>
 
-<div class="flex h-full bg-base-200 lg:divide-x lg:divide-base-content">
+<div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
 	<div class="hidden h-full w-72 lg:block">
 		<Sidebar />
 	</div>

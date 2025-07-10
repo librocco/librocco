@@ -138,7 +138,7 @@
 				</div>
 			{:else}
 				<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-					<table class="table-zebra table-sm table">
+					<table class="table-sm table">
 						<thead>
 							<tr>
 								<th scope="col">{t.table_columns.order_id()}</th>
