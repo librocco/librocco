@@ -12,12 +12,10 @@ _Note: the plugin interface part can be used with any extension satisfying the m
 ## Contents
 
 1. [Plugin interface](#1-plugin-interface):
-
    1. [Registering the plugin with the DB interface instance](#11-registering-the-plugin-with-db-interface-instance)
    2. [The functionality (as specified by the book data plugin interface)](#12-the-functionality-as-specified-by-book-data-plugin-in-interface)
 
 2. [Communication layer](#2-communication-layer):
-
    1. [The messaging spec](#21-the-messaging-spec)
 
 3. [The extension](#3-the-extension)
@@ -78,7 +76,6 @@ The messaging itself is implemented over `window.postMessage` (for sending) and 
 - **availability stream:**
   - when the book data extension becomes available it should register with the plugin by dispatching a `BOOK_FETCHER:ACTIVE` message with payload `{isActive: true}`, similarly, when the extension is unloaded, it's expected to dispatch `BOOK_FETCHER:ACTIVE` with payload `{isActive: false}`
 - **book data fetching:**
-
   - the `fetchBookData` (interface method) accepts a list of isbns, that list is then broken down to one request per each isbn
   - each book data request is dispatched against the extension using `BOOK_FETCHER:REQ:<isbn>` message
   - for each request, a new listener is created, waiting for the response in form of a `BOOK_FETCHER:RES<isbn>` with payload of book data, the wait is capped with a timeout (to prevent the app from hanging)
