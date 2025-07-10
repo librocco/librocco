@@ -99,7 +99,7 @@
 				</div>
 			{:else}
 				<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-auto" style="scrollbar-width: thin">
-					<table class="table-zebra table-sm table" id="supplier-orders">
+					<table class="table-sm table" id="supplier-orders">
 						<thead>
 							<tr>
 								<th scope="col">{t.columns.name()}</th>
