@@ -18,12 +18,3 @@ yarn.lock
 /build
 /dist
 /package
-
-# Skip linting i18n files
-formatters.ts
-i18n-svelte.ts
-i18n-types.ts
-i18n-util.async.ts
-i18n-util.sync.ts
-i18n-util.ts
-src/i18n/**/*.ts
