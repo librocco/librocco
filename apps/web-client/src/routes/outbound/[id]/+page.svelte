@@ -111,7 +111,8 @@
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: publisherList = data.publisherList;
 
-	$: selectedWarehouse = null;
+	let selectedWarehouse: Warehouse | null = null;
+	let initialSelectedWarehouse: Warehouse | null = null;
 
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
@@ -313,12 +314,9 @@
 	};
 
 	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
-		const unavailableWarehouses = warehouses.filter((w) => {
-			const stockInfo = data.availableWarehouses?.get(w.id);
-			return !stockInfo || stockInfo.quantity <= 0;
-		});
-
-		forceWithdrawalDialogData = { row: data, unavailableWarehouses };
+		const warehouse = warehouses.find((w) => w.id === data.warehouseId);
+		selectedWarehouse = warehouse;
+		forceWithdrawalDialogData = { row: data };
 		forceWithdrawalDialogOpen.set(true);
 	};
 
@@ -428,7 +426,7 @@
 	};
 
 	// Create individual dialogs for each type
-	let forceWithdrawalDialogData: { row: InventoryTableData<"book">; unavailableWarehouses: Warehouse[] } | null = null;
+	let forceWithdrawalDialogData: { row: InventoryTableData<"book"> } | null = null;
 	const forceWithdrawalDialog = createDialog(defaultDialogConfig);
 	const {
 		elements: {
@@ -754,7 +752,7 @@
 										on:m-click={() => {
 											openForceWithdrawal(row);
 											open.set(false);
-										}}>{tOutbound.labels.force_withdrawal()}</button
+										}}>{tOutbound.labels.force_withdrawal() || "Force Withdrawal"}</button
 									>
 								</WarehouseSelect>
 							{/if}
@@ -781,26 +779,32 @@
 </Page>
 
 {#if $forceWithdrawalDialogOpen && forceWithdrawalDialogData}
-	{@const { row, unavailableWarehouses } = forceWithdrawalDialogData}
+	{@const { row } = forceWithdrawalDialogData}
 	<PageCenterDialog dialog={forceWithdrawalDialog} title="" description="">
 		<div>
-			{`${tOutbound.force_withdrawal_dialog.title()} 	${row.isbn}`}
+			{`${tOutbound.force_withdrawal_dialog.title()}  ${row.isbn}`}
 		</div>
 		<div>
 			<p class="mb-4">{tOutbound.force_withdrawal_dialog.description()}</p>
-			<select id="warehouse-force-withdrawal" bind:value={selectedWarehouse} class="select-bordered select w-full">
+			<select
+				id="warehouse-force-withdrawal"
+				placeholder="Select a warehouse"
+				bind:value={selectedWarehouse}
+				class="select-bordered select w-full"
+			>
 				<option disabled selected>Select a warehouse</option>
-				{#each unavailableWarehouses as warehouse}
-					<option value={warehouse}>{warehouse.displayName}</option>
+				{#each warehouses as warehouse}
+					{@const availableForForcing = !row.availableWarehouses.has(warehouse.id)}
+					<option class={availableForForcing ? "" : "hidden"} value={warehouse}>{warehouse.displayName}</option>
 				{/each}
 			</select>
 			<p>
-				{selectedWarehouse
-					? tOutbound.force_withdrawal_dialog.selected_warehouse_message({
-							quantity: row.quantity,
-							displayName: selectedWarehouse.displayName
-						})
-					: tOutbound.force_withdrawal_dialog.no_warehouse_selected()}
+				{#if selectedWarehouse}
+					{tOutbound.force_withdrawal_dialog.selected_warehouse_message({
+						quantity: row.quantity,
+						displayName: selectedWarehouse.displayName
+					})}
+				{/if}
 			</p>
 		</div>
 		<div class="stretch flex w-full gap-x-4 p-6">
@@ -811,7 +815,11 @@
 			</div>
 
 			<div class="grow">
-				<button on:click={() => updateRowWarehouse(row)} class="btn-primary btn-lg btn w-full">
+				<button
+					on:click={() => updateRowWarehouse(row)}
+					class="btn-primary btn-lg btn w-full"
+					disabled={selectedWarehouse === initialSelectedWarehouse}
+				>
 					<Save aria-hidden="true" focusable="false" size={20} />
 					{tOutbound.force_withdrawal_dialog.confirm()}
 				</button>
