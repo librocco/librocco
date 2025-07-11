@@ -749,6 +749,7 @@
 										let:open
 										use:melt={$forceWithdrawalDialogTrigger}
 										slot="force-withdrawal"
+										data-testid={testId("force-withdrawal-button")}
 										on:m-click={() => {
 											openForceWithdrawal(row);
 											open.set(false);
