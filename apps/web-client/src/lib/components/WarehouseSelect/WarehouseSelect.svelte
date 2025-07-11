@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from "svelte";
 
 	import { createSelect } from "@melt-ui/svelte";
-	import Check from "$lucide/check";
+	import { SwatchBook } from "$lucide";
 	import ChevronsUpDown from "$lucide/chevrons-up-down";
 	import RefreshCcwDot from "$lucide/refresh-ccw-dot";
 
@@ -52,7 +52,7 @@
 				quantity: number;
 			}
 		>
-	) => [...warehouseList].map(([id, { displayName, quantity }]) => ({ value: id, label: `${displayName}: ${quantity} ` }));
+	) => [...warehouseList].map(([id, { displayName, quantity }]) => ({ value: id, label: displayName, quantity }));
 
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
@@ -98,7 +98,7 @@
 		use:menu
 	>
 		{#each options as warehouse}
-			{@const { label, value } = warehouse}
+			{@const { label, value, quantity } = warehouse}
 			<div
 				class="relative flex cursor-pointer items-center justify-between rounded p-1 focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
 				{...$option(warehouse)}
@@ -106,8 +106,9 @@
 			>
 				{label}
 
-				<div class="check {$isSelected(value) ? 'block' : 'hidden'}">
-					<Check size={18} />
+				<div class="check flex">
+					<SwatchBook size={18} />
+					{quantity}
 				</div>
 
 				<!-- An icon signifying that the book doesn't exist in the given warehouse - will need reconciliation -->
