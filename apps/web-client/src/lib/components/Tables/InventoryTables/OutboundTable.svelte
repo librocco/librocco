@@ -80,13 +80,10 @@
 				} = row}
 				{@const { warehouseId, warehouseName, availableWarehouses } = row}
 				{@const quantityInWarehouse = availableWarehouses?.get(warehouseId)?.quantity || 0}
-				<!-- If a book is available in multiple warehouses (and no warehouse selected), we require action - bg is yellow -->
-				<!-- {@const requiresAction = !warehouseId && availableWarehouses?.size > 1} -->
-				<!-- If a book is out of stock in curren warehouse - paint the row red - this also catches books with no warehouse selected, but no stock in any warehouse -->
-				<!-- {@const outOfStock = quantityInWarehouse < quantity} -->
+				<!-- If no warehouse is selected - paint the row red -->
+				{@const noWarehouse = !warehouseId || warehouseName === "not-found"}
 				<!-- This back and forth is necessary for TS + Svelte to recognise the object as book variant (not custom item) -->
-				<!-- Require action takes precedence over out of stock -->
-				<tr class={!warehouseId ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }}>
+				<tr class={noWarehouse ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }}>
 					<th scope="row" data-property="book" class="table-cell-max">
 						<BookHeadCell data={{ isbn, title, authors, year }} />
 					</th>
@@ -110,7 +107,6 @@
 						{year}
 					</td>
 					<td data-property="warehouseName" class="table-cell-max">
-						<!-- <WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} /> -->
 						{#if $$slots["warehouse-select"]}
 							<slot {editWarehouse} {row} {rowIx} name="warehouse-select"></slot>
 						{/if}
