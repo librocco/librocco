@@ -253,8 +253,14 @@ test("transaction should allow for warehouse selection if there is more than one
 	// Assert relevant fields (isbn, quantity and warehouseName)
 	await row.assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "" });
 	// Check row's available warehouses
-	await row.field("warehouseName").assertOptions(["Warehouse 1: 1", "Warehouse 2: 1"]);
-	/** @TODO assert that the rest of warehouses are inside the force withdrawal button*/
+	await row.field("warehouseName").click();
+
+	const dropdown = page.getByTestId("dropdown-menu");
+	// Check for an option that contains the text "Warehouse 1"
+	await expect(dropdown.locator("div", { hasText: "Warehouse 1" })).toBeVisible();
+
+	// Check for an option that contains the text "Warehouse 2"
+	await expect(dropdown.locator("div", { hasText: "Warehouse 2" })).toBeVisible();
 });
 
 test("if there's one transaction for the isbn with specified warehouse, should add a new transaction (with unspecified warehouse) on 'Add'", async ({
@@ -496,23 +502,27 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	await entries.row(2).field("warehouseName").set("Warehouse 1");
 
 	await entries.row(0).field("warehouseName").click();
-	await page.getByText("Force Withdrawal").waitFor();
 
-	const forceWithdrawalDropdown = page.getByTestId("dropdown-menu");
-	await forceWithdrawalDropdown.getByRole("button", { name: "Force Withdrawal" }).click();
+	const dropdown = page.getByTestId("dropdown-menu");
+	// Check for an option that contains the text "Warehouse 1"
+	await expect(dropdown.locator("button", { hasText: "Force Withdrawal" })).toBeVisible();
+
+	await dropdown.locator("button", { hasText: "Force Withdrawal" }).click();
 	const forceWithdrawalDialog = page.getByRole("dialog");
 	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({ label: "Warehouse 2" });
 	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
 
 	await entries.assertRows([
-		// Out of stock - the book doesn't exist in warehouse
+		// Forced Withdrawal - the book doesn't exist in warehouse
 		{ isbn: "44444444", quantity: 1, warehouseName: "Warehouse 2" },
-		// Out of stock - the book doesn't exist in warehouse
+		// Forced Withdrawal - the book doesn't exist in warehouse
 		{ isbn: "33333333", quantity: 2, warehouseName: "Warehouse 1" },
 		// All fine, enough books in stock (required 5, 5 available in the warehouse)
 		{ isbn: "22222222", quantity: 5, warehouseName: "Warehouse 1" },
-		// Invalid - out of stock (required 3, only 2 available in the warehouse)
-		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 2" },
+		// Only 2 available in the warehouse
+		{ isbn: "11111111", quantity: 2, warehouseName: "Warehouse 2" },
+		// Forced Withdrawal - 3rd copy doesn't exist in warehouse
+		{ isbn: "11111111", quantity: 1, warehouseName: "Warehouse 2" },
 		// All fine, enough books in stock (required 3, 4 available in the warehouse)
 		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 1" }
 	]);
