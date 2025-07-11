@@ -203,7 +203,7 @@ jobs:
       -  #@ rush_install()
       -  #@ rush_build()
       - name: Run the check
-        run: cd apps/web-client && rushx typesafe-i18n-check
+        run: cd pkg/shared && rushx typesafe-i18n-check
 
   perform-monorepo-checks:
     runs-on: ubuntu-latest
