@@ -201,12 +201,14 @@
 		const warehouseOptions = stock
 			.filter((st) => {
 				const totalScanned = bookRows.get(isbn)?.get(st.warehouseId) || 0;
-				return st.quantity >= quantity + totalScanned;
+				const warehouseExists = warehouses.find((warehouse) => warehouse.id === st.warehouseId);
+				return st.quantity >= quantity + totalScanned && warehouseExists;
 			})
 			.map((st) => {
 				return { warehouseId: st.warehouseId, warehouseName: st.warehouseName };
 			});
 
+		console.log({ warehouseOptions });
 		if (warehouseOptions.length === 1) {
 			return warehouseOptions[0].warehouseId;
 		} else if (warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {

@@ -36,6 +36,7 @@ export interface DisplayRow {
 	outOfPrint?: boolean;
 	category?: string;
 	warehouseName: string;
+	type: string;
 }
 
 export interface DashboardInterface extends Locator {
