@@ -66,7 +66,8 @@ const defaultInventoryRowValues: InventoryRowValues = {
 	editedBy: "",
 	warehouseName: "Select a warehouse",
 	outOfPrint: false,
-	category: ""
+	category: "",
+	type: "normal"
 };
 
 function getInventoryRow(parent: DashboardNode, view: InventoryTableView, index: number): InventoryRowInterface {
@@ -304,7 +305,8 @@ const inventoryFieldConstructorLookup: {
 	warehouseName: warehouseNameFieldConstructor,
 	editedBy: stringFieldConstructor("editedBy"),
 	category: stringFieldConstructor("category"),
-	year: stringFieldConstructor("year")
+	year: stringFieldConstructor("year"),
+	type: stringFieldConstructor("type")
 };
 
 const historyFieldConstructorLookup: {
