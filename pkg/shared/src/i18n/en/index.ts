@@ -739,7 +739,8 @@ const table_components = {
 			year: "Year",
 			warehouse: "Warehouse",
 			category: "Category",
-			row_actions: "Row Actions"
+			row_actions: "Row Actions",
+			type: "Type"
 		}
 	},
 	order_tables: {
