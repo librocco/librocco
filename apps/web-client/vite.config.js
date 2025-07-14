@@ -10,8 +10,13 @@ export const DEFAULT_BASE_PATH = "/preview";
 
 const dev = process.env.NODE_ENV === "development";
 const CURRENT_SHA = process.env.CURRENT_SHA;
-let BASE_PATH = process.env.BASE_PATH;
+const BUILD_WITH_SENTRY = process.env.BUILD_WITH_SENTRY === "true";
 
+if (BUILD_WITH_SENTRY) {
+	console.log("building with sentry...");
+}
+
+let BASE_PATH = process.env.BASE_PATH;
 if (typeof BASE_PATH === "undefined") {
 	// If no BASE_PATH was passed as environment variable, we default to either
 	// `/preview` or (if CURRENT_SHA is defined) to `/preview/<CURRENT_SHA>`
@@ -25,7 +30,7 @@ const config = {
 		"import.meta.env.VITE_PKG_VERSION": `"${pkg.version}"`
 	},
 	plugins: [
-		sentrySvelteKit(),
+		BUILD_WITH_SENTRY && sentrySvelteKit(),
 		sveltekit(),
 		{
 			name: "configure-response-headers",
