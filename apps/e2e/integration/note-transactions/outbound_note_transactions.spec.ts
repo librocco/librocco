@@ -721,7 +721,7 @@ test("should allow forcing a withdrawal for a book with no stock", async ({ page
 	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
 
 	// Assert that the transaction is now a 'Forced' withdrawal from Warehouse 1
-	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "Warehouse 1", type: "Forced" }]);
+	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "Warehouse 1", type: "forced" }]);
 });
 
 test("should merge forced transaction when stock becomes available", async ({ page }) => {
@@ -761,15 +761,15 @@ test("should merge forced transaction when stock becomes available", async ({ pa
 	await entries.row(1).assertFields({ type: "normal" });
 
 	await entries.assertRows([
-		{ isbn, quantity: 1, warehouseName: "Warehouse 1" },
-		{ isbn, quantity: 2, warehouseName: "Warehouse 1" }
+		{ isbn, quantity: 2, warehouseName: "Warehouse 1" },
+		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
 	]);
 
 	// Decrease the quantity of the normal transaction, freeing up stock
 	await entries.row(0).field("quantity").set(1);
 
 	// Check that the two rows have merged into a single normal transaction
-	await entries.assertRows([{ isbn, quantity: 2, warehouseName: "Warehouse 1", type: "Normal" }]);
+	await entries.assertRows([{ isbn, quantity: 2, warehouseName: "Warehouse 1", type: "normal" }]);
 });
 
 test("splitting a forced transaction by assigning to a warehouse with insufficient stock", async ({ page }) => {
@@ -793,12 +793,11 @@ test("splitting a forced transaction by assigning to a warehouse with insufficie
 
 	// Assign the transaction to Warehouse 1, which has insufficient stock
 	await entries.row(0).field("warehouseName").set("Warehouse 1");
-	await entries.row(0).assertFields({ type: "forced" });
-	await entries.row(1).assertFields({ type: "normal" });
+
 	// Check that the transaction was split into a 'Normal' and a 'Forced' row
 	await entries.assertRows([
-		{ isbn, quantity: 2, warehouseName: "Warehouse 1" },
-		{ isbn, quantity: 3, warehouseName: "Warehouse 1" }
+		{ isbn, quantity: 2, warehouseName: "Warehouse 1", type: "normal" },
+		{ isbn, quantity: 3, warehouseName: "Warehouse 1", type: "forced" }
 	]);
 });
 
@@ -828,8 +827,8 @@ test("reassigning normal and forced transactions to a warehouse with sufficient 
 	// Initial state: one normal (2 copies) and one forced (1 copy) transaction
 	// for Warehouse 1
 	await entries.assertRows([
-		{ isbn, quantity: 2, warehouseName: "Warehouse 1", type: "Normal" },
-		{ isbn, quantity: 1, warehouseName: "Warehouse 1", type: "Forced" }
+		{ isbn, quantity: 2, warehouseName: "Warehouse 1", type: "normal" },
+		{ isbn, quantity: 1, warehouseName: "Warehouse 1", type: "forced" }
 	]);
 
 	// Reassign the normal transaction to Warehouse 2
@@ -837,8 +836,8 @@ test("reassigning normal and forced transactions to a warehouse with sufficient 
 
 	// Check state after reassigning the normal transaction
 	await entries.assertRows([
-		{ isbn, quantity: 2, warehouseName: "Warehouse 2", type: "Normal" },
-		{ isbn, quantity: 1, warehouseName: "Warehouse 1", type: "Forced" }
+		{ isbn, quantity: 2, warehouseName: "Warehouse 2", type: "normal" },
+		{ isbn, quantity: 1, warehouseName: "Warehouse 1", type: "forced" }
 	]);
 
 	// Reassign the forced transaction to Warehouse 2
@@ -846,7 +845,7 @@ test("reassigning normal and forced transactions to a warehouse with sufficient 
 
 	// Check that both transactions merged into a single normal transaction in
 	// Warehouse 2
-	await entries.assertRows([{ isbn, quantity: 3, warehouseName: "Warehouse 2", type: "Normal" }]);
+	await entries.assertRows([{ isbn, quantity: 3, warehouseName: "Warehouse 2", type: "normal" }]);
 });
 
 test("should auto-assign to the available warehouse after a warehouse with stock has been deleted", async ({ page }) => {

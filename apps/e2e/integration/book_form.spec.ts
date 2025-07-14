@@ -102,7 +102,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	// Navigate to the note page
 	await content.entityList("outbound-list").item(0).edit();
 	await page.getByRole("heading", { name: "Note 1" }).first().waitFor();
-	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
+	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1, type: "forced" }], { strict: true });
 
 	// Edit the book data for the first (and only) row
 	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
@@ -114,7 +114,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	await bookForm.submit("click");
 
 	// The row should have been updated
-	await content.table("outbound-note").assertRows([{ ...book1, quantity: 1 }], { strict: true });
+	await content.table("outbound-note").assertRows([{ ...book1, quantity: 1, type: "forced" }], { strict: true });
 });
 
 test("book form can be submitted using keyboard", async ({ page }) => {
@@ -135,7 +135,7 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 	// Navigate to the note page
 	await content.entityList("outbound-list").item(0).edit();
 	await page.getByRole("heading", { name: "Note 1" }).first().waitFor();
-	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
+	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1, type: "forced" }], { strict: true });
 
 	// Edit the book data for the first (and only) row
 	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
@@ -147,5 +147,5 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 	await bookForm.submit("keyboard");
 
 	// The row should have been updated
-	await content.table("outbound-note").assertRows([{ ...book1, quantity: 1 }], { strict: true });
+	await content.table("outbound-note").assertRows([{ ...book1, quantity: 1, type: "forced" }], { strict: true });
 });
