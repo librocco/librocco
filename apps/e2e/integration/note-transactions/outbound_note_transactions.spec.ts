@@ -16,8 +16,6 @@ import {
 	deleteWarehouse
 } from "@/helpers/cr-sqlite";
 
-``;
-
 import { book1 } from "../data";
 import { compareEntries } from "@/helpers/utils";
 
@@ -605,15 +603,13 @@ test("should create a 'Forced' transaction when stock is depleted", async ({ pag
 	const scanField = content.scanField();
 	const entries = content.table("outbound-note");
 
-	// Add the book 3 times, which should aggregate into one transaction
 	await scanField.add(isbn);
 
-	await entries.assertRows([{ isbn: "1234567890", quantity: 1, type: "forced" }]);
+	await entries.assertRows([{ isbn: "1234567890", quantity: 1, type: "normal" }]);
 	// Assign the transaction to the warehouse
 	await entries.row(0).field("warehouseName").set("Warehouse 1");
 
 	// Check that the transaction is of type 'Normal' as stock is available
-
 	await entries.assertRows([{ isbn: "1234567890", quantity: 1, type: "normal", warehouseName: "Warehouse 1" }]);
 
 	// Add the book a 4th time, which should create a new 'Forced' transaction

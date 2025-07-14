@@ -129,8 +129,6 @@
 		}
 	}
 
-	$: alertMessage = "";
-
 	// #region infinite-scroll
 	let maxResults = 20;
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
@@ -208,7 +206,6 @@
 				return { warehouseId: st.warehouseId, warehouseName: st.warehouseName };
 			});
 
-		console.log({ warehouseOptions });
 		if (warehouseOptions.length === 1) {
 			return warehouseOptions[0].warehouseId;
 		} else if (warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
@@ -318,6 +315,7 @@
 	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
 		const warehouse = warehouses.find((w) => w.id === data.warehouseId);
 		selectedWarehouse = warehouse;
+		initialSelectedWarehouse = warehouse;
 		forceWithdrawalDialogData = { row: data };
 		forceWithdrawalDialogOpen.set(true);
 	};
@@ -665,19 +663,6 @@
 				</div>
 			</div>
 		{:else}
-			{#if alertMessage}
-				<div role="alert" class="alert alert-error">
-					<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24">
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							stroke-width="2"
-							d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-						/>
-					</svg>
-					<span>{alertMessage}</span>
-				</div>
-			{/if}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
@@ -755,7 +740,7 @@
 										on:m-click={() => {
 											openForceWithdrawal(row);
 											open.set(false);
-										}}>{tOutbound.labels.force_withdrawal() || "Force Withdrawal"}</button
+										}}>{tOutbound.labels.force_withdrawal()}</button
 									>
 								</WarehouseSelect>
 							{/if}

@@ -17,7 +17,6 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
-	import type { DialogContent } from "$lib/types";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 
@@ -29,8 +28,6 @@
 
 	const dispatch = createEventDispatcher<OutboundTableEvents>();
 	const { editQuantity, editWarehouse, openForceWithdrawalDialog } = createOutboundTableEvents(dispatch);
-
-	let dialogContent: DialogContent & { type: "commit" | "delete" };
 
 	// TODO: this is a duplicate
 	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
@@ -53,7 +50,7 @@
 			</th>
 			<th scope="col">{$LL.table_components.inventory_tables.outbound_table.warehouse()} </th>
 			<th scope="col" class="show-col-md"> {$LL.table_components.inventory_tables.outbound_table.category()} </th>
-			<th scope="col" class="show-col-md"> Type </th>
+			<th scope="col" class="show-col-md"> {$LL.table_components.inventory_tables.outbound_table.type()} </th>
 
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit">
