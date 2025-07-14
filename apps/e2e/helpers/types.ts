@@ -245,6 +245,7 @@ export interface InventoryFieldLookup {
 	editedBy: Asserter<string>;
 	outOfPrint: Asserter<boolean>;
 	category: Asserter<string>;
+	type: Asserter<string>;
 }
 export interface HistoryFieldLookup {
 	isbn: Asserter<string>;
