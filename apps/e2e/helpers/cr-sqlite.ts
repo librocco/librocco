@@ -77,6 +77,13 @@ export async function upsertWarehouse(db: DB, data: Warehouse): Promise<void> {
 	await window.warehouse.upsertWarehouse(db, data);
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/warehouse.ts:deleteWarehouse
+ */
+export async function deleteWarehouse(db: DB, warehouseId: number): Promise<void> {
+	await window.warehouse.deleteWarehouse(db, warehouseId);
+}
+
 // #region notes
 
 /**
