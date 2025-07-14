@@ -1743,6 +1743,10 @@ type RootTranslation = {
 				 * R​o​w​ ​A​c​t​i​o​n​s
 				 */
 				row_actions: string
+				/**
+				 * T​y​p​e
+				 */
+				type: string
 			}
 		}
 		order_tables: {
@@ -4205,6 +4209,10 @@ export type TranslationFunctions = {
 				 * Row Actions
 				 */
 				row_actions: () => LocalizedString
+				/**
+				 * Type
+				 */
+				type: () => LocalizedString
 			}
 		}
 		order_tables: {

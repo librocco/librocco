@@ -67,7 +67,7 @@ const defaultInventoryRowValues: InventoryRowValues = {
 	warehouseName: "Select a warehouse",
 	outOfPrint: false,
 	category: "",
-	type: "normal"
+	type: ""
 };
 
 function getInventoryRow(parent: DashboardNode, view: InventoryTableView, index: number): InventoryRowInterface {
@@ -91,7 +91,7 @@ function getInventoryRow(parent: DashboardNode, view: InventoryTableView, index:
 			stock: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint", "category"],
 			warehouse: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint", "category"],
 			"inbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint", "category"],
-			"outbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "warehouseName", "category"]
+			"outbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "warehouseName", "category", "type"]
 		};
 
 		await Promise.all(
