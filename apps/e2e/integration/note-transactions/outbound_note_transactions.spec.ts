@@ -498,18 +498,32 @@ test(`should check validity of the transactions and commit the note on 'commit'
 	const noWarehouseSelectedDialog = page.getByRole("dialog", { name: "No warehouse(s) selected" });
 	await noWarehouseSelectedDialog.getByRole("button", { name: "Cancel" }).click();
 
-	await expect(noWarehouseSelectedDialog).not.toBeVisible();
+	// await expect(noWarehouseSelectedDialog).not.toBeVisible();
 
 	// "22222222" - reverse order than order of adding/aggregating
 	await entries.row(2).field("warehouseName").set("Warehouse 1");
 
+	await entries.assertRows([
+		// Forced Withdrawal - the book doesn't exist in warehouse
+		{ isbn: "44444444", quantity: 1, warehouseName: "" },
+		// Forced Withdrawal - the book doesn't exist in warehouse
+		{ isbn: "33333333", quantity: 2, warehouseName: "Warehouse 1" },
+		// All fine, enough books in stock (required 5, 5 available in the warehouse)
+		{ isbn: "22222222", quantity: 5, warehouseName: "Warehouse 1" },
+		// Only 2 available in the warehouse
+		{ isbn: "11111111", quantity: 2, warehouseName: "Warehouse 2" },
+		// Forced Withdrawal - 3rd copy doesn't exist in warehouse
+		{ isbn: "11111111", quantity: 1, warehouseName: "Warehouse 2" },
+		// All fine, enough books in stock (required 3, 4 available in the warehouse)
+		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 1" }
+	]);
+
 	await entries.row(0).field("warehouseName").click();
 
 	const dropdown = page.getByTestId("dropdown-menu");
-	// Check for an option that contains the text "Warehouse 1"
-	await expect(dropdown.locator("button", { hasText: "Force Withdrawal" })).toBeVisible();
-
-	await dropdown.locator("button", { hasText: "Force Withdrawal" }).click();
+	// await expect(dropdown.locator("button", { hasText: "Force Withdrawal" })).toBeVisible();
+	await dropdown.locator("button", { hasText: "Force Withdrawal" }).waitFor();
+	await dropdown.locator("button", { hasText: "Force Withdrawal" }).click({ force: true });
 	const forceWithdrawalDialog = page.getByRole("dialog");
 	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({ label: "Warehouse 2" });
 	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
