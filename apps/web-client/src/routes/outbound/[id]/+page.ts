@@ -97,20 +97,28 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 
 	for (const entry of _entries) {
 		const available = isbnAvailability.get(entry.isbn)?.get(entry.warehouseId)?.quantity;
-		if (available && available === entry.quantity) {
-			entries.push({ ...entry, quantity: available, availableWarehouses: isbnAvailability.get(entry.isbn), type: "normal" });
-		} else if (!available || (available && available < entry.quantity)) {
-			if (available > 0) {
-				entries.push({ ...entry, quantity: available, availableWarehouses: isbnAvailability.get(entry.isbn), type: "normal" });
-			}
-			entries.push({
-				...entry,
-				quantity: entry.quantity - (available || 0),
-				availableWarehouses: isbnAvailability.get(entry.isbn),
-				type: "forced"
-			});
-		} else if (!available || available > entry.quantity) {
+		if (available && available >= entry.quantity) {
+			// Sufficient stock available
 			entries.push({ ...entry, availableWarehouses: isbnAvailability.get(entry.isbn), type: "normal" });
+		} else {
+			// Insufficient or no stock
+			if (available && available > 0) {
+				// Split into normal and forced entries
+				entries.push({ ...entry, quantity: available, availableWarehouses: isbnAvailability.get(entry.isbn), type: "normal" });
+				entries.push({
+					...entry,
+					quantity: entry.quantity - available,
+					availableWarehouses: isbnAvailability.get(entry.isbn),
+					type: "forced"
+				});
+			} else {
+				// No stock available, entire quantity is forced
+				entries.push({
+					...entry,
+					availableWarehouses: isbnAvailability.get(entry.isbn),
+					type: "forced"
+				});
+			}
 		}
 	}
 
