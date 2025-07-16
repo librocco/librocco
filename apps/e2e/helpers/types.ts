@@ -36,6 +36,7 @@ export interface DisplayRow {
 	outOfPrint?: boolean;
 	category?: string;
 	warehouseName: string;
+	type: string;
 }
 
 export interface DashboardInterface extends Locator {
@@ -245,6 +246,7 @@ export interface InventoryFieldLookup {
 	editedBy: Asserter<string>;
 	outOfPrint: Asserter<boolean>;
 	category: Asserter<string>;
+	type: Asserter<string>;
 }
 export interface HistoryFieldLookup {
 	isbn: Asserter<string>;

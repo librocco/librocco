@@ -723,3 +723,56 @@ test("should be able to edit note title", async ({ page }) => {
 
 	await expect(content.entityList("outbound-list").item(0).getByText("title")).toBeVisible();
 });
+
+testInventory("warehouse dropdown should display warehouse name and stock quantity", async ({ page, books, warehouses }) => {
+	await page.goto(baseURL);
+
+	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
+
+	const dbHandle = await getDbHandle(page);
+
+	// Setup stock for a book in two different warehouses
+	const INBOUND_NOTE_ID_1 = 222;
+	const INBOUND_NOTE_ID_2 = 333;
+	await dbHandle.evaluate(createInboundNote, { id: INBOUND_NOTE_ID_1, warehouseId: warehouses[0].id });
+	await dbHandle.evaluate(addVolumesToNote, [INBOUND_NOTE_ID_1, { isbn: books[0].isbn, quantity: 5 }] as const);
+	await dbHandle.evaluate(commitNote, INBOUND_NOTE_ID_1);
+
+	await dbHandle.evaluate(createInboundNote, { id: INBOUND_NOTE_ID_2, warehouseId: warehouses[1].id });
+	await dbHandle.evaluate(addVolumesToNote, [INBOUND_NOTE_ID_2, { isbn: books[0].isbn, quantity: 10 }] as const);
+	await dbHandle.evaluate(commitNote, INBOUND_NOTE_ID_2);
+
+	// Create an outbound note
+	await dbHandle.evaluate(createOutboundNote, {
+		id: 111,
+		displayName: "Warehouse Quantity Test"
+	});
+
+	// Navigate to outbound page and edit the note
+	await page.getByRole("link", { name: "Sale" }).click();
+	await dashboard.content().entityList("outbound-list").waitFor();
+	await dashboard.content().entityList("outbound-list").item(0).edit();
+	await dashboard.view("outbound-note").waitFor();
+
+	const table = dashboard.content().table("outbound-note");
+	// Add the book to the note
+	const isbnInput = page.getByPlaceholder("Scan to add books");
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+
+	await table.assertRows([
+		{
+			isbn: books[0].isbn,
+			warehouseName: ""
+		}
+	]);
+	// Verify the warehouse dropdown shows quantities
+	await dashboard.content().table("outbound-note").row(0).field("warehouseName").click();
+
+	const dropdown = page.getByTestId("dropdown-menu");
+	// Check for an option that contains the text "Warehouse 1"
+	await expect(dropdown.locator("div", { hasText: warehouses[0].displayName })).toBeVisible();
+	// Check for an option that contains the text "Warehouse 2"
+	await expect(dropdown.locator("div", { hasText: warehouses[1].displayName })).toBeVisible();
+});

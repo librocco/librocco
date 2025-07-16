@@ -573,6 +573,14 @@ const sale_note = {
 		review_transaction: "Please review the following transactions",
 		quantity: "quantity for reconciliation"
 	},
+	force_withdrawal_dialog: {
+		title: "Force withdrawal for",
+		cancel: "Cancel",
+		confirm: "Confirm",
+		description: "This book is out of stock. Select a warehouse to perform a force withdrawal.",
+		selected_warehouse_message: ` A reconciliation note will be created for {quantity} books in {displayName}`,
+		no_warehouse_selected: "No warehouse selected"
+	},
 	labels: {
 		new_note: "New Note",
 		edit: "Edit",
@@ -582,7 +590,8 @@ const sale_note = {
 		delete: "Delete",
 		commit: "Commit",
 		print: "Print",
-		custom_item: "Custom item"
+		custom_item: "Custom item",
+		force_withdrawal: "Force Withdrawal"
 	},
 	stats: {
 		last_updated: "Last updated",
@@ -593,6 +602,10 @@ const sale_note = {
 		no_warehouses: "No available warehouses",
 		scan_title: "Scan to add books",
 		scan_description: "Plugin your barcode scanner and pull the trigger"
+	},
+	alerts: {
+		insufficient_quantity:
+			"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse"
 	}
 };
 
@@ -752,7 +765,8 @@ const table_components = {
 			year: "Year",
 			warehouse: "Warehouse",
 			category: "Category",
-			row_actions: "Row Actions"
+			row_actions: "Row Actions",
+			type: "Type"
 		}
 	},
 	order_tables: {

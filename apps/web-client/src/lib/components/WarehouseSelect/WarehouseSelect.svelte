@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from "svelte";
 
 	import { createSelect } from "@melt-ui/svelte";
-	import Check from "$lucide/check";
+	import { SwatchBook } from "$lucide";
 	import ChevronsUpDown from "$lucide/chevrons-up-down";
 	import RefreshCcwDot from "$lucide/refresh-ccw-dot";
 
@@ -13,7 +13,7 @@
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
-	export let data: InventoryTableData<"book">;
+	export let row: InventoryTableData<"book">;
 	export let rowIx: number;
 	export let warehouseList: Omit<Warehouse, "discount">[];
 
@@ -39,10 +39,20 @@
 		}
 	});
 
-	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = data);
+	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = row);
 
 	const mapWarehousesToOptions = (warehouseList: Omit<Warehouse, "discount">[]) =>
 		[...warehouseList].map(({ id, displayName }) => ({ value: id, label: displayName }));
+
+	const mapAvailableWarehousesToOptions = (
+		warehouseList: Map<
+			number,
+			{
+				displayName: string;
+				quantity: number;
+			}
+		>
+	) => [...warehouseList].map(([id, { displayName, quantity }]) => ({ value: id, label: displayName, quantity }));
 
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
@@ -54,7 +64,8 @@
 	// We're allowing all warehouses for selection.
 	// Out of stock situations are handled in the row (painting it red) or
 	// when committing the note (prompting for reconciliation)
-	$: options = mapWarehousesToOptions(warehouseList);
+	// $: options = mapWarehousesToOptions(warehouseList);
+	$: options = mapAvailableWarehousesToOptions(availableWarehouses);
 
 	$: t = $LL.misc_components.warehouse_select;
 </script>
@@ -69,7 +80,7 @@
 	use:trigger
 	aria-label="Warehouse"
 >
-	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-success' : 'bg-error'}"></span>
+	<span class="rounded-full p-0.5 {row.type !== 'forced' ? 'bg-success' : 'bg-error'}"></span>
 	{#if $selectedLabel}
 		<span class="truncate">
 			{$selectedLabel === "not-found" ? t.default_option() : $selectedLabel}
@@ -87,7 +98,7 @@
 		use:menu
 	>
 		{#each options as warehouse}
-			{@const { label, value } = warehouse}
+			{@const { label, value, quantity } = warehouse}
 			<div
 				class="relative flex cursor-pointer items-center justify-between rounded p-1 focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
 				{...$option(warehouse)}
@@ -95,8 +106,9 @@
 			>
 				{label}
 
-				<div class="check {$isSelected(value) ? 'block' : 'hidden'}">
-					<Check size={18} />
+				<div class="check flex">
+					<SwatchBook size={18} />
+					{quantity}
 				</div>
 
 				<!-- An icon signifying that the book doesn't exist in the given warehouse - will need reconciliation -->
@@ -108,5 +120,6 @@
 				{/if}
 			</div>
 		{/each}
+		<slot {open} name="force-withdrawal"></slot>
 	</div>
 {/if}

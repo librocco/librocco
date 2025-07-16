@@ -16,6 +16,6 @@
 
 <Story name="Default">
 	<td>
-		<WarehouseSelect data={outNoteRows[0]} rowIx={0} {warehouseList} />
+		<WarehouseSelect row={outNoteRows[0]} rowIx={0} {warehouseList} />
 	</td>
 </Story>
