@@ -1,0 +1,21 @@
+name: PR Safety Check
+
+"on":
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check_pr_integrity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history needed
+
+      - name: Install file utility
+        run: sudo apt-get install -y file
+
+      - name: Run safety checks
+        run: ./scripts/check-pr.sh
