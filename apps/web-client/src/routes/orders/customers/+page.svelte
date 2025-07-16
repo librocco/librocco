@@ -98,7 +98,7 @@
 	};
 </script>
 
-<Page title="Customer Orders" view="orders/customers" {db} {plugins}>
+<Page title={t.title()} view="orders/customers" {db} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-2 divide-y">
 		<div class="flex flex-row gap-x-2 p-4">
 			<CustomerSearchForm
@@ -127,7 +127,7 @@
 		</div>
 		<div class="h-full p-4">
 			{#if !customerOrders.length}
-				<div class="mx-auto max-w-xl translate-y-1/2">
+				<div class="mx-auto w-fit max-w-xl translate-y-1/2">
 					<PlaceholderBox title={t.placeholder.no_orders.title()} description={t.placeholder.no_orders.description()}>
 						<User slot="icon" />
 
@@ -139,7 +139,7 @@
 				</div>
 			{:else}
 				<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-					<table class="table-zebra table-sm table">
+					<table class="table-sm table">
 						<thead>
 							<tr>
 								<th scope="col">{t.table_columns.order_id()}</th>

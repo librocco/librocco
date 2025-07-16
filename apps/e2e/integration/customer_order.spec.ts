@@ -6,11 +6,26 @@ import { testBase as test, testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
 import { addBooksToCustomer } from "@/helpers/cr-sqlite";
 
+test("should show empty state when no customer orders exist", async ({ page, t }) => {
+	const { customer_orders_page: tCustomers } = t;
+	await page.goto(appHash("customers"));
+
+	await expect(page.getByRole("table")).not.toBeVisible();
+	await expect(page.getByText(tCustomers.placeholder.no_orders.title())).toBeVisible();
+	await expect(page.getByText(tCustomers.placeholder.no_orders.description())).toBeVisible();
+
+	// There is a button in the top right of the view, but we target the one in the placeholder box
+	await page.getByRole("button", { name: tCustomers.labels.new_order() }).nth(1).click();
+
+	await expect(page.getByRole("dialog")).toBeVisible();
+});
+
 test("should create a new customer order", async ({ page, t }) => {
 	const { customer_orders_page: tCustomers } = t;
 	const { forms: tForms } = t;
 
 	await page.goto(appHash("customers"));
+	// This time target the first button in the top right of the view
 	await page.getByRole("button", { name: tCustomers.labels.new_order() }).first().click();
 
 	const dialog = page.getByRole("dialog");

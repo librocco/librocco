@@ -180,7 +180,8 @@ const supplier_orders_page = {
 		completed: "Completed"
 	},
 	placeholder: {
-		description: "No unordered supplier orders available. Create a customer order first to generate supplier orders.",
+		title: "There are no pending supplier orders",
+		description: "Create customer orders to generate supplier orders",
 		button: "New Customer Order"
 	}
 };
@@ -235,8 +236,8 @@ const customer_orders_page = {
 	placeholder: {
 		search: "Search for customers by name",
 		no_orders: {
-			title: "No customers",
-			description: "Get started by creating a new order"
+			title: "There are no customers",
+			description: "Create a new customer order to get started"
 		},
 		scan_title: "Scan to add books",
 		scan_description: "Plugin your barcode scanner and pull the trigger"
@@ -275,16 +276,20 @@ const customer_orders_page = {
 		}
 	}
 };
+
 const new_order_page = {
+	title: "New Supplier Order",
+	aria: {
+		last_updated: "Last updated"
+	},
 	stats: {
 		total_books: "Total books",
 		total_value: "Total value",
 		selected_books: "Selected books"
 	},
 	table: {
-		ordered_quantity: "Ordered quantity",
+		quantity: "Quantity",
 		total: "Total",
-		selected_quantity: "Selected quantity",
 		books: "Books",
 		isbn: "ISBN",
 		title: "Title",
@@ -323,6 +328,14 @@ const order_list_page = {
 		}
 	}
 };
+
+// The "placed order" page seems to have been setup
+// to use the same strings as the following "reconcilied_list_page"
+// so as not to disturbe to many things, I've kept it that way, and have added additional strings here
+const order_page = {
+	title: "Supplier Order"
+};
+
 const reconciled_list_page = {
 	labels: {
 		view_reconciliation: "View Reconciliation",
@@ -385,15 +398,25 @@ const reconcile_page = {
 	}
 };
 const suppliers_page = {
+	title: "Suppliers",
+	placeholder: {
+		title: "There are no suppliers",
+		description: "Create a new supplier to manage publisher catalogues"
+	},
+	dialog: {
+		new_order_title: "Create new supplier"
+	},
 	labels: {
-		new_supplier: "New Supplier"
-	},
-	title: {
-		suppliers: "Suppliers"
-	},
-	table: {
-		delete: "Delete",
+		save: "Create",
+		new_supplier: "New Supplier",
 		edit: "Edit"
+	},
+	columns: {
+		name: "Name",
+		email: "Email",
+		address: "Address",
+		assigned_publishers: "Assigned Publishers",
+		actions: "Actions"
 	}
 };
 
@@ -645,36 +668,39 @@ const supplier_orders_component = {
 		unmatched_books: "Unmatched Books"
 	},
 	completed_table: {
-		supplier: "Supplier",
+		supplier_id: "Order ID",
+		supplier: "Supplier Name",
 		books: "Books",
-		placed: "Placed",
+		finalized: "Finalised",
 		actions: "Actions",
 		view_order: "View Order",
 		view_reconciliation: "View Reconciliation"
 	},
 	ordered_table: {
-		supplier: "Supplier",
-		books: "Books",
+		order_id: "Order ID",
+		select: "Select",
+		supplier: "Supplier Name",
 		placed: "Placed",
 		actions: "Actions",
-		selected_orders_summary: "Selected orders summary",
-		selected_orders: "{ selectedOrders } orders selected",
-		reconcile_selected: "Reconcile Selected",
+		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
 		reconcile: "Reconcile",
-		view_reconciliation: "View Reconciliation"
+		view_reconciliation: "Reconciliation"
 	},
 	reconciling_table: {
-		order_id: "Order Id",
+		order_id: "Reconciliation ID",
 		supplier_orders: "Supplier Orders",
 		last_updated: "Last Updated",
 		update_order: "Update order",
-		continue: "Continue"
+		continue: "Continue",
+		actions: "Actions"
 	},
 	unordered_table: {
-		supplier: "Supplier",
-		books: "Books",
-		place_order: "Place Order"
+		supplier_id: "Supplier ID",
+		supplier: "Supplier Name",
+		books: "No. of Books",
+		place_order: "Place Order",
+		actions: "Actions"
 	}
 };
 
@@ -751,16 +777,6 @@ const table_components = {
 			order_no: "Order no.",
 			edit: "Edit",
 			manage: "Manage"
-		},
-		supplier_table: {
-			labels: {
-				name: "Name",
-				email: "Email",
-				address: "Address",
-
-				assigned_publishers: "Assigned Publishers",
-				row_actions: "Row Actions"
-			}
 		}
 	}
 };
@@ -1009,6 +1025,7 @@ const en = {
 	supplier_orders_page,
 	new_order_page,
 	reconcile_page,
+	order_page,
 	reconciled_list_page,
 	order_list_page,
 	supplier_orders_component,
