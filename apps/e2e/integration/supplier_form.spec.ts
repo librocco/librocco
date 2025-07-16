@@ -9,12 +9,12 @@ testOrders("general: closes the form 'Cancel' click or 'Esc' press", async ({ pa
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "New Supplier" }).click();
+	await page.getByRole("button", { name: "New Supplier" }).first().click();
 
 	await page.getByRole("button", { name: "Cancel" }).click();
 	await dialog.waitFor({ state: "detached" });
 
-	await page.getByRole("button", { name: "New Supplier" }).click();
+	await page.getByRole("button", { name: "New Supplier" }).first().click();
 
 	await page.keyboard.press("Escape");
 	await dialog.waitFor({ state: "detached" });
@@ -31,7 +31,7 @@ testOrders("supplier list: new: submits the form with all fields", async ({ page
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "New Supplier" }).click();
+	await page.getByRole("button", { name: "New Supplier" }).first().click();
 
 	await dialog.getByText("Create new supplier").waitFor();
 
@@ -55,7 +55,7 @@ testOrders("supplier list: new: submits the form with only name provided", async
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "New Supplier" }).click();
+	await page.getByRole("button", { name: "New Supplier" }).first().click();
 
 	await dialog.getByText("Create new supplier").waitFor();
 
@@ -80,7 +80,7 @@ testOrders("supplier list: new: doesn't allow for submission without the name fi
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "New Supplier" }).click();
+	await page.getByRole("button", { name: "New Supplier" }).first().click();
 
 	await dialog.getByText("Create new supplier").waitFor();
 
@@ -103,7 +103,7 @@ testOrders("supplier list: new: doesn't allow for submission with invalid email 
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "New Supplier" }).click();
+	await page.getByRole("button", { name: "New Supplier" }).first().click();
 
 	await dialog.getByText("Create new supplier").waitFor();
 
