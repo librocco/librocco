@@ -1,7 +1,6 @@
 import { loadedLocales } from "@librocco/shared/i18n-util";
 import { writable, get } from "svelte/store";
-import { browser } from "$app/environment";
-
+import { getLanguageUrl } from "$lib/i18n-overrides-lib";
 import { env as publicEnv } from "$env/dynamic/public";
 
 const PUBLIC_WEBLATE_COMPONENT_URL = publicEnv.PUBLIC_WEBLATE_COMPONENT_URL;
@@ -28,24 +27,15 @@ type TranslationOverridesState = {
 /* -------------------------------------------------------------------------- */
 
 function persisted<T>(key: string, initial: T) {
+	if (typeof localStorage === "undefined") return;
 	const store = writable(initial);
 
-	if (browser) {
-		try {
-			const json = localStorage.getItem(key);
-			if (json) store.set(JSON.parse(json));
-		} catch {
-			/* corrupted value – ignore */
-		}
+	const json = localStorage.getItem(key);
+	if (json) store.set(JSON.parse(json));
 
-		store.subscribe((value) => {
-			try {
-				localStorage.setItem(key, JSON.stringify(value));
-			} catch {
-				/* quota / serialisation errors – ignore */
-			}
-		});
-	}
+	store.subscribe((value) => {
+		localStorage.setItem(key, JSON.stringify(value));
+	});
 
 	return store;
 }
@@ -81,18 +71,14 @@ export async function updateTranslationOverrides(opts: { notOlderThanSecs?: numb
 		const url = getLanguageUrl(PUBLIC_WEBLATE_COMPONENT_URL, language);
 		if (!url) continue;
 
-		try {
-			const headers: Record<string, string> = {};
-			if (PUBLIC_WEBLATE_API_KEY) {
-				headers["Authorization"] = `Token ${PUBLIC_WEBLATE_API_KEY}`;
-			}
+		const headers: Record<string, string> = {};
+		if (PUBLIC_WEBLATE_API_KEY) {
+			headers["Authorization"] = `Token ${PUBLIC_WEBLATE_API_KEY}`;
+		}
 
-			const res = await fetch(url, { headers });
-			if (res.ok) {
-				newOverrides[language] = await res.json();
-			}
-		} catch (error) {
-			console.error(error);
+		const res = await fetch(url, { headers });
+		if (res.ok) {
+			newOverrides[language] = await res.json();
 		}
 	}
 
@@ -115,18 +101,6 @@ function applyOverridesToLoadedLocales(overrides: Record<string, unknown>) {
 	for (const [lang, data] of Object.entries(overrides)) {
 		if (!loadedLocales[lang]) continue;
 		deepMergeInPlace(loadedLocales[lang], data);
-	}
-}
-
-function getLanguageUrl(baseUrl: string, language: string) {
-	try {
-		const urlWithSlash = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
-		const url = new URL(urlWithSlash);
-		if (!url.pathname.startsWith("/projects/")) return "";
-		const newPath = url.pathname.replace("/projects/", "/api/translations/") + `${language}/file/`;
-		return new URL(newPath, url.origin).href;
-	} catch {
-		return "";
 	}
 }
 
