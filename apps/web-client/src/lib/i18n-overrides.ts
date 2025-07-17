@@ -1,5 +1,5 @@
 import { loadedLocales } from "@librocco/shared/i18n-util";
-import { writable } from "svelte/store";
+import { writable, get } from "svelte/store";
 import { browser } from "$app/environment";
 
 import { env as publicEnv } from "$env/dynamic/public";
@@ -26,25 +26,25 @@ type TranslationOverridesState = {
 /* -------------------------------------------------------------------------- */
 
 function persisted<T>(key: string, initial: T) {
-	const store = writable(initial, (set) => {
-		if (!browser) return;
+	const store = writable(initial);
 
+	if (browser) {
 		try {
 			const json = localStorage.getItem(key);
-			if (json) set(JSON.parse(json));
+			if (json) store.set(JSON.parse(json));
 		} catch {
 			/* corrupted value – ignore */
 		}
 
-		const unsub = store.subscribe((value) => {
+		store.subscribe((value) => {
 			try {
 				localStorage.setItem(key, JSON.stringify(value));
 			} catch {
 				/* quota / serialisation errors – ignore */
 			}
 		});
-		return unsub;
-	});
+	}
+
 	return store;
 }
 
@@ -64,8 +64,7 @@ export const translationOverridesStore = persisted<TranslationOverridesState>(
 export async function updateTranslationOverrides(
 	opts: { notOlderThanSecs?: number } = {}
 ): Promise<TranslationOverridesState> {
-	let current: TranslationOverridesState;
-	translationOverridesStore.subscribe((v) => (current = v))(); // immediate & unsubscribe
+	const current: TranslationOverridesState = get(translationOverridesStore);
 
 	const freshnessSecs = opts.notOlderThanSecs ?? 3600;
 
