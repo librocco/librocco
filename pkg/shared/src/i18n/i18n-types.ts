@@ -860,6 +860,10 @@ type RootTranslation = {
 			 */
 			select_warehouse: string
 			/**
+			 * A​n​y​ ​w​a​r​e​h​o​u​s​e
+			 */
+			any_warehouse: string
+			/**
 			 * N​o​ ​a​v​a​i​l​a​b​l​e​ ​w​a​r​e​h​o​u​s​e​s
 			 */
 			no_warehouses: string
@@ -3462,6 +3466,10 @@ export type TranslationFunctions = {
 			 * Please select a warehouse
 			 */
 			select_warehouse: () => LocalizedString
+			/**
+			 * Any warehouse
+			 */
+			any_warehouse: () => LocalizedString
 			/**
 			 * No available warehouses
 			 */
