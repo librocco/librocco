@@ -567,6 +567,7 @@ const sale_note = {
 	},
 	placeholder: {
 		select_warehouse: "Please select a warehouse",
+		any_warehouse: "Any warehouse",
 		no_warehouses: "No available warehouses",
 		scan_title: "Scan to add books",
 		scan_description: "Plugin your barcode scanner and pull the trigger"
@@ -776,7 +777,7 @@ const misc_components = {
 	},
 	warehouse_select: {
 		label: "Select a warehouse to withdraw book { rowIx } from",
-		default_option: "Select a warehouse"
+		default_option: "Select a warehouse",
 	}
 };
 

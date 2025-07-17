@@ -524,7 +524,7 @@
 				</div>
 			</div>
 
-			<div class="flex w-full py-4">
+			<div class="flex h-full">
 				<ScannerForm
 					data={defaults(zod(scannerSchema))}
 					options={{
@@ -538,7 +538,28 @@
 							await handleAddTransaction(isbn);
 						}
 					}}
+					placeholder={"Scan to select books from"}
 				/>
+				<select
+					id="defaultWarehouse"
+					name="defaultWarehouse"
+					class="select-bordered select select-sm h-full"
+					value={defaultWarehouse || ""}
+					on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
+				>
+					<option value="">{warehouses.length > 0 ? tOutbound.placeholder.any_warehouse() : tOutbound.placeholder.no_warehouses()}</option>
+					{#each warehouses as warehouse}
+						<option value={warehouse.id}>{warehouse.displayName}</option>
+					{/each}
+				</select>
+				<!-- <div id="button-container" class="flex h-24 w-full items-center justify-start px-8"> -->
+				<button
+					use:melt={$customItemDialogTrigger}
+					on:m-click={() => openCustomItemForm()}
+					on:m-keydown={() => openCustomItemForm()}
+					class="btn-neutral btn mx-2">{tOutbound.labels.custom_item()}</button
+				>
+				<!-- </div> -->
 			</div>
 		</div>
 
@@ -634,15 +655,6 @@
 							</PopoverWrapper>
 						</div>
 					</OutboundTable>
-				</div>
-
-				<div id="button-container" class="flex h-24 w-full items-center justify-start px-8">
-					<button
-						use:melt={$customItemDialogTrigger}
-						on:m-click={() => openCustomItemForm()}
-						on:m-keydown={() => openCustomItemForm()}
-						class="btn-neutral btn mx-2">{tOutbound.labels.custom_item()}</button
-					>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
