@@ -7,6 +7,8 @@ import { env as publicEnv } from "$env/dynamic/public";
 const PUBLIC_WEBLATE_COMPONENT_URL = publicEnv.PUBLIC_WEBLATE_COMPONENT_URL;
 const PUBLIC_WEBLATE_API_KEY = publicEnv.PUBLIC_WEBLATE_API_KEY;
 const LOCAL_STORAGE_KEY = "weblate_translation_overrides";
+const OVERRIDES_MAXAGE = 60;
+export const TRANSLATION_OVERRIDES_ENABLED = !!PUBLIC_WEBLATE_COMPONENT_URL;
 
 /* -------------------------------------------------------------------------- */
 /*                               Helper types                                 */
@@ -48,36 +50,27 @@ function persisted<T>(key: string, initial: T) {
 	return store;
 }
 
-export const translationOverridesStore = persisted<TranslationOverridesState>(
-	LOCAL_STORAGE_KEY,
-	{
-		overrides: {},
-		lastFetched: null,
-		loading: false
-	}
-);
+export const translationOverridesStore = persisted<TranslationOverridesState>(LOCAL_STORAGE_KEY, {
+	overrides: {},
+	lastFetched: null,
+	loading: false
+});
 
 /* -------------------------------------------------------------------------- */
 /*                         Public fetch/update function                       */
 /* -------------------------------------------------------------------------- */
 
-export async function updateTranslationOverrides(
-	opts: { notOlderThanSecs?: number } = {}
-): Promise<TranslationOverridesState> {
+export async function updateTranslationOverrides(opts: { notOlderThanSecs?: number } = {}): Promise<TranslationOverridesState> {
+	if (!TRANSLATION_OVERRIDES_ENABLED) return;
 	const current: TranslationOverridesState = get(translationOverridesStore);
 
-	const freshnessSecs = opts.notOlderThanSecs ?? 3600;
+	const freshnessSecs = opts.notOlderThanSecs ?? OVERRIDES_MAXAGE;
 
 	/* ---------- Use cached value if still fresh ---------- */
-	if (
-		current.lastFetched &&
-		Date.now() - current.lastFetched < freshnessSecs * 1_000
-	) {
+	if (current.lastFetched && Date.now() - current.lastFetched < freshnessSecs * 1_000) {
 		applyOverridesToLoadedLocales(current.overrides);
 		return current;
 	}
-
-	if (!PUBLIC_WEBLATE_COMPONENT_URL) return current;
 
 	translationOverridesStore.update((s) => ({ ...s, loading: true }));
 
@@ -98,8 +91,8 @@ export async function updateTranslationOverrides(
 			if (res.ok) {
 				newOverrides[language] = await res.json();
 			}
-		} catch {
-			/* ignore individual-language failures */
+		} catch (error) {
+			console.error(error);
 		}
 	}
 
@@ -130,9 +123,7 @@ function getLanguageUrl(baseUrl: string, language: string) {
 		const urlWithSlash = baseUrl.endsWith("/") ? baseUrl : `${baseUrl}/`;
 		const url = new URL(urlWithSlash);
 		if (!url.pathname.startsWith("/projects/")) return "";
-		const newPath =
-			url.pathname.replace("/projects/", "/api/translations/") +
-			`${language}/file/`;
+		const newPath = url.pathname.replace("/projects/", "/api/translations/") + `${language}/file/`;
 		return new URL(newPath, url.origin).href;
 	} catch {
 		return "";
@@ -142,11 +133,7 @@ function getLanguageUrl(baseUrl: string, language: string) {
 function deepMergeInPlace(target: any, source: any): any {
 	if (!target || !source) return target;
 	Object.keys(source).forEach((key) => {
-		if (
-			source[key] &&
-			typeof source[key] === "object" &&
-			!Array.isArray(source[key])
-		) {
+		if (source[key] && typeof source[key] === "object" && !Array.isArray(source[key])) {
 			if (!target[key] || typeof target[key] !== "object") {
 				target[key] = {};
 			}
