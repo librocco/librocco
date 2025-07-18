@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PluginsInterface } from "$lib/plugins";
+	import { invalidateAll } from "$app/navigation";
 	import { createDBConnectivityStore, createExtensionAvailabilityStore } from "$lib/stores";
 	import { updateTranslationOverrides, translationOverridesStore, TRANSLATION_OVERRIDES_ENABLED } from "$lib/i18n-overrides";
 	import LL from "@librocco/shared/i18n-svelte";
@@ -11,6 +12,7 @@
 
 	async function updateTranslationsButtonClicked() {
 		await updateTranslationOverrides({ notOlderThanSecs: 0 });
+		invalidateAll();
 	}
 </script>
 
