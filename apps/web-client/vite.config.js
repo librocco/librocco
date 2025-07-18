@@ -10,9 +10,8 @@ export const DEFAULT_BASE_PATH = "/preview";
 
 const dev = process.env.NODE_ENV === "development";
 const CURRENT_SHA = process.env.CURRENT_SHA;
-const BUILD_WITH_SENTRY = process.env.BUILD_WITH_SENTRY === "true";
 
-if (BUILD_WITH_SENTRY) {
+if (process.env.SENTRY_AUTH_TOKEN != "") {
 	console.log("building with sentry...");
 }
 
@@ -30,7 +29,7 @@ const config = {
 		"import.meta.env.VITE_PKG_VERSION": `"${pkg.version}"`
 	},
 	plugins: [
-		BUILD_WITH_SENTRY && sentrySvelteKit(),
+		process.env.SENTRY_AUTH_TOKEN && sentrySvelteKit(),
 		sveltekit(),
 		{
 			name: "configure-response-headers",
