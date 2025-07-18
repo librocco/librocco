@@ -1711,7 +1711,7 @@ type RootTranslation = {
 			 */
 			reconcile: string
 			/**
-			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
+			 * R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
 		}
@@ -2020,6 +2020,10 @@ type RootTranslation = {
 			 * R​e​m​o​t​e​ ​D​B
 			 */
 			remote_db: string
+			/**
+			 * R​e​l​o​a​d​ ​t​r​a​n​s​l​a​t​i​o​n​s​ ​o​v​e​r​r​i​d​e​s
+			 */
+			reload_translations_override: string
 		}
 		page_layout: {
 			/**
@@ -4339,7 +4343,7 @@ export type TranslationFunctions = {
 			 */
 			reconcile: () => LocalizedString
 			/**
-			 * View Reconciliation
+			 * Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
 		}
@@ -4648,6 +4652,10 @@ export type TranslationFunctions = {
 			 * Remote DB
 			 */
 			remote_db: () => LocalizedString
+			/**
+			 * Reload translations overrides
+			 */
+			reload_translations_override: () => LocalizedString
 		}
 		page_layout: {
 			/**
