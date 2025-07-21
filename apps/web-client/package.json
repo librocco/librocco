@@ -30,6 +30,7 @@
 		"@vlcn.io/crsqlite": "0.16.1",
 		"@vlcn.io/crsqlite-wasm": "0.16.0",
 		"@vlcn.io/rx-tbl": "0.15.0",
+		"@vlcn.io/wa-sqlite": "0.22.0",
 		"@vlcn.io/ws-browserdb": "0.2.0",
 		"@vlcn.io/ws-client": "0.2.0",
 		"@vlcn.io/ws-common": "0.2.0",

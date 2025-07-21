@@ -25,6 +25,7 @@ function alias_vlcn_dev() {
 		"@vlcn.io/crsqlite": "../../3rd-party/js/deps/cr-sqlite/core/nodejs-helper.js",
 		"@vlcn.io/crsqlite-wasm": "../../3rd-party/js/packages/crsqlite-wasm/dist",
 		"@vlcn.io/rx-tbl": "../../3rd-party/js/packages/rx-tbl/dist",
+		"@vlcn.io/wa-sqlite": "../../3rd-party/js/deps/wa-sqlite",
 		"@vlcn.io/ws-browserdb": "../../3rd-party/js/packages/ws-browserdb/dist",
 		"@vlcn.io/ws-client/worker.js": "../../3rd-party/js/packages/ws-client/dist/worker/worker.js",
 		"@vlcn.io/ws-client": "../../3rd-party/js/packages/ws-client/dist",
