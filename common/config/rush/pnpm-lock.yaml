@@ -356,7 +356,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(tsx@4.20.3)
+        version: 6.0.15(tsx@4.19.4)
 
   ../../pkg/scaffold:
     dependencies:
@@ -543,7 +543,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(tsx@4.20.3)
+        version: 6.0.15(tsx@4.19.4)
 
   ../../plugins/open-library-api:
     devDependencies:
@@ -573,7 +573,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(tsx@4.20.3)
+        version: 6.0.15(tsx@4.19.4)
 
 packages:
 
@@ -5327,7 +5327,7 @@ packages:
       sirv: 3.0.1
       tinyglobby: 0.2.14
       tinyrainbow: 2.0.0
-      vitest: 3.0.9(@vitest/browser@3.0.9)(@vitest/ui@3.0.9)(tsx@4.19.4)
+      vitest: 3.0.9(@vitest/ui@3.0.9)(tsx@4.20.3)
     dev: true
 
   /@vitest/utils@2.0.5:
@@ -13628,7 +13628,7 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz:
-    resolution: {integrity: sha512-oYkBs13UO197XJU+3PYN7wTuBGMw+rRUkv65jBo1WQpKjtaGf5BPloa93EwRWO7jLrICSGySr0vjZFD3DXPFZQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
+    resolution: {integrity: sha512-bnpX/4bwkW5S4LsmNnAJyG9poWcTqYv1ZEvneccYqE1CTZk16RIlpez71Sg5aVrZfl2+ckqhxwl35KAi2bmWAQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
     name: '@vlcn.io/crsqlite-wasm'
     version: 0.16.0
     dependencies:
@@ -13645,12 +13645,12 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz:
-    resolution: {integrity: sha512-0x/oHxQWOv80q9h7UDwwmarPlFuhjVc99SAdgUZGhyXT4v6jlB9YxwkTZOSmN+PHU7U4s+5YvVY1zZ7rwZ4RzA==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
+    resolution: {integrity: sha512-TCRIy407JP8xJ8DZbqNncipPyEm+/OYhAD8M5p+ChWBF7z1vF7U7ytNK/SMupER6BXD5h1CZ26wW/fk8x62Tkg==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
     name: '@vlcn.io/wa-sqlite'
     version: 0.22.0
 
   file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz:
-    resolution: {integrity: sha512-NQWJLBJq4K8Tc0ZzfOnGkxPzUjJ1nCVsZhtgejFsQWK8+S3xOsm8xFaj22MdDNlgnhITzTadLDumoKqT4c5IeQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
+    resolution: {integrity: sha512-GJONJnIhCBcup4cmtVfJ5IclW7i8/0/PutrQv9md9uyLWSdDN8dviJ90GBKGlnwiQsSCpFTzkzB31O8L3xAZ8Q==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
     name: '@vlcn.io/ws-browserdb'
     version: 0.2.0
     dependencies:
