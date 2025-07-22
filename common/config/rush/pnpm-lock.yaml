@@ -356,7 +356,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(tsx@4.20.3)
+        version: 6.0.15(@types/node@16.18.126)
 
   ../../pkg/scaffold:
     dependencies:
@@ -543,7 +543,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(tsx@4.20.3)
+        version: 6.0.15(@types/node@16.18.126)
 
   ../../plugins/open-library-api:
     devDependencies:
@@ -573,7 +573,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(tsx@4.20.3)
+        version: 6.0.15(@types/node@16.18.126)
 
 packages:
 
@@ -5261,7 +5261,7 @@ packages:
       '@vitest/spy': 3.0.9
       estree-walker: 3.0.3
       magic-string: 0.30.17
-      vite: 6.0.15(@types/node@16.18.126)
+      vite: 6.0.15(tsx@4.20.3)
     dev: true
 
   /@vitest/pretty-format@2.0.5:
@@ -5327,7 +5327,7 @@ packages:
       sirv: 3.0.1
       tinyglobby: 0.2.14
       tinyrainbow: 2.0.0
-      vitest: 3.0.9(@vitest/browser@3.0.9)(@vitest/ui@3.0.9)(tsx@4.19.4)
+      vitest: 3.0.9(@vitest/ui@3.0.9)(tsx@4.20.3)
     dev: true
 
   /@vitest/utils@2.0.5:
