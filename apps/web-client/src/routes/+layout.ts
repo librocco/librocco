@@ -21,6 +21,7 @@ import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
 import { ErrDBCorrupted, ErrDBSchemaMismatch } from "$lib/db/cr-sqlite/db";
+import { updateTranslationOverrides } from "$lib/i18n-overrides";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/#/stock/")
 const redirectPaths = ["", "/", "/#", "/#/"].map((path) => `${base}${path}`);
@@ -41,6 +42,7 @@ export const load: LayoutLoad = async ({ url }) => {
 	}
 
 	await loadLocaleAsync(locale);
+	await updateTranslationOverrides();
 	setLocale(locale);
 
 	const plugins = newPluginsInterface();
