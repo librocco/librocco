@@ -16,3 +16,4 @@ yarn.lock
 vite.config.js
 vitest.config.ts
 svelte.config.js
+build_constants.js
