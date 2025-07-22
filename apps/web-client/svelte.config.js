@@ -4,8 +4,9 @@ import preprocess from "svelte-preprocess";
 import { preprocessMeltUI } from "@melt-ui/pp";
 import sequence from "svelte-sequential-preprocessor";
 
+import { USE_SUBMODULES } from "./build_constants.js";
+
 const BASE_PATH = process.env.BASE_PATH ?? "";
-const USE_SUBMODULES = process.env.USE_SUBMODULES === "true";
 
 /**
  * A helper used to provide aliases for vlcn.io packages in dev mode:

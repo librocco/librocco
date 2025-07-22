@@ -1,7 +1,7 @@
 import path from "path";
 import { defineConfig } from "vitest/config";
 
-const USE_SUBMODULES = process.env.USE_SUBMODULES === "true";
+import { USE_SUBMODULES } from "./build_constants";
 
 /**
  * A helper used to provide aliases for vlcn.io packages in dev mode:
