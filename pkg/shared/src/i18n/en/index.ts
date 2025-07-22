@@ -784,7 +784,8 @@ const table_components = {
 const misc_components = {
 	extension_banner: {
 		book_data_extension: "Book Data Extension",
-		remote_db: "Remote DB"
+		remote_db: "Remote DB",
+		reload_translations_override: "Reload translations overrides"
 	},
 	page_layout: {
 		stock: "Stock",
