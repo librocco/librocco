@@ -9,8 +9,8 @@ const USE_SUBMODULES = process.env.USE_SUBMODULES === "true";
 
 /**
  * A helper used to provide aliases for vlcn.io packages in dev mode:
- * - if in dev mode, we're aliasing vlcn.io imports to submoduled packages (under '3rd-party/js')
- * - if in production mode, no aliases are provided: installed dependencies built from tarballs ('3rd-party/artefacts') are used
+ * - if `USE_SUBMODULES` env var is truthy, we're aliasing vlcn.io imports to submoduled packages (under '3rd-party/js')
+ * - if `USE_SUBMODULES` env var is undefined or falsy, no aliases are provided: installed dependencies built from tarballs ('3rd-party/artefacts') are used
  */
 function alias_vlcn_dev() {
 	console.log("\n");
