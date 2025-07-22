@@ -2,7 +2,7 @@ import { baseURL } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard, getDbHandle } from "@/helpers";
-import { addVolumesToNote, commitNote, createInboundNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
+import { addVolumesToNote, addVolumesToNoteBatched, commitNote, createInboundNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
 
 import { book1 } from "@/integration/data";
 
@@ -343,10 +343,9 @@ test("should progressively load entries until all are shown", async ({ page }) =
 	const db = await getDbHandle(page);
 	await db.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 	await db.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
-	// TODO: replace this with a batched op
-	for (const e of entries) {
-		await db.evaluate(addVolumesToNote, [1, e] as const);
-	}
+
+	await db.evaluate(addVolumesToNoteBatched, [1, entries] as const);
+
 	await db.evaluate(commitNote, 1);
 
 	const dashboard = getDashboard(page);

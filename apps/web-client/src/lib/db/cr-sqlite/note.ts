@@ -468,6 +468,44 @@ async function _addVolumesToNote(db: DB, noteId: number, volume: VolumeStock): P
 }
 
 /**
+ * A batched version of 'addVolumesToNote'
+ * NOTE: this is mostly used for test setups, rarely (if at all) in the production app.
+ */
+async function _addVolumesToNoteBatched(db: DB, noteId: number, volumes: VolumeStock[]): Promise<void> {
+	const note = await getNoteById(db, noteId);
+	if (note?.committed) {
+		console.warn("Cannot add volumes to a committed note.");
+		return;
+	}
+
+	const timestamp = Date.now();
+
+	const valuesPlaceholder = Array(volumes.length).fill(`(?, ?, ?, ?, ?)`).join(",\n");
+	const values = volumes
+		.map((volume) => {
+			const { isbn, quantity } = volume;
+			// If note.warehouseId is defined, we're within an inbound note - all txn warehouseIds should be the same as note.warehouseId
+			// If not an inbound note (outbound/reconciliation), read the provided warehouseId, default to 0 (as 0 = 0, and NULL is never equal)
+			const warehouseId = note.warehouseId || volume.warehouseId || 0;
+			return [isbn, quantity, warehouseId, noteId, timestamp];
+		})
+		.flat();
+
+	const insertOrUpdateTxnStmt = `
+		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id, updated_at)
+		VALUES ${valuesPlaceholder}
+		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
+			quantity = book_transaction.quantity + excluded.quantity,
+			updated_at = excluded.updated_at
+	`;
+
+	await db.tx(async (txDb) => {
+		await txDb.exec(insertOrUpdateTxnStmt, values);
+		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
+	});
+}
+
+/**
  * Retrieves all entries (book transactions) in a note with their associated book and warehouse details.
  * Results are ordered by most recently updated first.
  *
@@ -804,6 +842,7 @@ export const getNoWarehouseEntries = timed(_getNoWarehouseEntries);
 export const commitNote = timed(_commitNote);
 export const deleteNote = timed(_deleteNote);
 export const addVolumesToNote = timed(_addVolumesToNote);
+export const addVolumesToNoteBatched = timed(_addVolumesToNoteBatched);
 export const getNoteEntries = timed(_getNoteEntries);
 export const updateNoteTxn = timed(_updateNoteTxn);
 export const removeNoteTxn = timed(_removeNoteTxn);
