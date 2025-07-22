@@ -35,6 +35,7 @@
 		"@vlcn.io/ws-client": "0.2.0",
 		"@vlcn.io/ws-common": "0.2.0",
 		"@vlcn.io/ws-server": "0.2.2",
+		"@vlcn.io/xplat-api": "0.15.0",
 		"lucide-svelte": "^0.475.0",
 		"export-to-csv": "~1.3.0",
 		"rxjs": "~7.8.0",
