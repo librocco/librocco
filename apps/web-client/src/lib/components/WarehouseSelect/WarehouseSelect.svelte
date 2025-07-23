@@ -107,22 +107,12 @@
 		{#each options as warehouse}
 			{@const { label, value, quantity } = warehouse}
 			<div
-				class="relative flex cursor-pointer items-center justify-between rounded p-1 focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
+				class="relative flex cursor-pointer flex-col rounded p-1 focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
 				{...$option(warehouse)}
 				use:option
 			>
-				<div class="flex flex-col">
-					<span>{label}</span>
-					<span class="text-xs">{quantity} book(s)</span>
-				</div>
-
-				<!-- An icon signifying that the book doesn't exist in the given warehouse - will need reconciliation -->
-				<!-- We're not showing this if the warehouse is selected (the highlight takes precedance) -->
-				{#if !$isSelected(value)}
-					<div>
-						<RefreshCcwDot size={18} class={availableWarehouses.has(value) ? "hidden" : "block"} />
-					</div>
-				{/if}
+				<span>{label}</span>
+				<span class="text-xs">{quantity} book(s)</span>
 			</div>
 		{/each}
 		<slot {open} name="force-withdrawal"></slot>
