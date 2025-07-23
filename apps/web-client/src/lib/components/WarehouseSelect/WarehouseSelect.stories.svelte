@@ -16,6 +16,6 @@
 
 <Story name="Default">
 	<td>
-		<WarehouseSelect row={outNoteRows[0]} rowIx={0} {warehouseList} />
+		<WarehouseSelect scannedQuantitiesPerWarehouse={new Map()} row={outNoteRows[0]} rowIx={0} {warehouseList} />
 	</td>
 </Story>
