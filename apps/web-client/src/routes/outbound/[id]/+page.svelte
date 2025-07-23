@@ -117,17 +117,18 @@
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
 
-	$: bookRows = new Map((data.entries as NoteEntriesItem[]).map(({ isbn }) => [isbn, new Map()]));
-	$: {
+	$: bookRows = (() => {
+		const newBookRows = new Map<string, Map<number, number>>();
 		for (const { isbn, warehouseId, quantity } of data.entries as NoteEntriesItem[]) {
-			const preExistingQuantity = bookRows.get(isbn)?.get(warehouseId);
-			if (preExistingQuantity) {
-				bookRows.get(isbn)?.set(warehouseId, preExistingQuantity + quantity);
-			} else {
-				bookRows.get(isbn)?.set(warehouseId, quantity);
+			if (!newBookRows.has(isbn)) {
+				newBookRows.set(isbn, new Map());
 			}
+			const warehouseMap = newBookRows.get(isbn)!;
+			const preExistingQuantity = warehouseMap.get(warehouseId) || 0;
+			warehouseMap.set(warehouseId, preExistingQuantity + quantity);
 		}
-	}
+		return newBookRows;
+	})();
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -274,10 +275,13 @@
 
 	const updateRowWarehouse = async (data: InventoryTableData<"book">, e?: CustomEvent<WarehouseChangeDetail>) => {
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
+		// console.log({ isbn, quantity, currentWarehouseId });
+
 		let nextWarehouseId: number;
 		if (e) {
 			const { warehouseId } = e?.detail;
 			nextWarehouseId = warehouseId;
+			// console.log({ nextWarehouseId });
 		} else {
 			const { id } = selectedWarehouse;
 			nextWarehouseId = id;
@@ -294,6 +298,9 @@
 		// with wh1 containing the max available stock and the rest is forced
 
 		const totalQuantityCurrentWarehouse = bookRows.get(isbn)?.get(currentWarehouseId);
+		console.log(bookRows.get(isbn));
+		console.log({ totalQuantityCurrentWarehouse });
+		console.log({ quantity });
 		const totalQuantityNextWarehouse = bookRows.get(isbn)?.get(nextWarehouseId) || 0;
 		const difference = totalQuantityCurrentWarehouse - quantity;
 		forceWithdrawalDialogOpen.set(false);
@@ -314,7 +321,10 @@
 
 	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
 		const warehouse = warehouses.find((w) => w.id === data.warehouseId);
-		selectedWarehouse = warehouse;
+		// only assign warehouse if it's a forced selection
+		if (data.type === "forced") {
+			selectedWarehouse = warehouse;
+		}
 		initialSelectedWarehouse = warehouse;
 		forceWithdrawalDialogData = { row: data };
 		forceWithdrawalDialogOpen.set(true);
@@ -731,7 +741,13 @@
 						</div>
 						<svelte:fragment slot="warehouse-select" let:editWarehouse let:row let:rowIx>
 							{#if isBookRow(row)}
-								<WarehouseSelect {row} {rowIx} warehouseList={warehouses} on:change={(event) => editWarehouse(event, row)}>
+								<WarehouseSelect
+									scannedQuantitiesPerWarehouse={bookRows.get(row.isbn)}
+									{row}
+									{rowIx}
+									warehouseList={warehouses}
+									on:change={(event) => editWarehouse(event, row)}
+								>
 									<button
 										let:open
 										use:melt={$forceWithdrawalDialogTrigger}
@@ -780,9 +796,11 @@
 				bind:value={selectedWarehouse}
 				class="select-bordered select w-full"
 			>
-				<option disabled selected>Select a warehouse</option>
+				<option disabled value={null}>Select a warehouse</option>
 				{#each warehouses as warehouse}
-					{@const availableForForcing = !row.availableWarehouses.has(warehouse.id)}
+					{@const stock = row.availableWarehouses.get(warehouse.id)?.quantity || 0}
+					{@const scanned = bookRows.get(row.isbn)?.get(warehouse.id) || 0}
+					{@const availableForForcing = scanned >= stock}
 					<option class={availableForForcing ? "" : "hidden"} value={warehouse}>{warehouse.displayName}</option>
 				{/each}
 			</select>
@@ -806,7 +824,7 @@
 				<button
 					on:click={() => updateRowWarehouse(row)}
 					class="btn-primary btn-lg btn w-full"
-					disabled={selectedWarehouse === initialSelectedWarehouse}
+					disabled={selectedWarehouse === initialSelectedWarehouse || selectedWarehouse === null}
 				>
 					<Save aria-hidden="true" focusable="false" size={20} />
 					{tOutbound.force_withdrawal_dialog.confirm()}

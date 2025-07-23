@@ -16,6 +16,7 @@
 	export let row: InventoryTableData<"book">;
 	export let rowIx: number;
 	export let warehouseList: Omit<Warehouse, "discount">[];
+	export let scannedQuantitiesPerWarehouse: Map<number, number> | undefined;
 
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
 	const dispatchChange = (warehouseId: number) => dispatch("change", { warehouseId });
@@ -41,9 +42,6 @@
 
 	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = row);
 
-	const mapWarehousesToOptions = (warehouseList: Omit<Warehouse, "discount">[]) =>
-		[...warehouseList].map(({ id, displayName }) => ({ value: id, label: displayName }));
-
 	const mapAvailableWarehousesToOptions = (
 		warehouseList: Map<
 			number,
@@ -52,7 +50,13 @@
 				quantity: number;
 			}
 		>
-	) => [...warehouseList].map(([id, { displayName, quantity }]) => ({ value: id, label: displayName, quantity }));
+	) =>
+		[...warehouseList]
+			.filter(([id, { quantity: stock }]) => {
+				const scanned = scannedQuantitiesPerWarehouse?.get(id) || 0;
+				return stock > scanned;
+			})
+			.map(([id, { displayName, quantity }]) => ({ value: id, label: displayName, quantity }));
 
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
@@ -82,9 +86,12 @@
 >
 	<span class="rounded-full p-0.5 {row.type !== 'forced' ? 'bg-success' : 'bg-error'}"></span>
 	{#if $selectedLabel}
-		<span class="truncate">
-			{$selectedLabel === "not-found" ? t.default_option() : $selectedLabel}
-		</span>
+		<div class="flex flex-col items-start truncate">
+			<span>
+				{$selectedLabel === "not-found" ? t.default_option() : $selectedLabel}
+			</span>
+			<span class="text-xs capitalize">{row.type}</span>
+		</div>
 	{:else}
 		<span class="truncate">{t.default_option()}</span>
 	{/if}
@@ -104,11 +111,9 @@
 				{...$option(warehouse)}
 				use:option
 			>
-				{label}
-
-				<div class="check flex">
-					<SwatchBook size={18} />
-					{quantity}
+				<div class="flex flex-col">
+					<span>{label}</span>
+					<span class="text-xs">{quantity} book(s)</span>
 				</div>
 
 				<!-- An icon signifying that the book doesn't exist in the given warehouse - will need reconciliation -->
