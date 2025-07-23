@@ -275,13 +275,11 @@
 
 	const updateRowWarehouse = async (data: InventoryTableData<"book">, e?: CustomEvent<WarehouseChangeDetail>) => {
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
-		// console.log({ isbn, quantity, currentWarehouseId });
 
 		let nextWarehouseId: number;
 		if (e) {
 			const { warehouseId } = e?.detail;
 			nextWarehouseId = warehouseId;
-			// console.log({ nextWarehouseId });
 		} else {
 			const { id } = selectedWarehouse;
 			nextWarehouseId = id;
@@ -298,9 +296,7 @@
 		// with wh1 containing the max available stock and the rest is forced
 
 		const totalQuantityCurrentWarehouse = bookRows.get(isbn)?.get(currentWarehouseId);
-		console.log(bookRows.get(isbn));
-		console.log({ totalQuantityCurrentWarehouse });
-		console.log({ quantity });
+
 		const totalQuantityNextWarehouse = bookRows.get(isbn)?.get(nextWarehouseId) || 0;
 		const difference = totalQuantityCurrentWarehouse - quantity;
 		forceWithdrawalDialogOpen.set(false);

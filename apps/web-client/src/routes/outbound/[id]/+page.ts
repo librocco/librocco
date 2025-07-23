@@ -122,7 +122,6 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		}
 	}
 
-	console.log({ entries });
 	return { dbCtx, ...note, warehouses, entries, customItems, publisherList, isbnAvailability };
 };
 
