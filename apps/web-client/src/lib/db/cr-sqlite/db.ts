@@ -1,4 +1,4 @@
-import initWasm from "@vlcn.io/crsqlite-wasm";
+import { initWasm } from "./opfs";
 import type { DB as _DB } from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
@@ -34,7 +34,7 @@ async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null>
 
 export async function getDB(dbname: string): Promise<_DB> {
 	const sqlite = await initWasm(() => wasmUrl);
-	return sqlite.open(dbname);
+	return sqlite.open(dbname, "c", "opfs-any-context-vfs");
 }
 
 export async function initializeDB(db: DB) {

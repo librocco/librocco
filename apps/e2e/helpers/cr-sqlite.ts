@@ -121,6 +121,14 @@ export async function addVolumesToNote(db: DB, params: readonly [noteId: number,
 	await window.note.addVolumesToNote(db, id, volume);
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:addVolumesToNoteBatched
+ */
+export async function addVolumesToNoteBatched(db: DB, params: readonly [noteId: number, volumes: VolumeStock[]]): Promise<void> {
+	const [id, volumes] = params;
+	await window.note.addVolumesToNoteBatched(db, id, volumes);
+}
+
 export type NoteCustomItem = { id: number; title: string; price: number };
 
 /**
