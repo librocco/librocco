@@ -5,7 +5,6 @@ import { getDashboard, getDbHandle } from "@/helpers";
 import { upsertWarehouse, createInboundNote, createOutboundNote, addVolumesToNote, commitNote } from "@/helpers/cr-sqlite";
 
 import { book1 } from "./data";
-import { expect } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
