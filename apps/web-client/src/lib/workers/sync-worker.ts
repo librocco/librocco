@@ -5,8 +5,12 @@ import { start } from "@vlcn.io/ws-client/worker.js";
 import { createDbProvider } from "@vlcn.io/ws-browserdb";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 
+import { DEFAULT_VFS } from "$lib/constants";
+
 import { SyncTransportController, SyncEventEmitter } from "./sync-transport-control";
 import type { SyncConfig } from "./sync-transport-control";
+
+import { createVFSFactory } from "$lib/db/cr-sqlite/core";
 
 // Emitter object
 // - emits sync events to the main thread
@@ -27,7 +31,10 @@ progressEmitter.onProgress((payload) => {
 const maxChunkSize = 1024;
 
 const config: Config = {
-	dbProvider: createDbProvider({ locateWasm: () => wasmUrl }),
+	dbProvider: createDbProvider({
+		locateWasm: () => wasmUrl,
+		vfsFactory: createVFSFactory(DEFAULT_VFS)
+	}),
 	transportProvider: wrapProvider(defaultConfig.transportProvider, progressEmitter, { maxChunkSize })
 };
 
