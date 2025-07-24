@@ -318,9 +318,11 @@
 	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
 		const warehouse = warehouses.find((w) => w.id === data.warehouseId);
 		// only assign warehouse if it's a forced selection
+		console.log(data.type);
 		if (data.type === "forced") {
-			selectedWarehouse = warehouse;
+			selectedWarehouse = warehouse || null;
 		}
+		console.log({ selectedWarehouse });
 		initialSelectedWarehouse = warehouse;
 		forceWithdrawalDialogData = { row: data };
 		forceWithdrawalDialogOpen.set(true);

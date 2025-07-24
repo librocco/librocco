@@ -90,7 +90,15 @@
 			<span>
 				{$selectedLabel === "not-found" ? t.default_option() : $selectedLabel}
 			</span>
-			<span class="text-xs capitalize">{row.type}</span>
+			<span class="text-xs">{$selectedLabel !== "not-found" && row.type === "forced" ? "Forced" : ""}</span>
+			{#if row.availableWarehouses.get(row.warehouseId)?.quantity}
+				<span class="text-xs"
+					>{row.availableWarehouses.get(row.warehouseId)?.quantity}
+					book(s)</span
+				>
+			{/if}
+
+			<!-- <span class="text-xs capitalize">{row.type}</span> -->
 		</div>
 	{:else}
 		<span class="truncate">{t.default_option()}</span>
@@ -112,7 +120,6 @@
 				use:option
 			>
 				<span>{label}</span>
-				<span class="text-xs">{quantity} book(s)</span>
 			</div>
 		{/each}
 		<slot {open} name="force-withdrawal"></slot>
