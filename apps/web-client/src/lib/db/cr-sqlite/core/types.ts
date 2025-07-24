@@ -6,3 +6,5 @@ export type { DBAsync } from "@vlcn.io/xplat-api";
  * that call to `db.tx` don't accept `TXAsync` as `db` (ensuring we don't nest transactions).
  */
 export type TXAsync = Omit<_TXAsync, "tx">;
+
+export type { VFSWhitelist } from "./vfs";
