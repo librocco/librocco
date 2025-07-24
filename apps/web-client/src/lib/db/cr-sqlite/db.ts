@@ -31,8 +31,10 @@ async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | 
 	return [name, BigInt(version)];
 }
 
-export async function getDB(dbname: string): Promise<DBAsync> {
-	const sqlite = await initWasm(() => wasmUrl);
+export async function getDB(dbname: string): Promise<_DB> {
+	const sqlite = await initWasm({
+		locateWasm: () => wasmUrl
+	});
 	return sqlite.open(dbname);
 }
 
