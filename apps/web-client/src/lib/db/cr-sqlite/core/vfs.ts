@@ -15,7 +15,9 @@ const vfsLookup = {
 	"opfs-any-context": opfsAnyContext
 };
 
-export function createVFSFactory(vfs: keyof typeof vfsLookup): (module: SQLiteAPI) => Promise<SQLiteVFS> {
+export type VFSWhitelist = keyof typeof vfsLookup;
+
+export function createVFSFactory(vfs: VFSWhitelist): (module: SQLiteAPI) => Promise<SQLiteVFS> {
 	if (!(vfs in vfsLookup)) {
 		throw new Error("unknown vfs: " + vfs);
 	}
