@@ -38,6 +38,7 @@
 
 	import type { SyncProgress } from "$lib/workers/sync-transport-control";
 	import { LL } from "@librocco/shared/i18n-svelte";
+	import { VFS } from "$lib/db/cr-sqlite/vfs";
 
 	export let data: LayoutData;
 
@@ -116,6 +117,7 @@
 		//
 		// Init worker and sync interface
 		const wkr = new WorkerInterface(new SyncWorker());
+		wkr.start(VFS);
 		sync.init(wkr);
 
 		// Start the sync progress store (listen to sync events)

@@ -1,28 +1,12 @@
 import { WorkerInterface as WI } from "@vlcn.io/ws-client";
 
-import { SyncEventEmitter, type SyncProgress } from "./sync-transport-control";
+import type { VFSWhitelist } from "$lib/db/cr-sqlite/vfs";
+import type { MsgChangesProcessed, MsgChangesReceived, MsgProgress, MsgReady, MsgStart } from "./types";
 
-type ChangesReceivedData = {
-	_type: "changesReceived";
-	payload: { timestamp: number };
-};
-type ChangesProcessedData = {
-	_type: "changesProcessed";
-	payload: { timestamp: number };
-};
-type ProgressData = {
-	_type: "progress";
-	payload: SyncProgress;
-};
+import { SyncEventEmitter } from "./sync-transport-control";
 
-type TransportEventData = ChangesReceivedData | ChangesProcessedData | ProgressData;
-
-const isTransportMessageEvent = (e: MessageEvent<unknown>): e is MessageEvent<TransportEventData> => {
-	if (!(e.data as any)?._type) return false;
-	const data = e.data as { _type: string };
-
-	return ["changesReceived", "changesProcessed", "progress"].includes(data._type);
-};
+type OutbounrMessage = MsgStart;
+type InboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady;
 
 export default class WorkerInterface extends WI {
 	#worker: Worker;
@@ -37,20 +21,37 @@ export default class WorkerInterface extends WI {
 		this.#worker.addEventListener("message", this._handleMessage.bind(this));
 	}
 
-	private _handleMessage(e: MessageEvent<unknown>) {
-		if (!isTransportMessageEvent(e)) return;
+	private _sendMessage(msg: OutbounrMessage) {
+		this.#worker.postMessage(msg);
+	}
 
-		switch (e.data._type) {
+	private _handleMessage(e: MessageEvent<unknown>) {
+		if (!(e as MessageEvent<InboundMessage>).data._type) return;
+		const { data: msg } = e as MessageEvent<InboundMessage>;
+
+		switch (msg._type) {
 			case "changesReceived":
-				this.#emitter.notifyChangesReceived(e.data.payload);
+				this.#emitter.notifyChangesReceived(msg.payload);
 				break;
 			case "changesProcessed":
-				this.#emitter.notifyChangesProcessed(e.data.payload);
+				this.#emitter.notifyChangesProcessed(msg.payload);
 				break;
 			case "progress":
-				this.#emitter.notifyProgress(e.data.payload);
+				this.#emitter.notifyProgress(msg.payload);
+				break;
+			case "ready":
+				console.log("worker initialized");
+				break;
+			default:
 				break;
 		}
+	}
+
+	start(vfs: VFSWhitelist) {
+		this._sendMessage({
+			_type: "start",
+			payload: { vfs }
+		});
 	}
 
 	onChangesReceived(cb: (msg: { timestamp: number }) => void) {
