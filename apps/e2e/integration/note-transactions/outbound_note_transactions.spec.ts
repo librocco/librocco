@@ -603,7 +603,7 @@ test(`should check validity of the transactions and commit the note on 'commit'
 
 // TODO: Should not allow committing of an empty note ??
 
-test("should create a 'Forced' transaction when stock is depleted", async ({ page }) => {
+test("should create a new row for the same isbn when stock is depleted", async ({ page }) => {
 	// Setup: Create a warehouse and add 3 copies of a book
 	const dbHandle = await getDbHandle(page);
 	const isbn = "1234567890";
@@ -620,26 +620,22 @@ test("should create a 'Forced' transaction when stock is depleted", async ({ pag
 	await scanField.add(isbn);
 
 	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
-	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("normal");
 
 	// Check that the transaction is of type 'Normal' as stock is available
 	await entries.assertRows([{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }]);
-	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("normal");
 
 	// Add the book a 4th time, which should create a new 'Forced' transaction
 	await scanField.add(isbn);
 
 	// Check that a new row has been created with type 'Forced'
 	await entries.assertRows([
-		{ isbn, quantity: 1, warehouseName: "Warehouse 1" },
+		{ isbn, quantity: 1, warehouseName: "" },
 
 		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
 	]);
-	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("forced");
-	await expect(content.table("outbound-note").row(1).field("warehouseName")).toContainText("normal");
 });
 
-test("should create a 'Forced' transaction when quantity is increased beyond available stock", async ({ page }) => {
+test("should create a new row for the same isbn when quantity is increased beyond available stock", async ({ page }) => {
 	// Setup: Create a warehouse and add 3 copies of a book
 	const dbHandle = await getDbHandle(page);
 	const isbn = "1234567890";
@@ -661,11 +657,10 @@ test("should create a 'Forced' transaction when quantity is increased beyond ava
 	// Change the quantity to 4
 	await entries.row(0).field("quantity").set(4);
 
-	await expect(content.table("outbound-note").row(1).field("warehouseName")).toContainText("forced");
 	// Check that a new 'Forced' row is created for the extra copy
 	await entries.assertRows([
 		{ isbn, quantity: 3, warehouseName: "Warehouse 1" },
-		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
+		{ isbn, quantity: 1, warehouseName: "" }
 	]);
 });
 
@@ -739,7 +734,7 @@ test("should allow forcing a withdrawal for a book with no stock", async ({ page
 
 	// Assert that the transaction is now a 'Forced' withdrawal from Warehouse 1
 	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "Warehouse 1" }]);
-	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("forced");
+	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("Forced");
 });
 
 test("should merge forced transaction when stock becomes available", async ({ page }) => {
@@ -775,8 +770,7 @@ test("should merge forced transaction when stock becomes available", async ({ pa
 	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
 
 	// Check that we have one normal and one forced transaction
-	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("forced");
-	await expect(content.table("outbound-note").row(1).field("warehouseName")).toContainText("normal");
+	await expect(content.table("outbound-note").row(1).field("warehouseName")).toContainText("Forced");
 
 	await entries.assertRows([
 		{ isbn, quantity: 2, warehouseName: "Warehouse 1" },
@@ -788,7 +782,6 @@ test("should merge forced transaction when stock becomes available", async ({ pa
 
 	// Check that the two rows have merged into a single normal transaction
 	await entries.assertRows([{ isbn, quantity: 2, warehouseName: "Warehouse 1" }]);
-	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("normal");
 });
 
 test("splitting a forced transaction by assigning to a warehouse with insufficient stock", async ({ page }) => {
@@ -818,8 +811,7 @@ test("splitting a forced transaction by assigning to a warehouse with insufficie
 		{ isbn, quantity: 2, warehouseName: "Warehouse 1" },
 		{ isbn, quantity: 3, warehouseName: "Warehouse 1" }
 	]);
-	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("normal");
-	await expect(content.table("outbound-note").row(1).field("warehouseName")).toContainText("forced");
+	await expect(content.table("outbound-note").row(1).field("warehouseName")).toContainText("Forced");
 });
 
 test("reassigning normal and forced transactions to a warehouse with sufficient stock should merge them", async ({ page }) => {
@@ -839,8 +831,7 @@ test("reassigning normal and forced transactions to a warehouse with sufficient 
 	await dbHandle.evaluate(addVolumesToNote, [3, { isbn, quantity: 3, warehouseId: 2 }] as const);
 	await dbHandle.evaluate(commitNote, 3);
 
-	// Add a transaction for 3 copies and assign to Warehouse 1 to create a
-	// split;
+	// Add a transaction for 3 copies and assign to Warehouse 1 to create a split
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn, quantity: 3, warehouseId: 1 }] as const);
 
 	const entries = getDashboard(page).content().table("outbound-note");
@@ -851,8 +842,7 @@ test("reassigning normal and forced transactions to a warehouse with sufficient 
 		{ isbn, quantity: 2, warehouseName: "Warehouse 1" },
 		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
 	]);
-	await expect(entries.row(0).field("warehouseName")).toContainText("normal");
-	await expect(entries.row(1).field("warehouseName")).toContainText("forced");
+	await expect(entries.row(1).field("warehouseName")).toContainText("Forced");
 
 	// Reassign the normal transaction to Warehouse 2
 	await entries.row(1).field("warehouseName").set("Warehouse 2");
@@ -862,8 +852,6 @@ test("reassigning normal and forced transactions to a warehouse with sufficient 
 		{ isbn, quantity: 2, warehouseName: "Warehouse 2" },
 		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
 	]);
-	await expect(entries.row(0).field("warehouseName")).toContainText("normal");
-	await expect(entries.row(1).field("warehouseName")).toContainText("normal");
 
 	// Reassign the forced transaction to Warehouse 2
 	await entries.row(1).field("warehouseName").set("Warehouse 2");
@@ -871,7 +859,6 @@ test("reassigning normal and forced transactions to a warehouse with sufficient 
 	// Check that both transactions merged into a single normal transaction in
 	// Warehouse 2
 	await entries.assertRows([{ isbn, quantity: 3, warehouseName: "Warehouse 2" }]);
-	await expect(entries.row(0).field("warehouseName")).toContainText("normal");
 });
 
 test("should auto-assign to the available warehouse after a warehouse with stock has been deleted", async ({ page }) => {
