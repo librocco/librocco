@@ -9,6 +9,7 @@ export { schemaContent };
 
 import { type DB, type Change } from "./types";
 import { idbPromise, idbTxn } from "../indexeddb";
+import { createVfsFactory, VFS } from "./vfs";
 
 export type DbCtx = { db: _DB; rx: ReturnType<typeof rxtbl> };
 
@@ -34,7 +35,8 @@ async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null>
 
 export async function getDB(dbname: string): Promise<_DB> {
 	const sqlite = await initWasm({
-		locateWasm: () => wasmUrl
+		locateWasm: () => wasmUrl,
+		vfsFactory: createVfsFactory(VFS)
 	});
 	return sqlite.open(dbname);
 }

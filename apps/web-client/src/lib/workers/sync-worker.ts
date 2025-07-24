@@ -8,6 +8,8 @@ import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { SyncTransportController, SyncEventEmitter } from "./sync-transport-control";
 import type { SyncConfig } from "./sync-transport-control";
 
+import { createVfsFactory, VFS } from "$lib/db/cr-sqlite/vfs";
+
 // Emitter object
 // - emits sync events to the main thread
 // - used to monitor the sync state/progress
@@ -27,7 +29,10 @@ progressEmitter.onProgress((payload) => {
 const maxChunkSize = 1024;
 
 const config: Config = {
-	dbProvider: createDbProvider({ locateWasm: () => wasmUrl }),
+	dbProvider: createDbProvider({
+		locateWasm: () => wasmUrl,
+		vfsFactory: createVfsFactory(VFS)
+	}),
 	transportProvider: wrapProvider(defaultConfig.transportProvider, progressEmitter, { maxChunkSize })
 };
 
