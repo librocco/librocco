@@ -45,13 +45,32 @@
 				quantity: number;
 			}
 		>
-	) =>
-		[...warehouseList]
-			.filter(([id, { quantity: stock }]) => {
-				const scanned = scannedQuantitiesPerWarehouse?.get(id) || 0;
-				return stock > scanned;
-			})
-			.map(([id, { displayName, quantity }]) => ({ value: id, label: displayName, quantity }));
+	) => {
+		// Get all warehouses that have stock, regardless of scanned quantities
+		const allOptions = [...warehouseList].map(([id, { displayName, quantity }]) => ({ 
+			value: id, 
+			label: displayName, 
+			quantity,
+			// Calculate remaining stock (total - scanned)
+			remaining: quantity - (scannedQuantitiesPerWarehouse?.get(id) || 0)
+		}));
+		
+		// Include the currently selected warehouse even if it's out of stock
+		if (warehouseId && !allOptions.some(opt => opt.value === warehouseId)) {
+			const warehouseData = warehouseList.get(warehouseId);
+			if (warehouseData) {
+				allOptions.push({
+					value: warehouseId,
+					label: warehouseData.displayName,
+					quantity: warehouseData.quantity,
+					remaining: warehouseData.quantity - (scannedQuantitiesPerWarehouse?.get(warehouseId) || 0)
+				});
+			}
+		}
+		
+		// Sort by remaining stock (highest first)
+		return allOptions.sort((a, b) => b.remaining - a.remaining);
+	};
 
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
@@ -63,12 +82,7 @@
 	// We're allowing all warehouses for selection.
 	// Out of stock situations are handled in the row (painting it red) or
 	// when committing the note (prompting for reconciliation)
-	// $: options = mapWarehousesToOptions(warehouseList);
 	$: options = mapAvailableWarehousesToOptions(availableWarehouses);
-
-	$: console.log("scannedQuant", scannedQuantitiesPerWarehouse)
-	$: console.log(availableWarehouses)
-	$: console.log(options)
 
 	$: t = $LL.misc_components.warehouse_select;
 </script>
@@ -115,7 +129,7 @@
 			{#if options.length}
 				<div class="flex flex-col gap-y-0.5">
 					{#each options as warehouse}
-						{@const { label } = warehouse}
+						{@const { label, quantity, remaining } = warehouse}
 
 						<div
 							class="relative flex cursor-pointer flex-col rounded p-2 text-sm focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
@@ -123,6 +137,12 @@
 							use:option
 						>
 							<span>{label}</span>
+							<span class="text-xs {remaining <= 0 ? 'text-error' : ''}">
+								{t.label.book_count({ count: quantity })} 
+								{#if remaining !== quantity}
+									({t.label.book_count({ count: remaining })} {t.label.available()})
+								{/if}
+							</span>
 						</div>
 					{/each}
 				</div>
