@@ -46,7 +46,7 @@
 					{@const scanned = bookRows.get(row.isbn)?.get(id) || 0}
 
 					{@const availableForForcing = stock === 0 || stock < scanned}
-					
+
 					<option class={availableForForcing ? "" : "hidden"} value={id}>{displayName}</option>
 				{/each}
 			</select>
