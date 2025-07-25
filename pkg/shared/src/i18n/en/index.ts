@@ -556,7 +556,8 @@ const sale_note = {
 		confirm: "Confirm",
 		description:
 			"This book is out of stock. If you're certain additional copies exist, you can manually select a warehouse to force the withdrawal.",
-		selected_warehouse_message: "A stock adjustment will be recorded for {quantity:number} copies of {isbn:string} in {displayName:string}."
+		selected_warehouse_message:
+			"A stock adjustment will be recorded for {quantity:number} {{copy|copies}} of {isbn:string} in {displayName:string}."
 	},
 	labels: {
 		new_note: "New Note",
