@@ -1,3 +1,0 @@
-const inStockOptions = allOptions.filter(option => 
-    option.remaining > 0 || option.value === warehouseId
-);
