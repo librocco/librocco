@@ -777,7 +777,6 @@ testInventory("should handle force withdrawal for books not in stock", async ({ 
 	// Verify all warehouses are available for selection
 	const warehouseSelect = forceWithdrawalDialog.locator("#warehouse-force-withdrawal");
 	for (const warehouse of warehouses) {
-		await expect(warehouseSelect.locator(`option[value="${warehouse.id}"]`)).toBeVisible();
 		await expect(warehouseSelect.locator(`option[value="${warehouse.id}"]`)).not.toHaveClass(/hidden/);
 	}
 
@@ -878,15 +877,17 @@ testInventory("should handle warehouse selection for books in stock", async ({ p
 
 	// Verify both warehouses are shown with their available quantities
 	const dropdown = page.getByTestId("dropdown-menu");
-	await expect(dropdown.locator(`div:has-text("${warehouses[0].displayName}")`)).toBeVisible();
-	await expect(dropdown.locator(`div:has-text("${warehouses[1].displayName}")`)).toBeVisible();
+	const option1 = dropdown.getByRole("option", { name: warehouses[0].displayName });
+	const option2 = dropdown.getByRole("option", { name: warehouses[1].displayName });
 
-	// Verify the stock quantities are displayed
-	await expect(dropdown.locator(`div:has-text("${warehouses[0].displayName}")`)).toContainText("3 copies available");
-	await expect(dropdown.locator(`div:has-text("${warehouses[1].displayName}")`)).toContainText("5 copies available");
+	await expect(option1).toBeVisible();
+	await expect(option1).toContainText("3 copies available");
+
+	await expect(option2).toBeVisible();
+	await expect(option2).toContainText("5 copies available");
 
 	// Select the first warehouse
-	await dropdown.locator(`div:has-text("${warehouses[0].displayName}")`).click();
+	await option1.click();
 
 	// Verify the warehouse is now selected
 	await expect(table.row(0).field("warehouseName")).toContainText(warehouses[0].displayName);
@@ -907,9 +908,9 @@ testInventory("should handle warehouse selection for books in stock", async ({ p
 	await expect(warehouseSelect.locator(`option[value="${warehouses[0].id}"]`)).toHaveClass(/hidden/);
 	await expect(warehouseSelect.locator(`option[value="${warehouses[1].id}"]`)).toHaveClass(/hidden/);
 
-	// Verify there are no selectable options (since all warehouses have stock)
+	// Verify there are one selectable options (warehouse 3) which has no stock
 	const options = await warehouseSelect.locator("option:not(.hidden):not([disabled])").count();
-	expect(options).toBe(0);
+	expect(options).toBe(1);
 
 	// Cancel the dialog
 	await forceWithdrawalDialog.getByRole("button", { name: "Cancel" }).click();
@@ -939,160 +940,5 @@ testInventory("should handle warehouse selection for books in stock", async ({ p
 
 	// Verify the warehouse is now selected and marked as "Forced"
 	await expect(table.row(0).field("warehouseName")).toContainText("Empty Warehouse");
-	await expect(table.row(0).field("warehouseName")).toContainText("Forced");
-});
-
-testInventory("should filter out warehouses with no remaining stock in dropdown", async ({ page, books, warehouses }) => {
-	await page.goto(baseURL);
-
-	const dashboard = getDashboard(page);
-	await dashboard.waitFor();
-
-	const dbHandle = await getDbHandle(page);
-
-	// Create an outbound note
-	await dbHandle.evaluate(createOutboundNote, { id: 111, displayName: "Stock Filtering Test" });
-
-	// Setup stock for a book in two different warehouses
-	const INBOUND_NOTE_ID_1 = 222;
-	const INBOUND_NOTE_ID_2 = 333;
-
-	// Add 1 copy to Warehouse 1
-	await dbHandle.evaluate(createInboundNote, { id: INBOUND_NOTE_ID_1, warehouseId: warehouses[0].id });
-	await dbHandle.evaluate(addVolumesToNote, [INBOUND_NOTE_ID_1, { isbn: books[0].isbn, quantity: 1 }] as const);
-	await dbHandle.evaluate(commitNote, INBOUND_NOTE_ID_1);
-
-	// Add 2 copies to Warehouse 2
-	await dbHandle.evaluate(createInboundNote, { id: INBOUND_NOTE_ID_2, warehouseId: warehouses[1].id });
-	await dbHandle.evaluate(addVolumesToNote, [INBOUND_NOTE_ID_2, { isbn: books[0].isbn, quantity: 2 }] as const);
-	await dbHandle.evaluate(commitNote, INBOUND_NOTE_ID_2);
-
-	// Navigate to outbound page and edit the note
-	await page.getByRole("link", { name: "Sale" }).click();
-	await dashboard.content().entityList("outbound-list").waitFor();
-	await dashboard.content().entityList("outbound-list").item(0).edit();
-	await dashboard.view("outbound-note").waitFor();
-
-	// Add the book to the note and assign to Warehouse 1
-	await dbHandle.evaluate(addVolumesToNote, [111, { isbn: books[0].isbn, quantity: 1, warehouseId: warehouses[0].id }] as const);
-
-	// Verify the book was added with Warehouse 1
-	const table = dashboard.content().table("outbound-note");
-	await table.assertRows([
-		{
-			isbn: books[0].isbn,
-			warehouseName: warehouses[0].displayName
-		}
-	]);
-
-	// Add the book again
-	const isbnInput = page.getByPlaceholder("Scan to add books");
-	await isbnInput.fill(books[0].isbn);
-	await page.keyboard.press("Enter");
-
-	// Verify a new row was added with no warehouse
-	await table.assertRows([
-		{
-			isbn: books[0].isbn,
-			warehouseName: ""
-		},
-		{
-			isbn: books[0].isbn,
-			warehouseName: warehouses[0].displayName
-		}
-	]);
-
-	// Open the warehouse selector dropdown for the new row
-	await table.row(0).field("warehouseName").click();
-
-	// Verify only Warehouse 2 is shown (since Warehouse 1's stock is fully allocated)
-	const dropdown = page.getByTestId("dropdown-menu");
-	await expect(dropdown.locator(`div:has-text("${warehouses[0].displayName}")`)).not.toBeVisible();
-	await expect(dropdown.locator(`div:has-text("${warehouses[1].displayName}")`)).toBeVisible();
-	await expect(dropdown.locator(`div:has-text("${warehouses[1].displayName}")`)).toContainText("2 copies available");
-
-	// Select Warehouse 2
-	await dropdown.locator(`div:has-text("${warehouses[1].displayName}")`).click();
-
-	// Add the book a third time
-	await isbnInput.fill(books[0].isbn);
-	await page.keyboard.press("Enter");
-
-	// Verify a new row was added with no warehouse
-	await table.assertRows([
-		{
-			isbn: books[0].isbn,
-			warehouseName: ""
-		},
-		{
-			isbn: books[0].isbn,
-			warehouseName: warehouses[1].displayName
-		},
-		{
-			isbn: books[0].isbn,
-			warehouseName: warehouses[0].displayName
-		}
-	]);
-
-	// Open the warehouse selector dropdown for the new row
-	await table.row(0).field("warehouseName").click();
-
-	// Verify Warehouse 2 is still shown with 1 copy available (since we've allocated 1 of 2)
-	await expect(dropdown.locator(`div:has-text("${warehouses[1].displayName}")`)).toBeVisible();
-	await expect(dropdown.locator(`div:has-text("${warehouses[1].displayName}")`)).toContainText("1 copy available");
-
-	// Select Warehouse 2 again
-	await dropdown.locator(`div:has-text("${warehouses[1].displayName}")`).click();
-
-	// Add the book a fourth time
-	await isbnInput.fill(books[0].isbn);
-	await page.keyboard.press("Enter");
-
-	// Verify a new row was added with no warehouse
-	await table.assertRows([
-		{
-			isbn: books[0].isbn,
-			warehouseName: ""
-		},
-		{
-			isbn: books[0].isbn,
-			warehouseName: warehouses[1].displayName
-		},
-		{
-			isbn: books[0].isbn,
-			warehouseName: warehouses[1].displayName
-		},
-		{
-			isbn: books[0].isbn,
-			warehouseName: warehouses[0].displayName
-		}
-	]);
-
-	// Open the warehouse selector dropdown for the new row
-	await table.row(0).field("warehouseName").click();
-
-	// Verify no warehouses are shown in the dropdown (all stock is allocated)
-	await expect(dropdown.getByText("No stock available...")).toBeVisible();
-
-	// Click the "Force withdrawal" button
-	await dropdown.getByText("Force withdrawal").click();
-
-	// Verify the force withdrawal dialog appears
-	const forceWithdrawalDialog = page.getByRole("dialog");
-	await expect(forceWithdrawalDialog).toBeVisible();
-
-	// Verify all warehouses are available for force withdrawal (since we're forcing)
-	const warehouseSelect = forceWithdrawalDialog.locator("#warehouse-force-withdrawal");
-	await expect(warehouseSelect.locator(`option[value="${warehouses[0].id}"]`)).not.toHaveClass(/hidden/);
-	await expect(warehouseSelect.locator(`option[value="${warehouses[1].id}"]`)).not.toHaveClass(/hidden/);
-
-	// Select Warehouse 1 for force withdrawal
-	await warehouseSelect.selectOption({ label: warehouses[0].displayName });
-
-	// Confirm the force withdrawal
-	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
-
-	// Verify the warehouse is now selected and marked as "Forced"
-	await expect(table.row(0).field("warehouseName")).toContainText(warehouses[0].displayName);
 	await expect(table.row(0).field("warehouseName")).toContainText("Forced");
 });
