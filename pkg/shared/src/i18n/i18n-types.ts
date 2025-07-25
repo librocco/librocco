@@ -824,7 +824,7 @@ type RootTranslation = {
 			 */
 			description: string
 			/**
-			 * A​ ​s​t​o​c​k​ ​a​d​j​u​s​t​m​e​n​t​ ​w​i​l​l​ ​b​e​ ​r​e​c​o​r​d​e​d​ ​f​o​r​ ​{​q​u​a​n​t​i​t​y​}​ ​c​o​p​i​e​s​ ​o​f​ ​{​i​s​b​n​}​ ​i​n​ ​{​d​i​s​p​l​a​y​N​a​m​e​}​.
+			 * A​ ​s​t​o​c​k​ ​a​d​j​u​s​t​m​e​n​t​ ​w​i​l​l​ ​b​e​ ​r​e​c​o​r​d​e​d​ ​f​o​r​ ​{​q​u​a​n​t​i​t​y​}​ ​{​{​c​o​p​y​|​c​o​p​i​e​s​}​}​ ​o​f​ ​{​i​s​b​n​}​ ​i​n​ ​{​d​i​s​p​l​a​y​N​a​m​e​}​.
 			 * @param {string} displayName
 			 * @param {string} isbn
 			 * @param {number} quantity
@@ -3482,7 +3482,7 @@ export type TranslationFunctions = {
 			 */
 			description: () => LocalizedString
 			/**
-			 * A stock adjustment will be recorded for {quantity} copies of {isbn} in {displayName}.
+			 * A stock adjustment will be recorded for {quantity} {{copy|copies}} of {isbn} in {displayName}.
 			 */
 			selected_warehouse_message: (arg: { displayName: string, isbn: string, quantity: number }) => LocalizedString
 		}
