@@ -522,8 +522,8 @@ test(`should check validity of the transactions and commit the note on 'commit'
 
 	const dropdown = page.getByTestId("dropdown-menu");
 	// await expect(dropdown.locator("button", { hasText: "Force Withdrawal" })).toBeVisible();
-	await dropdown.locator("button", { hasText: "Force Withdrawal" }).waitFor();
-	await dropdown.locator("button", { hasText: "Force Withdrawal" }).click({ force: true });
+	await dropdown.locator("button", { hasText: "Force withdrawal" }).waitFor();
+	await dropdown.locator("button", { hasText: "Force withdrawal" }).click({ force: true });
 	const forceWithdrawalDialog = page.getByRole("dialog");
 	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({ label: "Warehouse 2" });
 	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
@@ -720,10 +720,10 @@ test("should allow forcing a withdrawal for a book with no stock", async ({ page
 
 	// The "Force Withdrawal" button should be visible in the dropdown
 	const dropdown = page.getByTestId("dropdown-menu");
-	await expect(dropdown.locator("button", { hasText: "Force Withdrawal" })).toBeVisible();
+	await expect(dropdown.locator("button", { hasText: "Force withdrawal" })).toBeVisible();
 
 	// Click the "Force Withdrawal" button
-	await dropdown.locator("button", { hasText: "Force Withdrawal" }).click();
+	await dropdown.locator("button", { hasText: "Force withdrawal" }).click();
 
 	// A dialog should appear. Select the warehouse and confirm.
 	const forceWithdrawalDialog = page.getByRole("dialog");
@@ -762,7 +762,7 @@ test("should merge forced transaction when stock becomes available", async ({ pa
 
 	await entries.row(0).field("warehouseName").click();
 	const dropdown = page.getByTestId("dropdown-menu");
-	await dropdown.locator("button", { hasText: "Force Withdrawal" }).click();
+	await dropdown.locator("button", { hasText: "Force withdrawal" }).click();
 	const forceWithdrawalDialog = page.getByRole("dialog");
 	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({
 		label: "Warehouse 1"
@@ -1047,7 +1047,7 @@ test("ForceWithdrawal dialog should not show warehouses with available stock", a
 
 	// Click the "Force Withdrawal" button
 	const dropdown = page.getByTestId("dropdown-menu");
-	await dropdown.locator("button", { hasText: "Force Withdrawal" }).click();
+	await dropdown.locator("button", { hasText: "Force withdrawal" }).click();
 
 	// A dialog should appear with warehouse options
 	const forceWithdrawalDialog = page.getByRole("dialog");
