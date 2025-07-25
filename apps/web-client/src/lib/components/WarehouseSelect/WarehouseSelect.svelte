@@ -55,9 +55,11 @@
 			remaining: quantity - (scannedQuantitiesPerWarehouse?.get(id) || 0)
 		}));
 		
-		// Filter out warehouses with no remaining stock
-		// Forced withdrawals should be handled via the force-withdrawal dialog
-		const inStockOptions = allOptions.filter(option => option.remaining >= 0);
+		// Filter out warehouses with no remaining stock, but keep the currently selected warehouse
+		// even if it has zero remaining stock
+		const inStockOptions = allOptions.filter(option => 
+			option.remaining > 0 || option.value === warehouseId
+		);
 		
 		// Sort by remaining stock (highest first)
 		return inStockOptions.sort((a, b) => b.remaining - a.remaining);
@@ -70,8 +72,9 @@
 		selected.set({ value: warehouseId, label: warehouseName });
 	}
 
-	// We're only showing warehouses with available stock in the dropdown.
-	// Out of stock situations are handled via the force-withdrawal dialog
+	// We're only showing warehouses with available stock in the dropdown,
+	// plus the currently selected warehouse (if any).
+	// Out of stock situations for new selections are handled via the force-withdrawal dialog
 	$: options = mapAvailableWarehousesToOptions(availableWarehouses);
 
 	$: t = $LL.misc_components.warehouse_select;
@@ -119,7 +122,7 @@
 			{#if options.length}
 				<div class="flex flex-col gap-y-0.5">
 					{#each options as warehouse}
-						{@const { label, quantity } = warehouse}
+						{@const { label, quantity, remaining } = warehouse}
 
 						<div
 							class="relative flex cursor-pointer flex-col rounded p-2 text-sm focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content data-[selected]:bg-primary data-[selected]:text-primary-content"
@@ -128,7 +131,10 @@
 						>
 							<span>{label}</span>
 							<span class="text-xs">
-								{t.label.book_count({ count: quantity })} 
+								{t.label.book_count({ count: quantity })}
+								{#if remaining <= 0 && warehouse.value === warehouseId}
+									<span class="text-error"> (Out of stock)</span>
+								{/if}
 							</span>
 						</div>
 					{/each}
