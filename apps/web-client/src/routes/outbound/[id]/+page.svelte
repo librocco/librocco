@@ -79,8 +79,6 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
-	import { createOutboundTableEvents, type OutboundTableEvents } from "$lib/components/Tables/InventoryTables/events";
-	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 	import { Save } from "$lucide";
 
 	export let data: PageData;
@@ -743,19 +741,21 @@
 									scannedQuantitiesPerWarehouse={bookRows.get(row.isbn)}
 									{row}
 									{rowIx}
-									warehouseList={warehouses}
 									on:change={(event) => editWarehouse(event, row)}
 								>
 									<button
 										let:open
 										use:melt={$forceWithdrawalDialogTrigger}
+										class="btn-ghost btn-sm btn w-full justify-start rounded border-0"
 										slot="force-withdrawal"
 										data-testid={testId("force-withdrawal-button")}
 										on:m-click={() => {
 											openForceWithdrawal(row);
 											open.set(false);
-										}}>{tOutbound.labels.force_withdrawal()}</button
+										}}
 									>
+										{tOutbound.labels.force_withdrawal()}
+									</button>
 								</WarehouseSelect>
 							{/if}
 						</svelte:fragment>
@@ -783,50 +783,50 @@
 {#if $forceWithdrawalDialogOpen && forceWithdrawalDialogData}
 	{@const { row } = forceWithdrawalDialogData}
 	<PageCenterDialog dialog={forceWithdrawalDialog} title="" description="">
-		<div>
-			{`${tOutbound.force_withdrawal_dialog.title()}  ${row.isbn}`}
-		</div>
-		<div>
-			<p class="mb-4">{tOutbound.force_withdrawal_dialog.description()}</p>
-			<select
-				id="warehouse-force-withdrawal"
-				placeholder="Select a warehouse"
-				bind:value={selectedWarehouse}
-				class="select-bordered select w-full"
-			>
-				<option disabled value={null}>Select a warehouse</option>
-				{#each warehouses as warehouse}
-					{@const stock = row.availableWarehouses.get(warehouse.id)?.quantity || 0}
-					{@const scanned = bookRows.get(row.isbn)?.get(warehouse.id) || 0}
-					{@const availableForForcing = scanned >= stock}
-					<option class={availableForForcing ? "" : "hidden"} value={warehouse}>{warehouse.displayName}</option>
-				{/each}
-			</select>
-			<p>
-				{#if selectedWarehouse}
-					{tOutbound.force_withdrawal_dialog.selected_warehouse_message({
-						quantity: row.quantity,
-						displayName: selectedWarehouse.displayName
-					})}
-				{/if}
-			</p>
-		</div>
-		<div class="stretch flex w-full gap-x-4 p-6">
-			<div class="basis-fit">
-				<button on:click={() => forceWithdrawalDialogOpen.set(false)} class="btn-secondary btn-outline btn-lg btn" type="button"
-					>{tOutbound.force_withdrawal_dialog.cancel()}</button
-				>
-			</div>
+		<div class="prose">
+			<h3>
+				{tOutbound.force_withdrawal_dialog.title({ isbn: row.isbn })}
+			</h3>
+			<p>{tOutbound.force_withdrawal_dialog.description()}</p>
 
-			<div class="grow">
-				<button
-					on:click={() => updateRowWarehouse(row)}
-					class="btn-primary btn-lg btn w-full"
-					disabled={selectedWarehouse === initialSelectedWarehouse || selectedWarehouse === null}
-				>
-					<Save aria-hidden="true" focusable="false" size={20} />
-					{tOutbound.force_withdrawal_dialog.confirm()}
-				</button>
+			<div class="stretch flex w-full flex-col gap-y-6">
+				<select id="warehouse-force-withdrawal" bind:value={selectedWarehouse} class="select-bordered select w-full">
+					<option value={null} disabled selected>{$LL.misc_components.warehouse_select.default_option()}</option>
+					{#each warehouses as warehouse}
+						{@const stock = row.availableWarehouses.get(warehouse.id)?.quantity || 0}
+						{@const scanned = bookRows.get(row.isbn)?.get(warehouse.id) || 0}
+						{@const availableForForcing = scanned >= stock}
+						<option class={availableForForcing ? "" : "hidden"} value={warehouse}>{warehouse.displayName}</option>
+					{/each}
+				</select>
+				{#if selectedWarehouse}
+					<p class="m-0">
+						{tOutbound.force_withdrawal_dialog.selected_warehouse_message({
+							quantity: row.quantity,
+							isbn: row.isbn,
+							displayName: selectedWarehouse.displayName
+						})}
+					</p>
+				{/if}
+
+				<div class="flex gap-x-4">
+					<div class="basis-fit">
+						<button on:click={() => forceWithdrawalDialogOpen.set(false)} class="btn-secondary btn-outline btn-lg btn" type="button">
+							{tOutbound.force_withdrawal_dialog.cancel()}
+						</button>
+					</div>
+
+					<div class="grow">
+						<button
+							on:click={() => updateRowWarehouse(row)}
+							class="btn-primary btn-lg btn w-full"
+							disabled={selectedWarehouse === initialSelectedWarehouse || selectedWarehouse === null}
+						>
+							<Save aria-hidden="true" focusable="false" size={20} />
+							{tOutbound.force_withdrawal_dialog.confirm()}
+						</button>
+					</div>
+				</div>
 			</div>
 		</div>
 	</PageCenterDialog>

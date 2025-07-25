@@ -11,11 +11,7 @@
 }
 
 .stock-table tbody tr.out-of-stock {
-	@apply !border border-error bg-error/80 text-error-content;
-}
-
-.stock-table tbody tr.requires-action {
-	@apply bg-yellow-200/80;
+	@apply !border border-error/40 bg-error/40 text-error-content;
 }
 
 .stock-table th,

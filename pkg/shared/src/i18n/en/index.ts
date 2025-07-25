@@ -551,12 +551,12 @@ const sale_note = {
 		quantity: "quantity for reconciliation"
 	},
 	force_withdrawal_dialog: {
-		title: "Force withdrawal for",
+		title: "Force withdrawal for {isbn:string}?",
 		cancel: "Cancel",
 		confirm: "Confirm",
-		description: "This book is out of stock. Select a warehouse to perform a force withdrawal.",
-		selected_warehouse_message: ` A reconciliation note will be created for {quantity} books in {displayName}`,
-		no_warehouse_selected: "No warehouse selected"
+		description:
+			"This book is out of stock. If you're certain additional copies exist, you can manually select a warehouse to force the withdrawal.",
+		selected_warehouse_message: "A stock adjustment will be recorded for {quantity:number} copies of {isbn:string} in {displayName:string}."
 	},
 	labels: {
 		new_note: "New Note",
@@ -568,7 +568,7 @@ const sale_note = {
 		commit: "Commit",
 		print: "Print",
 		custom_item: "Custom item",
-		force_withdrawal: "Force Withdrawal"
+		force_withdrawal: "Force withdrawal"
 	},
 	stats: {
 		last_updated: "Last updated",
@@ -789,8 +789,13 @@ const misc_components = {
 		checkout: "Checkout"
 	},
 	warehouse_select: {
-		label: "Select a warehouse to withdraw book { rowIx } from",
-		default_option: "Select a warehouse"
+		label: {
+			aria: "Select a warehouse to withdraw book {rowIx:number} from",
+			forced: "Forced",
+			book_count: "{count:number} {{copy|copies}} available"
+		},
+		default_option: "Select a warehouse",
+		empty_options: "No stock available..."
 	}
 };
 
