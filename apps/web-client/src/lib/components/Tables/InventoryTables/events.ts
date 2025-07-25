@@ -16,14 +16,6 @@ export const createOutboundTableEvents = (dispatch: EventDispatcher<OutboundTabl
 		editQuantity: createEditQuantityEvent(dispatch),
 		editWarehouse: (event: CustomEvent<WarehouseChangeDetail>, row: InventoryTableData<"book">) => {
 			dispatch("edit-row-warehouse", { event, row });
-		},
-		openForceWithdrawalDialog: (
-			event: MouseEvent & {
-				currentTarget: EventTarget & HTMLButtonElement;
-			},
-			row: InventoryTableData<"book">
-		) => {
-			dispatch("open-force-withdrawal-dialog", { event, row });
 		}
 	};
 };
@@ -34,7 +26,7 @@ export const createEditQuantityEvent =
 	};
 
 export type InboundTableEvents = EditQuantityEvent;
-export type OutboundTableEvents = EditQuantityEvent & EditWarehouseEvent & OpenForceWithdrawalEvent;
+export type OutboundTableEvents = EditQuantityEvent & EditWarehouseEvent;
 
 export type EditQuantityEvent = {
 	"edit-row-quantity": { event: SubmitEvent; row: InventoryTableData<"book"> };
@@ -44,15 +36,6 @@ export type EditQuantityEvent = {
 type EditWarehouseEvent = {
 	"edit-row-warehouse": {
 		event: CustomEvent<WarehouseChangeDetail>;
-		row: InventoryTableData<"book">;
-	};
-};
-
-type OpenForceWithdrawalEvent = {
-	"open-force-withdrawal-dialog": {
-		event: MouseEvent & {
-			currentTarget: EventTarget & HTMLButtonElement;
-		};
 		row: InventoryTableData<"book">;
 	};
 };
