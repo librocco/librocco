@@ -2,20 +2,16 @@
 	import { createEventDispatcher } from "svelte";
 
 	import { createSelect } from "@melt-ui/svelte";
-	import { SwatchBook } from "$lucide";
 	import ChevronsUpDown from "$lucide/chevrons-up-down";
-	import RefreshCcwDot from "$lucide/refresh-ccw-dot";
 
 	import { testId } from "@librocco/shared";
 
 	import type { WarehouseChangeDetail } from "./types";
-	import type { Warehouse } from "$lib/db/cr-sqlite/types";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let row: InventoryTableData<"book">;
 	export let rowIx: number;
-	export let warehouseList: Omit<Warehouse, "discount">[];
 	export let scannedQuantitiesPerWarehouse: Map<number, number> | undefined;
 
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
@@ -23,8 +19,7 @@
 
 	const {
 		elements: { trigger, menu, option, label },
-		states: { selectedLabel, open, selected },
-		helpers: { isSelected }
+		states: { selectedLabel, open, selected }
 	} = createSelect<number>({
 		forceVisible: true,
 		positioning: {
@@ -75,53 +70,68 @@
 </script>
 
 <!-- svelte-ignore a11y-label-has-associated-control - $label contains the 'for' attribute -->
-<label class="hidden" {...$label} use:label>{t.label({ rowIx })}</label>
+<label class="hidden" {...$label} use:label>{t.label.aria({ rowIx })}</label>
 <button
 	data-testid={testId("dropdown-control")}
 	data-open={open}
 	class="border-base flex w-full gap-x-2 rounded border-2 bg-transparent p-2 shadow focus:border-primary focus:outline-none focus:ring-0"
 	{...$trigger}
 	use:trigger
-	aria-label="Warehouse"
 >
-	<span class="rounded-full p-0.5 {row.type !== 'forced' ? 'bg-success' : 'bg-error'}"></span>
-	{#if $selectedLabel}
-		<div class="flex flex-col items-start truncate">
-			<span>
-				{$selectedLabel === "not-found" ? t.default_option() : $selectedLabel}
-			</span>
-			<span class="text-xs">{$selectedLabel !== "not-found" && row.type === "forced" ? "Forced" : ""}</span>
-			{#if row.availableWarehouses.get(row.warehouseId)?.quantity}
-				<span class="text-xs"
-					>{row.availableWarehouses.get(row.warehouseId)?.quantity}
-					book(s)</span
-				>
-			{/if}
+	<span class="rounded-full p-0.5 {$selectedLabel === 'not-found' ? 'bg-error' : row.type !== 'forced' ? 'bg-success' : 'bg-warning'}"
+	></span>
 
-			<!-- <span class="text-xs capitalize">{row.type}</span> -->
+	{#if $selectedLabel !== "not-found"}
+		<div class="flex flex-col items-start gap-0.5 truncate">
+			<span class="flex flex-row flex-wrap items-center gap-x-2 truncate">
+				<span class="font-medium">
+					{$selectedLabel}
+				</span>
+				<span class="text-xs italic">{row.type === "forced" ? "Forced" : ""}</span>
+			</span>
+			{#if row.type !== "forced" && row.availableWarehouses.get(row.warehouseId)?.quantity}
+				<span class="text-xs">
+					{t.label.book_count({ count: row.availableWarehouses.get(row.warehouseId)?.quantity })}
+				</span>
+			{/if}
 		</div>
 	{:else}
-		<span class="truncate">{t.default_option()}</span>
+		<span class="font-light text-gray-600">{t.default_option()}</span>
 	{/if}
-	<ChevronsUpDown size={18} class="ml-auto shrink-0 self-end" />
+	<ChevronsUpDown size={18} class="ml-auto shrink-0 self-center" />
 </button>
 {#if $open}
 	<div
 		data-testid={testId("dropdown-menu")}
-		class="z-10 flex max-h-[300px] flex-col gap-y-1.5 overflow-y-auto rounded-lg bg-base-100 p-1 text-base-content shadow-md focus:!ring-0"
+		class="z-10 flex max-h-[300px] overflow-y-auto rounded bg-base-100 p-1 text-base-content shadow-md focus:!ring-0"
 		{...$menu}
 		use:menu
 	>
-		{#each options as warehouse}
-			{@const { label, value, quantity } = warehouse}
-			<div
-				class="relative flex cursor-pointer flex-col rounded p-1 focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
-				{...$option(warehouse)}
-				use:option
-			>
-				<span>{label}</span>
+		<div class="flex w-full flex-col">
+			{#if options.length}
+				<div class="flex flex-col gap-y-0.5">
+					{#each options as warehouse}
+						{@const { label } = warehouse}
+
+						<div
+							class="relative flex cursor-pointer flex-col rounded p-2 text-sm focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
+							{...$option(warehouse)}
+							use:option
+						>
+							<span>{label}</span>
+						</div>
+					{/each}
+				</div>
+			{:else}
+				<p class="p-2 text-sm text-gray-600">
+					{t.empty_options()}
+				</p>
+			{/if}
+			<div class="divider m-0 h-0.5"></div>
+
+			<div class="w-full py-1">
+				<slot {open} name="force-withdrawal"></slot>
 			</div>
-		{/each}
-		<slot {open} name="force-withdrawal"></slot>
+		</div>
 	</div>
 {/if}
