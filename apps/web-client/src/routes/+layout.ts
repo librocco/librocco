@@ -16,11 +16,13 @@ import { setLocale } from "@librocco/shared/i18n-svelte";
 import { loadedLocales } from "@librocco/shared/i18n-util";
 import { locales } from "@librocco/shared/i18n-util";
 
+import { DEFAULT_LOCALE, DEFAULT_VFS, IS_E2E } from "$lib/constants";
+
 import { appPath } from "$lib/paths";
-import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
 import { ErrDBCorrupted, ErrDBSchemaMismatch } from "$lib/db/cr-sqlite/db";
+import { validateVFS, type VFSWhitelist } from "$lib/db/cr-sqlite/vfs";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/#/stock/")
 const redirectPaths = ["", "/", "/#", "/#/"].map((path) => `${base}${path}`);
@@ -66,7 +68,11 @@ export const load: LayoutLoad = async ({ url }) => {
 		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
 
 		try {
-			const dbCtx = await getInitializedDB(get(dbid));
+			// We're allowing for passing of (whitelisted) vfs name as a query param.
+			// This will usually only happen in tests/benchmarks and the fallback will
+			// be used in production (without the query param)
+			const vfs = getVFSParam(url, DEFAULT_VFS);
+			const dbCtx = await getInitializedDB(get(dbid), vfs);
 			return { dbCtx, plugins, error: null };
 		} catch (err) {
 			console.error("Error initializing DB", err);
@@ -106,4 +112,18 @@ function deepMergeInPlace(target, source) {
 		}
 	});
 	return target;
+}
+
+/**
+ * A util used to retrieve the 'vfs' (vfs name) param from the URL. If none is provided, or the
+ * provided value is not a whitelisted vfs name, the default one is returned
+ *
+ */
+function getVFSParam(url: URL, fallback: VFSWhitelist): VFSWhitelist {
+	const vfs = url.searchParams.get("vfs") || fallback;
+	if (!validateVFS(vfs)) {
+		console.warn(`unknown value for vfs param: ${vfs}, defaulting to: ${fallback}`);
+		return fallback;
+	}
+	return vfs;
 }

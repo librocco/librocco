@@ -18,12 +18,12 @@ const vfsLookup = {
 export type VFSWhitelist = keyof typeof vfsLookup;
 
 export function createVfsFactory(vfs: VFSWhitelist): (module: SQLiteAPI) => Promise<SQLiteVFS> {
-	if (!(vfs in vfsLookup)) {
+	if (!validateVFS(vfs)) {
 		throw new Error("unknown vfs: " + vfs);
 	}
 	return vfsLookup[vfs];
 }
 
-// TEMP
-// export const VFS = "idb-batch-atomic";
-export const VFS = "opfs-any-context";
+export function validateVFS(vfs: string): vfs is VFSWhitelist {
+	return Boolean(vfsLookup[vfs]);
+}
