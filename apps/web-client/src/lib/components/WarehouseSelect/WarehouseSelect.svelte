@@ -55,18 +55,8 @@
 			remaining: quantity - (scannedQuantitiesPerWarehouse?.get(id) || 0)
 		}));
 		
-		// Include the currently selected warehouse even if it's out of stock
-		if (warehouseId && !allOptions.some(opt => opt.value === warehouseId)) {
-			const warehouseData = warehouseList.get(warehouseId);
-			if (warehouseData) {
-				allOptions.push({
-					value: warehouseId,
-					label: warehouseData.displayName,
-					quantity: warehouseData.quantity,
-					remaining: warehouseData.quantity - (scannedQuantitiesPerWarehouse?.get(warehouseId) || 0)
-				});
-			}
-		}
+		// Don't include the currently selected warehouse if it's out of stock
+		// Forced withdrawals should be handled via the force-withdrawal dialog
 		
 		// Sort by remaining stock (highest first)
 		return allOptions.sort((a, b) => b.remaining - a.remaining);
