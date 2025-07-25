@@ -37,6 +37,7 @@
 	} from "$lib/components";
 	import { Page } from "$lib/controllers";
 	import { defaultDialogConfig, PageCenterDialog } from "$lib/components/Melt";
+	import ForceWithdrawalDialog from "$lib/components/ForceWithdrawalDialog/ForceWithdrawalDialog.svelte";
 
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import {
@@ -108,9 +109,6 @@
 	$: totalBookCount = bookEntries.filter(isBookRow).reduce((acc, { quantity }) => acc + quantity, 0);
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: publisherList = data.publisherList;
-
-	let selectedWarehouse: Warehouse | null = null;
-	let initialSelectedWarehouse: Warehouse | null = null;
 
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
@@ -271,17 +269,19 @@
 		forceWithdrawalDialogOpen.set(false);
 	};
 
-	const updateRowWarehouse = async (data: InventoryTableData<"book">, e?: CustomEvent<WarehouseChangeDetail>) => {
+	const updateRowWarehouse = async (data: InventoryTableData<"book">, warehouseId?: number, e?: CustomEvent<WarehouseChangeDetail>) => {
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
 
 		let nextWarehouseId: number;
 		if (e) {
 			const { warehouseId } = e?.detail;
 			nextWarehouseId = warehouseId;
+		} else if (warehouseId !== undefined) {
+			nextWarehouseId = warehouseId;
 		} else {
-			const { id } = selectedWarehouse;
-			nextWarehouseId = id;
+			return; // No warehouse ID provided
 		}
+		
 		// Number form control validation means this string->number conversion should yield a valid result
 		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
@@ -313,16 +313,15 @@
 		// non-pre-existing warehouse create a new transaction
 	};
 
+	const handleForceWithdrawalUpdate = ({ detail }: CustomEvent<{ row: InventoryTableData<"book">, warehouseId: number }>) => {
+		const { row, warehouseId } = detail;
+		updateRowWarehouse(row, warehouseId);
+	};
+
+	let forceWithdrawalDialogRow: InventoryTableData<"book"> | null = null;
+
 	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
-		const warehouse = warehouses.find((w) => w.id === data.warehouseId);
-		// only assign warehouse if it's a forced selection
-		console.log(data.type);
-		if (data.type === "forced") {
-			selectedWarehouse = warehouse || null;
-		}
-		console.log({ selectedWarehouse });
-		initialSelectedWarehouse = warehouse;
-		forceWithdrawalDialogData = { row: data };
+		forceWithdrawalDialogRow = data;
 		forceWithdrawalDialogOpen.set(true);
 	};
 
@@ -432,7 +431,6 @@
 	};
 
 	// Create individual dialogs for each type
-	let forceWithdrawalDialogData: { row: InventoryTableData<"book"> } | null = null;
 	const forceWithdrawalDialog = createDialog(defaultDialogConfig);
 	const {
 		elements: {
@@ -675,7 +673,7 @@
 					<OutboundTable
 						{table}
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
-						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(row, event)}
+						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(row, undefined, event)}
 						on:open-force-withdrawal-dialog={({ detail: { row } }) => openForceWithdrawal(row)}
 					>
 						<div id="row-actions" slot="row-actions" let:row let:rowIx>
@@ -780,56 +778,18 @@
 	</div>
 </Page>
 
-{#if $forceWithdrawalDialogOpen && forceWithdrawalDialogData}
-	{@const { row } = forceWithdrawalDialogData}
-	<PageCenterDialog dialog={forceWithdrawalDialog} title="" description="">
-		<div class="prose">
-			<h3>
-				{tOutbound.force_withdrawal_dialog.title({ isbn: row.isbn })}
-			</h3>
-			<p>{tOutbound.force_withdrawal_dialog.description()}</p>
-
-			<div class="stretch flex w-full flex-col gap-y-6">
-				<select id="warehouse-force-withdrawal" bind:value={selectedWarehouse} class="select-bordered select w-full">
-					<option value={null} disabled selected>{$LL.misc_components.warehouse_select.default_option()}</option>
-					{#each warehouses as warehouse}
-						{@const stock = row.availableWarehouses.get(warehouse.id)?.quantity || 0}
-						{@const scanned = bookRows.get(row.isbn)?.get(warehouse.id) || 0}
-						{@const availableForForcing = scanned >= stock}
-						<option class={availableForForcing ? "" : "hidden"} value={warehouse}>{warehouse.displayName}</option>
-					{/each}
-				</select>
-				{#if selectedWarehouse}
-					<p class="m-0">
-						{tOutbound.force_withdrawal_dialog.selected_warehouse_message({
-							quantity: row.quantity,
-							isbn: row.isbn,
-							displayName: selectedWarehouse.displayName
-						})}
-					</p>
-				{/if}
-
-				<div class="flex gap-x-4">
-					<div class="basis-fit">
-						<button on:click={() => forceWithdrawalDialogOpen.set(false)} class="btn-secondary btn-outline btn-lg btn" type="button">
-							{tOutbound.force_withdrawal_dialog.cancel()}
-						</button>
-					</div>
-
-					<div class="grow">
-						<button
-							on:click={() => updateRowWarehouse(row)}
-							class="btn-primary btn-lg btn w-full"
-							disabled={selectedWarehouse === initialSelectedWarehouse || selectedWarehouse === null}
-						>
-							<Save aria-hidden="true" focusable="false" size={20} />
-							{tOutbound.force_withdrawal_dialog.confirm()}
-						</button>
-					</div>
-				</div>
-			</div>
-		</div>
-	</PageCenterDialog>
+{#if $forceWithdrawalDialogOpen && forceWithdrawalDialogRow}
+	<div use:melt={$forceWithdrawalDialogPortalled}>
+		<div use:melt={$forceWithdrawalDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+		<ForceWithdrawalDialog 
+			dialog={forceWithdrawalDialog} 
+			row={forceWithdrawalDialogRow} 
+			{warehouses} 
+			{bookRows}
+			on:update={handleForceWithdrawalUpdate}
+			on:cancel={() => forceWithdrawalDialogOpen.set(false)}
+		/>
+	</div>
 {/if}
 
 {#if $confirmDialogOpen}
