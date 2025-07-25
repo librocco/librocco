@@ -1,2 +1,0 @@
-// We're only showing warehouses with available stock in the dropdown.
-// Out of stock situations are handled via the force-withdrawal dialog
