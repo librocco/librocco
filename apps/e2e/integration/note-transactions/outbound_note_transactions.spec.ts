@@ -258,10 +258,10 @@ test("transaction should allow for warehouse selection if there is more than one
 
 	const dropdown = page.getByTestId("dropdown-menu");
 	// Check for an option that contains the text "Warehouse 1"
-	await expect(dropdown.locator("div", { hasText: "Warehouse 1" })).toBeVisible();
+	await expect(dropdown.getByRole("option", { name: "Warehouse 1" })).toBeVisible();
 
 	// Check for an option that contains the text "Warehouse 2"
-	await expect(dropdown.locator("div", { hasText: "Warehouse 2" })).toBeVisible();
+	await expect(dropdown.getByRole("option", { name: "Warehouse 2" })).toBeVisible();
 });
 
 test("if there's one transaction for the isbn with specified warehouse, should add a new transaction (with unspecified warehouse) on 'Add'", async ({
@@ -988,6 +988,12 @@ test("warehouse dropdown should not show options for deleted warehouses", async 
 
 	// Assert that the dropdown only shows the warehouse with available unscanned stock
 	const dropdown = page.getByTestId("dropdown-menu");
-	await expect(dropdown.locator("div", { hasText: "Warehouse 1" })).not.toBeVisible();
-	await expect(dropdown.locator("div", { hasText: "Warehouse 2" })).not.toBeVisible();
+	// await expect(dropdown.locator("div", { hasText: "Warehouse 1" })).not.toBeVisible();
+	// await expect(dropdown.locator("div", { hasText: "Warehouse 2" })).not.toBeVisible();
+
+	// Check for an option that contains the text "Warehouse 1"
+	await expect(dropdown.getByRole("option", { name: "Warehouse 1" })).toBeVisible();
+
+	// Check for an option that contains the text "Warehouse 2"
+	await expect(dropdown.getByRole("option", { name: "Warehouse 2" })).not.toBeVisible();
 });
