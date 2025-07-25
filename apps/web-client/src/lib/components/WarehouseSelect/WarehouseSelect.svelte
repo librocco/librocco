@@ -47,19 +47,17 @@
 		>
 	) => {
 		// Get all warehouses that have stock, regardless of scanned quantities
-		const allOptions = [...warehouseList].map(([id, { displayName, quantity }]) => ({ 
-			value: id, 
-			label: displayName, 
+		const allOptions = [...warehouseList].map(([id, { displayName, quantity }]) => ({
+			value: id,
+			label: displayName,
 			quantity,
 			// Calculate remaining stock (total - scanned)
 			remaining: quantity - (scannedQuantitiesPerWarehouse?.get(id) || 0)
 		}));
-		
-		// Filter out warehouses with no remaining stock, 
+
+		// Filter out warehouses with no remaining stock,
 		// but keep the currently selected warehouse even if it has zero remaining stock (as long as the row is not "forced")
-		return allOptions.filter(option => 
-			option.remaining > 0 || (option.value === warehouseId && type !== "forced")
-		);
+		return allOptions.filter((option) => option.remaining > 0 || (option.value === warehouseId && type !== "forced"));
 	};
 
 	/**
@@ -122,7 +120,7 @@
 						{@const { label, quantity, remaining } = warehouse}
 
 						<div
-							class="relative flex cursor-pointer flex-col rounded p-2 text-sm focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content data-[selected]:bg-primary data-[selected]:text-primary-content"
+							class="relative flex cursor-pointer flex-col rounded p-2 text-sm focus:z-10 data-[highlighted]:bg-primary data-[selected]:bg-primary data-[highlighted]:text-primary-content data-[selected]:text-primary-content"
 							{...$option(warehouse)}
 							use:option
 						>
