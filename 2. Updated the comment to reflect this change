@@ -1,0 +1,3 @@
+// We're only showing warehouses with available stock in the dropdown,
+// plus the currently selected warehouse (if any).
+// Out of stock situations for new selections are handled via the force-withdrawal dialog
