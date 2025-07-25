@@ -1,0 +1,109 @@
+#@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "load_artefacts")
+#@ load("cache.lib.yml", "load_cached_artefacts")
+#@ load("cache.lib.yml", "cache_node")
+#@ load("rush.lib.yml", "rush_add_path")
+#@ load("rush.lib.yml", "rush_install")
+#@ load("rush.lib.yml", "rush_build")
+#@ load("build-crsqlite.lib.yml", "build_crsqlite")
+
+name: Checks
+
+"on":
+  push:
+    branches:
+      - "vfs-benchmark/**"
+
+jobs:
+  build-cr-sqlite: #@ build_crsqlite()
+
+  vfs-benchmark:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    needs: build-cr-sqlite
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        shardTotal: [10]
+    steps:
+      -  #@ checkout()
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Compute desired compiled artifact version
+        run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      -  #@ rush_build()
+      - name: Build the app
+        run: cd apps/web-client && rushx build:e2e
+      - name: Download playwright browsers
+        run: cd apps/e2e && npx playwright install
+      - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+        run: cd apps/e2e && rushx test:vfs:ci
+        env:
+          PLAYWRIGHT_OPTIONS: "--shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}"
+      #! upload each shard’s blob so we can merge later
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-blob-report-${{ matrix.shardIndex }}
+          path: apps/e2e/blob-report
+          retention-days: 2
+
+  vfs-benchmark-merge-report:
+    if: ${{ !cancelled() }}
+    needs: [vfs-benchmark]
+    runs-on: ubuntu-latest
+    steps:
+      -  #@ checkout()
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Download blob reports
+        uses: actions/download-artifact@v4
+        with:
+          path: all-blob-reports
+          pattern: e2e-blob-report-*
+          merge-multiple: true
+
+      - name: Merge to HTML report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Install lftp
+        run: |
+          sudo apt-get update
+          sudo apt-get install lftp
+
+      - name: Upload merged report to Bunny storage
+        run: |
+          lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
+          set ftp:ssl-allow no
+          set mirror:parallel-transfer-count 10
+          mirror -R playwright-report/ ${{ github.head_ref || github.ref_name }}/tests
+          EOF
+        env:
+          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+
+      - name: Purge Bunny cache
+        run: |
+          curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache \
+               --header "content-type: application/json" \
+               --header "AccessKey: $BUNNY_API_KEY"
+        env:
+          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-merged-html-report
+          path: playwright-report
+          retention-days: 30
+
+      - name: Output link to report
+        run: echo "Merged e2e report https://test.libroc.co/${{ github.head_ref || github.ref_name }}/tests/index.html" | tee -a $GITHUB_STEP_SUMMARY
