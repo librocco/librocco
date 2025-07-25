@@ -277,7 +277,7 @@
 		</div>
 
 		<div class="flex h-full w-full flex-col gap-y-6 px-4 md:overflow-y-auto">
-			<div class="top-o sticky flex w-full max-w-full flex-col gap-y-3">
+			<div class="sticky top-0 flex w-full max-w-full flex-col gap-y-3">
 				<div class="flex items-center justify-between pb-2 pt-4">
 					<h3 class="text-xl font-medium">{$LL.customer_orders_page.customer_details.books_heading()}</h3>
 

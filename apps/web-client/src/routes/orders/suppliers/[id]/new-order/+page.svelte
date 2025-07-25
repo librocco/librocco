@@ -11,7 +11,6 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
-	import { base } from "$app/paths";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
@@ -35,21 +34,26 @@
 
 	// Supplier meta data is returned per row. We just need one copy of it
 	$: [orderLine] = orderLines;
-	$: ({
-		supplier_id,
-		supplier_name
-		// last_updated_at // TODO: re-introduce this
-	} = orderLine);
+	$: ({ supplier_id, supplier_name } = orderLine);
 
-	// $: lastUpdatedAtDate = new Date(last_updated_at)
+	// Initialize with all books selected
+	let selectedBooksLookup: { [isbn: string]: boolean } = {};
 
-	// NOTE: might go out of sync, we don't care
-	let selectedBooksLookup: { [isbn: string]: number } = {};
+	// Initialize all books as selected by default
+	$: if (orderLines && Object.keys(selectedBooksLookup).length === 0) {
+		selectedBooksLookup = orderLines.reduce(
+			(acc, { isbn }) => {
+				acc[isbn] = true;
+				return acc;
+			},
+			{} as { [isbn: string]: boolean }
+		);
+	}
 
 	$: linesWithSelection = orderLines.map((line) => ({
 		...line,
-		selectedQuantity: selectedBooksLookup[line.isbn] || 0,
-		selected_line_price: line.price * (selectedBooksLookup[line.isbn] || 0)
+		selectedQuantity: selectedBooksLookup[line.isbn] ? line.quantity : 0,
+		selected_line_price: selectedBooksLookup[line.isbn] ? line.line_price : 0
 	}));
 
 	$: totalPossiblePrice = orderLines.reduce((acc, { line_price }) => acc + line_price, 0);
@@ -84,142 +88,126 @@
 
 	function selectPortion(portion: number) {
 		let budget = Math.floor(totalPossiblePrice * portion);
-		const selected: { [isbn: string]: number } = {};
+		const selected: { [isbn: string]: boolean } = {};
 
+		// Initialize all as unselected
 		for (const line of orderLines) {
-			// Calc max quantity we can select, given the remaining budget
-			const maxQuantity = Math.floor(budget / line.price);
+			selected[line.isbn] = false;
+		}
 
-			// If there are more possible lines than we can handle,
-			// select the max possible and terminate here
-			if (maxQuantity < line.quantity) {
-				selected[line.isbn] = maxQuantity;
-				break;
+		// Select books within budget
+		for (const line of orderLines) {
+			// If this line fits in the budget, select it
+			if (line.line_price <= budget) {
+				selected[line.isbn] = true;
+				budget -= line.line_price;
+			} else {
+				// If this line doesn't fit, skip it
+				selected[line.isbn] = false;
 			}
-
-			// Otherwise, select all of the line and continue
-			selected[line.isbn] = line.quantity;
-			budget -= line.price * line.quantity;
 		}
 
 		selectedBooksLookup = selected;
 	}
 </script>
 
-<Page title="New Supplier Order" view="orders/suppliers/id/new-order" {db} {plugins}>
-	<div slot="main" class="flex h-full w-full flex-col gap-y-10 px-4">
-		<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
-			<div class="min-w-fit md:basis-96 md:overflow-y-auto">
-				<div class="card">
-					<div class="card-body gap-y-2 p-0">
-						<div class="sticky top-0 flex gap-2 bg-base-100 pb-3 md:flex-col">
-							<h1 class="prose card-title">{supplier_name}</h1>
+<Page title={t.title()} view="orders/suppliers/id/new-order" {db} {plugins}>
+	<div slot="main" class="flex h-full flex-col gap-y-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
+			<div class="card md:h-full">
+				<div class="card-body gap-y-2 p-0">
+					<div class="flex flex-col gap-y-2 border-b bg-base-100 px-4 py-2.5 max-md:sticky max-md:top-0">
+						<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
+							<h2 class="text-2xl font-medium">{supplier_name}</h2>
 
-							<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-								<h2 class="prose">#{supplier_id}</h2>
+							<span class="badge-primary badge-lg badge badge-md gap-x-2">
+								#{supplier_id}
+							</span>
+						</div>
+					</div>
+
+					<dl class="flex w-full border-b px-4 md:flex-col">
+						<div class="stats stats-horizontal w-full bg-base-100 md:stats-vertical">
+							<div class="stat max-md:p-2 md:px-1">
+								<dt class="stat-title">{t.stats.total_books()}</dt>
+								<dd class="stat-value text-2xl">{totalPossibleBooks}</dd>
+							</div>
+							<div class="stat bg-base-100 max-md:py-2 md:px-1">
+								<dt class="stat-title">{t.stats.total_value()}</dt>
+								<dd class="stat-value text-2xl">€{totalPossiblePrice.toFixed(2)}</dd>
 							</div>
 						</div>
-
-						<dl class="flex flex-col">
-							<div class="stats md:stats-vertical">
-								<div class="stat md:px-1">
-									<dt class="stat-title">{t.stats.total_books()}</dt>
-									<dd class="stat-value text-2xl">{totalPossibleBooks}</dd>
-								</div>
-								<div class="stat md:px-1">
-									<dt class="stat-title">{t.stats.total_value()}</dt>
-									<dd class="stat-value text-2xl">€{totalPossiblePrice}</dd>
-								</div>
-								<!-- TODO: re-introduce last_updated_at -->
-								<!-- <div class="stat md:px-1">
-								<dt class="stat-title">Last updated</dt>
-								<dd class="stat-value text-2xl">
-									<time dateTime={lastUpdatedAtDate.toISOString()}>{lastUpdatedAtDate.toLocaleDateString()}</time>
-								</dd>
-							</div> -->
-							</div>
-						</dl>
-					</div>
+					</dl>
 				</div>
 			</div>
+		</div>
 
-			<div class="relative mb-20 flex h-full w-full flex-col gap-y-6 md:px-4">
-				<div class="prose flex w-full max-w-full flex-col gap-y-3">
-					<h3 class="max-md:divider-start max-md:divider">{t.table.books()}</h3>
+		<div class="flex h-full w-full flex-col gap-y-6 px-4 md:overflow-y-auto">
+			<div class="sticky top-0 flex w-full max-w-full flex-col gap-y-3">
+				<div class="flex flex-col items-start justify-between gap-y-2 pb-2 pt-4">
+					<h3 class="text-xl font-medium">{t.table.books()}</h3>
 					<div class="flex flex-wrap items-center gap-4">
 						<div class="flex flex-wrap gap-2">
 							<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(0.25)}>{t.labels.select()} 1/4</button>
 							<button class="btn-outline btn-sm btn border-dashed" on:click={() => selectPortion(0.5)}>{t.labels.select()} 1/2</button>
 							<button class="btn-outline btn-sm btn" on:click={() => selectPortion(0.75)}>{t.labels.select()} 3/4</button>
-							<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(1)}>{t.labels.select()} All</button>
 						</div>
 					</div>
 				</div>
+			</div>
 
-				<div class="relative h-full overflow-x-auto">
-					<table class="table-pin-rows table pb-20">
-						<thead>
+			<div class="relative h-full overflow-x-auto">
+				<table class="table-sm table">
+					<thead>
+						<tr>
+							<th scope="col" class="sr-only"> {t.labels.select()} </th>
+							<th>{t.table.isbn()}</th>
+							<th>{t.table.title()}</th>
+							<th>{t.table.authors()}</th>
+							<th>{t.table.quantity()}</th>
+							<th>{t.table.total()}</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						{#each linesWithSelection as orderLine}
+							{@const { isbn, title, authors, line_price, quantity, selectedQuantity } = orderLine}
+							{@const isChecked = selectedBooksLookup[isbn]}
 							<tr>
-								<th class="w-16">
-									<span class="sr-only">{t.labels.select()}</span>
-								</th>
-								<th>{t.table.isbn()}</th>
-								<th>{t.table.title()}</th>
-								<th>{t.table.authors()}</th>
+								<td>
+									<input
+										type="checkbox"
+										class="checkbox checkbox-sm"
+										checked={isChecked}
+										on:change={() => {
+											selectedBooksLookup[isbn] = !isChecked;
+											// eslint-disable-next-line no-self-assign
+											selectedBooksLookup = selectedBooksLookup;
+										}}
+									/>
+								</td>
+								<th>{isbn}</th>
+								<td>{title}</td>
+								<td>{authors}</td>
 
-								<th>{t.table.ordered_quantity()}</th>
-								<th>{t.table.total()}</th>
-
-								<th class="bg-gray-100">{t.table.selected_quantity()}</th>
-								<th class="bg-gray-100">{t.table.total()}</th>
+								<td>{quantity}</td>
+								<td>€{line_price.toFixed(2)}</td>
 							</tr>
-						</thead>
-
-						<tbody>
-							{#each linesWithSelection as orderLine}
-								{@const { isbn, title, authors, line_price, quantity, selectedQuantity, selected_line_price } = orderLine}
-								{@const isChecked = quantity === selectedQuantity}
-								<tr>
-									<td>
-										<input
-											type="checkbox"
-											class="checkbox"
-											checked={isChecked}
-											on:change={() => {
-												selectedBooksLookup[isbn] = isChecked ? 0 : quantity;
-												// eslint-disable-next-line no-self-assign
-												selectedBooksLookup = selectedBooksLookup;
-											}}
-										/>
-									</td>
-									<th>{isbn}</th>
-									<td>{title}</td>
-									<td>{authors}</td>
-
-									<!-- Ordered quantity / total -->
-									<td>{quantity}</td>
-									<td>€{line_price}</td>
-
-									<!-- Selected quantity / total -->
-									<td class="bg-gray-100">{selectedQuantity}</td>
-									<td class="bg-gray-100">€{selected_line_price}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+						{/each}
+					</tbody>
+				</table>
 
 				{#if canPlaceOrder}
-					<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
+					<div class="card absolute bottom-4 left-0 z-10 flex w-full flex-row bg-transparent">
 						<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
 							<dl class="stats flex">
-								<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
+								<div class="stat flex shrink flex-row place-items-center bg-base-300 py-2 max-md:px-4">
 									<div class="stat-title">{t.stats.selected_books()}:</div>
 									<div class="stat-value text-lg">
 										{totalSelectedBooks}
 									</div>
 								</div>
-								<div class="stat flex place-items-center py-2 max-md:px-4">
+								<div class="stat flex place-items-center bg-base-300 py-2 max-md:px-4">
 									<div class="stat-title sr-only">{t.table.total()}</div>
 									<div class="stat-value text-lg">€{totalSelectedPrice.toFixed(2)}</div>
 								</div>

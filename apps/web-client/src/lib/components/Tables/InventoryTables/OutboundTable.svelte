@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
-	import type { Warehouse } from "$lib/db/cr-sqlite/types";
 	import type { InventoryTableData } from "../types";
 
 	import type { createTable } from "$lib/actions";
@@ -13,13 +12,10 @@
 	import BookQuantityFormCell from "./BookQuantityFormCell.svelte";
 	import CustomItemHeadCell from "./CustomItemHeadCell.svelte";
 
-	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
-
 	import LL from "@librocco/shared/i18n-svelte";
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
-	export let warehouseList: Warehouse[];
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
@@ -51,6 +47,7 @@
 			</th>
 			<th scope="col">{$LL.table_components.inventory_tables.outbound_table.warehouse()} </th>
 			<th scope="col" class="show-col-md"> {$LL.table_components.inventory_tables.outbound_table.category()} </th>
+
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit">
 					<HeadCol label={$LL.table_components.inventory_tables.outbound_table.row_actions()} srOnly />
@@ -61,31 +58,12 @@
 	<tbody>
 		{#each rows as row (row.key)}
 			{#if isBookRow(row)}
-				{@const {
-					rowIx,
-					isbn,
-					authors = "N/A",
-					quantity,
-					price,
-					year = "N/A",
-					title = "N/A",
-					publisher = "",
-					warehouseDiscount,
-					category = ""
-				} = row}
+				{@const { rowIx, isbn, authors = "N/A", quantity, year = "N/A", title = "N/A", publisher = "", category = "" } = row}
 				{@const { warehouseId, warehouseName, availableWarehouses } = row}
-				{@const quantityInWarehouse = availableWarehouses?.get(warehouseId)?.quantity || 0}
-				<!-- If a book is available in multiple warehouses (and no warehouse selected), we require action - bg is yellow -->
-				{@const requiresAction = !warehouseId && availableWarehouses?.size > 1}
-				<!-- If a book is out of stock in curren warehouse - paint the row red - this also catches books with no warehouse selected, but no stock in any warehouse -->
-				{@const outOfStock = quantityInWarehouse < quantity}
+				<!-- If no warehouse is selected - paint the row red -->
+				{@const noWarehouse = !warehouseId || warehouseName === "not-found"}
 				<!-- This back and forth is necessary for TS + Svelte to recognise the object as book variant (not custom item) -->
-				<!-- Require action takes precedence over out of stock -->
-				<tr
-					class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""}
-					use:table.tableRow={{ position: rowIx }}
-					use:table.tableRow={{ position: rowIx }}
-				>
+				<tr class={noWarehouse ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }}>
 					<th scope="row" data-property="book" class="table-cell-max">
 						<BookHeadCell data={{ isbn, title, authors, year }} />
 					</th>
@@ -109,11 +87,14 @@
 						{year}
 					</td>
 					<td data-property="warehouseName" class="table-cell-max">
-						<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
+						{#if $$slots["warehouse-select"]}
+							<slot {editWarehouse} {row} {rowIx} name="warehouse-select"></slot>
+						{/if}
 					</td>
 					<td data-property="category" class="show-col-md table-cell-max">
 						{category}
 					</td>
+
 					{#if $$slots["row-actions"]}
 						<td class="table-cell-fit">
 							<slot name="row-actions" {row} {rowIx} />

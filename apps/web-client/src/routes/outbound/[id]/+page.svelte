@@ -20,7 +20,7 @@
 	import { type BookData } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
-	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem } from "$lib/db/cr-sqlite/types";
+	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 	import { OutOfStockError, NoWarehouseSelectedError } from "$lib/db/cr-sqlite/errors";
 
@@ -33,6 +33,8 @@
 		Dialog,
 		OutboundTable,
 		TextEditable,
+		ForceWithdrawalDialog,
+		WarehouseSelect,
 		type WarehouseChangeDetail
 	} from "$lib/components";
 	import { Page } from "$lib/controllers";
@@ -53,7 +55,7 @@
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { createIntersectionObserver, createTable } from "$lib/actions";
+	import { clickOutside, createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { mergeBookData } from "$lib/utils/misc";
@@ -109,6 +111,19 @@
 
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
+
+	$: bookRows = (() => {
+		const newBookRows = new Map<string, Map<number, number>>();
+		for (const { isbn, warehouseId, quantity } of data.entries as NoteEntriesItem[]) {
+			if (!newBookRows.has(isbn)) {
+				newBookRows.set(isbn, new Map());
+			}
+			const warehouseMap = newBookRows.get(isbn)!;
+			const preExistingQuantity = warehouseMap.get(warehouseId) || 0;
+			warehouseMap.set(warehouseId, preExistingQuantity + quantity);
+		}
+		return newBookRows;
+	})();
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -174,18 +189,34 @@
 	// #region note-actions
 
 	// #region transaction-actions
-	const handleAddTransaction = async (isbn: string) => {
+	const shouldAssignTransaction = async (isbn: string, quantity: number) => {
 		const stock = await getStock(db, { isbns: [isbn] });
 
-		const warehouseOptions = stock.map((st) => ({ warehouseId: st.warehouseId, warehouseName: st.warehouseName }));
+		const warehouseOptions = stock
+			.filter((st) => {
+				const totalScanned = bookRows.get(isbn)?.get(st.warehouseId) || 0;
+				const warehouseExists = warehouses.find((warehouse) => warehouse.id === st.warehouseId);
+				return st.quantity >= quantity + totalScanned && warehouseExists;
+			})
+			.map((st) => {
+				return { warehouseId: st.warehouseId, warehouseName: st.warehouseName };
+			});
 
 		if (warehouseOptions.length === 1) {
-			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: warehouseOptions[0].warehouseId });
-		} else if ((!warehouseOptions.length && defaultWarehouse) || warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
-			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: defaultWarehouse });
+			return warehouseOptions[0].warehouseId;
+		} else if (warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
+			return defaultWarehouse;
 		} else {
-			await addVolumesToNote(db, noteId, { isbn, quantity: 1 });
+			return null;
 		}
+	};
+
+	const handleAddTransaction = async (isbn: string, quantity = 1, warehouseId?: number) => {
+		if (!warehouseId) {
+			await addVolumesToNote(db, noteId, { isbn, quantity });
+			return;
+		}
+		await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId });
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
 		//
@@ -227,12 +258,19 @@
 			return;
 		}
 
-		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextQty });
+		// calculate difference between total scanned quantity and next quantity
+		const totalScannedQuantity = bookRows.get(isbn)?.get(warehouseId) || 0;
+		const difference = nextQty - currentQty;
+		const nextTotalQuantity = totalScannedQuantity + difference;
+
+		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextTotalQuantity });
+
+		forceWithdrawalDialogOpen.set(false);
 	};
 
-	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
+	const updateRowWarehouse = async (data: InventoryTableData<"book">, nextWarehouseId: number) => {
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
-		const { warehouseId: nextWarehouseId } = e.detail;
+
 		// Number form control validation means this string->number conversion should yield a valid result
 		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
@@ -240,15 +278,41 @@
 		if (currentWarehouseId === nextWarehouseId) {
 			return;
 		}
+		// if assigning from wh1 to wh2 and wh2 has no more stock (all scanned)
+		// we should end up with the total quantity of both
+		// with wh1 containing the max available stock and the rest is forced
 
-		await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
+		const totalQuantityCurrentWarehouse = bookRows.get(isbn)?.get(currentWarehouseId);
+
+		const difference = totalQuantityCurrentWarehouse - quantity;
+		forceWithdrawalDialogOpen.set(false);
+
+		if (quantity === totalQuantityCurrentWarehouse) {
+			await updateNoteTxn(db, noteId, transaction, { warehouseId: nextWarehouseId, quantity });
+			return;
+		}
+		await updateNoteTxn(db, noteId, transaction, { warehouseId: currentWarehouseId, quantity: difference });
+		await addVolumesToNote(db, noteId, { isbn, quantity, warehouseId: nextWarehouseId });
+
+		// wh1 has 1 stock and 10 are scanned
+		// user clicks on the sub-transaction that's in stock
+		// and re-assigns a different warehouse
+		// decrement quantity by said amount and in case of a
+		// non-pre-existing warehouse create a new transaction
 	};
 
 	const deleteRow = (rowIx: number) => async () => {
 		const row = entries[rowIx];
+
 		if (isBookRow(row)) {
-			const { isbn, warehouseId } = row;
-			await removeNoteTxn(db, noteId, { isbn, warehouseId });
+			const { isbn, warehouseId, quantity } = row;
+			const remainingQuantity = bookRows.get(isbn)?.get(warehouseId) - quantity;
+			if (remainingQuantity === 0) {
+				await removeNoteTxn(db, noteId, { isbn, warehouseId });
+				return;
+			}
+			await updateNoteTxn(db, noteId, { isbn, warehouseId }, { quantity: remainingQuantity, warehouseId });
+			return;
 		} else {
 			await removeNoteCustomItem(db, noteId, row.id);
 		}
@@ -342,7 +406,23 @@
 		await printBookLabel($deviceSettingsStore.labelPrinterUrl, book);
 	};
 
+	let forceWithdrawalDialogRow: InventoryTableData<"book"> | null = null;
+
+	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
+		forceWithdrawalDialogRow = data;
+	};
+
+	const closeForceWithdrawal = () => {
+		forceWithdrawalDialogRow = null;
+	};
+
 	// Create individual dialogs for each type
+	const forceWithdrawalDialog = createDialog({ ...defaultDialogConfig });
+	const {
+		elements: { trigger: forceWithdrawalDialogTrigger, overlay: forceWithdrawalDialogOverlay, portalled: forceWithdrawalDialogPortalled },
+		states: { open: forceWithdrawalDialogOpen }
+	} = forceWithdrawalDialog;
+
 	const confirmActionDialog = createDialog(defaultDialogConfig);
 	const {
 		elements: { trigger: confirmDialogTrigger, overlay: confirmDialogOverlay, portalled: confirmDialogPortalled },
@@ -535,7 +615,8 @@
 						resetForm: true,
 						onUpdated: async ({ form }) => {
 							const { isbn } = form?.data;
-							await handleAddTransaction(isbn);
+							const warehouseId = await shouldAssignTransaction(isbn, 1);
+							await handleAddTransaction(isbn, 1, warehouseId);
 						}
 					}}
 					placeholder={"Scan to select books from"}
@@ -593,9 +674,8 @@
 				<div>
 					<OutboundTable
 						{table}
-						warehouseList={warehouses}
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
-						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
+						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(row, event.detail.warehouseId)}
 					>
 						<div id="row-actions" slot="row-actions" let:row let:rowIx>
 							{@const editTrigger = isBookRow(row) ? $editBookDialogTrigger : $customItemDialogTrigger}
@@ -654,6 +734,30 @@
 								</div>
 							</PopoverWrapper>
 						</div>
+						<svelte:fragment slot="warehouse-select" let:editWarehouse let:row let:rowIx>
+							{#if isBookRow(row)}
+								<WarehouseSelect
+									scannedQuantitiesPerWarehouse={bookRows.get(row.isbn)}
+									{row}
+									{rowIx}
+									on:change={(event) => editWarehouse(event, row)}
+								>
+									<button
+										let:open
+										use:melt={$forceWithdrawalDialogTrigger}
+										class="btn-ghost btn-sm btn w-full justify-start rounded border-0"
+										slot="force-withdrawal"
+										data-testid={testId("force-withdrawal-button")}
+										on:m-click={() => {
+											openForceWithdrawal(row);
+											open.set(false);
+										}}
+									>
+										{tOutbound.labels.force_withdrawal()}
+									</button>
+								</WarehouseSelect>
+							{/if}
+						</svelte:fragment>
 					</OutboundTable>
 				</div>
 
@@ -665,6 +769,21 @@
 		{/if}
 	</div>
 </Page>
+
+{#if $forceWithdrawalDialogOpen && forceWithdrawalDialogRow}
+	<div use:melt={$forceWithdrawalDialogPortalled}>
+		<div use:melt={$forceWithdrawalDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+
+		<ForceWithdrawalDialog
+			dialog={forceWithdrawalDialog}
+			row={forceWithdrawalDialogRow}
+			{warehouses}
+			{bookRows}
+			onSave={(row, warehouseId) => updateRowWarehouse(row, warehouseId)}
+			onCancel={() => closeForceWithdrawal()}
+		/>
+	</div>
+{/if}
 
 {#if $confirmDialogOpen}
 	{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}

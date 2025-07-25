@@ -62,7 +62,6 @@
 
 <Story name="Outbound">
 	<OutboundTable
-		{warehouseList}
 		table={outboundTable}
 		on:edit-row-warehouse={({ detail }) => console.log("Edit Warehouse", detail)}
 		on:edit-row-quantity={({ detail }) => console.log("Edit Quantity", detail)}

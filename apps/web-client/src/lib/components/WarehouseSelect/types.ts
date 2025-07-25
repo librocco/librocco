@@ -1,3 +1,3 @@
-export type WarehouseChangeDetail = {
+export interface WarehouseChangeDetail {
 	warehouseId: number;
-};
+}
