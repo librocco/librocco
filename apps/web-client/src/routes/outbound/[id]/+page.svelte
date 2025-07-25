@@ -509,22 +509,6 @@
 				</div>
 
 				<div class="ml-auto flex items-center gap-x-2">
-					<div class="flex flex-col">
-						<select
-							id="defaultWarehouse"
-							name="defaultWarehouse"
-							class="select-bordered select select-sm w-full"
-							value={defaultWarehouse || ""}
-							on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
-						>
-							<option value=""
-								>{warehouses.length > 0 ? tOutbound.placeholder.select_warehouse() : tOutbound.placeholder.no_warehouses()}</option
-							>
-							{#each warehouses as warehouse}
-								<option value={warehouse.id}>{warehouse.displayName}</option>
-							{/each}
-						</select>
-					</div>
 					<button
 						class="btn-primary btn-sm btn hidden xs:block"
 						use:melt={$confirmDialogTrigger}
