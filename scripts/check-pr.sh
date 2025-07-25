@@ -46,7 +46,7 @@ for f in "${added_files[@]}"; do
   fi
 
   mime=$(file -b --mime -- "$f")
-  if [[ "$mime" != text/* ]]; then
+  if ! grep -Eq '^(text/|application/(javascript|json))' <<< "$mime"; then    
     echo "❌ binary/blob file detected: $f ($mime)"
     BINARY_DETECTED=1
   fi
