@@ -55,11 +55,12 @@
 			remaining: quantity - (scannedQuantitiesPerWarehouse?.get(id) || 0)
 		}));
 		
-		// Don't include the currently selected warehouse if it's out of stock
+		// Filter out warehouses with no remaining stock
 		// Forced withdrawals should be handled via the force-withdrawal dialog
+		const inStockOptions = allOptions.filter(option => option.remaining > 0);
 		
 		// Sort by remaining stock (highest first)
-		return allOptions.sort((a, b) => b.remaining - a.remaining);
+		return inStockOptions.sort((a, b) => b.remaining - a.remaining);
 	};
 
 	/**
@@ -69,9 +70,8 @@
 		selected.set({ value: warehouseId, label: warehouseName });
 	}
 
-	// We're allowing all warehouses for selection.
-	// Out of stock situations are handled in the row (painting it red) or
-	// when committing the note (prompting for reconciliation)
+	// We're only showing warehouses with available stock in the dropdown.
+	// Out of stock situations are handled via the force-withdrawal dialog
 	$: options = mapAvailableWarehousesToOptions(availableWarehouses);
 
 	$: t = $LL.misc_components.warehouse_select;
