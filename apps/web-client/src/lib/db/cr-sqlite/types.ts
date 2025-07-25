@@ -1,6 +1,6 @@
 import type { BookData } from "@librocco/shared";
 
-export type { DBAsync, TXAsync } from "./core";
+export type * from "./core";
 
 /**
  * Order tables only show a slice of book data => our order lines only need to return relevant cols
