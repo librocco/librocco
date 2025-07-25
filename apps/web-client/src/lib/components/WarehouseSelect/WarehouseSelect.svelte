@@ -35,7 +35,7 @@
 		}
 	});
 
-	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = row);
+	$: ({ warehouseId, type, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = row);
 
 	const mapAvailableWarehousesToOptions = (
 		warehouseList: Map<
@@ -55,14 +55,11 @@
 			remaining: quantity - (scannedQuantitiesPerWarehouse?.get(id) || 0)
 		}));
 		
-		// Filter out warehouses with no remaining stock, but keep the currently selected warehouse
-		// even if it has zero remaining stock
-		const inStockOptions = allOptions.filter(option => 
-			option.remaining > 0 || option.value === warehouseId
+		// Filter out warehouses with no remaining stock, 
+		// but keep the currently selected warehouse even if it has zero remaining stock (as long as the row is not "forced")
+		return allOptions.filter(option => 
+			option.remaining > 0 || (option.value === warehouseId && type !== "forced")
 		);
-		
-		// Sort by remaining stock (highest first)
-		return inStockOptions.sort((a, b) => b.remaining - a.remaining);
 	};
 
 	/**
@@ -132,9 +129,6 @@
 							<span>{label}</span>
 							<span class="text-xs">
 								{t.label.book_count({ count: quantity })}
-								{#if remaining <= 0 && warehouse.value === warehouseId}
-									<span class="text-error"> (Out of stock)</span>
-								{/if}
 							</span>
 						</div>
 					{/each}
