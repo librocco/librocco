@@ -24,7 +24,7 @@
 	$: rowCount = rows.length + 1;
 
 	const dispatch = createEventDispatcher<OutboundTableEvents>();
-	const { editQuantity, editWarehouse, openForceWithdrawalDialog } = createOutboundTableEvents(dispatch);
+	const { editQuantity, editWarehouse } = createOutboundTableEvents(dispatch);
 
 	// TODO: this is a duplicate
 	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";

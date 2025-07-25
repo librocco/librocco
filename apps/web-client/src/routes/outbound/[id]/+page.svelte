@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy, createEventDispatcher } from "svelte";
+	import { onMount, onDestroy } from "svelte";
 	import { fade, fly } from "svelte/transition";
 	import { writable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
@@ -20,7 +20,7 @@
 	import { type BookData } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
-	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem, Warehouse, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
+	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 	import { OutOfStockError, NoWarehouseSelectedError } from "$lib/db/cr-sqlite/errors";
 
@@ -33,11 +33,12 @@
 		Dialog,
 		OutboundTable,
 		TextEditable,
+		ForceWithdrawalDialog,
+		WarehouseSelect,
 		type WarehouseChangeDetail
 	} from "$lib/components";
 	import { Page } from "$lib/controllers";
-	import { defaultDialogConfig, PageCenterDialog } from "$lib/components/Melt";
-	import ForceWithdrawalDialog from "$lib/components/ForceWithdrawalDialog/ForceWithdrawalDialog.svelte";
+	import { defaultDialogConfig } from "$lib/components/Melt";
 
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import {
@@ -54,7 +55,7 @@
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { createIntersectionObserver, createTable } from "$lib/actions";
+	import { clickOutside, createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { mergeBookData } from "$lib/utils/misc";
@@ -79,8 +80,6 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
-	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
-	import { Save } from "$lucide";
 
 	export let data: PageData;
 
@@ -269,19 +268,9 @@
 		forceWithdrawalDialogOpen.set(false);
 	};
 
-	const updateRowWarehouse = async (data: InventoryTableData<"book">, warehouseId?: number, e?: CustomEvent<WarehouseChangeDetail>) => {
+	const updateRowWarehouse = async (data: InventoryTableData<"book">, nextWarehouseId: number) => {
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
 
-		let nextWarehouseId: number;
-		if (e) {
-			const { warehouseId } = e?.detail;
-			nextWarehouseId = warehouseId;
-		} else if (warehouseId !== undefined) {
-			nextWarehouseId = warehouseId;
-		} else {
-			return; // No warehouse ID provided
-		}
-		
 		// Number form control validation means this string->number conversion should yield a valid result
 		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
@@ -295,7 +284,6 @@
 
 		const totalQuantityCurrentWarehouse = bookRows.get(isbn)?.get(currentWarehouseId);
 
-		const totalQuantityNextWarehouse = bookRows.get(isbn)?.get(nextWarehouseId) || 0;
 		const difference = totalQuantityCurrentWarehouse - quantity;
 		forceWithdrawalDialogOpen.set(false);
 
@@ -311,18 +299,6 @@
 		// and re-assigns a different warehouse
 		// decrement quantity by said amount and in case of a
 		// non-pre-existing warehouse create a new transaction
-	};
-
-	const handleForceWithdrawalUpdate = ({ detail }: CustomEvent<{ row: InventoryTableData<"book">, warehouseId: number }>) => {
-		const { row, warehouseId } = detail;
-		updateRowWarehouse(row, warehouseId);
-	};
-
-	let forceWithdrawalDialogRow: InventoryTableData<"book"> | null = null;
-
-	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
-		forceWithdrawalDialogRow = data;
-		forceWithdrawalDialogOpen.set(true);
 	};
 
 	const deleteRow = (rowIx: number) => async () => {
@@ -430,15 +406,20 @@
 		await printBookLabel($deviceSettingsStore.labelPrinterUrl, book);
 	};
 
+	let forceWithdrawalDialogRow: InventoryTableData<"book"> | null = null;
+
+	const openForceWithdrawal = async (data: InventoryTableData<"book">) => {
+		forceWithdrawalDialogRow = data;
+	};
+
+	const closeForceWithdrawal = () => {
+		forceWithdrawalDialogRow = null;
+	};
+
 	// Create individual dialogs for each type
-	const forceWithdrawalDialog = createDialog(defaultDialogConfig);
+	const forceWithdrawalDialog = createDialog({ ...defaultDialogConfig });
 	const {
-		elements: {
-			trigger: forceWithdrawalDialogTrigger,
-			overlay: forceWithdrawalDialogOverlay,
-			portalled: forceWithdrawalDialogPortalled,
-			content: forceWithdrawalDialogContent
-		},
+		elements: { trigger: forceWithdrawalDialogTrigger, overlay: forceWithdrawalDialogOverlay, portalled: forceWithdrawalDialogPortalled },
 		states: { open: forceWithdrawalDialogOpen }
 	} = forceWithdrawalDialog;
 
@@ -673,8 +654,7 @@
 					<OutboundTable
 						{table}
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
-						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(row, undefined, event)}
-						on:open-force-withdrawal-dialog={({ detail: { row } }) => openForceWithdrawal(row)}
+						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(row, event.detail.warehouseId)}
 					>
 						<div id="row-actions" slot="row-actions" let:row let:rowIx>
 							{@const editTrigger = isBookRow(row) ? $editBookDialogTrigger : $customItemDialogTrigger}
@@ -781,13 +761,14 @@
 {#if $forceWithdrawalDialogOpen && forceWithdrawalDialogRow}
 	<div use:melt={$forceWithdrawalDialogPortalled}>
 		<div use:melt={$forceWithdrawalDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
-		<ForceWithdrawalDialog 
-			dialog={forceWithdrawalDialog} 
-			row={forceWithdrawalDialogRow} 
-			{warehouses} 
+
+		<ForceWithdrawalDialog
+			dialog={forceWithdrawalDialog}
+			row={forceWithdrawalDialogRow}
+			{warehouses}
 			{bookRows}
-			on:update={handleForceWithdrawalUpdate}
-			on:cancel={() => forceWithdrawalDialogOpen.set(false)}
+			onSave={(row, warehouseId) => updateRowWarehouse(row, warehouseId)}
+			onCancel={() => closeForceWithdrawal()}
 		/>
 	</div>
 {/if}
