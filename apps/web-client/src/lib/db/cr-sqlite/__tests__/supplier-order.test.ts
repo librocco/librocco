@@ -594,7 +594,9 @@ describe("Placing supplier orders", () => {
 					supplier_name: supplier1.name,
 					total_book_number: 3,
 					total_book_price: book1.price * 2 + book2.price,
-					created: expect.any(Number)
+					created: expect.any(Number),
+					// There is no associated reconciliation order => no updatedAt
+					reconciliation_last_updated_at: null
 				}),
 
 				expect.objectContaining({
@@ -603,7 +605,9 @@ describe("Placing supplier orders", () => {
 					supplier_name: supplier2.name,
 					total_book_number: 3,
 					total_book_price: book1.price * 3,
-					created: expect.any(Number)
+					created: expect.any(Number),
+					// There is no associated reconciliation order => no updatedAt
+					reconciliation_last_updated_at: null
 				})
 			]);
 		});
@@ -736,14 +740,18 @@ describe("Placing supplier orders", () => {
 					supplier_id: 1,
 					supplier_name: supplier1.name,
 					total_book_number: 6, // 3 Physics + 3 The Hobbit
-					created: expect.any(Number)
+					created: expect.any(Number),
+					// There is no associated reconciliation order => no updatedAt
+					reconciliation_last_updated_at: null
 				}),
 				expect.objectContaining({
 					id: 1,
 					supplier_id: 1,
 					supplier_name: supplier1.name,
 					total_book_number: 3, // 2 Physics + 1 Chemistry
-					created: expect.any(Number)
+					created: expect.any(Number),
+					// There is no associated reconciliation order => no updatedAt
+					reconciliation_last_updated_at: null
 				})
 			]);
 		});
@@ -763,21 +771,25 @@ describe("Placing supplier orders", () => {
 			const [{ id: s4 }, { id: s3 }, { id: s2 }, { id: s1 }] = await getPlacedSupplierOrders(db);
 
 			// Reconcile the orders
-			await createReconciliationOrder(db, 1, [s1]);
-			await finalizeReconciliationOrder(db, 1);
+			const reconciliationId1 = 1;
+			await createReconciliationOrder(db, reconciliationId1, [s1]);
+			await finalizeReconciliationOrder(db, reconciliationId1);
 
-			await createReconciliationOrder(db, 2, [s2]);
+			const reconciliationId2 = 2;
+			await createReconciliationOrder(db, reconciliationId2, [s2]);
 
 			// Reconciled - only
+			// Reconciliation order id and last_updated_at relation should be returned
 			expect(await getPlacedSupplierOrders(db, { reconciled: true })).toEqual([
-				expect.objectContaining({ id: s2 }),
-				expect.objectContaining({ id: s1 })
+				expect.objectContaining({ id: s2, reconciliation_order_id: reconciliationId2, reconciliation_last_updated_at: expect.any(Number) }),
+				expect.objectContaining({ id: s1, reconciliation_order_id: reconciliationId1, reconciliation_last_updated_at: expect.any(Number) })
 			]);
 
 			// Not reconciled - only
+			// Reconciliation order id and last_updated_at relation should be null
 			expect(await getPlacedSupplierOrders(db, { reconciled: false })).toEqual([
-				expect.objectContaining({ id: s4 }),
-				expect.objectContaining({ id: s3 })
+				expect.objectContaining({ id: s4, reconciliation_order_id: null, reconciliation_last_updated_at: null }),
+				expect.objectContaining({ id: s3, reconciliation_order_id: null, reconciliation_last_updated_at: null })
 			]);
 		});
 
@@ -794,19 +806,27 @@ describe("Placing supplier orders", () => {
 			await createSupplierOrder(db, 5, 1, [{ supplier_id: 1, isbn: "4", quantity: 1 }]);
 
 			// Reconcile the orders
-			await createReconciliationOrder(db, 1, [2]);
-			await finalizeReconciliationOrder(db, 1);
+			const reconciliationId1 = 1;
+			await createReconciliationOrder(db, reconciliationId1, [2]);
+			await finalizeReconciliationOrder(db, reconciliationId1);
 
-			await createReconciliationOrder(db, 2, [3]);
+			const reconciliationId2 = 2;
+			await createReconciliationOrder(db, reconciliationId2, [3]);
 
 			// Finalized - only
-			expect(await getPlacedSupplierOrders(db, { finalized: true })).toEqual([expect.objectContaining({ id: 2 })]);
+			expect(await getPlacedSupplierOrders(db, { finalized: true })).toEqual([
+				// Reconciliation order id and last_updated_at relation should be returned
+				expect.objectContaining({ id: 2, reconciliation_order_id: reconciliationId1, reconciliation_last_updated_at: expect.any(Number) })
+			]);
 
 			// Not finalized - only
 			expect(await getPlacedSupplierOrders(db, { finalized: false })).toEqual([
-				expect.objectContaining({ id: 5 }),
-				expect.objectContaining({ id: 4 }),
-				expect.objectContaining({ id: 3 })
+				// Reconciliation order id and last_updated_at relation should be null
+				expect.objectContaining({ id: 5, reconciliation_order_id: null, reconciliation_last_updated_at: null }),
+				expect.objectContaining({ id: 4, reconciliation_order_id: null, reconciliation_last_updated_at: null }),
+				// Reconciliation order id and last_updated_at relation should be returned
+
+				expect.objectContaining({ id: 3, reconciliation_order_id: reconciliationId2, reconciliation_last_updated_at: expect.any(Number) })
 			]);
 		});
 	});

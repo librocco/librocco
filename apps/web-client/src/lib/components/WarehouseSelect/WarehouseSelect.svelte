@@ -2,28 +2,24 @@
 	import { createEventDispatcher } from "svelte";
 
 	import { createSelect } from "@melt-ui/svelte";
-	import Check from "$lucide/check";
 	import ChevronsUpDown from "$lucide/chevrons-up-down";
-	import RefreshCcwDot from "$lucide/refresh-ccw-dot";
 
 	import { testId } from "@librocco/shared";
 
 	import type { WarehouseChangeDetail } from "./types";
-	import type { Warehouse } from "$lib/db/cr-sqlite/types";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
-	export let data: InventoryTableData<"book">;
+	export let row: InventoryTableData<"book">;
 	export let rowIx: number;
-	export let warehouseList: Omit<Warehouse, "discount">[];
+	export let scannedQuantitiesPerWarehouse: Map<number, number> | undefined;
 
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
 	const dispatchChange = (warehouseId: number) => dispatch("change", { warehouseId });
 
 	const {
 		elements: { trigger, menu, option, label },
-		states: { selectedLabel, open, selected },
-		helpers: { isSelected }
+		states: { selectedLabel, open, selected }
 	} = createSelect<number>({
 		forceVisible: true,
 		positioning: {
@@ -39,10 +35,30 @@
 		}
 	});
 
-	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = data);
+	$: ({ warehouseId, type, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = row);
 
-	const mapWarehousesToOptions = (warehouseList: Omit<Warehouse, "discount">[]) =>
-		[...warehouseList].map(({ id, displayName }) => ({ value: id, label: displayName }));
+	const mapAvailableWarehousesToOptions = (
+		warehouseList: Map<
+			number,
+			{
+				displayName: string;
+				quantity: number;
+			}
+		>
+	) => {
+		// Get all warehouses that have stock, regardless of scanned quantities
+		const allOptions = [...warehouseList].map(([id, { displayName, quantity }]) => ({
+			value: id,
+			label: displayName,
+			quantity,
+			// Calculate remaining stock (total - scanned)
+			remaining: quantity - (scannedQuantitiesPerWarehouse?.get(id) || 0)
+		}));
+
+		// Filter out warehouses with no remaining stock,
+		// but keep the currently selected warehouse even if it has zero remaining stock (as long as the row is not "forced")
+		return allOptions.filter((option) => option.remaining > 0 || (option.value === warehouseId && type !== "forced"));
+	};
 
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
@@ -51,62 +67,80 @@
 		selected.set({ value: warehouseId, label: warehouseName });
 	}
 
-	// We're allowing all warehouses for selection.
-	// Out of stock situations are handled in the row (painting it red) or
-	// when committing the note (prompting for reconciliation)
-	$: options = mapWarehousesToOptions(warehouseList);
+	// We're only showing warehouses with available stock in the dropdown,
+	// plus the currently selected warehouse (if any).
+	// Out of stock situations for new selections are handled via the force-withdrawal dialog
+	$: options = mapAvailableWarehousesToOptions(availableWarehouses);
 
 	$: t = $LL.misc_components.warehouse_select;
 </script>
 
 <!-- svelte-ignore a11y-label-has-associated-control - $label contains the 'for' attribute -->
-<label class="hidden" {...$label} use:label>{t.label({ rowIx })}</label>
+<label class="hidden" {...$label} use:label>{t.label.aria({ rowIx })}</label>
 <button
 	data-testid={testId("dropdown-control")}
 	data-open={open}
 	class="border-base flex w-full gap-x-2 rounded border-2 bg-transparent p-2 shadow focus:border-primary focus:outline-none focus:ring-0"
 	{...$trigger}
 	use:trigger
-	aria-label="Warehouse"
 >
-	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-success' : 'bg-error'}"></span>
-	{#if $selectedLabel}
-		<span class="truncate">
-			{$selectedLabel === "not-found" ? t.default_option() : $selectedLabel}
-		</span>
+	<span class="rounded-full p-0.5 {$selectedLabel === 'not-found' ? 'bg-error' : row.type !== 'forced' ? 'bg-success' : 'bg-warning'}"
+	></span>
+
+	{#if $selectedLabel !== "not-found"}
+		<div class="flex flex-col items-start gap-0.5 truncate">
+			<span class="flex flex-row flex-wrap items-center gap-x-2 truncate">
+				<span class="font-medium">
+					{$selectedLabel}
+				</span>
+				<span class="text-xs italic">{row.type === "forced" ? "Forced" : ""}</span>
+			</span>
+			{#if row.type !== "forced" && row.availableWarehouses.get(row.warehouseId)?.quantity}
+				<span class="text-xs">
+					{t.label.book_count({ count: row.availableWarehouses.get(row.warehouseId)?.quantity })}
+				</span>
+			{/if}
+		</div>
 	{:else}
-		<span class="truncate">{t.default_option()}</span>
+		<span class="font-light text-gray-600">{t.default_option()}</span>
 	{/if}
-	<ChevronsUpDown size={18} class="ml-auto shrink-0 self-end" />
+	<ChevronsUpDown size={18} class="ml-auto shrink-0 self-center" />
 </button>
 {#if $open}
 	<div
 		data-testid={testId("dropdown-menu")}
-		class="z-10 flex max-h-[300px] flex-col gap-y-1.5 overflow-y-auto rounded-lg bg-base-100 p-1 text-base-content shadow-md focus:!ring-0"
+		class="z-10 flex max-h-[300px] overflow-y-auto rounded bg-base-100 p-1 text-base-content shadow-md focus:!ring-0"
 		{...$menu}
 		use:menu
 	>
-		{#each options as warehouse}
-			{@const { label, value } = warehouse}
-			<div
-				class="relative flex cursor-pointer items-center justify-between rounded p-1 focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
-				{...$option(warehouse)}
-				use:option
-			>
-				{label}
+		<div class="flex w-full flex-col">
+			{#if options.length}
+				<div class="flex flex-col gap-y-0.5">
+					{#each options as warehouse}
+						{@const { label, quantity } = warehouse}
 
-				<div class="check {$isSelected(value) ? 'block' : 'hidden'}">
-					<Check size={18} />
+						<div
+							class="relative flex cursor-pointer flex-col rounded p-2 text-sm focus:z-10 data-[highlighted]:bg-primary data-[selected]:bg-primary data-[highlighted]:text-primary-content data-[selected]:text-primary-content"
+							{...$option(warehouse)}
+							use:option
+						>
+							<span>{label}</span>
+							<span class="text-xs">
+								{t.label.book_count({ count: quantity })}
+							</span>
+						</div>
+					{/each}
 				</div>
+			{:else}
+				<p class="p-2 text-sm text-gray-600">
+					{t.empty_options()}
+				</p>
+			{/if}
+			<div class="divider m-0 h-0.5"></div>
 
-				<!-- An icon signifying that the book doesn't exist in the given warehouse - will need reconciliation -->
-				<!-- We're not showing this if the warehouse is selected (the highlight takes precedance) -->
-				{#if !$isSelected(value)}
-					<div>
-						<RefreshCcwDot size={18} class={availableWarehouses.has(value) ? "hidden" : "block"} />
-					</div>
-				{/if}
+			<div class="w-full py-1">
+				<slot {open} name="force-withdrawal"></slot>
 			</div>
-		{/each}
+		</div>
 	</div>
 {/if}

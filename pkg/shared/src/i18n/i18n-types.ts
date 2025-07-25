@@ -531,11 +531,11 @@ type RootTranslation = {
 			search: string
 			no_orders: {
 				/**
-				 * N​o​ ​c​u​s​t​o​m​e​r​s
+				 * T​h​e​r​e​ ​a​r​e​ ​n​o​ ​c​u​s​t​o​m​e​r​s
 				 */
 				title: string
 				/**
-				 * G​e​t​ ​s​t​a​r​t​e​d​ ​b​y​ ​c​r​e​a​t​i​n​g​ ​a​ ​n​e​w​ ​o​r​d​e​r
+				 * C​r​e​a​t​e​ ​a​ ​n​e​w​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​ ​t​o​ ​g​e​t​ ​s​t​a​r​t​e​d
 				 */
 				description: string
 			}
@@ -641,27 +641,61 @@ type RootTranslation = {
 		}
 	}
 	suppliers_page: {
+		/**
+		 * S​u​p​p​l​i​e​r​s
+		 */
+		title: string
+		placeholder: {
+			/**
+			 * T​h​e​r​e​ ​a​r​e​ ​n​o​ ​s​u​p​p​l​i​e​r​s
+			 */
+			title: string
+			/**
+			 * C​r​e​a​t​e​ ​a​ ​n​e​w​ ​s​u​p​p​l​i​e​r​ ​t​o​ ​m​a​n​a​g​e​ ​p​u​b​l​i​s​h​e​r​ ​c​a​t​a​l​o​g​u​e​s
+			 */
+			description: string
+		}
+		dialog: {
+			/**
+			 * C​r​e​a​t​e​ ​n​e​w​ ​s​u​p​p​l​i​e​r
+			 */
+			new_order_title: string
+		}
 		labels: {
+			/**
+			 * C​r​e​a​t​e
+			 */
+			save: string
 			/**
 			 * N​e​w​ ​S​u​p​p​l​i​e​r
 			 */
 			new_supplier: string
-		}
-		title: {
-			/**
-			 * S​u​p​p​l​i​e​r​s
-			 */
-			suppliers: string
-		}
-		table: {
-			/**
-			 * D​e​l​e​t​e
-			 */
-			'delete': string
 			/**
 			 * E​d​i​t
 			 */
 			edit: string
+		}
+		columns: {
+			/**
+			 * N​a​m​e
+			 */
+			name: string
+			/**
+			 * E​m​a​i​l
+			 */
+			email: string
+			/**
+			 * A​d​d​r​e​s​s
+			 */
+			address: string
+			/**
+			 * A​s​s​i​g​n​e​d​ ​P​u​b​l​i​s​h​e​r​s
+			 */
+			assigned_publishers: string
+			/**
+			 * A​c​t​i​o​n​s
+			 */
+			actions: string
 		}
 	}
 	warehouse_list_page: {
@@ -805,6 +839,32 @@ type RootTranslation = {
 			 */
 			quantity: string
 		}
+		force_withdrawal_dialog: {
+			/**
+			 * F​o​r​c​e​ ​w​i​t​h​d​r​a​w​a​l​ ​f​o​r​ ​{​i​s​b​n​}​?
+			 * @param {string} isbn
+			 */
+			title: RequiredParams<'isbn'>
+			/**
+			 * C​a​n​c​e​l
+			 */
+			cancel: string
+			/**
+			 * C​o​n​f​i​r​m
+			 */
+			confirm: string
+			/**
+			 * T​h​i​s​ ​b​o​o​k​ ​i​s​ ​o​u​t​ ​o​f​ ​s​t​o​c​k​.​ ​I​f​ ​y​o​u​'​r​e​ ​c​e​r​t​a​i​n​ ​a​d​d​i​t​i​o​n​a​l​ ​c​o​p​i​e​s​ ​e​x​i​s​t​,​ ​y​o​u​ ​c​a​n​ ​m​a​n​u​a​l​l​y​ ​s​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​f​o​r​c​e​ ​t​h​e​ ​w​i​t​h​d​r​a​w​a​l​.
+			 */
+			description: string
+			/**
+			 * A​ ​s​t​o​c​k​ ​a​d​j​u​s​t​m​e​n​t​ ​w​i​l​l​ ​b​e​ ​r​e​c​o​r​d​e​d​ ​f​o​r​ ​{​q​u​a​n​t​i​t​y​}​ ​{​{​c​o​p​y​|​c​o​p​i​e​s​}​}​ ​o​f​ ​{​i​s​b​n​}​ ​i​n​ ​{​d​i​s​p​l​a​y​N​a​m​e​}​.
+			 * @param {string} displayName
+			 * @param {string} isbn
+			 * @param {number} quantity
+			 */
+			selected_warehouse_message: RequiredParams<'displayName' | 'isbn' | 'quantity'>
+		}
 		labels: {
 			/**
 			 * N​e​w​ ​N​o​t​e
@@ -842,6 +902,10 @@ type RootTranslation = {
 			 * C​u​s​t​o​m​ ​i​t​e​m
 			 */
 			custom_item: string
+			/**
+			 * F​o​r​c​e​ ​w​i​t​h​d​r​a​w​a​l
+			 */
+			force_withdrawal: string
 		}
 		stats: {
 			/**
@@ -875,6 +939,12 @@ type RootTranslation = {
 			 * P​l​u​g​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
 			 */
 			scan_description: string
+		}
+		alerts: {
+			/**
+			 * T​h​e​ ​w​a​r​e​h​o​u​s​e​ ​y​o​u​'​r​e​ ​a​t​t​e​m​p​t​i​n​g​ ​t​o​ ​a​s​s​i​g​n​ ​t​o​ ​h​a​s​ ​n​o​ ​m​o​r​e​ ​a​v​a​i​l​a​b​l​e​ ​q​u​a​n​t​i​t​y​,​ ​c​l​i​c​k​ ​F​o​r​c​e​ ​W​i​t​h​d​r​a​w​a​l​ ​t​o​ ​s​e​l​e​c​t​ ​a​n​o​t​h​e​r​ ​w​a​r​e​h​o​u​s​e
+			 */
+			insufficient_quantity: string
 		}
 	}
 	sale_page: {
@@ -1250,7 +1320,11 @@ type RootTranslation = {
 		}
 		placeholder: {
 			/**
-			 * N​o​ ​u​n​o​r​d​e​r​e​d​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s​ ​a​v​a​i​l​a​b​l​e​.​ ​C​r​e​a​t​e​ ​a​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​ ​f​i​r​s​t​ ​t​o​ ​g​e​n​e​r​a​t​e​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s​.
+			 * T​h​e​r​e​ ​a​r​e​ ​n​o​ ​p​e​n​d​i​n​g​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s
+			 */
+			title: string
+			/**
+			 * C​r​e​a​t​e​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​s​ ​t​o​ ​g​e​n​e​r​a​t​e​ ​s​u​p​p​l​i​e​r​ ​o​r​d​e​r​s
 			 */
 			description: string
 			/**
@@ -1260,6 +1334,16 @@ type RootTranslation = {
 		}
 	}
 	new_order_page: {
+		/**
+		 * N​e​w​ ​S​u​p​p​l​i​e​r​ ​O​r​d​e​r
+		 */
+		title: string
+		aria: {
+			/**
+			 * L​a​s​t​ ​u​p​d​a​t​e​d
+			 */
+			last_updated: string
+		}
 		stats: {
 			/**
 			 * T​o​t​a​l​ ​b​o​o​k​s
@@ -1276,17 +1360,13 @@ type RootTranslation = {
 		}
 		table: {
 			/**
-			 * O​r​d​e​r​e​d​ ​q​u​a​n​t​i​t​y
+			 * Q​u​a​n​t​i​t​y
 			 */
-			ordered_quantity: string
+			quantity: string
 			/**
 			 * T​o​t​a​l
 			 */
 			total: string
-			/**
-			 * S​e​l​e​c​t​e​d​ ​q​u​a​n​t​i​t​y
-			 */
-			selected_quantity: string
 			/**
 			 * B​o​o​k​s
 			 */
@@ -1414,6 +1494,12 @@ type RootTranslation = {
 				description: string
 			}
 		}
+	}
+	order_page: {
+		/**
+		 * S​u​p​p​l​i​e​r​ ​O​r​d​e​r
+		 */
+		title: string
 	}
 	reconciled_list_page: {
 		labels: {
@@ -1602,7 +1688,11 @@ type RootTranslation = {
 		}
 		completed_table: {
 			/**
-			 * S​u​p​p​l​i​e​r
+			 * O​r​d​e​r​ ​I​D
+			 */
+			supplier_id: string
+			/**
+			 * S​u​p​p​l​i​e​r​ ​N​a​m​e
 			 */
 			supplier: string
 			/**
@@ -1610,9 +1700,9 @@ type RootTranslation = {
 			 */
 			books: string
 			/**
-			 * P​l​a​c​e​d
+			 * F​i​n​a​l​i​s​e​d
 			 */
-			placed: string
+			finalized: string
 			/**
 			 * A​c​t​i​o​n​s
 			 */
@@ -1628,13 +1718,17 @@ type RootTranslation = {
 		}
 		ordered_table: {
 			/**
-			 * S​u​p​p​l​i​e​r
+			 * O​r​d​e​r​ ​I​D
+			 */
+			order_id: string
+			/**
+			 * S​e​l​e​c​t
+			 */
+			select: string
+			/**
+			 * S​u​p​p​l​i​e​r​ ​N​a​m​e
 			 */
 			supplier: string
-			/**
-			 * B​o​o​k​s
-			 */
-			books: string
 			/**
 			 * P​l​a​c​e​d
 			 */
@@ -1644,18 +1738,10 @@ type RootTranslation = {
 			 */
 			actions: string
 			/**
-			 * S​e​l​e​c​t​e​d​ ​o​r​d​e​r​s​ ​s​u​m​m​a​r​y
+			 * R​e​c​o​n​c​i​l​e​ ​{​c​o​u​n​t​}​ ​o​r​d​e​r​{​{​s​}​}
+			 * @param {number} count
 			 */
-			selected_orders_summary: string
-			/**
-			 * {​s​e​l​e​c​t​e​d​O​r​d​e​r​s​}​ ​o​r​d​e​r​s​ ​s​e​l​e​c​t​e​d
-			 * @param {unknown} selectedOrders
-			 */
-			selected_orders: RequiredParams<'selectedOrders'>
-			/**
-			 * R​e​c​o​n​c​i​l​e​ ​S​e​l​e​c​t​e​d
-			 */
-			reconcile_selected: string
+			reconcile_selected: RequiredParams<'count'>
 			/**
 			 * V​i​e​w​ ​O​r​d​e​r
 			 */
@@ -1665,13 +1751,13 @@ type RootTranslation = {
 			 */
 			reconcile: string
 			/**
-			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
+			 * R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
 		}
 		reconciling_table: {
 			/**
-			 * O​r​d​e​r​ ​I​d
+			 * R​e​c​o​n​c​i​l​i​a​t​i​o​n​ ​I​D
 			 */
 			order_id: string
 			/**
@@ -1690,20 +1776,32 @@ type RootTranslation = {
 			 * C​o​n​t​i​n​u​e
 			 */
 			'continue': string
+			/**
+			 * A​c​t​i​o​n​s
+			 */
+			actions: string
 		}
 		unordered_table: {
 			/**
-			 * S​u​p​p​l​i​e​r
+			 * S​u​p​p​l​i​e​r​ ​I​D
+			 */
+			supplier_id: string
+			/**
+			 * S​u​p​p​l​i​e​r​ ​N​a​m​e
 			 */
 			supplier: string
 			/**
-			 * B​o​o​k​s
+			 * N​o​.​ ​o​f​ ​B​o​o​k​s
 			 */
 			books: string
 			/**
 			 * P​l​a​c​e​ ​O​r​d​e​r
 			 */
 			place_order: string
+			/**
+			 * A​c​t​i​o​n​s
+			 */
+			actions: string
 		}
 	}
 	table_components: {
@@ -1875,6 +1973,10 @@ type RootTranslation = {
 				 * R​o​w​ ​A​c​t​i​o​n​s
 				 */
 				row_actions: string
+				/**
+				 * T​y​p​e
+				 */
+				type: string
 			}
 		}
 		order_tables: {
@@ -1950,30 +2052,6 @@ type RootTranslation = {
 				 */
 				manage: string
 			}
-			supplier_table: {
-				labels: {
-					/**
-					 * N​a​m​e
-					 */
-					name: string
-					/**
-					 * E​m​a​i​l
-					 */
-					email: string
-					/**
-					 * A​d​d​r​e​s​s
-					 */
-					address: string
-					/**
-					 * A​s​s​i​g​n​e​d​ ​P​u​b​l​i​s​h​e​r​s
-					 */
-					assigned_publishers: string
-					/**
-					 * R​o​w​ ​A​c​t​i​o​n​s
-					 */
-					row_actions: string
-				}
-			}
 		}
 	}
 	misc_components: {
@@ -1986,6 +2064,10 @@ type RootTranslation = {
 			 * R​e​m​o​t​e​ ​D​B
 			 */
 			remote_db: string
+			/**
+			 * R​e​l​o​a​d​ ​t​r​a​n​s​l​a​t​i​o​n​s​ ​o​v​e​r​r​i​d​e​s
+			 */
+			reload_translations_override: string
 		}
 		page_layout: {
 			/**
@@ -1998,15 +2080,30 @@ type RootTranslation = {
 			checkout: string
 		}
 		warehouse_select: {
-			/**
-			 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​w​i​t​h​d​r​a​w​ ​b​o​o​k​ ​{​r​o​w​I​x​}​ ​f​r​o​m
-			 * @param {unknown} rowIx
-			 */
-			label: RequiredParams<'rowIx'>
+			label: {
+				/**
+				 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​w​i​t​h​d​r​a​w​ ​b​o​o​k​ ​{​r​o​w​I​x​}​ ​f​r​o​m
+				 * @param {number} rowIx
+				 */
+				aria: RequiredParams<'rowIx'>
+				/**
+				 * F​o​r​c​e​d
+				 */
+				forced: string
+				/**
+				 * {​c​o​u​n​t​}​ ​{​{​c​o​p​y​|​c​o​p​i​e​s​}​}​ ​a​v​a​i​l​a​b​l​e
+				 * @param {number} count
+				 */
+				book_count: RequiredParams<'count'>
+			}
 			/**
 			 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e
 			 */
 			default_option: string
+			/**
+			 * N​o​ ​s​t​o​c​k​ ​a​v​a​i​l​a​b​l​e​.​.​.
+			 */
+			empty_options: string
 		}
 	}
 	layout: {
@@ -3140,11 +3237,11 @@ export type TranslationFunctions = {
 			search: () => LocalizedString
 			no_orders: {
 				/**
-				 * No customers
+				 * There are no customers
 				 */
 				title: () => LocalizedString
 				/**
-				 * Get started by creating a new order
+				 * Create a new customer order to get started
 				 */
 				description: () => LocalizedString
 			}
@@ -3249,27 +3346,61 @@ export type TranslationFunctions = {
 		}
 	}
 	suppliers_page: {
+		/**
+		 * Suppliers
+		 */
+		title: () => LocalizedString
+		placeholder: {
+			/**
+			 * There are no suppliers
+			 */
+			title: () => LocalizedString
+			/**
+			 * Create a new supplier to manage publisher catalogues
+			 */
+			description: () => LocalizedString
+		}
+		dialog: {
+			/**
+			 * Create new supplier
+			 */
+			new_order_title: () => LocalizedString
+		}
 		labels: {
+			/**
+			 * Create
+			 */
+			save: () => LocalizedString
 			/**
 			 * New Supplier
 			 */
 			new_supplier: () => LocalizedString
-		}
-		title: {
-			/**
-			 * Suppliers
-			 */
-			suppliers: () => LocalizedString
-		}
-		table: {
-			/**
-			 * Delete
-			 */
-			'delete': () => LocalizedString
 			/**
 			 * Edit
 			 */
 			edit: () => LocalizedString
+		}
+		columns: {
+			/**
+			 * Name
+			 */
+			name: () => LocalizedString
+			/**
+			 * Email
+			 */
+			email: () => LocalizedString
+			/**
+			 * Address
+			 */
+			address: () => LocalizedString
+			/**
+			 * Assigned Publishers
+			 */
+			assigned_publishers: () => LocalizedString
+			/**
+			 * Actions
+			 */
+			actions: () => LocalizedString
 		}
 	}
 	warehouse_list_page: {
@@ -3413,6 +3544,28 @@ export type TranslationFunctions = {
 			 */
 			quantity: () => LocalizedString
 		}
+		force_withdrawal_dialog: {
+			/**
+			 * Force withdrawal for {isbn}?
+			 */
+			title: (arg: { isbn: string }) => LocalizedString
+			/**
+			 * Cancel
+			 */
+			cancel: () => LocalizedString
+			/**
+			 * Confirm
+			 */
+			confirm: () => LocalizedString
+			/**
+			 * This book is out of stock. If you're certain additional copies exist, you can manually select a warehouse to force the withdrawal.
+			 */
+			description: () => LocalizedString
+			/**
+			 * A stock adjustment will be recorded for {quantity} {{copy|copies}} of {isbn} in {displayName}.
+			 */
+			selected_warehouse_message: (arg: { displayName: string, isbn: string, quantity: number }) => LocalizedString
+		}
 		labels: {
 			/**
 			 * New Note
@@ -3450,6 +3603,10 @@ export type TranslationFunctions = {
 			 * Custom item
 			 */
 			custom_item: () => LocalizedString
+			/**
+			 * Force withdrawal
+			 */
+			force_withdrawal: () => LocalizedString
 		}
 		stats: {
 			/**
@@ -3482,6 +3639,12 @@ export type TranslationFunctions = {
 			 * Plugin your barcode scanner and pull the trigger
 			 */
 			scan_description: () => LocalizedString
+		}
+		alerts: {
+			/**
+			 * The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse
+			 */
+			insufficient_quantity: () => LocalizedString
 		}
 	}
 	sale_page: {
@@ -3849,7 +4012,11 @@ export type TranslationFunctions = {
 		}
 		placeholder: {
 			/**
-			 * No unordered supplier orders available. Create a customer order first to generate supplier orders.
+			 * There are no pending supplier orders
+			 */
+			title: () => LocalizedString
+			/**
+			 * Create customer orders to generate supplier orders
 			 */
 			description: () => LocalizedString
 			/**
@@ -3859,6 +4026,16 @@ export type TranslationFunctions = {
 		}
 	}
 	new_order_page: {
+		/**
+		 * New Supplier Order
+		 */
+		title: () => LocalizedString
+		aria: {
+			/**
+			 * Last updated
+			 */
+			last_updated: () => LocalizedString
+		}
 		stats: {
 			/**
 			 * Total books
@@ -3875,17 +4052,13 @@ export type TranslationFunctions = {
 		}
 		table: {
 			/**
-			 * Ordered quantity
+			 * Quantity
 			 */
-			ordered_quantity: () => LocalizedString
+			quantity: () => LocalizedString
 			/**
 			 * Total
 			 */
 			total: () => LocalizedString
-			/**
-			 * Selected quantity
-			 */
-			selected_quantity: () => LocalizedString
 			/**
 			 * Books
 			 */
@@ -4013,6 +4186,12 @@ export type TranslationFunctions = {
 				description: () => LocalizedString
 			}
 		}
+	}
+	order_page: {
+		/**
+		 * Supplier Order
+		 */
+		title: () => LocalizedString
 	}
 	reconciled_list_page: {
 		labels: {
@@ -4197,7 +4376,11 @@ export type TranslationFunctions = {
 		}
 		completed_table: {
 			/**
-			 * Supplier
+			 * Order ID
+			 */
+			supplier_id: () => LocalizedString
+			/**
+			 * Supplier Name
 			 */
 			supplier: () => LocalizedString
 			/**
@@ -4205,9 +4388,9 @@ export type TranslationFunctions = {
 			 */
 			books: () => LocalizedString
 			/**
-			 * Placed
+			 * Finalised
 			 */
-			placed: () => LocalizedString
+			finalized: () => LocalizedString
 			/**
 			 * Actions
 			 */
@@ -4223,13 +4406,17 @@ export type TranslationFunctions = {
 		}
 		ordered_table: {
 			/**
-			 * Supplier
+			 * Order ID
+			 */
+			order_id: () => LocalizedString
+			/**
+			 * Select
+			 */
+			select: () => LocalizedString
+			/**
+			 * Supplier Name
 			 */
 			supplier: () => LocalizedString
-			/**
-			 * Books
-			 */
-			books: () => LocalizedString
 			/**
 			 * Placed
 			 */
@@ -4239,17 +4426,9 @@ export type TranslationFunctions = {
 			 */
 			actions: () => LocalizedString
 			/**
-			 * Selected orders summary
+			 * Reconcile {count} order{{s}}
 			 */
-			selected_orders_summary: () => LocalizedString
-			/**
-			 * {selectedOrders} orders selected
-			 */
-			selected_orders: (arg: { selectedOrders: unknown }) => LocalizedString
-			/**
-			 * Reconcile Selected
-			 */
-			reconcile_selected: () => LocalizedString
+			reconcile_selected: (arg: { count: number }) => LocalizedString
 			/**
 			 * View Order
 			 */
@@ -4259,13 +4438,13 @@ export type TranslationFunctions = {
 			 */
 			reconcile: () => LocalizedString
 			/**
-			 * View Reconciliation
+			 * Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
 		}
 		reconciling_table: {
 			/**
-			 * Order Id
+			 * Reconciliation ID
 			 */
 			order_id: () => LocalizedString
 			/**
@@ -4284,20 +4463,32 @@ export type TranslationFunctions = {
 			 * Continue
 			 */
 			'continue': () => LocalizedString
+			/**
+			 * Actions
+			 */
+			actions: () => LocalizedString
 		}
 		unordered_table: {
 			/**
-			 * Supplier
+			 * Supplier ID
+			 */
+			supplier_id: () => LocalizedString
+			/**
+			 * Supplier Name
 			 */
 			supplier: () => LocalizedString
 			/**
-			 * Books
+			 * No. of Books
 			 */
 			books: () => LocalizedString
 			/**
 			 * Place Order
 			 */
 			place_order: () => LocalizedString
+			/**
+			 * Actions
+			 */
+			actions: () => LocalizedString
 		}
 	}
 	table_components: {
@@ -4469,6 +4660,10 @@ export type TranslationFunctions = {
 				 * Row Actions
 				 */
 				row_actions: () => LocalizedString
+				/**
+				 * Type
+				 */
+				type: () => LocalizedString
 			}
 		}
 		order_tables: {
@@ -4544,30 +4739,6 @@ export type TranslationFunctions = {
 				 */
 				manage: () => LocalizedString
 			}
-			supplier_table: {
-				labels: {
-					/**
-					 * Name
-					 */
-					name: () => LocalizedString
-					/**
-					 * Email
-					 */
-					email: () => LocalizedString
-					/**
-					 * Address
-					 */
-					address: () => LocalizedString
-					/**
-					 * Assigned Publishers
-					 */
-					assigned_publishers: () => LocalizedString
-					/**
-					 * Row Actions
-					 */
-					row_actions: () => LocalizedString
-				}
-			}
 		}
 	}
 	misc_components: {
@@ -4580,6 +4751,10 @@ export type TranslationFunctions = {
 			 * Remote DB
 			 */
 			remote_db: () => LocalizedString
+			/**
+			 * Reload translations overrides
+			 */
+			reload_translations_override: () => LocalizedString
 		}
 		page_layout: {
 			/**
@@ -4592,14 +4767,28 @@ export type TranslationFunctions = {
 			checkout: () => LocalizedString
 		}
 		warehouse_select: {
-			/**
-			 * Select a warehouse to withdraw book {rowIx} from
-			 */
-			label: (arg: { rowIx: unknown }) => LocalizedString
+			label: {
+				/**
+				 * Select a warehouse to withdraw book {rowIx} from
+				 */
+				aria: (arg: { rowIx: number }) => LocalizedString
+				/**
+				 * Forced
+				 */
+				forced: () => LocalizedString
+				/**
+				 * {count} {{copy|copies}} available
+				 */
+				book_count: (arg: { count: number }) => LocalizedString
+			}
 			/**
 			 * Select a warehouse
 			 */
 			default_option: () => LocalizedString
+			/**
+			 * No stock available...
+			 */
+			empty_options: () => LocalizedString
 		}
 	}
 	layout: {

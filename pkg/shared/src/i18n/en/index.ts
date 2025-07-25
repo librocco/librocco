@@ -180,7 +180,8 @@ const supplier_orders_page = {
 		completed: "Completed"
 	},
 	placeholder: {
-		description: "No unordered supplier orders available. Create a customer order first to generate supplier orders.",
+		title: "There are no pending supplier orders",
+		description: "Create customer orders to generate supplier orders",
 		button: "New Customer Order"
 	}
 };
@@ -235,8 +236,8 @@ const customer_orders_page = {
 	placeholder: {
 		search: "Search for customers by name",
 		no_orders: {
-			title: "No customers",
-			description: "Get started by creating a new order"
+			title: "There are no customers",
+			description: "Create a new customer order to get started"
 		},
 		scan_title: "Scan to add books",
 		scan_description: "Plugin your barcode scanner and pull the trigger"
@@ -275,16 +276,20 @@ const customer_orders_page = {
 		}
 	}
 };
+
 const new_order_page = {
+	title: "New Supplier Order",
+	aria: {
+		last_updated: "Last updated"
+	},
 	stats: {
 		total_books: "Total books",
 		total_value: "Total value",
 		selected_books: "Selected books"
 	},
 	table: {
-		ordered_quantity: "Ordered quantity",
+		quantity: "Quantity",
 		total: "Total",
-		selected_quantity: "Selected quantity",
 		books: "Books",
 		isbn: "ISBN",
 		title: "Title",
@@ -323,6 +328,14 @@ const order_list_page = {
 		}
 	}
 };
+
+// The "placed order" page seems to have been setup
+// to use the same strings as the following "reconcilied_list_page"
+// so as not to disturbe to many things, I've kept it that way, and have added additional strings here
+const order_page = {
+	title: "Supplier Order"
+};
+
 const reconciled_list_page = {
 	labels: {
 		view_reconciliation: "View Reconciliation",
@@ -385,15 +398,25 @@ const reconcile_page = {
 	}
 };
 const suppliers_page = {
+	title: "Suppliers",
+	placeholder: {
+		title: "There are no suppliers",
+		description: "Create a new supplier to manage publisher catalogues"
+	},
+	dialog: {
+		new_order_title: "Create new supplier"
+	},
 	labels: {
-		new_supplier: "New Supplier"
-	},
-	title: {
-		suppliers: "Suppliers"
-	},
-	table: {
-		delete: "Delete",
+		save: "Create",
+		new_supplier: "New Supplier",
 		edit: "Edit"
+	},
+	columns: {
+		name: "Name",
+		email: "Email",
+		address: "Address",
+		assigned_publishers: "Assigned Publishers",
+		actions: "Actions"
 	}
 };
 
@@ -550,6 +573,15 @@ const sale_note = {
 		review_transaction: "Please review the following transactions",
 		quantity: "quantity for reconciliation"
 	},
+	force_withdrawal_dialog: {
+		title: "Force withdrawal for {isbn:string}?",
+		cancel: "Cancel",
+		confirm: "Confirm",
+		description:
+			"This book is out of stock. If you're certain additional copies exist, you can manually select a warehouse to force the withdrawal.",
+		selected_warehouse_message:
+			"A stock adjustment will be recorded for {quantity:number} {{copy|copies}} of {isbn:string} in {displayName:string}."
+	},
 	labels: {
 		new_note: "New Note",
 		edit: "Edit",
@@ -559,7 +591,8 @@ const sale_note = {
 		delete: "Delete",
 		commit: "Commit",
 		print: "Print",
-		custom_item: "Custom item"
+		custom_item: "Custom item",
+		force_withdrawal: "Force withdrawal"
 	},
 	stats: {
 		last_updated: "Last updated",
@@ -571,6 +604,10 @@ const sale_note = {
 		no_warehouses: "No available warehouses",
 		scan_title: "Scan to add books",
 		scan_description: "Plugin your barcode scanner and pull the trigger"
+	},
+	alerts: {
+		insufficient_quantity:
+			"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse"
 	}
 };
 
@@ -646,36 +683,39 @@ const supplier_orders_component = {
 		unmatched_books: "Unmatched Books"
 	},
 	completed_table: {
-		supplier: "Supplier",
+		supplier_id: "Order ID",
+		supplier: "Supplier Name",
 		books: "Books",
-		placed: "Placed",
+		finalized: "Finalised",
 		actions: "Actions",
 		view_order: "View Order",
 		view_reconciliation: "View Reconciliation"
 	},
 	ordered_table: {
-		supplier: "Supplier",
-		books: "Books",
+		order_id: "Order ID",
+		select: "Select",
+		supplier: "Supplier Name",
 		placed: "Placed",
 		actions: "Actions",
-		selected_orders_summary: "Selected orders summary",
-		selected_orders: "{ selectedOrders } orders selected",
-		reconcile_selected: "Reconcile Selected",
+		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
 		reconcile: "Reconcile",
-		view_reconciliation: "View Reconciliation"
+		view_reconciliation: "Reconciliation"
 	},
 	reconciling_table: {
-		order_id: "Order Id",
+		order_id: "Reconciliation ID",
 		supplier_orders: "Supplier Orders",
 		last_updated: "Last Updated",
 		update_order: "Update order",
-		continue: "Continue"
+		continue: "Continue",
+		actions: "Actions"
 	},
 	unordered_table: {
-		supplier: "Supplier",
-		books: "Books",
-		place_order: "Place Order"
+		supplier_id: "Supplier ID",
+		supplier: "Supplier Name",
+		books: "No. of Books",
+		place_order: "Place Order",
+		actions: "Actions"
 	}
 };
 
@@ -727,7 +767,8 @@ const table_components = {
 			year: "Year",
 			warehouse: "Warehouse",
 			category: "Category",
-			row_actions: "Row Actions"
+			row_actions: "Row Actions",
+			type: "Type"
 		}
 	},
 	order_tables: {
@@ -752,16 +793,6 @@ const table_components = {
 			order_no: "Order no.",
 			edit: "Edit",
 			manage: "Manage"
-		},
-		supplier_table: {
-			labels: {
-				name: "Name",
-				email: "Email",
-				address: "Address",
-
-				assigned_publishers: "Assigned Publishers",
-				row_actions: "Row Actions"
-			}
 		}
 	}
 };
@@ -769,15 +800,21 @@ const table_components = {
 const misc_components = {
 	extension_banner: {
 		book_data_extension: "Book Data Extension",
-		remote_db: "Remote DB"
+		remote_db: "Remote DB",
+		reload_translations_override: "Reload translations overrides"
 	},
 	page_layout: {
 		stock: "Stock",
 		checkout: "Checkout"
 	},
 	warehouse_select: {
-		label: "Select a warehouse to withdraw book { rowIx } from",
+		label: {
+			aria: "Select a warehouse to withdraw book {rowIx:number} from",
+			forced: "Forced",
+			book_count: "{count:number} {{copy|copies}} available"
+		},
 		default_option: "Select a warehouse",
+		empty_options: "No stock available..."
 	}
 };
 
@@ -1010,6 +1047,7 @@ const en = {
 	supplier_orders_page,
 	new_order_page,
 	reconcile_page,
+	order_page,
 	reconciled_list_page,
 	order_list_page,
 	supplier_orders_component,
