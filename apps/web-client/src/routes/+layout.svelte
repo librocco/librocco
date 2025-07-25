@@ -116,7 +116,7 @@
 		//
 		// Init worker and sync interface
 		const wkr = new WorkerInterface(new SyncWorker());
-		wkr.start(DEFAULT_VFS);
+		wkr.start(dbCtx.vfs); // Use the same VFS as the one in the main-thread-initialized DB
 		sync.init(wkr);
 
 		// Start the sync progress store (listen to sync events)
