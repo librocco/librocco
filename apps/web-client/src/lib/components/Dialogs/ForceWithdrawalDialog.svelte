@@ -51,7 +51,7 @@
 			</select>
 
 			{#if selectedId}
-				<p class="m-0">
+				<p class="m-0 font-bold">
 					{tOutbound.force_withdrawal_dialog.selected_warehouse_message({
 						quantity: row.quantity,
 						isbn: row.isbn,
