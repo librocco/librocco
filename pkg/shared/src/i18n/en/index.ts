@@ -573,6 +573,15 @@ const sale_note = {
 		review_transaction: "Please review the following transactions",
 		quantity: "quantity for reconciliation"
 	},
+	force_withdrawal_dialog: {
+		title: "Force withdrawal for {isbn:string}?",
+		cancel: "Cancel",
+		confirm: "Confirm",
+		description:
+			"This book is out of stock. If you're certain additional copies exist, you can manually select a warehouse to force the withdrawal.",
+		selected_warehouse_message:
+			"A stock adjustment will be recorded for {quantity:number} {{copy|copies}} of {isbn:string} in {displayName:string}."
+	},
 	labels: {
 		new_note: "New Note",
 		edit: "Edit",
@@ -582,7 +591,8 @@ const sale_note = {
 		delete: "Delete",
 		commit: "Commit",
 		print: "Print",
-		custom_item: "Custom item"
+		custom_item: "Custom item",
+		force_withdrawal: "Force withdrawal"
 	},
 	stats: {
 		last_updated: "Last updated",
@@ -593,6 +603,10 @@ const sale_note = {
 		no_warehouses: "No available warehouses",
 		scan_title: "Scan to add books",
 		scan_description: "Plugin your barcode scanner and pull the trigger"
+	},
+	alerts: {
+		insufficient_quantity:
+			"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse"
 	}
 };
 
@@ -752,7 +766,8 @@ const table_components = {
 			year: "Year",
 			warehouse: "Warehouse",
 			category: "Category",
-			row_actions: "Row Actions"
+			row_actions: "Row Actions",
+			type: "Type"
 		}
 	},
 	order_tables: {
@@ -792,8 +807,13 @@ const misc_components = {
 		checkout: "Checkout"
 	},
 	warehouse_select: {
-		label: "Select a warehouse to withdraw book { rowIx } from",
-		default_option: "Select a warehouse"
+		label: {
+			aria: "Select a warehouse to withdraw book {rowIx:number} from",
+			forced: "Forced",
+			book_count: "{count:number} {{copy|copies}} available"
+		},
+		default_option: "Select a warehouse",
+		empty_options: "No stock available..."
 	}
 };
 

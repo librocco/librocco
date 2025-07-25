@@ -23,7 +23,7 @@
 			use:melt={$overlay}
 		></div>
 		<div
-			class="fixed left-1/2 top-1/2 z-[200] max-h-screen w-full translate-x-[-50%] translate-y-[-50%] overflow-y-auto px-4 md:max-w-md md:px-0"
+			class="fixed left-1/2 top-1/2 z-[200] max-h-screen w-full translate-x-[-50%] translate-y-[-50%] overflow-y-auto px-4 md:max-w-lg md:px-0"
 			transition:fade={{ duration: 250, easing: expoInOut }}
 			use:melt={$content}
 		>

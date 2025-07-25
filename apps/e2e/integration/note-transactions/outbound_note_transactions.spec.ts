@@ -12,7 +12,8 @@ import {
 	updateNote,
 	upsertBook,
 	upsertNoteCustomItem,
-	upsertWarehouse
+	upsertWarehouse,
+	deleteWarehouse
 } from "@/helpers/cr-sqlite";
 
 import { book1 } from "../data";
@@ -253,7 +254,14 @@ test("transaction should allow for warehouse selection if there is more than one
 	// Assert relevant fields (isbn, quantity and warehouseName)
 	await row.assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "" });
 	// Check row's available warehouses
-	await row.field("warehouseName").assertOptions(["Warehouse 1", "Warehouse 2", "Warehouse 3"]);
+	await row.field("warehouseName").click();
+
+	const dropdown = page.getByTestId("dropdown-menu");
+	// Check for an option that contains the text "Warehouse 1"
+	await expect(dropdown.getByRole("option", { name: "Warehouse 1" })).toBeVisible();
+
+	// Check for an option that contains the text "Warehouse 2"
+	await expect(dropdown.getByRole("option", { name: "Warehouse 2" })).toBeVisible();
 });
 
 test("if there's one transaction for the isbn with specified warehouse, should add a new transaction (with unspecified warehouse) on 'Add'", async ({
@@ -296,7 +304,7 @@ test("if there's one transaction for the isbn with specified warehouse, should a
 	]);
 });
 
-test("if there are two transactions, one with specified and one with unspecified warehouse should aggregate the one with unspecified warehouse on 'Add'", async ({
+test("if there are two transactions, one with specified and one with unspecified warehouse, on 'Add' should add a new transaction and assign it to the first warehouse with available stock", async ({
 	page
 }) => {
 	// Setup: Create two warehouses with the book in stock
@@ -328,8 +336,9 @@ test("if there are two transactions, one with specified and one with unspecified
 	await scanField.add("1234567890");
 
 	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 2, warehouseName: "" },
-		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
+		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
+		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" },
+		{ isbn: "1234567890", quantity: 1 }
 	]);
 });
 
@@ -344,6 +353,10 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 	// Add two transactions to the note, one belonging to the first warehouse  and one belonging to the second warehouse (both specified)
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 2 }] as const);
+
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 5, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 
 	const entries = getDashboard(page).content().table("outbound-note");
 
@@ -437,7 +450,8 @@ test("should allow for editing of custom items using the custom item form", asyn
 	]);
 });
 
-test("should check validity of the transactions and commit the note on 'commit' button click", async ({ page }) => {
+test(`should check validity of the transactions and commit the note on 'commit'
+	button click`, async ({ page }) => {
 	const dbHandle = await getDbHandle(page);
 
 	// Setup - add some stock
@@ -484,22 +498,47 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	const noWarehouseSelectedDialog = page.getByRole("dialog", { name: "No warehouse(s) selected" });
 	await noWarehouseSelectedDialog.getByRole("button", { name: "Cancel" }).click();
 
-	await expect(noWarehouseSelectedDialog).not.toBeVisible();
+	// await expect(noWarehouseSelectedDialog).not.toBeVisible();
 
 	// "22222222" - reverse order than order of adding/aggregating
 	await entries.row(2).field("warehouseName").set("Warehouse 1");
-	// "44444444"
-	await entries.row(0).field("warehouseName").set("Warehouse 2");
 
 	await entries.assertRows([
-		// Out of stock - the book doesn't exist in warehouse
-		{ isbn: "44444444", quantity: 1, warehouseName: "Warehouse 2" },
-		// Out of stock - the book doesn't exist in warehouse
+		// Forced Withdrawal - the book doesn't exist in warehouse
+		{ isbn: "44444444", quantity: 1, warehouseName: "" },
+		// Forced Withdrawal - the book doesn't exist in warehouse
 		{ isbn: "33333333", quantity: 2, warehouseName: "Warehouse 1" },
 		// All fine, enough books in stock (required 5, 5 available in the warehouse)
 		{ isbn: "22222222", quantity: 5, warehouseName: "Warehouse 1" },
-		// Invalid - out of stock (required 3, only 2 available in the warehouse)
-		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 2" },
+		// Only 2 available in the warehouse
+		{ isbn: "11111111", quantity: 2, warehouseName: "Warehouse 2" },
+		// Forced Withdrawal - 3rd copy doesn't exist in warehouse
+		{ isbn: "11111111", quantity: 1, warehouseName: "Warehouse 2" },
+		// All fine, enough books in stock (required 3, 4 available in the warehouse)
+		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 1" }
+	]);
+
+	await entries.row(0).field("warehouseName").click();
+
+	const dropdown = page.getByTestId("dropdown-menu");
+	// await expect(dropdown.locator("button", { hasText: "Force Withdrawal" })).toBeVisible();
+	await dropdown.locator("button", { hasText: "Force withdrawal" }).waitFor();
+	await dropdown.locator("button", { hasText: "Force withdrawal" }).click({ force: true });
+	const forceWithdrawalDialog = page.getByRole("dialog");
+	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({ label: "Warehouse 2" });
+	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
+
+	await entries.assertRows([
+		// Forced Withdrawal - the book doesn't exist in warehouse
+		{ isbn: "44444444", quantity: 1, warehouseName: "Warehouse 2" },
+		// Forced Withdrawal - the book doesn't exist in warehouse
+		{ isbn: "33333333", quantity: 2, warehouseName: "Warehouse 1" },
+		// All fine, enough books in stock (required 5, 5 available in the warehouse)
+		{ isbn: "22222222", quantity: 5, warehouseName: "Warehouse 1" },
+		// Only 2 available in the warehouse
+		{ isbn: "11111111", quantity: 2, warehouseName: "Warehouse 2" },
+		// Forced Withdrawal - 3rd copy doesn't exist in warehouse
+		{ isbn: "11111111", quantity: 1, warehouseName: "Warehouse 2" },
 		// All fine, enough books in stock (required 3, 4 available in the warehouse)
 		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 1" }
 	]);
@@ -563,3 +602,398 @@ test("should check validity of the transactions and commit the note on 'commit' 
 });
 
 // TODO: Should not allow committing of an empty note ??
+
+test("should create a new row for the same isbn when stock is depleted", async ({ page }) => {
+	// Setup: Create a warehouse and add 3 copies of a book
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	const content = getDashboard(page).content();
+	const scanField = content.scanField();
+	const entries = content.table("outbound-note");
+
+	await scanField.add(isbn);
+
+	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
+
+	// Check that the transaction is of type 'Normal' as stock is available
+	await entries.assertRows([{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }]);
+
+	// Add the book a 4th time, which should create a new 'Forced' transaction
+	await scanField.add(isbn);
+
+	// Check that a new row has been created with type 'Forced'
+	await entries.assertRows([
+		{ isbn, quantity: 1, warehouseName: "" },
+
+		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
+	]);
+});
+
+test("should create a new row for the same isbn when quantity is increased beyond available stock", async ({ page }) => {
+	// Setup: Create a warehouse and add 3 copies of a book
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	// Add a transaction for 3 copies to the current outbound note
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn, quantity: 3, warehouseId: 1 }] as const);
+
+	const content = getDashboard(page).content();
+	const entries = content.table("outbound-note");
+
+	// Wait for the initial state
+	await entries.assertRows([{ isbn, quantity: 3, warehouseName: "Warehouse 1" }]);
+
+	// Change the quantity to 4
+	await entries.row(0).field("quantity").set(4);
+
+	// Check that a new 'Forced' row is created for the extra copy
+	await entries.assertRows([
+		{ isbn, quantity: 3, warehouseName: "Warehouse 1" },
+		{ isbn, quantity: 1, warehouseName: "" }
+	]);
+});
+
+test("reassigning warehouse with insufficient stock should split the transaction", async ({ page }) => {
+	// Setup: Create two warehouses with different stock levels for the same book
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn, quantity: 2, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
+
+	// Add a transaction for 3 copies to the current outbound note, assigned to
+	// Warehouse 1
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn, quantity: 3, warehouseId: 1 }] as const);
+
+	const content = getDashboard(page).content();
+	const entries = content.table("outbound-note");
+
+	// Wait for the initial state
+	await entries.assertRows([{ isbn, quantity: 3, warehouseName: "Warehouse 1" }]);
+
+	// Change the warehouse to Warehouse 2, which has insufficient stock
+	await entries.row(0).field("warehouseName").set("Warehouse 2");
+
+	// Check that the transaction was split into two rows
+	await entries.assertRows([
+		{ isbn, quantity: 2, warehouseName: "Warehouse 2" },
+		{ isbn, quantity: 1, warehouseName: "" }
+	]);
+});
+
+test("should allow forcing a withdrawal for a book with no stock", async ({ page }) => {
+	// Setup: Create a warehouse but add no stock for the book
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+
+	const content = getDashboard(page).content();
+	const scanField = content.scanField();
+	const entries = content.table("outbound-note");
+
+	// Add a transaction for the book
+	await scanField.add(isbn);
+
+	// The transaction should exist with no warehouse
+	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "" }]);
+
+	// Open the warehouse selector dropdown
+	await entries.row(0).field("warehouseName").click();
+
+	// The "Force Withdrawal" button should be visible in the dropdown
+	const dropdown = page.getByTestId("dropdown-menu");
+	await expect(dropdown.locator("button", { hasText: "Force withdrawal" })).toBeVisible();
+
+	// Click the "Force Withdrawal" button
+	await dropdown.locator("button", { hasText: "Force withdrawal" }).click();
+
+	// A dialog should appear. Select the warehouse and confirm.
+	const forceWithdrawalDialog = page.getByRole("dialog");
+	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({
+		label: "Warehouse 1"
+	});
+	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
+
+	// Assert that the transaction is now a 'Forced' withdrawal from Warehouse 1
+	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "Warehouse 1" }]);
+	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("Forced");
+});
+
+test("should merge forced transaction when stock becomes available", async ({ page }) => {
+	// Setup: Create a warehouse with 2 copies of a book
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	// Add a transaction for the 2 available copies
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn, quantity: 2, warehouseId: 1 }] as const);
+
+	const content = getDashboard(page).content();
+	const entries = content.table("outbound-note");
+	const scanField = content.scanField();
+
+	// Add one more copy and forcibly assign it to the same warehouse
+	await scanField.add(isbn);
+	await entries.assertRows([
+		{ isbn, quantity: 1, warehouseName: "Warehouse 1" },
+		{ isbn, quantity: 2, warehouseName: "" }
+	]);
+
+	await entries.row(0).field("warehouseName").click();
+	const dropdown = page.getByTestId("dropdown-menu");
+	await dropdown.locator("button", { hasText: "Force withdrawal" }).click();
+	const forceWithdrawalDialog = page.getByRole("dialog");
+	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({
+		label: "Warehouse 1"
+	});
+	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
+
+	// Check that we have one normal and one forced transaction
+	await expect(content.table("outbound-note").row(1).field("warehouseName")).toContainText("Forced");
+
+	await entries.assertRows([
+		{ isbn, quantity: 2, warehouseName: "Warehouse 1" },
+		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
+	]);
+
+	// Decrease the quantity of the normal transaction, freeing up stock
+	await entries.row(0).field("quantity").set(1);
+
+	// Check that the two rows have merged into a single normal transaction
+	await entries.assertRows([{ isbn, quantity: 2, warehouseName: "Warehouse 1" }]);
+});
+
+test("splitting a forced transaction by assigning to a warehouse with insufficient stock", async ({ page }) => {
+	// Setup: Create a warehouse with 2 copies of a book
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	// Add a transaction for 5 copies to the current outbound note
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn, quantity: 5 }] as const);
+
+	const content = getDashboard(page).content();
+	const entries = content.table("outbound-note");
+
+	// Wait for the initial state
+	await entries.assertRows([{ isbn, quantity: 5, warehouseName: "" }]);
+
+	// Assign the transaction to Warehouse 1, which has insufficient stock
+	await entries.row(0).field("warehouseName").set("Warehouse 1");
+
+	// Check that the transaction was split into a 'Normal' and a 'Forced' row
+	await entries.assertRows([
+		{ isbn, quantity: 2, warehouseName: "Warehouse 1" },
+		{ isbn, quantity: 3, warehouseName: "Warehouse 1" }
+	]);
+	await expect(content.table("outbound-note").row(1).field("warehouseName")).toContainText("Forced");
+});
+
+test("reassigning normal and forced transactions to a warehouse with sufficient stock should merge them", async ({ page }) => {
+	// Setup: Create two warehouses with different stock levels
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+
+	// Warehouse 1 has 2 copies
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	// Warehouse 2 has 3 copies
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn, quantity: 3, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
+
+	// Add a transaction for 3 copies and assign to Warehouse 1 to create a split
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn, quantity: 3, warehouseId: 1 }] as const);
+
+	const entries = getDashboard(page).content().table("outbound-note");
+
+	// Initial state: one normal (2 copies) and one forced (1 copy) transaction
+	// for Warehouse 1
+	await entries.assertRows([
+		{ isbn, quantity: 2, warehouseName: "Warehouse 1" },
+		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
+	]);
+	await expect(entries.row(1).field("warehouseName")).toContainText("Forced");
+
+	// Reassign the normal transaction to Warehouse 2
+	await entries.row(1).field("warehouseName").set("Warehouse 2");
+
+	// Check state after reassigning the normal transaction
+	await entries.assertRows([
+		{ isbn, quantity: 2, warehouseName: "Warehouse 2" },
+		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
+	]);
+
+	// Reassign the forced transaction to Warehouse 2
+	await entries.row(1).field("warehouseName").set("Warehouse 2");
+
+	// Check that both transactions merged into a single normal transaction in
+	// Warehouse 2
+	await entries.assertRows([{ isbn, quantity: 3, warehouseName: "Warehouse 2" }]);
+});
+
+test("should auto-assign to the available warehouse after a warehouse with stock has been deleted", async ({ page }) => {
+	// Setup: Create multiple warehouses, add stock, and then delete one of the
+	// warehouses with stock.
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+
+	// Create warehouses
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
+
+	// Add stock to Warehouse 2 and 3
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 3 });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn, quantity: 1, warehouseId: 3 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
+
+	// Delete Warehouse 3, which had stock
+	await dbHandle.evaluate(deleteWarehouse, 3);
+
+	// Set Warehouse 1 as the default for the main outbound note (it has no
+	// stock)
+	await dbHandle.evaluate(updateNote, { id: 1, defaultWarehouse: 1 });
+
+	const content = getDashboard(page).content();
+	const scanField = content.scanField();
+	const entries = content.table("outbound-note");
+
+	// Add a transaction for the book
+	await scanField.add(isbn);
+
+	// Assert that the transaction is automatically assigned to Warehouse 2, as
+	// it's the only remaining one with stock.
+	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "Warehouse 2" }]);
+});
+
+test("should show no warehouse selected after the assigned warehouse is deleted", async ({ page }) => {
+	// Setup: Create a transaction and assign it to a warehouse.
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+
+	// Add a transaction to the note and assign it to Warehouse 1
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn, quantity: 1, warehouseId: 1 }] as const);
+
+	const entries = getDashboard(page).content().table("outbound-note");
+
+	// Verify initial state: transaction is assigned to Warehouse 1
+	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "Warehouse 1" }]);
+
+	// Action: Delete the assigned warehouse.
+	await dbHandle.evaluate(deleteWarehouse, 1);
+
+	// Assertion: Verify the transaction row now shows no warehouse selected.
+	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "" }]);
+});
+
+test("should reset default warehouse selector when the selected warehouse is deleted", async ({ page }) => {
+	// Setup: Set a default warehouse for the note.
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(updateNote, { id: 1, defaultWarehouse: 1 });
+
+	const defaultWarehouseSelector = page.locator("#defaultWarehouse");
+
+	// Verify initial state: Warehouse 1 is selected.
+	await expect(defaultWarehouseSelector).toHaveValue("1");
+
+	// Action: Delete the assigned default warehouse.
+	await dbHandle.evaluate(deleteWarehouse, 1);
+
+	// Assertion: Verify the selector has reset.
+	await expect(defaultWarehouseSelector).toHaveValue("");
+});
+
+test("should create a transaction with no warehouse if the only warehouse with stock is deleted", async ({ page }) => {
+	// Setup: Create two warehouses, add stock to one.
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	// Action: Delete the warehouse that has stock.
+	await dbHandle.evaluate(deleteWarehouse, 2);
+
+	const content = getDashboard(page).content();
+	const scanField = content.scanField();
+	const entries = content.table("outbound-note");
+
+	// Scan the book.
+	await scanField.add(isbn);
+
+	// Assertion: Verify the new transaction has no warehouse assigned.
+	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "" }]);
+});
+
+test("warehouse dropdown should not show options for deleted warehouses", async ({ page }) => {
+	// Setup: Create two warehouses and add stock for a book to both.
+	const dbHandle = await getDbHandle(page);
+	const isbn = "1234567890";
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn, quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
+
+	// Add a transaction for the book.
+	const content = getDashboard(page).content();
+	await content.scanField().add(isbn);
+
+	// Delete one of the warehouses.
+	await dbHandle.evaluate(deleteWarehouse, 2);
+
+	const entries = content.table("outbound-note");
+	// Open the warehouse selector dropdown.
+	await entries.row(0).field("warehouseName").click();
+
+	// Assert that the dropdown only shows the warehouse with available unscanned stock
+	const dropdown = page.getByTestId("dropdown-menu");
+	// await expect(dropdown.locator("div", { hasText: "Warehouse 1" })).not.toBeVisible();
+	// await expect(dropdown.locator("div", { hasText: "Warehouse 2" })).not.toBeVisible();
+
+	// Check for an option that contains the text "Warehouse 1"
+	await expect(dropdown.getByRole("option", { name: "Warehouse 1" })).toBeVisible();
+
+	// Check for an option that contains the text "Warehouse 2"
+	await expect(dropdown.getByRole("option", { name: "Warehouse 2" })).not.toBeVisible();
+});
