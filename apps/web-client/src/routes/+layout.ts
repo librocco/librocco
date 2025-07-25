@@ -71,7 +71,7 @@ export const load: LayoutLoad = async ({ url }) => {
 			// We're allowing for passing of (whitelisted) vfs name as a query param.
 			// This will usually only happen in tests/benchmarks and the fallback will
 			// be used in production (without the query param)
-			const vfs = getVFSParam(url, DEFAULT_VFS);
+			const vfs = getVFSFromLocalStorage(DEFAULT_VFS);
 			const dbCtx = await getInitializedDB(get(dbid), vfs);
 			return { dbCtx, plugins, error: null };
 		} catch (err) {
@@ -119,10 +119,10 @@ function deepMergeInPlace(target, source) {
  * provided value is not a whitelisted vfs name, the default one is returned
  *
  */
-function getVFSParam(url: URL, fallback: VFSWhitelist): VFSWhitelist {
-	const vfs = url.searchParams.get("vfs") || fallback;
+function getVFSFromLocalStorage(fallback: VFSWhitelist): VFSWhitelist {
+	const vfs = window.localStorage.getItem("vfs") || fallback;
 	if (!validateVFS(vfs)) {
-		console.warn(`unknown value for vfs param: ${vfs}, defaulting to: ${fallback}`);
+		console.warn(`unknown value for vfs in local storage: ${vfs}, defaulting to: ${fallback}`);
 		return fallback;
 	}
 	return vfs;
