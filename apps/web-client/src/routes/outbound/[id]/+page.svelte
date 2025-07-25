@@ -509,22 +509,6 @@
 				</div>
 
 				<div class="ml-auto flex items-center gap-x-2">
-					<div class="flex flex-col">
-						<select
-							id="defaultWarehouse"
-							name="defaultWarehouse"
-							class="select-bordered select select-sm w-full"
-							value={defaultWarehouse || ""}
-							on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
-						>
-							<option value=""
-								>{warehouses.length > 0 ? tOutbound.placeholder.select_warehouse() : tOutbound.placeholder.no_warehouses()}</option
-							>
-							{#each warehouses as warehouse}
-								<option value={warehouse.id}>{warehouse.displayName}</option>
-							{/each}
-						</select>
-					</div>
 					<button
 						class="btn-primary btn-sm btn hidden xs:block"
 						use:melt={$confirmDialogTrigger}
@@ -604,7 +588,7 @@
 				</div>
 			</div>
 
-			<div class="flex w-full py-4">
+			<div class="flex h-full">
 				<ScannerForm
 					data={defaults(zod(scannerSchema))}
 					options={{
@@ -619,7 +603,28 @@
 							await handleAddTransaction(isbn, 1, warehouseId);
 						}
 					}}
+					placeholder={"Scan to select books from"}
 				/>
+				<select
+					id="defaultWarehouse"
+					name="defaultWarehouse"
+					class="select-bordered select select-sm h-full"
+					value={defaultWarehouse || ""}
+					on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
+				>
+					<option value="">{warehouses.length > 0 ? tOutbound.placeholder.any_warehouse() : tOutbound.placeholder.no_warehouses()}</option>
+					{#each warehouses as warehouse}
+						<option value={warehouse.id}>{warehouse.displayName}</option>
+					{/each}
+				</select>
+				<!-- <div id="button-container" class="flex h-24 w-full items-center justify-start px-8"> -->
+				<button
+					use:melt={$customItemDialogTrigger}
+					on:m-click={() => openCustomItemForm()}
+					on:m-keydown={() => openCustomItemForm()}
+					class="btn-neutral btn mx-2">{tOutbound.labels.custom_item()}</button
+				>
+				<!-- </div> -->
 			</div>
 		</div>
 
@@ -738,15 +743,6 @@
 							{/if}
 						</svelte:fragment>
 					</OutboundTable>
-				</div>
-
-				<div id="button-container" class="flex h-24 w-full items-center justify-start px-8">
-					<button
-						use:melt={$customItemDialogTrigger}
-						on:m-click={() => openCustomItemForm()}
-						on:m-keydown={() => openCustomItemForm()}
-						class="btn-neutral btn mx-2">{tOutbound.labels.custom_item()}</button
-					>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
