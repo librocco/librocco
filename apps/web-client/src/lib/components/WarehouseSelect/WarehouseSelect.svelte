@@ -57,7 +57,7 @@
 		
 		// Filter out warehouses with no remaining stock
 		// Forced withdrawals should be handled via the force-withdrawal dialog
-		const inStockOptions = allOptions.filter(option => option.remaining > 0);
+		const inStockOptions = allOptions.filter(option => option.remaining >= 0);
 		
 		// Sort by remaining stock (highest first)
 		return inStockOptions.sort((a, b) => b.remaining - a.remaining);
