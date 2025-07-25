@@ -1,0 +1,180 @@
+name: Checks
+"on":
+  push:
+    branches:
+    - vfs-benchmark/**
+jobs:
+  build-cr-sqlite:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      rebuild: ${{ steps.ts.outputs.rebuild }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: false
+        fetch-depth: 0
+    - name: Test if artefacts are stale
+      id: ts
+      shell: bash
+      run: echo "rebuild=yes" >> "$GITHUB_OUTPUT"
+    - uses: actions/setup-node@v4
+      if: steps.ts.outputs.rebuild == 'yes'
+      with:
+        node-version: "20"
+    - name: Install Rust 1.85.0
+      if: steps.ts.outputs.rebuild == 'yes'
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: 1.85.0
+        override: true
+    - name: install wasm-pack
+      if: steps.ts.outputs.rebuild == 'yes'
+      run: cargo install wasm-pack
+    - name: install pnpm
+      if: steps.ts.outputs.rebuild == 'yes'
+      run: npm install -g 'pnpm@<9'
+    - name: Build cr-sqlite
+      if: steps.ts.outputs.rebuild == 'yes'
+      run: ./scripts/build_vlcn.sh
+    - name: Check that the build went fine
+      run: git status; ls -l 3rd-party/artefacts/
+    - name: upload to later jobs
+      if: steps.ts.outputs.rebuild == 'yes'
+      uses: actions/upload-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts/
+    - name: Mark cached version
+      run: cp 3rd-party/artefacts_version.txt 3rd-party/artefacts/version-cached.txt
+    - name: Commit updated assets
+      if: github.ref == 'refs/heads/compile-assets'
+      run: bash scripts/commit-artefacts.sh
+    - name: Push changes
+      if: github.ref == 'refs/heads/compile-assets'
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        branch: compile-assets
+  vfs-benchmark:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    needs: build-cr-sqlite
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        shardTotal:
+        - 10
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: false
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - name: Compute desired compiled artifact version
+      run: ./scripts/compute_artefacts_version.sh
+    - uses: actions/download-artifact@v4
+      with:
+        name: built-vlcn-artefacts
+        path: 3rd-party/artefacts
+      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+    - name: Load cached cr-sqlite artefacts
+      uses: actions/cache/restore@v4
+      with:
+        path: 3rd-party/artefacts
+        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Build the app
+      run: cd apps/web-client && rushx build:e2e
+    - name: Download playwright browsers
+      run: cd apps/e2e && npx playwright install
+    - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
+      run: cd apps/e2e && rushx test:vfs:ci
+      env:
+        PLAYWRIGHT_OPTIONS: --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-blob-report-${{ matrix.shardIndex }}
+        path: apps/e2e/blob-report
+        retention-days: 2
+  vfs-benchmark-merge-report:
+    if: ${{ !cancelled() }}
+    needs:
+    - vfs-benchmark
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: false
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - name: Download blob reports
+      uses: actions/download-artifact@v4
+      with:
+        path: all-blob-reports
+        pattern: e2e-blob-report-*
+        merge-multiple: true
+    - name: Merge to HTML report
+      run: npx playwright merge-reports --reporter html ./all-blob-reports
+    - name: Install lftp
+      run: |
+        sudo apt-get update
+        sudo apt-get install lftp
+    - name: Upload merged report to Bunny storage
+      run: |
+        lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
+        set ftp:ssl-allow no
+        set mirror:parallel-transfer-count 10
+        mirror -R playwright-report/ ${{ github.head_ref || github.ref_name }}/tests
+        EOF
+      env:
+        BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+    - name: Purge Bunny cache
+      run: |
+        curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache \
+             --header "content-type: application/json" \
+             --header "AccessKey: $BUNNY_API_KEY"
+      env:
+        BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-merged-html-report
+        path: playwright-report
+        retention-days: 30
+    - name: Output link to report
+      run: echo "Merged e2e report https://test.libroc.co/${{ github.head_ref || github.ref_name }}/tests/index.html" | tee -a $GITHUB_STEP_SUMMARY
