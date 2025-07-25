@@ -1,6 +1,6 @@
-import { defineConfig, devices, ReporterDescription } from "@playwright/test";
+import { defineConfig, devices, PlaywrightTestConfig, ReporterDescription } from "@playwright/test";
 
-import { IS_CI, baseURL } from "./constants";
+import { IS_CI, VFS_TEST, baseURL } from "./constants";
 
 const reporter: ReporterDescription[] = [["list"]];
 // Produce a merge‑able blob report when running in CI
@@ -8,10 +8,51 @@ if (IS_CI) {
 	reporter.push(["blob"]);
 }
 
-/**
- * See https://playwright.dev/docs/test-configuration.
- */
-export default defineConfig({
+const browsers = [
+	{
+		name: "chromium",
+		device: devices["Desktop Chrome"]
+	},
+	{
+		name: "firefox",
+		device: devices["Desktop FireFox"]
+	}
+
+	// Skipped as some tests are failing on webkit in CI. The functionality is there and we wish to still
+	// run those tests, and have the ability for PRs to be green.
+	// TODO: Uncomment this when we have time to fix the tests failing on webkit:
+	// - scan input
+	// - enter form submission
+	//
+	// {
+	// 	name: "webkit",
+	// 	device: devices["Desktop Safari"]
+	// }
+
+	/* Test against mobile viewports. */
+	// {
+	//   name: 'Mobile Chrome',
+	//   device: devices['Pixel 5']
+	// },
+	// {
+	//   name: 'Mobile Safari',
+	//   device: devices['iPhone 12']
+	// },
+
+	/* Test against branded browsers. */
+	// {
+	//   name: 'Microsoft Edge',
+	//   device: devices['Desktop Edge']
+	// },
+	// {
+	//   name: 'Google Chrome',
+	//   device: devices['Desktop Chrome']
+	// },
+];
+
+const locales = ["en"];
+
+const baseConfig: PlaywrightTestConfig = {
 	testDir: "./integration",
 	/* Run tests in files in parallel */
 	fullyParallel: false,
@@ -32,59 +73,39 @@ export default defineConfig({
 		baseURL: baseURL,
 		/* Collect trace for failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: "retain-on-failure",
-
 		/** Record video for all test runs and retain for failed tests. See https://playwright.dev/docs/videos */
 		video: "retain-on-failure"
-	},
+	}
+};
 
-	/* Configure projects for major browsers */
-	projects: [
-		{
-			name: "chromium",
-			use: { ...devices["Desktop Chrome"], locale: "en" }
-		},
+const defaultConfig: PlaywrightTestConfig = {
+	...baseConfig,
+	reporter,
+	projects: browsers
+		.flatMap((browser) => locales.map((locale) => ({ ...browser, locale })))
+		.map(({ name, device, locale }) => ({
+			name,
+			use: { ...device, locale }
+		}))
+};
 
-		{
-			name: "firefox",
-			use: { ...devices["Desktop Firefox"], locale: "en" }
-		}
+const vfsList = ["opfs-any-context", "idb-batch-atomic"];
+const vfsTestConfig: PlaywrightTestConfig = {
+	...baseConfig,
+	reporter,
+	projects: browsers // NOTE: using all browsers, but only the default locale in this scenario
+		.flatMap((browser) => vfsList.map((vfs) => ({ name: [browser.name, vfs].join("-"), device: browser.device, vfs })))
+		.map(({ name, device, vfs }) => ({
+			name,
+			use: {
+				...device,
+				locale: locales[0],
+				storageState: { origins: [{ origin: new URL(baseURL).origin, localStorage: [{ name: "vfs", value: vfs }] }], cookies: [] as any[] }
+			}
+		}))
+};
 
-		// Skipped as some tests are failing on webkit in CI. The functionality is there and we wish to still
-		// run those tests, and have the ability for PRs to be green.
-		// TODO: Uncomment this when we have time to fix the tests failing on webkit:
-		// - scan input
-		// - enter form submission
-		//
-		// {
-		// 	name: "webkit",
-		// 	use: { ...devices["Desktop Safari"] }
-		// }
-
-		/* Test against mobile viewports. */
-		// {
-		//   name: 'Mobile Chrome',
-		//   use: { ...devices['Pixel 5'] },
-		// },
-		// {
-		//   name: 'Mobile Safari',
-		//   use: { ...devices['iPhone 12'] },
-		// },
-
-		/* Test against branded browsers. */
-		// {
-		//   name: 'Microsoft Edge',
-		//   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-		// },
-		// {
-		//   name: 'Google Chrome',
-		//   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-		// },
-	]
-
-	/* Run your local dev server before starting the tests */
-	// webServer: {
-	//   command: 'npm run start',
-	//   url: 'http://127.0.0.1:3000',
-	//   reuseExistingServer: !process.env.CI,
-	// },
-});
+/**
+ * See https://playwright.dev/docs/test-configuration.
+ */
+export default defineConfig(VFS_TEST ? vfsTestConfig : defaultConfig);
