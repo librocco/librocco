@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import ArrowRight from "$lucide/arrow-right";
+	import Printer from "$lucide/printer";
 	import ListTodo from "$lucide/list-todo";
+	import SquareArrow from "$lucide/square-arrow-out-up-right";
 
 	import type { PageData } from "./$types";
 
@@ -31,7 +32,7 @@
 	// #endregion reactivity
 	$: goto = racefreeGoto(disposer);
 
-	$: ({ orderLines, id, reconciliation_order_id, plugins } = data);
+	$: ({ orderLines, id, supplier_id, reconciliation_order_id, plugins } = data);
 	$: db = data?.dbCtx?.db;
 
 	// Supplier order meta data is returned per row. We just need one copy of it
@@ -65,92 +66,97 @@
 	}
 </script>
 
-<Page title="Supplier Orders" view="orders/suppliers/orders/id" {db} {plugins}>
-	<div slot="main" class="flex h-full w-full flex-col gap-y-10 px-4">
-		<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
-			<div class="min-w-fit md:basis-96 md:overflow-y-auto">
-				<div class="card">
-					<div class="card-body gap-y-2 p-0">
-						<div class="sticky top-0 flex gap-2 bg-base-100 pb-3 md:flex-col">
-							<h1 class="prose card-title">{supplier_order_id}</h1>
+<Page title={$LL.order_page.title()} view="orders/suppliers/orders/id" {db} {plugins}>
+	<div slot="main" class="flex h-full flex-col gap-y-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
+			<div class="card md:h-full">
+				<div class="card-body gap-y-2 p-0">
+					<div
+						class="flex flex-row items-center justify-between gap-y-2 border-b bg-base-100 px-4 py-2.5 max-md:sticky max-md:top-0 md:flex-col md:items-start"
+					>
+						<h2 class="text-2xl font-medium">{supplier_order_id}</h2>
 
-							{#if reconciled}
-								<button
-									class="btn-outline btn-sm btn flex-nowrap gap-x-2.5"
-									on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
-								>
-									<ListTodo aria-hidden focusable="false" size={20} />
-									{t.labels.view_reconciliation()}
-								</button>
-							{:else}
-								<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={handleReconcileSelf}>
-									<ListTodo aria-hidden focusable="false" size={20} />
-									{t.labels.reconcile()}
-								</button>
-							{/if}
-
-							<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-								<h2 class="prose">#{supplier_name}</h2>
+						<div class="flex flex-row items-center justify-between">
+							<a class="badge-primary badge-lg badge gap-x-2 hover:badge-outline" href={appHash("suppliers", supplier_id)}>
+								{supplier_name}
+								<SquareArrow size={12} />
+							</a>
+						</div>
+					</div>
+					<dl class="flex w-full border-b px-4 md:flex-col">
+						<div class="stats w-full bg-base-100 md:stats-vertical">
+							<div class="stat max-md:p-2 md:px-1">
+								<dt class="stat-title">{t.stats.total_books()}</dt>
+								<dd class="stat-value text-2xl">{total_book_number}</dd>
+							</div>
+							<div class="stat bg-base-100 max-md:py-2 md:px-1">
+								<dt class="stat-title">{t.stats.total_value()}</dt>
+								<dd class="stat-value text-2xl">€{total_book_price.toFixed(2)}</dd>
+							</div>
+							<div class="stat bg-base-100 max-md:py-2 md:px-1">
+								<dt class="stat-title">{t.stats.ordered()}</dt>
+								<dd class="stat-value text-2xl">
+									<time dateTime={createdDate.toString()}>{createdDate.toLocaleDateString()}</time>
+								</dd>
 							</div>
 						</div>
-						<dl class="flex flex-col">
-							<div class="stats md:stats-vertical">
-								<div class="stat md:px-1">
-									<dt class="stat-title">{t.stats.total_books()}</dt>
-									<dd class="stat-value text-2xl">{total_book_number}</dd>
-								</div>
-								<div class="stat md:px-1">
-									<dt class="stat-title">{t.stats.total_value()}</dt>
-									<dd class="stat-value text-2xl">€{total_book_price.toFixed(2)}</dd>
-								</div>
-								<div class="stat md:px-1">
-									<dt class="stat-title">{t.stats.ordered()}</dt>
-									<dd class="stat-value text-2xl">
-										<time dateTime={createdDate.toString()}>{createdDate.toLocaleDateString()}</time>
-									</dd>
-								</div>
-							</div>
-						</dl>
-						<div class="card-actions border-t py-6 md:mb-20">
-							<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled on:click={handlePrintOrder}>
-								{t.labels.print_order()}
-								<ArrowRight aria-hidden size={20} />
+					</dl>
+					<div class="card-actions w-full flex-col p-4 md:mb-20">
+						<button class="btn-secondary btn-outline btn-sm btn w-full" type="button" disabled on:click={handlePrintOrder}>
+							{t.labels.print_order()}
+							<Printer aria-hidden size={20} />
+						</button>
+
+						{#if reconciled}
+							<button
+								class="btn-outline btn-sm btn w-full flex-nowrap gap-x-2.5"
+								on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
+							>
+								{t.labels.view_reconciliation()}
+								<ListTodo aria-hidden focusable="false" size={20} />
 							</button>
-						</div>
+						{:else}
+							<button class="btn-primary btn-sm btn w-full flex-nowrap gap-x-2.5" on:click={handleReconcileSelf}>
+								{t.labels.reconcile()}
+								<ListTodo aria-hidden focusable="false" size={20} />
+							</button>
+						{/if}
 					</div>
 				</div>
 			</div>
+		</div>
 
-			<div class="relative mb-20 flex h-full w-full flex-col gap-y-6 md:px-4">
-				<div class="prose flex w-full max-w-full flex-col gap-y-3">
-					<h3 class="max-md:divider-start max-md:divider">{t.table.books()}</h3>
+		<div class="flex h-full w-full flex-col gap-y-6 px-4 md:overflow-y-auto">
+			<div class="sticky top-0 flex w-full max-w-full flex-col gap-y-3">
+				<div class="flex flex-col items-start justify-between gap-y-2 pb-2 pt-4">
+					<h3 class="text-xl font-medium">{t.table.books()}</h3>
 				</div>
+			</div>
 
-				<div class="relative h-full overflow-x-auto">
-					<table class="table-pin-rows table pb-20">
-						<thead>
+			<div class="relative h-full overflow-x-auto">
+				<table class="table-sm table">
+					<thead>
+						<tr>
+							<th>{t.table.isbn()}</th>
+							<th>{t.table.title()}</th>
+							<th>{t.table.authors()}</th>
+							<th>{t.table.quantity()}</th>
+							<th>{t.table.total_price()}</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each orderLines as orderLine}
+							{@const { isbn, title, authors, line_price, quantity } = orderLine}
 							<tr>
-								<th>{t.table.isbn()}</th>
-								<th>{t.table.title()}</th>
-								<th>{t.table.authors()}</th>
-								<th>{t.table.quantity()}</th>
-								<th>{t.table.total_price()}</th>
+								<th>{isbn}</th>
+								<td>{title}</td>
+								<td>{authors}</td>
+								<td>{quantity}</td>
+								<td>€{line_price.toFixed(2)}</td>
 							</tr>
-						</thead>
-						<tbody>
-							{#each orderLines as orderLine}
-								{@const { isbn, title, authors, line_price, quantity } = orderLine}
-								<tr>
-									<th>{isbn}</th>
-									<td>{title}</td>
-									<td>{authors}</td>
-									<td>{quantity}</td>
-									<td>€{line_price}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+						{/each}
+					</tbody>
+				</table>
 			</div>
 		</div>
 	</div>

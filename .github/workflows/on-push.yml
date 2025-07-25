@@ -419,6 +419,11 @@ jobs:
       run: rush update
     - name: Build packages
       run: rush build
+    - name: Prepare Weblate env (only for weblate branches)
+      if: contains(github.head_ref || github.ref_name, 'weblate')
+      run: |
+        echo "PUBLIC_WEBLATE_API_KEY=${{ secrets.PUBLIC_WEBLATE_API_KEY }}" >> "$GITHUB_ENV"
+        echo "PUBLIC_WEBLATE_COMPONENT_URL=${{ vars.PUBLIC_WEBLATE_COMPONENT_URL }}" >> "$GITHUB_ENV"
     - name: Build web-client app using prefix ${{ github.head_ref || github.ref_name }}
       run: cd apps/web-client && rushx build:prod
       env:
