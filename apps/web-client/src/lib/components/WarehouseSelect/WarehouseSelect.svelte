@@ -129,19 +129,16 @@
 			{#if options.length}
 				<div class="flex flex-col gap-y-0.5">
 					{#each options as warehouse}
-						{@const { label, quantity, remaining } = warehouse}
+						{@const { label, quantity } = warehouse}
 
 						<div
-							class="relative flex cursor-pointer flex-col rounded p-2 text-sm focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
+							class="relative flex cursor-pointer flex-col rounded p-2 text-sm focus:z-10 data-[highlighted]:bg-primary data-[highlighted]:text-primary-content data-[selected]:bg-primary data-[selected]:text-primary-content"
 							{...$option(warehouse)}
 							use:option
 						>
 							<span>{label}</span>
-							<span class="text-xs {remaining <= 0 ? 'text-error' : ''}">
+							<span class="text-xs">
 								{t.label.book_count({ count: quantity })} 
-								{#if remaining !== quantity}
-									({t.label.book_count({ count: remaining })} {t.label.available()})
-								{/if}
 							</span>
 						</div>
 					{/each}
