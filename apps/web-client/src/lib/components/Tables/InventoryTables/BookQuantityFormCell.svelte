@@ -14,6 +14,5 @@
 		type="number"
 		min="1"
 		required
-		on:blur={() => form.requestSubmit()}
 	/>
 </form>
