@@ -66,6 +66,10 @@
 	// $: options = mapWarehousesToOptions(warehouseList);
 	$: options = mapAvailableWarehousesToOptions(availableWarehouses);
 
+	$: console.log("scannedQuant", scannedQuantitiesPerWarehouse)
+	$: console.log(availableWarehouses)
+	$: console.log(options)
+
 	$: t = $LL.misc_components.warehouse_select;
 </script>
 
