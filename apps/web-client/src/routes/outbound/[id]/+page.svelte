@@ -12,6 +12,8 @@
 	import QrCode from "$lucide/qr-code";
 	import Trash2 from "$lucide/trash-2";
 	import FileEdit from "$lucide/file-edit";
+	import Plus from "$lucide/plus";
+
 	import MoreVertical from "$lucide/more-vertical";
 	import X from "$lucide/x";
 	import FileCheck from "$lucide/file-check";
@@ -588,43 +590,49 @@
 				</div>
 			</div>
 
-			<div class="flex h-full">
-				<ScannerForm
-					data={defaults(zod(scannerSchema))}
-					options={{
-						SPA: true,
-						dataType: "json",
-						validators: zod(scannerSchema),
-						validationMethod: "submit-only",
-						resetForm: true,
-						onUpdated: async ({ form }) => {
-							const { isbn } = form?.data;
-							const warehouseId = await shouldAssignTransaction(isbn, 1);
-							await handleAddTransaction(isbn, 1, warehouseId);
-						}
-					}}
-					placeholder={"Scan to select books from"}
-				/>
-				<select
-					id="defaultWarehouse"
-					name="defaultWarehouse"
-					class="select-bordered select select-sm h-full"
-					value={defaultWarehouse || ""}
-					on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
-				>
-					<option value="">{warehouses.length > 0 ? tOutbound.placeholder.any_warehouse() : tOutbound.placeholder.no_warehouses()}</option>
-					{#each warehouses as warehouse}
-						<option value={warehouse.id}>{warehouse.displayName}</option>
-					{/each}
-				</select>
-				<!-- <div id="button-container" class="flex h-24 w-full items-center justify-start px-8"> -->
+			<div class="flex h-full flex-wrap items-center gap-2">
+				<div class="flex flex-grow items-center gap-2">
+					<ScannerForm
+						data={defaults(zod(scannerSchema))}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: zod(scannerSchema),
+							validationMethod: "submit-only",
+							resetForm: true,
+							onUpdated: async ({ form }) => {
+								const { isbn } = form?.data;
+								const warehouseId = await shouldAssignTransaction(isbn, 1);
+								await handleAddTransaction(isbn, 1, warehouseId);
+							}
+						}}
+						placeholder={tOutbound.placeholder.scan_title()}
+					/>
+					<select
+						id="defaultWarehouse"
+						name="defaultWarehouse"
+						class="select-bordered select select-sm h-full"
+						class:italic={!defaultWarehouse && warehouses.length > 0}
+						value={defaultWarehouse || ""}
+						on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
+					>
+						<option value="">{warehouses.length > 0 ? tOutbound.placeholder.any_warehouse() : tOutbound.placeholder.no_warehouses()}</option
+						>
+						{#each warehouses as warehouse}
+							<option class="not-italic" value={warehouse.id}>{warehouse.displayName}</option>
+						{/each}
+					</select>
+				</div>
 				<button
 					use:melt={$customItemDialogTrigger}
 					on:m-click={() => openCustomItemForm()}
 					on:m-keydown={() => openCustomItemForm()}
-					class="btn-neutral btn mx-2">{tOutbound.labels.custom_item()}</button
+					class="btn-neutral btn-sm btn max-sm:w-full
+sm:mx-2"
 				>
-				<!-- </div> -->
+					<Plus />
+					{tOutbound.labels.custom_item()}</button
+				>
 			</div>
 		</div>
 
@@ -642,14 +650,6 @@
 						<QrCode slot="icon" />
 					</PlaceholderBox>
 					<!-- End entity list placeholder -->
-					<div class="flex h-24 w-full items-center justify-center px-8">
-						<button
-							use:melt={$customItemDialogTrigger}
-							on:m-click={() => openCustomItemForm()}
-							on:m-keydown={() => openCustomItemForm()}
-							class="btn-neutral btn">{tOutbound.labels.custom_item()}</button
-						>
-					</div>
 				</div>
 			</div>
 		{:else}
