@@ -9,7 +9,7 @@ import type { DBAsync, TXAsync, Change, VFSWhitelist } from "./types";
 import { DEFAULT_VFS } from "$lib/constants";
 
 import { idbPromise, idbTxn } from "../indexeddb";
-import { getMainThreadDB } from "./core";
+import { getMainThreadDB, getWorkerDB } from "./core";
 
 export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
 
@@ -34,7 +34,13 @@ async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | 
 }
 
 export async function getDB(dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<DBAsync> {
-	return getMainThreadDB(dbname, vfs);
+	const mainThreadVFS = new Set<VFSWhitelist>(["idb-batch-atomic", "opfs-any-context"]);
+	if (mainThreadVFS.has(vfs)) {
+		console.log(`using main thread db with vfs: ${vfs}`);
+		return getMainThreadDB(dbname, vfs);
+	}
+	console.log(`using worker db with vfs: ${vfs}`);
+	return getWorkerDB(dbname, vfs);
 }
 
 export async function initializeDB(db: TXAsync) {
