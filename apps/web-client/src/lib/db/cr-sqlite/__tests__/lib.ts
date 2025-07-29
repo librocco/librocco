@@ -1,7 +1,8 @@
+import type { DB } from "@vlcn.io/crsqlite-wasm";
+
 import { getDB, initializeDB, getChanges, applyChanges, getSiteId, getPeerDBVersion } from "../db";
 import { upsertCustomer, addBooksToCustomer } from "../customers";
 import { upsertBook } from "../books";
-import { type DB } from "../types";
 import { upsertSupplier, associatePublisher } from "../suppliers";
 
 export const getRandomDb = async (): Promise<DB> => {

@@ -1,20 +1,18 @@
-import initWasm from "@vlcn.io/crsqlite-wasm";
-import type { DB as _DB } from "@vlcn.io/crsqlite-wasm";
-import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
 import rxtbl from "@vlcn.io/rx-tbl";
+import type { DB } from "@vlcn.io/crsqlite-wasm";
 
 import schemaContent from "$lib/schemas/init?raw";
 export { schemaContent };
 
-import { type DB, type Change } from "./types";
+import { type Change } from "./types";
 
 import { DEFAULT_VFS } from "$lib/constants";
 
 import { idbPromise, idbTxn } from "../indexeddb";
-import { createVfsFactory, type VFSWhitelist } from "./vfs";
+import { type VFSWhitelist, getMainThreadDB, getWorkerDB } from "./core";
 
-export type DbCtx = { db: _DB; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
+export type DbCtx = { db: DB; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
 
 // DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
 // chahe the DB as soon as the first time 'getInitializedDB' is called, so that all subsequent calls
@@ -36,12 +34,14 @@ async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null>
 	return [name, BigInt(version)];
 }
 
-export async function getDB(dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<_DB> {
-	const sqlite = await initWasm({
-		locateWasm: () => wasmUrl,
-		vfsFactory: createVfsFactory(vfs)
-	});
-	return sqlite.open(dbname);
+export async function getDB(dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<DB> {
+	const mainThreadVFS = new Set<VFSWhitelist>(["idb-batch-atomic", "opfs-any-context"]);
+	if (mainThreadVFS.has(vfs)) {
+		console.log(`using main thread db with vfs: ${vfs}`);
+		return getMainThreadDB(dbname, vfs);
+	}
+	console.log(`using worker db with vfs: ${vfs}`);
+	return getWorkerDB(dbname, vfs);
 }
 
 export async function initializeDB(db: DB) {
@@ -94,7 +94,7 @@ export class ErrDBSchemaMismatch extends Error {
  * - throws error(s) if need be
  * - initialises the DB if not initialised
  */
-const checkAndInitializeDB = async (db: _DB) => {
+const checkAndInitializeDB = async (db: DB) => {
 	// Integrity check
 	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
 	if (res !== "ok") {
