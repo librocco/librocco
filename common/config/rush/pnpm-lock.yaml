@@ -93,6 +93,9 @@ importers:
       '@vlcn.io/xplat-api':
         specifier: file:../../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
         version: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
+      comlink:
+        specifier: ~4.4.2
+        version: 4.4.2
       export-to-csv:
         specifier: ~1.3.0
         version: 1.3.0
