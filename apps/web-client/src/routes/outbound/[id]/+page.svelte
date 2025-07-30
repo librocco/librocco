@@ -14,6 +14,7 @@
 	import FileEdit from "$lucide/file-edit";
 	import MoreVertical from "$lucide/more-vertical";
 	import X from "$lucide/x";
+	import XCircle from "$lucide/x-circle";
 	import FileCheck from "$lucide/file-check";
 
 	import { desc, testId } from "@librocco/shared";
@@ -55,7 +56,7 @@
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { clickOutside, createIntersectionObserver, createTable } from "$lib/actions";
+	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { mergeBookData } from "$lib/utils/misc";
@@ -66,6 +67,8 @@
 	import {
 		addVolumesToNote,
 		commitNote,
+		getNoWarehouseEntries,
+		getOutOfStockEntries,
 		createAndCommitReconciliationNote,
 		deleteNote,
 		getNoteIdSeq,
@@ -103,9 +106,17 @@
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !db;
+	$: no_warehouse_selected_commit_self = [];
 
 	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
 	$: totalBookCount = bookEntries.filter(isBookRow).reduce((acc, { quantity }) => acc + quantity, 0);
+	$: filteredBookEntries = bookEntries.filter(isBookRow);
+	$: totalAvailableStockBookCount = filteredBookEntries
+		.filter((book) => {
+			return book.type === "normal";
+		})
+		.reduce((acc, { quantity }) => acc + quantity, 0);
+
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: publisherList = data.publisherList;
 
@@ -154,29 +165,35 @@
 		window.print();
 	};
 
-	const handleCommitSelf = async (closeDialog: () => void) => {
-		try {
-			await commitNote(db, noteId);
-			closeDialog();
-		} catch (err) {
-			if (err instanceof NoWarehouseSelectedError) {
-				return openNoWarehouseSelectedDialog(err.invalidTransactions);
-			}
-			if (err instanceof OutOfStockError) {
-				return openReconciliationDialog(err.invalidTransactions);
-			}
-			throw err;
+	const handleCommitSelfDryRun = async () => {
+		no_warehouse_selected_commit_self = [];
+
+		const noWarehouseTxns = await getNoWarehouseEntries(db, noteId);
+		if (noWarehouseTxns.length) {
+			no_warehouse_selected_commit_self = noWarehouseTxns;
+			return;
 		}
+
+		const outOfStockEntries = await getOutOfStockEntries(db, noteId);
+		if (outOfStockEntries.length) {
+			openReconciliationDialog(outOfStockEntries);
+			return;
+		}
+
+		// open confirmation/empty reconciliation dialog
+		openReconciliationDialog([]);
 	};
 
-	const handleReconcileAndCommitSelf = (invalidTransactions: OutOfStockTransaction[]) => async (closeDialog: () => void) => {
+	const handleReconcileAndCommitSelf = (invalidTransactions?: OutOfStockTransaction[]) => async (closeDialog: () => void) => {
 		// TODO: this should probably be wrapped in a txn, but doing so resulted in app freezing at this point
 		const id = await getNoteIdSeq(db);
-		await createAndCommitReconciliationNote(
-			db,
-			id,
-			invalidTransactions.map(({ quantity, available, ...txn }) => ({ ...txn, quantity: quantity - available }))
-		);
+		if (invalidTransactions) {
+			await createAndCommitReconciliationNote(
+				db,
+				id,
+				invalidTransactions.map(({ quantity, available, ...txn }) => ({ ...txn, quantity: quantity - available }))
+			);
+		}
 		await commitNote(db, noteId);
 		closeDialog();
 		confirmDialogOpen.set(false);
@@ -269,6 +286,7 @@
 	};
 
 	const updateRowWarehouse = async (data: InventoryTableData<"book">, nextWarehouseId: number) => {
+		no_warehouse_selected_commit_self = [];
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
 
 		// Number form control validation means this string->number conversion should yield a valid result
@@ -525,28 +543,11 @@
 							{/each}
 						</select>
 					</div>
-					<button
-						class="btn-primary btn-sm btn hidden xs:block"
-						use:melt={$confirmDialogTrigger}
-						on:m-click={() => {
-							dialogContent = {
-								onConfirm: handleCommitSelf,
-								title: tCommon.commit_sale_dialog.title({ entity: displayName }),
-								description: tCommon.commit_sale_dialog.description({ bookCount: totalBookCount }),
-								type: "commit"
-							};
-						}}
-						on:m-keydown={() => {
-							dialogContent = {
-								onConfirm: handleCommitSelf,
-								title: tCommon.commit_sale_dialog.title({ entity: displayName }),
-								description: tCommon.commit_sale_dialog.description({ bookCount: totalBookCount }),
-								type: "commit"
-							};
-						}}
-					>
-						<span class="button-text">{tOutbound.labels.commit()}</span>
-					</button>
+					<div>
+						<button class="btn-primary btn-sm btn hidden xs:block" on:click={handleCommitSelfDryRun} on:keydown={handleCommitSelfDryRun}>
+							<span class="button-text">{tOutbound.labels.commit()}</span>
+						</button>
+					</div>
 					<button on:click={() => handlePrint()} on:keydown={() => handlePrint()} class="btn-primary btn-sm btn hidden xs:block">
 						{tCommon.actions.print()}
 					</button>
@@ -555,15 +556,7 @@
 						<div
 							{...item}
 							use:item.action
-							use:melt={$confirmDialogTrigger}
-							on:m-click={() => {
-								dialogContent = {
-									onConfirm: handleCommitSelf,
-									title: tCommon.commit_sale_dialog.title({ entity: displayName }),
-									description: tCommon.commit_sale_dialog.description({ bookCount: totalBookCount }),
-									type: "commit"
-								};
-							}}
+							on:click={handleCommitSelfDryRun}
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
 						>
 							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tOutbound.labels.commit()}</span>
@@ -603,6 +596,12 @@
 					</DropdownWrapper>
 				</div>
 			</div>
+			{#if no_warehouse_selected_commit_self.length}
+				<div role="alert" class="alert alert-error">
+					<XCircle />
+					<span>{tOutbound.alerts.no_warehouse_selected_commit_self()}</span>
+				</div>
+			{/if}
 
 			<div class="flex w-full py-4">
 				<ScannerForm
@@ -787,46 +786,43 @@
 	</div>
 {/if}
 
-{#if $noWarehouseDialogOpen}
-	<div use:melt={$noWarehouseDialogPortalled}>
-		<div use:melt={$noWarehouseDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
-		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-			<Dialog dialog={noWarehouseDialog} type="delete" onConfirm={() => {}} onCancel={() => confirmDialogOpen.set(false)}>
-				<svelte:fragment slot="title">{tCommon.no_warehouse_dialog.title()}</svelte:fragment>
-				<svelte:fragment slot="description">{tCommon.no_warehouse_dialog.description()}</svelte:fragment>
-				<h3 class="mb-2 mt-4 font-semibold">{tOutbound.delete_dialog.select_warehouse()}:</h3>
-				<ul class="pl-2">
-					{#each noWarehouseDialogData as { isbn }}
-						<li>{isbn}</li>
-					{/each}
-				</ul>
-				<!-- A small hack to hide the 'Confirm' button as there's nothing to confirm -->
-				<svelte:fragment slot="confirm-button"><span></span></svelte:fragment>
-			</Dialog>
-		</div>
-	</div>
-{/if}
-
 {#if $reconcileDialogOpen}
 	<div use:melt={$reconcileDialogPortalled}>
 		<div use:melt={$reconcileDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
 			<Dialog dialog={reconcileDialog} type="delete" onConfirm={handleReconcileAndCommitSelf(reconcileDialogData)}>
-				<svelte:fragment slot="title">{tCommon.reconcile_sale_dialog.title()}</svelte:fragment>
-				<svelte:fragment slot="description">{tCommon.reconcile_sale_dialog.description()}</svelte:fragment>
-				<h3 class="mb-2 mt-4 font-semibold">{tOutbound.reconcile_dialog.review_transaction()}:</h3>
-				<ul class="pl-2">
-					{#each reconcileDialogData as { isbn, warehouseName, quantity, available }}
-						<li class="mb-2">
-							<p><span class="font-semibold">{isbn}</span> in <span class="font-semibold">{warehouseName}:</span></p>
-							<p class="pl-2">requested quantity: {quantity}</p>
-							<p class="pl-2">available: {available}</p>
-							<p class="pl-2">
-								{tOutbound.reconcile_dialog.quantity()}: <span class="font-semibold">{quantity - available}</span>
-							</p>
-						</li>
-					{/each}
-				</ul>
+				<svelte:fragment slot="title"
+					>{reconcileDialogData.length
+						? tCommon.reconcile_sale_dialog.title()
+						: tCommon.commit_sale_dialog.title({ entity: displayName })}</svelte:fragment
+				>
+				<svelte:fragment slot="description">
+					{#if totalAvailableStockBookCount > 0}
+						<div>{tCommon.commit_sale_dialog.description({ bookCount: totalAvailableStockBookCount })}</div>
+					{/if}
+					{reconcileDialogData.length ? tCommon.reconcile_sale_dialog.description() : ""}</svelte:fragment
+				>
+
+				{#if reconcileDialogData.length}
+					<details>
+						<summary class="mb-2 mt-4 font-semibold">
+							{tOutbound.reconcile_dialog.review_transaction()}:
+							<!-- <h3 class="mb-2 mt-4 font-semibold">{tOutbound.reconcile_dialog.review_transaction()}:</h3> -->
+						</summary>
+						<ul class="pl-2">
+							{#each reconcileDialogData as { isbn, warehouseName, quantity, available }}
+								<li class="mb-2">
+									<p><span class="font-semibold">{isbn}</span> in <span class="font-semibold">{warehouseName}:</span></p>
+									<p class="pl-2">requested quantity: {quantity}</p>
+									<p class="pl-2">available: {available}</p>
+									<p class="pl-2">
+										{tOutbound.reconcile_dialog.quantity()}: <span class="font-semibold">{quantity - available}</span>
+									</p>
+								</li>
+							{/each}
+						</ul>
+					</details>
+				{/if}
 			</Dialog>
 		</div>
 	</div>
