@@ -322,7 +322,7 @@ async function _updateNote(db: DB, id: number, payload: { displayName?: string; 
  * @param {number} noteId - ID of note to check
  * @returns {Promise<OutOfStockTransaction[]>} Array of transactions that would result in negative stock
  */
-async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockTransaction[]> {
+async function _getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockTransaction[]> {
 	const entries = (await getNoteEntries(db, noteId)) as Required<NoteEntriesItem>[];
 	const stock = await getStock(db, { entries }).then((x) => new Map(x.map((e) => [[e.isbn, e.warehouseId].join("-"), e])));
 
@@ -396,7 +396,7 @@ async function _commitNote(db: DB, id: number, { force = false }: { force?: bool
 		}
 
 		if (note.noteType === "outbound") {
-			const outOfStockEntries = await getOutOfStockEntries(db, id);
+			const outOfStockEntries = await _getOutOfStockEntries(db, id);
 			if (outOfStockEntries.length) {
 				throw new OutOfStockError(outOfStockEntries);
 			}
@@ -801,6 +801,7 @@ export const getActiveOutboundNotes = timed(_getActiveOutboundNotes);
 export const getNoteById = timed(_getNoteById);
 export const updateNote = timed(_updateNote);
 export const getNoWarehouseEntries = timed(_getNoWarehouseEntries);
+export const getOutOfStockEntries = timed(_getOutOfStockEntries);
 export const commitNote = timed(_commitNote);
 export const deleteNote = timed(_deleteNote);
 export const addVolumesToNote = timed(_addVolumesToNote);
