@@ -89,7 +89,7 @@ const defaultConfig: PlaywrightTestConfig = {
 		}))
 };
 
-const vfsList = ["opfs-any-context", "idb-batch-atomic"];
+const vfsList = ["idb-batch-atomic", "opfs-any-context", "opfs-adaptive-vfs", "opfs-coop-sync"];
 const vfsTestConfig: PlaywrightTestConfig = {
 	...baseConfig,
 	reporter,
