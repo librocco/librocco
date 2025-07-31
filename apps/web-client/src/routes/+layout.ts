@@ -22,7 +22,7 @@ import { appPath } from "$lib/paths";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
 import { ErrDBCorrupted, ErrDBSchemaMismatch } from "$lib/db/cr-sqlite/db";
-import { validateVFS, type VFSWhitelist } from "$lib/db/cr-sqlite/vfs";
+import { validateVFS, type VFSWhitelist } from "$lib/db/cr-sqlite/core/vfs";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/#/stock/")
 const redirectPaths = ["", "/", "/#", "/#/"].map((path) => `${base}${path}`);

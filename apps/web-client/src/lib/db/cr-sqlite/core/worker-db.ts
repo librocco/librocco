@@ -1,8 +1,9 @@
 import * as Comlink from "comlink";
+import type { TXAsync } from "@vlcn.io/xplat-api";
 
 import type { DB } from "@vlcn.io/crsqlite-wasm";
 
-import type { DBAsync, TXAsync, StmtAsync, TMutex, TXCallback, UpdateType } from "./types";
+import type { DBAsync, StmtAsync, TMutex, TXCallback, UpdateType } from "./types";
 
 import DBWorker from "./worker-db.worker?worker";
 import type { MsgInit } from "./worker-db.worker";

@@ -1,4 +1,4 @@
-import type { VFSWhitelist } from "$lib/db/cr-sqlite/vfs";
+import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
 import type { SyncProgress } from "./sync-transport-control";
 
 // Client -> Worker

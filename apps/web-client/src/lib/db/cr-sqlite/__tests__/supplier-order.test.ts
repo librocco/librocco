@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { type DB } from "../types";
+import { type DBAsync, type TXAsync } from "../types";
 
 import { getRandomDb } from "./lib";
 
@@ -28,7 +28,7 @@ const books = [book1, book2];
 const supplier1 = { id: 1, name: "Alphabet Books LTD" };
 const supplier2 = { id: 2, name: "Xanax Books LTD" };
 
-let db: DB;
+let db: DBAsync;
 
 beforeEach(async () => {
 	db = await getRandomDb();

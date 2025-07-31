@@ -1,5 +1,11 @@
-import type { DBAsync } from "@vlcn.io/xplat-api";
-export type { DBAsync, TXAsync, StmtAsync, TMutex, UpdateType } from "@vlcn.io/xplat-api";
+import type { DBAsync, TXAsync as _TXAsync } from "@vlcn.io/xplat-api";
+export type { DBAsync, StmtAsync, TMutex, UpdateType } from "@vlcn.io/xplat-api";
+
+/**
+ * A TXAsync type without the `tx.tx` method - we're using this adjusted type to ensure that functions
+ * that call to `db.tx` don't accept `TXAsync` as `db` (ensuring we don't nest transactions).
+ */
+export type TXAsync = Omit<_TXAsync, "tx">;
 
 export type { VFSWhitelist } from "./vfs";
 

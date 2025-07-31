@@ -1,6 +1,6 @@
 import { WorkerInterface as WI } from "@vlcn.io/ws-client";
 
-import type { VFSWhitelist } from "$lib/db/cr-sqlite/vfs";
+import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
 import type { MsgChangesProcessed, MsgChangesReceived, MsgProgress, MsgReady, MsgStart } from "./types";
 
 import { SyncEventEmitter } from "./sync-transport-control";

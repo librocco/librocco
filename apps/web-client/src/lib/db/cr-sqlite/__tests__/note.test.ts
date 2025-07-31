@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import type { DB, OutOfStockTransaction } from "../types";
+import type { TXAsync, OutOfStockTransaction } from "../types";
 
 import { getRandomDb } from "./lib";
 import { NoWarehouseSelectedError, OutOfStockError } from "../errors";
@@ -1175,7 +1175,7 @@ describe("Book transactions", async () => {
 		/* This should be trivial, but I had some weird behaviour around this so here's a test testing that cr-sqlite extension doesn't block that. */
 
 		// A helper to avoid flakiness due to temporal sorting - sorts by warehouseId
-		const _getNoteEntries = (db: DB, noteId: number) =>
+		const _getNoteEntries = (db: TXAsync, noteId: number) =>
 			getNoteEntries(db, noteId).then((r) => r.sort((a, b) => a.warehouseId - b.warehouseId));
 
 		const db = await getRandomDb();

@@ -10,7 +10,7 @@ import type { MsgStart, MsgChangesReceived, MsgChangesProcessed, MsgProgress, Ms
 import { SyncTransportController, SyncEventEmitter } from "./sync-transport-control";
 import type { SyncConfig } from "./sync-transport-control";
 
-import { createVfsFactory } from "$lib/db/cr-sqlite/vfs";
+import { createVFSFactory } from "$lib/db/cr-sqlite/core/vfs";
 
 type InboundMessage = MsgStart;
 type OutboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady;
@@ -55,7 +55,7 @@ function handleStart(payload: MsgStart["payload"]) {
 	const config: Config = {
 		dbProvider: createDbProvider({
 			locateWasm: () => wasmUrl,
-			vfsFactory: createVfsFactory(payload.vfs)
+			vfsFactory: createVFSFactory(payload.vfs)
 		}),
 		transportProvider: wrapProvider(defaultConfig.transportProvider, createProgressEmitter(), { maxChunkSize: MAX_SYNC_CHUNK_SIZE })
 	};

@@ -1,9 +1,6 @@
-/**
- * This is a placeholder as we're not using the generic DB, this might change as we add schema, but trying to keep this as a single source of truth
- */
-import type { DB as _DB } from "@vlcn.io/crsqlite-wasm";
-
 import type { BookData } from "@librocco/shared";
+
+export type { DBAsync, TXAsync, VFSWhitelist } from "./core";
 
 /**
  * Order tables only show a slice of book data => our order lines only need to return relevant cols
@@ -299,10 +296,6 @@ export type GetStockResponseItem = {
 	outOfPrint: boolean;
 	category: string;
 };
-
-/** The type of the DB object passed to sqlite DB.tx transaction callback */
-export type TXAsync = Parameters<Parameters<_DB["tx"]>[0]>[0];
-export type DB = _DB | TXAsync;
 
 /** The transaction returned (thrown) by outbound note commit check - if certin txn will result in negative stock */
 export interface OutOfStockTransaction extends VolumeStock {
