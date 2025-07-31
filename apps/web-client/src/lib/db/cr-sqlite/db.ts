@@ -1,5 +1,3 @@
-import initWasm from "@vlcn.io/crsqlite-wasm";
-import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
 import rxtbl from "@vlcn.io/rx-tbl";
 
@@ -8,6 +6,7 @@ export { schemaContent };
 
 import type { DBAsync, TXAsync, Change } from "./types";
 import { idbPromise, idbTxn } from "../indexeddb";
+import { getMainThreadDB } from "./core";
 
 export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl> };
 
@@ -31,11 +30,8 @@ async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | 
 	return [name, BigInt(version)];
 }
 
-export async function getDB(dbname: string): Promise<_DB> {
-	const sqlite = await initWasm({
-		locateWasm: () => wasmUrl
-	});
-	return sqlite.open(dbname);
+export async function getDB(dbname: string): Promise<DBAsync> {
+	return getMainThreadDB(dbname);
 }
 
 export async function initializeDB(db: TXAsync) {
