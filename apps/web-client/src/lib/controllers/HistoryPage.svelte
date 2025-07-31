@@ -10,7 +10,7 @@
 
 	import type { HistoryView } from "@librocco/shared";
 
-	import type { DB } from "$lib/db/cr-sqlite/types";
+	import type { DBAsync } from "$lib/db/cr-sqlite/types";
 	import type { PluginsInterface } from "$lib/plugins";
 
 	$: tabs = [
@@ -41,7 +41,7 @@
 	];
 
 	export let view: HistoryView;
-	export let db: DB;
+	export let db: DBAsync;
 	export let plugins: PluginsInterface;
 </script>
 

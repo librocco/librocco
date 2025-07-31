@@ -8,9 +8,9 @@
 	import { PageLayout, ExtensionStatusBanner } from "$lib/components";
 
 	import type { WebClientView } from "@librocco/shared";
-	import type { DB } from "$lib/db/cr-sqlite/types";
+	import type { DBAsync } from "$lib/db/cr-sqlite/types";
 
-	export let db: DB;
+	export let db: DBAsync;
 	export let plugins: PluginsInterface;
 
 	export let view: WebClientView;

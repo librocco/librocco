@@ -1,5 +1,4 @@
 import initWasm from "@vlcn.io/crsqlite-wasm";
-import type { DB as _DB } from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
 import rxtbl from "@vlcn.io/rx-tbl";
@@ -7,10 +6,10 @@ import rxtbl from "@vlcn.io/rx-tbl";
 import schemaContent from "$lib/schemas/init?raw";
 export { schemaContent };
 
-import { type DB, type Change } from "./types";
+import type { DBAsync, TXAsync, Change } from "./types";
 import { idbPromise, idbTxn } from "../indexeddb";
 
-export type DbCtx = { db: _DB; rx: ReturnType<typeof rxtbl> };
+export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl> };
 
 // DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
 // chahe the DB as soon as the first time 'getInitializedDB' is called, so that all subsequent calls
@@ -20,7 +19,7 @@ const dbCache: Record<string, Promise<DbCtx>> = {};
 export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
 
-async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null> {
+async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | null> {
 	const nameRes = await db.execA<[string]>("SELECT value FROM crsql_master WHERE key = 'schema_name'");
 	if (!nameRes?.length) return null;
 	const [[name]] = nameRes;
@@ -32,12 +31,12 @@ async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null>
 	return [name, BigInt(version)];
 }
 
-export async function getDB(dbname: string): Promise<_DB> {
+export async function getDB(dbname: string): Promise<DBAsync> {
 	const sqlite = await initWasm(() => wasmUrl);
 	return sqlite.open(dbname);
 }
 
-export async function initializeDB(db: DB) {
+export async function initializeDB(db: TXAsync) {
 	// Thought: This could probably be wrapped into a txn
 	// not really: transactions are for DML, not for DDL
 	// Apply the schema (initialise the db)
@@ -87,7 +86,7 @@ export class ErrDBSchemaMismatch extends Error {
  * - throws error(s) if need be
  * - initialises the DB if not initialised
  */
-const checkAndInitializeDB = async (db: _DB) => {
+const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
 	// Integrity check
 	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
 	if (res !== "ok") {
@@ -133,7 +132,7 @@ export const getInitializedDB = async (dbname: string): Promise<DbCtx> => {
 	}
 };
 
-export const getChanges = (db: DB, since: bigint | null = BigInt(0)): Promise<Change[]> => {
+export const getChanges = (db: TXAsync, since: bigint | null = BigInt(0)): Promise<Change[]> => {
 	const query = `SELECT
 	  "table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq"
 	  FROM crsql_changes
@@ -141,7 +140,7 @@ export const getChanges = (db: DB, since: bigint | null = BigInt(0)): Promise<Ch
 	return db.execA(query, [since]) as any;
 };
 
-export const applyChanges = async (db: DB, changes: readonly Change[]) => {
+export const applyChanges = async (db: TXAsync, changes: readonly Change[]) => {
 	const query = `
 	  INSERT INTO crsql_changes
 			("table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq")
@@ -151,19 +150,19 @@ export const applyChanges = async (db: DB, changes: readonly Change[]) => {
 	}
 };
 
-export const getSiteId = async (db: DB): Promise<Uint8Array> => {
+export const getSiteId = async (db: TXAsync): Promise<Uint8Array> => {
 	// Return the site id of the passed database
 	const siteid = (await db.execA(`SELECT quote(crsql_site_id())`))[0][0];
 	return siteid.slice(2, -1); // remove X'' quoting
 };
 
-export const getDBVersion = async (db: DB): Promise<bigint> => {
+export const getDBVersion = async (db: TXAsync): Promise<bigint> => {
 	// Get the db version of changes done locally in the passed database
 	const version = (await db.execA(`SELECT crsql_db_version()`))[0][0];
 	return BigInt(version);
 };
 
-export const getPeerDBVersion = async (db: DB, siteId: Uint8Array): Promise<bigint> => {
+export const getPeerDBVersion = async (db: TXAsync, siteId: Uint8Array): Promise<bigint> => {
 	// Get the last db version of updates for the given peer site id
 	const version = (await db.execA(`SELECT max(db_version) FROM crsql_changes WHERE site_id = ?`, [siteId]))[0][0];
 	return version ? BigInt(version) : BigInt(0);

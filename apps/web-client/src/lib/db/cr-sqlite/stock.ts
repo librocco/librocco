@@ -18,7 +18,7 @@
  * - book table: Contains book metadata
  */
 
-import type { DB, GetStockResponseItem } from "./types";
+import type { TXAsync, GetStockResponseItem } from "./types";
 
 import { timed } from "$lib/utils/timer";
 
@@ -52,7 +52,7 @@ type GetStockParams = {
  *   - Book metadata: title, price, year, authors, etc
  */
 async function _getStock(
-	db: DB,
+	db: TXAsync,
 	{ searchString = "", entries = [], isbns = [], warehouseId }: GetStockParams = {}
 ): Promise<GetStockResponseItem[]> {
 	const filterClauses = [];

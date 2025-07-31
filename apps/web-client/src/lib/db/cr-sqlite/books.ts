@@ -20,7 +20,7 @@
 
 import { type BookData } from "@librocco/shared";
 
-import { type DB } from "./types";
+import { type TXAsync } from "./types";
 
 import { timed } from "$lib/utils/timer";
 
@@ -34,7 +34,7 @@ import { timed } from "$lib/utils/timer";
  * @throws {Error} If ISBN is not provided
  * @see apps/e2e/helpers/cr-sqlite.ts:upsertBook whe you make any updates
  */
-async function _upsertBook(db: DB, book: BookData) {
+async function _upsertBook(db: TXAsync, book: BookData) {
 	if (!book.isbn) {
 		throw new Error("Book must have an ISBN");
 	}
@@ -75,7 +75,7 @@ async function _upsertBook(db: DB, book: BookData) {
 	);
 }
 
-async function _getMultipleBookData(db: DB, ...isbns: string[]): Promise<Array<Required<BookData> & { updatedAt: Date | null }>> {
+async function _getMultipleBookData(db: TXAsync, ...isbns: string[]): Promise<Array<Required<BookData> & { updatedAt: Date | null }>> {
 	// Supporting this case as there might be a request for empty entries list (as this depends on warehouse/note entries)
 	if (!isbns.length) {
 		return [];
@@ -109,7 +109,7 @@ async function _getMultipleBookData(db: DB, ...isbns: string[]): Promise<Array<R
 	return res.map(processRawBookRes);
 }
 
-async function _getBookData(db: DB, isbn: string): Promise<Required<BookData> & { updatedAt: Date | null }> {
+async function _getBookData(db: TXAsync, isbn: string): Promise<Required<BookData> & { updatedAt: Date | null }> {
 	const [res] = await db.execO<RawBookRes>(
 		`SELECT
 				isbn,
@@ -132,7 +132,7 @@ async function _getBookData(db: DB, isbn: string): Promise<Required<BookData> & 
 	return processRawBookRes(res);
 }
 
-async function _getPublisherList(db: DB): Promise<string[]> {
+async function _getPublisherList(db: TXAsync): Promise<string[]> {
 	const res = await db.execO<{ publisher: string }>(`SELECT DISTINCT publisher FROM book`);
 	return res.map(({ publisher }) => publisher);
 }
@@ -143,7 +143,7 @@ type SearchBooksParams = {
 	order?: "asc" | "desc";
 };
 async function _searchBooks(
-	db: DB,
+	db: TXAsync,
 	{ searchString, orderBy, order = "asc" }: SearchBooksParams = {}
 ): Promise<Array<Required<BookData> & { updatedAt: Date | null }>> {
 	const filterClauses = [];
