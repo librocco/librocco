@@ -103,6 +103,8 @@ jobs:
       -  #@ rush_add_path()
       -  #@ rush_install()
       -  #@ rush_build()
+      - name: Check wa-sqlite files
+        run: cd apps/web-client/node_modules/@vlcn.io/wa-sqlite && ls -lR
       - name: Build the app
         run: cd apps/web-client && rushx build:e2e
       - name: Download playwright browsers
