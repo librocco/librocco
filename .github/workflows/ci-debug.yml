@@ -31,8 +31,6 @@ jobs:
       run: rush update
     - name: Build packages
       run: rush build
-    - name: Build the app
-      run: cd apps/web-client && rushx build:prod
     - name: Setup upterm (debug) session
       uses: lhotari/action-upterm@v1
     - uses: actions/upload-artifact@v4
