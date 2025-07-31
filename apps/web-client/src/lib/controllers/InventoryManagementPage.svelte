@@ -8,7 +8,7 @@
 	import { Page } from "$lib/controllers";
 	import { appHash } from "$lib/paths";
 
-	import type { DB } from "$lib/db/cr-sqlite/types";
+	import type { DBAsync } from "$lib/db/cr-sqlite/types";
 	import type { PluginsInterface } from "$lib/plugins";
 
 	$: tabs = [
@@ -26,7 +26,7 @@
 
 	$: activeTab = tabs.find(({ href }) => $page.url.hash.startsWith(href));
 
-	export let db: DB;
+	export let db: DBAsync;
 	export let plugins: PluginsInterface;
 
 	export let handleCreateWarehouse = () => Promise.resolve();

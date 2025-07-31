@@ -15,11 +15,11 @@
  * - book_transaction table: Records book "line-item" movements
  */
 
-import type { DB, PickPartial, TXAsync, Warehouse } from "./types";
+import type { DBAsync, TXAsync, PickPartial, Warehouse } from "./types";
 
 import { timed } from "$lib/utils/timer";
 
-async function _getWarehouseIdSeq(db: DB) {
+async function _getWarehouseIdSeq(db: TXAsync) {
 	const query = `SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM warehouse;`;
 	const [result] = await db.execO<{ nextId: number }>(query);
 	return result.nextId;
@@ -31,10 +31,10 @@ async function _getWarehouseIdSeq(db: DB) {
  * If "New Warehouse" exists, returns "New Warehouse (2)".
  * Otherwise returns "New Warehouse (n+1)" where n is the highest existing sequence number.
  *
- * @param {DB | TXAsync} db - Database connection
+ * @param {TXAsync} db - Database connection
  * @returns {Promise<string>} The next sequential warehouse name
  */
-const getSeqName = async (db: DB | TXAsync) => {
+const getSeqName = async (db: TXAsync): Promise<string> => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM warehouse
 			WHERE displayName LIKE 'New Warehouse%'
@@ -62,12 +62,12 @@ const getSeqName = async (db: DB | TXAsync) => {
  * If no display name is provided, generates one using getSeqName().
  * Updates are performed as a single transaction.
  *
- * @param {DB} db - Database connection
+ * @param {DBAsync} db - Database connection
  * @param {PickPartial<Warehouse, "displayName" | "discount">} data - Warehouse data with required id
  * @throws {Error} If warehouse id is not provided
  * @returns {Promise<void>} Resolves when upsert completes
  */
-export function upsertWarehouse(db: DB, data: PickPartial<Warehouse, "displayName" | "discount">): Promise<void> {
+export function upsertWarehouse(db: DBAsync, data: PickPartial<Warehouse, "displayName" | "discount">): Promise<void> {
 	if (!data.id) {
 		throw new Error("Warehouse must have an id");
 	}
@@ -98,12 +98,12 @@ export function upsertWarehouse(db: DB, data: PickPartial<Warehouse, "displayNam
  * - Negative quantities for outbound notes
  * Only committed notes are included in calculations.
  *
- * @param {DB} db - Database connection
+ * @param {TXAsync} db - Database connection
  * @param opts - query options, set `skipTotals` to `true` if warehouse total books aren't required for much faster queries
  * @returns {Promise<(Warehouse & { totalBooks: number })[]>} Warehouses with book counts
  */
 async function _getAllWarehouses(
-	db: DB,
+	db: TXAsync,
 	{ skipTotals = false }: { skipTotals?: boolean } = {}
 ): Promise<(Warehouse & { totalBooks: number })[]> {
 	// NOTE: there's a n.committed IS NULL constraint
@@ -153,7 +153,7 @@ async function _getAllWarehouses(
 	return db.execO<Warehouse & { totalBooks: number }>(query);
 }
 
-async function _getWarehouseById(db: DB, id: number) {
+async function _getWarehouseById(db: TXAsync, id: number) {
 	const query = `
 		SELECT
 			id,
@@ -166,7 +166,7 @@ async function _getWarehouseById(db: DB, id: number) {
 	return result;
 }
 
-export function deleteWarehouse(db: DB, id: number) {
+export function deleteWarehouse(db: TXAsync, id: number) {
 	return db.exec("DELETE FROM warehouse WHERE id = ?", [id]);
 }
 

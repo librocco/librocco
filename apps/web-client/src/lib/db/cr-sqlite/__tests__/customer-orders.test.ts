@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { type DB, type Customer, OrderLineStatus } from "../types";
+import { type Customer, OrderLineStatus } from "../types";
 
 import { getRandomDb } from "./lib";
 
@@ -729,7 +729,7 @@ describe("Stress tests", () => {
 		for (let i = 0; i < howMany; i++) {
 			// NOTE: this was wrapped in a transaction, but 'addBooksToCustomer'
 			// already runs inside a transaction (internally)
-			await addBooksToCustomer(db as DB, 1, [
+			await addBooksToCustomer(db, 1, [
 				"9780000000000",
 				"9780000000001",
 				"9780000000002",
