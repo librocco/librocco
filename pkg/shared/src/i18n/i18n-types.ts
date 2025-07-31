@@ -941,6 +941,10 @@ type RootTranslation = {
 			 * T​h​e​ ​w​a​r​e​h​o​u​s​e​ ​y​o​u​'​r​e​ ​a​t​t​e​m​p​t​i​n​g​ ​t​o​ ​a​s​s​i​g​n​ ​t​o​ ​h​a​s​ ​n​o​ ​m​o​r​e​ ​a​v​a​i​l​a​b​l​e​ ​q​u​a​n​t​i​t​y​,​ ​c​l​i​c​k​ ​F​o​r​c​e​ ​W​i​t​h​d​r​a​w​a​l​ ​t​o​ ​s​e​l​e​c​t​ ​a​n​o​t​h​e​r​ ​w​a​r​e​h​o​u​s​e
 			 */
 			insufficient_quantity: string
+			/**
+			 * P​l​e​a​s​e​ ​m​a​k​e​ ​s​u​r​e​ ​a​l​l​ ​i​t​e​m​s​ ​h​a​v​e​ ​a​n​ ​a​s​s​i​g​n​e​d​ ​w​a​r​e​h​o​u​s​e​.
+			 */
+			no_warehouse_selected_commit_self: string
 		}
 	}
 	sale_page: {
@@ -3637,6 +3641,10 @@ export type TranslationFunctions = {
 			 * The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse
 			 */
 			insufficient_quantity: () => LocalizedString
+			/**
+			 * Please make sure all items have an assigned warehouse.
+			 */
+			no_warehouse_selected_commit_self: () => LocalizedString
 		}
 	}
 	sale_page: {

@@ -606,8 +606,7 @@ const sale_note = {
 	},
 	alerts: {
 		insufficient_quantity:
-			"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse"
-	, no_warehouse_selected_commit_self: "Please make sure all items have an assigned warehouse."
+			"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse",	no_warehouse_selected_commit_self: "Please make sure all items have an assigned warehouse."
 	}
 };
 
