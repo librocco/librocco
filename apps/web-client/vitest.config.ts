@@ -21,6 +21,7 @@ function alias_vlcn_dev() {
 		"@vlcn.io/crsqlite": path.resolve(__dirname, "../../3rd-party/js/deps/cr-sqlite/core/nodejs-helper.js"),
 		"@vlcn.io/crsqlite-wasm": path.resolve(__dirname, "../../3rd-party/js/packages/crsqlite-wasm/dist"),
 		"@vlcn.io/rx-tbl": path.resolve(__dirname, "../../3rd-party/js/packages/rx-tbl/dist"),
+		"@vlcn.io/wa-sqlite": path.resolve(__dirname, "../../3rd-party/js/deps/wa-sqlite"),
 		"@vlcn.io/ws-browserdb": path.resolve(__dirname, "../../3rd-party/js/packages/ws-browserdb/dist"),
 		"@vlcn.io/ws-client/worker.js": path.resolve(__dirname, "../../3rd-party/js/packages/ws-client/dist/worker/worker.js"),
 		"@vlcn.io/ws-client": path.resolve(__dirname, "../../3rd-party/js/packages/ws-client/dist"),
