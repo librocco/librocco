@@ -2,7 +2,7 @@ import { cryb64 } from "@vlcn.io/ws-common";
 
 import { zip } from "@librocco/shared";
 
-import type { DB } from "../types";
+import type { TXAsync } from "../types";
 import { getDB } from "../db";
 
 function firstPick<T>(data: any[]): T | undefined {
@@ -77,7 +77,7 @@ const logger = newLogger();
  *
  * IMPORTANT NOTE: This is for debug purposes only and should NEVER be used in production as (unlike the original) it doesn't wrap everything into a transaction
  */
-export async function jsAutomigrateTo(db: DB, schemaName: string, schemaContent: string): Promise<"noop" | "apply" | "migrate"> {
+export async function jsAutomigrateTo(db: TXAsync, schemaName: string, schemaContent: string): Promise<"noop" | "apply" | "migrate"> {
 	const l = logger.extend("jsAutomigrateTo");
 	l.start({ db, schemaName, schemaContent });
 
@@ -130,7 +130,7 @@ export async function jsAutomigrateTo(db: DB, schemaName: string, schemaContent:
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L31
  */
-export async function crsql_automigrate(db: DB, schema: string, cleanup_stmt: string): Promise<void> {
+export async function crsql_automigrate(db: TXAsync, schema: string, cleanup_stmt: string): Promise<void> {
 	const l = logger.extend("crsql_automigrate");
 	l.start({ db, schema, cleanup_stmt });
 
@@ -146,11 +146,11 @@ export async function crsql_automigrate(db: DB, schema: string, cleanup_stmt: st
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L55
  */
-export async function automigrate_impl(db: DB, schema: string, cleanup_stmt: string) {
+export async function automigrate_impl(db: TXAsync, schema: string, cleanup_stmt: string) {
 	const l = logger.extend("automigrate_impl");
 	l.start({ db, schema, cleanup_stmt });
 
-	const cleanup = (mem_db: DB) => mem_db.exec(cleanup_stmt);
+	const cleanup = (mem_db: TXAsync) => mem_db.exec(cleanup_stmt);
 
 	const local_db = db;
 	const desired_schema = schema;
@@ -207,7 +207,7 @@ export async function automigrate_impl(db: DB, schema: string, cleanup_stmt: str
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L106
  */
-export async function migrate_to(local_db: DB, mem_db: DB) {
+export async function migrate_to(local_db: TXAsync, mem_db: TXAsync) {
 	const l = logger.extend("migrate_to");
 	l.start({ local_db, mem_db });
 
@@ -263,7 +263,7 @@ export function strip_crr_statements(schema: string) {
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L169
  */
-export async function drop_tables(local_db: DB, tables: string[]) {
+export async function drop_tables(local_db: TXAsync, tables: string[]) {
 	const l = logger.extend("drop_tables");
 	l.start({ local_db, tables });
 
@@ -277,7 +277,7 @@ export async function drop_tables(local_db: DB, tables: string[]) {
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L181
  */
-export async function maybe_modify_table(local_db: DB, table: string, mem_db: DB) {
+export async function maybe_modify_table(local_db: TXAsync, table: string, mem_db: TXAsync) {
 	const l = logger.extend("maybe_modify_table");
 	l.start({ local_db, table, mem_db });
 
@@ -319,7 +319,7 @@ export async function maybe_modify_table(local_db: DB, table: string, mem_db: DB
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/is_crr.rs#L10
  */
-export async function is_crr(local_db: DB, table: string) {
+export async function is_crr(local_db: TXAsync, table: string) {
 	const l = logger.extend("is_crr");
 	l.start({ local_db, table });
 
@@ -332,7 +332,7 @@ export async function is_crr(local_db: DB, table: string) {
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L236
  */
-export async function drop_columns(local_db: DB, table: string, columns: string[]) {
+export async function drop_columns(local_db: TXAsync, table: string, columns: string[]) {
 	const l = logger.extend("drop_columns");
 	l.start({ local_db, table, columns });
 
@@ -352,7 +352,7 @@ export async function drop_columns(local_db: DB, table: string, columns: string[
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L256
  */
-export async function add_columns(local_db: DB, table: string, columns: string[], mem_db: DB) {
+export async function add_columns(local_db: TXAsync, table: string, columns: string[], mem_db: TXAsync) {
 	const l = logger.extend("add_columns");
 	l.start({ local_db, table, columns, mem_db });
 
@@ -386,7 +386,7 @@ export async function add_columns(local_db: DB, table: string, columns: string[]
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L301
  */
-export async function add_column(local_db: DB, table: string, name: string, col_type: string, notnull: number, dflt_val: unknown) {
+export async function add_column(local_db: TXAsync, table: string, name: string, col_type: string, notnull: number, dflt_val: unknown) {
 	const l = logger.extend("add_column");
 	l.start({ local_db, table, name, col_type, notnull, dflt_val });
 
@@ -400,7 +400,7 @@ export async function add_column(local_db: DB, table: string, name: string, col_
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L328
  */
-export async function maybe_update_indices(local_db: DB, table: string, mem_db: DB) {
+export async function maybe_update_indices(local_db: TXAsync, table: string, mem_db: TXAsync) {
 	const l = logger.extend("maybe_update_indices");
 	l.start({ local_db, table, mem_db });
 
@@ -437,7 +437,7 @@ export async function maybe_update_indices(local_db: DB, table: string, mem_db: 
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L374
  */
-export async function drop_indices(local_db: DB, dropped: string[]) {
+export async function drop_indices(local_db: TXAsync, dropped: string[]) {
 	const l = logger.extend("drop_indices");
 	l.start({ local_db, dropped });
 
@@ -466,7 +466,7 @@ export async function drop_indices(local_db: DB, dropped: string[]) {
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L396
  *
  */
-export async function maybe_recreate_index(local_db: DB, table: string, idx: string, mem_db: DB) {
+export async function maybe_recreate_index(local_db: TXAsync, table: string, idx: string, mem_db: TXAsync) {
 	const l = logger.extend("maybe_recreate_index");
 	l.start({ local_db, table, idx, mem_db });
 
@@ -514,7 +514,7 @@ export async function maybe_recreate_index(local_db: DB, table: string, idx: str
 /**
  * @see https://github.com/vlcn-io/cr-sqlite/blob/891fe9e0190dd20917f807d739c809e1bc32f6a3/core/rs/core/src/automigrate.rs#L447
  */
-export async function recreate_index(local_db: DB, idx: string) {
+export async function recreate_index(local_db: TXAsync, idx: string) {
 	const l = logger.extend("recreate_index");
 	l.start({ local_db, idx });
 
