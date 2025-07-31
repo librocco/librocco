@@ -611,7 +611,7 @@
 					<select
 						id="defaultWarehouse"
 						name="defaultWarehouse"
-						class="select-bordered select select-sm h-full"
+						class="select-bordered select h-full"
 						class:italic={!defaultWarehouse && warehouses.length > 0}
 						value={defaultWarehouse || ""}
 						on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
@@ -627,8 +627,7 @@
 					use:melt={$customItemDialogTrigger}
 					on:m-click={() => openCustomItemForm()}
 					on:m-keydown={() => openCustomItemForm()}
-					class="btn-neutral btn-sm btn max-sm:w-full
-sm:mx-2"
+					class="btn-neutral btn max-sm:w-full sm:mx-2"
 				>
 					<Plus />
 					{tOutbound.labels.custom_item()}</button

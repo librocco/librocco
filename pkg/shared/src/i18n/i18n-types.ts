@@ -932,7 +932,7 @@ type RootTranslation = {
 			 */
 			no_warehouses: string
 			/**
-			 * S​c​a​n​ ​t​o​ ​a​d​d​ ​b​o​o​k​s
+			 * S​c​a​n​ ​t​o​ ​s​e​l​e​c​t​ ​b​o​o​k​s​ ​f​r​o​m​.​.​.
 			 */
 			scan_title: string
 			/**
@@ -3632,7 +3632,7 @@ export type TranslationFunctions = {
 			 */
 			no_warehouses: () => LocalizedString
 			/**
-			 * Scan to add books
+			 * Scan to select books from...
 			 */
 			scan_title: () => LocalizedString
 			/**
