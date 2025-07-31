@@ -29,7 +29,8 @@
  */
 
 import {
-	type DB,
+	type DBAsync,
+	type TXAsync,
 	type Customer,
 	type DBCustomerOrderLine,
 	type CustomerOrderLine,
@@ -51,7 +52,7 @@ import { timed } from "$lib/utils/timer";
  * @param {Customer} customer - Customer data
  * @throws {Error} If customer ID is not provided
  */
-async function _upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt">) {
+async function _upsertCustomer(db: TXAsync, customer: Omit<Customer, "updatedAt">) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
 	}
@@ -92,7 +93,7 @@ async function _upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt">) {
 }
 
 /** Checks if there's another customer with the same display ID */
-export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
+export const isDisplayIdUnique = async (db: TXAsync, customer: Customer) => {
 	const [res] = await db.execO<{ count: number }>("SELECT COUNT(*) as count FROM customer WHERE display_id = ? AND id != ?", [
 		customer.displayId,
 		customer.id
@@ -100,7 +101,7 @@ export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
 	return !res.count;
 };
 
-export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
+export const getCustomerDisplayIdSeq = async (db: TXAsync): Promise<number> => {
 	const [result] = await db.execO<{ nextId: number }>(
 		"SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer WHERE CAST(display_id AS INTEGER) < 10000;"
 	);
@@ -117,7 +118,7 @@ export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
  *
  * TODO: it would probably make more sense to return Promise<Customer | undefined> (instead of a list)
  */
-export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer> => {
+export const getCustomerDetails = async (db: TXAsync, customerId: number): Promise<Customer> => {
 	const [result] = await db.execO<DBCustomer>(
 		`
 			SELECT
@@ -151,7 +152,7 @@ const unmarshallCustomerOrder = ({ updated_at, ...customer }: DBCustomer): Custo
  * @param {DB} db - Database connection
  * @returns {Promise<CustomerOrderListItem[]>} Array of customers
  */
-async function _getCustomerOrderList(db: DB): Promise<CustomerOrderListItem[]> {
+async function _getCustomerOrderList(db: TXAsync): Promise<CustomerOrderListItem[]> {
 	const orderLineStatusQuery = `
 		SELECT
 			customer_id,
@@ -200,7 +201,7 @@ const unmarshallCustomerOrderListItem = ({ updated_at, status, ...customer }: DB
  * @returns {Promise<void>} A promise that resolves when both operations complete successfully
  * @throws {Error} If the database transaction fails
  */
-export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
+export const addBooksToCustomer = async (db: DBAsync, customerId: number, bookIsbns: string[]): Promise<void> => {
 	return await db.tx(async (db) => {
 		const timestamp = Date.now();
 		const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
@@ -229,7 +230,7 @@ export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: 
  * @example
  * await removeBooksFromCustomer(db, 123, [456, 789]); // Removes order lines 456 and 789 from customer 123
  */
-export const removeBooksFromCustomer = async (db: DB, customerId: number, bookIds: number[]): Promise<void> => {
+export const removeBooksFromCustomer = async (db: DBAsync, customerId: number, bookIds: number[]): Promise<void> => {
 	return await db.tx(async (db) => {
 		await db.exec(`DELETE FROM customer_order_lines WHERE customer_id = ? AND id IN (${multiplyString("?", bookIds.length)})`, [
 			customerId,
@@ -251,7 +252,7 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
  * @param {number} customerId - Customer to query orders for
  * @returns {Promise<CustomerOrderLine[]>} Customer's order lines
  */
-export const getCustomerOrderLines = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
+export const getCustomerOrderLines = async (db: TXAsync, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT
 			id, customer_id, created, placed, received, collected,
@@ -309,7 +310,7 @@ export const unmarshalCustomerOrderLine = (line: DBCustomerOrderLine): CustomerO
  * Retrieves a history entries for each time a particular customer order line had been placed with a supplier.
  * TODO: history is the best I cound come up with in terms of nomenclature, maybe revisit
  */
-async function _getCustomerOrderLineHistory(db: DB, lineId: number): Promise<CustomerOrderLineHistory[]> {
+async function _getCustomerOrderLineHistory(db: TXAsync, lineId: number): Promise<CustomerOrderLineHistory[]> {
 	const query = `
 		SELECT
 			supplier_order_id AS supplierOrderId,
@@ -334,7 +335,7 @@ export const multiplyString = (str: string, n: number) => Array(n).fill(str).joi
  * @param {ids[]} ids - Array of supplier order line ids that have been collected
  * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as collected
  */
-export const markCustomerOrderAsCollected = async (db: DB, ids: number[]): Promise<void> => {
+export const markCustomerOrderAsCollected = async (db: DBAsync, ids: number[]): Promise<void> => {
 	if (!ids.length) return;
 	return db.tx(async (txDb) => {
 		const timestamp = Date.now();
@@ -350,7 +351,7 @@ export const markCustomerOrderAsCollected = async (db: DB, ids: number[]): Promi
 	});
 };
 
-export const markCustomerOrderLinesAsCollected = async (db: DB, ids: number[]): Promise<void> => {
+export const markCustomerOrderLinesAsCollected = async (db: TXAsync, ids: number[]): Promise<void> => {
 	if (!ids.length) return;
 
 	const timestamp = Date.now();

@@ -15,7 +15,7 @@
  * - warehouse table: Location names and discounts
  */
 
-import type { DB, PastNoteItem, PastTransactionItem, NoteType } from "./types";
+import type { TXAsync, PastNoteItem, PastTransactionItem, NoteType } from "./types";
 
 import { timed } from "$lib/utils/timer";
 
@@ -28,7 +28,7 @@ import { timed } from "$lib/utils/timer";
  * @param {string} date - Date to query in YYYY-MM-DD format
  * @returns {Promise<PastNoteItem[]>} Committed notes
  */
-async function _getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
+async function _getPastNotes(db: TXAsync, date: string): Promise<PastNoteItem[]> {
 	const query = `
             SELECT
                 n.id,
@@ -89,7 +89,7 @@ type Params = {
  * @param {Params} params - Query filters
  * @returns {Promise<PastTransactionItem[]>} Historical transactions
  */
-async function _getPastTransactions(db: DB, params: Params): Promise<PastTransactionItem[]> {
+async function _getPastTransactions(db: TXAsync, params: Params): Promise<PastTransactionItem[]> {
 	const { isbn, warehouseId, startDate, endDate, noteType } = params;
 	const conditions = [];
 	const values = [];
