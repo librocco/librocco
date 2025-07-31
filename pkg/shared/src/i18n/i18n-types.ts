@@ -839,6 +839,32 @@ type RootTranslation = {
 			 */
 			quantity: string
 		}
+		force_withdrawal_dialog: {
+			/**
+			 * F​o​r​c​e​ ​w​i​t​h​d​r​a​w​a​l​ ​f​o​r​ ​{​i​s​b​n​}​?
+			 * @param {string} isbn
+			 */
+			title: RequiredParams<'isbn'>
+			/**
+			 * C​a​n​c​e​l
+			 */
+			cancel: string
+			/**
+			 * C​o​n​f​i​r​m
+			 */
+			confirm: string
+			/**
+			 * T​h​i​s​ ​b​o​o​k​ ​i​s​ ​o​u​t​ ​o​f​ ​s​t​o​c​k​.​ ​I​f​ ​y​o​u​'​r​e​ ​c​e​r​t​a​i​n​ ​a​d​d​i​t​i​o​n​a​l​ ​c​o​p​i​e​s​ ​e​x​i​s​t​,​ ​y​o​u​ ​c​a​n​ ​m​a​n​u​a​l​l​y​ ​s​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​f​o​r​c​e​ ​t​h​e​ ​w​i​t​h​d​r​a​w​a​l​.
+			 */
+			description: string
+			/**
+			 * A​ ​s​t​o​c​k​ ​a​d​j​u​s​t​m​e​n​t​ ​w​i​l​l​ ​b​e​ ​r​e​c​o​r​d​e​d​ ​f​o​r​ ​{​q​u​a​n​t​i​t​y​}​ ​{​{​c​o​p​y​|​c​o​p​i​e​s​}​}​ ​o​f​ ​{​i​s​b​n​}​ ​i​n​ ​{​d​i​s​p​l​a​y​N​a​m​e​}​.
+			 * @param {string} displayName
+			 * @param {string} isbn
+			 * @param {number} quantity
+			 */
+			selected_warehouse_message: RequiredParams<'displayName' | 'isbn' | 'quantity'>
+		}
 		labels: {
 			/**
 			 * N​e​w​ ​N​o​t​e
@@ -876,6 +902,10 @@ type RootTranslation = {
 			 * C​u​s​t​o​m​ ​i​t​e​m
 			 */
 			custom_item: string
+			/**
+			 * F​o​r​c​e​ ​w​i​t​h​d​r​a​w​a​l
+			 */
+			force_withdrawal: string
 		}
 		stats: {
 			/**
@@ -905,6 +935,12 @@ type RootTranslation = {
 			 * P​l​u​g​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
 			 */
 			scan_description: string
+		}
+		alerts: {
+			/**
+			 * T​h​e​ ​w​a​r​e​h​o​u​s​e​ ​y​o​u​'​r​e​ ​a​t​t​e​m​p​t​i​n​g​ ​t​o​ ​a​s​s​i​g​n​ ​t​o​ ​h​a​s​ ​n​o​ ​m​o​r​e​ ​a​v​a​i​l​a​b​l​e​ ​q​u​a​n​t​i​t​y​,​ ​c​l​i​c​k​ ​F​o​r​c​e​ ​W​i​t​h​d​r​a​w​a​l​ ​t​o​ ​s​e​l​e​c​t​ ​a​n​o​t​h​e​r​ ​w​a​r​e​h​o​u​s​e
+			 */
+			insufficient_quantity: string
 		}
 	}
 	sale_page: {
@@ -1711,7 +1747,7 @@ type RootTranslation = {
 			 */
 			reconcile: string
 			/**
-			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
+			 * R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
 		}
@@ -1933,6 +1969,10 @@ type RootTranslation = {
 				 * R​o​w​ ​A​c​t​i​o​n​s
 				 */
 				row_actions: string
+				/**
+				 * T​y​p​e
+				 */
+				type: string
 			}
 		}
 		order_tables: {
@@ -2020,6 +2060,10 @@ type RootTranslation = {
 			 * R​e​m​o​t​e​ ​D​B
 			 */
 			remote_db: string
+			/**
+			 * R​e​l​o​a​d​ ​t​r​a​n​s​l​a​t​i​o​n​s​ ​o​v​e​r​r​i​d​e​s
+			 */
+			reload_translations_override: string
 		}
 		page_layout: {
 			/**
@@ -2032,15 +2076,30 @@ type RootTranslation = {
 			checkout: string
 		}
 		warehouse_select: {
-			/**
-			 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​w​i​t​h​d​r​a​w​ ​b​o​o​k​ ​{​r​o​w​I​x​}​ ​f​r​o​m
-			 * @param {unknown} rowIx
-			 */
-			label: RequiredParams<'rowIx'>
+			label: {
+				/**
+				 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​t​o​ ​w​i​t​h​d​r​a​w​ ​b​o​o​k​ ​{​r​o​w​I​x​}​ ​f​r​o​m
+				 * @param {number} rowIx
+				 */
+				aria: RequiredParams<'rowIx'>
+				/**
+				 * F​o​r​c​e​d
+				 */
+				forced: string
+				/**
+				 * {​c​o​u​n​t​}​ ​{​{​c​o​p​y​|​c​o​p​i​e​s​}​}​ ​a​v​a​i​l​a​b​l​e
+				 * @param {number} count
+				 */
+				book_count: RequiredParams<'count'>
+			}
 			/**
 			 * S​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e
 			 */
 			default_option: string
+			/**
+			 * N​o​ ​s​t​o​c​k​ ​a​v​a​i​l​a​b​l​e​.​.​.
+			 */
+			empty_options: string
 		}
 	}
 	layout: {
@@ -3481,6 +3540,28 @@ export type TranslationFunctions = {
 			 */
 			quantity: () => LocalizedString
 		}
+		force_withdrawal_dialog: {
+			/**
+			 * Force withdrawal for {isbn}?
+			 */
+			title: (arg: { isbn: string }) => LocalizedString
+			/**
+			 * Cancel
+			 */
+			cancel: () => LocalizedString
+			/**
+			 * Confirm
+			 */
+			confirm: () => LocalizedString
+			/**
+			 * This book is out of stock. If you're certain additional copies exist, you can manually select a warehouse to force the withdrawal.
+			 */
+			description: () => LocalizedString
+			/**
+			 * A stock adjustment will be recorded for {quantity} {{copy|copies}} of {isbn} in {displayName}.
+			 */
+			selected_warehouse_message: (arg: { displayName: string, isbn: string, quantity: number }) => LocalizedString
+		}
 		labels: {
 			/**
 			 * New Note
@@ -3518,6 +3599,10 @@ export type TranslationFunctions = {
 			 * Custom item
 			 */
 			custom_item: () => LocalizedString
+			/**
+			 * Force withdrawal
+			 */
+			force_withdrawal: () => LocalizedString
 		}
 		stats: {
 			/**
@@ -3546,6 +3631,12 @@ export type TranslationFunctions = {
 			 * Plugin your barcode scanner and pull the trigger
 			 */
 			scan_description: () => LocalizedString
+		}
+		alerts: {
+			/**
+			 * The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse
+			 */
+			insufficient_quantity: () => LocalizedString
 		}
 	}
 	sale_page: {
@@ -4339,7 +4430,7 @@ export type TranslationFunctions = {
 			 */
 			reconcile: () => LocalizedString
 			/**
-			 * View Reconciliation
+			 * Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
 		}
@@ -4561,6 +4652,10 @@ export type TranslationFunctions = {
 				 * Row Actions
 				 */
 				row_actions: () => LocalizedString
+				/**
+				 * Type
+				 */
+				type: () => LocalizedString
 			}
 		}
 		order_tables: {
@@ -4648,6 +4743,10 @@ export type TranslationFunctions = {
 			 * Remote DB
 			 */
 			remote_db: () => LocalizedString
+			/**
+			 * Reload translations overrides
+			 */
+			reload_translations_override: () => LocalizedString
 		}
 		page_layout: {
 			/**
@@ -4660,14 +4759,28 @@ export type TranslationFunctions = {
 			checkout: () => LocalizedString
 		}
 		warehouse_select: {
-			/**
-			 * Select a warehouse to withdraw book {rowIx} from
-			 */
-			label: (arg: { rowIx: unknown }) => LocalizedString
+			label: {
+				/**
+				 * Select a warehouse to withdraw book {rowIx} from
+				 */
+				aria: (arg: { rowIx: number }) => LocalizedString
+				/**
+				 * Forced
+				 */
+				forced: () => LocalizedString
+				/**
+				 * {count} {{copy|copies}} available
+				 */
+				book_count: (arg: { count: number }) => LocalizedString
+			}
 			/**
 			 * Select a warehouse
 			 */
 			default_option: () => LocalizedString
+			/**
+			 * No stock available...
+			 */
+			empty_options: () => LocalizedString
 		}
 	}
 	layout: {

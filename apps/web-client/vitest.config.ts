@@ -42,7 +42,8 @@ export default defineConfig({
 		include: [
 			"src/lib/db/cr-sqlite/__tests__/**/*.{test,spec}.{js,ts}",
 			"src/lib/db/__tests__/**/*.{test,spec}.{js,ts}",
-			"src/lib/utils/__tests__/**/*.{test,spec}.{js,ts}"
+			"src/lib/utils/__tests__/**/*.{test,spec}.{js,ts}",
+			"src/lib/__tests__/**/*.{test,spec}.{js,ts}"
 		],
 		browser: {
 			enabled: true,
