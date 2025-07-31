@@ -5247,23 +5247,6 @@ packages:
       vite: 6.0.15(tsx@4.19.4)
     dev: true
 
-  /@vitest/mocker@3.0.9(vite@6.0.15):
-    resolution: {integrity: sha512-ryERPIBOnvevAkTq+L1lD+DTFBRcjueL9lOUfXsLfwP92h4e+Heb+PjiqS3/OURWPtywfafK0kj++yDFjWUmrA==}
-    peerDependencies:
-      msw: ^2.4.9
-      vite: ^5.0.0 || ^6.0.0
-    peerDependenciesMeta:
-      msw:
-        optional: true
-      vite:
-        optional: true
-    dependencies:
-      '@vitest/spy': 3.0.9
-      estree-walker: 3.0.3
-      magic-string: 0.30.17
-      vite: 6.0.15(tsx@4.20.3)
-    dev: true
-
   /@vitest/pretty-format@2.0.5:
     resolution: {integrity: sha512-h8k+1oWHfwTkyTkb9egzwNMfJAEx4veaPSnMeKbVSjp4euqGSbQlm5+6VHwTr7u4FJslVVsUG5nopCaAYdOmSQ==}
     dependencies:
@@ -5327,7 +5310,7 @@ packages:
       sirv: 3.0.1
       tinyglobby: 0.2.14
       tinyrainbow: 2.0.0
-      vitest: 3.0.9(@vitest/ui@3.0.9)(tsx@4.20.3)
+      vitest: 3.0.9(@vitest/browser@3.0.9)(@vitest/ui@3.0.9)(tsx@4.19.4)
     dev: true
 
   /@vitest/utils@2.0.5:
@@ -13063,7 +13046,7 @@ packages:
     dependencies:
       '@types/node': 16.18.126
       '@vitest/expect': 3.0.9
-      '@vitest/mocker': 3.0.9(vite@6.0.15)
+      '@vitest/mocker': 3.0.9(msw@2.10.4)(vite@6.0.15)
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.0.9
       '@vitest/snapshot': 3.0.9
@@ -13128,7 +13111,7 @@ packages:
     dependencies:
       '@vitest/browser': 3.0.9(playwright@1.50.1)(typescript@5.8.3)(vite@6.0.15)(vitest@3.0.9)
       '@vitest/expect': 3.0.9
-      '@vitest/mocker': 3.0.9(vite@6.0.15)
+      '@vitest/mocker': 3.0.9(msw@2.10.4)(vite@6.0.15)
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.0.9
       '@vitest/snapshot': 3.0.9
@@ -13192,7 +13175,7 @@ packages:
         optional: true
     dependencies:
       '@vitest/expect': 3.0.9
-      '@vitest/mocker': 3.0.9(vite@6.0.15)
+      '@vitest/mocker': 3.0.9(msw@2.10.4)(vite@6.0.15)
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.0.9
       '@vitest/snapshot': 3.0.9
@@ -13628,7 +13611,7 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz:
-    resolution: {integrity: sha512-oYkBs13UO197XJU+3PYN7wTuBGMw+rRUkv65jBo1WQpKjtaGf5BPloa93EwRWO7jLrICSGySr0vjZFD3DXPFZQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
+    resolution: {integrity: sha512-ub5aKNz3CaHBfqldIlL0fu9I8M7tF3yx+0FF5l4WA97MzQfbfvqK5PaJlMD49HanNNR518GJ/KNpqIS8RsAOuw==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
     name: '@vlcn.io/crsqlite-wasm'
     version: 0.16.0
     dependencies:
@@ -13645,12 +13628,12 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz:
-    resolution: {integrity: sha512-0x/oHxQWOv80q9h7UDwwmarPlFuhjVc99SAdgUZGhyXT4v6jlB9YxwkTZOSmN+PHU7U4s+5YvVY1zZ7rwZ4RzA==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
+    resolution: {integrity: sha512-6SwOK8TnDctAPioh5EGwV74epILqI8rRyz7j/U6e7ZRG6ob1qqHjpXkm3hT51fSLG5qXWs94A/VnIta73041sw==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
     name: '@vlcn.io/wa-sqlite'
     version: 0.22.0
 
   file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz:
-    resolution: {integrity: sha512-NQWJLBJq4K8Tc0ZzfOnGkxPzUjJ1nCVsZhtgejFsQWK8+S3xOsm8xFaj22MdDNlgnhITzTadLDumoKqT4c5IeQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
+    resolution: {integrity: sha512-T8xd50vqQRDGoAP6nG+dRBroq27cdp/sod8m/ZrjMAeE4o3Q34wsecN0y9cCqWNsVbhC2TGJeZgM03zHPcu13Q==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
     name: '@vlcn.io/ws-browserdb'
     version: 0.2.0
     dependencies:
