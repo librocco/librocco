@@ -3,6 +3,7 @@ import type { VolumeStockKind } from "@librocco/shared";
 
 type InventoryTableDataBook = NoteEntriesItem & {
 	__kind?: "book";
+	type?: string;
 	availableWarehouses?: Map<number, { displayName: string; quantity: number }>;
 };
 type InventoryTableDataCustomItem = NoteCustomItem & {

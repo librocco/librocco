@@ -30,7 +30,17 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 			warehouses: [] as Warehouse[],
 			entries: [] as NoteEntriesItem[],
 			customItems: [] as NoteCustomItem[],
-			publisherList: [] as string[]
+			publisherList: [] as string[],
+			isbnAvailability: Map<
+				string,
+				Map<
+					number,
+					{
+						displayName: string;
+						quantity: number;
+					}
+				>
+			>
 		};
 	}
 
@@ -54,6 +64,17 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 
 	// Get availability by ISBN
 	const isbns = _entries.map(({ isbn }) => isbn);
+	/**
+	Map {
+  "978-3-16-148410-0" => Map {
+    111 => { displayName: "Warehouse111", quantity: 10 },
+    222 => { displayName: "Warehouse222", quantity: 5 }
+  },
+  "978-1-40-289462-6" => Map {
+    111 => { displayName: "Warehouse111", quantity: 8 }
+  }
+}
+	 */
 	const isbnAvailability = new Map(isbns.map((isbn) => [isbn, new Map<number, { displayName: string; quantity: number }>()]));
 
 	// NOTE: we're skipping this part as it's completely unnecessary if there are no entries,
@@ -61,11 +82,47 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	// query in case of fully populated database
 	const stock = await getStock(dbCtx.db, { isbns });
 	for (const { isbn, warehouseId, warehouseName, quantity } of stock) {
-		isbnAvailability.get(isbn)?.set(warehouseId, { displayName: warehouseName, quantity });
-	}
-	const entries = _entries.map((e) => ({ ...e, availableWarehouses: isbnAvailability.get(e.isbn) }));
+		const warehouseExists = warehouses.find((wh) => wh.id === warehouseId);
 
-	return { dbCtx, ...note, warehouses, entries, customItems, publisherList };
+		if (warehouseExists) {
+			isbnAvailability.get(isbn)?.set(warehouseId, { displayName: warehouseName, quantity });
+		}
+	}
+	// for each entry compare quantity with available quantity in warehouse
+	// assign min(available quantity, quantity) to entry
+	// assign remainder (quantity - available) to forcedEntries\
+	const entries: (NoteEntriesItem & { type: "normal" | "forced" } & {
+		availableWarehouses: Map<number, { displayName: string; quantity: number }>;
+	})[] = [];
+
+	for (const entry of _entries) {
+		const available = isbnAvailability.get(entry.isbn)?.get(entry.warehouseId)?.quantity;
+		if (available && available >= entry.quantity) {
+			// Sufficient stock available
+			entries.push({ ...entry, availableWarehouses: isbnAvailability.get(entry.isbn), type: "normal" });
+		} else {
+			// Insufficient or no stock
+			if (available && available > 0) {
+				// Split into normal and forced entries
+				entries.push({ ...entry, quantity: available, availableWarehouses: isbnAvailability.get(entry.isbn), type: "normal" });
+				entries.push({
+					...entry,
+					quantity: entry.quantity - available,
+					availableWarehouses: isbnAvailability.get(entry.isbn),
+					type: "forced"
+				});
+			} else {
+				// No stock available, entire quantity is forced
+				entries.push({
+					...entry,
+					availableWarehouses: isbnAvailability.get(entry.isbn),
+					type: "forced"
+				});
+			}
+		}
+	}
+
+	return { dbCtx, ...note, warehouses, entries, customItems, publisherList, isbnAvailability };
 };
 
 export const load: PageLoad = timed(_load);

@@ -14,7 +14,8 @@ export const rows: InventoryTableData<"book">[] = [
 		category: "",
 		warehouseId: 1,
 		warehouseName: "Warehouse 1",
-		warehouseDiscount: 20
+		warehouseDiscount: 20,
+		type: "normal"
 	},
 	{
 		isbn: "917289012381",
@@ -29,7 +30,8 @@ export const rows: InventoryTableData<"book">[] = [
 		category: "",
 		warehouseId: 1,
 		warehouseName: "Warehouse 1",
-		warehouseDiscount: 10
+		warehouseDiscount: 10,
+		type: "normal"
 	},
 
 	{
@@ -45,7 +47,8 @@ export const rows: InventoryTableData<"book">[] = [
 		category: "",
 		warehouseId: 1,
 		warehouseName: "Warehouse 1",
-		warehouseDiscount: 0
+		warehouseDiscount: 0,
+		type: "normal"
 	}
 ];
 
