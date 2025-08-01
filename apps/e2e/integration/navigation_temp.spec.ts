@@ -22,7 +22,7 @@ test("should navigate using the side nav", async ({ page }) => {
 
 	// Navigate to 'outbound' page
 	await page.getByRole("link", { name: "Sale" }).click();
-	await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "Outbound" })).toBeVisible();
+	await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "Sales" })).toBeVisible();
 
 	// Navigate to 'settings' page
 	await page.getByRole("link", { name: "Settings" }).click();
