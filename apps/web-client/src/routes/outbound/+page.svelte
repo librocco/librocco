@@ -71,10 +71,10 @@
 
 	let dialogContent: DialogContent | null = null;
 	$: tOutboundPage = $LL.sale_page;
-	$: tCommon = $LL.common;
+	$: tPages = $LL.page_headings;
 </script>
 
-<Page title="Outbound" view="outbound" {db} {plugins}>
+<Page title={tPages.outbound()} view="outbound" {db} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-4 divide-y">
 		<div class="flex w-full items-center">
 			<div class="flex w-full items-center justify-end p-4">

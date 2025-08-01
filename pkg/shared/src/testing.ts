@@ -52,6 +52,7 @@ export type TestId =
 	| "search-completion"
 	| "popover-control"
 	| "popover-container"
+	| "popover-commit"
 	| "edit-row"
 	| "collect-row"
 	| "delete-row"

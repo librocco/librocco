@@ -49,6 +49,20 @@ type RootTranslation = {
 		 */
 		supplier_orders: string
 	}
+	page_headings: {
+		/**
+		 * S​a​l​e​s
+		 */
+		outbound: string
+		/**
+		 * P​u​r​c​h​a​s​e​s
+		 */
+		inbound: string
+		/**
+		 * W​a​r​e​h​o​u​s​e​s
+		 */
+		warehouse: string
+	}
 	search: {
 		/**
 		 * S​e​a​r​c​h
@@ -823,21 +837,46 @@ type RootTranslation = {
 		}
 	}
 	sale_note: {
-		delete_dialog: {
+		commit_dialog: {
 			/**
-			 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​f​o​r​ ​e​a​c​h​ ​o​f​ ​t​h​e​ ​f​o​l​l​o​w​i​n​g​ ​t​r​a​n​s​a​c​t​i​o​n​s
+			 * C​o​m​m​i​t​ ​s​a​l​e​ ​"​{​e​n​t​i​t​y​}​"​?
+			 * @param {unknown} entity
 			 */
-			select_warehouse: string
-		}
-		reconcile_dialog: {
+			title: RequiredParams<'entity'>
 			/**
-			 * P​l​e​a​s​e​ ​r​e​v​i​e​w​ ​t​h​e​ ​f​o​l​l​o​w​i​n​g​ ​t​r​a​n​s​a​c​t​i​o​n​s
+			 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}​ ​w​i​l​l​ ​b​e​ ​r​e​m​o​v​e​d​ ​f​r​o​m​ ​y​o​u​r​ ​s​t​o​c​k
+			 * @param {string | number | boolean} bookCount
 			 */
-			review_transaction: string
-			/**
-			 * q​u​a​n​t​i​t​y​ ​f​o​r​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n
-			 */
-			quantity: string
+			description: RequiredParams<'bookCount'>
+			stock_adjustement_detail: {
+				/**
+				 * S​o​m​e​ ​q​u​a​n​t​i​t​i​e​s​ ​r​e​q​u​e​s​t​e​d​ ​a​r​e​ ​g​r​e​a​t​e​r​ ​t​h​a​n​ ​a​v​a​i​l​a​b​l​e​ ​i​n​ ​s​t​o​c​k​.​ ​P​l​e​a​s​e​ ​r​e​v​i​e​w​ ​t​h​e​ ​f​o​l​l​o​w​i​n​g​ ​s​t​o​c​k​ ​a​d​j​u​s​t​m​e​n​t​s​:
+				 */
+				summary: string
+				detail_list: {
+					/**
+					 * {​i​s​b​n​}​ ​f​r​o​m​ ​{​w​a​r​e​h​o​u​s​e​}
+					 * @param {unknown} isbn
+					 * @param {unknown} warehouse
+					 */
+					row: RequiredParams<'isbn' | 'warehouse'>
+					/**
+					 * R​e​q​u​e​s​t​e​d​:​ ​{​q​u​a​n​t​i​t​y​}​ ​{​{​c​o​p​y​|​c​o​p​i​e​s​}​}
+					 * @param {number} quantity
+					 */
+					requested: RequiredParams<'quantity'>
+					/**
+					 * A​v​a​i​l​a​b​l​e​:​ ​{​q​u​a​n​t​i​t​y​}​ ​{​{​c​o​p​y​|​c​o​p​i​e​s​}​}
+					 * @param {number} quantity
+					 */
+					available: RequiredParams<'quantity'>
+					/**
+					 * A​d​j​u​s​t​m​e​n​t​:​ ​{​q​u​a​n​t​i​t​y​}​ ​{​{​c​o​p​y​|​c​o​p​i​e​s​}​}
+					 * @param {number} quantity
+					 */
+					adjustment: RequiredParams<'quantity'>
+				}
+			}
 		}
 		force_withdrawal_dialog: {
 			/**
@@ -864,6 +903,18 @@ type RootTranslation = {
 			 * @param {number} quantity
 			 */
 			selected_warehouse_message: RequiredParams<'displayName' | 'isbn' | 'quantity'>
+		}
+		create_custom_item_dialog: {
+			/**
+			 * C​r​e​a​t​e​ ​c​u​s​t​o​m​ ​i​t​e​m
+			 */
+			title: string
+		}
+		edit_custom_item_dialog: {
+			/**
+			 * E​d​i​t​ ​c​u​s​t​o​m​ ​i​t​e​m
+			 */
+			title: string
 		}
 		labels: {
 			/**
@@ -945,6 +996,10 @@ type RootTranslation = {
 			 * T​h​e​ ​w​a​r​e​h​o​u​s​e​ ​y​o​u​'​r​e​ ​a​t​t​e​m​p​t​i​n​g​ ​t​o​ ​a​s​s​i​g​n​ ​t​o​ ​h​a​s​ ​n​o​ ​m​o​r​e​ ​a​v​a​i​l​a​b​l​e​ ​q​u​a​n​t​i​t​y​,​ ​c​l​i​c​k​ ​F​o​r​c​e​ ​W​i​t​h​d​r​a​w​a​l​ ​t​o​ ​s​e​l​e​c​t​ ​a​n​o​t​h​e​r​ ​w​a​r​e​h​o​u​s​e
 			 */
 			insufficient_quantity: string
+			/**
+			 * P​l​e​a​s​e​ ​m​a​k​e​ ​s​u​r​e​ ​a​l​l​ ​i​t​e​m​s​ ​h​a​v​e​ ​a​n​ ​a​s​s​i​g​n​e​d​ ​w​a​r​e​h​o​u​s​e​.
+			 */
+			no_warehouse_selected_commit_self: string
 		}
 	}
 	sale_page: {
@@ -991,6 +1046,19 @@ type RootTranslation = {
 		}
 	}
 	purchase_note: {
+		commit_dialog: {
+			/**
+			 * C​o​m​m​i​t​ ​p​u​r​c​h​a​s​e​ ​"​{​e​n​t​i​t​y​}​"​?
+			 * @param {unknown} entity
+			 */
+			title: RequiredParams<'entity'>
+			/**
+			 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}​ ​w​i​l​l​ ​b​e​ ​a​d​d​e​d​ ​t​o​ ​{​w​a​r​e​h​o​u​s​e​N​a​m​e​}
+			 * @param {string | number | boolean} bookCount
+			 * @param {unknown} warehouseName
+			 */
+			description: RequiredParams<'bookCount' | 'warehouseName'>
+		}
 		stats: {
 			/**
 			 * L​a​s​t​ ​u​p​d​a​t​e​d
@@ -1146,51 +1214,6 @@ type RootTranslation = {
 			 */
 			description: string
 		}
-		commit_purchase_dialog: {
-			/**
-			 * C​o​m​m​i​t​ ​p​u​r​c​h​a​s​e​ ​{​e​n​t​i​t​y​}​?
-			 * @param {unknown} entity
-			 */
-			title: RequiredParams<'entity'>
-			/**
-			 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}​ ​w​i​l​l​ ​b​e​ ​a​d​d​e​d​ ​t​o​ ​{​w​a​r​e​h​o​u​s​e​N​a​m​e​}
-			 * @param {string | number | boolean} bookCount
-			 * @param {unknown} warehouseName
-			 */
-			description: RequiredParams<'bookCount' | 'warehouseName'>
-		}
-		commit_sale_dialog: {
-			/**
-			 * C​o​m​m​i​t​ ​s​a​l​e​ ​{​e​n​t​i​t​y​}​?
-			 * @param {unknown} entity
-			 */
-			title: RequiredParams<'entity'>
-			/**
-			 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}​ ​w​i​l​l​ ​b​e​ ​r​e​m​o​v​e​d​ ​f​r​o​m​ ​y​o​u​r​ ​s​t​o​c​k
-			 * @param {string | number | boolean} bookCount
-			 */
-			description: RequiredParams<'bookCount'>
-		}
-		no_warehouse_dialog: {
-			/**
-			 * N​o​ ​w​a​r​e​h​o​u​s​e​(​s​)​ ​s​e​l​e​c​t​e​d
-			 */
-			title: string
-			/**
-			 * C​a​n​'​t​ ​c​o​m​m​i​t​ ​t​h​e​ ​n​o​t​e​ ​a​s​ ​s​o​m​e​ ​t​r​a​n​s​a​c​t​i​o​n​s​ ​d​o​n​'​t​ ​h​a​v​e​ ​a​n​y​ ​w​a​r​e​h​o​u​s​e​ ​s​e​l​e​c​t​e​d
-			 */
-			description: string
-		}
-		reconcile_sale_dialog: {
-			/**
-			 * S​t​o​c​k​ ​m​i​s​m​a​t​c​h
-			 */
-			title: string
-			/**
-			 * S​o​m​e​ ​q​u​a​n​t​i​t​i​e​s​ ​r​e​q​u​e​s​t​e​d​ ​a​r​e​ ​g​r​e​a​t​e​r​ ​t​h​a​n​ ​a​v​a​i​l​a​b​l​e​ ​i​n​ ​s​t​o​c​k​ ​a​n​d​ ​w​i​l​l​ ​n​e​e​d​ ​t​o​ ​b​e​ ​r​e​c​o​n​c​i​l​e​d​ ​i​n​ ​o​r​d​e​r​ ​t​o​ ​p​r​o​c​e​e​d​.
-			 */
-			description: string
-		}
 		edit_book_dialog: {
 			/**
 			 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
@@ -1200,18 +1223,6 @@ type RootTranslation = {
 			 * U​p​d​a​t​e​ ​b​o​o​k​ ​d​e​t​a​i​l​s
 			 */
 			description: string
-		}
-		create_custom_item_dialog: {
-			/**
-			 * C​r​e​a​t​e​ ​c​u​s​t​o​m​ ​i​t​e​m
-			 */
-			title: string
-		}
-		edit_custom_item_dialog: {
-			/**
-			 * E​d​i​t​ ​c​u​s​t​o​m​ ​i​t​e​m
-			 */
-			title: string
 		}
 		edit_warehouse_dialog: {
 			/**
@@ -1246,6 +1257,10 @@ type RootTranslation = {
 			 */
 			description: string
 		}
+		/**
+		 * o​p​e​n​ ​a​c​t​i​o​n​s​ ​d​r​o​p​d​o​w​n
+		 */
+		action_dropdown_trigger_aria: string
 		actions: {
 			/**
 			 * C​a​n​c​e​l
@@ -2757,6 +2772,20 @@ export type TranslationFunctions = {
 		 */
 		supplier_orders: () => LocalizedString
 	}
+	page_headings: {
+		/**
+		 * Sales
+		 */
+		outbound: () => LocalizedString
+		/**
+		 * Purchases
+		 */
+		inbound: () => LocalizedString
+		/**
+		 * Warehouses
+		 */
+		warehouse: () => LocalizedString
+	}
 	search: {
 		/**
 		 * Search
@@ -3528,21 +3557,39 @@ export type TranslationFunctions = {
 		}
 	}
 	sale_note: {
-		delete_dialog: {
+		commit_dialog: {
 			/**
-			 * Please select a warehouse for each of the following transactions
+			 * Commit sale "{entity}"?
 			 */
-			select_warehouse: () => LocalizedString
-		}
-		reconcile_dialog: {
+			title: (arg: { entity: unknown }) => LocalizedString
 			/**
-			 * Please review the following transactions
+			 * {bookCount} book{{s}} will be removed from your stock
 			 */
-			review_transaction: () => LocalizedString
-			/**
-			 * quantity for reconciliation
-			 */
-			quantity: () => LocalizedString
+			description: (arg: { bookCount: string | number | boolean }) => LocalizedString
+			stock_adjustement_detail: {
+				/**
+				 * Some quantities requested are greater than available in stock. Please review the following stock adjustments:
+				 */
+				summary: () => LocalizedString
+				detail_list: {
+					/**
+					 * {isbn} from {warehouse}
+					 */
+					row: (arg: { isbn: unknown, warehouse: unknown }) => LocalizedString
+					/**
+					 * Requested: {quantity} {{copy|copies}}
+					 */
+					requested: (arg: { quantity: number }) => LocalizedString
+					/**
+					 * Available: {quantity} {{copy|copies}}
+					 */
+					available: (arg: { quantity: number }) => LocalizedString
+					/**
+					 * Adjustment: {quantity} {{copy|copies}}
+					 */
+					adjustment: (arg: { quantity: number }) => LocalizedString
+				}
+			}
 		}
 		force_withdrawal_dialog: {
 			/**
@@ -3565,6 +3612,18 @@ export type TranslationFunctions = {
 			 * A stock adjustment will be recorded for {quantity} {{copy|copies}} of {isbn} in {displayName}.
 			 */
 			selected_warehouse_message: (arg: { displayName: string, isbn: string, quantity: number }) => LocalizedString
+		}
+		create_custom_item_dialog: {
+			/**
+			 * Create custom item
+			 */
+			title: () => LocalizedString
+		}
+		edit_custom_item_dialog: {
+			/**
+			 * Edit custom item
+			 */
+			title: () => LocalizedString
 		}
 		labels: {
 			/**
@@ -3645,6 +3704,10 @@ export type TranslationFunctions = {
 			 * The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse
 			 */
 			insufficient_quantity: () => LocalizedString
+			/**
+			 * Please make sure all items have an assigned warehouse.
+			 */
+			no_warehouse_selected_commit_self: () => LocalizedString
 		}
 	}
 	sale_page: {
@@ -3690,6 +3753,16 @@ export type TranslationFunctions = {
 		}
 	}
 	purchase_note: {
+		commit_dialog: {
+			/**
+			 * Commit purchase "{entity}"?
+			 */
+			title: (arg: { entity: unknown }) => LocalizedString
+			/**
+			 * {bookCount} book{{s}} will be added to {warehouseName}
+			 */
+			description: (arg: { bookCount: string | number | boolean, warehouseName: unknown }) => LocalizedString
+		}
 		stats: {
 			/**
 			 * Last updated
@@ -3844,46 +3917,6 @@ export type TranslationFunctions = {
 			 */
 			description: () => LocalizedString
 		}
-		commit_purchase_dialog: {
-			/**
-			 * Commit purchase {entity}?
-			 */
-			title: (arg: { entity: unknown }) => LocalizedString
-			/**
-			 * {bookCount} book{{s}} will be added to {warehouseName}
-			 */
-			description: (arg: { bookCount: string | number | boolean, warehouseName: unknown }) => LocalizedString
-		}
-		commit_sale_dialog: {
-			/**
-			 * Commit sale {entity}?
-			 */
-			title: (arg: { entity: unknown }) => LocalizedString
-			/**
-			 * {bookCount} book{{s}} will be removed from your stock
-			 */
-			description: (arg: { bookCount: string | number | boolean }) => LocalizedString
-		}
-		no_warehouse_dialog: {
-			/**
-			 * No warehouse(s) selected
-			 */
-			title: () => LocalizedString
-			/**
-			 * Can't commit the note as some transactions don't have any warehouse selected
-			 */
-			description: () => LocalizedString
-		}
-		reconcile_sale_dialog: {
-			/**
-			 * Stock mismatch
-			 */
-			title: () => LocalizedString
-			/**
-			 * Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed.
-			 */
-			description: () => LocalizedString
-		}
 		edit_book_dialog: {
 			/**
 			 * Edit book details
@@ -3893,18 +3926,6 @@ export type TranslationFunctions = {
 			 * Update book details
 			 */
 			description: () => LocalizedString
-		}
-		create_custom_item_dialog: {
-			/**
-			 * Create custom item
-			 */
-			title: () => LocalizedString
-		}
-		edit_custom_item_dialog: {
-			/**
-			 * Edit custom item
-			 */
-			title: () => LocalizedString
 		}
 		edit_warehouse_dialog: {
 			/**
@@ -3938,6 +3959,10 @@ export type TranslationFunctions = {
 			 */
 			description: () => LocalizedString
 		}
+		/**
+		 * open actions dropdown
+		 */
+		action_dropdown_trigger_aria: () => LocalizedString
 		actions: {
 			/**
 			 * Cancel
