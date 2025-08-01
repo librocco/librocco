@@ -271,16 +271,16 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: tCommon.commit_purchase_dialog.title({ entity: displayName }),
-								description: tCommon.commit_purchase_dialog.description({ bookCount: totalBookCount, warehouseName }),
+								title: tInbound.commit_dialog.title({ entity: displayName }),
+								description: tInbound.commit_dialog.description({ bookCount: totalBookCount, warehouseName }),
 								type: "commit"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: tCommon.commit_purchase_dialog.title({ entity: displayName }),
-								description: tCommon.commit_purchase_dialog.description({ bookCount: totalBookCount, warehouseName }),
+								title: tInbound.commit_dialog.title({ entity: displayName }),
+								description: tInbound.commit_dialog.description({ bookCount: totalBookCount, warehouseName }),
 								type: "commit"
 							};
 						}}
@@ -299,8 +299,8 @@
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleCommitSelf,
-									title: tCommon.commit_sale_dialog.title({ entity: displayName }),
-									description: tCommon.commit_sale_dialog.description({ bookCount: totalBookCount }),
+									title: tInbound.commit_dialog.title({ entity: displayName }),
+									description: tInbound.commit_dialog.description({ bookCount: totalBookCount, warehouseName }),
 									type: "commit"
 								};
 							}}

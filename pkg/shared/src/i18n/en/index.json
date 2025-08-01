@@ -162,29 +162,92 @@
     "title": "Customer Orders",
     "labels": {
       "new_order": "New Order",
-      "update_order": "Update Order",
-      "update": "Update"
+      "edit": "Edit",
+      "save": "Save",
+      "create": "Create",
+      "edit_customer": "Edit customer",
+      "print_receipt": "Print receipt",
+      "edit_line": "Edit line",
+      "collect": "Collect",
+      "delete_row": "Delete row",
+      "edit_row": "Edit row"
     },
-    "table": {
-      "customer": "Customer",
-      "order_id": "Order ID",
-      "customer_details": "Customer Details"
+    "table_columns": {
+      "order_id": "ID",
+      "name": "Name",
+      "email": "Email",
+      "updated": "Updated",
+      "actions": "Actions",
+      "isbn": "ISBN",
+      "title": "Title",
+      "authors": "Authors",
+      "price": "Price",
+      "publisher": "Publisher",
+      "status": "Status"
     },
     "placeholder": {
       "search": "Search for customers by name",
-      "no_orders": "No customer orders yet. Create your first order to get started."
+      "no_orders": {
+        "title": "There are no customers",
+        "description": "Create a new customer order to get started"
+      },
+      "scan_title": "Scan to add books",
+      "scan_description": "Plugin your barcode scanner and pull the trigger"
+    },
+    "new_customer_dialog": {
+      "title": "new customer form dialog",
+      "description": "enter new customer details"
+    },
+    "customer_details": {
+      "last_updated": "Last updated",
+      "customer_id": "Customer ID",
+      "customer_email": "Customer email",
+      "customer_phone": "Customer phone",
+      "secondary_phone": "Secondary phone",
+      "deposit": "Deposit",
+      "deposit_amount": "€{amount} deposit",
+      "books_heading": "Books",
+      "total": "Total:"
+    },
+    "status": {
+      "collected": "Collected",
+      "delivered": "Delivered",
+      "placed": "Placed",
+      "pending": "Pending"
+    },
+    "dialogs": {
+      "new_customer": {
+        "title": "Create new order"
+      },
+      "edit_customer": {
+        "title": "Edit customer details"
+      },
+      "non_unique_id": {
+        "title": "Non unique customer ID",
+        "description": "There's at least one more order with the same ID. Please confirm you're ok with this?"
+      }
     }
   },
   "suppliers_page": {
+    "title": "Suppliers",
+    "placeholder": {
+      "title": "There are no suppliers",
+      "description": "Create a new supplier to manage publisher catalogues"
+    },
+    "dialog": {
+      "new_order_title": "Create new supplier"
+    },
     "labels": {
-      "new_supplier": "New Supplier"
-    },
-    "title": {
-      "suppliers": "Suppliers"
-    },
-    "table": {
-      "delete": "Delete",
+      "save": "Create",
+      "new_supplier": "New Supplier",
       "edit": "Edit"
+    },
+    "columns": {
+      "name": "Name",
+      "email": "Email",
+      "address": "Address",
+      "assigned_publishers": "Assigned Publishers",
+      "actions": "Actions"
     }
   },
   "warehouse_list_page": {
@@ -231,12 +294,24 @@
     }
   },
   "sale_note": {
-    "delete_dialog": {
-      "select_warehouse": "Please select a warehouse for each of the following transactions"
-    },
-    "reconcile_dialog": {
-      "review_transaction": "Please review the following transactions",
+    "commit_dialog": {
+      "title": "Commit sale \"{entity}\"?",
+      "description": "{ bookCount } book{{s}} will be removed from your stock",
+      "review_transaction": "Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed. Please review the following transactions",
       "quantity": "quantity for reconciliation"
+    },
+    "force_withdrawal_dialog": {
+      "title": "Force withdrawal for {isbn:string}?",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "description": "This book is out of stock. If you're certain additional copies exist, you can manually select a warehouse to force the withdrawal.",
+      "selected_warehouse_message": "A stock adjustment will be recorded for {quantity:number} {{copy|copies}} of {isbn:string} in {displayName:string}."
+    },
+    "create_custom_item_dialog": {
+      "title": "Create custom item"
+    },
+    "edit_custom_item_dialog": {
+      "title": "Edit custom item"
     },
     "labels": {
       "new_note": "New Note",
@@ -247,7 +322,8 @@
       "delete": "Delete",
       "commit": "Commit",
       "print": "Print",
-      "custom_item": "Custom item"
+      "custom_item": "Custom item",
+      "force_withdrawal": "Force withdrawal"
     },
     "stats": {
       "last_updated": "Last updated",
@@ -258,6 +334,10 @@
       "no_warehouses": "No available warehouses",
       "scan_title": "Scan to add books",
       "scan_description": "Plugin your barcode scanner and pull the trigger"
+    },
+    "alerts": {
+      "insufficient_quantity": "The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse",
+      "no_warehouse_selected_commit_self": "Please make sure all items have an assigned warehouse."
     }
   },
   "sale_page": {
@@ -276,6 +356,10 @@
     }
   },
   "purchase_note": {
+    "commit_dialog": {
+      "title": "Commit purchase \"{entity}\"?",
+      "description": "{ bookCount } book{{s}} will be added to { warehouseName }"
+    },
     "stats": {
       "last_updated": "Last updated"
     },
@@ -337,31 +421,9 @@
       "title": "Permenantly delete {entity}?",
       "description": "Once you delete this note, you will not be able to access it again"
     },
-    "commit_purchase_dialog": {
-      "title": "Commit purchase {entity}?",
-      "description": "{ bookCount } book{{s}} will be added to { warehouseName }"
-    },
-    "commit_sale_dialog": {
-      "title": "Commit sale {entity}?",
-      "description": "{ bookCount } book{{s}} will be removed from your stock"
-    },
-    "no_warehouse_dialog": {
-      "title": "No warehouse(s) selected",
-      "description": "Can't commit the note as some transactions don't have any warehouse selected"
-    },
-    "reconcile_sale_dialog": {
-      "title": "Stock mismatch",
-      "description": "Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed."
-    },
     "edit_book_dialog": {
       "title": "Edit book details",
       "description": "Update book details"
-    },
-    "create_custom_item_dialog": {
-      "title": "Create custom item"
-    },
-    "edit_custom_item_dialog": {
-      "title": "Edit custom item"
     },
     "edit_warehouse_dialog": {
       "title": "Update warehouse details",
@@ -405,20 +467,24 @@
       "completed": "Completed"
     },
     "placeholder": {
-      "description": "No unordered supplier orders available. Create a customer order first to generate supplier orders.",
+      "title": "There are no pending supplier orders",
+      "description": "Create customer orders to generate supplier orders",
       "button": "New Customer Order"
     }
   },
   "new_order_page": {
+    "title": "New Supplier Order",
+    "aria": {
+      "last_updated": "Last updated"
+    },
     "stats": {
       "total_books": "Total books",
       "total_value": "Total value",
       "selected_books": "Selected books"
     },
     "table": {
-      "ordered_quantity": "Ordered quantity",
+      "quantity": "Quantity",
       "total": "Total",
-      "selected_quantity": "Selected quantity",
       "books": "Books",
       "isbn": "ISBN",
       "title": "Title",
@@ -468,6 +534,9 @@
         "description": "Notify customers"
       }
     }
+  },
+  "order_page": {
+    "title": "Supplier Order"
   },
   "reconciled_list_page": {
     "labels": {
@@ -534,36 +603,39 @@
       "unmatched_books": "Unmatched Books"
     },
     "completed_table": {
-      "supplier": "Supplier",
+      "supplier_id": "Order ID",
+      "supplier": "Supplier Name",
       "books": "Books",
-      "placed": "Placed",
+      "finalized": "Finalised",
       "actions": "Actions",
       "view_order": "View Order",
       "view_reconciliation": "View Reconciliation"
     },
     "ordered_table": {
-      "supplier": "Supplier",
-      "books": "Books",
+      "order_id": "Order ID",
+      "select": "Select",
+      "supplier": "Supplier Name",
       "placed": "Placed",
       "actions": "Actions",
-      "selected_orders_summary": "Selected orders summary",
-      "selected_orders": "{ selectedOrders } orders selected",
-      "reconcile_selected": "Reconcile Selected",
+      "reconcile_selected": "Reconcile {count:number} order{{s}}",
       "view_order": "View Order",
       "reconcile": "Reconcile",
-      "view_reconciliation": "View Reconciliation"
+      "view_reconciliation": "Reconciliation"
     },
     "reconciling_table": {
-      "order_id": "Order Id",
+      "order_id": "Reconciliation ID",
       "supplier_orders": "Supplier Orders",
       "last_updated": "Last Updated",
       "update_order": "Update order",
-      "continue": "Continue"
+      "continue": "Continue",
+      "actions": "Actions"
     },
     "unordered_table": {
-      "supplier": "Supplier",
-      "books": "Books",
-      "place_order": "Place Order"
+      "supplier_id": "Supplier ID",
+      "supplier": "Supplier Name",
+      "books": "No. of Books",
+      "place_order": "Place Order",
+      "actions": "Actions"
     }
   },
   "table_components": {
@@ -614,7 +686,8 @@
         "year": "Year",
         "warehouse": "Warehouse",
         "category": "Category",
-        "row_actions": "Row Actions"
+        "row_actions": "Row Actions",
+        "type": "Type"
       }
     },
     "order_tables": {
@@ -638,30 +711,27 @@
         "order_no": "Order no.",
         "edit": "Edit",
         "manage": "Manage"
-      },
-      "supplier_table": {
-        "labels": {
-          "name": "Name",
-          "email": "Email",
-          "address": "Address",
-          "assigned_publishers": "Assigned Publishers",
-          "row_actions": "Row Actions"
-        }
       }
     }
   },
   "misc_components": {
     "extension_banner": {
       "book_data_extension": "Book Data Extension",
-      "remote_db": "Remote DB"
+      "remote_db": "Remote DB",
+      "reload_translations_override": "Reload translations overrides"
     },
     "page_layout": {
       "stock": "Stock",
       "checkout": "Checkout"
     },
     "warehouse_select": {
-      "label": "Select a warehouse to withdraw book { rowIx } from",
-      "default_option": "Select a warehouse"
+      "label": {
+        "aria": "Select a warehouse to withdraw book {rowIx:number} from",
+        "forced": "Forced",
+        "book_count": "{count:number} {{copy|copies}} available"
+      },
+      "default_option": "Select a warehouse",
+      "empty_options": "No stock available..."
     }
   },
   "layout": {

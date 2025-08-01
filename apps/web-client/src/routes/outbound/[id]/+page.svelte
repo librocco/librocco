@@ -778,28 +778,32 @@
 		<div use:melt={$confirmDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
 			<Dialog dialog={confirmDialog} type="delete" onConfirm={handleReconcileAndCommitSelf(confirmDialogData)}>
-				<svelte:fragment slot="title">{tCommon.reconcile_sale_dialog.title()}</svelte:fragment>
+				<svelte:fragment slot="title">{tOutbound.commit_dialog.title({ entity: displayName })}</svelte:fragment>
 				<svelte:fragment slot="description">
 					{#if totalAvailableStockBookCount > 0}
-						<div>{tCommon.commit_sale_dialog.description({ bookCount: totalAvailableStockBookCount })}</div>
+						{tOutbound.commit_dialog.description({ bookCount: totalAvailableStockBookCount })}
 					{/if}
 				</svelte:fragment>
 
 				{#if confirmDialogData.length}
 					<details>
-						<summary class="mb-2 mt-4 font-semibold">
-							{tCommon.reconcile_sale_dialog.description()}
-							{tOutbound.reconcile_dialog.review_transaction()}:
+						<summary class="mb-2 mt-4">
+							{tOutbound.commit_dialog.stock_adjustement_detail.summary()}
 						</summary>
-						<ul class="pl-2">
+						<ul class="list-disc px-5">
 							{#each confirmDialogData as { isbn, warehouseName, quantity, available }}
-								<li class="mb-2">
-									<p><span class="font-semibold">{isbn}</span> in <span class="font-semibold">{warehouseName}:</span></p>
-									<p class="pl-2">requested quantity: {quantity}</p>
-									<p class="pl-2">available: {available}</p>
-									<p class="pl-2">
-										{tOutbound.reconcile_dialog.quantity()}: <span class="font-semibold">{quantity - available}</span>
-									</p>
+								<li class="pl-2">
+									<span class="font-semibold"
+										>{tOutbound.commit_dialog.stock_adjustement_detail.detail_list.row({ isbn, warehouse: warehouseName })}</span
+									>
+
+									<ul class="mb-2">
+										<li class="pl-2">{tOutbound.commit_dialog.stock_adjustement_detail.detail_list.requested({ quantity: quantity })}</li>
+										<li class="pl-2">{tOutbound.commit_dialog.stock_adjustement_detail.detail_list.available({ quantity: available })}</li>
+										<li class="pl-2 font-semibold">
+											{tOutbound.commit_dialog.stock_adjustement_detail.detail_list.adjustment({ quantity: quantity - available })}
+										</li>
+									</ul>
 								</li>
 							{/each}
 						</ul>
@@ -891,7 +895,7 @@
 			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
 				<div>
 					<h2 use:melt={$customItemDialogTitle} class="text-lg font-medium">
-						{customItemFormData ? tCommon.edit_custom_item_dialog.title() : tCommon.create_custom_item_dialog.title()}
+						{customItemFormData ? tOutbound.edit_custom_item_dialog.title() : tOutbound.create_custom_item_dialog.title()}
 					</h2>
 					<p use:melt={$customItemDialogDescription} class="leading-normal">
 						<!-- TODO: no string for this -->

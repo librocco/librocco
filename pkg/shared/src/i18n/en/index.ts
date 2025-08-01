@@ -186,6 +186,10 @@ const supplier_orders_page = {
 	}
 };
 const purchase_note = {
+	commit_dialog: {
+		title: `Commit purchase "{entity}"?`,
+		description: `{ bookCount } book{{s}} will be added to { warehouseName }`
+	},
 	stats: {
 		last_updated: "Last updated"
 	},
@@ -511,31 +515,9 @@ const common = {
 		title: `Permenantly delete {entity}?`,
 		description: "Once you delete this note, you will not be able to access it again"
 	},
-	commit_purchase_dialog: {
-		title: `Commit purchase {entity}?`,
-		description: `{ bookCount } book{{s}} will be added to { warehouseName }`
-	},
-	commit_sale_dialog: {
-		title: `Commit sale {entity}?`,
-		description: `{ bookCount } book{{s}} will be removed from your stock`
-	},
-	no_warehouse_dialog: {
-		title: "No warehouse(s) selected",
-		description: "Can't commit the note as some transactions don't have any warehouse selected"
-	},
-	reconcile_sale_dialog: {
-		title: "Stock mismatch",
-		description: "Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed."
-	},
 	edit_book_dialog: {
 		title: "Edit book details",
 		description: "Update book details"
-	},
-	create_custom_item_dialog: {
-		title: "Create custom item"
-	},
-	edit_custom_item_dialog: {
-		title: "Edit custom item"
 	},
 	edit_warehouse_dialog: {
 		title: "Update warehouse details",
@@ -566,12 +548,18 @@ const common = {
 	loading: "Loading"
 };
 const sale_note = {
-	delete_dialog: {
-		select_warehouse: "Please select a warehouse for each of the following transactions"
-	},
-	reconcile_dialog: {
-		review_transaction: "Please review the following transactions",
-		quantity: "quantity for reconciliation"
+	commit_dialog: {
+		title: `Commit sale "{entity}"?`,
+		description: `{ bookCount } book{{s}} will be removed from your stock`,
+		stock_adjustement_detail: {
+			summary: "Some quantities requested are greater than available in stock. Please review the following stock adjustments:",
+			detail_list: {
+				row: "{isbn} from {warehouse}",
+				requested: "Requested: {quantity:number} {{copy|copies}}",
+				available: "Available: {quantity:number} {{copy|copies}}",
+				adjustment: "Adjustment: {quantity:number} {{copy|copies}}"
+			}
+		}
 	},
 	force_withdrawal_dialog: {
 		title: "Force withdrawal for {isbn:string}?",
@@ -581,6 +569,12 @@ const sale_note = {
 			"This book is out of stock. If you're certain additional copies exist, you can manually select a warehouse to force the withdrawal.",
 		selected_warehouse_message:
 			"A stock adjustment will be recorded for {quantity:number} {{copy|copies}} of {isbn:string} in {displayName:string}."
+	},
+	create_custom_item_dialog: {
+		title: "Create custom item"
+	},
+	edit_custom_item_dialog: {
+		title: "Edit custom item"
 	},
 	labels: {
 		new_note: "New Note",
@@ -606,7 +600,8 @@ const sale_note = {
 	},
 	alerts: {
 		insufficient_quantity:
-			"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse",	no_warehouse_selected_commit_self: "Please make sure all items have an assigned warehouse."
+			"The warehouse you're attempting to assign to has no more available quantity, click Force Withdrawal to select another warehouse",
+		no_warehouse_selected_commit_self: "Please make sure all items have an assigned warehouse."
 	}
 };
 
