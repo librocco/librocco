@@ -591,7 +591,7 @@
 			</div>
 
 			<div class="flex h-full flex-wrap items-center gap-2">
-				<div class="flex flex-grow items-center gap-2">
+				<div class="flex grow items-center max-sm:w-full">
 					<ScannerForm
 						data={defaults(zod(scannerSchema))}
 						options={{
@@ -627,7 +627,7 @@
 					use:melt={$customItemDialogTrigger}
 					on:m-click={() => openCustomItemForm()}
 					on:m-keydown={() => openCustomItemForm()}
-					class="btn-neutral btn max-sm:w-full sm:mx-2"
+					class="btn-neutral btn max-sm:btn-sm max-sm:w-full"
 				>
 					<Plus />
 					{tOutbound.labels.custom_item()}</button
