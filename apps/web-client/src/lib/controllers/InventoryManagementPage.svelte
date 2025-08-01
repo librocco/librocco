@@ -5,21 +5,25 @@
 
 	import { page } from "$app/stores";
 
+	import LL from "@librocco/shared/i18n-svelte";
+
 	import { Page } from "$lib/controllers";
 	import { appHash } from "$lib/paths";
 
 	import type { DB } from "$lib/db/cr-sqlite/types";
 	import type { PluginsInterface } from "$lib/plugins";
 
+	$: ({ page_headings: tPage } = $LL);
+
 	$: tabs = [
 		{
 			icon: Building,
-			label: "Warehouses",
+			label: tPage.warehouse(),
 			href: appHash("warehouses")
 		},
 		{
 			icon: CopyPlus,
-			label: "Purchase",
+			label: tPage.inbound(),
 			href: appHash("inbound")
 		}
 	];

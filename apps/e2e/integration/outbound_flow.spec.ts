@@ -16,7 +16,7 @@ import {
 } from "@/helpers/cr-sqlite";
 import { book1 } from "@/integration/data";
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach(async ({ t, page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
@@ -24,8 +24,8 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// Navigate to the outbound note page
-	await page.getByRole("link", { name: "Sale" }).click();
-	await page.getByRole("heading", { name: "Outbound" }).first().waitFor();
+	await page.getByRole("link", { name: t.nav.sale() }).click();
+	await page.getByRole("heading", { level: 1, name: t.page_headings.outbound() }).waitFor();
 });
 
 test('should create a new outbound note, on "New sale" and redirect to it', async ({ page }) => {
@@ -302,6 +302,39 @@ test("should be able to edit note title", async ({ page }) => {
 	await page.getByLabel("Main navigation").getByRole("link", { name: "Sale" }).click();
 
 	await expect(content.entityList("outbound-list").item(0).getByText("title")).toBeVisible();
+});
+
+test("should be able to delete the note (from the note view)", async ({ t, page }) => {
+	const { common: tCommon, page_headings: tPages, sale_note: tOutbound } = t;
+
+	const dbHandle = await getDbHandle(page);
+
+	const noteName = "New Sale";
+
+	await dbHandle.evaluate(createOutboundNote, { id: 1, warehouseId: 1, displayName: noteName });
+
+	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Sale", exact: true }).click();
+
+	const content = dashboard.content();
+
+	await content.entityList("outbound-list").item(0).edit();
+	await dashboard.view("outbound-note").waitFor();
+
+	// Open the actions dropdown and click delete
+	await page.getByRole("button", { name: tCommon.action_dropdown_trigger_aria() }).click();
+	await page.getByRole("menuitem", { name: tOutbound.labels.delete() }).click();
+
+	const dialog = page.getByRole("dialog");
+	await expect(dialog).toBeVisible();
+
+	await expect(page.getByText(tCommon.delete_dialog.title({ entity: noteName }))).toBeVisible();
+	await expect(page.getByText(tCommon.delete_dialog.description())).toBeVisible();
+
+	await dialog.getByRole("button", { name: tCommon.actions.confirm() }).click();
+
+	await page.waitForURL("**/outbound/");
+	await expect(page.getByRole("heading", { level: 1, name: tPages.outbound() })).toBeVisible();
 });
 
 test("should update default warehouse for outbound note using dropdown", async ({ page }) => {

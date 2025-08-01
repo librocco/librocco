@@ -49,6 +49,20 @@ type RootTranslation = {
 		 */
 		supplier_orders: string
 	}
+	page_headings: {
+		/**
+		 * S​a​l​e​s
+		 */
+		outbound: string
+		/**
+		 * P​u​r​c​h​a​s​e​s
+		 */
+		inbound: string
+		/**
+		 * W​a​r​e​h​o​u​s​e​s
+		 */
+		warehouse: string
+	}
 	search: {
 		/**
 		 * S​e​a​r​c​h
@@ -1239,6 +1253,10 @@ type RootTranslation = {
 			 */
 			description: string
 		}
+		/**
+		 * o​p​e​n​ ​a​c​t​i​o​n​s​ ​d​r​o​p​d​o​w​n
+		 */
+		action_dropdown_trigger_aria: string
 		actions: {
 			/**
 			 * C​a​n​c​e​l
@@ -2750,6 +2768,20 @@ export type TranslationFunctions = {
 		 */
 		supplier_orders: () => LocalizedString
 	}
+	page_headings: {
+		/**
+		 * Sales
+		 */
+		outbound: () => LocalizedString
+		/**
+		 * Purchases
+		 */
+		inbound: () => LocalizedString
+		/**
+		 * Warehouses
+		 */
+		warehouse: () => LocalizedString
+	}
 	search: {
 		/**
 		 * Search
@@ -3919,6 +3951,10 @@ export type TranslationFunctions = {
 			 */
 			description: () => LocalizedString
 		}
+		/**
+		 * open actions dropdown
+		 */
+		action_dropdown_trigger_aria: () => LocalizedString
 		actions: {
 			/**
 			 * Cancel

@@ -259,6 +259,39 @@ test("should be able to edit note title", async ({ page }) => {
 	await expect(content.entityList("inbound-list").item(0).getByText("Warehouse 1 / title")).toBeVisible();
 });
 
+test("should be able to delete the note (from the note view)", async ({ t, page }) => {
+	const { common: tCommon, page_headings: tPages, sale_note: tOutbound } = t;
+
+	const dbHandle = await getDbHandle(page);
+
+	const noteName = "New Purchase 1";
+
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: noteName });
+
+	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Purchase" }).click();
+
+	const content = dashboard.content();
+
+	await content.entityList("inbound-list").item(0).edit();
+	await dashboard.view("inbound-note").waitFor();
+
+	// Open the actions dropdown and click delete
+	await page.getByRole("button", { name: tCommon.action_dropdown_trigger_aria() }).click();
+	await page.getByRole("menuitem", { name: tOutbound.labels.delete() }).click();
+
+	const dialog = page.getByRole("dialog");
+	await expect(dialog).toBeVisible();
+
+	await expect(page.getByText(tCommon.delete_dialog.title({ entity: noteName }))).toBeVisible();
+	await expect(page.getByText(tCommon.delete_dialog.description())).toBeVisible();
+
+	await dialog.getByRole("button", { name: tCommon.actions.confirm() }).click();
+
+	await page.waitForURL("**/inbound/");
+	await expect(page.getByRole("heading", { level: 1, name: tPages.inbound() })).toBeVisible();
+});
+
 test("should navigate to note page on 'edit' button click", async ({ page }) => {
 	const dashboard = getDashboard(page);
 

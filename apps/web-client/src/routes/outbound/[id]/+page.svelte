@@ -557,14 +557,16 @@
 						{tCommon.actions.print()}
 					</button>
 
-					<DropdownWrapper let:item>
+					<DropdownWrapper let:item triggerLabel={tCommon.action_dropdown_trigger_aria()}>
 						<div
 							{...item}
 							use:item.action
 							on:click={handleCommitSelfDryRun}
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
 						>
-							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tOutbound.labels.commit()}</span>
+							<FileCheck class="text-base-content/70" size={20} aria-hidden /><span class="text-base-content"
+								>{tOutbound.labels.commit()}</span
+							>
 						</div>
 						<div
 							{...item}
@@ -572,7 +574,8 @@
 							on:m-click={handlePrintReceipt}
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 						>
-							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tOutbound.labels.print()}</span>
+							<Printer class="text-base-content/70" size={20} aria-hidden /><span class="text-base-content">{tOutbound.labels.print()}</span
+							>
 						</div>
 						<div
 							{...item}
@@ -580,7 +583,7 @@
 							use:melt={$deleteDialogTrigger}
 							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
 						>
-							<Trash2 class="text-error-content" size={20} /><span class="text-error-content">{tOutbound.labels.delete()}</span>
+							<Trash2 class="text-error-content" size={20} aria-hidden /><span class="text-error-content">{tOutbound.labels.delete()}</span>
 						</div>
 					</DropdownWrapper>
 				</div>

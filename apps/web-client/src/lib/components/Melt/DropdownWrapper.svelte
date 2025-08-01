@@ -6,6 +6,8 @@
 	import { createDropdownMenu, melt } from "@melt-ui/svelte";
 	import { testId } from "@librocco/shared";
 
+	export let triggerLabel = "";
+
 	const {
 		elements: { menu, item, trigger, separator },
 		states: { open }
@@ -13,12 +15,13 @@
 </script>
 
 <button
+	aria-label={triggerLabel}
 	data-testid="dropdown-control"
 	data-open={$open}
 	use:melt={$trigger}
 	class="bg-content btn-sm btn items-center border border-base-content py-[9px] pl-[17px] pr-[15px] hover:bg-base-300"
 >
-	<MoreVertical class="border-base-300" size={14} />
+	<MoreVertical class="border-base-300" size={14} aria-hidden focusable="false" />
 </button>
 
 {#if $open}
