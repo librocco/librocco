@@ -440,7 +440,7 @@ testInventory(
 
 		// Add a book to the note - it should use the warehouse where it's present
 
-		const isbnInput = page.getByPlaceholder("Scan to add books");
+		const isbnInput = page.getByPlaceholder("Scan to select books from");
 		await isbnInput.fill(books[0].isbn);
 
 		await page.keyboard.press("Enter");
@@ -505,7 +505,7 @@ testInventory(
 
 		// Add a book to the note - it should use the warehouse where it's present
 
-		const isbnInput = page.getByPlaceholder("Scan to add books");
+		const isbnInput = page.getByPlaceholder("Scan to select books from");
 		await isbnInput.fill(books[0].isbn);
 
 		await page.keyboard.press("Enter");
@@ -578,7 +578,7 @@ testInventory(
 
 		// Add a book to the note - it should use the warehouse where it's present
 
-		const isbnInput = page.getByPlaceholder("Scan to add books");
+		const isbnInput = page.getByPlaceholder("Scan to select books from");
 		await isbnInput.fill(books[0].isbn);
 
 		await page.keyboard.press("Enter");
@@ -651,7 +651,7 @@ testInventory(
 
 		// Add a book to the note - it should use the warehouse where it's present
 
-		const isbnInput = page.getByPlaceholder("Scan to add books");
+		const isbnInput = page.getByPlaceholder("Scan to select books from");
 		await isbnInput.fill(books[0].isbn);
 
 		await page.keyboard.press("Enter");
@@ -726,7 +726,7 @@ testInventory(
 
 		// Add a book to the note - it should use the warehouse where it's present
 
-		const isbnInput = page.getByPlaceholder("Scan to add books");
+		const isbnInput = page.getByPlaceholder("Scan to select books from");
 		await isbnInput.fill(books[0].isbn);
 
 		await page.keyboard.press("Enter");
@@ -778,7 +778,7 @@ testInventory("should handle force withdrawal for books not in stock", async ({ 
 
 	// Add a book that doesn't exist in any warehouse
 	const nonExistentIsbn = "9999999999";
-	const isbnInput = page.getByPlaceholder("Scan to add books");
+	const isbnInput = page.getByPlaceholder("Scan to select books from");
 	await isbnInput.fill(nonExistentIsbn);
 	await page.keyboard.press("Enter");
 
@@ -892,7 +892,7 @@ testInventory("should handle warehouse selection for books in stock", async ({ p
 	await dashboard.view("outbound-note").waitFor();
 
 	// Add the book to the note
-	const isbnInput = page.getByPlaceholder("Scan to add books");
+	const isbnInput = page.getByPlaceholder("Scan to select books from");
 	await isbnInput.fill(books[0].isbn);
 	await page.keyboard.press("Enter");
 

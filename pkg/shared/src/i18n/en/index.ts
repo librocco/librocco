@@ -601,9 +601,11 @@ const sale_note = {
 	},
 	placeholder: {
 		select_warehouse: "Please select a warehouse",
+		any_warehouse: "Any warehouse",
 		no_warehouses: "No available warehouses",
-		scan_title: "Scan to add books",
-		scan_description: "Plugin your barcode scanner and pull the trigger"
+		scan_title: "Scan to select books from...",
+		scan_description: "Plugin your barcode scanner and pull the trigger",
+
 	},
 	alerts: {
 		insufficient_quantity:

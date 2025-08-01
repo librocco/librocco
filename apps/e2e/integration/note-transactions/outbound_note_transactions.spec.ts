@@ -379,7 +379,7 @@ test("should add custom item on 'Custom Item' button click after filling out the
 	const content = getDashboard(page).content();
 
 	// Add a custom item using custom item button
-	await content.getByRole("button", { name: "Custom Item" }).click();
+	await content.getByRole("button", { name: "Custom Item" }).first().click();
 	// The custom item form appears automatically, when adding a new custom item
 	const form = getDashboard(page).customItemForm();
 	await form.fillData({ title: "Item 1", price: 5 });
@@ -392,7 +392,7 @@ test("should add custom item on 'Custom Item' button click after filling out the
 	]);
 
 	await content.scanField().add("22222222"); // Add new book item
-	await content.getByRole("button", { name: "Custom Item" }).click(); // Add new custom item
+	await content.getByRole("button", { name: "Custom Item" }).first().click(); // Add new custom item
 	await form.fillData({ title: "Item 2", price: 20 });
 	await form.submit();
 
@@ -405,7 +405,7 @@ test("should add custom item on 'Custom Item' button click after filling out the
 	]);
 
 	// Opening up a form and and cancelling shouldn't add anything
-	await content.getByRole("button", { name: "Custom item" }).click();
+	await content.getByRole("button", { name: "Custom item" }).first().click();
 	await form.cancel();
 
 	await content.table("outbound-note").assertRows([
