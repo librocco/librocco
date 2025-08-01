@@ -5,7 +5,7 @@
 	import { invalidate } from "$app/navigation";
 	import { filter, scan } from "rxjs";
 
-	import { createDialog, createPopover, createTooltip, melt } from "@melt-ui/svelte";
+	import { createDialog, createPopover, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import Printer from "$lucide/printer";
@@ -14,7 +14,6 @@
 	import FileEdit from "$lucide/file-edit";
 	import MoreVertical from "$lucide/more-vertical";
 	import X from "$lucide/x";
-	import XCircle from "$lucide/x-circle";
 	import FileCheck from "$lucide/file-check";
 
 	import { desc, testId } from "@librocco/shared";
@@ -22,8 +21,6 @@
 
 	import type { PageData } from "./$types";
 	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
-
-	import { OutOfStockError, NoWarehouseSelectedError } from "$lib/db/cr-sqlite/errors";
 
 	import {
 		Breadcrumbs,
@@ -35,8 +32,7 @@
 		OutboundTable,
 		TextEditable,
 		ForceWithdrawalDialog,
-		WarehouseSelect,
-		type WarehouseChangeDetail
+		WarehouseSelect
 	} from "$lib/components";
 	import { Page } from "$lib/controllers";
 	import { defaultDialogConfig } from "$lib/components/Melt";
@@ -144,8 +140,8 @@
 
 	// #region note-actions
 	const openReconciliationDialog = (invalidTransactions: OutOfStockTransaction[]) => {
-		reconcileDialogData = invalidTransactions;
-		reconcileDialogOpen.set(true);
+		confirmDialogData = invalidTransactions;
+		confirmDialogOpen.set(true);
 	};
 
 	const handlePrint = () => {
@@ -430,11 +426,11 @@
 		states: { open: forceWithdrawalDialogOpen }
 	} = forceWithdrawalDialog;
 
-	const confirmActionDialog = createDialog(defaultDialogConfig);
+	const deleteActionDialog = createDialog(defaultDialogConfig);
 	const {
-		elements: { trigger: confirmDialogTrigger, overlay: confirmDialogOverlay, portalled: confirmDialogPortalled },
-		states: { open: confirmDialogOpen }
-	} = confirmActionDialog;
+		elements: { trigger: deleteDialogTrigger, overlay: deleteDialogOverlay, portalled: deleteDialogPortalled },
+		states: { open: deleteDialogOpen }
+	} = deleteActionDialog;
 
 	const editBookDialog = createDialog(defaultDialogConfig);
 	const {
@@ -464,14 +460,12 @@
 		states: { open: customItemDialogOpen }
 	} = customItemDialog;
 
-	let dialogContent: DialogContent & { type: "commit" | "delete" };
-
-	const reconcileDialog = createDialog(defaultDialogConfig);
+	const confirmDialog = createDialog(defaultDialogConfig);
 	const {
-		elements: { overlay: reconcileDialogOverlay, portalled: reconcileDialogPortalled },
-		states: { open: reconcileDialogOpen }
-	} = reconcileDialog;
-	let reconcileDialogData: OutOfStockTransaction[] = [];
+		elements: { overlay: confirmDialogOverlay, portalled: confirmDialogPortalled },
+		states: { open: confirmDialogOpen }
+	} = confirmDialog;
+	let confirmDialogData: OutOfStockTransaction[] = [];
 
 	const {
 		elements: { trigger: popoverTrigger, content: popoverContent },
@@ -583,24 +577,8 @@
 						<div
 							{...item}
 							use:item.action
-							use:melt={$confirmDialogTrigger}
+							use:melt={$deleteDialogTrigger}
 							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
-							on:m-click={() => {
-								dialogContent = {
-									onConfirm: handleDeleteSelf,
-									title: tCommon.delete_dialog.title({ entity: displayName }),
-									description: tCommon.delete_dialog.description(),
-									type: "delete"
-								};
-							}}
-							on:m-keydown={() => {
-								dialogContent = {
-									onConfirm: handleDeleteSelf,
-									title: tCommon.delete_dialog.title({ entity: displayName }),
-									description: tCommon.delete_dialog.description(),
-									type: "delete"
-								};
-							}}
 						>
 							<Trash2 class="text-error-content" size={20} /><span class="text-error-content">{tOutbound.labels.delete()}</span>
 						</div>
@@ -777,17 +755,29 @@
 	</div>
 {/if}
 
-{#if $reconcileDialogOpen}
+{#if $deleteDialogOpen}
+	<div use:melt={$deleteDialogPortalled}>
+		<div use:melt={$deleteDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+			<Dialog dialog={deleteActionDialog} type="delete" onConfirm={handleDeleteSelf}>
+				<svelte:fragment slot="title">{tCommon.delete_dialog.title({ entity: displayName })}</svelte:fragment>
+				<svelte:fragment slot="description">{tCommon.delete_dialog.description()}</svelte:fragment>
+			</Dialog>
+		</div>
+	</div>
+{/if}
+
+{#if $confirmDialogOpen}
 	{@const totalAvailableStockBookCount = bookEntries
 		.filter(isBookRow)
 		.filter((book) => {
 			return book.type === "normal";
 		})
 		.reduce((acc, { quantity }) => acc + quantity, 0)}
-	<div use:melt={$reconcileDialogPortalled}>
-		<div use:melt={$reconcileDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+	<div use:melt={$confirmDialogPortalled}>
+		<div use:melt={$confirmDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-			<Dialog dialog={reconcileDialog} type="delete" onConfirm={handleReconcileAndCommitSelf(reconcileDialogData)}>
+			<Dialog dialog={confirmDialog} type="delete" onConfirm={handleReconcileAndCommitSelf(confirmDialogData)}>
 				<svelte:fragment slot="title">{tCommon.reconcile_sale_dialog.title()}</svelte:fragment>
 				<svelte:fragment slot="description">
 					{#if totalAvailableStockBookCount > 0}
@@ -795,14 +785,14 @@
 					{/if}
 				</svelte:fragment>
 
-				{#if reconcileDialogData.length}
+				{#if confirmDialogData.length}
 					<details>
 						<summary class="mb-2 mt-4 font-semibold">
 							{tCommon.reconcile_sale_dialog.description()}
 							{tOutbound.reconcile_dialog.review_transaction()}:
 						</summary>
 						<ul class="pl-2">
-							{#each reconcileDialogData as { isbn, warehouseName, quantity, available }}
+							{#each confirmDialogData as { isbn, warehouseName, quantity, available }}
 								<li class="mb-2">
 									<p><span class="font-semibold">{isbn}</span> in <span class="font-semibold">{warehouseName}:</span></p>
 									<p class="pl-2">requested quantity: {quantity}</p>
