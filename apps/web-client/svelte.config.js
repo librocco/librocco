@@ -4,7 +4,44 @@ import preprocess from "svelte-preprocess";
 import { preprocessMeltUI } from "@melt-ui/pp";
 import sequence from "svelte-sequential-preprocessor";
 
+import { USE_SUBMODULES } from "./build_constants.js";
+
 const BASE_PATH = process.env.BASE_PATH ?? "";
+
+/**
+ * A helper used to provide aliases for vlcn.io packages in dev mode:
+ * - if `USE_SUBMODULES` env var is truthy, we're aliasing vlcn.io imports to submoduled packages (under '3rd-party/js')
+ * - if `USE_SUBMODULES` env var is undefined or falsy, no aliases are provided: installed dependencies built from tarballs ('3rd-party/artefacts') are used
+ */
+function alias_vlcn_dev() {
+	console.log("\n");
+
+	if (!USE_SUBMODULES) {
+		console.log("using vlcn.io packages installed from '3rd-party/artefacts'");
+		console.log("\n");
+		return {};
+	}
+
+	const aliases = {
+		"@vlcn.io/crsqlite": "../../3rd-party/js/deps/cr-sqlite/core/nodejs-helper.js",
+		"@vlcn.io/crsqlite-wasm": "../../3rd-party/js/packages/crsqlite-wasm/dist",
+		"@vlcn.io/rx-tbl": "../../3rd-party/js/packages/rx-tbl/dist",
+		"@vlcn.io/ws-browserdb": "../../3rd-party/js/packages/ws-browserdb/dist",
+		"@vlcn.io/ws-client/worker.js": "../../3rd-party/js/packages/ws-client/dist/worker/worker.js",
+		"@vlcn.io/ws-client": "../../3rd-party/js/packages/ws-client/dist",
+		"@vlcn.io/ws-common": "../../3rd-party/js/packages/ws-common/dist",
+		"@vlcn.io/ws-server": "../../3rd-party/js/packages/ws-server/dist"
+	};
+
+	console.log("using submodules: aliasing vlcn.io packages to respective submodules:");
+	for (const [pkg, path] of Object.entries(aliases)) {
+		console.log(`  ${pkg} -> ${path}`);
+	}
+	console.log("all changes made to these files will be reflected in the dev server");
+	console.log("\n");
+
+	return aliases;
+}
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -13,8 +50,9 @@ const config = {
 	preprocess: sequence([preprocess(), preprocessMeltUI()]),
 	kit: {
 		alias: {
+			$lucide: "node_modules/lucide-svelte/dist/icons",
 			"$i18n/*": "./src/i18n/*",
-			$lucide: "node_modules/lucide-svelte/dist/icons"
+			...alias_vlcn_dev()
 		},
 		serviceWorker: {
 			register: false

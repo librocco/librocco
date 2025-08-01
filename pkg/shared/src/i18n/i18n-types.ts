@@ -975,11 +975,15 @@ type RootTranslation = {
 			 */
 			select_warehouse: string
 			/**
+			 * A​n​y​ ​w​a​r​e​h​o​u​s​e
+			 */
+			any_warehouse: string
+			/**
 			 * N​o​ ​a​v​a​i​l​a​b​l​e​ ​w​a​r​e​h​o​u​s​e​s
 			 */
 			no_warehouses: string
 			/**
-			 * S​c​a​n​ ​t​o​ ​a​d​d​ ​b​o​o​k​s
+			 * S​c​a​n​ ​t​o​ ​s​e​l​e​c​t​ ​b​o​o​k​s​ ​f​r​o​m​.​.​.
 			 */
 			scan_title: string
 			/**
@@ -3679,11 +3683,15 @@ export type TranslationFunctions = {
 			 */
 			select_warehouse: () => LocalizedString
 			/**
+			 * Any warehouse
+			 */
+			any_warehouse: () => LocalizedString
+			/**
 			 * No available warehouses
 			 */
 			no_warehouses: () => LocalizedString
 			/**
-			 * Scan to add books
+			 * Scan to select books from...
 			 */
 			scan_title: () => LocalizedString
 			/**
