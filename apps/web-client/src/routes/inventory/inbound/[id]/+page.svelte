@@ -291,7 +291,7 @@
 						<span class="button-text ml-1">{tCommon.actions.print()}</span>
 					</button>
 
-					<DropdownWrapper let:item>
+					<DropdownWrapper let:item triggerLabel={tCommon.action_dropdown_trigger_aria()}>
 						<div
 							{...item}
 							use:item.action
@@ -306,7 +306,9 @@
 							}}
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
 						>
-							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.commit()}</span>
+							<FileCheck class="text-base-content/70" aria-hidden size={20} /><span class="text-base-content"
+								>{tInbound.labels.commit()}</span
+							>
 						</div>
 						<div
 							{...item}
@@ -314,7 +316,7 @@
 							on:m-click={handlePrintReceipt}
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 						>
-							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.print()}</span>
+							<Printer class="text-base-content/70" aria-hidden size={20} /><span class="text-base-content">{tInbound.labels.print()}</span>
 						</div>
 						<div
 							{...item}
@@ -324,7 +326,7 @@
 								? '!bg-success text-success-content'
 								: ''}"
 						>
-							<Printer class="text-base-content/70" size={20} />
+							<Printer class="text-base-content/70" size={20} aria-hidden />
 							<span class="text-base-content">
 								{tInbound.labels.auto_print_book_labels()}
 							</span>

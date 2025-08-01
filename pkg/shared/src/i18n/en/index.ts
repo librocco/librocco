@@ -14,6 +14,12 @@ const nav = {
 	supplier_orders: "Suppliers orders"
 };
 
+const page_headings = {
+	outbound: "Sales",
+	inbound: "Purchases",
+	warehouse: "Warehouses"
+};
+
 const search = {
 	title: "Search",
 	empty: {
@@ -533,6 +539,7 @@ const common = {
 		title: "Create new database",
 		description: "Please type in the name for the new database"
 	},
+	action_dropdown_trigger_aria: "open actions dropdown",
 	actions: {
 		cancel: "Cancel",
 		confirm: "Confirm",
@@ -1024,6 +1031,7 @@ const forms = {
 
 const en = {
 	nav,
+	page_headings,
 	search,
 	history_page,
 	inventory_page,
