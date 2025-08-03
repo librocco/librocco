@@ -33,7 +33,8 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 			);
 		}
 
-		if (numBooks) await locator.getByText(`${numBooks} books`).waitFor();
+		if (numBooks === 1) await locator.getByText(`${numBooks} book`).waitFor();
+		if (numBooks > 1) await locator.getByText(`${numBooks} books`).waitFor();
 		if (discount) await locator.getByText(`${discount}% discount`).waitFor();
 		if (totalCoverPrice) await locator.getByText(`Total cover price: ${totalCoverPrice.toFixed(2)}`).waitFor();
 		if (totalDiscountedPrice) await locator.getByText(`Total discounted price: ${totalDiscountedPrice.toFixed(2)}`).waitFor();

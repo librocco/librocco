@@ -427,7 +427,11 @@ async function _deleteNote(db: DB, id: number): Promise<void> {
 		console.warn("Trying to delete a committed note: this is a noop, but probably indicates a bug in the calling code.");
 		return;
 	}
-	return db.exec("DELETE FROM note WHERE id = ?", [id]);
+	return db.tx(async (db) => {
+		await db.exec("DELETE FROM note WHERE id = ?", [id]);
+		await db.exec("DELETE FROM book_transaction WHERE note_id = ?", [id]);
+		await db.exec("DELETE FROM custom_item WHERE note_id = ?", [id]);
+	});
 }
 
 /**
