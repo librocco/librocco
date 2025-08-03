@@ -157,11 +157,12 @@
     "@vlcn.io/crsqlite": "file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz",
     "@vlcn.io/crsqlite-wasm": "file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz",
     "@vlcn.io/rx-tbl": "file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz",
+    "@vlcn.io/wa-sqlite": "file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz",
     "@vlcn.io/ws-browserdb": "file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz",
     "@vlcn.io/ws-client": "file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz",
     "@vlcn.io/ws-common": "file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz",
     "@vlcn.io/ws-server": "file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz",
-    "@vlcn.io/wa-sqlite": "file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz"
+    "@vlcn.io/xplat-api": "file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz"
   },
 
   /**

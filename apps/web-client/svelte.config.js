@@ -30,7 +30,8 @@ function alias_vlcn_dev() {
 		"@vlcn.io/ws-client/worker.js": "../../3rd-party/js/packages/ws-client/dist/worker/worker.js",
 		"@vlcn.io/ws-client": "../../3rd-party/js/packages/ws-client/dist",
 		"@vlcn.io/ws-common": "../../3rd-party/js/packages/ws-common/dist",
-		"@vlcn.io/ws-server": "../../3rd-party/js/packages/ws-server/dist"
+		"@vlcn.io/ws-server": "../../3rd-party/js/packages/ws-server/dist",
+		"@vlcn.io/xplat-api": "../../3rd-party/js/packages/xplat-api/dist/xplat-api.js"
 	};
 
 	console.log("using submodules: aliasing vlcn.io packages to respective submodules:");
