@@ -6,10 +6,9 @@ export { schemaContent };
 
 import type { DBAsync, TXAsync, Change, VFSWhitelist } from "./types";
 
-import { DEFAULT_VFS } from "$lib/constants";
-
 import { idbPromise, idbTxn } from "../indexeddb";
 import { getMainThreadDB, getWorkerDB } from "./core";
+import { DEFAULT_VFS } from "./core/constants";
 
 export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
 
