@@ -60,7 +60,7 @@ class WrappedDB implements DBAsync {
 		return this.internal.execMany(sql);
 	}
 
-	execO<O extends {}>(sql: string, bind: SQLiteCompatibleType[]) {
+	execO<O extends Record<string, any>>(sql: string, bind: SQLiteCompatibleType[]) {
 		return this.internal.execO(sql, bind) as Promise<O[]>;
 	}
 
@@ -72,7 +72,7 @@ class WrappedDB implements DBAsync {
 		return this.internal.close();
 	}
 
-	createFunction(name: string, fn: (...args: any) => unknown, opts?: {}) {
+	createFunction(name: string, fn: (...args: any) => unknown, opts?: Record<string, any>) {
 		return this.internal.createFunction(name, Comlink.proxy(fn), opts);
 	}
 
@@ -108,4 +108,3 @@ class WrappedDB implements DBAsync {
 function wrapDB(db: DBAsync) {
 	return new WrappedDB(db);
 }
-

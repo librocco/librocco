@@ -29,5 +29,5 @@ export type MsgProgress = {
 
 export type MsgReady = {
 	_type: "ready";
-	payload: {};
+	payload: null;
 };
