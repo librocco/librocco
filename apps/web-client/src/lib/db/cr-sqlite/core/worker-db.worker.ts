@@ -1,12 +1,85 @@
 import * as Comlink from "comlink";
 
-import type { DBAsync, OnUpdateCallback, TXCallback, VFSWhitelist } from "./types";
+import type { DBAsync, _TXAsync, OnUpdateCallback, TXCallback, VFSWhitelist } from "./types";
 
 import { getCrsqliteDB } from "./init";
 
 export type MsgInitOk = { _type: "wkr-init"; status: "ok" };
 export type MsgWkrError = { _type: "wkr-init"; status: "error"; error: string; stack?: string };
 export type MsgInit = MsgInitOk | MsgWkrError;
+
+class WrappedDB implements DBAsync {
+	constructor(readonly internal: DBAsync) {}
+
+	get __mutex() {
+		return this.internal.__mutex;
+	}
+	get siteid() {
+		return this.internal.siteid;
+	}
+	get filename() {
+		return this.internal.filename;
+	}
+	get tablesUsedStmt() {
+		return Comlink.proxy(this.internal.tablesUsedStmt);
+	}
+
+	prepare(sql: string) {
+		return this.internal.prepare(sql);
+	}
+
+	exec(sql: string, bind: SQLiteCompatibleType[]) {
+		return this.internal.exec(sql, bind);
+	}
+
+	execMany(sql: string[]) {
+		return this.internal.execMany(sql);
+	}
+
+	execO<O extends {}>(sql: string, bind: SQLiteCompatibleType[]) {
+		return this.internal.execO(sql, bind) as Promise<O[]>;
+	}
+
+	execA<T extends any[]>(sql: string, bind: SQLiteCompatibleType[]) {
+		return this.internal.execA(sql, bind) as Promise<T[]>;
+	}
+
+	close() {
+		return this.internal.close();
+	}
+
+	createFunction(name: string, fn: (...args: any) => unknown, opts?: {}) {
+		return this.internal.createFunction(name, Comlink.proxy(fn), opts);
+	}
+
+	onUpdate(cb: OnUpdateCallback): () => void {
+		// NOTE: `db.onUpdate` returns a function (unsubscribe) that needs to be proxied (Comlink.proxy) when being
+		// returned to the main thread.
+		const unsubscribe = this.internal.onUpdate(cb);
+		return Comlink.proxy(unsubscribe);
+	}
+
+	tx(cb: TXCallback): Promise<void> {
+		// NOTE: `db.tx` is called by passing the callback. When calling from the main thread, the callback needs to be
+		// proxied (using Comlink.proxy). Furthermore, when calling the proxied callback (from worker to the main thread),
+		// the first parameter (the TXAsync object) needs to be proxied back as well.
+		// Adapt the 'cb' so that the first param (TXAsync) is proxied back when calling
+		const adapt = (cb: TXCallback): TXCallback => {
+			return (tx) => cb(Comlink.proxy(tx));
+		};
+		return this.internal.tx(adapt(cb));
+	}
+
+	async imperativeTx(): Promise<[() => void, _TXAsync]> {
+		// NOTE: `db.imperativeTx` returns releaser and TXAsync object, both of which need to be proxied.
+		const [releaser, tx] = await this.internal.imperativeTx();
+		return [Comlink.proxy(releaser), Comlink.proxy(tx)];
+	}
+
+	automigrateTo(schemaName: string, schemaContent: string): Promise<"noop" | "apply" | "migrate"> {
+		return this.internal.automigrateTo(schemaName, schemaContent);
+	}
+}
 
 try {
 	const [dbname, vfs] = self.name.split("---") as [string, VFSWhitelist];
@@ -29,50 +102,6 @@ try {
 	self.postMessage(msg);
 }
 
-/**
- * Wraps the DB instance with a (JS) Proxy, overriding certain methods for safe over-the-wire (Comlink) usage.
- */
-function wrapDB(db: DBAsync): DBAsync {
-	return new Proxy(db, {
-		get(target: DBAsync, prop: keyof DBAsync, receiver) {
-			switch (prop) {
-				// NOTE: `db.onUpdate` returns a function (unsubscribe) that needs to be proxied (Comlink.proxy) when being
-				// returned to the main thread.
-				case "onUpdate": {
-					return async (cb: OnUpdateCallback) => {
-						const unsubscribe = Reflect.get(target, prop, receiver)(cb);
-						return Comlink.proxy(unsubscribe);
-					};
-				}
-
-				// NOTE: `db.tx` is called by passing the callback. When calling from the main thread, the callback needs to be
-				// proxied (using Comlink.proxy). Furthermore, when calling the proxied callback (from worker to the main thread),
-				// the first parameter (the TXAsync object) needs to be proxied back as well.
-				case "tx": {
-					return async (cb: TXCallback) => {
-						// Adapt the 'cb' so that the first param (TXAsync) is proxied back when calling
-						const adapt = (cb: TXCallback): TXCallback => {
-							return (tx) => cb(Comlink.proxy(tx));
-						};
-						return Reflect.get(target, prop, receiver)(adapt(cb));
-					};
-				}
-
-				// NOTE: `db.imperativeTx` returns releaser and TXAsync object, both of which need to be proxied.
-				case "imperativeTx": {
-					return async () => {
-						const [releaser, tx] = await Reflect.get(target, prop, receiver)();
-						return [Comlink.proxy(releaser), Comlink.proxy(tx)];
-					};
-				}
-
-				default: {
-					return Reflect.get(target, prop, receiver);
-				}
-			}
-		},
-		set(target, prop, value, receiver) {
-			return Reflect.set(target, prop, value, receiver);
-		}
-	});
+function wrapDB(db: DBAsync) {
+	return new WrappedDB(db);
 }

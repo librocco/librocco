@@ -1,6 +1,6 @@
 import * as Comlink from "comlink";
 
-import type { DBAsync, StmtAsync, TMutex, TXCallback, UpdateType, _TXAsync } from "./types";
+import type { DBAsync, OnUpdateCallback, StmtAsync, TMutex, TXCallback, UpdateType, _TXAsync } from "./types";
 
 import DBWorker from "./worker-db.worker?worker";
 import type { MsgInit } from "./worker-db.worker";
@@ -83,7 +83,7 @@ class WorkerDB implements DBAsync {
 		return this.remote.createFunction(name, Comlink.proxy(fn), opts);
 	}
 
-	onUpdate(cb: (type: UpdateType, dbName: string, tblName: string, rowid: bigint) => void): () => void {
+	onUpdate(cb: OnUpdateCallback): () => void {
 		// NOTE: everything done over the wire is a Promise, whereas 'onUpdate' signature expects the unsubscribe function
 		// to be returned immediately, so we create a function that (internally) waits for the unsubscribe and calls it
 		const res = this.remote.onUpdate(Comlink.proxy(cb));
