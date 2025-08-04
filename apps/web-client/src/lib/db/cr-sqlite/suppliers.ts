@@ -1,5 +1,6 @@
 import type {
-	DB,
+	DBAsync,
+	TXAsync,
 	Supplier,
 	PossibleSupplierOrder,
 	PossibleSupplierOrderLine,
@@ -37,7 +38,7 @@ import { timed } from "$lib/utils/timer";
  * @param db - The database instance to query
  * @returns Promise resolving to an array of suppliers with their basic info
  */
-async function _getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
 	const query = `
 		SELECT
 			supplier.id,
@@ -64,7 +65,7 @@ async function _getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
  * @param db - The database instance to query
  * @param id - supplier id
  */
-async function _getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
+async function _getSupplierDetails(db: TXAsync, id: number): Promise<SupplierExtended | undefined> {
 	const conditions = [];
 	const params = [];
 
@@ -100,7 +101,7 @@ async function _getSupplierDetails(db: DB, id: number): Promise<SupplierExtended
  * @param supplier - The supplier data to upsert
  * @throws {Error} If supplier.id is not provided
  */
-async function _upsertSupplier(db: DB, supplier: Supplier) {
+async function _upsertSupplier(db: TXAsync, supplier: Supplier) {
 	if (!supplier.id) {
 		throw new Error("Supplier must have an id");
 	}
@@ -135,7 +136,7 @@ async function _upsertSupplier(db: DB, supplier: Supplier) {
  * @param supplierId - The id of the supplier
  * @returns Promise resolving to an array of publisher ids
  */
-async function _getPublishersFor(db: DB, supplierId?: number): Promise<string[]> {
+async function _getPublishersFor(db: TXAsync, supplierId?: number): Promise<string[]> {
 	const whereCondition = supplierId ? `WHERE supplier_id = ?` : "";
 	const stmt = await db.prepare(
 		`SELECT publisher
@@ -158,7 +159,7 @@ async function _getPublishersFor(db: DB, supplierId?: number): Promise<string[]>
  * @param supplierId - The id of the supplier to associate to
  * @param publisher - The id of the publisher to associate
  */
-async function _associatePublisher(db: DB, supplierId: number, publisher: string) {
+async function _associatePublisher(db: TXAsync, supplierId: number, publisher: string) {
 	/* Makes sure the given publisher is associated with the given supplier id.
      If necessary it disassociates a different supplier */
 	await db.exec(
@@ -173,7 +174,7 @@ async function _associatePublisher(db: DB, supplierId: number, publisher: string
 }
 
 /** Removes a publisher from the list of publishers for a supplier */
-async function _removePublisherFromSupplier(db: DB, supplierId: number, publisher: string) {
+async function _removePublisherFromSupplier(db: TXAsync, supplierId: number, publisher: string) {
 	await db.exec("DELETE FROM supplier_publisher WHERE supplier_id = ? AND publisher = ?", [supplierId, publisher]);
 }
 
@@ -197,7 +198,7 @@ export const DEFAULT_SUPPLIER_NAME = "General";
  * @param db - The database instance to query
  * @returns Promise resolving to an array of supplier order summaries with supplier information
  */
-async function _getPossibleSupplierOrders(db: DB): Promise<PossibleSupplierOrder[]> {
+async function _getPossibleSupplierOrders(db: TXAsync): Promise<PossibleSupplierOrder[]> {
 	const query = `
 		SELECT
             supplier_id,
@@ -233,7 +234,7 @@ async function _getPossibleSupplierOrders(db: DB): Promise<PossibleSupplierOrder
  * @param supplierId - The ID of the supplier to get order lines for
  * @returns Promise resolving to an array of possible order lines for the specified supplier
  */
-async function _getPossibleSupplierOrderLines(db: DB, supplierId: number | null): Promise<PossibleSupplierOrderLine[]> {
+async function _getPossibleSupplierOrderLines(db: TXAsync, supplierId: number | null): Promise<PossibleSupplierOrderLine[]> {
 	const conditions = [
 		"col.placed is NULL",
 		// sometimes a book can be received before being placed with the supplier due to overdelivery
@@ -295,7 +296,7 @@ async function _getPossibleSupplierOrderLines(db: DB, supplierId: number | null)
  supplier details and book counts
   */
 async function _getPlacedSupplierOrders(
-	db: DB,
+	db: TXAsync,
 	filters?: { supplierId?: number; reconciled?: boolean; finalized?: boolean }
 ): Promise<PlacedSupplierOrder[]> {
 	const whereConditions = ["so.created IS NOT NULL"];
@@ -367,7 +368,7 @@ async function _getPlacedSupplierOrders(
  * @param supplier_order_id - supplier order to retrieve lines for
  * @returns array of place supplier order lines:
  **/
-async function _getPlacedSupplierOrderLines(db: DB, supplier_order_ids: number[]): Promise<PlacedSupplierOrderLine[]> {
+async function _getPlacedSupplierOrderLines(db: TXAsync, supplier_order_ids: number[]): Promise<PlacedSupplierOrderLine[]> {
 	if (!supplier_order_ids.length) {
 		return [];
 	}
@@ -425,7 +426,7 @@ async function _getPlacedSupplierOrderLines(db: DB, supplier_order_ids: number[]
  * @todo Rewrite this function to accommodate for removing quantity in customerOrderLine
  */
 async function _createSupplierOrder(
-	db: DB,
+	db: DBAsync,
 	id: number,
 	supplierId: number | null,
 	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
