@@ -1,6 +1,6 @@
 import * as Comlink from "comlink";
 
-import type { DBAsync, OnUpdateCallback, StmtAsync, TMutex, TXCallback, UpdateType, _TXAsync } from "./types";
+import type { DBAsync, OnUpdateCallback, StmtAsync, TMutex, TXCallback, _TXAsync } from "./types";
 
 import DBWorker from "./worker-db.worker?worker";
 import type { MsgInit } from "./worker-db.worker";
@@ -67,7 +67,7 @@ class WorkerDB implements DBAsync {
 		return this.remote.execMany(sql);
 	}
 
-	execO<O extends {}>(sql: string, bind: SQLiteCompatibleType[]) {
+	execO<O extends Record<string, any>>(sql: string, bind: SQLiteCompatibleType[]) {
 		return this.remote.execO(sql, bind) as Promise<O[]>;
 	}
 
@@ -79,7 +79,7 @@ class WorkerDB implements DBAsync {
 		return this.remote.close();
 	}
 
-	createFunction(name: string, fn: (...args: any) => unknown, opts?: {}) {
+	createFunction(name: string, fn: (...args: any) => unknown, opts?: Record<string, any>) {
 		return this.remote.createFunction(name, Comlink.proxy(fn), opts);
 	}
 
