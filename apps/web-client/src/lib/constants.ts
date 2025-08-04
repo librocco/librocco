@@ -28,4 +28,4 @@ const PKG_VERSION = import.meta.env.VITE_PKG_VERSION;
 export const GIT_SHA = import.meta.env.VITE_GIT_SHA || "dev";
 export const VERSION = import.meta.env.VITE_GIT_SHA ? `${PKG_VERSION}-${import.meta.env.VITE_GIT_SHA}` : PKG_VERSION;
 
-export const DEFAULT_VFS = "opfs-any-context";
+export { DEFAULT_VFS } from "$lib/db/cr-sqlite/core/constants";
