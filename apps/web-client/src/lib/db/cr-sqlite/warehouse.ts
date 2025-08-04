@@ -166,8 +166,11 @@ async function _getWarehouseById(db: DB, id: number) {
 	return result;
 }
 
-export function deleteWarehouse(db: DB, id: number) {
-	return db.exec("DELETE FROM warehouse WHERE id = ?", [id]);
+export function deleteWarehouse(db: DB, id: number): Promise<void> {
+	return db.tx(async (txDb) => {
+		await txDb.exec("DELETE FROM note WHERE warehouse_id = ?", [id]);
+		await txDb.exec("DELETE FROM warehouse WHERE id = ?", [id]);
+	});
 }
 
 export const getWarehouseIdSeq = timed(_getWarehouseIdSeq);
