@@ -8,11 +8,12 @@ overrides:
   '@vlcn.io/crsqlite': file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz
   '@vlcn.io/crsqlite-wasm': file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
   '@vlcn.io/rx-tbl': file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz
+  '@vlcn.io/wa-sqlite': file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz
   '@vlcn.io/ws-browserdb': file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz
   '@vlcn.io/ws-client': file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz
   '@vlcn.io/ws-common': file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz
   '@vlcn.io/ws-server': file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz
-  '@vlcn.io/wa-sqlite': file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz
+  '@vlcn.io/xplat-api': file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
 
 importers:
 
@@ -86,6 +87,9 @@ importers:
       '@vlcn.io/ws-server':
         specifier: file:../../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz
         version: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz
+      '@vlcn.io/xplat-api':
+        specifier: file:../../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
+        version: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
       export-to-csv:
         specifier: ~1.3.0
         version: 1.3.0
@@ -356,7 +360,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(@types/node@16.18.126)
+        version: 6.0.15(tsx@4.19.4)
 
   ../../pkg/scaffold:
     dependencies:
@@ -543,7 +547,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(@types/node@16.18.126)
+        version: 6.0.15(tsx@4.19.4)
 
   ../../plugins/open-library-api:
     devDependencies:
@@ -573,7 +577,7 @@ importers:
         version: 5.8.3
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(@types/node@16.18.126)
+        version: 6.0.15(tsx@4.19.4)
 
 packages:
 
@@ -5360,11 +5364,6 @@ packages:
     dependencies:
       winston: 3.17.0
     dev: false
-
-  /@vlcn.io/xplat-api@0.15.0:
-    resolution: {integrity: sha512-2/aE7VgI3EbIO5EcJGrskAJuCa2pteY1rWNWfhovFKMERe9NhJdlDMIB1I31X0sN/WC2DnF30RqcdTXNfYyzhQ==}
-    dependencies:
-      comlink: 4.4.2
 
   /abab@2.0.6:
     resolution: {integrity: sha512-j2afSsaIENvHZN2B8GOpF566vZ5WVk5opAiMTvWgaQT8DkbOqsTfvNAvHoRGU2zzP8cPoqys+xHTRDWW8L+/BA==}
@@ -13628,12 +13627,12 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz:
-    resolution: {integrity: sha512-oYkBs13UO197XJU+3PYN7wTuBGMw+rRUkv65jBo1WQpKjtaGf5BPloa93EwRWO7jLrICSGySr0vjZFD3DXPFZQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
+    resolution: {integrity: sha512-JFskUyV/aqHypW7kaFcXMmmnifrcUk/Fq7VR35kznEnN/u59888tK3pzhiR4qw4zqMM1tKiB0ZWkmZ8G6k7hCw==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
     name: '@vlcn.io/crsqlite-wasm'
     version: 0.16.0
     dependencies:
       '@vlcn.io/wa-sqlite': file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz
-      '@vlcn.io/xplat-api': 0.15.0
+      '@vlcn.io/xplat-api': file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
       async-mutex: 0.4.1
 
   file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz:
@@ -13641,16 +13640,16 @@ packages:
     name: '@vlcn.io/rx-tbl'
     version: 0.15.0
     dependencies:
-      '@vlcn.io/xplat-api': 0.15.0
+      '@vlcn.io/xplat-api': file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz:
-    resolution: {integrity: sha512-0x/oHxQWOv80q9h7UDwwmarPlFuhjVc99SAdgUZGhyXT4v6jlB9YxwkTZOSmN+PHU7U4s+5YvVY1zZ7rwZ4RzA==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
+    resolution: {integrity: sha512-mxe0c3EN3+RWhb9L3Inki30cqNxuJRVXlicm9fG2GkHzlpB7qbOm0kyo8Im2W1w1cMYQzg70noRLJykS1rk1WQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
     name: '@vlcn.io/wa-sqlite'
     version: 0.22.0
 
   file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz:
-    resolution: {integrity: sha512-NQWJLBJq4K8Tc0ZzfOnGkxPzUjJ1nCVsZhtgejFsQWK8+S3xOsm8xFaj22MdDNlgnhITzTadLDumoKqT4c5IeQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
+    resolution: {integrity: sha512-P4YYb9EvzQi87BHPplzWnpcmZMq+lQL6AruozNM5leZ1ETWNdntJ+mUm4MD3+ZHdcdb0EPRvwGclv0QkLNyOag==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
     name: '@vlcn.io/ws-browserdb'
     version: 0.2.0
     dependencies:
@@ -13659,7 +13658,7 @@ packages:
       '@vlcn.io/rx-tbl': file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz
       '@vlcn.io/ws-client': file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz
       '@vlcn.io/ws-common': file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz
-      '@vlcn.io/xplat-api': 0.15.0
+      '@vlcn.io/xplat-api': file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz:
@@ -13680,7 +13679,7 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz:
-    resolution: {integrity: sha512-4zmFuykl3vyZ5x3kGWaQj+t0eLHPnPAUtf/gPrSAKI91a0xRq+W5xBQEVQng50djElgoNBvwGLxfA7HuP6Hl/A==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
+    resolution: {integrity: sha512-1F9kqzCe/cAoLc9HJvicIyj28ButkqG4wHuMLdO6EWnis3NtBZnlpQQEbeNLk2gza+LmJ7flOKW1ZFQiW5UsEw==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
     name: '@vlcn.io/ws-server'
     version: 0.2.2
     dependencies:
@@ -13697,3 +13696,10 @@ packages:
       - bufferutil
       - utf-8-validate
     dev: false
+
+  file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz:
+    resolution: {integrity: sha512-rdJShMovT3ymtOFcdFZOR0PZZliClXjSZPEFge3QMDdPkN2ZuXYOtGCsuSLMkK/7M/U8uAmZtb8akTPCEjesIg==, tarball: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz}
+    name: '@vlcn.io/xplat-api'
+    version: 0.15.0
+    dependencies:
+      comlink: 4.4.2

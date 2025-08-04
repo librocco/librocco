@@ -30,7 +30,7 @@
 
 import { asc } from "@librocco/shared";
 
-import type { DB, ReconciliationOrder, ReconciliationOrderLine, DBReconciliationOrder } from "./types";
+import type { DBAsync, TXAsync, ReconciliationOrder, ReconciliationOrderLine, DBReconciliationOrder } from "./types";
 
 import { timed } from "$lib/utils/timer";
 
@@ -76,7 +76,7 @@ export class ErrSupplierOrdersAlreadyReconciling extends Error {
  * @throws Error if supplierOrderIds array is empty
  * @returns ID of the newly created reconciliation order
  */
-async function _createReconciliationOrder(db: DB, id: number, _supplierOrderIds: number[]): Promise<void> {
+async function _createReconciliationOrder(db: TXAsync, id: number, _supplierOrderIds: number[]): Promise<void> {
 	if (!_supplierOrderIds.length) {
 		throw new Error("Reconciliation order must be based on at least one supplier order");
 	}
@@ -126,7 +126,7 @@ async function _createReconciliationOrder(db: DB, id: number, _supplierOrderIds:
  * if not provided, all orders are fetched
  * @returns ReconciliationOrder array
  */
-async function _getAllReconciliationOrders(db: DB, filters?: { finalized?: boolean }): Promise<ReconciliationOrder[]> {
+async function _getAllReconciliationOrders(db: TXAsync, filters?: { finalized?: boolean }): Promise<ReconciliationOrder[]> {
 	// Filter by finalized status if provided (return all otherwise)
 	const whereClause = filters?.finalized === undefined ? "" : `WHERE finalized = ${Number(filters.finalized)}`;
 
@@ -146,7 +146,7 @@ async function _getAllReconciliationOrders(db: DB, filters?: { finalized?: boole
  * @throws Error if order not found or if supplier_order_ids contains invalid JSON
  * @returns ReconciliationOrder with parsed supplier_order_ids
  */
-async function _getReconciliationOrder(db: DB, id: number): Promise<ReconciliationOrder & { supplierOrderIds: number[] }> {
+async function _getReconciliationOrder(db: TXAsync, id: number): Promise<ReconciliationOrder & { supplierOrderIds: number[] }> {
 	const [result] = await db.execO<DBReconciliationOrder>(
 		`
 			SELECT id, supplier_order_ids, finalized, updatedAt, created
@@ -218,7 +218,7 @@ export class ErrReconciliationOrderFinalized extends Error {
   * - The reconciliation order is already finalized
   * - Database transaction fails
   */
-async function _deleteReconciliationOrder(db: DB, id: number): Promise<void> {
+async function _deleteReconciliationOrder(db: DBAsync, id: number): Promise<void> {
 	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
 
 	if (!reconOrder[0]) {
@@ -250,7 +250,7 @@ async function _deleteReconciliationOrder(db: DB, id: number): Promise<void> {
   * - Reconciliation order not found
   * - Order is already finalized
   */
-async function _upsertReconciliationOrderLines(db: DB, id: number, newLines: { isbn: string; quantity: number }[]) {
+async function _upsertReconciliationOrderLines(db: DBAsync, id: number, newLines: { isbn: string; quantity: number }[]) {
 	const [reconOrder] = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
 
 	if (!reconOrder) {
@@ -291,7 +291,7 @@ async function _upsertReconciliationOrderLines(db: DB, id: number, newLines: { i
  * @param isbn - The ISBN of the book to remove from the order
  * @throws {Error} When the reconciliation order with the given ID is not found or order is finalized
  */
-async function _deleteOrderLineFromReconciliationOrder(db: DB, id: number, isbn: string) {
+async function _deleteOrderLineFromReconciliationOrder(db: DBAsync, id: number, isbn: string) {
 	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
 
 	if (!reconOrder[0]) {
@@ -326,7 +326,7 @@ async function _deleteOrderLineFromReconciliationOrder(db: DB, id: number, isbn:
  * @param id - The ID of the reconciliation order
  * @returns array of ReconciliationOrderLine objects with book details
  */
-async function _getReconciliationOrderLines(db: DB, id: number): Promise<ReconciliationOrderLine[]> {
+async function _getReconciliationOrderLines(db: TXAsync, id: number): Promise<ReconciliationOrderLine[]> {
 	// Check if the order exists
 	// TODO: do we, prehaps, want this to fail silently ??
 	const [reconOrder] = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
@@ -364,7 +364,7 @@ async function _getReconciliationOrderLines(db: DB, id: number): Promise<Reconci
  * - Order is already finalized
  * - Customer order lines format is invalid
  */
-async function _finalizeReconciliationOrder(db: DB, id: number) {
+async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 	const reconOrder = await getReconciliationOrder(db, id);
 	if (!reconOrder) {
 		throw new ErrReconciliationOrderNotFound(id);
