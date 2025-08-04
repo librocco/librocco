@@ -8,6 +8,30 @@ export type MsgInitOk = { _type: "wkr-init"; status: "ok" };
 export type MsgWkrError = { _type: "wkr-init"; status: "error"; error: string; stack?: string };
 export type MsgInit = MsgInitOk | MsgWkrError;
 
+async function start() {
+	try {
+		const [dbname, vfs] = self.name.split("---") as [string, VFSWhitelist];
+		console.log(`[worker] initialising db, using: dbname: ${dbname}, vfs: ${vfs}`);
+		if (!dbname || !vfs) {
+			throw new Error("Invalid worker name format. Expected '<dbname>---<vfs>'.");
+		}
+
+		const _db = await getCrsqliteDB(dbname, vfs);
+		console.log(`[worker] db initialised!`);
+
+		const db = wrapDB(_db);
+		Comlink.expose(db);
+
+		console.log(`[worker] db exposed, sending ok msg...`);
+		const msg: MsgInitOk = { _type: "wkr-init", status: "ok" };
+		self.postMessage(msg);
+	} catch (e) {
+		const msg: MsgWkrError = { _type: "wkr-init", status: "error", error: (e as Error).message, stack: (e as Error).stack };
+		self.postMessage(msg);
+	}
+}
+start();
+
 class WrappedDB implements DBAsync {
 	constructor(readonly internal: DBAsync) {}
 
@@ -81,27 +105,7 @@ class WrappedDB implements DBAsync {
 	}
 }
 
-try {
-	const [dbname, vfs] = self.name.split("---") as [string, VFSWhitelist];
-	console.log(`[worker] initialising db, using: dbname: ${dbname}, vfs: ${vfs}`);
-	if (!dbname || !vfs) {
-		throw new Error("Invalid worker name format. Expected '<dbname>---<vfs>'.");
-	}
-
-	const _db = await getCrsqliteDB(dbname, vfs);
-	console.log(`[worker] db initialised!`);
-
-	const db = wrapDB(_db);
-	Comlink.expose(db);
-
-	console.log(`[worker] db exposed, sending ok msg...`);
-	const msg: MsgInitOk = { _type: "wkr-init", status: "ok" };
-	self.postMessage(msg);
-} catch (e) {
-	const msg: MsgWkrError = { _type: "wkr-init", status: "error", error: (e as Error).message, stack: (e as Error).stack };
-	self.postMessage(msg);
-}
-
 function wrapDB(db: DBAsync) {
 	return new WrappedDB(db);
 }
+
