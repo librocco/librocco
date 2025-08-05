@@ -207,6 +207,10 @@
 				<div class="basis-1/3">
 					<h2 class="text-base font-semibold leading-7 text-gray-900">{tSettings.headings.db_management()}</h2>
 					<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.db_management()}</p>
+
+					{#if data.dbCtx?.vfs}
+						<p class="mt-8 inline-block rounded bg-gray-400 px-4 py-1 text-white">{data.dbCtx.vfs}</p>
+					{/if}
 				</div>
 
 				<div class="w-full basis-2/3">
