@@ -1,1 +1,1 @@
-export const DEFAULT_VFS = "opfs-any-context";
+export const DEFAULT_VFS = "idb-batch-atomic";
