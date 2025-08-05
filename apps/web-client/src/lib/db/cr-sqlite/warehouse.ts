@@ -168,6 +168,7 @@ async function _getWarehouseById(db: TXAsync, id: number) {
 
 export function deleteWarehouse(db: DBAsync, id: number): Promise<void> {
 	return db.tx(async (txDb) => {
+		await txDb.exec("DELETE FROM book_transaction WHERE warehouse_id = ?", [id]);
 		await txDb.exec("DELETE FROM note WHERE warehouse_id = ?", [id]);
 		await txDb.exec("DELETE FROM warehouse WHERE id = ?", [id]);
 	});
