@@ -258,20 +258,20 @@
 									{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbid)}
 									{#if selectionOn}
 										<!-- svelte-ignore a11y_click_events_have_key_events -->
-										<li>
-											<button>
-												on:click={handleSelect(file)}
-												data-active={active}
-												class="group flex h-16 cursor-pointer items-center justify-between px-4 py-3 {active
-													? "bg-green-300"
-													: "hover:bg-gray-50"}" > file
-											</button>
+										<li
+											on:click={handleSelect(file)}
+											data-active={active}
+											class="group flex h-16 cursor-pointer items-center justify-between px-4 py-3 {active
+												? 'bg-green-300'
+												: 'hover:bg-gray-50'}"
+										>
+											<button>{file} </button>
 										</li>
 									{:else}
 										<li
 											data-file={file}
 											data-active={active}
-											class="group flex h-16 items-center justify-between px-4 py-3 {active ? 'bg-base-100' : ''}"
+											class="group flex h-16 items-center justify-between px-4 py-3 {active ? 'bg-gray-200' : ''}"
 										>
 											<span>{file}</span>
 											<div class="hidden gap-x-2 group-hover:flex">
