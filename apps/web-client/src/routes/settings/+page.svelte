@@ -7,23 +7,26 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { zod } from "sveltekit-superforms/adapters";
 
+	import { invalidateAll } from "$app/navigation";
+
 	import { testId, addSQLite3Suffix } from "@librocco/shared";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";
-
-	import { dbid, syncConfig, syncActive } from "$lib/db";
-
-	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
-	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
-	import { Page } from "$lib/controllers";
-
 	import { type DialogContent } from "$lib/types";
 
 	import { VERSION } from "$lib/constants";
-	import { invalidateAll } from "$app/navigation";
+
+	import { Page } from "$lib/controllers";
+
 	import { deviceSettingsStore } from "$lib/stores/app";
-	import { LL } from "@librocco/shared/i18n-svelte";
+
+	import { dbid, syncConfig, syncActive } from "$lib/db";
 	import { clearDb } from "$lib/db/cr-sqlite/db";
+	import { opfsVFSList, vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
+
+	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
+	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 
 	export let data: PageData;
 
@@ -214,64 +217,10 @@
 				</div>
 
 				<div class="w-full basis-2/3">
-					<ul data-testid={testId("database-management-list")} class="h-[240px] w-full overflow-y-auto overflow-x-hidden border">
-						{#if !importOn}
-							{#each files as file (file)}
-								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbid)}
-								{#if selectionOn}
-									<!-- svelte-ignore a11y_click_events_have_key_events -->
-									<li>
-										<button>
-											on:click={handleSelect(file)}
-											data-active={active}
-											class="group flex h-16 cursor-pointer items-center justify-between px-4 py-3 {active
-												? "bg-green-300"
-												: "hover:bg-gray-50"}" > file
-										</button>
-									</li>
-								{:else}
-									<li
-										data-file={file}
-										data-active={active}
-										class="group flex h-16 items-center justify-between px-4 py-3 {active ? 'bg-base-100' : ''}"
-									>
-										<span>{file}</span>
-										<div class="hidden gap-x-2 group-hover:flex">
-											<button
-												data-testid={testId("db-action-export")}
-												on:click={handleExportDatabase(file)}
-												type="button"
-												class="btn-primary btn-sm btn cursor-pointer"><Download /></button
-											>
-											<button
-												data-testid={testId("db-action-delete")}
-												use:melt={$trigger}
-												on:m-click={() => {
-													deleteDatabase = { name: file };
-													dialogContent = {
-														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-														title: tCommon.delete_dialog.title({ entity: file }),
-														description: tCommon.delete_database_dialog.description(),
-														type: "delete"
-													};
-												}}
-												on:m-keydown={() => {
-													deleteDatabase = { name: file };
-													dialogContent = {
-														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-														title: tCommon.delete_dialog.title({ entity: file }),
-														description: tCommon.delete_database_dialog.description(),
-														type: "delete"
-													};
-												}}
-												type="button"
-												class="btn-primary btn-sm btn cursor-pointer"><Trash /></button
-											>
-										</div>
-									</li>
-								{/if}
-							{/each}
-						{:else}
+					<div data-testid={testId("database-management-list")} class="h-[240px] w-full overflow-hidden">
+						{#if importOn}
+							<!-- Import drop area, NOTE: with current state of things this should be unreachable with no-OPFS VFS -->
+
 							<div
 								class="flex h-full items-center justify-center border-2 border-dashed border-base-100"
 								on:drop={handleDrop}
@@ -281,38 +230,120 @@
 							>
 								<p>{tSettings.descriptions.import()}</p>
 							</div>
+						{:else if !vfsSupportsOPFS(data.dbCtx?.vfs)}
+							<!-- DB management is not supported for idb-batch-atomic (as the implementation is non-trivial) -->
+
+							<div
+								class="h-full select-none items-center justify-center overflow-y-auto overflow-x-hidden rounded border border-gray-100 bg-gray-100 p-4 text-gray-500"
+							>
+								<div>
+									<p>
+										The following functionality is not available for <span class="rounded bg-gray-300 px-2 py-1">{data.dbCtx?.vfs}</span>
+										vfs: <strong>Import</strong>, <strong>Export</strong>, <strong>Select</strong>, <strong>New</strong>
+										<br />
+										<br />
+										Please use OPFS-supported VFS by setting a local storage entry
+										<span class="rounded bg-gray-300 px-2 py-1">vfs: {"<vfs-name>"}</span> with one of the following values:
+									</p>
+									<ul class="pl-4">
+										{#each opfsVFSList as vfs}
+											<li>- {vfs}</li>
+										{/each}
+									</ul>
+								</div>
+							</div>
+						{:else}
+							<ul class="h-full w-full overflow-y-auto overflow-x-hidden border">
+								{#each files as file (file)}
+									{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbid)}
+									{#if selectionOn}
+										<!-- svelte-ignore a11y_click_events_have_key_events -->
+										<li>
+											<button>
+												on:click={handleSelect(file)}
+												data-active={active}
+												class="group flex h-16 cursor-pointer items-center justify-between px-4 py-3 {active
+													? "bg-green-300"
+													: "hover:bg-gray-50"}" > file
+											</button>
+										</li>
+									{:else}
+										<li
+											data-file={file}
+											data-active={active}
+											class="group flex h-16 items-center justify-between px-4 py-3 {active ? 'bg-base-100' : ''}"
+										>
+											<span>{file}</span>
+											<div class="hidden gap-x-2 group-hover:flex">
+												<button
+													data-testid={testId("db-action-export")}
+													on:click={handleExportDatabase(file)}
+													type="button"
+													class="btn-primary btn-sm btn cursor-pointer"><Download /></button
+												>
+												<button
+													data-testid={testId("db-action-delete")}
+													use:melt={$trigger}
+													on:m-click={() => {
+														deleteDatabase = { name: file };
+														dialogContent = {
+															onConfirm: () => {}, // Note: confirm handler is called directly from the form element
+															title: tCommon.delete_dialog.title({ entity: file }),
+															description: tCommon.delete_database_dialog.description(),
+															type: "delete"
+														};
+													}}
+													on:m-keydown={() => {
+														deleteDatabase = { name: file };
+														dialogContent = {
+															onConfirm: () => {}, // Note: confirm handler is called directly from the form element
+															title: tCommon.delete_dialog.title({ entity: file }),
+															description: tCommon.delete_database_dialog.description(),
+															type: "delete"
+														};
+													}}
+													type="button"
+													class="btn-primary btn-sm btn cursor-pointer"><Trash /></button
+												>
+											</div>
+										</li>
+									{/if}
+								{/each}
+							</ul>
 						{/if}
-					</ul>
+					</div>
 
 					<div class="flex justify-end gap-x-2 px-4 py-6">
 						<button on:click={nukeAndResyncDB} type="button" class="btn-secondary btn">{tSettings.actions.nuke_and_resync()}</button>
-						<button on:click={toggleImport} type="button" class="btn-secondary btn">
-							{importOn ? tCommon.actions.cancel() : tCommon.actions.import()}
-						</button>
-						<button on:click={toggleSelection} type="button" class="btn {!selectionOn ? 'btn-secondary btn-outline' : 'btn-primary'}">
-							{tCommon.actions.select()}
-						</button>
-						<button
-							use:melt={$trigger}
-							on:m-click={() => {
-								dialogContent = {
-									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-									title: tCommon.create_database_dialog.title(),
-									description: tCommon.create_database_dialog.description(),
-									type: "create"
-								};
-							}}
-							on:m-keydown={() => {
-								dialogContent = {
-									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-									title: tCommon.create_database_dialog.title(),
-									description: tCommon.create_database_dialog.description(),
-									type: "create"
-								};
-							}}
-							type="button"
-							class="btn-primary btn">{tSettings.labels.new()}</button
-						>
+						{#if vfsSupportsOPFS(data.dbCtx?.vfs)}
+							<button on:click={toggleImport} type="button" class="btn-secondary btn">
+								{importOn ? tCommon.actions.cancel() : tCommon.actions.import()}
+							</button>
+							<button on:click={toggleSelection} type="button" class="btn {!selectionOn ? 'btn-secondary btn-outline' : 'btn-primary'}">
+								{tCommon.actions.select()}
+							</button>
+							<button
+								use:melt={$trigger}
+								on:m-click={() => {
+									dialogContent = {
+										onConfirm: () => {}, // Note: confirm handler is called directly from the form element
+										title: tCommon.create_database_dialog.title(),
+										description: tCommon.create_database_dialog.description(),
+										type: "create"
+									};
+								}}
+								on:m-keydown={() => {
+									dialogContent = {
+										onConfirm: () => {}, // Note: confirm handler is called directly from the form element
+										title: tCommon.create_database_dialog.title(),
+										description: tCommon.create_database_dialog.description(),
+										type: "create"
+									};
+								}}
+								type="button"
+								class="btn-primary btn">{tSettings.labels.new()}</button
+							>
+						{/if}
 					</div>
 				</div>
 			</div>
