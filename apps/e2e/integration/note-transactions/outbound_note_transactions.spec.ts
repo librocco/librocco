@@ -926,7 +926,7 @@ test("should auto-assign to the available warehouse after a warehouse with stock
 	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "Warehouse 2" }]);
 });
 
-test("should show no warehouse selected after the assigned warehouse is deleted", async ({ page }) => {
+test("should not show transaction after the assigned warehouse is deleted", async ({ page }) => {
 	// Setup: Create a transaction and assign it to a warehouse.
 	const dbHandle = await getDbHandle(page);
 	const isbn = "1234567890";
@@ -942,8 +942,8 @@ test("should show no warehouse selected after the assigned warehouse is deleted"
 	// Action: Delete the assigned warehouse.
 	await dbHandle.evaluate(deleteWarehouse, 1);
 
-	// Assertion: Verify the transaction row now shows no warehouse selected.
-	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "" }]);
+	// Assertion: Verify the transaction row now does not exist
+	await entries.assertRows([]);
 });
 
 test("should reset default warehouse selector when the selected warehouse is deleted", async ({ page }) => {
