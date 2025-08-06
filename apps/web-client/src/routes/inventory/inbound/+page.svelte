@@ -25,6 +25,8 @@
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import { InventoryManagementPage } from "$lib/controllers";
 	import LL from "@librocco/shared/i18n-svelte";
+	import PageCenterDialog from "$lib/components/Melt/PageCenterDialog.svelte";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	export let data: PageData;
 	interface DialogContent {
@@ -39,6 +41,7 @@
 	$: t = $LL.inventory_page.purchase_tab;
 	$: tPurchase = $LL.purchase_note;
 
+	let noteToDelete = null;
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
@@ -60,16 +63,15 @@
 		await goto(appPath("warehouses", id));
 	};
 
-	const handleDeleteNote = (id: number) => async (closeDialog: () => void) => {
-		await deleteNote(db, id);
-		closeDialog();
-	};
-
 	const dialog = createDialog({ forceVisible: true });
 	const {
 		elements: { portalled, overlay, trigger },
 		states: { open }
 	} = dialog;
+	const handleDeleteNote = async (id: number) => {
+		open.set(false);
+		await deleteNote(db, id);
+	};
 
 	let dialogContent: DialogContent;
 </script>
@@ -141,11 +143,12 @@
 								class="btn-secondary btn-sm btn"
 								aria-label="Delete note: {note.displayName}"
 								on:m-click={() => {
-									dialogContent = {
-										onConfirm: handleDeleteNote(note.id),
-										title: $LL.common.delete_dialog.title({ entity: note.displayName }),
-										description: $LL.common.delete_dialog.description()
-									};
+									noteToDelete = note;
+									// dialogContent = {
+									// 	onConfirm: handleDeleteNote(note.id),
+									// 	title: $LL.common.delete_dialog.title({ entity: note.displayName }),
+									// 	description: $LL.common.delete_dialog.description()
+									// };
 								}}
 							>
 								<Trash size={18} aria-hidden />
@@ -159,7 +162,7 @@
 		<!-- End entity list contaier -->
 	{/if}
 </InventoryManagementPage>
-
+<!--
 {#if $open}
 	{@const { onConfirm, title, description } = dialogContent};
 
@@ -172,4 +175,20 @@
 			</Dialog>
 		</div>
 	</div>
-{/if}
+{/if} -->
+
+<PageCenterDialog {dialog} description="" title="">
+	<ConfirmDialog
+		on:confirm={() => {
+			handleDeleteNote(noteToDelete.id);
+			noteToDelete = null;
+		}}
+		on:cancel={() => {
+			open.set(false);
+			noteToDelete = null;
+		}}
+		heading={$LL.common.delete_dialog.description()}
+		description={$LL.common.delete_dialog.title({ entity: noteToDelete.displayName })}
+		labels={{ confirm: "Confirm", cancel: "Cancel" }}
+	/>
+</PageCenterDialog>
