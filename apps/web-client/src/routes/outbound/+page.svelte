@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { fade } from "svelte/transition";
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
@@ -19,8 +18,6 @@
 
 	import { PlaceholderBox, Dialog } from "$lib/components";
 	import { Page } from "$lib/controllers";
-
-	import { type DialogContent } from "$lib/types";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
@@ -72,7 +69,6 @@
 	} = dialog;
 
 	let noteToDelete = null;
-	let dialogContent: DialogContent | null = null;
 	$: tOutboundPage = $LL.sale_page;
 	$: tPages = $LL.page_headings;
 </script>
@@ -172,8 +168,14 @@
 
 <PageCenterDialog {dialog} description="" title="">
 	<ConfirmDialog
-		on:confirm={() => handleDeleteNote(noteToDelete.id)}
-		on:cancel={() => open.set(false)}
+		on:confirm={() => {
+			handleDeleteNote(noteToDelete.id);
+			noteToDelete = null;
+		}}
+		on:cancel={() => {
+			open.set(false);
+			noteToDelete = null;
+		}}
 		heading={$LL.common.delete_dialog.description()}
 		description={$LL.common.delete_dialog.title({ entity: noteToDelete.displayName })}
 		labels={{ confirm: "Confirm", cancel: "Cancel" }}
