@@ -61,41 +61,73 @@
 
 	const toggleImport = () => (importOn = !importOn);
 
+	const getDroppedSqlite3Files = (event: DragEvent) => {
+		if (event.dataTransfer?.items) {
+			return Array.from(event.dataTransfer.items)
+				.filter((item) => item.kind === "file")
+				.map((item) => item.getAsFile())
+				.filter((file): file is File => file !== null && file.name.endsWith(".sqlite3"));
+		} else if (event.dataTransfer?.files) {
+			return Array.from(event.dataTransfer.files).filter((file) => file.name.endsWith(".sqlite3"));
+		}
+		return [];
+	};
+
 	const handleDrop = async (event: DragEvent) => {
 		event.preventDefault();
-		if (event.dataTransfer?.items) {
-			for (let i = 0; i < event.dataTransfer.items.length; i++) {
-				const item = event.dataTransfer.items[i];
-				if (item.kind === "file") {
-					const file = item.getAsFile();
-					if (file && file.name.endsWith(".sqlite3")) {
-						await importDatabase(file);
-					}
-				}
-			}
-		} else if (event.dataTransfer?.files) {
-			for (let i = 0; i < event.dataTransfer.files.length; i++) {
-				const file = event.dataTransfer.files[i];
-				if (file && file.name.endsWith(".sqlite3")) {
-					await importDatabase(file);
-				}
-			}
+
+		const sqliteFiles = getDroppedSqlite3Files(event);
+
+		// We support exactly 1 file per import
+		if (sqliteFiles.length !== 1) return;
+		const [file] = sqliteFiles;
+
+		// Close relevant connections
+		//
+		// Stop the sync -- this is useful if overwriting the current DB, but doesn't hurt otherwise
+		syncActive.set(false);
+		//
+		// Close the DB if cached (current or used in the session)
+		const cached = dbCache.get(file.name);
+		if (cached) {
+			const { db } = await cached;
+			await db.close();
+			dbCache.delete(file.name);
 		}
-		files = await getFiles();
+
+		const dir = await window.navigator.storage.getDirectory();
+
+		// If overwriting an existing file, remove it (and its corresponding wal and journal) first
+		// if the files don't exist - noop
+		const removeArtefact = async (name: string) => {
+			try {
+				await dir.removeEntry(name);
+			} catch (e) {
+				// Skip file if not exists
+				if ((e as Error).name === "NotFoundError") {
+					// Throw otherwise
+					throw e;
+				}
+			}
+		};
+		// NOTE: running with retries to make sure the file locks were released
+		await retry(() => removeArtefact(file.name), 100, 5);
+		await retry(() => removeArtefact(`${file.name}-wal`), 100, 5);
+		await retry(() => removeArtefact(`${file.name}-journal`), 100, 5);
+
+		// Import the file
+		const fileHandle = await dir.getFileHandle(file.name, { create: true });
+		const writable = await fileHandle.createWritable();
+		await writable.write(await file.arrayBuffer());
+		await writable.close();
+
+		await handleSelect(file.name)();
+
 		importOn = false;
 	};
 
 	const handleDragOver = (event: DragEvent) => {
 		event.preventDefault();
-	};
-
-	const importDatabase = async (file: File) => {
-		const dir = await window.navigator.storage.getDirectory();
-		const fileHandle = await dir.getFileHandle(file.name, { create: true });
-		const writable = await fileHandle.createWritable();
-		await writable.write(await file.arrayBuffer());
-		await writable.close();
-		await handleSelect(file.name)();
 	};
 
 	// #region select db control
