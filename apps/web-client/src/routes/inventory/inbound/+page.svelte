@@ -64,15 +64,13 @@
 
 	const dialog = createDialog({ forceVisible: true, closeOnOutsideClick: false });
 	const {
-		elements: { portalled, overlay, trigger },
+		elements: { trigger },
 		states: { open }
 	} = dialog;
 	const handleDeleteNote = async (id: number) => {
 		open.set(false);
 		await deleteNote(db, id);
 	};
-
-	let dialogContent: DialogContent;
 </script>
 
 <InventoryManagementPage {handleCreateWarehouse} {db} {plugins}>

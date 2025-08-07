@@ -33,7 +33,7 @@
 			use:clickOutside={() => dispatch("cancel")}
 		>
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
-				<div class="flex w-full flex-col justify-between gap-y-6 p-6">
+				<div class="flex w-full flex-col justify-between">
 					{#if title}
 						<div class="prose">
 							<h3 use:melt={$titleStore}>
