@@ -32,7 +32,7 @@
 	import { invalidate as invalidateStockCache } from "$lib/db/cr-sqlite/stock_cache";
 
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import { deleteWarehouse, getNotes, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";
