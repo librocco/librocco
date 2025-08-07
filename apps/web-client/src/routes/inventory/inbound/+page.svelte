@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { fade } from "svelte/transition";
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
@@ -63,7 +62,7 @@
 		await goto(appPath("warehouses", id));
 	};
 
-	const dialog = createDialog({ forceVisible: true });
+	const dialog = createDialog({ forceVisible: true, closeOnOutsideClick: false });
 	const {
 		elements: { portalled, overlay, trigger },
 		states: { open }
@@ -144,11 +143,6 @@
 								aria-label="Delete note: {note.displayName}"
 								on:m-click={() => {
 									noteToDelete = note;
-									// dialogContent = {
-									// 	onConfirm: handleDeleteNote(note.id),
-									// 	title: $LL.common.delete_dialog.title({ entity: note.displayName }),
-									// 	description: $LL.common.delete_dialog.description()
-									// };
 								}}
 							>
 								<Trash size={18} aria-hidden />
@@ -162,33 +156,22 @@
 		<!-- End entity list contaier -->
 	{/if}
 </InventoryManagementPage>
-<!--
-{#if $open}
-	{@const { onConfirm, title, description } = dialogContent};
 
-	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
-		<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
-			<Dialog {dialog} type="delete" {onConfirm}>
-				<svelte:fragment slot="title">{title}</svelte:fragment>
-				<svelte:fragment slot="description">{description}</svelte:fragment>
-			</Dialog>
-		</div>
-	</div>
-{/if} -->
-
-<PageCenterDialog {dialog} description="" title="">
+<PageCenterDialog
+	{dialog}
+	on:cancel={() => {
+		open.set(false);
+		noteToDelete = null;
+	}}
+	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
+	title={$LL.common.delete_dialog.description()}
+>
 	<ConfirmDialog
 		on:confirm={() => {
 			handleDeleteNote(noteToDelete.id);
 			noteToDelete = null;
 		}}
-		on:cancel={() => {
-			open.set(false);
-			noteToDelete = null;
-		}}
-		heading={$LL.common.delete_dialog.description()}
-		description={$LL.common.delete_dialog.title({ entity: noteToDelete.displayName })}
+		on:cancel={() => open.set(false)}
 		labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	/>
 </PageCenterDialog>

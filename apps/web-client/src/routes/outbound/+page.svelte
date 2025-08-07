@@ -166,7 +166,15 @@
 	</div>
 </Page>
 
-<PageCenterDialog {dialog} description="" title="">
+<PageCenterDialog
+	{dialog}
+	on:cancel={() => {
+		open.set(false);
+		noteToDelete = null;
+	}}
+	title={$LL.common.delete_dialog.description()}
+	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
+>
 	<ConfirmDialog
 		on:confirm={() => {
 			handleDeleteNote(noteToDelete.id);
@@ -176,8 +184,6 @@
 			open.set(false);
 			noteToDelete = null;
 		}}
-		heading={$LL.common.delete_dialog.description()}
-		description={$LL.common.delete_dialog.title({ entity: noteToDelete.displayName })}
 		labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	/>
 </PageCenterDialog>
