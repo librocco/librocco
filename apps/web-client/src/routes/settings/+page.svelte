@@ -22,11 +22,12 @@
 	import { deviceSettingsStore } from "$lib/stores/app";
 
 	import { dbid, syncConfig, syncActive } from "$lib/db";
-	import { clearDb } from "$lib/db/cr-sqlite/db";
+	import { clearDb, dbCache, getInitializedDB } from "$lib/db/cr-sqlite/db";
 	import { opfsVFSList, vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
+	import { retry } from "$lib/utils/misc";
 
 	export let data: PageData;
 
@@ -35,6 +36,8 @@
 
 	// #region files list
 	let files: string[] = [];
+	// Each time a dbCtx changes, update the file list - this might indicate a DB created / deleted
+	$: if (data.dbCtx) getFiles().then((_files) => (files = _files));
 
 	const getFiles = async () => {
 		return window.navigator.storage.getDirectory().then(async (dir) => {
@@ -101,7 +104,7 @@
 	// TODO: This used the old functionality and currently doesn't work, revisit
 	const handleSelect = (name: string) => async () => {
 		// Persist the selection
-		dbid.set(name);
+		dbid.set(addSQLite3Suffix(name));
 		// Reset the db (allowing the root load function to reinstantiate the db)
 		// resetDB();
 		// Recalculate the data from root load down
@@ -124,20 +127,46 @@
 		document.removeChild(a);
 	};
 
-	const handleCreateDatabase = async (name: string) => {
+	const handleCreateDatabase = async (_name: string) => {
+		const name = addSQLite3Suffix(_name);
+
+		// Initialize a new database (we don't need it, we just need it to be initialised and cached)
+		// If this isn't done, and a sync worker is active a race condition might happen where the worker
+		// (sync controller communicating with the worker to be precise) reacts to change in persisted dbid
+		// before the root load function has had the chance to initialise the DB (apply the schema and all)
+		await getInitializedDB(name);
+
 		await handleSelect(name)();
 		open.set(false);
 		files = await getFiles();
 	};
 
 	const handleDeleteDatabase = (name: string) => async () => {
+		// If DB exists in cache (either current or used in this session), close it and clear
+		const cachedDbCtx = dbCache.get(name);
+		if (cachedDbCtx) {
+			const { db } = await cachedDbCtx;
+			await db.close();
+			dbCache.delete(name);
+		}
+
+		// Stop the sync if deleting the current DB
+		// Reasoning:
+		//   - if deleting the current DB we need the worker to release the internal DB connection
+		//   - when deleting the current DB we select the next one in the list (or recreate a default one if none exists),
+		//     in which case the sync continuing is a non-trivial choice which we defer to the user to do manually
+		if (name === get(dbid)) {
+			syncActive.set(false);
+		}
+
 		const dir = await window.navigator.storage.getDirectory();
-		await dir.removeEntry(name);
+		await retry(() => dir.removeEntry(name), 100, 5);
+
 		files = await getFiles();
 
 		// If we've just deleted the current database, select the first one in the list
 		if (!files.includes(addSQLite3Suffix(get(dbid)))) {
-			await handleSelect(files[0] || "dev")(); // If this was the last file, create a new (default) db
+			await handleSelect(files[0] || "dev.sqlite3")(); // If this was the last file, create a new (default) db(files[0] || "dev")(); // If this was the last file, create a new (default) db
 		}
 
 		open.set(false);
