@@ -1,20 +1,21 @@
-import initWasm from "@vlcn.io/crsqlite-wasm";
-import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
 import rxtbl from "@vlcn.io/rx-tbl";
 
 import schemaContent from "$lib/schemas/init?raw";
 export { schemaContent };
 
-import type { DBAsync, TXAsync, Change } from "./types";
-import { idbPromise, idbTxn } from "../indexeddb";
+import type { DBAsync, TXAsync, Change, VFSWhitelist } from "./types";
 
-export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl> };
+import { idbPromise, idbTxn } from "../indexeddb";
+import { getMainThreadDB, getWorkerDB } from "./core";
+import { DEFAULT_VFS } from "./core/constants";
+
+export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
 
 // DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
 // chahe the DB as soon as the first time 'getInitializedDB' is called, so that all subsequent calls
 // await the same promise (which may or may not be resolved by then).
-const dbCache: Record<string, Promise<DbCtx>> = {};
+export const dbCache = new Map<string, Promise<DbCtx>>();
 
 export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
@@ -31,9 +32,14 @@ async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | 
 	return [name, BigInt(version)];
 }
 
-export async function getDB(dbname: string): Promise<DBAsync> {
-	const sqlite = await initWasm(() => wasmUrl);
-	return sqlite.open(dbname);
+export async function getDB(dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<DBAsync> {
+	const mainThreadVFS = new Set<VFSWhitelist>(["idb-batch-atomic", "opfs-any-context"]);
+	if (mainThreadVFS.has(vfs)) {
+		console.log(`using main thread db with vfs: ${vfs}`);
+		return getMainThreadDB(dbname, vfs);
+	}
+	console.log(`using worker db with vfs: ${vfs}`);
+	return getWorkerDB(dbname, vfs);
 }
 
 export async function initializeDB(db: TXAsync) {
@@ -109,25 +115,29 @@ const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
 	return db;
 };
 
-export const getInitializedDB = async (dbname: string): Promise<DbCtx> => {
+export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<DbCtx> => {
 	// NOTE: DB Cache holds promises to prevent multiple initialisation attemtps:
 	// - if initialization needed - cache the request (promise) immediately
 	// - if cache exists, return the promise (which may or may not be resolved yet)
 
-	if (dbCache[dbname]) {
-		return await dbCache[dbname];
+	const cached = dbCache.get(dbname);
+	if (cached) {
+		return await cached;
 	}
 
 	try {
 		// Register the request (promise) immediately, to prevent multiple init requests
 		// at the same time
-		return await (dbCache[dbname] = getDB(dbname)
+		const initialiser = getDB(dbname, vfs)
 			.then(checkAndInitializeDB)
-			.then((db) => ({ db, rx: rxtbl(db) })));
+			.then((db) => ({ db, rx: rxtbl(db), vfs }));
+		dbCache.set(dbname, initialiser);
+
+		return await initialiser;
 	} catch (err) {
 		// If the request fails, however, (invalid DB state)
 		// remove the cached promise so that we rerun the reqiuest on error fix + invalidateAll
-		delete dbCache[dbname];
+		dbCache.delete(dbname);
 		throw err;
 	}
 };
