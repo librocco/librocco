@@ -111,6 +111,9 @@ test("should not carry over state from a deleted warehose into a new one", async
 	// Create a new warehouse
 	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 
+	// check stock is empty
+	await content.table("warehouse").assertRows([]);
+
 	// Navigate back to the list to check the new warehouse
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await warehouseList.waitFor();
