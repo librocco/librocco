@@ -29,9 +29,10 @@
 	import PageCenterDialog from "$lib/components/Melt/PageCenterDialog.svelte";
 	import { InventoryManagementPage } from "$lib/controllers";
 	import { defaultDialogConfig } from "$lib/components/Melt";
+	import { invalidate as invalidateStockCache } from "$lib/db/cr-sqlite/stock_cache";
 
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import { deleteWarehouse, getNotes, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";
@@ -49,7 +50,7 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when warehouse data changes
-		disposer = data.dbCtx?.rx?.onRange(["warehouse"], () => invalidate("warehouse:list"));
+		disposer = data.dbCtx?.rx?.onRange(["warehouse", "note", "book_transaction"], () => invalidate("warehouse:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -62,6 +63,7 @@
 	const handleDeleteWarehouse = (id: number) => async () => {
 		await deleteWarehouse(db, id);
 		deleteDialogOpen.set(false);
+		invalidateStockCache();
 	};
 
 	/**
