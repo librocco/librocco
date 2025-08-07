@@ -77,7 +77,7 @@ export async function retry<R>(cb: () => Promise<R>, pause: number, retries: num
 	for (let i = 0; i < retries; i++) {
 		try {
 			return await cb();
-		} catch (error) {
+		} catch {
 			await new Promise((res) => setTimeout(res, pause));
 		}
 	}
