@@ -515,8 +515,7 @@ test(`should check validity of the transactions and commit the note on 'commit'
 	await entries.row(0).field("warehouseName").click({ force: true });
 
 	const dropdown = page.getByTestId("dropdown-menu");
-	await dropdown.locator("button", { hasText: "Force withdrawal" }).waitFor();
-	await dropdown.locator("button", { hasText: "Force withdrawal" }).click({ force: true });
+	await dropdown.getByRole("button", { name: "Force withdrawal" }).click();
 	const forceWithdrawalDialog = page.getByRole("dialog");
 	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({ label: "Warehouse 2" });
 	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
