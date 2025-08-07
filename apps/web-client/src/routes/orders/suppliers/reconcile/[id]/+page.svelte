@@ -359,12 +359,10 @@
 	/>
 </PageCenterDialog>
 
-<PageCenterDialog dialog={deleteDialog} title="" description="">
+<PageCenterDialog dialog={deleteDialog} title={t.delete_dialog.title()} description={t.delete_dialog.description()}>
 	<ConfirmDialog
 		on:confirm={handleDelete}
 		on:cancel={() => deleteDialogOpen.set(false)}
-		heading={t.delete_dialog.title()}
-		description={t.delete_dialog.description()}
 		labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	/>
 </PageCenterDialog>

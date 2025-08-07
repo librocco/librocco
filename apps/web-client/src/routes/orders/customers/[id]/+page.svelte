@@ -536,12 +536,14 @@
 	/>
 </PageCenterDialog>
 
-<PageCenterDialog dialog={nonUniqueIdDialog} title="" description="">
+<PageCenterDialog
+	dialog={nonUniqueIdDialog}
+	title={$LL.customer_orders_page.dialogs.non_unique_id.title()}
+	description={$LL.customer_orders_page.dialogs.non_unique_id.description()}
+>
 	<ConfirmDialog
 		on:confirm={handleConfirmNonUniqueIdDialog}
 		on:cancel={() => nonUniqueIdDialogOpen.set(false)}
-		heading={$LL.customer_orders_page.dialogs.non_unique_id.title()}
-		description={$LL.customer_orders_page.dialogs.non_unique_id.description()}
 		labels={{ confirm: $LL.common.actions.confirm(), cancel: $LL.common.actions.cancel() }}
 	/>
 </PageCenterDialog>
