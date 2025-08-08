@@ -5,15 +5,12 @@
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
-#@ load("test-job.lib.yml", "test_job")
 
 name: Checks
 
 "on":
   push:
-    branches-ignore:
-      - "ci-debug/*"
-      - "wip/**"
+    branches:
       - "vfs-benchmark/**"
 
 jobs:
@@ -84,21 +81,15 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: compile-assets
 
-  js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
-
-  book-data-extension-test: #@ test_job("Book data extension Tests", "plugins/book-data-extension")
-
-  web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
-
-  e2e-test:
+  vfs-benchmark:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     needs: build-cr-sqlite
     strategy:
       fail-fast: false
       matrix:
-        shardIndex: [1, 2, 3, 4, 5, 6]
-        shardTotal: [6]
+        shardIndex: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        shardTotal: [10]
     steps:
       -  #@ checkout()
       - uses: actions/setup-node@v4
@@ -117,7 +108,7 @@ jobs:
       - name: Download playwright browsers
         run: cd apps/e2e && npx playwright install
       - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
-        run: cd apps/e2e && rushx test:ci
+        run: cd apps/e2e && rushx test:vfs:ci
         env:
           PLAYWRIGHT_OPTIONS: "--shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}"
       #! upload each shard’s blob so we can merge later
@@ -128,118 +119,9 @@ jobs:
           path: apps/e2e/blob-report
           retention-days: 2
 
-  lint-and-typecheck:
-    needs: build-cr-sqlite
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      id-token: write
-      contents: read
-      checks: write
-    steps:
-      -  #@ checkout()
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      -  #@ cache_node()
-      -  #@ rush_add_path()
-      -  #@ rush_install()
-      -  #@ rush_build()
-      - name: Lint all the packages
-        run: rush lint:strict
-      - name: Typecheck all the packages
-        #! Run typecheck even if linting fails
-        if: success() || failure()
-        run: rush typecheck
-
-  check-i18n-sync:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      id-token: write
-      contents: read
-      checks: write
-    steps:
-      -  #@ checkout()
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      -  #@ cache_node()
-      -  #@ rush_add_path()
-      -  #@ rush_install()
-      -  #@ rush_build()
-      - name: Run the check
-        run: cd pkg/shared && rushx typesafe-i18n-check
-
-  perform-monorepo-checks:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      -  #@ checkout()
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      -  #@ cache_node()
-      -  #@ rush_add_path()
-      -  #@ rush_install()
-      -  #@ rush_build()
-      - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
-        run: rush check-workspace-projects
-
-  deploy-production:
-    name: Deploy web-client app to bunny cdn
-    runs-on: ubuntu-latest
-    needs: build-cr-sqlite
-    steps:
-      -  #@ checkout()
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - name: compute desired compiled artifact version
-        run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
-      -  #@ load_artefacts()
-      -  #@ load_cached_artefacts()
-      -  #@ cache_node()
-      -  #@ rush_add_path()
-      -  #@ rush_install()
-      -  #@ rush_build()
-      - name: Prepare Weblate env (only for weblate branches)
-        if: contains(github.head_ref || github.ref_name, 'weblate')
-        run: |
-          echo "PUBLIC_WEBLATE_API_KEY=${{ secrets.PUBLIC_WEBLATE_API_KEY }}" >> "$GITHUB_ENV"
-          echo "PUBLIC_WEBLATE_COMPONENT_URL=${{ vars.PUBLIC_WEBLATE_COMPONENT_URL }}" >> "$GITHUB_ENV"
-
-      - name: Build web-client app using prefix ${{ github.head_ref || github.ref_name }}
-        run: cd apps/web-client && rushx build:prod
-        env:
-          BASE_PATH: /${{ github.head_ref || github.ref_name }}
-          SENTRY_ORG: code-myriad
-          SENTRY_PROJECT: librocco
-          SENTRY_URL: https://sentry.libroc.co
-          SENTRY_AUTH_TOKEN: ${{ secrets.SETNRY_AUTH_TOKEN }}
-          PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
-      - name: Install lftp
-        run: |
-          sudo apt-get update
-          sudo apt-get install lftp
-      - name: Copy built app to bunny storage zone
-        run: |
-          lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
-          set ftp:ssl-allow no
-          set mirror:parallel-transfer-count 10
-          mirror -R apps/web-client/build/ ${{ github.head_ref || github.ref_name }}
-          EOF
-        env:
-          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
-      - name: Purge bunny cache
-        run: 'curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache --header "content-type: application/json" --header "AccessKey: $BUNNY_API_KEY"'
-        env:
-          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
-      - name: Output link to deployed app
-        run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
-  e2e-merge-report:
+  vfs-benchmark-merge-report:
     if: ${{ !cancelled() }}
-    needs: [e2e-test]
+    needs: [vfs-benchmark]
     runs-on: ubuntu-latest
     steps:
       -  #@ checkout()

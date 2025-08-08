@@ -42,6 +42,9 @@ const config = {
 			}
 		}
 	],
+	worker: {
+		format: "es"
+	},
 	optimizeDeps: {
 		esbuildOptions: {
 			// Define global variable for node modules required for PouchDB
