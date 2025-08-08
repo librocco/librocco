@@ -43,7 +43,6 @@ const getSeqName = async (db: TXAsync): Promise<string> => {
 		`;
 	const result = await db.execO<{ displayName?: string }>(sequenceQuery);
 	const displayName = result[0]?.displayName;
-	console.log({ displayName });
 	if (!displayName) {
 		return "New Warehouse";
 	}
@@ -53,7 +52,6 @@ const getSeqName = async (db: TXAsync): Promise<string> => {
 	}
 
 	const maxSequence = Number(displayName.replace("New Warehouse", "").replace("(", "").replace(")", "").trim()) + 1;
-	console.log({ maxSequence });
 	return `New Warehouse (${maxSequence})`;
 };
 
