@@ -38,12 +38,11 @@ const getSeqName = async (db: TXAsync): Promise<string> => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM warehouse
 			WHERE displayName LIKE 'New Warehouse%'
-			ORDER BY displayName DESC
+			ORDER BY LENGTH(displayName) DESC, displayName DESC
 			LIMIT 1;
 		`;
 	const result = await db.execO<{ displayName?: string }>(sequenceQuery);
 	const displayName = result[0]?.displayName;
-
 	if (!displayName) {
 		return "New Warehouse";
 	}
@@ -53,7 +52,6 @@ const getSeqName = async (db: TXAsync): Promise<string> => {
 	}
 
 	const maxSequence = Number(displayName.replace("New Warehouse", "").replace("(", "").replace(")", "").trim()) + 1;
-
 	return `New Warehouse (${maxSequence})`;
 };
 

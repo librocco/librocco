@@ -72,7 +72,7 @@ const getSeqName = async (db: TXAsync, kind: "inbound" | "outbound"): Promise<st
 			SELECT display_name AS displayName FROM note
 			WHERE displayName LIKE 'New ${kind === "inbound" ? "Purchase" : "Sale"}%'
 			AND warehouse_id ${kind === "outbound" ? "IS NULL" : "IS NOT NULL"}
-			ORDER BY displayName DESC
+			ORDER BY LENGTH(displayName) DESC, displayName DESC
 			LIMIT 1;
 `;
 	const result = await db.execO<{ displayName?: string }>(sequenceQuery);
