@@ -48,8 +48,9 @@ class WrappedDB implements DBAsync {
 		return Comlink.proxy(this.internal.tablesUsedStmt);
 	}
 
-	prepare(sql: string) {
-		return this.internal.prepare(sql);
+	async prepare(sql: string) {
+		const stmt = await this.internal.prepare(sql);
+		return Comlink.proxy(stmt);
 	}
 
 	exec(sql: string, bind: SQLiteCompatibleType[]) {
