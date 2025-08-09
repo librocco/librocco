@@ -94,12 +94,13 @@ function getInventoryRow(parent: DashboardNode, view: InventoryTableView, index:
 			"outbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "warehouseName", "category", "type"]
 		};
 
-		await Promise.all(
-			Object.entries(compareObj).map(async ([name, value]) => {
-				if (!rowFieldsLookup[view].includes(name)) return;
-				return field<any>(name).assert(value, opts);
-			})
-		);
+		const rowMatcher = Object.entries(compareObj)
+			// Skip fields not visible in the particular view
+			.filter(([name]) => rowFieldsLookup[view].includes(name))
+			.map(([name, value]) => field<any>(name).assertedLocator(dashboard().page(), value))
+			.reduce((acc, curr) => acc.filter({ has: curr }), container);
+
+		return rowMatcher.waitFor({ timeout: assertionTimeout, ...opts });
 	};
 
 	return Object.assign(container, { dashboard, field, assertFields, edit, delete: _delete });
