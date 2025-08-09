@@ -365,7 +365,11 @@
 	/>
 </PageCenterDialog>
 
-<PageCenterDialog dialog={confirmationDialog} title="" description="">
+<PageCenterDialog
+	dialog={confirmationDialog}
+	title={t.dialogs.reassign_publisher.title()}
+	description={t.dialogs.reassign_publisher.description({ publisher: confirmationPublisher, supplier: supplier.name })}
+>
 	<ConfirmDialog
 		labels={{
 			confirm: "Confirm",
@@ -376,8 +380,6 @@
 			confirmationDialogOpen.set(false);
 		}}
 		on:cancel={() => confirmationDialogOpen.set(false)}
-		heading={t.dialogs.reassign_publisher.title()}
-		description={t.dialogs.reassign_publisher.description({ publisher: confirmationPublisher, supplier: supplier.name })}
 	/>
 </PageCenterDialog>
 

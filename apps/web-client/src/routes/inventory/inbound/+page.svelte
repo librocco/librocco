@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { fade } from "svelte/transition";
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
@@ -25,6 +24,8 @@
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import { InventoryManagementPage } from "$lib/controllers";
 	import LL from "@librocco/shared/i18n-svelte";
+	import PageCenterDialog from "$lib/components/Melt/PageCenterDialog.svelte";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	export let data: PageData;
 	interface DialogContent {
@@ -39,6 +40,7 @@
 	$: t = $LL.inventory_page.purchase_tab;
 	$: tPurchase = $LL.purchase_note;
 
+	let noteToDelete = null;
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
@@ -60,18 +62,15 @@
 		await goto(appPath("warehouses", id));
 	};
 
-	const handleDeleteNote = (id: number) => async (closeDialog: () => void) => {
-		await deleteNote(db, id);
-		closeDialog();
-	};
-
-	const dialog = createDialog({ forceVisible: true });
+	const dialog = createDialog({ forceVisible: true, closeOnOutsideClick: false });
 	const {
-		elements: { portalled, overlay, trigger },
+		elements: { trigger },
 		states: { open }
 	} = dialog;
-
-	let dialogContent: DialogContent;
+	const handleDeleteNote = async (id: number) => {
+		open.set(false);
+		await deleteNote(db, id);
+	};
 </script>
 
 <InventoryManagementPage {handleCreateWarehouse} {db} {plugins}>
@@ -141,11 +140,7 @@
 								class="btn-secondary btn-sm btn"
 								aria-label="Delete note: {note.displayName}"
 								on:m-click={() => {
-									dialogContent = {
-										onConfirm: handleDeleteNote(note.id),
-										title: $LL.common.delete_dialog.title({ entity: note.displayName }),
-										description: $LL.common.delete_dialog.description()
-									};
+									noteToDelete = note;
 								}}
 							>
 								<Trash size={18} aria-hidden />
@@ -160,16 +155,21 @@
 	{/if}
 </InventoryManagementPage>
 
-{#if $open}
-	{@const { onConfirm, title, description } = dialogContent};
-
-	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
-		<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
-			<Dialog {dialog} type="delete" {onConfirm}>
-				<svelte:fragment slot="title">{title}</svelte:fragment>
-				<svelte:fragment slot="description">{description}</svelte:fragment>
-			</Dialog>
-		</div>
-	</div>
-{/if}
+<PageCenterDialog
+	{dialog}
+	on:cancel={() => {
+		open.set(false);
+		noteToDelete = null;
+	}}
+	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
+	title={$LL.common.delete_dialog.description()}
+>
+	<ConfirmDialog
+		on:confirm={() => {
+			handleDeleteNote(noteToDelete.id);
+			noteToDelete = null;
+		}}
+		on:cancel={() => open.set(false)}
+		labels={{ confirm: "Confirm", cancel: "Cancel" }}
+	/>
+</PageCenterDialog>

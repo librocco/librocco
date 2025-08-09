@@ -38,7 +38,7 @@
 		</h3>
 		<p>{tOutbound.force_withdrawal_dialog.description()}</p>
 
-		<div class="stretch flex w-full flex-col gap-y-6">
+		<div id="warehouse-force-withdrawal-container" class="stretch flex w-full flex-col gap-y-6">
 			<select id="warehouse-force-withdrawal" bind:value={selectedId} class="select-bordered select w-full">
 				<option value={null} disabled selected>{$LL.misc_components.warehouse_select.default_option()}</option>
 				{#each warehouses as { id, displayName }}

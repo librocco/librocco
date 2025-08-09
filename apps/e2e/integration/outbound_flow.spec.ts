@@ -39,7 +39,9 @@ test('should create a new outbound note, on "New sale" and redirect to it', asyn
 	await page.getByRole("heading", { name: "New Sale" }).first().waitFor();
 });
 
-test("should delete the note on delete button click (after confirming the prompt)", async ({ page }) => {
+test("should delete the note on delete button click (after confirming the prompt) then make sure a newly created note has an empty state", async ({
+	page
+}) => {
 	const dashboard = getDashboard(page);
 	await page.getByRole("link", { name: "Sale" }).click();
 
@@ -47,18 +49,29 @@ test("should delete the note on delete button click (after confirming the prompt
 
 	// Create two notes to work with
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Sale 1" });
-	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Sale 2" });
+	await dbHandle.evaluate(createOutboundNote, { id: 1 });
+	await dbHandle.evaluate(createOutboundNote, { id: 2 });
 
-	// Wait for the notes to appear
-	await content.entityList("outbound-list").assertElements([{ name: "Sale 2" }, { name: "Sale 1" }]);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
+
+	await content.entityList("outbound-list").assertElements([
+		{ name: "New Sale", numBooks: 1 },
+		{ name: "New Sale (2)", numBooks: 0 }
+	]);
 
 	// Delete the first note
 	await content.entityList("outbound-list").item(0).delete();
 	await dashboard.dialog().confirm();
 
 	// Check that the note has been deleted
-	await content.entityList("outbound-list").assertElements([{ name: "Sale 1" }]);
+	await content.entityList("outbound-list").assertElements([{ name: "New Sale (2)" }]);
+
+	// try creating a new note
+	await dashboard.content().header().getByRole("button", { name: "New Sale" }).first().click();
+
+	const table = dashboard.content().table("outbound-note");
+	// check that note is created with an empty state
+	await table.assertRows([]);
 });
 
 test("note heading should display note name, 'updated at' timestamp", async ({ page }) => {

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { fade } from "svelte/transition";
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
@@ -20,13 +19,13 @@
 	import { PlaceholderBox, Dialog } from "$lib/components";
 	import { Page } from "$lib/controllers";
 
-	import { type DialogContent } from "$lib/types";
-
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import LL from "@librocco/shared/i18n-svelte";
+	import PageCenterDialog from "$lib/components/Melt/PageCenterDialog.svelte";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	export let data: PageData;
 
@@ -48,9 +47,9 @@
 	let initialized = false;
 	$: initialized = Boolean(db);
 
-	const handleDeleteNote = (id: number) => async (closeDialog: () => void) => {
+	const handleDeleteNote = async (id: number) => {
+		open.set(false);
 		await deleteNote(db, id);
-		closeDialog();
 	};
 
 	/**
@@ -63,13 +62,13 @@
 		await goto(appPath("outbound", id));
 	};
 
-	const dialog = createDialog({ forceVisible: true });
+	const dialog = createDialog();
 	const {
 		elements: { portalled, overlay, trigger },
 		states: { open }
 	} = dialog;
 
-	let dialogContent: DialogContent | null = null;
+	let noteToDelete = null;
 	$: tOutboundPage = $LL.sale_page;
 	$: tPages = $LL.page_headings;
 </script>
@@ -149,11 +148,7 @@
 									class="btn-secondary btn-sm btn"
 									aria-label="Delete note: {note.displayName}"
 									on:m-click={() => {
-										dialogContent = {
-											onConfirm: handleDeleteNote(note.id),
-											title: $LL.common.delete_dialog.title({ entity: note.displayName }),
-											description: $LL.common.delete_dialog.description()
-										};
+										noteToDelete = note;
 									}}
 								>
 									<span aria-hidden="true">
@@ -171,15 +166,24 @@
 	</div>
 </Page>
 
-{#if $open}
-	{@const { onConfirm, title, description } = dialogContent};
-	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
-		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-			<Dialog {dialog} type="delete" {onConfirm}>
-				<svelte:fragment slot="title">{title}</svelte:fragment>
-				<svelte:fragment slot="description">{description}</svelte:fragment>
-			</Dialog>
-		</div>
-	</div>
-{/if}
+<PageCenterDialog
+	{dialog}
+	on:cancel={() => {
+		open.set(false);
+		noteToDelete = null;
+	}}
+	title={$LL.common.delete_dialog.description()}
+	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
+>
+	<ConfirmDialog
+		on:confirm={() => {
+			handleDeleteNote(noteToDelete.id);
+			noteToDelete = null;
+		}}
+		on:cancel={() => {
+			open.set(false);
+			noteToDelete = null;
+		}}
+		labels={{ confirm: "Confirm", cancel: "Cancel" }}
+	/>
+</PageCenterDialog>

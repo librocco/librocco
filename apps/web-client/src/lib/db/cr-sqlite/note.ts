@@ -422,13 +422,17 @@ async function _commitNote(db: DBAsync, id: number, { force = false }: { force?:
  * @param {number} id - ID of note to delete
  * @returns {Promise<void>} Resolves when note is deleted
  */
-async function _deleteNote(db: TXAsync, id: number): Promise<void> {
+async function _deleteNote(db: DBAsync, id: number): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
 		console.warn("Trying to delete a committed note: this is a noop, but probably indicates a bug in the calling code.");
 		return;
 	}
-	return db.exec("DELETE FROM note WHERE id = ?", [id]);
+	return db.tx(async (db) => {
+		await db.exec("DELETE FROM note WHERE id = ?", [id]);
+		await db.exec("DELETE FROM book_transaction WHERE note_id = ?", [id]);
+		await db.exec("DELETE FROM custom_item WHERE note_id = ?", [id]);
+	});
 }
 
 /**

@@ -4,25 +4,8 @@
 
 	const dispatch = createEventDispatcher<{ cancel: void; confirm: void }>();
 
-	export let heading = "";
-	export let description = "";
-
 	export let labels: Partial<Record<"cancel" | "confirm", string>> = {};
 </script>
-
-<div class="flex w-full flex-col justify-between gap-y-6 p-6">
-	{#if heading}
-		<div class="prose">
-			<h3>
-				{heading}
-			</h3>
-		</div>
-	{/if}
-
-	<div class="form-fields w-full"></div>
-</div>
-
-<p class="w-full px-6 pb-6">{description}</p>
 
 <div class="stretch flex w-full gap-x-4 p-6">
 	<div class="basis-fit">
