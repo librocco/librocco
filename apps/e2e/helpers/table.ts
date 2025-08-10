@@ -1,5 +1,7 @@
 import { Locator, Page, expect } from "@playwright/test";
 
+import { enumerate } from "@librocco/shared";
+
 import {
 	AssertRowFieldsOpts,
 	DashboardNode,
@@ -19,7 +21,8 @@ import {
 	HistoryTableView,
 	Asserter,
 	FieldConstructor,
-	TableView
+	TableView,
+	IWarehouseName
 } from "./types";
 
 import { assertionTimeout } from "@/constants";
@@ -38,18 +41,16 @@ export function getInventoryTable(parent: DashboardNode, view: InventoryTableVie
 	const row = (index: number) => getInventoryRow(getInventoryTable(parent, view), view, index);
 
 	const assertRows = async (rows: Partial<InventoryRowValues>[], opts: AssertRowFieldsOpts) => {
-		// Check that there are no more rows than specified in the want 'rows' array
-		await row(rows.length).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
+		// Check that there are enough rows to match the required number
+		await row(rows.length - 1).waitFor();
 
-		await Promise.all(
-			rows.map(async (values, index) => {
-				// We're waiting for the row to be present before asserting the fields
-				// this is for 'strict: false' case where we can pass an empty object and the assertion will pass without making any
-				// DOM/locator queries (which is perfectly fine), but we want to make sure the row exists (even if we don't care about the fields)
-				await row(index).waitFor({ timeout: assertionTimeout, ...opts });
-				return row(index).assertFields(values, opts);
-			})
-		);
+		// NOTE: matching row by row in synchronous manner to prevent flakiness due to rows jumping up and down
+		for (const [ix, values] of enumerate(rows)) {
+			await row(ix).assertFields(values, opts);
+		}
+
+		// Check that there are no more rows than specified
+		await row(rows.length).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
 	};
 
 	return Object.assign(container, { dashboard, row, assertRows });
@@ -251,7 +252,11 @@ const outOfPrintFieldConstructor: FieldConstructor<InventoryFieldLookup, "outOfP
 };
 
 const warehouseNameFieldConstructor: FieldConstructor<InventoryFieldLookup, "warehouseName"> = (row) => {
+	type T = string | IWarehouseName;
+
 	const container = row.locator('[data-property="warehouseName"]');
+
+	const DEFAULT_LABEL = "Select a warehouse";
 
 	const dropdown = getDropdown(row);
 	const opened = dropdown.opened;
@@ -263,7 +268,7 @@ const warehouseNameFieldConstructor: FieldConstructor<InventoryFieldLookup, "war
 	};
 
 	const _assertedLocator = (container: Page | Locator, want: string): Locator =>
-		container.locator('[data-property="warehouseName"]', { hasText: want });
+		container.locator('[data-property="warehouseName"]').locator("button", { hasText: want == "" ? DEFAULT_LABEL : want });
 	const assertedLocator = (page: Page, want: string) => _assertedLocator(page, want);
 	const assert = (want: string, opts?: WaitForOpts) => _assertedLocator(row, want).waitFor({ timeout: assertionTimeout, ...opts });
 
