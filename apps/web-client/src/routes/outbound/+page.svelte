@@ -24,7 +24,6 @@
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import LL from "@librocco/shared/i18n-svelte";
-	import PageCenterDialog from "$lib/components/Melt/PageCenterDialog.svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	export let data: PageData;
@@ -166,24 +165,17 @@
 	</div>
 </Page>
 
-<PageCenterDialog
+<ConfirmDialog
 	{dialog}
-	on:cancel={() => {
+	onConfirm={() => {
+		handleDeleteNote(noteToDelete.id);
+		noteToDelete = null;
+	}}
+	onCancel={() => {
 		open.set(false);
 		noteToDelete = null;
 	}}
+	labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	title={$LL.common.delete_dialog.description()}
 	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
->
-	<ConfirmDialog
-		on:confirm={() => {
-			handleDeleteNote(noteToDelete.id);
-			noteToDelete = null;
-		}}
-		on:cancel={() => {
-			open.set(false);
-			noteToDelete = null;
-		}}
-		labels={{ confirm: "Confirm", cancel: "Cancel" }}
-	/>
-</PageCenterDialog>
+/>

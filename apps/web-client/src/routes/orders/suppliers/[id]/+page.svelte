@@ -365,23 +365,20 @@
 	/>
 </PageCenterDialog>
 
-<PageCenterDialog
+<ConfirmDialog
 	dialog={confirmationDialog}
 	title={t.dialogs.reassign_publisher.title()}
 	description={t.dialogs.reassign_publisher.description({ publisher: confirmationPublisher, supplier: supplier.name })}
->
-	<ConfirmDialog
-		labels={{
-			confirm: "Confirm",
-			cancel: "Cancel"
-		}}
-		on:confirm={() => {
-			handleAssignPublisher(confirmationPublisher)();
-			confirmationDialogOpen.set(false);
-		}}
-		on:cancel={() => confirmationDialogOpen.set(false)}
-	/>
-</PageCenterDialog>
+	labels={{
+		confirm: "Confirm",
+		cancel: "Cancel"
+	}}
+	onConfirm={() => {
+		handleAssignPublisher(confirmationPublisher)();
+		confirmationDialogOpen.set(false);
+	}}
+	onCancel={() => confirmationDialogOpen.set(false)}
+/>
 
 <style global>
 	:global(html) {
