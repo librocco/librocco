@@ -66,8 +66,11 @@
 		elements: { trigger },
 		states: { open }
 	} = dialog;
-	const handleDeleteNote = async (id: number) => {
+	const resetDialogState = () => {
 		open.set(false);
+		noteToDelete = null;
+	};
+	const handleDeleteNote = async (id: number) => {
 		await deleteNote(db, id);
 	};
 </script>
@@ -161,8 +164,8 @@
 	title={$LL.common.delete_dialog.description()}
 	onConfirm={() => {
 		handleDeleteNote(noteToDelete.id);
-		noteToDelete = null;
+		resetDialogState();
 	}}
-	onCancel={() => open.set(false)}
+	onCancel={resetDialogState}
 	labels={{ confirm: "Confirm", cancel: "Cancel" }}
 />

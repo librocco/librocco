@@ -46,8 +46,12 @@
 	let initialized = false;
 	$: initialized = Boolean(db);
 
-	const handleDeleteNote = async (id: number) => {
+	const resetDialogState = () => {
 		open.set(false);
+		noteToDelete = null;
+	};
+
+	const handleDeleteNote = async (id: number) => {
 		await deleteNote(db, id);
 	};
 
@@ -169,12 +173,9 @@
 	{dialog}
 	onConfirm={() => {
 		handleDeleteNote(noteToDelete.id);
-		noteToDelete = null;
+		resetDialogState();
 	}}
-	onCancel={() => {
-		open.set(false);
-		noteToDelete = null;
-	}}
+	onCancel={resetDialogState}
 	labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	title={$LL.common.delete_dialog.description()}
 	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
