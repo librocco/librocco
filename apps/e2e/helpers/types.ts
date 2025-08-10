@@ -230,7 +230,16 @@ export type HistoryRowInterface = DashboardNode<{
 	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
 }>;
 
-export interface InventoryWarehouseNameField extends AssertedLocator<string>, Asserter<string>, Setter<string>, Locator {
+export type IWarehouseName = {
+	name: string;
+	forced: boolean;
+};
+
+export interface InventoryWarehouseNameField
+	extends AssertedLocator<string | IWarehouseName>,
+		Asserter<string | IWarehouseName>,
+		Setter<string | IWarehouseName>,
+		Locator {
 	assertOptions(options: string[], opts?: WaitForOpts): Promise<void>;
 }
 
