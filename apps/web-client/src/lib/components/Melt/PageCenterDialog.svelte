@@ -5,13 +5,9 @@
 
 	import { melt } from "@melt-ui/svelte";
 	import type { Dialog } from "@melt-ui/svelte";
-	import { clickOutside } from "$lib/actions";
-	import { createEventDispatcher } from "svelte";
 	export let title: string;
 	export let description: string;
 	export let dialog: Dialog;
-
-	const dispatch = createEventDispatcher<{ cancel: void }>();
 
 	const {
 		elements: { portalled, overlay, content, title: titleStore, description: desciptionStore, close },
@@ -30,20 +26,12 @@
 			class="fixed left-1/2 top-1/2 z-[200] max-h-screen w-full translate-x-[-50%] translate-y-[-50%] overflow-y-auto px-4 md:max-w-lg md:px-0"
 			transition:fade={{ duration: 250, easing: expoInOut }}
 			use:melt={$content}
-			use:clickOutside={() => dispatch("cancel")}
 		>
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
-				<div class="flex w-full flex-col justify-between">
-					{#if title}
-						<div class="prose">
-							<h3 use:melt={$titleStore}>
-								{title}
-							</h3>
-						</div>
-					{/if}
-				</div>
+				<p class="sr-only" use:melt={$titleStore}>{title}</p>
 
-				<p class="w-full px-6 pb-6" use:melt={$desciptionStore}>{description}</p>
+				<p class="sr-only" use:melt={$desciptionStore}>{description}</p>
+
 				<button use:melt={$close} class="btn-ghost btn-outline btn-sm btn absolute right-8 top-4" aria-label="Close">
 					<X size={16} />
 				</button>
