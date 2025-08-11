@@ -180,13 +180,20 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 
 	// Verify final warehouse names
 	await page.getByRole("link", { name: "Manage inventory" }).click();
+	// assert for warehouses > 10
+	await dbHandle.evaluate(upsertWarehouse, { id: 10, displayName: "New Warehouse (10)" });
+	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
+	await header.title().assert("New Warehouse (11)");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 
 	await warehouseList.assertElements([
 		{ name: "Warehouse 1" },
 		{ name: "Warehouse 2" },
 		{ name: "Warehouse 3" },
 		{ name: "Warehouse 4" },
-		{ name: "New Warehouse" }
+		{ name: "New Warehouse" },
+		{ name: "New Warehouse (10)" },
+		{ name: "New Warehouse (11)" }
 	]);
 });
 

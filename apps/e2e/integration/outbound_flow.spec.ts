@@ -126,6 +126,20 @@ test("should assign default name to notes in sequential order", async ({ page })
 		{ name: "New Sale (2)", numBooks: 0, updatedAt: note2UpdatedAt },
 		{ name: "New Sale", numBooks: 0, updatedAt: note1UpdatedAt }
 	]);
+
+	// assert for note sequence > 10
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(createOutboundNote, { id: 10, displayName: "New Sale (10)" });
+	await dashboard.content().header().getByRole("button", { name: "New sale" }).first().click();
+	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
+
+	await entityList.assertElements([
+		{ name: "New Sale (11)", numBooks: 0 },
+		{ name: "New Sale (10)", numBooks: 0 },
+		{ name: "New Sale (2)", numBooks: 0, updatedAt: note2UpdatedAt },
+		{ name: "New Sale", numBooks: 0, updatedAt: note1UpdatedAt }
+	]);
 });
 
 test("should continue the naming sequence from the highest sequenced note name (even if lower sequenced notes have been renamed)", async ({
