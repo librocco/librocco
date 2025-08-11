@@ -512,11 +512,9 @@ test(`should check validity of the transactions and commit the note on 'commit'
 		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 1" }
 	]);
 
-	await entries.row(0).field("warehouseName").click({ force: true });
+	await page.getByTestId("dropdown-control").nth(1).click();
 
-	const dropdown = page.getByTestId("dropdown-menu");
-	await dropdown.locator("button", { hasText: "Force withdrawal" }).waitFor();
-	await dropdown.locator("button", { hasText: "Force withdrawal" }).click({ force: true });
+	await page.getByRole("button", { name: "Force withdrawal" }).click();
 	const forceWithdrawalDialog = page.getByRole("dialog");
 	await forceWithdrawalDialog.locator("#warehouse-force-withdrawal").selectOption({ label: "Warehouse 2" });
 	await forceWithdrawalDialog.getByRole("button", { name: "Confirm" }).click();
@@ -926,7 +924,7 @@ test("should auto-assign to the available warehouse after a warehouse with stock
 	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "Warehouse 2" }]);
 });
 
-test("should show no warehouse selected after the assigned warehouse is deleted", async ({ page }) => {
+test("should show transaction with no assigned warehouse after the assigned warehouse is deleted", async ({ page }) => {
 	// Setup: Create a transaction and assign it to a warehouse.
 	const dbHandle = await getDbHandle(page);
 	const isbn = "1234567890";
@@ -942,7 +940,7 @@ test("should show no warehouse selected after the assigned warehouse is deleted"
 	// Action: Delete the assigned warehouse.
 	await dbHandle.evaluate(deleteWarehouse, 1);
 
-	// Assertion: Verify the transaction row now shows no warehouse selected.
+	// Assertion: Verify the transaction row now has no wh
 	await entries.assertRows([{ isbn, quantity: 1, warehouseName: "" }]);
 });
 
