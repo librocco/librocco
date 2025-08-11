@@ -84,6 +84,43 @@ test("should delete the warehouse on delete button click (after confirming the p
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 2" }]);
 });
 
+test("should not carry over state from a deleted warehose into a new one", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+	const dbHandle = await getDbHandle(page);
+	const warehouseList = content.entityList("warehouse-list");
+
+	// Create a warehouse and add books to it
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 5, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
+
+	await warehouseList.assertElements([{ name: "Warehouse 1", numBooks: 5 }]);
+
+	// Delete the warehouse
+	await warehouseList.item(0).dropdown().delete();
+	const dialog = dashboard.dialog();
+	await dialog.getByLabel("Confirm by typing warehouse name").fill("warehouse_1");
+	await dialog.confirm();
+	await dialog.waitFor({ state: "detached" });
+
+	// Verify it's gone
+	await warehouseList.assertElement(null, 0);
+
+	// Create a new warehouse
+	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
+
+	// check stock is empty
+	await content.table("warehouse").assertRows([]);
+
+	// Navigate back to the list to check the new warehouse
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	await warehouseList.waitFor();
+
+	// Verify the new warehouse is empty
+	await warehouseList.assertElements([{ name: "New Warehouse", numBooks: 0 }]);
+});
 test("warehouse page: should display breadcrumbs leading back to warehouse page", async ({ page }) => {
 	const dashboard = getDashboard(page);
 

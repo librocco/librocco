@@ -28,7 +28,7 @@
 			use:melt={$content}
 		>
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
-				<h2 class="sr-only" use:melt={$titleStore}>{title}</h2>
+				<p class="sr-only" use:melt={$titleStore}>{title}</p>
 
 				<p class="sr-only" use:melt={$desciptionStore}>{description}</p>
 
