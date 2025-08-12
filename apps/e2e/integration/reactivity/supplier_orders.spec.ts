@@ -9,7 +9,7 @@ import { testOrders } from "@/helpers/fixtures";
 testOrders(
 	"unordered: reacts to updates to suppliers, customer order lines and publisher association",
 	async ({ page, books, customers, suppliers }) => {
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("supplier_order"));
 
 		const dbHandle = await getDbHandle(page);
 		const table = page.getByRole("table");

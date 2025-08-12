@@ -5,7 +5,7 @@ import { depends, testOrders } from "@/helpers/fixtures";
 
 testOrders("create: single order: on row button click", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -26,7 +26,7 @@ testOrders("create: single order: on row button click", async ({ page, supplierO
 
 testOrders("create: multiple orders: using checkboxes and a global 'Reconcile' button", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -48,7 +48,7 @@ testOrders("create: multiple orders: using checkboxes and a global 'Reconcile' b
 
 testOrders("create: adds the created reconciliation order to (active) 'Reconciling' tab", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -72,7 +72,7 @@ testOrders("create: adds the created reconciliation order to (active) 'Reconcili
 	await page.getByPlaceholder("Enter ISBN of ordered books").waitFor();
 
 	// Navigate back to supplier orders
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	// Navigate to reconiling view
 	await reconcilingBtn.click();
@@ -83,7 +83,7 @@ testOrders("create: adds the created reconciliation order to (active) 'Reconcili
 
 testOrders("create: doesn't allow for reconciling same supplier order(s) twice", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -108,7 +108,7 @@ testOrders("create: doesn't allow for reconciling same supplier order(s) twice",
 	await page.getByPlaceholder("Enter ISBN of ordered books").waitFor();
 
 	// Navigate back to supplier orders
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
@@ -118,7 +118,7 @@ testOrders("create: doesn't allow for reconciling same supplier order(s) twice",
 
 testOrders("delete: doesn't delete the reconciliation order on cancel", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -162,7 +162,7 @@ testOrders("delete: doesn't delete the reconciliation order on cancel", async ({
 	// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
 	//
 	// await page.reload();
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 	await page.getByRole("button", { name: "Reconciling" }).click();
 	await page.getByRole("button", { name: "Continue" }).click(); // NOTE: only active order (no need for fine grained matching)
 
@@ -172,7 +172,7 @@ testOrders("delete: doesn't delete the reconciliation order on cancel", async ({
 
 testOrders("delete: deletes the order (and navigates back to supplier orders) on confirm", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -223,7 +223,7 @@ testOrders("delete: deletes the order (and navigates back to supplier orders) on
 
 testOrders("delete: allows deletion of an empty reconciliation order", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -260,7 +260,7 @@ testOrders("delete: allows deletion of an empty reconciliation order", async ({ 
 });
 
 testOrders("populate: initial state", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -298,7 +298,7 @@ testOrders("populate: initial state", async ({ page, supplierOrders }) => {
 });
 
 testOrders("populate: aggregates the quantity for scanned books", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -351,7 +351,7 @@ testOrders("populate: aggregates the quantity for scanned books", async ({ page,
 });
 
 testOrders("populate: adjusts quantity using the +/- buttons", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -409,7 +409,7 @@ testOrders("populate: adjusts quantity using the +/- buttons", async ({ page, bo
 });
 
 testOrders("populate: removes a line when quantity drops to 0", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -452,7 +452,7 @@ testOrders("populate: removes a line when quantity drops to 0", async ({ page, b
 });
 
 testOrders("populate: sorts books by ISBN", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -530,7 +530,7 @@ testOrders("populate: sorts books by ISBN", async ({ page, books, supplierOrders
 testOrders(
 	"populate: persists the state (reconciliation can be continued after navigating away and back)",
 	async ({ page, supplierOrders }) => {
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("supplier_order"));
 
 		const table = page.getByRole("table");
 
@@ -561,7 +561,7 @@ testOrders(
 			.waitFor();
 
 		// Navigate away from the page
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("supplier_order"));
 
 		// Navigate to the existing reconciliation order
 		await page.getByRole("button", { name: "Reconciling", exact: true }).click();
@@ -584,7 +584,7 @@ testOrders(
 testOrders(
 	"compare: empty state: shows all lines for the respective order, case: single order",
 	async ({ page, books, supplierOrders }) => {
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("supplier_order"));
 
 		const table = page.getByRole("table");
 
@@ -644,7 +644,7 @@ testOrders(
 testOrders(
 	"compare: empty state: shows all lines for the respective order, case: multiple orders, same supplier",
 	async ({ page, books, supplierOrders }) => {
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("supplier_order"));
 
 		const table = page.getByRole("table");
 
@@ -710,7 +710,7 @@ testOrders(
 testOrders(
 	"compare: empty state: shows all lines for the respective order, case: multiple orders, muliple suppliers",
 	async ({ page, books, supplierOrders }) => {
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("supplier_order"));
 
 		const table = page.getByRole("table");
 
@@ -789,7 +789,7 @@ testOrders(
 testOrders(
 	"compare: unmatched orders are shown at the top of the list (namespaced as 'Unmatched')",
 	async ({ page, books, supplierOrders }) => {
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("supplier_order"));
 
 		const table = page.getByRole("table");
 
@@ -851,7 +851,7 @@ testOrders(
 );
 
 testOrders("compare: overdelivered books should be shown in the 'Unmatched' section", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -917,7 +917,7 @@ testOrders("compare: overdelivered books should be shown in the 'Unmatched' sect
 });
 
 testOrders("compare: single order: fully filled", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -968,7 +968,7 @@ testOrders("compare: single order: fully filled", async ({ page, supplierOrders 
 });
 
 testOrders("compare: single order: overdelivery", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1022,7 +1022,7 @@ testOrders("compare: single order: overdelivery", async ({ page, supplierOrders 
 });
 
 testOrders("compare: single order: partial delivery: no additional books", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1068,7 +1068,7 @@ testOrders("compare: single order: partial delivery: no additional books", async
 });
 
 testOrders("compare: single order: partial delivery: 1 line overdelivered", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1109,7 +1109,7 @@ testOrders("compare: single order: partial delivery: 1 line overdelivered", asyn
 });
 
 testOrders("compare: single order: partial delivery: 1 unmatched book", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1157,7 +1157,7 @@ testOrders("compare: single order: partial delivery: 1 unmatched book", async ({
 });
 
 testOrders("compare: multiple orders: fully filled", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1222,7 +1222,7 @@ testOrders("compare: multiple orders: fully filled", async ({ page, supplierOrde
 });
 
 testOrders("compare: multiple orders: overdelivery", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1292,7 +1292,7 @@ testOrders("compare: multiple orders: overdelivery", async ({ page, supplierOrde
 });
 
 testOrders("compare: multiple orders: partial delivery: no additional books", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1357,7 +1357,7 @@ testOrders("compare: multiple orders: partial delivery: no additional books", as
 });
 
 testOrders("compare: multiple orders: partial delivery: 1 line overdelivered", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1431,7 +1431,7 @@ testOrders("compare: multiple orders: partial delivery: 1 line overdelivered", a
 });
 
 testOrders("compare: multiple orders: partial delivery: 1 unmatched book", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1510,7 +1510,7 @@ testOrders("compare: multiple orders: partial delivery: 1 unmatched book", async
 testOrders(
 	"compare: multiple orders: partial delivery: shared ISBN - filled for order 1, not for order 2",
 	async ({ page, supplierOrders }) => {
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("supplier_order"));
 
 		const table = page.getByRole("table");
 
@@ -1577,7 +1577,7 @@ testOrders(
 // NOTE: This tests both regular delivery, as well as delivery of unmatched books (and its effects on customer orders)
 testOrders("commit: applies delivery updates to customer order lines", async ({ page, customers, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 
 	const table = page.getByRole("table");
 
@@ -1641,7 +1641,7 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 testOrders("quantity: should handle quantity adjustments correctly", async ({ page, supplierOrders }) => {
 	depends(supplierOrders);
 	// Navigate and start reconciliation
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1665,7 +1665,7 @@ testOrders("quantity: should handle quantity adjustments correctly", async ({ pa
 
 testOrders("quantity:should remove line when quantity reaches zero", async ({ page, supplierOrders }) => {
 	depends(supplierOrders);
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1691,7 +1691,7 @@ testOrders("quantity:should remove line when quantity reaches zero", async ({ pa
 
 testOrders("quantity: should handle multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
 	depends(supplierOrders);
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1722,7 +1722,7 @@ testOrders("quantity: should handle multiple quantity adjustments", async ({ pag
 });
 
 testOrders("delete: should allow supplier orders to be reconciled again after deletion", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 	await page.getByText("Ordered").nth(1).click();
 
 	// Select multiple orders
@@ -1761,7 +1761,7 @@ testOrders("delete: should allow supplier orders to be reconciled again after de
 });
 
 testOrders("delete: should not delete reconciliation order when canceling deletion", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1782,7 +1782,7 @@ testOrders("delete: should not delete reconciliation order when canceling deleti
 });
 
 testOrders("delete: should allow deletion after comparing books", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1805,7 +1805,7 @@ testOrders("delete: should allow deletion after comparing books", async ({ page,
 
 testOrders("finalize: should disable all action buttons when an order is finalized", async ({ page, supplierOrders }) => {
 	depends(supplierOrders);
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("supplier_order"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1841,7 +1841,7 @@ testOrders(
 	"commit: allows committing of an empty reconciliation order (rejecting all lines associated with respective supplier orders)",
 	async ({ page, books, customers, supplierOrders }) => {
 		// Navigate to supplier orders and start reconciliation
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("supplier_order"));
 
 		const table = page.getByRole("table");
 

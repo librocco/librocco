@@ -41,8 +41,14 @@ export const HASHES = {
 	// Order mgmt
 	customers: "#/orders/customers/",
 	suppliers: "#/orders/suppliers/",
-	supplier_orders: "#/orders/suppliers/orders/",
-	reconcile: "#/orders/suppliers/reconcile/"
+	reconcile: "#/orders/suppliers/reconcile/",
+
+	// Supplier orders
+	supplier_order: "#/orders/suppliers/order/",
+	unordered: "#/orders/suppliers/orders/",
+	reconciling: "#/orders/suppliers/orders/reconciling",
+	completed: "#/orders/suppliers/orders/completed",
+	ordered: "#/orders/suppliers/orders/ordered"
 };
 export const appHash = (location: keyof typeof HASHES, ...segments: (number | string)[]) => {
 	return [HASHES[location], ...segments].join("/").concat("/").replaceAll(/\/\/+/g, "/");
