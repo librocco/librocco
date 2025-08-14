@@ -1,6 +1,6 @@
 import { defineConfig, devices, PlaywrightTestConfig, ReporterDescription } from "@playwright/test";
 
-import { IS_CI, VFS_TEST, baseURL } from "./constants";
+import { IS_CI, VFS_TEST, SHARD_INDEX, baseURL } from "./constants";
 
 const reporter: ReporterDescription[] = [["list"]];
 // Produce a merge‑able blob report when running in CI
@@ -90,9 +90,10 @@ const defaultConfig: PlaywrightTestConfig = {
 };
 
 const vfsList = ["idb-batch-atomic", "opfs-any-context", "opfs-adaptive-vfs", "opfs-coop-sync"];
+const outputFile = SHARD_INDEX === undefined ? `vfs-benchmark-results/test-results.json` : `vfs-benchmark-results/test-results-${SHARD_INDEX}.json`;
 const vfsTestConfig: PlaywrightTestConfig = {
 	...baseConfig,
-	reporter,
+	reporter: [["json", { outputFile }]],
 	projects: browsers // NOTE: using all browsers, but only the default locale in this scenario
 		.flatMap((browser) => vfsList.map((vfs) => ({ name: [browser.name, vfs].join("-"), device: browser.device, vfs })))
 		.map(({ name, device, vfs }) => ({
