@@ -2,11 +2,11 @@ import { getAllReconciliationOrders } from "$lib/db/cr-sqlite/order-reconciliati
 import { getPlacedSupplierOrders, getPossibleSupplierOrders } from "$lib/db/cr-sqlite/suppliers";
 
 import type { PlacedSupplierOrder, PossibleSupplierOrder, ReconciliationOrder } from "$lib/db/cr-sqlite/types";
-import type { PageLoad } from "./$types";
+import type { LayoutLoad } from "./$types";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
+const _load = async ({ depends, parent }: Parameters<LayoutLoad>[0]) => {
 	depends("books:data");
 	depends("suppliers:data");
 	depends("customers:order_lines");
@@ -34,4 +34,4 @@ const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
 	return { possibleOrders, placedOrders, reconcilingOrders, completedOrders };
 };
 
-export const load: PageLoad = timed(_load);
+export const load: LayoutLoad = timed(_load);

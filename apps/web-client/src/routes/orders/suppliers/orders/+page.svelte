@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { getContext } from "svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -21,10 +20,9 @@
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
 	import LL from "@librocco/shared/i18n-svelte";
+	import { goto } from "$lib/utils/navigation";
 
 	export let data: PageData;
-
-	const goto = getContext<(url: string) => Promise<void>>("goto");
 
 	$: ({ possibleOrders, placedOrders } = data);
 	$: db = data?.dbCtx?.db;

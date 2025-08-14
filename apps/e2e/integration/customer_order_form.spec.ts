@@ -477,7 +477,7 @@ testOrders("supplier order list: new: submits the form with all fields", async (
 	const { supplier_orders_page: tSuppliers } = t;
 	const { forms: tForms } = t;
 
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("unordered"));
 
 	const customer = {
 		[tForms.customer_order_meta.labels.name()]: "John Doe",
@@ -508,7 +508,7 @@ testOrders("supplier order list: new: submits the form with only name provided",
 	const { supplier_orders_page: tSuppliers } = t;
 	const { forms: tForms } = t;
 
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("unordered"));
 
 	const customer = {
 		[tForms.customer_order_meta.labels.name()]: "John Doe"
@@ -535,7 +535,7 @@ testOrders("supplier order list: new: doesn't allow for submission without the n
 	const { supplier_orders_page: tSuppliers } = t;
 	const { forms: tForms } = t;
 
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("unordered"));
 
 	// NOTE: filling in non-required fields ensures the focus moves away from the name field (asserted to return back in failed validation)
 	const customer = {
@@ -562,7 +562,7 @@ testOrders("supplier order list: new: doesn't allow for submission with invalid 
 	const { supplier_orders_page: tSuppliers } = t;
 	const { forms: tForms } = t;
 
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("unordered"));
 
 	const customer = {
 		[tForms.customer_order_meta.labels.name()]: "John Doe",

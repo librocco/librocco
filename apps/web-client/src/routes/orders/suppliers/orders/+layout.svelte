@@ -20,9 +20,8 @@
 		const disposer1 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("books:data"));
 		const disposer2 = data.dbCtx?.rx?.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
 		const disposer3 = data.dbCtx?.rx?.onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
-		const disposer4 = data.dbCtx?.rx?.onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
 
-		disposer = () => (disposer1(), disposer2(), disposer3(), disposer4());
+		disposer = () => (disposer1(), disposer2(), disposer3());
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount

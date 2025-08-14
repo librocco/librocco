@@ -9,13 +9,10 @@ import { testOrders } from "@/helpers/fixtures";
 testOrders(
 	"unordered: reacts to updates to suppliers, customer order lines and publisher association",
 	async ({ page, books, customers, suppliers }) => {
-		await page.goto(appHash("supplier_order"));
+		await page.goto(appHash("unordered"));
 
 		const dbHandle = await getDbHandle(page);
 		const table = page.getByRole("table");
-
-		// Check that the page is loaded
-		await page.getByRole("button", { name: "Unordered", exact: true }).waitFor();
 
 		// There should be no possible orders
 		//

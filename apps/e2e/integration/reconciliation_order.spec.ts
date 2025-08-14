@@ -1,15 +1,13 @@
 import { expect } from "@playwright/test";
 
-import { appHash } from "@/constants";
+import { appHash, baseURL } from "@/constants";
 import { depends, testOrders } from "@/helpers/fixtures";
 
 testOrders("create: single order: on row button click", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -26,11 +24,9 @@ testOrders("create: single order: on row button click", async ({ page, supplierO
 
 testOrders("create: multiple orders: using checkboxes and a global 'Reconcile' button", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -48,16 +44,15 @@ testOrders("create: multiple orders: using checkboxes and a global 'Reconcile' b
 
 testOrders("create: adds the created reconciliation order to (active) 'Reconciling' tab", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
 
-	// 'Reconiling' tab is disabled - no acrive reconciliation orders
-	const reconcilingBtn = page.getByRole("button", { name: "Reconciling", exact: true });
-	await expect(reconcilingBtn).toBeDisabled();
+	// 'Reconiling' tab is disabled - no active reconciliation orders
+	page.getByTestId("reconciling-list").click();
+	expect(page.url()).toBe(`${baseURL}${appHash("ordered")}`);
 
 	// Create an order
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -72,10 +67,10 @@ testOrders("create: adds the created reconciliation order to (active) 'Reconcili
 	await page.getByPlaceholder("Enter ISBN of ordered books").waitFor();
 
 	// Navigate back to supplier orders
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("reconciling"));
 
 	// Navigate to reconiling view
-	await reconcilingBtn.click();
+	// await reconcilingBtn.click();
 
 	// There should be one row - active reconciliation order (containing 'Continue' button)
 	await table.getByRole("row").getByRole("button", { name: "Continue" }).waitFor();
@@ -83,16 +78,13 @@ testOrders("create: adds the created reconciliation order to (active) 'Reconcili
 
 testOrders("create: doesn't allow for reconciling same supplier order(s) twice", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
 
 	// 'Reconiling' tab is disabled - no acrive reconciliation orders
-	const reconcilingBtn = page.getByRole("button", { name: "Reconciling", exact: true });
-	await expect(reconcilingBtn).toBeDisabled();
-
-	// Create an order
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+	page.getByTestId("reconciling-list").click();
+	expect(page.url()).toBe(`${baseURL}${appHash("ordered")}`);
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -108,9 +100,9 @@ testOrders("create: doesn't allow for reconciling same supplier order(s) twice",
 	await page.getByPlaceholder("Enter ISBN of ordered books").waitFor();
 
 	// Navigate back to supplier orders
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+	// await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// The orders being reconciled are currently not displayed in the table
 	await relevantOrders.waitFor({ state: "detached" });
@@ -118,11 +110,9 @@ testOrders("create: doesn't allow for reconciling same supplier order(s) twice",
 
 testOrders("delete: doesn't delete the reconciliation order on cancel", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -133,7 +123,7 @@ testOrders("delete: doesn't delete the reconciliation order on cancel", async ({
 		.getByRole("checkbox")
 		.click();
 
-	await page.getByText("Reconcile").first().click();
+	await page.getByText("Reconcile").first().click({ force: true });
 
 	const isbnInput = page.getByPlaceholder("Enter ISBN of ordered books");
 	const l1 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
@@ -162,8 +152,8 @@ testOrders("delete: doesn't delete the reconciliation order on cancel", async ({
 	// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
 	//
 	// await page.reload();
-	await page.goto(appHash("supplier_order"));
-	await page.getByRole("button", { name: "Reconciling" }).click();
+	await page.goto(appHash("reconciling"));
+	// await page.getByRole("button", { name: "Reconciling" }).click();
 	await page.getByRole("button", { name: "Continue" }).click(); // NOTE: only active order (no need for fine grained matching)
 
 	await l1.waitFor();
@@ -172,11 +162,9 @@ testOrders("delete: doesn't delete the reconciliation order on cancel", async ({
 
 testOrders("delete: deletes the order (and navigates back to supplier orders) on confirm", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -210,7 +198,6 @@ testOrders("delete: deletes the order (and navigates back to supplier orders) on
 	await dialog.waitFor({ state: "detached" });
 
 	// Should navigate to supplier orders
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 	// Check that all supplier orders are there (including the reconciliation-attempted one)
 	const allSuppliers = [...new Set(supplierOrders.map(({ order: { supplier_name } }) => supplier_name))];
 	const orderRow = table.getByRole("row").filter({ hasText: new RegExp(`(${allSuppliers.join("|")})`) });
@@ -218,16 +205,15 @@ testOrders("delete: deletes the order (and navigates back to supplier orders) on
 	await expect(orderRow).toHaveCount(3);
 
 	// Check that 'Reconciling' tab button is disabled - no active reconciliation orders
-	await expect(page.getByRole("button", { name: "Reconciling", exact: true })).toBeDisabled();
+	page.getByTestId("reconciling-list").click();
+	expect(page.url()).toBe(`${baseURL}${appHash("ordered")}`);
 });
 
 testOrders("delete: allows deletion of an empty reconciliation order", async ({ page, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -246,9 +232,9 @@ testOrders("delete: allows deletion of an empty reconciliation order", async ({ 
 	const dialog = page.getByRole("dialog");
 	await dialog.getByRole("button", { name: "Confirm" }).click();
 	await dialog.waitFor({ state: "detached" });
+	await page.goto(appHash("ordered"));
 
 	// Should navigate to supplier orders
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 	// Check that all supplier orders are there (including the reconciliation-attempted one)
 	const allSuppliers = [...new Set(supplierOrders.map(({ order: { supplier_name } }) => supplier_name))];
 	const orderRow = table.getByRole("row").filter({ hasText: new RegExp(`(${allSuppliers.join("|")})`) });
@@ -256,15 +242,16 @@ testOrders("delete: allows deletion of an empty reconciliation order", async ({ 
 	await expect(orderRow).toHaveCount(3);
 
 	// Check that 'Reconciling' tab button is disabled - no active reconciliation orders
-	await expect(page.getByRole("button", { name: "Reconciling", exact: true })).toBeDisabled();
+	await page.goto(appHash("reconciling"));
+	expect(page.getByRole("table").getByRole("row")).toHaveCount(1);
 });
 
 testOrders("populate: initial state", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
 
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+	// await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: checking for initial state using all 3 supplier orders
 	for (const { order } of supplierOrders) {
@@ -277,6 +264,7 @@ testOrders("populate: initial state", async ({ page, supplierOrders }) => {
 	}
 
 	await page.getByText("Reconcile").first().click();
+	// await page.goto(appHash("reconcile", "9999"));
 
 	// Verify initial UI elements
 	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
@@ -298,11 +286,9 @@ testOrders("populate: initial state", async ({ page, supplierOrders }) => {
 });
 
 testOrders("populate: aggregates the quantity for scanned books", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -351,11 +337,9 @@ testOrders("populate: aggregates the quantity for scanned books", async ({ page,
 });
 
 testOrders("populate: adjusts quantity using the +/- buttons", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -409,11 +393,9 @@ testOrders("populate: adjusts quantity using the +/- buttons", async ({ page, bo
 });
 
 testOrders("populate: removes a line when quantity drops to 0", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -452,11 +434,9 @@ testOrders("populate: removes a line when quantity drops to 0", async ({ page, b
 });
 
 testOrders("populate: sorts books by ISBN", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -530,11 +510,11 @@ testOrders("populate: sorts books by ISBN", async ({ page, books, supplierOrders
 testOrders(
 	"populate: persists the state (reconciliation can be continued after navigating away and back)",
 	async ({ page, supplierOrders }) => {
-		await page.goto(appHash("supplier_order"));
+		await page.goto(appHash("ordered"));
 
 		const table = page.getByRole("table");
 
-		await page.getByRole("button", { name: "Ordered", exact: true }).click();
+		// await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 		// NOTE: using the first order (from the fixture) for the test
 		// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -561,10 +541,10 @@ testOrders(
 			.waitFor();
 
 		// Navigate away from the page
-		await page.goto(appHash("supplier_order"));
+		await page.goto(appHash("reconciling"));
 
 		// Navigate to the existing reconciliation order
-		await page.getByRole("button", { name: "Reconciling", exact: true }).click();
+		// await page.getByRole("button", { name: "Reconciling", exact: true }).click();
 		// NOTE: there's only one reconciliation note in progress - no need for fine grained matching
 		await page.getByRole("button", { name: "Continue", exact: true }).click();
 
@@ -584,11 +564,9 @@ testOrders(
 testOrders(
 	"compare: empty state: shows all lines for the respective order, case: single order",
 	async ({ page, books, supplierOrders }) => {
-		await page.goto(appHash("supplier_order"));
+		await page.goto(appHash("ordered"));
 
 		const table = page.getByRole("table");
-
-		await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 		// NOTE: using the first order (from the fixture) for the test
 		const { order } = supplierOrders[0];
@@ -644,11 +622,9 @@ testOrders(
 testOrders(
 	"compare: empty state: shows all lines for the respective order, case: multiple orders, same supplier",
 	async ({ page, books, supplierOrders }) => {
-		await page.goto(appHash("supplier_order"));
+		await page.goto(appHash("ordered"));
 
 		const table = page.getByRole("table");
-
-		await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 		// NOTE: using the first two orders (from the fixture)
 		// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -710,11 +686,9 @@ testOrders(
 testOrders(
 	"compare: empty state: shows all lines for the respective order, case: multiple orders, muliple suppliers",
 	async ({ page, books, supplierOrders }) => {
-		await page.goto(appHash("supplier_order"));
+		await page.goto(appHash("ordered"));
 
 		const table = page.getByRole("table");
-
-		await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 		// Check all of the boxes (reconcile all 3 at once)
 		await table.getByRole("row").getByRole("checkbox").nth(0).click();
@@ -789,11 +763,9 @@ testOrders(
 testOrders(
 	"compare: unmatched orders are shown at the top of the list (namespaced as 'Unmatched')",
 	async ({ page, books, supplierOrders }) => {
-		await page.goto(appHash("supplier_order"));
+		await page.goto(appHash("ordered"));
 
 		const table = page.getByRole("table");
-
-		await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 		// NOTE: using the first order (from the fixture) for the test
 		const { order } = supplierOrders[0];
@@ -851,11 +823,9 @@ testOrders(
 );
 
 testOrders("compare: overdelivered books should be shown in the 'Unmatched' section", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -917,11 +887,9 @@ testOrders("compare: overdelivered books should be shown in the 'Unmatched' sect
 });
 
 testOrders("compare: single order: fully filled", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -968,11 +936,9 @@ testOrders("compare: single order: fully filled", async ({ page, supplierOrders 
 });
 
 testOrders("compare: single order: overdelivery", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -1022,11 +988,9 @@ testOrders("compare: single order: overdelivery", async ({ page, supplierOrders 
 });
 
 testOrders("compare: single order: partial delivery: no additional books", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -1068,11 +1032,9 @@ testOrders("compare: single order: partial delivery: no additional books", async
 });
 
 testOrders("compare: single order: partial delivery: 1 line overdelivered", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -1109,11 +1071,9 @@ testOrders("compare: single order: partial delivery: 1 line overdelivered", asyn
 });
 
 testOrders("compare: single order: partial delivery: 1 unmatched book", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -1157,11 +1117,9 @@ testOrders("compare: single order: partial delivery: 1 unmatched book", async ({
 });
 
 testOrders("compare: multiple orders: fully filled", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -1222,11 +1180,9 @@ testOrders("compare: multiple orders: fully filled", async ({ page, supplierOrde
 });
 
 testOrders("compare: multiple orders: overdelivery", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -1292,11 +1248,9 @@ testOrders("compare: multiple orders: overdelivery", async ({ page, supplierOrde
 });
 
 testOrders("compare: multiple orders: partial delivery: no additional books", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -1357,11 +1311,9 @@ testOrders("compare: multiple orders: partial delivery: no additional books", as
 });
 
 testOrders("compare: multiple orders: partial delivery: 1 line overdelivered", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -1431,11 +1383,9 @@ testOrders("compare: multiple orders: partial delivery: 1 line overdelivered", a
 });
 
 testOrders("compare: multiple orders: partial delivery: 1 unmatched book", async ({ page, books, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -1510,11 +1460,9 @@ testOrders("compare: multiple orders: partial delivery: 1 unmatched book", async
 testOrders(
 	"compare: multiple orders: partial delivery: shared ISBN - filled for order 1, not for order 2",
 	async ({ page, supplierOrders }) => {
-		await page.goto(appHash("supplier_order"));
+		await page.goto(appHash("ordered"));
 
 		const table = page.getByRole("table");
-
-		await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 		// NOTE: Using the first two orders (from the fixture)
 		// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -1577,11 +1525,9 @@ testOrders(
 // NOTE: This tests both regular delivery, as well as delivery of unmatched books (and its effects on customer orders)
 testOrders("commit: applies delivery updates to customer order lines", async ({ page, customers, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -1641,7 +1587,7 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 testOrders("quantity: should handle quantity adjustments correctly", async ({ page, supplierOrders }) => {
 	depends(supplierOrders);
 	// Navigate and start reconciliation
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1665,7 +1611,7 @@ testOrders("quantity: should handle quantity adjustments correctly", async ({ pa
 
 testOrders("quantity:should remove line when quantity reaches zero", async ({ page, supplierOrders }) => {
 	depends(supplierOrders);
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1691,7 +1637,7 @@ testOrders("quantity:should remove line when quantity reaches zero", async ({ pa
 
 testOrders("quantity: should handle multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
 	depends(supplierOrders);
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1722,7 +1668,7 @@ testOrders("quantity: should handle multiple quantity adjustments", async ({ pag
 });
 
 testOrders("delete: should allow supplier orders to be reconciled again after deletion", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 	await page.getByText("Ordered").nth(1).click();
 
 	// Select multiple orders
@@ -1761,7 +1707,7 @@ testOrders("delete: should allow supplier orders to be reconciled again after de
 });
 
 testOrders("delete: should not delete reconciliation order when canceling deletion", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1782,7 +1728,7 @@ testOrders("delete: should not delete reconciliation order when canceling deleti
 });
 
 testOrders("delete: should allow deletion after comparing books", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1805,7 +1751,7 @@ testOrders("delete: should allow deletion after comparing books", async ({ page,
 
 testOrders("finalize: should disable all action buttons when an order is finalized", async ({ page, supplierOrders }) => {
 	depends(supplierOrders);
-	await page.goto(appHash("supplier_order"));
+	await page.goto(appHash("ordered"));
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
@@ -1819,7 +1765,7 @@ testOrders("finalize: should disable all action buttons when an order is finaliz
 	await expect(dialog).not.toBeVisible();
 
 	//navigate to completed orders
-	await page.getByRole("button", { name: "Completed", exact: true }).click();
+	await page.goto(appHash("completed"));
 
 	await page.getByRole("button", { name: "View Reconciliation", exact: true }).first().click();
 
@@ -1841,11 +1787,11 @@ testOrders(
 	"commit: allows committing of an empty reconciliation order (rejecting all lines associated with respective supplier orders)",
 	async ({ page, books, customers, supplierOrders }) => {
 		// Navigate to supplier orders and start reconciliation
-		await page.goto(appHash("supplier_order"));
+		await page.goto(appHash("ordered"));
 
 		const table = page.getByRole("table");
 
-		await page.getByRole("button", { name: "Ordered", exact: true }).click();
+		// await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 		// NOTE: using the first order (from the fixture) for the test
 		const { order } = supplierOrders[0];
