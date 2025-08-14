@@ -46,6 +46,7 @@ jobs:
       - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: cd apps/e2e && rushx test:vfs:ci
         env:
+          PLAYWRIGHT_SHARD_INDEX: "${{ matrix.shardIndex }}"
           PLAYWRIGHT_OPTIONS: "--shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}"
       #! upload each shard’s blob so we can merge later
       - uses: actions/upload-artifact@v4
@@ -54,8 +55,34 @@ jobs:
           name: e2e-blob-report-${{ matrix.shardIndex }}
           path: apps/e2e/blob-report
           retention-days: 2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-json-report-${{ matrix.shardIndex }}.json
+          path: apps/e2e/vfs-benchmark-results
+          retention-days: 2
 
-  vfs-benchmark-merge-report:
+  parse-benchmarks:
+    if: ${{ !cancelled() }}
+    needs: [vfs-benchmark]
+    runs-on: ubuntu-latest
+    steps:
+      -  #@ checkout()
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Download JSON reports
+        uses: actions/download-artifact@v4
+        with:
+          path: vfs-benchmark-results
+          pattern: e2e-json-report-*
+          merge-multiple: true
+
+      - name: Parse reports and produce benchmarks
+        run: ./scripts/parse-vfs-benchmarks vfs-benchmark-results
+
+  e2e-merge-report:
     if: ${{ !cancelled() }}
     needs: [vfs-benchmark]
     runs-on: ubuntu-latest
