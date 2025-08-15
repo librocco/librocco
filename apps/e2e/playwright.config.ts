@@ -90,7 +90,8 @@ const defaultConfig: PlaywrightTestConfig = {
 };
 
 const vfsList = ["idb-batch-atomic", "opfs-any-context", "opfs-adaptive-vfs", "opfs-coop-sync"];
-const outputFile = SHARD_INDEX === undefined ? `vfs-benchmark-results/test-results.json` : `vfs-benchmark-results/test-results-${SHARD_INDEX}.json`;
+const outputFile =
+	SHARD_INDEX === undefined ? `vfs-benchmark-results/test-results.json` : `vfs-benchmark-results/test-results-${SHARD_INDEX}.json`;
 const vfsTestConfig: PlaywrightTestConfig = {
 	...baseConfig,
 	reporter: [["json", { outputFile }]],
