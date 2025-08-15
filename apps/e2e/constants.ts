@@ -2,7 +2,7 @@ import * as net from "net";
 
 export const IS_CI = /^(?:1|true|on)$/i.test(process.env.CI?.trim() ?? "");
 export const VFS_TEST = process.env.VFS_TEST === "true";
-export const SHARD_INDEX = process.env.PLAYWRIGHT_SHARD_INDEX
+export const SHARD_INDEX = process.env.PLAYWRIGHT_SHARD_INDEX;
 
 export function getPort(): Promise<number> {
 	const testSocket = new net.Socket();
