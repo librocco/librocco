@@ -110,13 +110,15 @@ async function _createReconciliationOrder(db: TXAsync, id: number, _supplierOrde
 		throw new ErrSupplierOrdersAlreadyReconciling(supplierOrderIds, conflicts);
 	}
 
-	await db.exec(
+	const rrrr = await db.exec(
 		`
 			INSERT INTO reconciliation_order (id, supplier_order_ids, created, updatedAt)
 			VALUES (?, json_array(${multiplyString("?", supplierOrderIds.length)}), ?, ?)
+			RETURNING id
 		`,
 		[id, ...supplierOrderIds, timestamp, timestamp]
 	);
+	console.log(rrrr[0]);
 }
 
 /**

@@ -35,7 +35,7 @@
 					<td>
 						<div class="flex flex-wrap gap-1">
 							{#each supplierOrderIds as supplier_id}
-								<a class="badge-primary badge gap-x-2 hover:badge-outline" href={appHash("supplier_orders", supplier_id)}>
+								<a class="badge-primary badge gap-x-2 hover:badge-outline" href={appHash("supplier_order", supplier_id)}>
 									#{supplier_id}
 									<SquareArrow size={12} />
 								</a>

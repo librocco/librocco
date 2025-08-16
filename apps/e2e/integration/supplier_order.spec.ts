@@ -15,7 +15,7 @@ import { depends, testOrders } from "@/helpers/fixtures";
 
 testOrders("should show empty state when no supplier orders exist", async ({ page, t }) => {
 	const { supplier_orders_page: tSupplierOrders } = t;
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("unordered"));
 
 	await expect(page.getByRole("table")).not.toBeVisible();
 	await expect(page.getByText(tSupplierOrders.placeholder.title())).toBeVisible();
@@ -29,36 +29,29 @@ testOrders("should show empty state when no supplier orders exist", async ({ pag
 	await expect(page.getByRole("dialog")).toBeVisible();
 });
 
-testOrders("order tabs (filters): shows completed orders under 'completed' tab", async ({ page, supplierOrders, t }) => {
-	const { supplier_orders_page: tSupplierOrders } = t;
-	await page.goto(appHash("supplier_orders"));
+testOrders("order tabs (filters): shows completed orders under 'completed' tab", async ({ page, supplierOrders }) => {
+	await page.goto(appHash("completed"));
 
 	const dbHandle = await getDbHandle(page);
-
-	// The tab should be disabled - no completed orders
-	await expect(page.getByRole("button", { name: tSupplierOrders.tabs.completed(), exact: true })).toBeDisabled();
 
 	// Complete two orders - create a reconciliation order and finalize it
 	const [o1, o2] = supplierOrders;
 	await dbHandle.evaluate(createReconciliationOrder, { id: 1, supplierOrderIds: [o1.order.id, o2.order.id] });
 	await dbHandle.evaluate(finalizeReconciliationOrder, 1);
 
-	// Check the 'Completed' view
-	await page.getByRole("button", { name: tSupplierOrders.tabs.completed(), exact: true }).click();
-
 	await page.getByRole("table").getByRole("row").nth(2).waitFor();
 });
 
 testOrders("should show list of unordered orders", async ({ page, suppliers: [supplier], books, t }) => {
 	const { supplier_orders_page: tSupplierOrders } = t;
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("unordered"));
 
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
 	await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisher: "pub1" });
 
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("unordered"));
 	page.getByRole("button", { name: tSupplierOrders.tabs.unordered() });
 
 	await expect(page.getByText(supplier.name)).toBeVisible();
@@ -74,7 +67,7 @@ testOrders("should show list of unordered orders", async ({ page, suppliers: [su
 testOrders.skip(
 	"should allow a new supplier order to be placed from a batch of possible customer order lines",
 	async ({ page, suppliers: [supplier], books, customers }) => {
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("unordered"));
 
 		const dbHandle = await getDbHandle(page);
 
@@ -91,7 +84,7 @@ testOrders.skip(
 			bookIsbns: [books[2].isbn, books[2].isbn]
 		});
 
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("unordered"));
 
 		const table = page.getByRole("table");
 
@@ -163,13 +156,13 @@ testOrders.skip(
 
 		await page.getByRole("button", { name: "Place Order" }).first().click();
 
-		await page.waitForURL(appHash("supplier_orders"));
+		await page.waitForURL(appHash("unordered"));
 		page.getByRole("button", { name: "Ordered" }).nth(1).click();
 
 		await expect(page.getByText(supplier.name)).toBeVisible();
 		await expect(page.getByText("reconcile")).toBeVisible();
 
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("unordered"));
 		page.getByRole("button", { name: "Unordered" });
 		// Start new order
 		await page.getByRole("button", { name: "Place Order" }).first().click();
@@ -193,7 +186,7 @@ testOrders(
 
 		const table = page.getByRole("table");
 
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("unordered"));
 
 		// NOTE: this should be unnecessary once the reactivity fix is in
 		await page.reload();
@@ -285,7 +278,7 @@ testOrders(
 	"should view reconciliation controls for orders already in reconciliation",
 	async ({ page, suppliers: [supplier], books, t }) => {
 		const { supplier_orders_component: tSupplierOrdersComponent } = t;
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("unordered"));
 
 		const dbHandle = await getDbHandle(page);
 
@@ -347,7 +340,7 @@ testOrders(
 	"should show correct batch reconciliation state with mixed reconciliation status",
 	async ({ page, suppliers: [supplier], books, t }) => {
 		const { supplier_orders_component: tSupplierOrdersComponent } = t;
-		await page.goto(appHash("supplier_orders"));
+		await page.goto(appHash("unordered"));
 
 		const dbHandle = await getDbHandle(page);
 
@@ -432,7 +425,7 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 
 	const table = page.getByRole("table");
 
-	await page.goto(appHash("supplier_orders"));
+	await page.goto(appHash("unordered"));
 
 	// NOTE: this should be unnecessary once the reactivity fix is in
 	await page.reload();
@@ -511,16 +504,10 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 });
 
 testOrders("supplier order page: view + reactivity", async ({ page, books, supplierOrders, t }) => {
-	const {
-		reconciled_list_page: tReconciledList,
-		supplier_orders_component: tSupplierOrdersComponent,
-		supplier_orders_page: tSupplierOrders
-	} = t;
-	await page.goto(appHash("supplier_orders"));
+	const { reconciled_list_page: tReconciledList, supplier_orders_component: tSupplierOrdersComponent } = t;
+	await page.goto(appHash("ordered"));
 
 	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: tSupplierOrders.tabs.ordered(), exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order, lines } = supplierOrders[0];
@@ -532,7 +519,7 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 		.click();
 
 	// Wait for navigation
-	await page.waitForURL(appHash("supplier_orders", order.id));
+	await page.waitForURL(appHash("supplier_order", order.id));
 
 	// Displays supplier name
 	await page.getByText(order.supplier_name).waitFor();
@@ -584,10 +571,9 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 	const reconOrderId = page.url().split("/").filter(Boolean).pop();
 
 	// Navigate back to the order (now the reconciliation order had been created)
-	await page.goto(appHash("supplier_orders"));
-	await page.getByRole("button", { name: "Reconciling" }).click();
+	await page.goto(appHash("reconciling"));
 	await page.getByRole("link", { name: `#${order.id}` }).click();
-	await page.waitForURL(appHash("supplier_orders", order.id));
+	await page.waitForURL(appHash("supplier_order", order.id));
 
 	// The reconciliation button now reads 'View Reconciliation'
 	await page.getByRole("button", { name: tReconciledList.labels.reconcile() }).waitFor({ state: "detached" });
@@ -599,8 +585,7 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 	// Check reconciliation order reactivity
 	//
 	// Go back to the supplier order
-	await page.goto(appHash("supplier_orders"));
-	await page.getByRole("button", { name: "Reconciling" }).click();
+	await page.goto(appHash("reconciling"));
 	await page.getByRole("link", { name: `#${order.id}` }).click();
 
 	// The reconciliation button reads 'View Reconciliation' (reconciliation order exists)

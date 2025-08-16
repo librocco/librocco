@@ -467,7 +467,11 @@ async function _createSupplierOrder(
 			const customerOrderLineIds = await db
 				.execO<{
 					id: number;
-				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC LIMIT ?", [isbn, quantity])
+				}>(
+					`SELECT id FROM customer_order_lines WHERE
+					isbn = ? AND placed is NULL ORDER BY created ASC LIMIT ?`,
+					[isbn, quantity]
+				)
 				.then((res) => res.map(({ id }) => id));
 
 			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;

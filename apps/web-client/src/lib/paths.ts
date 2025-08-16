@@ -19,8 +19,14 @@ const HASHES = {
 	// Order mgmt
 	customers: "#/orders/customers/",
 	suppliers: "#/orders/suppliers/",
-	supplier_orders: "#/orders/suppliers/orders/",
-	reconcile: "#/orders/suppliers/reconcile/"
+	reconcile: "#/orders/suppliers/reconcile/",
+
+	// Supplier orders
+	supplier_order: "#/orders/suppliers/order/",
+	unordered: "#/orders/suppliers/orders/",
+	reconciling: "#/orders/suppliers/orders/reconciling",
+	completed: "#/orders/suppliers/orders/completed",
+	ordered: "#/orders/suppliers/orders/ordered"
 };
 
 const PATHS: { [key: string]: string } = Object.fromEntries(Object.entries(HASHES).map(([key, hash]) => [key, `${base}/${hash}`]));

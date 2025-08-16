@@ -37,7 +37,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import LL from "@librocco/shared/i18n-svelte";
-	import { appPath } from "$lib/paths";
+	import { appHash } from "$lib/paths";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -130,7 +130,7 @@
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
 		await finalizeReconciliationOrder(db, parseInt($page.params.id));
-		await goto(appPath("supplier_orders"));
+		await goto(appHash("unordered"));
 	}
 
 	const handleConfirmDeleteDialog = () => {
@@ -142,7 +142,7 @@
 
 		await deleteReconciliationOrder(db, parseInt($page.params.id));
 
-		await goto(appPath("supplier_orders"));
+		await goto(appHash("unordered"));
 	}
 </script>
 

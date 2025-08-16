@@ -9,7 +9,7 @@
 	export let orders: PlacedSupplierOrder[];
 
 	function handleView(supplierOrderId: number) {
-		goto(appHash("supplier_orders", supplierOrderId));
+		goto(appHash("supplier_order", supplierOrderId));
 	}
 	function handleViewReconcileOrder(id: number) {
 		goto(appHash("reconcile", id));
