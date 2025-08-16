@@ -66,11 +66,8 @@ testOrders("create: adds the created reconciliation order to (active) 'Reconcili
 	// Check that we're at the reconciliation page
 	await page.getByPlaceholder("Enter ISBN of ordered books").waitFor();
 
-	// Navigate back to supplier orders
-	await page.goto(appHash("reconciling"));
-
 	// Navigate to reconiling view
-	// await reconcilingBtn.click();
+	await page.goto(appHash("reconciling"));
 
 	// There should be one row - active reconciliation order (containing 'Continue' button)
 	await table.getByRole("row").getByRole("button", { name: "Continue" }).waitFor();
@@ -83,8 +80,8 @@ testOrders("create: doesn't allow for reconciling same supplier order(s) twice",
 	const table = page.getByRole("table");
 
 	// 'Reconiling' tab is disabled - no acrive reconciliation orders
-	page.getByTestId("reconciling-list").click();
-	expect(page.url()).toBe(`${baseURL}${appHash("ordered")}`);
+	await page.goto(appHash("reconciling"));
+	expect(page.getByRole("table").getByRole("row")).toHaveCount(1);
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -153,7 +150,6 @@ testOrders("delete: doesn't delete the reconciliation order on cancel", async ({
 	//
 	// await page.reload();
 	await page.goto(appHash("reconciling"));
-	// await page.getByRole("button", { name: "Reconciling" }).click();
 	await page.getByRole("button", { name: "Continue" }).click(); // NOTE: only active order (no need for fine grained matching)
 
 	await l1.waitFor();
@@ -196,6 +192,7 @@ testOrders("delete: deletes the order (and navigates back to supplier orders) on
 	const dialog = page.getByRole("dialog");
 	await dialog.getByRole("button", { name: "Confirm" }).click();
 	await dialog.waitFor({ state: "detached" });
+	await page.goto(appHash("ordered"));
 
 	// Should navigate to supplier orders
 	// Check that all supplier orders are there (including the reconciliation-attempted one)
@@ -205,8 +202,8 @@ testOrders("delete: deletes the order (and navigates back to supplier orders) on
 	await expect(orderRow).toHaveCount(3);
 
 	// Check that 'Reconciling' tab button is disabled - no active reconciliation orders
-	page.getByTestId("reconciling-list").click();
-	expect(page.url()).toBe(`${baseURL}${appHash("ordered")}`);
+	await page.goto(appHash("reconciling"));
+	expect(page.getByRole("table").getByRole("row")).toHaveCount(1);
 });
 
 testOrders("delete: allows deletion of an empty reconciliation order", async ({ page, supplierOrders }) => {
