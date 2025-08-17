@@ -49,8 +49,10 @@ testOrders("create: adds the created reconciliation order to (active) 'Reconcili
 	const table = page.getByRole("table");
 
 	// 'Reconiling' tab is disabled - no active reconciliation orders
-	page.getByTestId("reconciling-list").click();
-	expect(page.url()).toBe(`${baseURL}${appHash("ordered")}`);
+	await page.goto(appHash("reconciling"));
+	expect(page.getByRole("table").getByRole("row")).toHaveCount(1);
+
+	await page.goto(appHash("ordered"));
 
 	// Create an order
 
@@ -82,6 +84,8 @@ testOrders("create: doesn't allow for reconciling same supplier order(s) twice",
 	// 'Reconiling' tab is disabled - no acrive reconciliation orders
 	await page.goto(appHash("reconciling"));
 	expect(page.getByRole("table").getByRole("row")).toHaveCount(1);
+
+	await page.goto(appHash("ordered"));
 
 	// NOTE: Using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
