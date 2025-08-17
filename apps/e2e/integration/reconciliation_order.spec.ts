@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { appHash, baseURL } from "@/constants";
+import { appHash } from "@/constants";
 import { depends, testOrders } from "@/helpers/fixtures";
 
 testOrders("create: single order: on row button click", async ({ page, supplierOrders }) => {
