@@ -111,7 +111,7 @@
 		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: quantity }]);
 	};
 
-	let currentStep = 1;
+	let currentStep = data?.reconciliationOrder.finalized ? 2 : 1;
 	const commitDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: commitDialogOpen }
@@ -331,6 +331,7 @@
 							</dl>
 						{/if}
 						<button
+							disabled={data?.reconciliationOrder.finalized}
 							class="btn-primary btn ml-auto"
 							on:click={async () => {
 								if (currentStep === 1) {
