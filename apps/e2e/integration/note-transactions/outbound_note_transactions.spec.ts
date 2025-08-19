@@ -449,8 +449,7 @@ test("should allow for editing of custom items using the custom item form", asyn
 	]);
 });
 
-test(`should check validity of the transactions and commit the note on 'commit'
-	button click`, async ({ t, page }) => {
+test("should check validity of the transactions and commit the note on 'commit' button click", async ({ t, page }) => {
 	const { sale_note: tOutbound } = t;
 
 	const dbHandle = await getDbHandle(page);
