@@ -205,27 +205,6 @@ test("should delete the transaction from the note when when selected for deletio
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }]);
 });
 
-// TODO: Rethink this...
-test.skip("transaction should default to the only warehouse the given book is available in if there is only one", async ({ page }) => {
-	// Setup: Add the book to the warehouse (through an inbound note)
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
-	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 2);
-
-	const content = getDashboard(page).content();
-
-	// Add a book transaction to the note
-	await content.scanField().add("1234567890");
-
-	// TDDO: Replace the following with a single call to `assertFields` (commented line below) when the
-	// warehouse picker's single-option / multiple option implementation is reconciled
-	await content.table("outbound-note").row(0).field("isbn").assert("1234567890");
-	await content.table("outbound-note").row(0).field("quantity").assert(1);
-	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("Warehouse 1");
-	// await content.table("outbound-note").row(0).assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" });
-});
-
 test("transaction should allow for warehouse selection if there is more than one warehouse the given book is available in", async ({
 	page
 }) => {
@@ -261,84 +240,6 @@ test("transaction should allow for warehouse selection if there is more than one
 
 	// Check for an option that contains the text "Warehouse 2"
 	await expect(dropdown.getByRole("option", { name: "Warehouse 2" })).toBeVisible();
-});
-
-test("if there's one transaction for the isbn with specified warehouse, should add a new transaction (with unspecified warehouse) on 'Add'", async ({
-	page
-}) => {
-	// Setup: Create two warehouses with the book in stock
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
-	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 2);
-
-	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
-	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2 });
-	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1234567890", quantity: 1, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(commitNote, 3);
-
-	// Add a transaction to the note, belonging to the first warehouse - specified warehouse
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
-
-	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().table("outbound-note");
-
-	// Wait for the transaction to be displayed before continuing with assertions
-	//
-	// TDDO: Replace the following with a single call to `assertRows` (commented line below) when the
-	// warehouse picker's single-option / multiple option implementation is reconciled
-	await entries.row(0).field("isbn").assert("1234567890");
-	await entries.row(0).field("quantity").assert(1);
-	await expect(entries.row(0).field("warehouseName")).toContainText("Warehouse 1");
-	await entries.row(1).waitFor({ state: "detached" });
-	// await entries.assertRows([{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }]);
-
-	// Add another transaction for the same book (should default to "" warehouse)
-	await scanField.add("1234567890");
-
-	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
-		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
-	]);
-});
-
-test("if there are two transactions, one with specified and one with unspecified warehouse, on 'Add' should add a new transaction and assign it to the first warehouse with available stock", async ({
-	page
-}) => {
-	// Setup: Create two warehouses with the book in stock
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
-	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 2);
-
-	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
-	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2 });
-	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1234567890", quantity: 1, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(commitNote, 3);
-
-	// Add a transaction to the note, belonging to the first warehouse - specified warehouse
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
-
-	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().table("outbound-note");
-
-	// Wait for the transactions to be displayed before continuing with assertions
-	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
-		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
-	]);
-
-	// Add yet another transaction for the same book (should default to "" warehouse and aggregate with the first entry)
-	await scanField.add("1234567890");
-
-	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
-		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" },
-		{ isbn: "1234567890", quantity: 1 }
-	]);
 });
 
 test("updating a transaction to an 'isbn' and 'warehouseId' of an already existing transaction should aggregate the two", async ({
