@@ -267,8 +267,29 @@ const warehouseNameFieldConstructor: FieldConstructor<InventoryFieldLookup, "war
 		return container.page().keyboard.press("Escape");
 	};
 
-	const _assertedLocator = (container: Page | Locator, want: string): Locator =>
-		container.locator('[data-property="warehouseName"]').locator("button", { hasText: want == "" ? DEFAULT_LABEL : want });
+	const _assertedLocator = (container: Page | Locator, want: T): Locator => {
+		const isObjectMatcher = typeof want === "object";
+
+		const name = isObjectMatcher ? want.name : want;
+		const wantText = name === "" ? DEFAULT_LABEL : name;
+
+		const baseMatcher = container.locator('[data-property="warehouseName"]').locator("button").filter({ hasText: wantText });
+
+		// Matching by name only
+		if (!isObjectMatcher) {
+			return baseMatcher;
+		}
+
+		// Matching by { name, forced } object
+		const { forced } = want as IWarehouseName;
+
+		if (forced) {
+			return baseMatcher.filter({ hasText: "Forced" });
+		}
+
+		return baseMatcher.filter({ hasNotText: "Forced" });
+	};
+
 	const assertedLocator = (page: Page, want: string) => _assertedLocator(page, want);
 	const assert = (want: string, opts?: WaitForOpts) => _assertedLocator(row, want).waitFor({ timeout: assertionTimeout, ...opts });
 
