@@ -205,6 +205,150 @@ test("should delete the transaction from the note when when selected for deletio
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }]);
 });
 
+// Handles cases:
+//
+// - no availability (default: no-warehouse)
+// - available in a single warehouse (default: available warehouse)
+// - available in multiple warehouses (default: no-warehouse)
+test("scanning a book - no default warehouse", async ({ page }) => {
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+
+	const content = getDashboard(page).content();
+	const table = getDashboard(page).content().table("outbound-note");
+
+	// Not available in any warehouse
+	await content.scanField().add("11111111");
+	await table.assertRows([{ isbn: "11111111", quantity: 1, warehouseName: "" }]);
+
+	// Available in single warehouse (default: available warehouse)
+	// NOTE: the already created outbound note is id = 1
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "22222222", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+	// Stock:
+	//   Warehouse 1:
+	//     22222222 - total: 1, filled: 0, remaining: 1 <- filling here
+	await content.scanField().add("22222222");
+	// NOTE: all newly added rows pop to the top
+	await table.assertRows([
+		{ isbn: "22222222", quantity: 1, warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 1, warehouseName: "" }
+	]);
+
+	// Available in multiple warehouses (default: no-warehouse)
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "33333333", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
+
+	await dbHandle.evaluate(createInboundNote, { id: 4, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "33333333", quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 4);
+	// Stock:
+	//   Warehouse 1:
+	//     22222222 - total: 1, filled: 1, remaining: 0
+	//     33333333 - total: 1, filled: 0, remaining: 1
+	//   Warehouse 2:
+	//     33333333 - total: 1, filled: 0, remaining: 1
+	await content.scanField().add("33333333");
+	await table.assertRows([
+		{ isbn: "33333333", quantity: 1, warehouseName: "" },
+		{ isbn: "22222222", quantity: 1, warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 1, warehouseName: "" }
+	]);
+});
+
+// NOTE: scanning with existing transactions is assumed to work in the same way as adding a new transaction
+// TODO: check if we want slightly different behaviour (or need to test for edge cases as it is) in case of existing transactions
+
+// Handles cases:
+//
+// - no availability (default: no-warehouse)
+// - available in a single (non-default) warehouse (default: available warehouse)
+// - available in multiple warehouses (none default) (default: no-warehouse)
+// - available in multiple warehouses (one of which default) (default: default warehouse)
+test("scanning a book - with default warehouse", async ({ page }) => {
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
+
+	const content = getDashboard(page).content();
+	const table = getDashboard(page).content().table("outbound-note");
+
+	// Not available in any warehouse
+	await content.scanField().add("11111111");
+	await table.assertRows([{ isbn: "11111111", quantity: 1, warehouseName: "" }]);
+
+	// Set default warehouse: Warehouse 3
+	await dbHandle.evaluate(updateNote, { id: 1, defaultWarehouse: 3 });
+
+	// Available in single (non-default) warehouse (default: available warehouse)
+	// NOTE: the already created outbound note is id = 1
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "22222222", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+	// Stock:
+	//   Warehouse 1:
+	//     22222222 - total: 1, filled: 0, remaining: 1 <- filling here
+	await content.scanField().add("22222222");
+	// NOTE: all newly added rows pop to the top
+	await table.assertRows([
+		{ isbn: "22222222", quantity: 1, warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 1, warehouseName: "" }
+	]);
+
+	// Available in multiple warehouses, none of which is default (default: no-warehouse)
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "33333333", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
+
+	await dbHandle.evaluate(createInboundNote, { id: 4, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "33333333", quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 4);
+	// Stock:
+	//   Warehouse 1:
+	//     22222222 - total: 1, filled: 1, remaining: 0
+	//     33333333 - total: 1, filled: 0, remaining: 1
+	//   Warehouse 2:
+	//     33333333 - total: 1, filled: 0, remaining: 1
+	await content.scanField().add("33333333");
+	await table.assertRows([
+		{ isbn: "33333333", quantity: 1, warehouseName: "" },
+		{ isbn: "22222222", quantity: 1, warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 1, warehouseName: "" }
+	]);
+
+	// Available in multiple warehouses, one of which is the default one (default: default warehouse)
+	await dbHandle.evaluate(createInboundNote, { id: 5, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [5, { isbn: "44444444", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 5);
+
+	await dbHandle.evaluate(createInboundNote, { id: 6, warehouseId: 3 });
+	await dbHandle.evaluate(addVolumesToNote, [6, { isbn: "44444444", quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 6);
+
+	// Stock:
+	//   Warehouse 1:
+	//     22222222 - total: 1, filled: 1, remaining: 0
+	//     33333333 - total: 1, filled: 0, remaining: 1
+	//     44444444 - total: 1, filled: 0, remaining: 0
+	//   Warehouse 2:
+	//     33333333 - total: 1, filled: 0, remaining: 1
+	//   Warehouse 3 (default):
+	//     44444444 - total: 1, filled: 0, remaining: 1 <- filling here
+	await content.scanField().add("44444444");
+	await table.assertRows([
+		{ isbn: "44444444", quantity: 1, warehouseName: "Warehouse 3" },
+		{ isbn: "33333333", quantity: 1, warehouseName: "" },
+		{ isbn: "22222222", quantity: 1, warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 1, warehouseName: "" }
+	]);
+});
+
 test("transaction should allow for warehouse selection if there is more than one warehouse the given book is available in", async ({
 	page
 }) => {
