@@ -221,7 +221,7 @@ export type HistoryTableInterface = DashboardNode<{
 
 export type InventoryRowInterface = DashboardNode<{
 	field<K extends InventoryRowField>(name: K): InventoryFieldLookup[K];
-	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
+	assertFields(row: Partial<InventoryRowValues>, opts?: AssertRowFieldsOpts): Promise<void>;
 	edit(): Promise<void>;
 	delete(): Promise<void>;
 }>;
@@ -238,7 +238,7 @@ export type IWarehouseName = {
 export interface InventoryWarehouseNameField
 	extends AssertedLocator<string | IWarehouseName>,
 		Asserter<string | IWarehouseName>,
-		Setter<string | IWarehouseName>,
+		Setter<string>,
 		Locator {
 	assertOptions(options: string[], opts?: WaitForOpts): Promise<void>;
 }
