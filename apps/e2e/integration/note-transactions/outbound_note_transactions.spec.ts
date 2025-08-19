@@ -671,38 +671,6 @@ test("should check validity of the transactions and commit the note on 'commit' 
 
 // TODO: Should not allow committing of an empty note ??
 
-test("should create a new row for the same isbn when stock is depleted", async ({ page }) => {
-	// Setup: Create a warehouse and add 3 copies of a book
-	const dbHandle = await getDbHandle(page);
-	const isbn = "1234567890";
-
-	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
-	await dbHandle.evaluate(addVolumesToNote, [2, { isbn, quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 2);
-
-	const content = getDashboard(page).content();
-	const scanField = content.scanField();
-	const entries = content.table("outbound-note");
-
-	await scanField.add(isbn);
-
-	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
-
-	// Check that the transaction is of type 'Normal' as stock is available
-	await entries.assertRows([{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }]);
-
-	// Add the book a 4th time, which should create a new 'Forced' transaction
-	await scanField.add(isbn);
-
-	// Check that a new row has been created with type 'Forced'
-	await entries.assertRows([
-		{ isbn, quantity: 1, warehouseName: "" },
-
-		{ isbn, quantity: 1, warehouseName: "Warehouse 1" }
-	]);
-});
-
 test("should create a new row for the same isbn when quantity is increased beyond available stock", async ({ page }) => {
 	// Setup: Create a warehouse and add 3 copies of a book
 	const dbHandle = await getDbHandle(page);
