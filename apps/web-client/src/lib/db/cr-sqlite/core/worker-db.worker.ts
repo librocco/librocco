@@ -1,3 +1,11 @@
+/**
+ * NOTE: This is a dedicated worker used to house the DB instance. We're using it to instantiate the DB
+ * with a VFS that has to be run within the worker context (and, normally, wrap the worker in Comlink for easier interaction).
+ * see: ./worker-db.ts
+ *
+ * When starting the worker, the name of the worker is expected to be of the format: "<dbname>---<vfs>"
+ */
+
 import * as Comlink from "comlink";
 
 import type { DBAsync, _TXAsync, OnUpdateCallback, TXCallback, VFSWhitelist } from "./types";
