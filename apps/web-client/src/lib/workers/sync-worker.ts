@@ -27,7 +27,7 @@ progressEmitter.onProgress((payload) => {
 const maxChunkSize = 1024;
 
 const config: Config = {
-	dbProvider: createDbProvider(wasmUrl),
+	dbProvider: createDbProvider({ locateWasm: () => wasmUrl }),
 	transportProvider: wrapProvider(defaultConfig.transportProvider, progressEmitter, { maxChunkSize })
 };
 

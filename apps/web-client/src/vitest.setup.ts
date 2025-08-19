@@ -37,14 +37,15 @@ vi.mock("$app/navigation", (): typeof navigation => ({
 	preloadCode: () => Promise.resolve(),
 	onNavigate: () => Promise.resolve(),
 	pushState: () => Promise.resolve(),
-	replaceState: () => Promise.resolve()
+	replaceState: () => Promise.resolve(),
+	refreshAll: () => Promise.resolve()
 }));
 
 vi.mock("$app/stores", (): typeof stores => {
 	const getStores: typeof stores.getStores = () => {
 		const navigating = readable<Navigation | null>(null);
 		const page = readable<Page>({
-			url: new URL("http://localhost"),
+			url: new URL("http://localhost") as any,
 			params: {},
 			route: {
 				id: null
