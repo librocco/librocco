@@ -17,7 +17,7 @@
 
 	import type { LayoutData } from "./$types";
 
-	import { IS_DEBUG, IS_E2E } from "$lib/constants";
+	import { DEFAULT_VFS, IS_DEBUG, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
@@ -116,6 +116,7 @@
 		//
 		// Init worker and sync interface
 		const wkr = new WorkerInterface(new SyncWorker());
+		wkr.start(dbCtx.vfs); // Use the same VFS as the one in the main-thread-initialized DB
 		sync.init(wkr);
 
 		// Start the sync progress store (listen to sync events)

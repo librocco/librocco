@@ -27,3 +27,5 @@ export const DEFAULT_LOCALE: Locales = "en";
 const PKG_VERSION = import.meta.env.VITE_PKG_VERSION;
 export const GIT_SHA = import.meta.env.VITE_GIT_SHA || "dev";
 export const VERSION = import.meta.env.VITE_GIT_SHA ? `${PKG_VERSION}-${import.meta.env.VITE_GIT_SHA}` : PKG_VERSION;
+
+export { DEFAULT_VFS } from "$lib/db/cr-sqlite/core/constants";
