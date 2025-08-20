@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
-
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -30,6 +29,7 @@
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
 	import LL from "@librocco/shared/i18n-svelte";
+	import { page } from "$app/stores";
 
 	export let data: PageData;
 
@@ -60,7 +60,19 @@
 	$: hasReconcilingOrders = reconcilingOrders?.length;
 	$: hasCompletedOrders = completedOrders?.length;
 
-	let orderStatusFilter: "unordered" | "ordered" | "reconciling" | "completed" = "unordered";
+	type OrderStatus = "unordered" | "ordered" | "reconciling" | "completed";
+
+	$: statusFromUrl = $page.url.hash.split("?filter=")[1].split("/")[0];
+	$: statusFromUrlParam = $page.url.search;
+	$: orderStatusFilter =
+		statusFromUrl === "ordered" || statusFromUrl === "reconciling" || statusFromUrl === "completed" ? statusFromUrl : "unordered";
+
+	function setFilter(status: OrderStatus) {
+		orderStatusFilter = status;
+		const base = $page.url.hash.split("?")[0];
+
+		goto(`${base}?filter=${status}`);
+	}
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
 		/**@TODO replace randomId with incremented id */
@@ -75,7 +87,7 @@
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 
-		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+		const id = Math.floor(Math.random() * 1000000); // Temporary IDgeneration
 		const displayId = await getCustomerDisplayIdSeq(db).then(String);
 
 		await upsertCustomer(db, { ...customer, id, displayId });
@@ -94,7 +106,7 @@
 			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
 				<button
 					class="btn-sm btn {orderStatusFilter === 'unordered' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => (orderStatusFilter = "unordered")}
+					on:click={() => setFilter("unordered")}
 					aria-pressed={orderStatusFilter === "unordered"}
 				>
 					{t.tabs.unordered()}
@@ -102,7 +114,7 @@
 
 				<button
 					class="btn-sm btn {orderStatusFilter === 'ordered' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => (orderStatusFilter = "ordered")}
+					on:click={() => setFilter("ordered")}
 					aria-pressed={orderStatusFilter === "ordered"}
 					disabled={!hasPlacedOrders}
 					data-testid="ordered-list"
@@ -112,7 +124,7 @@
 
 				<button
 					class="btn-sm btn {orderStatusFilter === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => (orderStatusFilter = "reconciling")}
+					on:click={() => setFilter("reconciling")}
 					aria-pressed={orderStatusFilter === "reconciling"}
 					disabled={!hasReconcilingOrders}
 					data-testid="reconciling-list"
@@ -122,7 +134,7 @@
 				<div class="w-fit">
 					<button
 						class="btn-sm btn self-end {orderStatusFilter === 'completed' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => (orderStatusFilter = "completed")}
+						on:click={() => setFilter("completed")}
 						aria-pressed={orderStatusFilter === "completed"}
 						disabled={!hasCompletedOrders}
 						data-testid="reconciling-list"
