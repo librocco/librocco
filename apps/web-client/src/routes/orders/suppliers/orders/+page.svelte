@@ -62,8 +62,7 @@
 
 	type OrderStatus = "unordered" | "ordered" | "reconciling" | "completed";
 
-	$: statusFromUrl = $page.url.hash.split("?filter=")[1].split("/")[0];
-	$: statusFromUrlParam = $page.url.search;
+	$: statusFromUrl = $page.url.hash.split("?filter=")[1]?.split("/")[0];
 	$: orderStatusFilter =
 		statusFromUrl === "ordered" || statusFromUrl === "reconciling" || statusFromUrl === "completed" ? statusFromUrl : "unordered";
 
