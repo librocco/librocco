@@ -41,6 +41,12 @@ export function getInventoryTable(parent: DashboardNode, view: InventoryTableVie
 	const row = (index: number) => getInventoryRow(getInventoryTable(parent, view), view, index);
 
 	const assertRows = async (rows: Partial<InventoryRowValues>[], opts: AssertRowFieldsOpts) => {
+		// Check for empty state
+		if (rows.length === 0) {
+			await row(0).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
+			return;
+		}
+
 		// Check that there are enough rows to match the required number
 		await row(rows.length - 1).waitFor();
 
