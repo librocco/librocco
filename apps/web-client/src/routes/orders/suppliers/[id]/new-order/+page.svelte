@@ -32,7 +32,9 @@
 	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
-	$: ({ orderLines, plugins } = data);
+	$: ({ orderLines, plugins, supplier } = data);
+
+	$: order_format = supplier.orderFormat;
 
 	// Supplier meta data is returned per row. We just need one copy of it
 	$: [orderLine] = orderLines;
@@ -84,36 +86,36 @@
 		await createSupplierOrder(db, id, supplier_id, selection);
 
 		let generatedLines = "";
-		switch (data.supplier?.orderFormat) {
+		switch (supplier?.orderFormat) {
 			case orderFormats.pbm:
-				generatedLines = generatePearsonFormat(data.supplier, selection);
+				generatedLines = generatePearsonFormat(supplier, selection);
 
 				break;
 			case orderFormats.standard:
-				generatedLines = generateStandardFormat(data.supplier, selection);
+				generatedLines = generateStandardFormat(supplier, selection);
 
 				break;
 			case orderFormats.rcs3:
-				generatedLines = generateRcsFormat(data.supplier, selection, 3);
+				generatedLines = generateRcsFormat(supplier, selection, 3);
 
 				break;
 			case orderFormats.rcs5:
-				generatedLines = generateRcsFormat(data.supplier, selection, 5);
+				generatedLines = generateRcsFormat(supplier, selection, 5);
 
 				break;
 			case orderFormats.loescher3:
-				generatedLines = generateLoescherFormat(data.supplier, selection, 3);
+				generatedLines = generateLoescherFormat(supplier, selection, 3);
 
 				break;
 			case orderFormats.loescher5:
-				generatedLines = generateLoescherFormat(data.supplier, selection, 5);
+				generatedLines = generateLoescherFormat(supplier, selection, 5);
 
 				break;
 			default:
 				break;
 		}
 
-		downloadAsTextFile(generatedLines, `${id}-${data?.supplier.orderFormat || "unknown"}`);
+		downloadAsTextFile(generatedLines, `${id}-${supplier.orderFormat || "unknown"}`);
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
 		await goto(appHash("supplier_orders", id));
@@ -209,6 +211,10 @@
 							<span class="badge-primary badge-lg badge badge-md gap-x-2">
 								#{supplier_id}
 							</span>
+							<div class="stat bg-base-100 max-md:py-2 md:px-1">
+								<dt class="stat-title">{t.stats.order_format()}</dt>
+								<dd class="stat-value text-2xl">{order_format}</dd>
+							</div>
 						</div>
 					</div>
 
