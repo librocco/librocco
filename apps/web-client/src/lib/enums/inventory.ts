@@ -27,6 +27,4 @@ export const noteStateLookup: Record<NoteState, NoteStateParams> = {
 	}
 };
 
-export const formats = ["PBM", "Standard", "RCS-3", "RCS-5", "Loescher-3", "Loescher-5"];
-
 export const noteStates = Object.values(noteStateLookup);

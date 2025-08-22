@@ -7,14 +7,14 @@
 	import type { SupplierSchema } from "./schemas";
 	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
 	import { LL } from "@librocco/shared/i18n-svelte";
+	import type { Format } from "$lib/db/cr-sqlite/types";
 
 	export let saveLabel: string;
 	export let heading = "";
 
 	export let data: SuperValidated<SupplierSchema>;
 	export let options: FormOptions<SupplierSchema>;
-	export let formatList: string[] = [];
-
+	export let formatList: Record<string, Format>;
 	export let onCancel = () => {};
 
 	const form = superForm(data, options);
@@ -66,11 +66,11 @@
 				</FormFieldProxy>
 			</div>
 			<div class="form-control gap-y-2">
-				<FormFieldProxy {form} name="format">
+				<FormFieldProxy {form} name="orderFormat">
 					<label class="form-control w-full">
-						<div class="label">{$LL.forms.supplier_meta.labels.format()}</div>
-						<select bind:value={$formStore.format} class="select-bordered select w-full">
-							{#each formatList as format}
+						<div class="label">{$LL.forms.supplier_meta.labels.order_format()}</div>
+						<select bind:value={$formStore.orderFormat} class="select-bordered select w-full">
+							{#each Object.values(formatList) as format}
 								<option>{format}</option>
 							{/each}
 						</select>
