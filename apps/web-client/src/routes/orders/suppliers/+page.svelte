@@ -26,6 +26,7 @@
 	import { appHash, appPath } from "$lib/paths";
 
 	import type { PageData } from "./$types";
+	import { formats } from "$lib/enums/inventory";
 
 	export let data: PageData;
 
@@ -153,6 +154,7 @@
 				}
 			}
 		}}
+		formatList={formats}
 		onCancel={() => dialogOpen.set(false)}
 	/>
 </PageCenterDialog>
