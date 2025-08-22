@@ -27,6 +27,7 @@
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 	import LL from "@librocco/shared/i18n-svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+	import { formats } from "$lib/enums/inventory";
 
 	export let data: PageData;
 
@@ -361,6 +362,7 @@
 				}
 			}
 		}}
+		formatList={formats}
 		onCancel={() => dialogOpen.set(false)}
 	/>
 </PageCenterDialog>

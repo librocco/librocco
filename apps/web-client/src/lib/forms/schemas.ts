@@ -92,5 +92,6 @@ export const supplierSchema = z.object({
 	name: z.string().min(1),
 	email: z.string().max(0).optional().or(z.string().email().optional()),
 	address: z.string().optional(),
-	customerId: z.number().default(0)
+	customerId: z.number().default(0),
+	format: z.string().optional().default("PBM")
 });

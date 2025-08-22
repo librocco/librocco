@@ -860,7 +860,8 @@
         "email": "Email",
         "address": "Address",
         "customer_id": "Customer ID",
-        "cancel_button": "Cancel"
+        "cancel_button": "Cancel",
+        "format": "Format"
       },
       "aria": {
         "form": "Edit customer order name, email or deposit"
