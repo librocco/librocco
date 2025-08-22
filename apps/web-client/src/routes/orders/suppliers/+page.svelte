@@ -26,7 +26,7 @@
 	import { appHash, appPath } from "$lib/paths";
 
 	import type { PageData } from "./$types";
-	import { formats } from "$lib/enums/inventory";
+	import { orderFormats } from "$lib/enums/orders";
 
 	export let data: PageData;
 
@@ -107,6 +107,7 @@
 								<th scope="col">{t.columns.email()}</th>
 								<th scope="col">{t.columns.address()}</th>
 								<th scope="col">{t.columns.assigned_publishers()}</th>
+								<th scope="col">{t.columns.order_format()}</th>
 								<th scope="col" class="sr-only">
 									{t.columns.actions()}
 								</th>
@@ -115,7 +116,7 @@
 
 						<tbody>
 							{#each $suppliersStore as row (row.id)}
-								{@const { id, name, email, address, numPublishers } = row}
+								{@const { id, name, email, address, numPublishers, orderFormat } = row}
 								<tr class="hover focus-within:bg-base-200 hover:cursor-pointer" on:click={() => goto(appPath("suppliers", id))}>
 									<th scope="row" data-property="supplier">
 										{name}
@@ -126,6 +127,8 @@
 									<td data-property="address">{address}</td>
 
 									<td data-property="assigned-publishers">{numPublishers}</td>
+
+									<td data-property="order-format">{orderFormat}</td>
 
 									<td class="text-right">
 										<a href={appPath("suppliers", id)} class="btn-outline btn-sm btn">{t.labels.edit()}</a>
@@ -154,7 +157,7 @@
 				}
 			}
 		}}
-		formatList={formats}
+		formatList={orderFormats}
 		onCancel={() => dialogOpen.set(false)}
 	/>
 </PageCenterDialog>

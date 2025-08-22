@@ -46,6 +46,7 @@ async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
 			COALESCE(email, 'N/A') as email,
 			COALESCE(address, 'N/A') as address,
 			COALESCE(customerId, 'N/A') as customerId,
+			COALESCE(orderFormat, 'N/A') as orderFormat,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -82,7 +83,7 @@ async function _getSupplierDetails(db: TXAsync, id: number): Promise<SupplierExt
 			email,
 			address,
 			customerId,
-			format,
+			orderFormat,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -108,14 +109,14 @@ async function _upsertSupplier(db: TXAsync, supplier: Supplier) {
 	}
 
 	await db.exec(
-		`INSERT INTO supplier (id, name, email, address, customerId, format)
+		`INSERT INTO supplier (id, name, email, address, customerId, orderFormat)
         VALUES (?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
         	name = COALESCE(?, name),
             email = COALESCE(?, email),
             address = COALESCE(?, address),
             customerId = COALESCE(?, customerId),
-            format = COALESCE(?, format)
+            orderFormat = COALESCE(?, orderFormat)
             ;`,
 		[
 			supplier.id,
@@ -123,12 +124,12 @@ async function _upsertSupplier(db: TXAsync, supplier: Supplier) {
 			supplier.email ?? null,
 			supplier.address ?? null,
 			supplier.customerId ?? null,
-			supplier.format ?? null,
+			supplier.orderFormat ?? null,
 			supplier.name ?? null,
 			supplier.email ?? null,
 			supplier.address ?? null,
 			supplier.customerId ?? null,
-			supplier.format ?? null
+			supplier.orderFormat ?? null
 		]
 	);
 }

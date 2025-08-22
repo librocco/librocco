@@ -861,7 +861,7 @@
         "address": "Address",
         "customer_id": "Customer ID",
         "cancel_button": "Cancel",
-        "format": "Format"
+        "order_format": "Order Format"
       },
       "aria": {
         "form": "Edit customer order name, email or deposit"
