@@ -295,7 +295,8 @@ const new_order_page = {
 	stats: {
 		total_books: "Total books",
 		total_value: "Total value",
-		selected_books: "Selected books"
+		selected_books: "Selected books",
+		order_format: "Order Format"
 	},
 	table: {
 		quantity: "Quantity",
