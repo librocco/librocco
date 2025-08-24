@@ -42,7 +42,7 @@ import type {
 import { timed } from "$lib/utils/timer";
 
 import { multiplyString } from "./customers";
-import { createSupplierOrder } from "./suppliers";
+import { createSupplierOrderTxSafe } from "./suppliers";
 
 /** Thrown from `createReconciliationOrder` when some of the provided supplier order ids don't match any existing supplier orders */
 export class ErrSupplierOrdersNotFound extends Error {
@@ -485,7 +485,7 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number, supplierKee
 		// Create continuation orders (grouped by supplier_id), TODO: we might want to group those per their parent supplier orders
 		for (const [supplierId, lines] of _group(continuationOrderLines, (line) => [line.supplier_id, line])) {
 			const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
-			await createSupplierOrder(txDb, id, supplierId, [...lines]);
+			await createSupplierOrderTxSafe(txDb, id, supplierId, [...lines]);
 		}
 
 		// NOTE: It might happen that the number of books delivered is greater than the number of books ordered IN THIS SUPPLIER ORDER
