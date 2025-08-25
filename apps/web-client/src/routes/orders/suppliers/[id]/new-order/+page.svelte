@@ -14,6 +14,13 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import { orderFormats } from "$lib/enums/orders";
 	import type { Supplier } from "$lib/db/cr-sqlite/types";
+	import {
+		generateLoescherFormat,
+		generatePearsonFormat,
+		generateStandardFormat,
+		generateRcsFormat,
+		downloadAsTextFile
+	} from "$lib/utils/misc";
 
 	export let data: PageData;
 
@@ -119,59 +126,6 @@
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
 		await goto(appHash("supplier_orders", id));
-	}
-
-	function formatLine(cust: number, isbn: string, quantity: number, custLength: number, quantityLength: number, suffix = ""): string {
-		const paddedCode = String(cust).padStart(custLength, "0");
-		const digitsIsbn = isbn.replace(/-/g, "");
-		const paddedQuantity = String(quantity).padStart(quantityLength, "0");
-		return `${paddedCode}${digitsIsbn}${paddedQuantity}${suffix}`;
-	}
-	type CustomerOrderLineSelection = {
-		isbn: string;
-		quantity: number;
-		supplier_id: number;
-	};
-	/**
-	 * Generates an order file string for Format A (Pearson/PBM).
-	 */
-	export function generatePearsonFormat(supplier: Supplier, lines: CustomerOrderLineSelection[]): string {
-		return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 10, 5, "LL")).join("\n");
-	}
-
-	/**
-	 * Generates an order file string for Format B (Standard Fixed-Width).
-	 */
-	export function generateStandardFormat(supplier: Supplier, lines: CustomerOrderLineSelection[]): string {
-		return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 10, 5)).join("\n");
-	}
-
-	/**
-	 * Generates an order file string for Format C (RCS/Rizzoli).
-	 */
-	export function generateRcsFormat(supplier: Supplier, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
-		return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 10, quantityLength)).join("\n");
-	}
-
-	/**
-	 * Generates an order file string for Format D (Loescher).
-	 */
-	export function generateLoescherFormat(supplier: Supplier, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
-		return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 6, quantityLength)).join("\n");
-	}
-
-	function downloadAsTextFile(content: string, filename: string) {
-		const blob = new Blob([content], { type: "text/plain" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-
-		a.href = url;
-		a.download = filename;
-		document.body.appendChild(a);
-		a.click();
-
-		document.body.removeChild(a);
-		URL.revokeObjectURL(url);
 	}
 
 	function selectPortion(portion: number) {

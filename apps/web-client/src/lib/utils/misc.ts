@@ -1,5 +1,9 @@
 import type { BookData, BookFetchResultEntry } from "@librocco/shared";
-
+type CustomerOrderLineSelection = {
+	isbn: string;
+	quantity: number;
+	supplier_id: number;
+};
 // #region book data fetching
 /**
  * Merges book data for the same book retrieved from multiple sources
@@ -70,4 +74,52 @@ export function matchesName(needle: string, haystack: string) {
 
 	// Check if all conditions derived from the needle are present in the normalized haystack
 	return needleConditions.every((condition) => normalizedHaystack.includes(condition));
+}
+
+/**
+ * Generates an order file string for Format A (Pearson/PBM).
+ */
+export function generatePearsonFormat(supplier: Supplier, lines: CustomerOrderLineSelection[]): string {
+	return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 10, 5, "LL")).join("\n");
+}
+
+/**
+ * Generates an order file string for Format B (Standard Fixed-Width).
+ */
+export function generateStandardFormat(supplier: Supplier, lines: CustomerOrderLineSelection[]): string {
+	return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 10, 5)).join("\n");
+}
+
+/**
+ * Generates an order file string for Format C (RCS/Rizzoli).
+ */
+export function generateRcsFormat(supplier: Supplier, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
+	return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 10, quantityLength)).join("\n");
+}
+
+/**
+ * Generates an order file string for Format D (Loescher).
+ */
+export function generateLoescherFormat(supplier: Supplier, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
+	return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 6, quantityLength)).join("\n");
+}
+
+export function downloadAsTextFile(content: string, filename: string) {
+	const blob = new Blob([content], { type: "text/plain" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+function formatLine(cust: number, isbn: string, quantity: number, custLength: number, quantityLength: number, suffix = ""): string {
+	const paddedCode = String(cust).padStart(custLength, "0");
+	const digitsIsbn = isbn.replace(/-/g, "");
+	const paddedQuantity = String(quantity).padStart(quantityLength, "0");
+	return `${paddedCode}${digitsIsbn}${paddedQuantity}${suffix}`;
 }

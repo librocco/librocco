@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { matchesName } from "../misc";
+import { generateLoescherFormat, generatePearsonFormat, generateRcsFormat, generateStandardFormat, matchesName } from "../misc";
 
 describe("matchesName", () => {
 	it("should find a simple exact match", () => {
@@ -53,5 +53,60 @@ describe("matchesName", () => {
 
 	it("should return true for an empty search string", () => {
 		expect(matchesName("", "John Doe")).toBe(true);
+	});
+});
+describe("Order file generation", () => {
+	const mockSupplier = {
+		customerId: 913186
+	};
+
+	const mockLines = [
+		{ isbn: "978-88-6910-245-5", quantity: 1, supplier_id: 1 },
+		{ isbn: "9788869108402", quantity: 12, supplier_id: 1 },
+		{ isbn: "978-88-6910-677-4", quantity: 99, supplier_id: 1 }
+	];
+
+	describe("generatePearsonFormat", () => {
+		it("should generate a correctly formatted Pearson (PBM) order string", () => {
+			const expected = ["0000913186978886910245500001LL", "0000913186978886910840200012LL", "0000913186978886910677400099LL"].join("\n");
+			const result = generatePearsonFormat(mockSupplier, mockLines);
+			expect(result).toBe(expected);
+		});
+	});
+
+	describe("generateStandardFormat", () => {
+		it("should generate a correctly formatted Standard Fixed-Width order string", () => {
+			const expected = ["0000913186978886910245500001", "0000913186978886910840200012", "0000913186978886910677400099"].join("\n");
+			const result = generateStandardFormat(mockSupplier, mockLines);
+			expect(result).toBe(expected);
+		});
+	});
+
+	describe("generateRcsFormat", () => {
+		it("should generate a correctly formatted RCS order string with 3-digit quantity", () => {
+			const expected = ["00009131869788869102455001", "00009131869788869108402012", "00009131869788869106774099"].join("\n");
+			const result = generateRcsFormat(mockSupplier, mockLines, 3);
+			expect(result).toBe(expected);
+		});
+
+		it("should generate a correctly formatted RCS order string with 5-digit quantity", () => {
+			const expected = ["0000913186978886910245500001", "0000913186978886910840200012", "0000913186978886910677400099"].join("\n");
+			const result = generateRcsFormat(mockSupplier, mockLines, 5);
+			expect(result).toBe(expected);
+		});
+	});
+
+	describe("generateLoescherFormat", () => {
+		it("should generate a correctly formatted Loescher order string with 3-digit quantity", () => {
+			const expected = ["9131869788869102455001", "9131869788869108402012", "9131869788869106774099"].join("\n");
+			const result = generateLoescherFormat(mockSupplier, mockLines, 3);
+			expect(result).toBe(expected);
+		});
+
+		it("should generate a correctly formatted Loescher order string with 5-digit quantity", () => {
+			const expected = ["913186978886910245500001", "913186978886910840200012", "913186978886910677400099"].join("\n");
+			const result = generateLoescherFormat(mockSupplier, mockLines, 5);
+			expect(result).toBe(expected);
+		});
 	});
 });
