@@ -221,7 +221,7 @@ export type HistoryTableInterface = DashboardNode<{
 
 export type InventoryRowInterface = DashboardNode<{
 	field<K extends InventoryRowField>(name: K): InventoryFieldLookup[K];
-	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
+	assertFields(row: Partial<InventoryRowValues>, opts?: AssertRowFieldsOpts): Promise<void>;
 	edit(): Promise<void>;
 	delete(): Promise<void>;
 }>;
@@ -230,29 +230,38 @@ export type HistoryRowInterface = DashboardNode<{
 	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
 }>;
 
-export interface InventoryWarehouseNameField extends AsserterSetter<string>, Locator {
+export type IWarehouseName = {
+	name: string;
+	forced: boolean;
+};
+
+export interface InventoryWarehouseNameField
+	extends AssertedLocator<string | IWarehouseName>,
+		Asserter<string | IWarehouseName>,
+		Setter<string>,
+		Locator {
 	assertOptions(options: string[], opts?: WaitForOpts): Promise<void>;
 }
 
 export interface InventoryFieldLookup {
-	isbn: Asserter<string>;
-	title: Asserter<string>;
-	authors: Asserter<string>;
-	quantity: AsserterSetter<number>;
-	year: Asserter<string>;
-	publisher: Asserter<string>;
-	price: Asserter<number | string | IBookPrice>;
+	isbn: Asserter<string> & AssertedLocator<string>;
+	title: Asserter<string> & AssertedLocator<string>;
+	authors: Asserter<string> & AssertedLocator<string>;
+	quantity: Asserter<number> & Setter<number> & AssertedLocator<number>;
+	year: Asserter<string> & AssertedLocator<string>;
+	publisher: Asserter<string> & AssertedLocator<string>;
+	price: Asserter<number | string | IBookPrice> & AssertedLocator<number | string | IBookPrice>;
 	warehouseName: InventoryWarehouseNameField;
-	editedBy: Asserter<string>;
-	outOfPrint: Asserter<boolean>;
-	category: Asserter<string>;
-	type: Asserter<string>;
+	editedBy: Asserter<string> & AssertedLocator<string>;
+	outOfPrint: Asserter<boolean> & AssertedLocator<boolean>;
+	category: Asserter<string> & AssertedLocator<string>;
+	type: Asserter<string> & AssertedLocator<string>;
 }
 export interface HistoryFieldLookup {
 	isbn: Asserter<string>;
 	title: Asserter<string>;
 	authors: Asserter<string>;
-	quantity: AsserterSetter<number>;
+	quantity: Asserter<number> & Setter<number>;
 	warehouseName: Asserter<string>;
 	noteName: Locator & Asserter<string>;
 	committedAt: Asserter<string | Date>;
@@ -311,11 +320,30 @@ export interface Asserter<T> {
 	assert(value: T, opts?: WaitForOpts): Promise<void>;
 }
 
-interface Setter<T> {
-	set: (value: T) => Promise<void>;
+export interface AssertedLocator<T> {
+	/**
+	 * Createa s locator with assertion information (some expected value or text),
+	 * this should be used within a `.filter()` method to construct a composite matcher (locator)
+	 * for a row as a whole, e.g.:
+	 * ```ts`
+	 *  // matching a row with:
+	 *  // - isbn: "123456789"
+	 *  // - title: "Some Book Title"
+	 *  const row = table.row(0)
+	 *  const matcher = row
+	 *    .filter({ has: row.field("isbn").assertedLocator(page, "123456789") })
+	 *    .filter({ has: row.field("title").assertedLocator(page, "Some Book Title") })
+	 * ```
+	 * @param {Page} page - Playwright page instance -- this is used as nested locators (within filter)
+	 *   are already relative to the container.filter(...) element, and as such should be chained off of page interface (not the container)
+	 * @param {T} value - The expected value to assert against the locator.
+	 */
+	assertedLocator(page: Page, value: T): Locator;
 }
 
-type AsserterSetter<T> = Asserter<T> & Setter<T>;
+export interface Setter<T> {
+	set: (value: T) => Promise<void>;
+}
 
 export interface FieldConstructor<L extends Record<string, any>, K extends keyof L> {
 	(parent: DashboardNode, view: TableView): L[K];
