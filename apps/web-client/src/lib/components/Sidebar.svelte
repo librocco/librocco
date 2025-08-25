@@ -68,7 +68,7 @@
 		},
 		{
 			label: tNav.supplier_orders(),
-			href: appHash("supplier_orders", "?filter=unordered"),
+			href: appHash("supplier_orders"),
 			icon: Truck
 		}
 	];
