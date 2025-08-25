@@ -35,6 +35,9 @@
 
 	let disposer: () => void;
 	onMount(() => {
+		if ($page.url.hash.split("?filter=").length <= 1) {
+			goto(`${$page.url.hash}?filter=unordered`);
+		}
 		const disposer1 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("books:data"));
 		const disposer2 = data.dbCtx?.rx?.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
 		const disposer3 = data.dbCtx?.rx?.onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
