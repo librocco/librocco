@@ -27,6 +27,7 @@
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 	import LL from "@librocco/shared/i18n-svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+	import { orderFormats } from "$lib/enums/orders";
 
 	export let data: PageData;
 
@@ -138,6 +139,14 @@
 													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 												</dt>
 												<dd class="truncate">{supplier.customerId || "N/A"}</dd>
+											</div>
+
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">{t.details.supplier_orderFormat()}</span>
+													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">{supplier.orderFormat || "N/A"}</dd>
 											</div>
 										</div>
 									</div>
@@ -361,6 +370,7 @@
 				}
 			}
 		}}
+		formatList={orderFormats}
 		onCancel={() => dialogOpen.set(false)}
 	/>
 </PageCenterDialog>

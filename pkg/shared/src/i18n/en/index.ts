@@ -295,7 +295,8 @@ const new_order_page = {
 	stats: {
 		total_books: "Total books",
 		total_value: "Total value",
-		selected_books: "Selected books"
+		selected_books: "Selected books",
+		order_format: "Order Format"
 	},
 	table: {
 		quantity: "Quantity",
@@ -323,7 +324,9 @@ const order_list_page = {
 		supplier_name: "Supplier name",
 		supplier_email: "Supplier email",
 		supplier_address: "Supplier address",
-		supplier_customerId: "Supplier customer ID"
+		supplier_customerId: "Supplier customer ID",
+		supplier_orderFormat: "Supplier order format"
+
 	},
 	table: {
 		publisher_name: "Publisher name",
@@ -911,7 +914,8 @@ const forms = {
 			email: "Email",
 			address: "Address",
 			customer_id: "Customer ID",
-			cancel_button: "Cancel"
+			cancel_button: "Cancel",
+			order_format: "Order Format"
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"
