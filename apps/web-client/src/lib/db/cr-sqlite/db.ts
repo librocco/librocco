@@ -33,7 +33,7 @@ async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | 
 }
 
 export async function getDB(dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<DBAsync> {
-	const mainThreadVFS = new Set<VFSWhitelist>(["idb-batch-atomic", "opfs-any-context"]);
+	const mainThreadVFS = new Set<VFSWhitelist>(["asyncify-idb-batch-atomic", "asyncify-opfs-any-context"]);
 	if (mainThreadVFS.has(vfs)) {
 		console.log(`using main thread db with vfs: ${vfs}`);
 		return getMainThreadDB(dbname, vfs);

@@ -1,8 +1,18 @@
 const vfsLookup = {
-	"idb-batch-atomic": () => import("@vlcn.io/wa-sqlite/src/examples/IDBBatchAtomicVFS.js").then((module) => module.IDBBatchAtomicVFS),
-	"opfs-any-context": () => import("@vlcn.io/wa-sqlite/src/examples/OPFSAnyContextVFS.js").then((module) => module.OPFSAnyContextVFS),
-	"opfs-adaptive-vfs": () => import("@vlcn.io/wa-sqlite/src/examples/OPFSAdaptiveVFS.js").then((module) => module.OPFSAdaptiveVFS),
-	"opfs-coop-sync": () => import("@vlcn.io/wa-sqlite/src/examples/OPFSCoopSyncVFS.js").then((module) => module.OPFSCoopSyncVFS)
+	"asyncify-idb-batch-atomic": () =>
+		import("@vlcn.io/wa-sqlite/src/examples/IDBBatchAtomicVFS.js").then((module) => module.IDBBatchAtomicVFS),
+
+	"asyncify-opfs-any-context": () =>
+		import("@vlcn.io/wa-sqlite/src/examples/OPFSAnyContextVFS.js").then((module) => module.OPFSAnyContextVFS),
+
+	"asyncify-opfs-adaptive": () => import("@vlcn.io/wa-sqlite/src/examples/OPFSAdaptiveVFS.js").then((module) => module.OPFSAdaptiveVFS),
+
+	// NOTE: the following are the same VFS (and the same module), but used with different WASM builds, so here for exhaustiveness
+	"asyncify-opfs-coop-sync": () => import("@vlcn.io/wa-sqlite/src/examples/OPFSCoopSyncVFS.js").then((module) => module.OPFSCoopSyncVFS),
+	"sync-opfs-coop-sync": () => import("@vlcn.io/wa-sqlite/src/examples/OPFSCoopSyncVFS.js").then((module) => module.OPFSCoopSyncVFS),
+
+	// NOTE: the following only works with (still experimental) JSPI builds
+	"jspi-opfs-permuted": () => import("@vlcn.io/wa-sqlite/src/examples/OPFSAdaptiveVFS.js").then((module) => module.OPFSAdaptiveVFS)
 };
 
 export type VFSWhitelist = keyof typeof vfsLookup;
