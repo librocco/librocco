@@ -10,7 +10,7 @@ if (!argPath) {
 }
 
 function readAndParseReport(fpath) {
-	const full_fpath = path.join(process.cwd(), fpath);
+	const full_fpath = path.resolve(fpath);
 
 	const fcontent = fs.readFileSync(full_fpath, "utf8");
 	const report = JSON.parse(fcontent);
