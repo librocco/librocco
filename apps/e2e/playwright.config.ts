@@ -89,7 +89,16 @@ const defaultConfig: PlaywrightTestConfig = {
 		}))
 };
 
-const vfsList = ["idb-batch-atomic", "opfs-any-context", "opfs-adaptive-vfs", "opfs-coop-sync"];
+const vfsList = [
+	"asyncify-idb-batch-atomic",
+	"asyncify-opfs-any-context",
+	"asyncify-opfs-adaptive",
+
+	"asyncify-opfs-coop-sync",
+	"sync-opfs-coop-sync"
+
+	// "jspi-opfs-permuted"
+];
 const outputFile =
 	SHARD_INDEX === undefined ? `vfs-benchmark-results/test-results.json` : `vfs-benchmark-results/test-results-${SHARD_INDEX}.json`;
 const vfsTestConfig: PlaywrightTestConfig = {
