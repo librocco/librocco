@@ -4,6 +4,7 @@ name: Checks
     branches-ignore:
     - ci-debug/*
     - wip/**
+    - vfs-benchmark/**
 jobs:
   build-cr-sqlite:
     runs-on: ubuntu-latest
