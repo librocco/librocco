@@ -3,7 +3,7 @@ name: Checkout repository and submodules
 uses: actions/checkout@v4
 with:
   submodules: "recursive"
-  lfs: true
+  lfs: false
   #@ if deep!=None:
   fetch-depth: 0  #! Enables full clone, with all history
   #@ end
