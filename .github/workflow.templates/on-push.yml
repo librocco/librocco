@@ -121,9 +121,9 @@ jobs:
           retention-days: 2
 
   lint-and-typecheck:
-    needs: build-cr-sqlite
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-cr-sqlite
     permissions:
       id-token: write
       contents: read
@@ -133,6 +133,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
@@ -147,6 +149,7 @@ jobs:
   check-i18n-sync:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-cr-sqlite
     permissions:
       id-token: write
       contents: read
@@ -156,6 +159,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
@@ -166,11 +171,14 @@ jobs:
   perform-monorepo-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-cr-sqlite
     steps:
       -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
