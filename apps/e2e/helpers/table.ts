@@ -1,4 +1,6 @@
-import { Locator, expect } from "@playwright/test";
+import { Locator, Page, expect } from "@playwright/test";
+
+import { enumerate } from "@librocco/shared";
 
 import {
 	AssertRowFieldsOpts,
@@ -19,7 +21,8 @@ import {
 	HistoryTableView,
 	Asserter,
 	FieldConstructor,
-	TableView
+	TableView,
+	IWarehouseName
 } from "./types";
 
 import { assertionTimeout } from "@/constants";
@@ -38,18 +41,22 @@ export function getInventoryTable(parent: DashboardNode, view: InventoryTableVie
 	const row = (index: number) => getInventoryRow(getInventoryTable(parent, view), view, index);
 
 	const assertRows = async (rows: Partial<InventoryRowValues>[], opts: AssertRowFieldsOpts) => {
-		// Check that there are no more rows than specified in the want 'rows' array
-		await row(rows.length).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
+		// Check for empty state
+		if (rows.length === 0) {
+			await row(0).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
+			return;
+		}
 
-		await Promise.all(
-			rows.map(async (values, index) => {
-				// We're waiting for the row to be present before asserting the fields
-				// this is for 'strict: false' case where we can pass an empty object and the assertion will pass without making any
-				// DOM/locator queries (which is perfectly fine), but we want to make sure the row exists (even if we don't care about the fields)
-				await row(index).waitFor({ timeout: assertionTimeout, ...opts });
-				return row(index).assertFields(values, opts);
-			})
-		);
+		// Check that there are enough rows to match the required number
+		await row(rows.length - 1).waitFor();
+
+		// NOTE: matching row by row in synchronous manner to prevent flakiness due to rows jumping up and down
+		for (const [ix, values] of enumerate(rows)) {
+			await row(ix).assertFields(values, opts);
+		}
+
+		// Check that there are no more rows than specified
+		await row(rows.length).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
 	};
 
 	return Object.assign(container, { dashboard, row, assertRows });
@@ -94,13 +101,13 @@ function getInventoryRow(parent: DashboardNode, view: InventoryTableView, index:
 			"outbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "warehouseName", "category", "type"]
 		};
 
-		await Promise.all(
-			Object.entries(compareObj).map(async ([name, value]) => {
-				// Skip fields not visible in the particular view
-				if (!rowFieldsLookup[view].includes(name)) return;
-				return field<any>(name).assert(value, opts);
-			})
-		);
+		const rowMatcher = Object.entries(compareObj)
+			// Skip fields not visible in the particular view
+			.filter(([name]) => rowFieldsLookup[view].includes(name))
+			.map(([name, value]) => field<any>(name).assertedLocator(dashboard().page(), value))
+			.reduce((acc, curr) => acc.filter({ has: curr }), container);
+
+		return rowMatcher.waitFor({ timeout: assertionTimeout, ...opts });
 	};
 
 	return Object.assign(container, { dashboard, field, assertFields, edit, delete: _delete });
@@ -192,65 +199,70 @@ function getHistoryRow(parent: DashboardNode, view: HistoryTableView, index: num
 // #region history table
 
 // #region row_fields
-const priceFieldConstructor: FieldConstructor<InventoryFieldLookup, "price"> = (row) => ({
-	assert: (want: string | number | IBookPrice, opts) => {
+const priceFieldConstructor: FieldConstructor<InventoryFieldLookup, "price"> = (row) => {
+	type T = IBookPrice | string | number;
+	const _assertedLocator = (page: Page, container: Page | Locator, want: T): Locator => {
+		const el = container.locator('[data-property="price"]');
+
 		switch (typeof want) {
-			case "number":
-				return expect(row.locator(`[data-property="full-price"]`)).toHaveText(`€${want.toFixed(2)}`, {
-					timeout: assertionTimeout,
-					...opts
-				});
-			case "string":
-				return expect(row.locator(`[data-property="full-price"]`)).toHaveText(want, { timeout: assertionTimeout, ...opts });
-			case "object":
-				return new Promise<void>((resolve) => {
-					const promises = [
-						expect(row.locator(`[data-property="full-price"]`)).toHaveText(want.price, {
-							timeout: assertionTimeout,
-							...opts
-						}),
-						expect(row.locator(`[data-property="discounted-price"]`)).toHaveText(want.discountedPrice, {
-							timeout: assertionTimeout,
-							...opts
-						}),
-						expect(row.locator(`[data-property="applied-discount"]`)).toHaveText(want.discount.toString(), {
-							timeout: assertionTimeout,
-							...opts
-						})
-					];
-
-					Promise.all(promises).then(() => resolve());
-				});
+			case "number": {
+				return el.locator(`[data-property="full-price"]`, { hasText: `€${want.toFixed(2)}` });
+			}
+			case "string": {
+				return el.locator(`[data-property="full-price"]`, { hasText: want });
+			}
+			case "object": {
+				return el
+					.filter({ has: page.locator(`[data-property="full-price"]`, { hasText: want.price }) })
+					.filter({ has: page.locator(`[data-property="discounted-price"]`, { hasText: want.discountedPrice }) })
+					.filter({ has: page.locator(`[data-property="applied-discount"]`, { hasText: want.discount.toString() }) });
+			}
 		}
-	}
-});
+	};
 
-const quantityFieldCostructor: FieldConstructor<InventoryFieldLookup & HistoryFieldLookup, "quantity"> = (row, view) => ({
-	assert: (want, opts) =>
+	const assertedLocator = (page: Page, want: T) => _assertedLocator(page, page, want);
+	const assert = (want: T, opts?: WaitForOpts) => _assertedLocator(row.page(), row, want).waitFor({ timeout: assertionTimeout, ...opts });
+
+	return { assertedLocator, assert };
+};
+
+const quantityFieldCostructor: FieldConstructor<InventoryFieldLookup & HistoryFieldLookup, "quantity"> = (row, view) => {
+	const _assertedLocator = (container: Page | Locator, want: number): Locator =>
 		view === "warehouse"
-			? expect(row.locator('[data-property="quantity"]')).toHaveText(want.toString(), { timeout: assertionTimeout, ...opts })
-			: expect(row.locator('[data-property="quantity"]').locator(`input`)).toHaveValue(want.toString(), {
-					timeout: assertionTimeout,
-					...opts
-				}),
-	set: async (value) => {
-		const quantityInput = row.locator("[data-property='quantity']").locator("input");
-		await quantityInput.fill(value.toString());
-		await quantityInput.press("Enter");
-	}
-});
+			? container.locator('[data-property="quantity"]', { hasText: want.toString() })
+			: // NOTE: matching by data-value is a horrible hack, but we can't set up a locator in such a way as to match the input value
+				// (and we need a locator, not an assertion as we're using these to build out a single matcher for the full row)
+				container.locator('[data-property="quantity"]').locator(`input[data-value="${want}"]`);
 
-const outOfPrintFieldConstructor: FieldConstructor<InventoryFieldLookup, "outOfPrint"> = (row) => ({
-	assert: (want, opts) => {
-		const el = row.locator('[data-property="outOfPrint"]').locator(`input`);
-		return want
-			? expect(el).toBeChecked({ timeout: assertionTimeout, ...opts })
-			: expect(el).not.toBeChecked({ timeout: assertionTimeout, ...opts });
-	}
-});
+	const assertedLocator = (page: Page, want: number) => _assertedLocator(page, want);
+	const assert = (want: number, opts?: WaitForOpts) => _assertedLocator(row, want).waitFor({ timeout: assertionTimeout, ...opts });
+	const set = async (value: number) => {
+		const input = row.locator('[data-property="quantity"]').locator("input");
+		await input.fill(value.toString());
+		await input.press("Enter");
+	};
+
+	return { assertedLocator, assert, set };
+};
+
+const outOfPrintFieldConstructor: FieldConstructor<InventoryFieldLookup, "outOfPrint"> = (row) => {
+	const _assertedLocator = (container: Page | Locator, want: boolean): Locator =>
+		want
+			? container.locator('[data-property="outOfPrint"]').locator(`input:checked`)
+			: container.locator('[data-property="outOfPrint"]').locator(`input:not(checked)`);
+
+	const assertedLocator = (page: Page, want: boolean) => _assertedLocator(page, want);
+	const assert = (want: boolean, opts?: WaitForOpts) => _assertedLocator(row, want).waitFor({ timeout: assertionTimeout, ...opts });
+
+	return { assertedLocator, assert };
+};
 
 const warehouseNameFieldConstructor: FieldConstructor<InventoryFieldLookup, "warehouseName"> = (row) => {
+	type T = string | IWarehouseName;
+
 	const container = row.locator('[data-property="warehouseName"]');
+
+	const DEFAULT_LABEL = "Select a warehouse";
 
 	const dropdown = getDropdown(row);
 	const opened = dropdown.opened;
@@ -261,7 +273,31 @@ const warehouseNameFieldConstructor: FieldConstructor<InventoryFieldLookup, "war
 		return container.page().keyboard.press("Escape");
 	};
 
-	const assert = (want: string, opts?: WaitForOpts) => expect(container).toContainText(want, { timeout: assertionTimeout, ...opts });
+	const _assertedLocator = (container: Page | Locator, want: T): Locator => {
+		const isObjectMatcher = typeof want === "object";
+
+		const name = isObjectMatcher ? want.name : want;
+		const wantText = name === "" ? DEFAULT_LABEL : name;
+
+		const baseMatcher = container.locator('[data-property="warehouseName"]').locator("button").filter({ hasText: wantText });
+
+		// Matching by name only
+		if (!isObjectMatcher) {
+			return baseMatcher;
+		}
+
+		// Matching by { name, forced } object
+		const { forced } = want as IWarehouseName;
+
+		if (forced) {
+			return baseMatcher.filter({ hasText: "Forced" });
+		}
+
+		return baseMatcher.filter({ hasNotText: "Forced" });
+	};
+
+	const assertedLocator = (page: Page, want: string) => _assertedLocator(page, want);
+	const assert = (want: string, opts?: WaitForOpts) => _assertedLocator(row, want).waitFor({ timeout: assertionTimeout, ...opts });
 
 	const assertOptions = async (options: string[], opts?: WaitForOpts) => {
 		// This implementation is rather dirty:
@@ -273,7 +309,7 @@ const warehouseNameFieldConstructor: FieldConstructor<InventoryFieldLookup, "war
 		return dropdown.close();
 	};
 
-	return Object.assign(container, { assert, set, assertOptions });
+	return Object.assign(container, { assertedLocator, assert, set, assertOptions });
 };
 
 const noteNameFieldConstructor = (row: DashboardNode): Locator & Asserter<string> => {
