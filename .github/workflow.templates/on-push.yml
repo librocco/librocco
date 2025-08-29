@@ -26,20 +26,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-          lfs: true
+          lfs: false
           fetch-depth: 0 #! We need all the history to check artifact date
-      - name: Compute desired compiled artifact version
-        run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
-      - name: Cache cr-sqlite artefacts
-        uses: actions/cache@v4
-        with:
-          path: 3rd-party/artefacts
-          key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
       - name: Test if artefacts are stale
         id: ts
         shell: bash
-        #! The script will output either `rebuild=yes` or `rebuild=no` on stdout
-        run: scripts/compare_artefacts_version.sh >> "$GITHUB_OUTPUT"
+        #! TEMP fix: always output 'yes' (not using git lfs atm so we're forcing the build of artefacts at each run)
+        run: echo "rebuild=yes" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         if: steps.ts.outputs.rebuild == 'yes'
         with:
@@ -128,9 +121,9 @@ jobs:
           retention-days: 2
 
   lint-and-typecheck:
-    needs: build-cr-sqlite
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-cr-sqlite
     permissions:
       id-token: write
       contents: read
@@ -140,6 +133,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
@@ -154,6 +149,7 @@ jobs:
   check-i18n-sync:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-cr-sqlite
     permissions:
       id-token: write
       contents: read
@@ -163,6 +159,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
@@ -173,11 +171,14 @@ jobs:
   perform-monorepo-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: build-cr-sqlite
     steps:
       -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
