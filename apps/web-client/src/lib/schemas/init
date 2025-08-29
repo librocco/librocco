@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS supplier (
 	email TEXT,
 	address TEXT,
 	customerId INTEGER,
+	orderFormat TEXT,
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('supplier');
