@@ -1,4 +1,4 @@
-import { Locator, expect } from "@playwright/test";
+import { Locator, Page, expect } from "@playwright/test";
 
 import { assertionTimeout } from "@/constants";
 import { EntityListView, TestId, WebClientView } from "@librocco/shared";
@@ -56,17 +56,22 @@ export const selector = (...segments: SelectorSegment[]): string => segments.joi
 // #endregion selectors
 
 // #region assertions
-export const stringFieldConstructor =
-	<L extends Record<string, any>, K extends keyof L>(
-		name: K,
-		transformDisplay: (x: string) => string | RegExp = (x: string) => x
-	): FieldConstructor<L, K> =>
-	(parent: Locator) =>
-		({
-			assert: (want: K, opts?: WaitForOpts) =>
-				expect(parent.locator(`[data-property="${name as string}"]`)).toHaveText(transformDisplay(want.toString()), {
-					timeout: assertionTimeout,
-					...opts
-				})
-		}) as L[K];
+export function stringFieldConstructor<L extends Record<string, any>, K extends keyof L>(
+	name: K,
+	transformDisplay: (x: string) => string | RegExp = (x: string) => x
+): FieldConstructor<L, K> {
+	return (parent: Locator) => {
+		const _assertedLocator = (container: Page | Locator, want: boolean): Locator =>
+			container.locator(`[data-property="${name as string}"]`, { hasText: transformDisplay(want.toString()) });
+
+		const assertedLocator = (page: Page, want: boolean) => _assertedLocator(page, want);
+		const assert = (want: boolean, opts?: WaitForOpts) => _assertedLocator(parent, want).waitFor({ timeout: assertionTimeout, ...opts });
+
+		return {
+			assertedLocator,
+			assert
+		} as L[K];
+	};
+}
+
 // #endregion assertions

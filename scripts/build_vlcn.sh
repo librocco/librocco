@@ -8,9 +8,6 @@ TRD_PARTY="$SCRIPT_DIR/../3rd-party"
 VLCN_ROOT="$TRD_PARTY/js"
 ARTEFACTS_DIR="$TRD_PARTY/artefacts"
 
-SQLITE_VERSION="version-3.50.1"
-export SQLITE_SRC_TARBALL="$ARTEFACTS_DIR/sqlite-$SQLITE_VERSION.tar.gz"
-
 cd $SCRIPT_DIR/..
 
 # 2. Check if npx is installed
