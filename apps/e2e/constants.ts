@@ -50,3 +50,6 @@ export const appHash = (location: keyof typeof HASHES, ...segments: (number | st
 
 /** Max timeout for DOM assertions (waitFor, etc. - longer in CI, default in non-CI) */
 export const assertionTimeout = IS_CI ? 15000 : undefined;
+
+export const remoteDbURL = "http://localhost:3000/";
+export const syncUrl = "http://localhost:3000/sync";
