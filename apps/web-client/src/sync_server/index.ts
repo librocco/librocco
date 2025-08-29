@@ -1,9 +1,9 @@
 import * as http from "http";
-import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
 import express from "express";
 import cors from "cors";
 import path from "path";
 
+import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
 import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack";
 
 const PORT = process.env.PORT || 3000;
@@ -23,6 +23,7 @@ const dbProvider = {
 	use: (dbname: string, schema: string, cb: (idb: IDB) => void) => {
 		dbCache.use(dbname, schema, (idb) => {
 			cb(idb);
+			// Perform 'touchHack' - touching the database file, triggering FSNotifier of potential change (notifying clients via sync websocket server)
 			touchHack(path.resolve(wsConfig.dbFolder!, dbname));
 		});
 	}
@@ -34,9 +35,6 @@ app.use(express.json());
 app.get("/", (_, res) => {
 	res.send("Ok");
 });
-
-// NOTE: CRUD doesn't perform checks for required fields, but the CRUD part is temp and
-// probably won't be used with production DB
 
 app.post("/:dbname/exec", async (req, res) => {
 	dbProvider.use(req.params.dbname, schemaName, (idb) => {
@@ -54,118 +52,6 @@ app.post("/:dbname/exec", async (req, res) => {
 			return res.json({ rows: null });
 		} catch (err) {
 			return res.status(400).json({ isSQLiteError: true, message: err.message, code: err.code });
-		}
-	});
-});
-
-app.get("/:dbname/customers", async (req, res) => {
-	dbProvider.use(req.params.dbname, schemaName, (idb) => {
-		const db = idb.getDB();
-		const stmt = db.prepare("SELECT * FROM customer");
-		const customers = stmt.all();
-		res.json(customers);
-	});
-});
-
-app.get("/:dbname/customers/:id", async (req, res) => {
-	dbProvider.use(req.params.dbname, schemaName, (idb) => {
-		const db = idb.getDB();
-		const { id } = req.params;
-		const stmt = db.prepare("SELECT * FROM customer WHERE id = ?");
-		const customer = stmt.get(id);
-		if (customer) {
-			res.json(customer);
-		} else {
-			res.status(404).send("Customer not found");
-		}
-	});
-});
-
-app.put("/:dbname/customers/:id", async (req, res) => {
-	dbProvider.use(req.params.dbname, schemaName, (idb) => {
-		const db = idb.getDB();
-		const { id } = req.params;
-		const { fullname, email, deposit } = req.body;
-		const stmt = db.prepare(`
-		INSERT INTO customer (id, fullname, email, deposit)
-		VALUES (?, ?, ?, ?)
-		ON CONFLICT(id) DO UPDATE SET
-			fullname = excluded.fullname,
-			email = excluded.email,
-			deposit = excluded.deposit
-	`);
-		const info = stmt.run(id, fullname, email, deposit);
-		if (info.changes > 0) {
-			res.send("Customer upserted successfully");
-		} else {
-			res.status(500).send("Failed to upsert customer");
-		}
-	});
-});
-
-app.delete("/:dbname/customers/:id", async (req, res) => {
-	dbProvider.use(req.params.dbname, schemaName, (idb) => {
-		const db = idb.getDB();
-		const { id } = req.params;
-		const stmt = db.prepare("DELETE FROM customer WHERE id = ?");
-		const info = stmt.run(id);
-		if (info.changes > 0) {
-			res.send("Customer deleted successfully");
-		} else {
-			res.status(404).send("Customer not found");
-		}
-	});
-});
-
-app.post("/:dbname/customer-order-lines", async (req, res) => {
-	dbProvider.use(req.params.dbname, schemaName, (idb) => {
-		const db = idb.getDB();
-		const { customer_id, isbn, quantity } = req.body;
-		const stmt = db.prepare("INSERT INTO customer_order_lines (customer_id, isbn, quantity) VALUES (?, ?, ?)");
-		const info = stmt.run(customer_id, isbn, quantity);
-		res.status(201).json({ id: info.lastInsertRowid });
-	});
-});
-
-app.get("/:dbname/customer-order-lines/:customerId", async (req, res) => {
-	dbProvider.use(req.params.dbname, schemaName, (idb) => {
-		const db = idb.getDB();
-		const { customerId } = req.params;
-		const stmt = db.prepare("SELECT * FROM customer_order_lines WHERE customer_id = ?");
-		const orderLines = stmt.all(customerId);
-		if (orderLines.length > 0) {
-			res.json(orderLines);
-		} else {
-			res.status(404).send("No order lines found for this customer");
-		}
-	});
-});
-
-app.put("/:dbname/customer-order-lines/:id", async (req, res) => {
-	dbProvider.use(req.params.dbname, schemaName, (idb) => {
-		const db = idb.getDB();
-		const { id } = req.params;
-		const { customer_id, isbn, quantity } = req.body;
-		const stmt = db.prepare("UPDATE customer_order_lines SET customer_id = ?, isbn = ?, quantity = ? WHERE id = ?");
-		const info = stmt.run(customer_id, isbn, quantity, id);
-		if (info.changes > 0) {
-			res.send("Order line updated successfully");
-		} else {
-			res.status(404).send("Order line not found");
-		}
-	});
-});
-
-app.delete("/:dbname/customer-order-lines/:id", async (req, res) => {
-	dbProvider.use(req.params.dbname, schemaName, (idb) => {
-		const db = idb.getDB();
-		const { id } = req.params;
-		const stmt = db.prepare("DELETE FROM customer_order_lines WHERE id = ?");
-		const info = stmt.run(id);
-		if (info.changes > 0) {
-			res.send("Order line deleted successfully");
-		} else {
-			res.status(404).send("Order line not found");
 		}
 	});
 });
