@@ -38,6 +38,7 @@
 
 	import type { SyncProgress } from "$lib/workers/sync-transport-control";
 	import { LL } from "@librocco/shared/i18n-svelte";
+	import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
 
 	export let data: LayoutData;
 
@@ -66,6 +67,7 @@
 		if (browser && dbCtx) {
 			window["db_ready"] = true;
 			window["_db"] = dbCtx.db;
+			window["_getRemoteDB"] = getRemoteDB;
 			window.dispatchEvent(new Event("db_ready"));
 
 			window["books"] = books;
