@@ -79,29 +79,29 @@ export function matchesName(needle: string, haystack: string) {
 /**
  * Generates an order file string for Format A (Pearson/PBM).
  */
-export function generatePearsonFormat(supplier: Supplier, lines: CustomerOrderLineSelection[]): string {
-	return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 10, 5, "LL")).join("\n");
+export function generatePearsonFormat(customerId: number, lines: CustomerOrderLineSelection[]): string {
+	return lines.map((line) => formatLine(customerId, line.isbn, line.quantity, 10, 5, "LL")).join("\n");
 }
 
 /**
  * Generates an order file string for Format B (Standard Fixed-Width).
  */
-export function generateStandardFormat(supplier: Supplier, lines: CustomerOrderLineSelection[]): string {
-	return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 10, 5)).join("\n");
+export function generateStandardFormat(customerId: number, lines: CustomerOrderLineSelection[]): string {
+	return lines.map((line) => formatLine(customerId, line.isbn, line.quantity, 10, 5)).join("\n");
 }
 
 /**
  * Generates an order file string for Format C (RCS/Rizzoli).
  */
-export function generateRcsFormat(supplier: Supplier, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
-	return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 10, quantityLength)).join("\n");
+export function generateRcsFormat(customerId: number, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
+	return lines.map((line) => formatLine(customerId, line.isbn, line.quantity, 10, quantityLength)).join("\n");
 }
 
 /**
  * Generates an order file string for Format D (Loescher).
  */
-export function generateLoescherFormat(supplier: Supplier, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
-	return lines.map((line) => formatLine(supplier.customerId, line.isbn, line.quantity, 6, quantityLength)).join("\n");
+export function generateLoescherFormat(customerId: number, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
+	return lines.map((line) => formatLine(customerId, line.isbn, line.quantity, 6, quantityLength)).join("\n");
 }
 
 export function downloadAsTextFile(content: string, filename: string) {
@@ -119,7 +119,13 @@ export function downloadAsTextFile(content: string, filename: string) {
 }
 function formatLine(cust: number, isbn: string, quantity: number, custLength: number, quantityLength: number, suffix = ""): string {
 	const paddedCode = String(cust).padStart(custLength, "0");
-	const digitsIsbn = isbn.replace(/-/g, "");
+	let digitsIsbn = isbn.replace(/-/g, "");
+	if (digitsIsbn.length < 13) {
+		digitsIsbn = digitsIsbn.padStart(13, "0");
+	} else if (digitsIsbn.length > 13) {
+		// throw error??
+		return "";
+	}
 	const paddedQuantity = String(quantity).padStart(quantityLength, "0");
 	return `${paddedCode}${digitsIsbn}${paddedQuantity}${suffix}`;
 }

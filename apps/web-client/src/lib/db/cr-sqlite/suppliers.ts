@@ -381,7 +381,8 @@ async function _getPlacedSupplierOrderLines(db: TXAsync, supplier_order_ids: num
 	const query = `
         SELECT
             sol.supplier_order_id,
-
+            s.orderFormat,
+            s.customerId,
             sol.isbn,
             sol.quantity,
 			COALESCE(book.price, 0) * sol.quantity as line_price,

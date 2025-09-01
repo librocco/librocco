@@ -150,6 +150,8 @@ export type DBPlacedSupplierOrderLine = {
 	total_book_price: number;
 	quantity: number;
 	line_price: number;
+	orderFormat: Format;
+	customerId: number;
 } & SupplierJoinData &
 	Omit<BookData, "outOfPrint"> & { out_of_print: number };
 
@@ -160,6 +162,8 @@ export type PlacedSupplierOrderLine = {
 	total_book_price: number;
 	quantity: number;
 	line_price: number;
+	orderFormat: Format;
+	customerId: number;
 } & SupplierJoinData &
 	BookData;
 

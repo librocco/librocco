@@ -56,9 +56,8 @@ describe("matchesName", () => {
 	});
 });
 describe("Order file generation", () => {
-	const mockSupplier = {
-		customerId: 913186
-	};
+	const customerId = 913186;
+	const shortIsbnMockLines = [{ isbn: "1234567890", quantity: 5, supplier_id: 1 }];
 
 	const mockLines = [
 		{ isbn: "978-88-6910-245-5", quantity: 1, supplier_id: 1 },
@@ -69,7 +68,12 @@ describe("Order file generation", () => {
 	describe("generatePearsonFormat", () => {
 		it("should generate a correctly formatted Pearson (PBM) order string", () => {
 			const expected = ["0000913186978886910245500001LL", "0000913186978886910840200012LL", "0000913186978886910677400099LL"].join("\n");
-			const result = generatePearsonFormat(mockSupplier, mockLines);
+			const result = generatePearsonFormat(customerId, mockLines);
+			expect(result).toBe(expected);
+		});
+		it("should handle ISBNs with less than 13 characters", () => {
+			const expected = "0000913186000123456789000005LL";
+			const result = generatePearsonFormat(customerId, shortIsbnMockLines);
 			expect(result).toBe(expected);
 		});
 	});
@@ -77,7 +81,13 @@ describe("Order file generation", () => {
 	describe("generateStandardFormat", () => {
 		it("should generate a correctly formatted Standard Fixed-Width order string", () => {
 			const expected = ["0000913186978886910245500001", "0000913186978886910840200012", "0000913186978886910677400099"].join("\n");
-			const result = generateStandardFormat(mockSupplier, mockLines);
+			const result = generateStandardFormat(customerId, mockLines);
+			expect(result).toBe(expected);
+		});
+
+		it("should handle ISBNs with less than 13 characters", () => {
+			const expected = "0000913186000123456789000005";
+			const result = generateStandardFormat(customerId, shortIsbnMockLines);
 			expect(result).toBe(expected);
 		});
 	});
@@ -85,13 +95,23 @@ describe("Order file generation", () => {
 	describe("generateRcsFormat", () => {
 		it("should generate a correctly formatted RCS order string with 3-digit quantity", () => {
 			const expected = ["00009131869788869102455001", "00009131869788869108402012", "00009131869788869106774099"].join("\n");
-			const result = generateRcsFormat(mockSupplier, mockLines, 3);
+			const result = generateRcsFormat(customerId, mockLines, 3);
+			expect(result).toBe(expected);
+		});
+		it("should handle ISBNs with less than 13 characters with 3-digit quantity", () => {
+			const expected = "00009131860001234567890005";
+			const result = generateRcsFormat(customerId, shortIsbnMockLines, 3);
 			expect(result).toBe(expected);
 		});
 
 		it("should generate a correctly formatted RCS order string with 5-digit quantity", () => {
 			const expected = ["0000913186978886910245500001", "0000913186978886910840200012", "0000913186978886910677400099"].join("\n");
-			const result = generateRcsFormat(mockSupplier, mockLines, 5);
+			const result = generateRcsFormat(customerId, mockLines, 5);
+			expect(result).toBe(expected);
+		});
+		it("should handle ISBNs with less than 13 characters with 5-digit quantity", () => {
+			const expected = "0000913186000123456789000005";
+			const result = generateRcsFormat(customerId, shortIsbnMockLines, 5);
 			expect(result).toBe(expected);
 		});
 	});
@@ -99,13 +119,23 @@ describe("Order file generation", () => {
 	describe("generateLoescherFormat", () => {
 		it("should generate a correctly formatted Loescher order string with 3-digit quantity", () => {
 			const expected = ["9131869788869102455001", "9131869788869108402012", "9131869788869106774099"].join("\n");
-			const result = generateLoescherFormat(mockSupplier, mockLines, 3);
+			const result = generateLoescherFormat(customerId, mockLines, 3);
+			expect(result).toBe(expected);
+		});
+		it("should handle ISBNs with less than 13 characters with 3-digit quantity", () => {
+			const expected = "9131860001234567890005";
+			const result = generateLoescherFormat(customerId, shortIsbnMockLines, 3);
 			expect(result).toBe(expected);
 		});
 
 		it("should generate a correctly formatted Loescher order string with 5-digit quantity", () => {
 			const expected = ["913186978886910245500001", "913186978886910840200012", "913186978886910677400099"].join("\n");
-			const result = generateLoescherFormat(mockSupplier, mockLines, 5);
+			const result = generateLoescherFormat(customerId, mockLines, 5);
+			expect(result).toBe(expected);
+		});
+		it("should handle ISBNs with less than 13 characters with 5-digit quantity", () => {
+			const expected = "913186000123456789000005";
+			const result = generateLoescherFormat(customerId, shortIsbnMockLines, 5);
 			expect(result).toBe(expected);
 		});
 	});
