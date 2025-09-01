@@ -21,3 +21,9 @@ export function createVFSFactory(vfs: VFSWhitelist): (module: SQLiteAPI) => Prom
 export function validateVFS(vfs: string): vfs is VFSWhitelist {
 	return Boolean(vfsLookup[vfs]);
 }
+
+export const opfsVFSList = new Set(["opfs-any-context", "opfs-adaptive-vfs", "opfs-coop-sync"]);
+
+export function vfsSupportsOPFS(vfs: string): boolean {
+	return opfsVFSList.has(vfs);
+}
