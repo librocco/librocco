@@ -93,5 +93,7 @@ export const supplierSchema = z.object({
 	email: z.string().max(0).optional().or(z.string().email().optional()),
 	address: z.string().optional(),
 	customerId: z.number().default(0),
-	orderFormat: z.string().optional().default("PBM")
+	orderFormat: z
+		.enum(["", "PBM", "Standard", "RCS-3", "RCS-5", "Loescher-3", "Loescher-5"])
+		.refine((orderFormat) => orderFormat !== "", "Please select an order format")
 });

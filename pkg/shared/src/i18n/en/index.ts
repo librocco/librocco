@@ -296,7 +296,9 @@ const new_order_page = {
 		total_books: "Total books",
 		total_value: "Total value",
 		selected_books: "Selected books",
-		order_format: "Order Format"
+		order_format: "Order Format",
+		no_order_format: "Order format needs to be configured",
+		go_to_supplier: "Go to supplier"
 	},
 	table: {
 		quantity: "Quantity",
@@ -308,7 +310,8 @@ const new_order_page = {
 	},
 	labels: {
 		select: "Select",
-		place_order: "Place Order"
+		place_order: "Place Order",
+		no_format_popover: "No format configured"
 	}
 };
 
@@ -706,7 +709,8 @@ const supplier_orders_component = {
 		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
 		reconcile: "Reconcile",
-		view_reconciliation: "Reconciliation"
+		view_reconciliation: "View Reconciliation",
+		download_order: "Download Order"
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",

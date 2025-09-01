@@ -13,7 +13,6 @@
 	import type { PageData } from "./$types";
 	import LL from "@librocco/shared/i18n-svelte";
 	import { orderFormats } from "$lib/enums/orders";
-	import type { Supplier } from "$lib/db/cr-sqlite/types";
 	import {
 		generateLoescherFormat,
 		generatePearsonFormat,
@@ -21,7 +20,8 @@
 		generateRcsFormat,
 		downloadAsTextFile
 	} from "$lib/utils/misc";
-
+	import { TooltipWrapper } from "$lib/components";
+	import { testId } from "@librocco/shared";
 	export let data: PageData;
 
 	let disposer: () => void;
@@ -36,6 +36,7 @@
 		// Unsubscribe on unmount
 		disposer();
 	});
+
 	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
@@ -95,34 +96,34 @@
 		let generatedLines = "";
 		switch (supplier?.orderFormat) {
 			case orderFormats.pbm:
-				generatedLines = generatePearsonFormat(supplier, selection);
+				generatedLines = generatePearsonFormat(supplier.customerId, selection);
 
 				break;
 			case orderFormats.standard:
-				generatedLines = generateStandardFormat(supplier, selection);
+				generatedLines = generateStandardFormat(supplier.customerId, selection);
 
 				break;
 			case orderFormats.rcs3:
-				generatedLines = generateRcsFormat(supplier, selection, 3);
+				generatedLines = generateRcsFormat(supplier.customerId, selection, 3);
 
 				break;
 			case orderFormats.rcs5:
-				generatedLines = generateRcsFormat(supplier, selection, 5);
+				generatedLines = generateRcsFormat(supplier.customerId, selection, 5);
 
 				break;
 			case orderFormats.loescher3:
-				generatedLines = generateLoescherFormat(supplier, selection, 3);
+				generatedLines = generateLoescherFormat(supplier.customerId, selection, 3);
 
 				break;
 			case orderFormats.loescher5:
-				generatedLines = generateLoescherFormat(supplier, selection, 5);
+				generatedLines = generateLoescherFormat(supplier.customerId, selection, 5);
 
 				break;
 			default:
 				break;
 		}
 
-		downloadAsTextFile(generatedLines, `${id}-${supplier.orderFormat || "unknown"}`);
+		downloadAsTextFile(generatedLines, `${id}-${supplier.name}-${supplier.orderFormat}`);
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
 		await goto(appHash("supplier_orders", id));
@@ -167,7 +168,12 @@
 							</span>
 							<div class="stat bg-base-100 max-md:py-2 md:px-1">
 								<dt class="stat-title">{t.stats.order_format()}</dt>
-								<dd class="stat-value text-2xl">{order_format}</dd>
+								{#if order_format}
+									<dd class="stat-value text-2xl">{order_format}</dd>
+								{:else}
+									<dd class="stat-value text-2xl">{t.stats.no_order_format()}</dd>
+									<a target="_blank" href={appHash("suppliers", supplier_id)} class="underline">{t.stats.go_to_supplier()}</a>
+								{/if}
 							</div>
 						</div>
 					</div>
@@ -259,10 +265,37 @@
 								</div>
 							</dl>
 
-							<button class="btn-primary btn" on:click={handlePlaceOrder}>
-								{t.labels.place_order()}
-								<Truck aria-hidden size={20} class="hidden md:block" />
-							</button>
+							{#if !order_format}
+								<TooltipWrapper
+									options={{
+										positioning: {
+											placement: "top-start"
+										},
+										openDelay: 0,
+										closeDelay: 0,
+										closeOnPointerDown: true,
+										forceVisible: true,
+										disableHoverableContent: true
+									}}
+									let:trigger={tooltipTrigger}
+								>
+									<span {...tooltipTrigger} use:tooltipTrigger.action>
+										<button disabled class="btn-primary btn">
+											{t.labels.place_order()}
+											<Truck aria-hidden size={20} class="hidden md:block" />
+										</button>
+									</span>
+
+									<div slot="tooltip-content" data-testid={testId("popover-container")}>
+										<p class="px-4 py-1 text-white">{t.labels.no_format_popover()}</p>
+									</div>
+								</TooltipWrapper>
+							{:else}
+								<button class="btn-primary btn" on:click={handlePlaceOrder}>
+									{t.labels.place_order()}
+									<Truck aria-hidden size={20} class="hidden md:block" />
+								</button>
+							{/if}
 						</div>
 					</div>
 				{/if}

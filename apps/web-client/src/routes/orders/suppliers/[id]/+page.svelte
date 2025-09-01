@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import Mail from "$lucide/mail";
+	import { Settings, PencilLine, Plus, Mail } from "$lucide";
 	import UserCircle from "$lucide/user-circle";
-	import PencilLine from "$lucide/pencil-line";
-	import Plus from "$lucide/plus";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -19,7 +17,12 @@
 	import { Page } from "$lib/controllers";
 
 	import { supplierSchema } from "$lib/forms/schemas";
-	import { upsertSupplier, associatePublisher, removePublisherFromSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import {
+		upsertSupplier,
+		associatePublisher,
+		removePublisherFromSupplier,
+		getPlacedSupplierOrderLines
+	} from "$lib/db/cr-sqlite/suppliers";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
@@ -28,6 +31,13 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 	import { orderFormats } from "$lib/enums/orders";
+	import {
+		downloadAsTextFile,
+		generateLoescherFormat,
+		generatePearsonFormat,
+		generateRcsFormat,
+		generateStandardFormat
+	} from "$lib/utils/misc";
 
 	export let data: PageData;
 
@@ -90,6 +100,41 @@
 	const handleUnassignPublisher = (publisher: string) => async () => {
 		await removePublisherFromSupplier(db, supplier.id, publisher);
 	};
+	async function handleDownload(event: CustomEvent<{ supplierOrderId: number }>) {
+		const lines = await getPlacedSupplierOrderLines(db, [event.detail.supplierOrderId]);
+
+		let generatedLines = "";
+		switch (lines[0]?.orderFormat) {
+			case orderFormats.pbm:
+				generatedLines = generatePearsonFormat(lines[0]?.customerId, lines);
+
+				break;
+			case orderFormats.standard:
+				generatedLines = generateStandardFormat(lines[0]?.customerId, lines);
+
+				break;
+			case orderFormats.rcs3:
+				generatedLines = generateRcsFormat(lines[0]?.customerId, lines, 3);
+
+				break;
+			case orderFormats.rcs5:
+				generatedLines = generateRcsFormat(lines[0]?.customerId, lines, 5);
+
+				break;
+			case orderFormats.loescher3:
+				generatedLines = generateLoescherFormat(lines[0]?.customerId, lines, 3);
+
+				break;
+			case orderFormats.loescher5:
+				generatedLines = generateLoescherFormat(lines[0]?.customerId, lines, 5);
+
+				break;
+			default:
+				break;
+		}
+
+		downloadAsTextFile(generatedLines, `${event.detail.supplierOrderId}-${lines[0]?.supplier_name}-${lines[0]?.orderFormat}`);
+	}
 </script>
 
 <Page title={t.details.supplier_page()} view="orders/suppliers/id" {db} {plugins}>
@@ -144,7 +189,7 @@
 											<div class="flex gap-x-3">
 												<dt>
 													<span class="sr-only">{t.details.supplier_orderFormat()}</span>
-													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+													<Settings aria-hidden="true" class="h-6 w-5 text-gray-400" />
 												</dt>
 												<dd class="truncate">{supplier.orderFormat || "N/A"}</dd>
 											</div>
@@ -259,7 +304,7 @@
 
 				<div class="h-full overflow-x-auto">
 					<div class="h-full">
-						<OrderedTable orders={data.orders} on:reconcile={handleReconcile} />
+						<OrderedTable orders={data.orders} on:reconcile={handleReconcile} on:download={handleDownload} />
 					</div>
 				</div>
 			</div>
@@ -349,7 +394,7 @@
 
 			<div class="h-full overflow-x-auto">
 				<div class="h-full">
-					<OrderedTable orders={data.orders} on:reconcile={handleReconcile} />
+					<OrderedTable orders={data.orders} on:reconcile={handleReconcile} on:download={handleDownload} />
 				</div>
 			</div>
 		</div>

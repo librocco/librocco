@@ -25,19 +25,22 @@
 			selectedOrders = [...selectedOrders, supplierOrderId];
 		}
 	}
-	const dispatch = createEventDispatcher<{ reconcile: { supplierOrderIds: number[] } }>();
+	const dispatch = createEventDispatcher<{ reconcile: { supplierOrderIds: number[] }; download: { supplierOrderId: number } }>();
 
 	async function handleReconcile(supplierOrderIds: number[]) {
 		/** @TODO replace with SOIds */
 		dispatch("reconcile", { supplierOrderIds: supplierOrderIds });
 	}
 
+	function handleViewReconcileOrder(id: number) {
+		goto(appHash("reconcile", id));
+	}
 	function handleView(supplierOrderId: number) {
 		goto(appHash("supplier_orders", supplierOrderId));
 	}
 
-	function handleViewReconcileOrder(id: number) {
-		goto(appHash("reconcile", id));
+	async function handleDownloadOrder(supplierOrderId: number) {
+		dispatch("download", { supplierOrderId: supplierOrderId });
 	}
 
 	$: t = $LL.supplier_orders_component.ordered_table;
@@ -91,6 +94,9 @@
 					<td class="whitespace-nowrap text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}>
 							{t.view_order()}
+						</button>
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleDownloadOrder(id)}>
+							{t.download_order()}
 						</button>
 						{#if !reconciled}
 							<button
