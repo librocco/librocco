@@ -311,7 +311,7 @@ const new_order_page = {
 	labels: {
 		select: "Select",
 		place_order: "Place Order",
-		no_format_popover: "No format configured"
+		no_format_tooltip: "No format configured"
 	}
 };
 
@@ -432,7 +432,8 @@ const suppliers_page = {
 		email: "Email",
 		address: "Address",
 		assigned_publishers: "Assigned Publishers",
-		actions: "Actions"
+		actions: "Actions",
+		order_format:"Order Format"
 	}
 };
 
