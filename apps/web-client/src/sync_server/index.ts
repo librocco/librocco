@@ -77,7 +77,15 @@ server.listen(PORT, () => {
 
 // Gracefully shut down the server on process termination
 process.on("SIGINT", () => {
-	console.log("info", "Shutting down server...");
+	console.log("info", "[SIGINT] Shutting down server...");
+	server.close(() => {
+		console.log("info", "Server closed");
+		process.exit(0);
+	});
+});
+
+process.on("SIGKILL", () => {
+	console.log("info", "[SIGKILL] Shutting down server...");
 	server.close(() => {
 		console.log("info", "Server closed");
 		process.exit(0);

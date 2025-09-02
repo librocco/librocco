@@ -9,7 +9,7 @@ import { getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpe
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
-testOrders("should delete the warehouse on delete button click (after confirming the prompt)", async ({ page, customers }) => {
+testOrders("should sync client <-> sync server", async ({ page, customers }) => {
 	// Start the sync
 	await page.evaluate(
 		([syncUrl]) => {
