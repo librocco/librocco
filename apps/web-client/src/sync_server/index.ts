@@ -6,6 +6,7 @@ import path from "path";
 import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
 import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack";
 
+const IS_DEV = process.env.IS_DEV === "true";
 const PORT = process.env.PORT || 3000;
 const app = express();
 const server = http.createServer(app);
@@ -36,7 +37,21 @@ app.get("/", (_, res) => {
 	res.send("Ok");
 });
 
+if (IS_DEV) {
+	console.log("running sync server in dev mode:");
+	console.log("  RPC endpoiont enabled");
+	console.log("  use RemoteDB to interact with the server DB");
+} else {
+	console.log("running sync server in production mode:");
+	console.log("  RPC endpoiont disabled");
+	console.log("  only access to the DB is via sync websocket server");
+}
+
 app.post("/:dbname/exec", async (req, res) => {
+	if (!IS_DEV) {
+		return res.status(403).json({ message: "Not allowed in production mode" });
+	}
+
 	dbProvider.use(req.params.dbname, schemaName, (idb) => {
 		try {
 			const db = idb.getDB();
