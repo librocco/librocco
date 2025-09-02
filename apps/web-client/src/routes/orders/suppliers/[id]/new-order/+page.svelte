@@ -121,6 +121,8 @@
 
 				break;
 			default:
+				console.warn("Unknown supplier orderFormat; defaulting to Standard.");
+				generatedLines = generateStandardFormat(supplier.customerId, selection);
 				break;
 		}
 

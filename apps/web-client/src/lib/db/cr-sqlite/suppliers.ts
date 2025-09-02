@@ -46,7 +46,7 @@ async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
 			COALESCE(email, 'N/A') as email,
 			COALESCE(address, 'N/A') as address,
 			COALESCE(customerId, 'N/A') as customerId,
-			COALESCE(orderFormat, 'N/A') as orderFormat,
+			orderFormat,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
