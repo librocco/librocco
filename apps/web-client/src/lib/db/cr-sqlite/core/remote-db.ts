@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { SQLiteError } from "@vlcn.io/wa-sqlite";
 import type { DBAsync, OnUpdateCallback, StmtAsync, TMutex, TXCallback, _TXAsync } from "./types";
 
