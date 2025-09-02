@@ -128,3 +128,16 @@ function formatLine(cust: number, isbn: string, quantity: number, custLength: nu
 	const paddedQuantity = String(quantity).padStart(quantityLength, "0");
 	return `${paddedCode}${digitsIsbn}${paddedQuantity}${suffix}`;
 }
+export async function retry<R>(cb: () => Promise<R>, pause: number, retries: number): Promise<R> {
+	// Attempt the first time + n - 1 retries
+	for (let i = 0; i < retries; i++) {
+		try {
+			return await cb();
+		} catch {
+			await new Promise((res) => setTimeout(res, pause));
+		}
+	}
+
+	// On the last retry, execute the function come-what-may
+	return await cb();
+}
