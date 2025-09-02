@@ -12,7 +12,7 @@ export async function getRemoteDB(url: string, dbname: string): Promise<DBAsync>
 	}
 }
 
-async function rpc<T>(url: string, body: any, token?: string): Promise<T> {
+async function rpc<T>(url: string | URL, body: any, token?: string): Promise<T> {
 	const res = await fetch(url, {
 		method: "POST",
 		headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
@@ -53,7 +53,9 @@ class Comm {
 	}
 
 	async exec<R extends any[] = null>(sql: string, bind: SQLiteCompatibleType[]): Promise<QueryResp<R>> {
-		const url = [this._httpUrl, this.dbname, "exec"].join("/").replace(/\/+/g, "/");
+		const url = this._httpUrl;
+		url.pathname = `/${this.dbname}/exec`;
+
 		console.log("RemoteDB.exec:");
 		console.log("	httpUrl:", this._httpUrl.toString());
 		console.log("	dbname:", this.dbname);
