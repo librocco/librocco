@@ -2,6 +2,7 @@ import * as http from "http";
 import express from "express";
 import cors from "cors";
 import path from "path";
+import fs from "fs";
 
 import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
 import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack";
@@ -16,6 +17,9 @@ const wsConfig = {
 	schemaFolder: "./src/lib/schemas",
 	pathPattern: /\/sync/
 };
+
+// Create the DB folder if it doesn't exist
+fs.existsSync(path.resolve(wsConfig.dbFolder)) || fs.mkdirSync(wsConfig.dbFolder!, { recursive: true });
 
 const schemaName = "init";
 
