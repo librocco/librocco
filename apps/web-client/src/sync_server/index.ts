@@ -83,11 +83,3 @@ process.on("SIGINT", () => {
 		process.exit(0);
 	});
 });
-
-process.on("SIGKILL", () => {
-	console.log("info", "[SIGKILL] Shutting down server...");
-	server.close(() => {
-		console.log("info", "Server closed");
-		process.exit(0);
-	});
-});
