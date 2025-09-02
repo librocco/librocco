@@ -55,7 +55,8 @@ const suppliersWithPublishers = [
 const customers = [
 	{ id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" },
 	{ id: 2, fullname: "Jane Doe", email: "jane@gmail.com", displayId: "2" },
-	{ id: 3, fullname: "Don Joe", displayId: "3" }
+	{ id: 3, fullname: "Don Joe", displayId: "3" },
+	{ id: 4, fullname: "Joe Don", displayId: "4" }
 ];
 
 const customerOrderLines = [
@@ -68,7 +69,7 @@ const customerOrderLines = [
 	{ customerId: 2, isbn: "7777" },
 	{ customerId: 3, isbn: "1234" },
 	{ customerId: 3, isbn: "9999" },
-	{ customerId: 1, isbn: "6666" }
+	{ customerId: 4, isbn: "6666" }
 ];
 
 type FixtureCustomerOrderLines = {

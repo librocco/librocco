@@ -200,7 +200,7 @@
 										<button
 											class="btn-secondary btn-outline btn-xs btn w-full"
 											type="button"
-											aria-label="Edit supplier name, email or address"
+											aria-label="Edit supplier details"
 											on:click={() => dialogOpen.set(true)}
 										>
 											<PencilLine aria-hidden size={16} />
