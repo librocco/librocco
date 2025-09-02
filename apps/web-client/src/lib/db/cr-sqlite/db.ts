@@ -15,7 +15,7 @@ export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhiteli
 // DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
 // chahe the DB as soon as the first time 'getInitializedDB' is called, so that all subsequent calls
 // await the same promise (which may or may not be resolved by then).
-const dbCache: Record<string, Promise<DbCtx>> = {};
+export const dbCache = new Map<string, Promise<DbCtx>>();
 
 export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
@@ -120,20 +120,24 @@ export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAU
 	// - if initialization needed - cache the request (promise) immediately
 	// - if cache exists, return the promise (which may or may not be resolved yet)
 
-	if (dbCache[dbname]) {
-		return await dbCache[dbname];
+	const cached = dbCache.get(dbname);
+	if (cached) {
+		return await cached;
 	}
 
 	try {
 		// Register the request (promise) immediately, to prevent multiple init requests
 		// at the same time
-		return await (dbCache[dbname] = getDB(dbname, vfs)
+		const initialiser = getDB(dbname, vfs)
 			.then(checkAndInitializeDB)
-			.then((db) => ({ db, rx: rxtbl(db), vfs })));
+			.then((db) => ({ db, rx: rxtbl(db), vfs }));
+		dbCache.set(dbname, initialiser);
+
+		return await initialiser;
 	} catch (err) {
 		// If the request fails, however, (invalid DB state)
 		// remove the cached promise so that we rerun the reqiuest on error fix + invalidateAll
-		delete dbCache[dbname];
+		dbCache.delete(dbname);
 		throw err;
 	}
 };

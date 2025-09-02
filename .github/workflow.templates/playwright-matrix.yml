@@ -1,8 +1,11 @@
 #@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "load_artefacts")
 #@ load("cache.lib.yml", "cache_node")
+#@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
+#@ load("build-crsqlite.lib.yml", "build_crsqlite")
 
 name: PlaywrightMatrix
 
@@ -15,9 +18,12 @@ name: PlaywrightMatrix
     - cron: "30 5 * * 1,3"
 
 jobs:
+  build-cr-sqlite: #@ build_crsqlite()
+
   e2e-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    needs: build-cr-sqlite
     strategy:
       fail-fast: false
       matrix:
@@ -28,6 +34,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()

@@ -6,6 +6,7 @@
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
 #@ load("test-job.lib.yml", "test_job")
+#@ load("build-crsqlite.lib.yml", "build_crsqlite")
 
 name: Checks
 
@@ -16,65 +17,7 @@ name: Checks
       - "wip/**"
 
 jobs:
-  build-cr-sqlite:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    outputs:
-      rebuild: ${{ steps.ts.outputs.rebuild }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          lfs: false
-          fetch-depth: 0 #! We need all the history to check artifact date
-      - name: Test if artefacts are stale
-        id: ts
-        shell: bash
-        #! TEMP fix: always output 'yes' (not using git lfs atm so we're forcing the build of artefacts at each run)
-        run: echo "rebuild=yes" >> "$GITHUB_OUTPUT"
-      - uses: actions/setup-node@v4
-        if: steps.ts.outputs.rebuild == 'yes'
-        with:
-          node-version: "20"
-      - name: Install Rust 1.85.0
-        if: steps.ts.outputs.rebuild == 'yes'
-        #! I was getting this:
-        #! error: older versions of the `wasm-bindgen` crate are incompatible with current versions of Rust; please update to `wasm-bindgen` v0.2.88
-        #! and for now I decided to downgrade rust instead of upgrading wasm-bindgen
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: 1.85.0
-          override: true
-      - name: install wasm-pack
-        if: steps.ts.outputs.rebuild == 'yes'
-        run: cargo install wasm-pack
-      - name: install pnpm
-        if: steps.ts.outputs.rebuild == 'yes'
-        run: npm install -g 'pnpm@<9'
-      - name: Build cr-sqlite
-        if: steps.ts.outputs.rebuild == 'yes'
-        run: ./scripts/build_vlcn.sh
-      - name: Check that the build went fine
-        #! Let's leave this without an `if`: it won't hurt and might help debugging
-        run: git status; ls -l 3rd-party/artefacts/
-      - name: upload to later jobs
-        if: steps.ts.outputs.rebuild == 'yes'
-        uses: actions/upload-artifact@v4
-        with:
-          name: built-vlcn-artefacts
-          path: 3rd-party/artefacts/
-      - name: Mark cached version
-        run: cp 3rd-party/artefacts_version.txt 3rd-party/artefacts/version-cached.txt
-      - name: Commit updated assets
-        if: github.ref == 'refs/heads/compile-assets'
-        run: bash scripts/commit-artefacts.sh
-      - name: Push changes
-        if: github.ref == 'refs/heads/compile-assets'
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: compile-assets
+  build-cr-sqlite: #@ build_crsqlite()
 
   js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
 
