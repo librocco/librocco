@@ -22,6 +22,7 @@
 	} from "$lib/utils/misc";
 	import { TooltipWrapper } from "$lib/components";
 	import { testId } from "@librocco/shared";
+	import { SquareArrowUpRight } from "$lucide";
 	export let data: PageData;
 
 	let disposer: () => void;
@@ -169,11 +170,16 @@
 							<div class="stat bg-base-100 max-md:py-2 md:px-1">
 								<dt class="stat-title">{t.stats.order_format()}</dt>
 								{#if order_format}
-									<dd class="stat-value text-2xl">{order_format}</dd>
+									<p class="stat-value">{order_format}</p>
 								{:else}
-									<dd class="stat-value text-2xl">{t.stats.no_order_format()}</dd>
-									<a target="_blank" href={appHash("suppliers", supplier_id)} class="underline">{t.stats.go_to_supplier()}</a>
+									<p class="stat-desc">{t.stats.no_order_format()}</p>
 								{/if}
+								<div class="mt-2 flex flex-row items-center justify-between">
+									<a class="badge-primary badge-lg badge gap-x-2 hover:badge-outline" href={appHash("suppliers", supplier_id)}>
+										{t.stats.go_to_supplier()}
+										<SquareArrowUpRight size={12} />
+									</a>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -279,15 +285,15 @@
 									}}
 									let:trigger={tooltipTrigger}
 								>
-									<span {...tooltipTrigger} use:tooltipTrigger.action>
+									<span {...tooltipTrigger} use:tooltipTrigger.action data-testid={testId("tooltip-trigger")}>
 										<button disabled class="btn-primary btn">
 											{t.labels.place_order()}
 											<Truck aria-hidden size={20} class="hidden md:block" />
 										</button>
 									</span>
 
-									<div slot="tooltip-content" data-testid={testId("popover-container")}>
-										<p class="px-4 py-1 text-white">{t.labels.no_format_popover()}</p>
+									<div slot="tooltip-content" data-testid={testId("tooltip-container")}>
+										<p class="px-4 py-1 text-white">{t.labels.no_format_tooltip()}</p>
 									</div>
 								</TooltipWrapper>
 							{:else}

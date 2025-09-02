@@ -2,7 +2,6 @@ import type { BookData, BookFetchResultEntry } from "@librocco/shared";
 type CustomerOrderLineSelection = {
 	isbn: string;
 	quantity: number;
-	supplier_id: number;
 };
 // #region book data fetching
 /**
