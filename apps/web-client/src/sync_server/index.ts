@@ -19,7 +19,9 @@ const wsConfig = {
 };
 
 // Create the DB folder if it doesn't exist
-fs.existsSync(path.resolve(wsConfig.dbFolder)) || fs.mkdirSync(wsConfig.dbFolder!, { recursive: true });
+if (!fs.existsSync(path.resolve(wsConfig.dbFolder))) {
+	fs.mkdirSync(wsConfig.dbFolder!, { recursive: true });
+}
 
 const schemaName = "init";
 
