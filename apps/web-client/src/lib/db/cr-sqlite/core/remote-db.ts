@@ -53,7 +53,11 @@ class Comm {
 	}
 
 	async exec<R extends any[] = null>(sql: string, bind: SQLiteCompatibleType[]): Promise<QueryResp<R>> {
-		const url = [this._httpUrl, this.dbname, "exec"].join("/").replace(/\/+/g, "/").replace(":/", "://");
+		const url = [this._httpUrl, this.dbname, "exec"].join("/").replace(/\/+/g, "/");
+		console.log("RemoteDB.exec:");
+		console.log("	httpUrl:", this._httpUrl.toString());
+		console.log("	dbname:", this.dbname);
+		console.log("	merged url:", url);
 		try {
 			return await rpc<QueryResp<R>>(url, { sql, bind });
 		} catch (err) {
