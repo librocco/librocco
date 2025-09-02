@@ -167,7 +167,9 @@ type OrderTestFixture = {
 	 *
 	 * id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1"
 	 * id: 2, fullname: "Jane Doe", email: "jane@gmail.com", displayId: "2"
-	 * id: 3, fullname: "Don Joe",  displayId: "3"
+	 * id: 3, fullname: "Don Joe",  displayId: "3",
+	 * id: 4, fullname: "Joe Don",  displayId: "4"
+
 	 */
 	customers: Customer[];
 
