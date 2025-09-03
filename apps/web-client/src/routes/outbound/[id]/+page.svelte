@@ -136,7 +136,10 @@
 
 	// #region table
 	const tableOptions = writable({ data: entries?.slice(0, maxResults) });
-	const table = createTable(tableOptions);
+	// Generate row key based on identifier (isbn - warehouseId for book rows, id for custom items) to
+	// prevent assigning random nanoid (and thus rerendering on every update)
+	const generateRowKey = (row: InventoryTableData) => (isBookRow(row) ? [row.isbn, row.warehouseId].join("--") : `custom--${row.id}`);
+	const table = createTable(tableOptions, generateRowKey);
 	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
 
