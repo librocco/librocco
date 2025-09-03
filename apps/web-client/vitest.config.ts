@@ -1,4 +1,6 @@
 import path from "path";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
+
 import { defineConfig } from "vitest/config";
 
 import { USE_SUBMODULES } from "./build_constants";
@@ -40,6 +42,8 @@ function alias_vlcn_dev() {
 }
 
 export default defineConfig({
+	plugins: [svelte({ hot: !process.env.VITEST })],
+
 	test: {
 		include: [
 			"src/lib/db/cr-sqlite/__tests__/**/*.{test,spec}.{js,ts}",
@@ -55,7 +59,8 @@ export default defineConfig({
 		},
 		alias: {
 			$lib: path.resolve(__dirname, "src/lib"),
-			...alias_vlcn_dev()
+			...alias_vlcn_dev(),
+			$lucide: path.resolve(__dirname, "node_modules/lucide-svelte/dist/icons")
 		}
 	},
 	server: {
