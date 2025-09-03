@@ -103,7 +103,7 @@ const outputFile =
 	SHARD_INDEX === undefined ? `vfs-benchmark-results/test-results.json` : `vfs-benchmark-results/test-results-${SHARD_INDEX}.json`;
 const vfsTestConfig: PlaywrightTestConfig = {
 	...baseConfig,
-	reporter: [["json", { outputFile }]],
+	reporter: [...reporter, ["json", { outputFile }]],
 	projects: browsers // NOTE: using all browsers, but only the default locale in this scenario
 		.flatMap((browser) => vfsList.map((vfs) => ({ name: [browser.name, vfs].join("-"), device: browser.device, vfs })))
 		.map(({ name, device, vfs }) => ({
