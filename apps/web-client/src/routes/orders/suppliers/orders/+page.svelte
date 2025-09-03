@@ -65,15 +65,21 @@
 
 	type OrderStatus = "unordered" | "ordered" | "reconciling" | "completed";
 
-	$: statusFromUrl = $page.url.hash.split("?filter=")[1]?.split("/")[0];
-	$: orderStatusFilter =
-		statusFromUrl === "ordered" || statusFromUrl === "reconciling" || statusFromUrl === "completed" ? statusFromUrl : "unordered";
-
+	let orderStatusFilter: OrderStatus = "unordered";
+	function isOrderStatus(s: string | null): s is OrderStatus {
+		return s === "unordered" || s === "ordered" || s === "reconciling" || s === "completed";
+	}
+	$: {
+		const params = new URLSearchParams($page.url.hash.split("?")[1] ?? "");
+		const s = params.get("filter")?.split("/")[0];
+		orderStatusFilter = isOrderStatus(s) ? s : "unordered";
+	}
 	function setFilter(status: OrderStatus) {
-		orderStatusFilter = status;
-		const base = $page.url.hash.split("?")[0];
-
-		goto(`${base}?filter=${status}`);
+		const [base, search = ""] = $page.url.hash.split("?");
+		const params = new URLSearchParams(search);
+		params.set("filter", status);
+		// Let URL drive the reactive state; no need to pre-set `orderStatusFilter`.
+		goto(`${base}?${params.toString()}`);
 	}
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
@@ -139,7 +145,7 @@
 						on:click={() => setFilter("completed")}
 						aria-pressed={orderStatusFilter === "completed"}
 						disabled={!hasCompletedOrders}
-						data-testid="reconciling-list"
+						data-testid="completed-list"
 					>
 						{t.tabs.completed()}
 					</button>
