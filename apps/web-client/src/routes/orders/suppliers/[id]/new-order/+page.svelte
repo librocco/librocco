@@ -12,7 +12,17 @@
 
 	import type { PageData } from "./$types";
 	import LL from "@librocco/shared/i18n-svelte";
-
+	import { orderFormats } from "$lib/enums/orders";
+	import {
+		generateLoescherFormat,
+		generatePearsonFormat,
+		generateStandardFormat,
+		generateRcsFormat,
+		downloadAsTextFile
+	} from "$lib/utils/misc";
+	import { TooltipWrapper } from "$lib/components";
+	import { testId } from "@librocco/shared";
+	import { SquareArrowUpRight } from "$lucide";
 	export let data: PageData;
 
 	let disposer: () => void;
@@ -27,10 +37,13 @@
 		// Unsubscribe on unmount
 		disposer();
 	});
+
 	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
-	$: ({ orderLines, plugins } = data);
+	$: ({ orderLines, plugins, supplier } = data);
+
+	$: order_format = supplier.orderFormat;
 
 	// Supplier meta data is returned per row. We just need one copy of it
 	$: [orderLine] = orderLines;
@@ -81,9 +94,42 @@
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		await createSupplierOrder(db, id, supplier_id, selection);
 
+		let generatedLines = "";
+		switch (supplier?.orderFormat) {
+			case orderFormats.pbm:
+				generatedLines = generatePearsonFormat(supplier.customerId, selection);
+
+				break;
+			case orderFormats.standard:
+				generatedLines = generateStandardFormat(supplier.customerId, selection);
+
+				break;
+			case orderFormats.rcs3:
+				generatedLines = generateRcsFormat(supplier.customerId, selection, 3);
+
+				break;
+			case orderFormats.rcs5:
+				generatedLines = generateRcsFormat(supplier.customerId, selection, 5);
+
+				break;
+			case orderFormats.loescher3:
+				generatedLines = generateLoescherFormat(supplier.customerId, selection, 3);
+
+				break;
+			case orderFormats.loescher5:
+				generatedLines = generateLoescherFormat(supplier.customerId, selection, 5);
+
+				break;
+			default:
+				console.warn("Unknown supplier orderFormat; defaulting to Standard.");
+				generatedLines = generateStandardFormat(supplier.customerId, selection);
+				break;
+		}
+
+		downloadAsTextFile(generatedLines, `${id}-${supplier.name}-${supplier.orderFormat}`);
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
-		await goto(appHash("supplier_orders"));
+		await goto(appHash("supplier_orders", id));
 	}
 
 	function selectPortion(portion: number) {
@@ -123,6 +169,20 @@
 							<span class="badge-primary badge-lg badge badge-md gap-x-2">
 								#{supplier_id}
 							</span>
+							<div class="stat bg-base-100 max-md:py-2 md:px-1">
+								<dt class="stat-title">{t.stats.order_format()}</dt>
+								{#if order_format}
+									<p class="stat-value">{order_format}</p>
+								{:else}
+									<p class="stat-desc">{t.stats.no_order_format()}</p>
+								{/if}
+								<div class="mt-2 flex flex-row items-center justify-between">
+									<a class="badge-primary badge-lg badge gap-x-2 hover:badge-outline" href={appHash("suppliers", supplier_id)}>
+										{t.stats.go_to_supplier()}
+										<SquareArrowUpRight size={12} />
+									</a>
+								</div>
+							</div>
 						</div>
 					</div>
 
@@ -213,10 +273,37 @@
 								</div>
 							</dl>
 
-							<button class="btn-primary btn" on:click={handlePlaceOrder}>
-								{t.labels.place_order()}
-								<Truck aria-hidden size={20} class="hidden md:block" />
-							</button>
+							{#if !order_format}
+								<TooltipWrapper
+									options={{
+										positioning: {
+											placement: "top-start"
+										},
+										openDelay: 0,
+										closeDelay: 0,
+										closeOnPointerDown: true,
+										forceVisible: true,
+										disableHoverableContent: true
+									}}
+									let:trigger={tooltipTrigger}
+								>
+									<span {...tooltipTrigger} use:tooltipTrigger.action data-testid={testId("tooltip-trigger")}>
+										<button disabled class="btn-primary btn">
+											{t.labels.place_order()}
+											<Truck aria-hidden size={20} class="hidden md:block" />
+										</button>
+									</span>
+
+									<div slot="tooltip-content" data-testid={testId("tooltip-container")}>
+										<p class="px-4 py-1 text-white">{t.labels.no_format_tooltip()}</p>
+									</div>
+								</TooltipWrapper>
+							{:else}
+								<button class="btn-primary btn" on:click={handlePlaceOrder}>
+									{t.labels.place_order()}
+									<Truck aria-hidden size={20} class="hidden md:block" />
+								</button>
+							{/if}
 						</div>
 					</div>
 				{/if}

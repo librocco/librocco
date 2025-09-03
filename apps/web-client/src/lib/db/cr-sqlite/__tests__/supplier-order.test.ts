@@ -17,6 +17,7 @@ import {
 import { addBooksToCustomer, getCustomerOrderLines, getCustomerOrderLineHistory, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
 import { upsertReconciliationOrderLines, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
+import { orderFormats } from "$lib/enums/orders";
 
 const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
 const customer2 = { fullname: "Harry Styles", id: 2, displayId: "200" };
@@ -25,8 +26,8 @@ const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", au
 const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", authors: "Dr. Small Hands", price: 13 };
 const books = [book1, book2];
 
-const supplier1 = { id: 1, name: "Alphabet Books LTD" };
-const supplier2 = { id: 2, name: "Xanax Books LTD" };
+const supplier1 = { id: 1, name: "Alphabet Books LTD", customerId: 111, orderFormat: orderFormats.pbm };
+const supplier2 = { id: 2, name: "Xanax Books LTD", customerId: 222, orderFormat: orderFormats.pbm };
 
 let db: DBAsync;
 
@@ -860,7 +861,8 @@ describe("Placing supplier orders", () => {
 				supplier_order_id: 1,
 				supplier_id: supplierId,
 				supplier_name: supplierName,
-
+				customerId: 111,
+				orderFormat: "PBM",
 				isbn: book1.isbn,
 				title: book1.title,
 				authors: book1.authors,
@@ -870,7 +872,6 @@ describe("Placing supplier orders", () => {
 				year: "",
 				editedBy: "",
 				outOfPrint: false,
-
 				quantity: 2,
 				line_price: book1.price * 2,
 				total_book_number: 3,
@@ -883,7 +884,8 @@ describe("Placing supplier orders", () => {
 				supplier_order_id: 1,
 				supplier_id: supplierId,
 				supplier_name: supplierName,
-
+				customerId: 111,
+				orderFormat: "PBM",
 				isbn: book2.isbn,
 				title: book2.title,
 				authors: book2.authors,
@@ -893,7 +895,6 @@ describe("Placing supplier orders", () => {
 				year: "",
 				editedBy: "",
 				outOfPrint: false,
-
 				quantity: 1,
 				line_price: book2.price,
 				total_book_number: 3,
@@ -933,7 +934,8 @@ describe("Placing supplier orders", () => {
 				supplier_order_id: 1,
 				supplier_id: null,
 				supplier_name: "General",
-
+				customerId: null,
+				orderFormat: null,
 				isbn: book1.isbn,
 				title: book1.title,
 				authors: book1.authors,
@@ -958,7 +960,8 @@ describe("Placing supplier orders", () => {
 				supplier_order_id: 1,
 				supplier_id: null,
 				supplier_name: "General",
-
+				customerId: null,
+				orderFormat: null,
 				isbn: book2.isbn,
 				title: book2.title,
 				authors: book2.authors,

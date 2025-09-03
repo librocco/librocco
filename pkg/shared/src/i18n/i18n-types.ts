@@ -710,6 +710,10 @@ type RootTranslation = {
 			 * A​c​t​i​o​n​s
 			 */
 			actions: string
+			/**
+			 * O​r​d​e​r​ ​F​o​r​m​a​t
+			 */
+			order_format: string
 		}
 	}
 	warehouse_list_page: {
@@ -1372,6 +1376,18 @@ type RootTranslation = {
 			 * S​e​l​e​c​t​e​d​ ​b​o​o​k​s
 			 */
 			selected_books: string
+			/**
+			 * O​r​d​e​r​ ​F​o​r​m​a​t
+			 */
+			order_format: string
+			/**
+			 * O​r​d​e​r​ ​f​o​r​m​a​t​ ​n​e​e​d​s​ ​t​o​ ​b​e​ ​c​o​n​f​i​g​u​r​e​d
+			 */
+			no_order_format: string
+			/**
+			 * G​o​ ​t​o​ ​s​u​p​p​l​i​e​r
+			 */
+			go_to_supplier: string
 		}
 		table: {
 			/**
@@ -1408,6 +1424,10 @@ type RootTranslation = {
 			 * P​l​a​c​e​ ​O​r​d​e​r
 			 */
 			place_order: string
+			/**
+			 * N​o​ ​f​o​r​m​a​t​ ​c​o​n​f​i​g​u​r​e​d
+			 */
+			no_format_tooltip: string
 		}
 	}
 	reconcile_page: {
@@ -1612,6 +1632,10 @@ type RootTranslation = {
 			 * S​u​p​p​l​i​e​r​ ​c​u​s​t​o​m​e​r​ ​I​D
 			 */
 			supplier_customerId: string
+			/**
+			 * S​u​p​p​l​i​e​r​ ​o​r​d​e​r​ ​f​o​r​m​a​t
+			 */
+			supplier_orderFormat: string
 		}
 		table: {
 			/**
@@ -1766,9 +1790,13 @@ type RootTranslation = {
 			 */
 			reconcile: string
 			/**
-			 * R​e​c​o​n​c​i​l​i​a​t​i​o​n
+			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
+			/**
+			 * D​o​w​n​l​o​a​d​ ​O​r​d​e​r
+			 */
+			download_order: string
 		}
 		reconciling_table: {
 			/**
@@ -2440,6 +2468,10 @@ type RootTranslation = {
 				 * C​a​n​c​e​l
 				 */
 				cancel_button: string
+				/**
+				 * O​r​d​e​r​ ​F​o​r​m​a​t
+				 */
+				order_format: string
 			}
 			aria: {
 				/**
@@ -3430,6 +3462,10 @@ export type TranslationFunctions = {
 			 * Actions
 			 */
 			actions: () => LocalizedString
+			/**
+			 * Order Format
+			 */
+			order_format: () => LocalizedString
 		}
 	}
 	warehouse_list_page: {
@@ -4074,6 +4110,18 @@ export type TranslationFunctions = {
 			 * Selected books
 			 */
 			selected_books: () => LocalizedString
+			/**
+			 * Order Format
+			 */
+			order_format: () => LocalizedString
+			/**
+			 * Order format needs to be configured
+			 */
+			no_order_format: () => LocalizedString
+			/**
+			 * Go to supplier
+			 */
+			go_to_supplier: () => LocalizedString
 		}
 		table: {
 			/**
@@ -4110,6 +4158,10 @@ export type TranslationFunctions = {
 			 * Place Order
 			 */
 			place_order: () => LocalizedString
+			/**
+			 * No format configured
+			 */
+			no_format_tooltip: () => LocalizedString
 		}
 	}
 	reconcile_page: {
@@ -4314,6 +4366,10 @@ export type TranslationFunctions = {
 			 * Supplier customer ID
 			 */
 			supplier_customerId: () => LocalizedString
+			/**
+			 * Supplier order format
+			 */
+			supplier_orderFormat: () => LocalizedString
 		}
 		table: {
 			/**
@@ -4463,9 +4519,13 @@ export type TranslationFunctions = {
 			 */
 			reconcile: () => LocalizedString
 			/**
-			 * Reconciliation
+			 * View Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
+			/**
+			 * Download Order
+			 */
+			download_order: () => LocalizedString
 		}
 		reconciling_table: {
 			/**
@@ -5129,6 +5189,10 @@ export type TranslationFunctions = {
 				 * Cancel
 				 */
 				cancel_button: () => LocalizedString
+				/**
+				 * Order Format
+				 */
+				order_format: () => LocalizedString
 			}
 			aria: {
 				/**

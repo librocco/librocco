@@ -614,3 +614,32 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 	await page.getByRole("button", { name: tReconciledList.labels.reconcile() }).waitFor();
 	await page.getByRole("button", { name: tReconciledList.labels.view_reconciliation() }).waitFor({ state: "detached" });
 });
+testOrders(
+	"placing orders should be disabled for suppliers without a format configured",
+	async ({ page, books, suppliersWithPublishers, customerOrderLines, t }) => {
+		const { new_order_page: tNewOrder, supplier_orders_component: tSupplierOrdersComponent } = t;
+		depends(customerOrderLines);
+
+		const suppliers = suppliersWithPublishers;
+
+		const table = page.getByRole("table");
+
+		await page.goto(appHash("supplier_orders"));
+
+		// Use supplier3 for the test
+		await table
+			.getByRole("row")
+			.filter({ hasText: suppliers[2].name })
+			.getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() })
+			.click();
+
+		const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
+		const possibleOrderRow = table.getByRole("row").filter({ hasText: isbnRegex });
+
+		await expect(possibleOrderRow).toHaveCount(4);
+		await expect(page.getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() })).toBeDisabled();
+		// hover over the button
+		page.getByTestId("tooltip-trigger").hover();
+		await expect(page.getByTestId("tooltip-container")).toContainText(tNewOrder.labels.no_format_tooltip());
+	}
+);

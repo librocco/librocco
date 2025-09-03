@@ -39,6 +39,7 @@ testOrders("supplier list: new: submits the form with all fields", async ({ page
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
+	await dialog.getByLabel("Order Format").selectOption("PBM");
 	await dialog.getByRole("button", { name: "Create" }).click();
 
 	// At this point we're validating the form was closed and considering it a good enough
@@ -62,6 +63,7 @@ testOrders("supplier list: new: submits the form with only name provided", async
 	for (const [key, value] of Object.entries(supplier)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
+	await dialog.getByLabel("Order Format").selectOption("PBM");
 
 	await dialog.getByRole("button", { name: "Create" }).click();
 
@@ -292,7 +294,6 @@ testOrders("supplier page: update: allows for blank email string", async ({ page
 	for (const [key, value] of Object.entries(supplier)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
-
 	await dialog.getByRole("button", { name: "Save" }).click();
 
 	// At this point we're validating the form was closed and considering it a good enough
