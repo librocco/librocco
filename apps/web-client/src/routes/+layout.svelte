@@ -118,6 +118,7 @@
 		//
 		// Init worker and sync interface
 		const wkr = new WorkerInterface(new SyncWorker());
+		console.log("using vfs:", dbCtx.vfs);
 		wkr.start(dbCtx.vfs); // Use the same VFS as the one in the main-thread-initialized DB
 		sync.init(wkr);
 

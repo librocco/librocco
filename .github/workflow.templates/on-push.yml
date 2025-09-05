@@ -15,6 +15,7 @@ name: Checks
     branches-ignore:
       - "ci-debug/*"
       - "wip/**"
+      - "vfs-benchmark/**"
 
 jobs:
   build-cr-sqlite: #@ build_crsqlite()
