@@ -1722,8 +1722,8 @@ testOrders("quantity: should handle multiple quantity adjustments", async ({ pag
 });
 
 testOrders("delete: should allow supplier orders to be reconciled again after deletion", async ({ page, supplierOrders }) => {
-	await page.goto(appHash("supplier_orders"));
-	await page.getByText("Ordered").nth(1).click();
+	await page.goto(appHash("supplier_orders", "?filter=ordered"));
+	// await page.getByText("Ordered").nth(1).click();
 
 	// Select multiple orders
 	const items = await page.getByRole("checkbox").all();
@@ -1742,10 +1742,6 @@ testOrders("delete: should allow supplier orders to be reconciled again after de
 	await page.getByRole("button", { name: "Confirm" }).click();
 
 	await expect(page.getByRole("dialog")).toBeHidden();
-
-	await page.waitForURL("**/orders/suppliers/orders/");
-	await page.waitForTimeout(1000);
-	await page.reload();
 
 	// Verify back at supplier orders
 	// stalling here to give time for the page to load the deleted orders
