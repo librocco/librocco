@@ -147,10 +147,10 @@
 	<SupplierMetaForm
 		heading={t.dialog.new_order_title()}
 		saveLabel={t.labels.save()}
-		data={defaults(zod(supplierSchema))}
+		data={defaults(zod(supplierSchema($LL)))}
 		options={{
 			SPA: true,
-			validators: zod(supplierSchema),
+			validators: zod(supplierSchema($LL)),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					createSupplier(form.data);

@@ -30,15 +30,8 @@
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
 	import LL from "@librocco/shared/i18n-svelte";
-	import {
-		downloadAsTextFile,
-		generateLoescherFormat,
-		generatePearsonFormat,
-		generateRcsFormat,
-		generateStandardFormat
-	} from "$lib/utils/misc";
+	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
 	import { getPlacedSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
-	import { orderFormats } from "$lib/enums/orders";
 
 	export let data: PageData;
 
@@ -83,35 +76,7 @@
 	async function handleDownload(event: CustomEvent<{ supplierOrderId: number }>) {
 		const lines = await getPlacedSupplierOrderLines(db, [event.detail.supplierOrderId]);
 
-		let generatedLines = "";
-		switch (lines[0]?.orderFormat) {
-			case orderFormats.pbm:
-				generatedLines = generatePearsonFormat(lines[0]?.customerId, lines);
-
-				break;
-			case orderFormats.standard:
-				generatedLines = generateStandardFormat(lines[0]?.customerId, lines);
-
-				break;
-			case orderFormats.rcs3:
-				generatedLines = generateRcsFormat(lines[0]?.customerId, lines, 3);
-
-				break;
-			case orderFormats.rcs5:
-				generatedLines = generateRcsFormat(lines[0]?.customerId, lines, 5);
-
-				break;
-			case orderFormats.loescher3:
-				generatedLines = generateLoescherFormat(lines[0]?.customerId, lines, 3);
-
-				break;
-			case orderFormats.loescher5:
-				generatedLines = generateLoescherFormat(lines[0]?.customerId, lines, 5);
-
-				break;
-			default:
-				break;
-		}
+		const generatedLines = generateLinesForDownload(lines[0]?.customerId, lines[0]?.orderFormat, lines);
 
 		downloadAsTextFile(generatedLines, `${event.detail.supplierOrderId}-${lines[0]?.supplier_name}-${lines[0]?.orderFormat}`);
 	}

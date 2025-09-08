@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { onDestroy, onMount } from "svelte";
+	import { createEventDispatcher, onDestroy, onMount } from "svelte";
 	import Printer from "$lucide/printer";
 	import ListTodo from "$lucide/list-todo";
 	import SquareArrow from "$lucide/square-arrow-out-up-right";
+	import HardDriveDownload from "$lucide/hard-drive-download";
 
 	import type { PageData } from "./$types";
 
@@ -13,6 +14,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { invalidate } from "$app/navigation";
 	import LL from "@librocco/shared/i18n-svelte";
+	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
 
 	export let data: PageData;
 
@@ -48,8 +50,15 @@
 	$: reconciled = reconciliation_order_id !== null && reconciliation_order_id !== undefined;
 
 	$: t = $LL.reconciled_list_page;
-	async function handlePrintOrder() {
-		/**@TODO implement print functionality */
+	const dispatch = createEventDispatcher<{ reconcile: { supplierOrderIds: number[] }; download: { supplierOrderId: number } }>();
+
+	function handlePrintOrder() {
+		/** @TODO Implement print functionality */
+	}
+	function handleDownloadOrder(supplierOrderId: number) {
+		const generatedLines = generateLinesForDownload(orderLines[0]?.customerId, orderLines[0]?.orderFormat, orderLines);
+
+		downloadAsTextFile(generatedLines, `${supplier_order_id}-${supplier_name}-${orderLines[0]?.orderFormat}`);
 	}
 
 	async function handleReconcileSelf() {
@@ -121,6 +130,10 @@
 								<ListTodo aria-hidden focusable="false" size={20} />
 							</button>
 						{/if}
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleDownloadOrder(id)}>
+							{t.labels.download_order()}
+							<HardDriveDownload aria-hidden focusable="false" size={20} />
+						</button>
 					</div>
 				</div>
 			</div>

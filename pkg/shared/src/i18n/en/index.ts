@@ -356,7 +356,9 @@ const reconciled_list_page = {
 	labels: {
 		view_reconciliation: "View Reconciliation",
 		reconcile: "Reconcile",
-		print_order: "Print Order"
+		print_order: "Print Order",
+		download_order: "Download Order"
+
 	},
 	stats: {
 		total_books: "Total books",
@@ -711,7 +713,6 @@ const supplier_orders_component = {
 		view_order: "View Order",
 		reconcile: "Reconcile",
 		view_reconciliation: "View Reconciliation",
-		download_order: "Download Order"
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",
@@ -920,7 +921,8 @@ const forms = {
 			address: "Address",
 			customer_id: "Customer ID",
 			cancel_button: "Cancel",
-			order_format: "Order Format"
+			order_format: "Order Format",
+			order_format_message: "Please select an order format"
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"

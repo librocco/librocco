@@ -39,10 +39,6 @@
 		goto(appHash("supplier_orders", supplierOrderId));
 	}
 
-	async function handleDownloadOrder(supplierOrderId: number) {
-		dispatch("download", { supplierOrderId: supplierOrderId });
-	}
-
 	$: t = $LL.supplier_orders_component.ordered_table;
 </script>
 
@@ -95,9 +91,7 @@
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}>
 							{t.view_order()}
 						</button>
-						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleDownloadOrder(id)}>
-							{t.download_order()}
-						</button>
+
 						{#if !reconciled}
 							<button
 								class="btn-primary btn-sm btn flex-nowrap gap-x-2.5"

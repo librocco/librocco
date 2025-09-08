@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Infer } from "sveltekit-superforms";
+import type { TranslationFunctions } from "@librocco/shared";
 
 export type DeviceSettingsSchema = Infer<typeof deviceSettingsSchema>;
 export const deviceSettingsSchema = z.object({
@@ -86,14 +87,19 @@ export const createCustomerOrderSchema = (kind: "create" | "update") => {
 	});
 };
 
-export type SupplierSchema = Infer<typeof supplierSchema>;
-export const supplierSchema = z.object({
-	id: z.number(),
-	name: z.string().min(1),
-	email: z.string().max(0).optional().or(z.string().email().optional()),
-	address: z.string().optional(),
-	customerId: z.number().default(0),
-	orderFormat: z
-		.enum(["", "PBM", "Standard", "RCS-3", "RCS-5", "Loescher-3", "Loescher-5"])
-		.refine((orderFormat) => orderFormat !== "", { message: "Please select an order format" })
-});
+export type SupplierSchema = Infer<ReturnType<typeof supplierSchema>>;
+export const supplierSchema = (LL: TranslationFunctions) =>
+	z.object({
+		id: z.number(),
+		name: z.string().min(1),
+		email: z.string().max(0).optional().or(z.string().email().optional()),
+		address: z.string().optional(),
+		customerId: z.number().default(0),
+		orderFormat: z
+			.enum(["", "PBM", "Standard", "RCS-3", "RCS-5", "Loescher-3", "Loescher-5"])
+			/** @TODO not sure how to fix this, the correct type would be
+			 * to use "message" instead of "error" but that results in the error not being displayed
+			 * and when it is displayed, it's a generic "Input invalid" message
+			 *  */
+			.refine((orderFormat) => orderFormat !== "", { error: LL.forms.supplier_meta.labels.order_format_message() } as any)
+	});

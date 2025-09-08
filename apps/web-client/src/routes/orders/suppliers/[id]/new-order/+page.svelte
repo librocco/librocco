@@ -12,14 +12,7 @@
 
 	import type { PageData } from "./$types";
 	import LL from "@librocco/shared/i18n-svelte";
-	import { orderFormats } from "$lib/enums/orders";
-	import {
-		generateLoescherFormat,
-		generatePearsonFormat,
-		generateStandardFormat,
-		generateRcsFormat,
-		downloadAsTextFile
-	} from "$lib/utils/misc";
+	import { generateLinesForDownload, downloadAsTextFile } from "$lib/utils/misc";
 	import { TooltipWrapper } from "$lib/components";
 	import { testId } from "@librocco/shared";
 	import { SquareArrowUpRight } from "$lucide";
@@ -94,37 +87,7 @@
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		await createSupplierOrder(db, id, supplier_id, selection);
 
-		let generatedLines = "";
-		switch (supplier?.orderFormat) {
-			case orderFormats.pbm:
-				generatedLines = generatePearsonFormat(supplier.customerId, selection);
-
-				break;
-			case orderFormats.standard:
-				generatedLines = generateStandardFormat(supplier.customerId, selection);
-
-				break;
-			case orderFormats.rcs3:
-				generatedLines = generateRcsFormat(supplier.customerId, selection, 3);
-
-				break;
-			case orderFormats.rcs5:
-				generatedLines = generateRcsFormat(supplier.customerId, selection, 5);
-
-				break;
-			case orderFormats.loescher3:
-				generatedLines = generateLoescherFormat(supplier.customerId, selection, 3);
-
-				break;
-			case orderFormats.loescher5:
-				generatedLines = generateLoescherFormat(supplier.customerId, selection, 5);
-
-				break;
-			default:
-				console.warn("Unknown supplier orderFormat; defaulting to Standard.");
-				generatedLines = generateStandardFormat(supplier.customerId, selection);
-				break;
-		}
+		const generatedLines = generateLinesForDownload(supplier.customerId, supplier?.orderFormat, selection);
 
 		downloadAsTextFile(generatedLines, `${id}-${supplier.name}-${supplier.orderFormat}`);
 		// TODO: We could either go to the new supplier order "placed" view when it's created
@@ -166,22 +129,17 @@
 						<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
 							<h2 class="text-2xl font-medium">{supplier_name}</h2>
 
-							<span class="badge-primary badge-lg badge badge-md gap-x-2">
-								#{supplier_id}
-							</span>
-							<div class="stat bg-base-100 max-md:py-2 md:px-1">
-								<dt class="stat-title">{t.stats.order_format()}</dt>
-								{#if order_format}
-									<p class="stat-value">{order_format}</p>
-								{:else}
-									<p class="stat-desc">{t.stats.no_order_format()}</p>
-								{/if}
-								<div class="mt-2 flex flex-row items-center justify-between">
-									<a class="badge-primary badge-lg badge gap-x-2 hover:badge-outline" href={appHash("suppliers", supplier_id)}>
-										{t.stats.go_to_supplier()}
-										<SquareArrowUpRight size={12} />
-									</a>
-								</div>
+							<div class="mt-2 flex flex-row items-center justify-between">
+								<span class="badge-outline badge-lg badge badge-md mr-2 gap-x-2">
+									#{supplier_id}
+								</span>
+								<button
+									class="badge-primary badge-lg badge gap-x-2 hover:badge-outline"
+									on:click={() => goto(appHash("suppliers", supplier_id))}
+								>
+									aaaaa{t.stats.go_to_supplier()}
+									<SquareArrowUpRight size={12} />
+								</button>
 							</div>
 						</div>
 					</div>
@@ -196,6 +154,17 @@
 								<dt class="stat-title">{t.stats.total_value()}</dt>
 								<dd class="stat-value text-2xl">€{totalPossiblePrice.toFixed(2)}</dd>
 							</div>
+						</div>
+						<div class="stat bg-base-100 max-md:py-2 md:px-1">
+							<dt class="stat-title">{t.stats.order_format()}</dt>
+							{#if order_format}
+								<p class="stat-value text-xl">{order_format}</p>
+							{:else}
+								<!-- <p class="stat-desc">{t.stats.no_order_format()}</p> -->
+								<a class="badge-primary badge-lg badge gap-x-2 hover:badge-outline" href={appHash("suppliers", supplier_id)}>
+									{t.stats.no_order_format()}
+								</a>
+							{/if}
 						</div>
 					</dl>
 				</div>
