@@ -59,14 +59,14 @@
 				</FormFieldProxy>
 			</div>
 			<div class="form-control gap-y-2">
-				<FormFieldProxy {form} name="address">
+				<FormFieldProxy {form} name="customerId">
 					<TextControl label={$LL.forms.supplier_meta.labels.customer_id()} let:controlAttrs>
 						<input {...controlAttrs} bind:value={$formStore.customerId} class="input-bordered input w-full" type="number" />
 					</TextControl>
 				</FormFieldProxy>
 			</div>
 			<div class="form-control gap-y-2">
-				<FormFieldProxy {form} name="orderFormat">
+				<FormFieldProxy {form} let:errors let:errAttrs let:errAction name="orderFormat">
 					<label class="form-control w-full">
 						<div class="label">{$LL.forms.supplier_meta.labels.order_format()}</div>
 						<select bind:value={$formStore.orderFormat} class="select-bordered select w-full">
@@ -74,6 +74,11 @@
 								<option>{format}</option>
 							{/each}
 						</select>
+						<span class="font-regular pt-2 text-red-500" {...errAttrs} use:errAction>
+							{#each errors as error}
+								{error}
+							{/each}
+						</span>
 					</label>
 				</FormFieldProxy>
 			</div>

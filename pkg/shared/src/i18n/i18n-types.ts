@@ -1550,6 +1550,10 @@ type RootTranslation = {
 			 * P​r​i​n​t​ ​O​r​d​e​r
 			 */
 			print_order: string
+			/**
+			 * D​o​w​n​l​o​a​d​ ​O​r​d​e​r
+			 */
+			download_order: string
 		}
 		stats: {
 			/**
@@ -1793,10 +1797,6 @@ type RootTranslation = {
 			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
-			/**
-			 * D​o​w​n​l​o​a​d​ ​O​r​d​e​r
-			 */
-			download_order: string
 		}
 		reconciling_table: {
 			/**
@@ -2472,6 +2472,10 @@ type RootTranslation = {
 				 * O​r​d​e​r​ ​F​o​r​m​a​t
 				 */
 				order_format: string
+				/**
+				 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​n​ ​o​r​d​e​r​ ​f​o​r​m​a​t
+				 */
+				order_format_message: string
 			}
 			aria: {
 				/**
@@ -4284,6 +4288,10 @@ export type TranslationFunctions = {
 			 * Print Order
 			 */
 			print_order: () => LocalizedString
+			/**
+			 * Download Order
+			 */
+			download_order: () => LocalizedString
 		}
 		stats: {
 			/**
@@ -4522,10 +4530,6 @@ export type TranslationFunctions = {
 			 * View Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
-			/**
-			 * Download Order
-			 */
-			download_order: () => LocalizedString
 		}
 		reconciling_table: {
 			/**
@@ -5193,6 +5197,10 @@ export type TranslationFunctions = {
 				 * Order Format
 				 */
 				order_format: () => LocalizedString
+				/**
+				 * Please select an order format
+				 */
+				order_format_message: () => LocalizedString
 			}
 			aria: {
 				/**

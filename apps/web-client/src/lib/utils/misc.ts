@@ -1,3 +1,5 @@
+import type { Format } from "$lib/db/cr-sqlite/types";
+import { orderFormats } from "$lib/enums/orders";
 import type { BookData, BookFetchResultEntry } from "@librocco/shared";
 type CustomerOrderLineSelection = {
 	isbn: string;
@@ -103,6 +105,38 @@ export function generateLoescherFormat(customerId: number, lines: CustomerOrderL
 	return lines.map((line) => formatLine(customerId, line.isbn, line.quantity, 6, quantityLength)).join("\n");
 }
 
+export function generateLinesForDownload(customerId: number, orderFormat: Format, lines: CustomerOrderLineSelection[]) {
+	let generatedLines = "";
+	switch (orderFormat) {
+		case orderFormats.pbm:
+			generatedLines = generatePearsonFormat(customerId, lines);
+
+			break;
+		case orderFormats.standard:
+			generatedLines = generateStandardFormat(customerId, lines);
+
+			break;
+		case orderFormats.rcs3:
+			generatedLines = generateRcsFormat(customerId, lines, 3);
+
+			break;
+		case orderFormats.rcs5:
+			generatedLines = generateRcsFormat(customerId, lines, 5);
+
+			break;
+		case orderFormats.loescher3:
+			generatedLines = generateLoescherFormat(customerId, lines, 3);
+
+			break;
+		case orderFormats.loescher5:
+			generatedLines = generateLoescherFormat(customerId, lines, 5);
+
+			break;
+		default:
+			break;
+	}
+	return generatedLines;
+}
 export function downloadAsTextFile(content: string, filename: string) {
 	const blob = new Blob([content], { type: "text/plain" });
 	const url = URL.createObjectURL(blob);
@@ -123,6 +157,7 @@ function formatLine(cust: number, isbn: string, quantity: number, custLength: nu
 		digitsIsbn = digitsIsbn.padStart(13, "0");
 	} else if (digitsIsbn.length > 13) {
 		// throw error??
+		console.log("Invalid ISBN length:", digitsIsbn.length);
 		return "";
 	}
 	const paddedQuantity = String(quantity).padStart(quantityLength, "0");
