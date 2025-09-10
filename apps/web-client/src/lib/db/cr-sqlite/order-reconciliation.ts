@@ -28,13 +28,21 @@
  * - The `reconciliation_order_lines` table contains the book data lines for a scanned _delivered_ books
  */
 
-import { asc } from "@librocco/shared";
+import { _group, asc } from "@librocco/shared";
 
-import type { DBAsync, TXAsync, ReconciliationOrder, ReconciliationOrderLine, DBReconciliationOrder } from "./types";
+import type {
+	DBAsync,
+	TXAsync,
+	ReconciliationOrder,
+	ReconciliationOrderLine,
+	DBReconciliationOrder,
+	PossibleSupplierOrderLine
+} from "./types";
 
 import { timed } from "$lib/utils/timer";
 
 import { multiplyString } from "./customers";
+import { createSupplierOrderTxSafe } from "./suppliers";
 
 /** Thrown from `createReconciliationOrder` when some of the provided supplier order ids don't match any existing supplier orders */
 export class ErrSupplierOrdersNotFound extends Error {
@@ -358,13 +366,16 @@ async function _getReconciliationOrderLines(db: TXAsync, id: number): Promise<Re
  * Finalizes a reconciliation order and updates corresponding customer order lines
  * @param db
  * @param id - The ID of the reconciliation order to finalize
+ * @param supplierKeepsTrack - a map { isbn => supplierId } of lines that were underdelivered, but shouldn't be rejected (for manual reordering)
+ * as the respective supplier keeps track of underdelivered orders
+ *
  * @throws Error if:
  * - ID is 0 or undefined
  * - Reconciliation order not found
  * - Order is already finalized
  * - Customer order lines format is invalid
  */
-async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
+async function _finalizeReconciliationOrder(db: DBAsync, id: number, supplierKeepsTrack = new Map<string, number>()) {
 	const reconOrder = await getReconciliationOrder(db, id);
 	if (!reconOrder) {
 		throw new ErrReconciliationOrderNotFound(id);
@@ -390,6 +401,8 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 
 	const overdeliveredLines = new Map<string, { ordered: number; delivered: number }>();
 
+	const continuationOrderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[] = [];
+
 	return db.tx(async (txDb) => {
 		const timestamp = Date.now();
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1, updatedAt = ? WHERE id = ?;`, [timestamp, id]);
@@ -399,11 +412,22 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		for (const isbn of allISBNS) {
 			const orderedQuantity = orderedLines.get(isbn) || 0;
 			const receivedQuantity = receivedLines.get(isbn) || 0;
+
 			// The number of order lines that were ordered, but weren't delivered
-			const rejectQuantity = orderedQuantity - receivedQuantity;
+			const deltaQuantity = receivedQuantity - orderedQuantity;
+			const missingQuantity = Math.max(0, -deltaQuantity);
+
+			// NOTE: the following is only applicable if some quantity is missing (otherwise the both quantities are 0 || 0 = 0)
+			//
+			// If the ISBN is marked as "booked with supplier" (supplier already keeps track of underdelivered books), add it to mark as booked pseudo-order.
+			// Otherwise reject the appropriate quantity (from customer orders) -- indicating the manual reordering requirement
+			//
+			// NOTE: notice that the missing quantity (if any) will belong to exactly one group (mark as booked / reject - reorder manually)
+			const rejectQuantity = supplierKeepsTrack.has(isbn) ? 0 : missingQuantity;
+			const bookedWithSupplierQuantity = supplierKeepsTrack.has(isbn) ? missingQuantity : 0;
 
 			// Check if some books were overdelivered
-			if (rejectQuantity < 0) {
+			if (deltaQuantity > 0) {
 				overdeliveredLines.set(isbn, { ordered: orderedQuantity, delivered: receivedQuantity });
 			}
 
@@ -421,6 +445,8 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 			//
 			// The reason we do this is that, while there should always be at least n + m in-progress lines in the DB, the difference might happen,
 			// so we're making sure we're resistant to that scenario.
+			//
+			// NOTE: .splice as we want to remove the filled lines before moving on to rejected lines
 			const receivedIds = customerOrderLines.splice(0, receivedQuantity).map(({ id }) => id);
 			const rejectedIds = customerOrderLines
 				.reverse()
@@ -439,14 +465,27 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 			);
 
 			// Mark the rejected books
-			await txDb.exec(
-				`
+			if (rejectedIds.length) {
+				await txDb.exec(
+					`
 					UPDATE customer_order_lines
 					SET placed = NULL
 					WHERE id IN (${multiplyString("?", rejectedIds.length)})
 				`,
-				rejectedIds
-			);
+					rejectedIds
+				);
+			}
+
+			// Enqueue the "booked with supplier" quantity for the pseudo-order
+			if (bookedWithSupplierQuantity > 0) {
+				continuationOrderLines.push({ isbn, quantity: bookedWithSupplierQuantity, supplier_id: supplierKeepsTrack.get(isbn)! });
+			}
+		}
+
+		// Create continuation orders (grouped by supplier_id), TODO: we might want to group those per their parent supplier orders
+		for (const [supplierId, lines] of _group(continuationOrderLines, (line) => [line.supplier_id, line])) {
+			const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+			await createSupplierOrderTxSafe(txDb, id, supplierId, [...lines]);
 		}
 
 		// NOTE: It might happen that the number of books delivered is greater than the number of books ordered IN THIS SUPPLIER ORDER
@@ -454,6 +493,10 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		//
 		// NOTE: Currently, if the number delivered is greater for this supplier order, but there are additional customer order lines for a particular book,
 		// they will be reconcile early and extra stock will happen only after there are no more customer order lines to receive, but the books keep coming in.
+		//
+		// TODO: The note above says the overdelivery is handled by:
+		// - filling more customer lines if there are any (this is correct)
+		// - aggregating the overdelivered books in stock (delivered > pending customer orders) -- I don't see this being the case
 		if (overdeliveredLines.size > 0) {
 			const msg = [
 				"Number of books delivered is greater than the number of books ordered:",
@@ -467,6 +510,7 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		}
 	});
 }
+
 export const createReconciliationOrder = timed(_createReconciliationOrder);
 export const getAllReconciliationOrders = timed(_getAllReconciliationOrders);
 export const getReconciliationOrder = timed(_getReconciliationOrder);
