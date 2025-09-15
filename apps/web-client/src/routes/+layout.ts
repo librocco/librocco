@@ -16,15 +16,16 @@ import { setLocale } from "@librocco/shared/i18n-svelte";
 import { loadedLocales } from "@librocco/shared/i18n-util";
 import { locales } from "@librocco/shared/i18n-util";
 
-import { DEFAULT_LOCALE, DEFAULT_VFS, IS_E2E } from "$lib/constants";
+import { DEFAULT_LOCALE, DEFAULT_VFS, IS_DEMO, IS_E2E } from "$lib/constants";
 
 import { appPath } from "$lib/paths";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
-import { ErrDBCorrupted, ErrDBSchemaMismatch } from "$lib/db/cr-sqlite/db";
+import { ErrDBCorrupted, ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/db";
 import { validateVFS, type VFSWhitelist } from "$lib/db/cr-sqlite/core/vfs";
 
 import { updateTranslationOverrides } from "$lib/i18n-overrides";
+import { DEMO_VFS } from "$lib/db/cr-sqlite/core/constants";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/#/stock/")
 const redirectPaths = ["", "/", "/#", "/#/"].map((path) => `${base}${path}`);
@@ -71,6 +72,21 @@ export const load: LayoutLoad = async ({ url }) => {
 		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
 
 		try {
+			// DEMO section
+			if (IS_DEMO) {
+				// In demo mode we use the hardcoded VFS
+				const vfs = DEMO_VFS;
+				const dbCtx = await getInitializedDB(get(dbid), vfs);
+
+				// Perform additional check - is demo DB empty?
+				const [res] = await dbCtx.db.execA("SELECT value FROM crsql_master WHERE key = 'demo_initialised'");
+				if (!res?.length || res[0] != "true") {
+					throw new ErrDemoDBNotInitialised();
+				}
+
+				return { dbCtx, plugins, error: null };
+			}
+
 			// We're allowing for storing of (whitelisted) vfs name in local storage for selection.
 			// This will usually only happen in tests/benchmarks and the fallback will
 			// be used in production
@@ -80,7 +96,7 @@ export const load: LayoutLoad = async ({ url }) => {
 		} catch (err) {
 			console.error("Error initializing DB", err);
 			// If know error, return it (it will ba handled in the shown dialog)
-			if (err instanceof ErrDBCorrupted || err instanceof ErrDBSchemaMismatch) {
+			if (err instanceof ErrDBCorrupted || err instanceof ErrDBSchemaMismatch || err instanceof ErrDemoDBNotInitialised) {
 				return { dbCtx: null, plugins, error: err as Error };
 			}
 
