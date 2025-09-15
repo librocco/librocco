@@ -383,17 +383,27 @@
       "settings": "Settings",
       "device_settings": "Device settings",
       "sync_settings": "Sync settings",
-      "db_management": "Database management"
+      "db_management": "Database management",
+	  "demo_setup": "Load the DB with data",
+	  "demo_reset": "Reset the DB to initial state ?"
     },
     "descriptions": {
       "sync_settings": "Manage DB name, sync URL and the connection. Note: This will be merged with DB selection in the future",
       "db_management": "Use this section to create, select, import, export or delete a database",
       "import": "Drag and drop your .sqlite3 file here to import",
-      "device_settings": "Manage connections to external devices"
+      "device_settings": "Manage connections to external devices",
+	  "demo_setup_1": "Click on the button below to load the DB prepupulated with demo data",
+	  "demo_setup_2": "This will download the demo DB .sqlite3 file and store it to browser's OPFS (for in app usage)",
+	  "demo_reset_1": "Click on the button below to reset the DB to initial state",
+	  "demo_reset_2": "All changes made will be lost and the DB will be reset to initial demo state."
     },
     "actions": {
       "nuke_and_resync": "Nuke and resync"
     },
+	"demo": {
+		"fetch_db": "Set up the demo database",
+		"reset_db": "Reset database"
+	},
     "stats": {
       "version": "Version"
     },
