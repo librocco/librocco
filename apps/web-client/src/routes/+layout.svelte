@@ -17,7 +17,7 @@
 
 	import type { LayoutData } from "./$types";
 
-	import { DEFAULT_VFS, IS_DEBUG, IS_E2E } from "$lib/constants";
+	import { DEFAULT_VFS, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
@@ -25,7 +25,7 @@
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
 	import { sync, syncConfig, syncActive, dbid, newSyncProgressStore } from "$lib/db";
-	import { clearDb, ErrDBSchemaMismatch, getDB, schemaName, schemaContent } from "$lib/db/cr-sqlite/db";
+	import { clearDb, ErrDBSchemaMismatch, getDB, schemaName, schemaContent, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/db";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -103,10 +103,21 @@
 
 	let disposer: () => void;
 
+	onMount(() => {
+		// Control the invalidation of the stock cache in central spot
+		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
+		// between the last cached value and the current one and invalidates the cache if needed
+		disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
+	});
+
+	// Sync
 	const syncProgressStore = newSyncProgressStore();
 	const { progress } = syncProgressStore;
 
 	onMount(() => {
+		// We currently don't support the sync in demo mode
+		if (IS_DEMO) return;
+
 		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
 		document.body.setAttribute("hydrated", "true");
 
@@ -138,11 +149,6 @@
 			}
 		};
 		window.addEventListener("beforeunload", preventUnloadIfSyncing);
-
-		// Control the invalidation of the stock cache in central spot
-		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
-		// between the last cached value and the current one and invalidates the cache if needed
-		disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
 	});
 
 	onDestroy(() => {
@@ -240,6 +246,9 @@
 	};
 
 	$: ({ layout: tLayout, common: tCommon } = $LL);
+
+	// DEMO
+	const handleFetchDemoDB = async () => {};
 </script>
 
 <div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
@@ -332,7 +341,26 @@
 			use:melt={$errorDialogContent}
 		>
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
-				{#if error.name === ErrDBSchemaMismatch.name}
+				{#if error.name === ErrDemoDBNotInitialised.name}
+					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
+						{tLayout.error_dialog.demo_db_not_initialised.title()}
+					</h2>
+
+					<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
+						<span class="mb-2 block">
+							{tLayout.error_dialog.demo_db_not_initialised.call_to_action()}
+						</span>
+						<span class="mb-2 block">
+							{tLayout.error_dialog.demo_db_not_initialised.description()}
+						</span>
+					</p>
+
+					<div class="w-full text-end">
+						<button on:click={handleFetchDemoDB} type="button" class="btn-secondary btn">
+							{tLayout.error_dialog.demo_db_not_initialised.button()}
+						</button>
+					</div>
+				{:else if error.name === ErrDBSchemaMismatch.name}
 					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
 						{tLayout.error_dialog.schema_mismatch.title()}
 					</h2>

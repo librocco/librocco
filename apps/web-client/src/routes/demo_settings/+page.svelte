@@ -25,7 +25,6 @@
 
 	$: ({ settings_page: tSettings } = $LL);
 
-	const fetchDemoDB = () => {};
 	const resetDemoDB = () => {};
 </script>
 
@@ -35,34 +34,18 @@
 			<h4>{tSettings.stats.version()} {VERSION}</h4>
 		</div>
 
-		{#if !data.dbCtx?.db}
-			<div class="flex h-full flex-col flex-wrap space-y-12 overflow-y-auto p-6">
-				<div data-testid={testId("database-management-container")} class="flex min-h-[320px] flex-wrap gap-6 px-4 md:flex-row">
-					<div class="w-full">
-						<h2 class="text-base font-semibold leading-7 text-gray-900">{tSettings.headings.demo_setup()}</h2>
-						<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.demo_setup_1()}</p>
-						<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.demo_setup_2()}</p>
-					</div>
+		<div class="flex h-full flex-col flex-wrap space-y-12 overflow-y-auto p-6">
+			<div data-testid={testId("database-management-container")} class="flex min-h-[320px] flex-wrap gap-6 px-4 md:flex-row">
+				<div class="w-full">
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{tSettings.headings.demo_reset()}</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.demo_reset_1()}</p>
+					<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.demo_reset_2()}</p>
+				</div>
 
-					<div class="flex w-full justify-end gap-x-2 px-4 py-6">
-						<button on:click={fetchDemoDB} type="button" class="btn-secondary btn">{tSettings.demo_actions.fetch_db()}</button>
-					</div>
+				<div class="flex w-full justify-end gap-x-2 px-4 py-6">
+					<button on:click={resetDemoDB} type="button" class="btn-secondary btn">{tSettings.demo_actions.reset_db()}</button>
 				</div>
 			</div>
-		{:else}
-			<div class="flex h-full flex-col flex-wrap space-y-12 overflow-y-auto p-6">
-				<div data-testid={testId("database-management-container")} class="flex min-h-[320px] flex-wrap gap-6 px-4 md:flex-row">
-					<div class="w-full">
-						<h2 class="text-base font-semibold leading-7 text-gray-900">{tSettings.headings.demo_reset()}</h2>
-						<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.demo_reset_1()}</p>
-						<p class="mt-1 text-sm leading-6 text-gray-600">{tSettings.descriptions.demo_reset_2()}</p>
-					</div>
-
-					<div class="flex w-full justify-end gap-x-2 px-4 py-6">
-						<button on:click={resetDemoDB} type="button" class="btn-secondary btn">{tSettings.demo_actions.reset_db()}</button>
-					</div>
-				</div>
-			</div>
-		{/if}
+		</div>
 	</div>
 </Page>

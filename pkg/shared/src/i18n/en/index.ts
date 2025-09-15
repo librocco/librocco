@@ -652,7 +652,6 @@ const settings_page = {
 		sync_settings: "Sync settings",
 		db_management: "Database management",
 
-		demo_setup: "Load the DB with data",
 		demo_reset: "Reset the DB to initial state ?"
 	},
 	descriptions: {
@@ -661,8 +660,6 @@ const settings_page = {
 		import: "Drag and drop your .sqlite3 file here to import",
 		device_settings: "Manage connections to external devices",
 
-		demo_setup_1: "Click on the button below to load the DB prepupulated with demo data",
-		demo_setup_2: "This will download the demo DB .sqlite3 file and store it to browser's OPFS (for in app usage)",
 		demo_reset_1: "Click on the button below to reset the DB to initial state",
 		demo_reset_2: "All changes made will be lost and the DB will be reset to initial demo state."
 	},
@@ -670,7 +667,6 @@ const settings_page = {
 		nuke_and_resync: "Nuke and resync"
 	},
 	demo_actions: {
-		fetch_db: "Set up the demo database",
 		reset_db: "Reset database"
 	},
 	stats: {
@@ -861,6 +857,13 @@ const layout = {
 		}
 	},
 	error_dialog: {
+		demo_db_not_initialised: {
+			title: "Load the DB with data",
+			call_to_action: "Click on the button below to load the DB prepupulated with demo data",
+			description: "This will download the demo DB .sqlite3 file and store it to browser's OPFS (for in app usage)",
+			button: "Load DB",
+
+		},
 		schema_mismatch: {
 			title: "Error: DB Schema mismatch",
 			description: "Your DB's schema version doesn't match the latest schema version. Click automigrate to migrate to the latest version.",
