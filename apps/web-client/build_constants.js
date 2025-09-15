@@ -19,3 +19,4 @@ function asBool(value) {
 
 export const USE_SUBMODULES = asBool(process.env.USE_SUBMODULES);
 export const IS_DEMO = asBool(process.env.PUBLIC_IS_DEMO);
+export const DEMO_DB_URL = process.env.PUBLIC_DEMO_DB_URL;
