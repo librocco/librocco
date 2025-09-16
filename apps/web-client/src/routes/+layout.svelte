@@ -11,7 +11,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import Menu from "$lucide/menu";
 
-	import { afterNavigate, invalidateAll } from "$app/navigation";
+	import { afterNavigate } from "$app/navigation";
 	import { browser } from "$app/environment";
 	import { beforeNavigate } from "$app/navigation";
 
@@ -42,6 +42,9 @@
 	import { deleteDBFromOPFS, checkOPFSFileExists, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
 
 	import { progressBar } from "$lib/actions";
+
+	import { goto } from "$lib/utils/navigation";
+	import { appPath } from "$lib/paths";
 
 	export let data: LayoutData;
 
@@ -258,7 +261,7 @@
 
 		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);
 
-		invalidateAll();
+		goto(appPath("stock"));
 	};
 </script>
 
