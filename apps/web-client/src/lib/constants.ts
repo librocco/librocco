@@ -33,4 +33,5 @@ export const VERSION = import.meta.env.VITE_GIT_SHA ? `${PKG_VERSION}-${import.m
 
 export { DEFAULT_VFS } from "$lib/db/cr-sqlite/core/constants";
 
+export const DEMO_DB_NAME = "librocco_demo_db.sqlite3";
 export const DEMO_DB_URL = PUBLIC_DEMO_DB_URL;

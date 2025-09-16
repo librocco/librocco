@@ -17,7 +17,7 @@
 
 	import type { LayoutData } from "./$types";
 
-	import { DEFAULT_VFS, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
+	import { IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
@@ -25,7 +25,8 @@
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
 	import { sync, syncConfig, syncActive, dbid, newSyncProgressStore } from "$lib/db";
-	import { clearDb, ErrDBSchemaMismatch, getDB, schemaName, schemaContent, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/db";
+	import { clearDb, getDB, schemaName, schemaContent } from "$lib/db/cr-sqlite/db";
+	import { ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";

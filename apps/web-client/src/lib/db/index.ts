@@ -2,7 +2,7 @@ import { derived, get as get, readable, type Writable } from "svelte/store";
 import { persisted } from "svelte-local-storage-store";
 import { browser } from "$app/environment";
 
-import { IS_DEMO } from "$lib/constants";
+import { DEMO_DB_NAME, IS_DEMO } from "$lib/constants";
 
 import type { SyncConfig } from "./sync";
 export * from "./sync";
@@ -10,7 +10,7 @@ export * from "./sync";
 // NOTE: we're purposefully casting the demo dbid to writable:
 // - for type simplicity - for most intents and purposes we'll have the selection available (production)
 // - in demo - we're purposefully using readable so that we get a runtime error if some background code is trying to change it
-export const dbid = IS_DEMO ? (readable("librocco_demo_db.sqlite3") as Writable<string>) : persisted("librocco-current-db", "dev");
+export const dbid = IS_DEMO ? (readable(DEMO_DB_NAME) as Writable<string>) : persisted("librocco-current-db", "dev");
 
 const url = persisted("librocco-sync-url", browser ? `${window.location.protocol}//${window.location.host}/sync` : "");
 
