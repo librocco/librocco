@@ -9,6 +9,7 @@ import type { DBAsync, TXAsync, Change, VFSWhitelist } from "./types";
 import { idbPromise, idbTxn } from "../indexeddb";
 import { getMainThreadDB, getWorkerDB } from "./core";
 import { DEFAULT_VFS } from "./core/constants";
+import { ErrDBCorrupted, ErrDBSchemaMismatch } from "./errors";
 
 export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
 
@@ -167,45 +168,4 @@ export async function clearDb() {
 
 	// TODO: This is a bit inconsistent -- maybe clear only the "dev" db
 	delete dbCache["dev"];
-}
-
-export class ErrDBCorrupted extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "ErrDBCorrupted";
-	}
-}
-
-type ErrDBSchemaMismatchPayload = { wantName: string; wantVersion: bigint; gotName: string; gotVersion: bigint };
-export class ErrDBSchemaMismatch extends Error {
-	wantName: string;
-	wantVersion: bigint;
-
-	gotName: string;
-	gotVersion: bigint;
-
-	constructor({ wantName, wantVersion, gotName, gotVersion }: ErrDBSchemaMismatchPayload) {
-		const message = [
-			"DB name/schema mismatch:",
-			`  req name: ${wantName}, got name: ${gotName}`,
-			`  req version: ${wantVersion}, got version: ${gotVersion}`
-		].join("\n");
-
-		super(message);
-
-		this.name = "ErrDBSchemaMismatch";
-
-		this.wantName = wantName;
-		this.wantVersion = wantVersion;
-
-		this.gotName = gotName;
-		this.gotVersion = gotVersion;
-	}
-}
-
-export class ErrDemoDBNotInitialised extends Error {
-	constructor() {
-		super("Demo DB not initialised");
-		this.name = "ErrDemoDBNotInitialised";
-	}
 }
