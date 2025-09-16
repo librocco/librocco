@@ -32,8 +32,14 @@ export function validateVFS(vfs: string): vfs is VFSWhitelist {
 	return Boolean(vfsLookup[vfs]);
 }
 
-export const opfsVFSList = new Set(["opfs-any-context", "opfs-adaptive-vfs", "opfs-coop-sync"]);
+export const opfsVFSList = new Set<VFSWhitelist>([
+	"asyncify-opfs-any-context",
+	"asyncify-opfs-adaptive",
+	"asyncify-opfs-coop-sync",
+	"sync-opfs-coop-sync",
+	"jspi-opfs-permuted"
+]);
 
 export function vfsSupportsOPFS(vfs: string): boolean {
-	return opfsVFSList.has(vfs);
+	return opfsVFSList.has(vfs as VFSWhitelist);
 }

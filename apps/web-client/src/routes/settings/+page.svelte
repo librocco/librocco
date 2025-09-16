@@ -104,10 +104,10 @@
 				await dir.removeEntry(name);
 			} catch (e) {
 				// Skip file if not exists
-				if ((e as Error).name === "NotFoundError") {
-					// Throw otherwise
-					throw e;
-				}
+				if ((e as Error).name === "NotFoundError") return;
+
+				// Throw otherwise
+				throw e;
 			}
 		};
 		// NOTE: running with retries to make sure the file locks were released
