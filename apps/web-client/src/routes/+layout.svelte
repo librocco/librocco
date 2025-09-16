@@ -4,20 +4,20 @@
 	import "./global.css";
 
 	import { onDestroy, onMount } from "svelte";
-	import { type Readable, get } from "svelte/store";
+	import { get, writable } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
 
 	import { Subscription } from "rxjs";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import Menu from "$lucide/menu";
 
-	import { afterNavigate } from "$app/navigation";
+	import { afterNavigate, invalidateAll } from "$app/navigation";
 	import { browser } from "$app/environment";
 	import { beforeNavigate } from "$app/navigation";
 
 	import type { LayoutData } from "./$types";
 
-	import { IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
+	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
@@ -25,7 +25,7 @@
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
 	import { sync, syncConfig, syncActive, dbid, newSyncProgressStore } from "$lib/db";
-	import { clearDb, getDB, schemaName, schemaContent } from "$lib/db/cr-sqlite/db";
+	import { clearDb, getDB, schemaName, schemaContent, dbCache } from "$lib/db/cr-sqlite/db";
 	import { ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
@@ -37,9 +37,11 @@
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
 
-	import type { SyncProgress } from "$lib/workers/sync-transport-control";
 	import { LL } from "@librocco/shared/i18n-svelte";
 	import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
+	import { deleteDBFromOPFS, checkOPFSFileExists, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
+
+	import { progressBar } from "$lib/actions";
 
 	export let data: LayoutData;
 
@@ -113,7 +115,7 @@
 
 	// Sync
 	const syncProgressStore = newSyncProgressStore();
-	const { progress } = syncProgressStore;
+	const { progress: syncProgress } = syncProgressStore;
 
 	onMount(() => {
 		// We currently don't support the sync in demo mode
@@ -144,7 +146,7 @@
 
 		// Prevent user from navigating away if sync is in progress (this would result in an invalid DB state)
 		const preventUnloadIfSyncing = (e: BeforeUnloadEvent) => {
-			if (get(progress).active) {
+			if (get(syncProgress).active) {
 				e.preventDefault();
 				e.returnValue = "";
 			}
@@ -194,15 +196,7 @@
 	} = createDialog({
 		forceVisible: true
 	});
-	$: $syncDialogOpen = $progress.active;
-
-	/** An action used to (reactively) update the progress bar during sync */
-	function progressBar(node?: HTMLElement, progress?: Readable<SyncProgress>) {
-		progress.subscribe(({ nProcessed, nTotal }) => {
-			const value = nTotal > 0 ? nProcessed / nTotal : 0;
-			node?.style.setProperty("width", `${value * 100}%`);
-		});
-	}
+	$: $syncDialogOpen = $syncProgress.active;
 
 	const {
 		elements: {
@@ -249,7 +243,23 @@
 	$: ({ layout: tLayout, common: tCommon } = $LL);
 
 	// DEMO
-	const handleFetchDemoDB = async () => {};
+	const demoFetchProgress = writable({ active: false, nProcessed: 0, nTotal: 0 });
+
+	const handleFetchDemoDB = async () => {
+		// Sanity check: this should be unreachable as we validate the DEMO_DB_URL at build time
+		if (!DEMO_DB_URL) {
+			throw new Error("DEMO_DB_URL is not set");
+		}
+
+		// Remove the existing DB (if any)
+		if (await checkOPFSFileExists(DEMO_DB_NAME)) {
+			await deleteDBFromOPFS({ dbname: DEMO_DB_NAME, dbCache, syncActiveStore: syncActive }); // await removeOPFS
+		}
+
+		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);
+
+		invalidateAll();
+	};
 </script>
 
 <div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
@@ -318,9 +328,11 @@
 				<div class="mb-4 text-sm leading-6 text-gray-600" use:melt={$syncDialogDescription}>
 					<p class="mb-8">{tLayout.sync_dialog.description.in_progress()}</p>
 
-					<p class="mb-2">{tLayout.sync_dialog.description.progress({ nProcessed: $progress.nProcessed, nTotal: $progress.nTotal })}</p>
+					<p class="mb-2">
+						{tLayout.sync_dialog.description.progress({ nProcessed: $syncProgress.nProcessed, nTotal: $syncProgress.nTotal })}
+					</p>
 					<div class="mb-8 h-3 w-full overflow-hidden rounded">
-						<div use:progressBar={progress} class="h-full bg-cyan-300"></div>
+						<div use:progressBar={syncProgress} class="h-full bg-cyan-300"></div>
 					</div>
 
 					<p>
@@ -355,6 +367,10 @@
 							{tLayout.error_dialog.demo_db_not_initialised.description()}
 						</span>
 					</p>
+
+					<div class="mb-8 h-3 w-full overflow-hidden rounded">
+						<div use:progressBar={demoFetchProgress} class="h-full bg-cyan-300"></div>
+					</div>
 
 					<div class="w-full text-end">
 						<button on:click={handleFetchDemoDB} type="button" class="btn-secondary btn">
