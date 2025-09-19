@@ -18,7 +18,6 @@
 
 	import { progressBar } from "$lib/actions";
 
-	import { goto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
@@ -48,7 +47,9 @@
 
 		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);
 
-		goto(appPath("stock"));
+		// Do a full reload as invalidation sometimes takes awhile (depending on VFS I guess...),
+		// so it's nicer to show a loading state than have a feel of app hanging
+		window.location.href = appPath("stock");
 	};
 </script>
 
