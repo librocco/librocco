@@ -43,7 +43,6 @@
 
 	import { progressBar } from "$lib/actions";
 
-	import { goto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 
 	export let data: LayoutData;
@@ -86,6 +85,8 @@
 			window["sync"] = sync;
 
 			window["migrations"] = migrations;
+
+			window["deleteDBFromOPFS"] = (dbname: string) => deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
 		}
 
 		// This shouldn't affect much, but is here for the purpose of exhaustive handling
@@ -256,12 +257,14 @@
 
 		// Remove the existing DB (if any)
 		if (await checkOPFSFileExists(DEMO_DB_NAME)) {
-			await deleteDBFromOPFS({ dbname: DEMO_DB_NAME, dbCache, syncActiveStore: syncActive }); // await removeOPFS
+			await deleteDBFromOPFS({ dbname: DEMO_DB_NAME, dbCache, syncActiveStore: syncActive });
 		}
 
 		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);
 
-		goto(appPath("stock"));
+		// Do a full reload as invalidation sometimes takes awhile (depending on VFS I guess...),
+		// so it's nicer to show a loading state than have a feel of app hanging
+		window.location.href = appPath("stock");
 	};
 </script>
 
@@ -357,7 +360,7 @@
 			use:melt={$errorDialogContent}
 		>
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
-				{#if error.name === ErrDemoDBNotInitialised.name}
+				{#if error instanceof ErrDemoDBNotInitialised}
 					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
 						{tLayout.error_dialog.demo_db_not_initialised.title()}
 					</h2>
@@ -380,7 +383,7 @@
 							{tLayout.error_dialog.demo_db_not_initialised.button()}
 						</button>
 					</div>
-				{:else if error.name === ErrDBSchemaMismatch.name}
+				{:else if error instanceof ErrDBSchemaMismatch}
 					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
 						{tLayout.error_dialog.schema_mismatch.title()}
 					</h2>
