@@ -4,7 +4,7 @@
 	import "./global.css";
 
 	import { onDestroy, onMount } from "svelte";
-	import { type Readable, get } from "svelte/store";
+	import { get, writable } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
 
 	import { Subscription } from "rxjs";
@@ -17,7 +17,7 @@
 
 	import type { LayoutData } from "./$types";
 
-	import { DEFAULT_VFS, IS_DEBUG, IS_E2E } from "$lib/constants";
+	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
@@ -25,7 +25,8 @@
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
 	import { sync, syncConfig, syncActive, dbid, newSyncProgressStore } from "$lib/db";
-	import { clearDb, ErrDBSchemaMismatch, getDB, schemaName, schemaContent } from "$lib/db/cr-sqlite/db";
+	import { clearDb, getDB, schemaName, schemaContent, dbCache } from "$lib/db/cr-sqlite/db";
+	import { ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -36,9 +37,13 @@
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
 
-	import type { SyncProgress } from "$lib/workers/sync-transport-control";
 	import { LL } from "@librocco/shared/i18n-svelte";
 	import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
+	import { deleteDBFromOPFS, checkOPFSFileExists, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
+
+	import { progressBar } from "$lib/actions";
+
+	import { appPath } from "$lib/paths";
 
 	export let data: LayoutData;
 
@@ -80,6 +85,8 @@
 			window["sync"] = sync;
 
 			window["migrations"] = migrations;
+
+			window["deleteDBFromOPFS"] = (dbname: string) => deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
 		}
 
 		// This shouldn't affect much, but is here for the purpose of exhaustive handling
@@ -103,10 +110,21 @@
 
 	let disposer: () => void;
 
+	onMount(() => {
+		// Control the invalidation of the stock cache in central spot
+		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
+		// between the last cached value and the current one and invalidates the cache if needed
+		disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
+	});
+
+	// Sync
 	const syncProgressStore = newSyncProgressStore();
-	const { progress } = syncProgressStore;
+	const { progress: syncProgress } = syncProgressStore;
 
 	onMount(() => {
+		// We currently don't support the sync in demo mode
+		if (IS_DEMO) return;
+
 		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
 		document.body.setAttribute("hydrated", "true");
 
@@ -132,17 +150,12 @@
 
 		// Prevent user from navigating away if sync is in progress (this would result in an invalid DB state)
 		const preventUnloadIfSyncing = (e: BeforeUnloadEvent) => {
-			if (get(progress).active) {
+			if (get(syncProgress).active) {
 				e.preventDefault();
 				e.returnValue = "";
 			}
 		};
 		window.addEventListener("beforeunload", preventUnloadIfSyncing);
-
-		// Control the invalidation of the stock cache in central spot
-		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
-		// between the last cached value and the current one and invalidates the cache if needed
-		disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
 	});
 
 	onDestroy(() => {
@@ -187,15 +200,7 @@
 	} = createDialog({
 		forceVisible: true
 	});
-	$: $syncDialogOpen = $progress.active;
-
-	/** An action used to (reactively) update the progress bar during sync */
-	function progressBar(node?: HTMLElement, progress?: Readable<SyncProgress>) {
-		progress.subscribe(({ nProcessed, nTotal }) => {
-			const value = nTotal > 0 ? nProcessed / nTotal : 0;
-			node?.style.setProperty("width", `${value * 100}%`);
-		});
-	}
+	$: $syncDialogOpen = $syncProgress.active;
 
 	const {
 		elements: {
@@ -240,6 +245,27 @@
 	};
 
 	$: ({ layout: tLayout, common: tCommon } = $LL);
+
+	// DEMO
+	const demoFetchProgress = writable({ active: false, nProcessed: 0, nTotal: 0 });
+
+	const handleFetchDemoDB = async () => {
+		// Sanity check: this should be unreachable as we validate the DEMO_DB_URL at build time
+		if (!DEMO_DB_URL) {
+			throw new Error("DEMO_DB_URL is not set");
+		}
+
+		// Remove the existing DB (if any)
+		if (await checkOPFSFileExists(DEMO_DB_NAME)) {
+			await deleteDBFromOPFS({ dbname: DEMO_DB_NAME, dbCache, syncActiveStore: syncActive });
+		}
+
+		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);
+
+		// Do a full reload as invalidation sometimes takes awhile (depending on VFS I guess...),
+		// so it's nicer to show a loading state than have a feel of app hanging
+		window.location.href = appPath("stock");
+	};
 </script>
 
 <div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
@@ -308,9 +334,11 @@
 				<div class="mb-4 text-sm leading-6 text-gray-600" use:melt={$syncDialogDescription}>
 					<p class="mb-8">{tLayout.sync_dialog.description.in_progress()}</p>
 
-					<p class="mb-2">{tLayout.sync_dialog.description.progress({ nProcessed: $progress.nProcessed, nTotal: $progress.nTotal })}</p>
+					<p class="mb-2">
+						{tLayout.sync_dialog.description.progress({ nProcessed: $syncProgress.nProcessed, nTotal: $syncProgress.nTotal })}
+					</p>
 					<div class="mb-8 h-3 w-full overflow-hidden rounded">
-						<div use:progressBar={progress} class="h-full bg-cyan-300"></div>
+						<div use:progressBar={syncProgress} class="h-full bg-cyan-300"></div>
 					</div>
 
 					<p>
@@ -332,7 +360,30 @@
 			use:melt={$errorDialogContent}
 		>
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
-				{#if error.name === ErrDBSchemaMismatch.name}
+				{#if error instanceof ErrDemoDBNotInitialised}
+					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
+						{tLayout.error_dialog.demo_db_not_initialised.title()}
+					</h2>
+
+					<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
+						<span class="mb-2 block">
+							{tLayout.error_dialog.demo_db_not_initialised.call_to_action()}
+						</span>
+						<span class="mb-2 block">
+							{tLayout.error_dialog.demo_db_not_initialised.description()}
+						</span>
+					</p>
+
+					<div class="mb-8 h-3 w-full overflow-hidden rounded">
+						<div use:progressBar={demoFetchProgress} class="h-full bg-cyan-300"></div>
+					</div>
+
+					<div class="w-full text-end">
+						<button on:click={handleFetchDemoDB} type="button" class="btn-secondary btn">
+							{tLayout.error_dialog.demo_db_not_initialised.button()}
+						</button>
+					</div>
+				{:else if error instanceof ErrDBSchemaMismatch}
 					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
 						{tLayout.error_dialog.schema_mismatch.title()}
 					</h2>
