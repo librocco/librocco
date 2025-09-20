@@ -22,7 +22,7 @@ import { appPath } from "$lib/paths";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
 import { ErrDBCorrupted, ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
-import { validateVFS, type VFSWhitelist } from "$lib/db/cr-sqlite/core/vfs";
+import { validateVFS, vfsSupportsOPFS, type VFSWhitelist } from "$lib/db/cr-sqlite/core/vfs";
 
 import { updateTranslationOverrides } from "$lib/i18n-overrides";
 import { DEMO_VFS } from "$lib/db/cr-sqlite/core/constants";
@@ -81,7 +81,7 @@ export const load: LayoutLoad = async ({ url }) => {
 				}
 
 				// In demo mode we use the hardcoded VFS
-				const vfs = DEMO_VFS;
+				const vfs = getDemoVFSFromLocalStorage(DEMO_VFS);
 				const dbCtx = await getInitializedDB(get(dbid), vfs);
 
 				return { dbCtx, plugins, error: null };
@@ -146,6 +146,16 @@ function getVFSFromLocalStorage(fallback: VFSWhitelist): VFSWhitelist {
 	const vfs = window.localStorage.getItem("vfs") || fallback;
 	if (!validateVFS(vfs)) {
 		console.warn(`unknown value for vfs in local storage: ${vfs}, defaulting to: ${fallback}`);
+		return fallback;
+	}
+	return vfs;
+}
+
+function getDemoVFSFromLocalStorage(fallback: VFSWhitelist): VFSWhitelist {
+	const vfs = window.localStorage.getItem("demo_vfs") || fallback;
+
+	if (!vfsSupportsOPFS(vfs)) {
+		console.warn(`unsupported value for demo vfs in local storage: ${vfs}, defaulting to: ${fallback}`);
 		return fallback;
 	}
 	return vfs;
