@@ -32,6 +32,7 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 	let received = 0;
 
 	const reader = res.body.getReader();
+	// eslint-disable-next-line no-constant-condition
 	while (true) {
 		const { done, value } = await reader.read();
 		if (done) break;
