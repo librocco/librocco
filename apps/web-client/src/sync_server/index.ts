@@ -77,6 +77,16 @@ app.post("/:dbname/exec", async (req, res) => {
 	});
 });
 
+app.get("/:dbname/file", async (req, res) => {
+	const dbname = req.params.dbname;
+	const dbPath = path.resolve(wsConfig.dbFolder!, dbname);
+	if (!fs.existsSync(dbPath)) {
+		return res.status(404).json({ message: `File not found: ${dbPath}` });
+	}
+	console.log("Serving file:", dbPath);
+	return res.sendFile(dbPath);
+});
+
 server.listen(PORT, () => {
 	console.log("info", `listening on http://localhost:${PORT}!`);
 });

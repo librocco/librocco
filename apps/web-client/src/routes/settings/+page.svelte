@@ -197,7 +197,7 @@
 
 		// TODO: rethink setup around this
 		const url = new URL(sync_url);
-		url.pathname = `/fetch/${dbname}`;
+		url.pathname = `/${dbname}/file`;
 
 		try {
 			await fetchAndStoreDBFile(url.href, dbname);
