@@ -28,7 +28,7 @@
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 	import { retry } from "$lib/utils/misc";
-	import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
+	import { checkOPFSFileExists, deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
 
 	export let data: PageData;
 
@@ -186,7 +186,35 @@
 
 	let dialogContent: (DialogContent & { type: "create" | "delete" }) | null = null;
 
-	const nukeAndResyncDB = async () => {
+	const nukeAndResyncOPFS = async () => {
+		const dbname = get(dbid);
+
+		if (await checkOPFSFileExists(dbname)) {
+			await deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
+		}
+
+		const sync_url = get(syncConfig).url;
+
+		// TODO: rethink setup around this
+		const url = new URL(sync_url);
+		url.pathname = `/fetch/${dbname}`;
+
+		try {
+			await fetchAndStoreDBFile(url.href, dbname);
+		} catch (err) {
+			// If error fetching the DB file, fallback to regular sync
+			console.error(err);
+			console.log("Error fetching DB file, falling back to regular sync");
+		}
+
+		// Reinstate the sync
+		// - in case of DB file fetched, we should be in-sync
+		// - in case of error fetching DB file, this will trigger a full sync
+		await invalidateAll();
+		syncActive.set(true);
+	};
+
+	const nukeAndResyncIDB = async () => {
 		// Stop the ongoing sync
 		syncActive.set(false);
 
@@ -198,6 +226,24 @@
 
 		// Reset the sync
 		syncActive.set(true);
+	};
+
+	const nukeAndResyncDB = async () => {
+		const dbCtx = data.dbCtx;
+		if (!dbCtx) {
+			throw new Error("Cannot nuke and resync: no db context: this indicates an error in app core logic");
+		}
+		const { vfs } = dbCtx;
+
+		if (vfsSupportsOPFS(data.dbCtx?.vfs)) {
+			console.log("OPFS supported VFS detected:", vfs);
+			console.log("Fetching DB file to optimise sync process");
+			await nukeAndResyncOPFS();
+		} else {
+			console.log("No-OPFS VFS detected:", vfs);
+			console.log("Using regular sync methods withut optimisations");
+			await nukeAndResyncIDB();
+		}
 	};
 
 	$: ({ settings_page: tSettings, common: tCommon } = $LL);
