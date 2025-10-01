@@ -192,7 +192,7 @@
 	// we're delaying the showing of the dialog by some timeout (showSyncDebounce),
 	// and cancelling in case the sync finishes before that
 	const syncShowDebounce = 2000;
-	let tSyncDialog: NodeJS.Timeout = null;
+	let tSyncDialog: any = null;
 	$: {
 		if ($progress.active) {
 			tSyncDialog = setTimeout(() => syncDialogOpen.set(true), syncShowDebounce);
