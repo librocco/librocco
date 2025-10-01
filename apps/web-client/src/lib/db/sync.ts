@@ -74,7 +74,7 @@ const newSyncInterface = () => {
 
 export const sync = newSyncInterface();
 
-export const newSyncProgressStore = () => {
+const newSyncProgressStore = () => {
 	const progress = writable<ProgressState>({ active: false, nProcessed: 0, nTotal: 0 });
 
 	let disposer: () => void;
@@ -89,3 +89,4 @@ export const newSyncProgressStore = () => {
 
 	return { start, stop, progress };
 };
+export const syncProgressStore = newSyncProgressStore();

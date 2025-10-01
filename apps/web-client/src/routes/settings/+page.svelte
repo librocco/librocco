@@ -21,7 +21,7 @@
 
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { dbid, syncConfig, syncActive } from "$lib/db";
+	import { dbid, syncConfig, syncActive, syncProgressStore } from "$lib/db";
 	import { clearDb, dbCache, getInitializedDB } from "$lib/db/cr-sqlite/db";
 	import { opfsVFSList, vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 
@@ -200,7 +200,7 @@
 		url.pathname = `/${dbname}/file`;
 
 		try {
-			await fetchAndStoreDBFile(url.href, dbname);
+			await fetchAndStoreDBFile(url.href, dbname, syncProgressStore.progress);
 		} catch (err) {
 			// If error fetching the DB file, fallback to regular sync
 			console.error(err);
