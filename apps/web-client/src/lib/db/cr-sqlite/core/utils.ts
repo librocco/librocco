@@ -31,6 +31,7 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 	progressStore.set({ active: true, nProcessed: 0, nTotal: contentLength });
 	let received = 0;
 
+	// Initial write (from res stream to OPFS)
 	const reader = res.body.getReader();
 	// eslint-disable-next-line no-constant-condition
 	while (true) {
@@ -42,8 +43,26 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 
 		progressStore.set({ active: true, nProcessed: received, nTotal: contentLength });
 	}
-
+	// Close the initial write
 	await writable.close();
+
+	// Check for locking mode (and disable WAL)
+	const file = await fileHandle.getFile();
+	const buf = await file.arrayBuffer();
+	const view = new Uint8Array(buf, 0, Math.min(32, buf.byteLength));
+	if (view.length < 20) throw new Error("File too small to be a valid SQLite DB.");
+	const isWal = view[18] === 0x02 || view[19] === 0x02;
+
+	// If is WAL mode, update the header to disable it (set to ROLLBACK mode)
+	if (isWal) {
+		const writable = await fileHandle.createWritable({ keepExistingData: true });
+		// Make sure the file header says: no WAL (use rollback mode)
+		await writable.write({ type: "write", position: 18, data: new Uint8Array([0x01]) });
+		await writable.write({ type: "write", position: 19, data: new Uint8Array([0x01]) });
+
+		await writable.close();
+	}
+
 	progressStore.set({ active: false, nProcessed: 0, nTotal: 0 });
 }
 
