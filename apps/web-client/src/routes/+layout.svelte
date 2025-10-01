@@ -187,7 +187,23 @@
 	} = createDialog({
 		forceVisible: true
 	});
-	$: $syncDialogOpen = $progress.active;
+
+	// In order to prevent sync dialog flashing for moinor changes
+	// we're delaying the showing of the dialog by some timeout (showSyncDebounce),
+	// and cancelling in case the sync finishes before that
+	const syncShowDebounce = 2000;
+	let tSyncDialog: NodeJS.Timeout = null;
+	$: {
+		if ($progress.active) {
+			tSyncDialog = setTimeout(() => syncDialogOpen.set(true), syncShowDebounce);
+		} else {
+			if (tSyncDialog) {
+				clearTimeout(tSyncDialog);
+				tSyncDialog = null;
+			}
+			syncDialogOpen.set(false);
+		}
+	}
 
 	/** An action used to (reactively) update the progress bar during sync */
 	function progressBar(node?: HTMLElement, progress?: Readable<SyncProgress>) {
