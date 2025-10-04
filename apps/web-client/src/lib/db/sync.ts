@@ -1,4 +1,4 @@
-import type { SyncProgress } from "$lib/workers/sync-transport-control";
+import type { ProgressState } from "$lib/types";
 import type WorkerInterface from "$lib/workers/WorkerInterface";
 import { writable } from "svelte/store";
 
@@ -74,8 +74,8 @@ const newSyncInterface = () => {
 
 export const sync = newSyncInterface();
 
-export const newSyncProgressStore = () => {
-	const progress = writable<SyncProgress>({ active: false, nProcessed: 0, nTotal: 0 });
+const newSyncProgressStore = () => {
+	const progress = writable<ProgressState>({ active: false, nProcessed: 0, nTotal: 0 });
 
 	let disposer: () => void;
 
@@ -89,3 +89,4 @@ export const newSyncProgressStore = () => {
 
 	return { start, stop, progress };
 };
+export const syncProgressStore = newSyncProgressStore();

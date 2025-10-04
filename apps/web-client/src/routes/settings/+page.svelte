@@ -21,13 +21,14 @@
 
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { dbid, syncConfig, syncActive } from "$lib/db";
+	import { dbid, syncConfig, syncActive, syncProgressStore } from "$lib/db";
 	import { clearDb, dbCache, getInitializedDB } from "$lib/db/cr-sqlite/db";
 	import { opfsVFSList, vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 	import { retry } from "$lib/utils/misc";
+	import { checkOPFSFileExists, deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
 
 	export let data: PageData;
 
@@ -82,40 +83,10 @@
 		if (sqliteFiles.length !== 1) return;
 		const [file] = sqliteFiles;
 
-		// Close relevant connections
-		//
-		// Stop the sync -- this is useful if overwriting the current DB, but doesn't hurt otherwise
-		syncActive.set(false);
-		//
-		// Close the DB if cached (current or used in the session)
-		const cached = dbCache.get(file.name);
-		if (cached) {
-			const { db } = await cached;
-			await db.close();
-			dbCache.delete(file.name);
-		}
-
-		const dir = await window.navigator.storage.getDirectory();
-
-		// If overwriting an existing file, remove it (and its corresponding wal and journal) first
-		// if the files don't exist - noop
-		const removeArtefact = async (name: string) => {
-			try {
-				await dir.removeEntry(name);
-			} catch (e) {
-				// Skip file if not exists
-				if ((e as Error).name === "NotFoundError") return;
-
-				// Throw otherwise
-				throw e;
-			}
-		};
-		// NOTE: running with retries to make sure the file locks were released
-		await retry(() => removeArtefact(file.name), 100, 5);
-		await retry(() => removeArtefact(`${file.name}-wal`), 100, 5);
-		await retry(() => removeArtefact(`${file.name}-journal`), 100, 5);
+		await deleteDBFromOPFS({ dbname: file.name, dbCache, syncActiveStore: syncActive });
 
 		// Import the file
+		const dir = await window.navigator.storage.getDirectory();
 		const fileHandle = await dir.getFileHandle(file.name, { create: true });
 		const writable = await fileHandle.createWritable();
 		await writable.write(await file.arrayBuffer());
@@ -215,7 +186,35 @@
 
 	let dialogContent: (DialogContent & { type: "create" | "delete" }) | null = null;
 
-	const nukeAndResyncDB = async () => {
+	const nukeAndResyncOPFS = async () => {
+		const dbname = get(dbid);
+
+		if (await checkOPFSFileExists(dbname)) {
+			await deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
+		}
+
+		const sync_url = get(syncConfig).url;
+
+		// TODO: rethink setup around this
+		const url = new URL(sync_url);
+		url.pathname = `/${dbname}/file`;
+
+		try {
+			await fetchAndStoreDBFile(url.href, dbname, syncProgressStore.progress);
+		} catch (err) {
+			// If error fetching the DB file, fallback to regular sync
+			console.error(err);
+			console.log("Error fetching DB file, falling back to regular sync");
+		}
+
+		// Reinstate the sync
+		// - in case of DB file fetched, we should be in-sync
+		// - in case of error fetching DB file, this will trigger a full sync
+		await invalidateAll();
+		syncActive.set(true);
+	};
+
+	const nukeAndResyncIDB = async () => {
 		// Stop the ongoing sync
 		syncActive.set(false);
 
@@ -227,6 +226,24 @@
 
 		// Reset the sync
 		syncActive.set(true);
+	};
+
+	const nukeAndResyncDB = async () => {
+		const dbCtx = data.dbCtx;
+		if (!dbCtx) {
+			throw new Error("Cannot nuke and resync: no db context: this indicates an error in app core logic");
+		}
+		const { vfs } = dbCtx;
+
+		if (vfsSupportsOPFS(data.dbCtx?.vfs)) {
+			console.log("OPFS supported VFS detected:", vfs);
+			console.log("Fetching DB file to optimise sync process");
+			await nukeAndResyncOPFS();
+		} else {
+			console.log("No-OPFS VFS detected:", vfs);
+			console.log("Using regular sync methods withut optimisations");
+			await nukeAndResyncIDB();
+		}
 	};
 
 	$: ({ settings_page: tSettings, common: tCommon } = $LL);

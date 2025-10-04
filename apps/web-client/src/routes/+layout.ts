@@ -16,15 +16,17 @@ import { setLocale } from "@librocco/shared/i18n-svelte";
 import { loadedLocales } from "@librocco/shared/i18n-util";
 import { locales } from "@librocco/shared/i18n-util";
 
-import { DEFAULT_LOCALE, DEFAULT_VFS, IS_E2E } from "$lib/constants";
+import { DEFAULT_LOCALE, DEFAULT_VFS, DEMO_DB_NAME, IS_DEMO, IS_E2E } from "$lib/constants";
 
 import { appPath } from "$lib/paths";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
-import { ErrDBCorrupted, ErrDBSchemaMismatch } from "$lib/db/cr-sqlite/db";
-import { validateVFS, type VFSWhitelist } from "$lib/db/cr-sqlite/core/vfs";
+import { ErrDBCorrupted, ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
+import { validateVFS, vfsSupportsOPFS, type VFSWhitelist } from "$lib/db/cr-sqlite/core/vfs";
 
 import { updateTranslationOverrides } from "$lib/i18n-overrides";
+import { DEMO_VFS } from "$lib/db/cr-sqlite/core/constants";
+import { checkOPFSFileExists } from "$lib/db/cr-sqlite/core/utils";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/#/stock/")
 const redirectPaths = ["", "/", "/#", "/#/"].map((path) => `${base}${path}`);
@@ -71,6 +73,20 @@ export const load: LayoutLoad = async ({ url }) => {
 		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
 
 		try {
+			// DEMO section
+			if (IS_DEMO) {
+				// Check if the DB exists in OPFS
+				if (!(await checkOPFSFileExists(DEMO_DB_NAME))) {
+					throw new ErrDemoDBNotInitialised();
+				}
+
+				// In demo mode we use the hardcoded VFS
+				const vfs = getDemoVFSFromLocalStorage(DEMO_VFS);
+				const dbCtx = await getInitializedDB(get(dbid), vfs);
+
+				return { dbCtx, plugins, error: null };
+			}
+
 			// We're allowing for storing of (whitelisted) vfs name in local storage for selection.
 			// This will usually only happen in tests/benchmarks and the fallback will
 			// be used in production
@@ -78,6 +94,10 @@ export const load: LayoutLoad = async ({ url }) => {
 			const dbCtx = await getInitializedDB(get(dbid), vfs);
 			return { dbCtx, plugins, error: null };
 		} catch (err) {
+			if (err instanceof ErrDemoDBNotInitialised) {
+				return { dbCtx: null, plugins, error: err as Error };
+			}
+
 			console.error("Error initializing DB", err);
 			// If know error, return it (it will ba handled in the shown dialog)
 			if (err instanceof ErrDBCorrupted || err instanceof ErrDBSchemaMismatch) {
@@ -126,6 +146,16 @@ function getVFSFromLocalStorage(fallback: VFSWhitelist): VFSWhitelist {
 	const vfs = window.localStorage.getItem("vfs") || fallback;
 	if (!validateVFS(vfs)) {
 		console.warn(`unknown value for vfs in local storage: ${vfs}, defaulting to: ${fallback}`);
+		return fallback;
+	}
+	return vfs;
+}
+
+function getDemoVFSFromLocalStorage(fallback: VFSWhitelist): VFSWhitelist {
+	const vfs = window.localStorage.getItem("demo_vfs") || fallback;
+
+	if (!vfsSupportsOPFS(vfs)) {
+		console.warn(`unsupported value for demo vfs in local storage: ${vfs}, defaulting to: ${fallback}`);
 		return fallback;
 	}
 	return vfs;
