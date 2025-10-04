@@ -1,9 +1,51 @@
 import { type Writable, writable } from "svelte/store";
 
-import type { DbCtx } from "$lib/db/cr-sqlite/db";
+import type { DBAsync } from "$lib/db/cr-sqlite/types";
+import { dbCache, getDB, type DbCtx } from "$lib/db/cr-sqlite/db";
 import type { ProgressState } from "$lib/types";
 
 import { retry } from "$lib/utils/misc";
+
+function uuidV4Bytes() {
+	const b = new Uint8Array(16);
+	crypto.getRandomValues(b);
+
+	// version = 4
+	b[6] = (b[6] & 0x0f) | 0x40;
+	// variant = RFC 4122
+	b[8] = (b[8] & 0x3f) | 0x80;
+
+	return b;
+}
+
+/**
+ * Re-identifies a DB node: updates the siteid, as well as `crsql_site_id`, `crsql_tracked_peers`, `*__crsql_clock` tables.
+ *
+ * This is done when we retrieve an exact copy of a DB from another node (with ids and respective crsql links) and we want to have it reidentified:
+ * - generating a new siteid for the node
+ * - updating tracked peers to only include the origin node and attributing all tracked changes to it (as if we synced from it)
+ */
+export async function reidentifyDbNode(db: DBAsync) {
+	await db.tx(async (txDb) => {
+		// Delete existing tracked peers (if any), those are unfamiliar to a new node
+		await txDb.exec("DELETE FROM crsql_tracked_peers");
+		// Delete existin peers' site ids (if any), keeping only the origin
+		// (origin being the site id of the node we copied this from, found in the table with ordinal = 0)
+		await txDb.exec("DELETE FROM crsql_site_id WHERE ordinal != 0");
+
+		// Bump the origin ordinal to 1 (this is our only peer now)
+		await txDb.exec("UPDATE crsql_site_id SET ordinal = 1 WHERE ordinal = 0");
+		// Generate a new id for the node (ordinal = 0)
+		const siteid = uuidV4Bytes();
+		await txDb.exec("INSERT INTO crsql_site_id (site_id, ordinal) VALUES (?, ?)", [siteid, 0]);
+
+		// Attribute all tracked changes to origin node
+		const crsql_clock_tables = await txDb.execA<[string]>("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%crsql_clock'");
+		for (const [tbl] of crsql_clock_tables) {
+			await txDb.exec(`UPDATE ${tbl} SET site_id = 1`);
+		}
+	});
+}
 
 /**
  * Fetches the DB file (.sqlite3) from the provided URL and stores it in OPFS under the given target name.
@@ -62,6 +104,18 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 
 		await writable.close();
 	}
+
+	// Re-identify the DB node (the fetched copy is the exact same as the server one, incl. siteid):
+	// - assign new siteid
+	// - attribute all *__crsql_clock tracked changes to server (as if they were synced to a pristine DB in the current node)
+	//
+	// NOTE: using opfs-any-context, not ideal, but not terribly important either
+	const db = await getDB(target, "asyncify-opfs-any-context");
+	await reidentifyDbNode(db);
+
+	// Cleanup
+	await db.close();
+	dbCache.delete(target);
 
 	progressStore.set({ active: false, nProcessed: 0, nTotal: 0 });
 }
