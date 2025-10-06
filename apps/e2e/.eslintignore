@@ -15,3 +15,6 @@ yarn.lock
 # Skip linting config files as that produces more headache than benefit
 vite.config.js
 svelte.config.js
+
+# Skip TEMP test results
+./vfs-benchmark-results/*

@@ -29,9 +29,7 @@ declare global {
  * const dbHandle = await getDbHandle(page);
  *
  * // Use the handle to create a warehouse in the db
- * await dbHandle.evaluate(async (db) => {
- *   await db.warehouse("foo-wh").create()
- * })
+ * await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
  * ```
  */
 export function getDbHandle(page: Page) {
@@ -56,6 +54,30 @@ export function getDbHandle(page: Page) {
 }
 
 /**
+ * Returns the database handle from the remote DB interface (remote = sync server). It satisfies the
+ * same interface as the local DB, so we can run any statements in the same manner, e.g.
+ * @example
+ * ```ts
+ * const remoteDbHandle = await getRemoteDbHandle(page);
+ *
+ * // Use the handle to create a warehouse in the DB on the sync server
+ * await remoteDbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+ * ```
+ */
+export async function getRemoteDbHandle(page: Page, url: string) {
+	const browserDbHandle = await getDbHandle(page);
+	return browserDbHandle.evaluateHandle(
+		async (db, [url]) => {
+			const dbname = db.filename;
+			const w = window as { [key: string]: any };
+			const getRemoteDB = w["_getRemoteDB"] as (url: string, dbname: string) => Promise<DB>;
+			return await getRemoteDB(url, dbname);
+		},
+		[url]
+	);
+}
+
+/**
  * @see apps/web-client/src/lib/db/cr-sqlite/books.ts:upsertBook
  */
 export async function upsertBook(db: DB, book: BookData): Promise<void> {
@@ -75,6 +97,13 @@ export type Warehouse = {
  */
 export async function upsertWarehouse(db: DB, data: Warehouse): Promise<void> {
 	await window.warehouse.upsertWarehouse(db, data);
+}
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/warehouse.ts:getAllWarehouses
+ */
+export async function getAllWarehouses(db: DB): Promise<Warehouse[]> {
+	return (await window.warehouse.getAllWarehouses(db, { skipTotals: true })) as Warehouse[];
 }
 
 /**
@@ -153,6 +182,10 @@ export async function commitNote(db: DB, id: number): Promise<void> {
  */
 export async function upsertCustomer(db: DB, customer: Customer) {
 	await window.customers.upsertCustomer(db, customer);
+}
+
+export async function getCustomerOrderList(db: DB): Promise<Customer[]> {
+	return await window.customers.getCustomerOrderList(db);
 }
 
 /**

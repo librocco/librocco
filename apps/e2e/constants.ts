@@ -1,6 +1,8 @@
 import * as net from "net";
 
 export const IS_CI = /^(?:1|true|on)$/i.test(process.env.CI?.trim() ?? "");
+export const VFS_TEST = process.env.VFS_TEST === "true";
+export const SHARD_INDEX = process.env.PLAYWRIGHT_SHARD_INDEX;
 
 export function getPort(): Promise<number> {
 	const testSocket = new net.Socket();
@@ -50,3 +52,6 @@ export const appHash = (location: keyof typeof HASHES, ...segments: (number | st
 
 /** Max timeout for DOM assertions (waitFor, etc. - longer in CI, default in non-CI) */
 export const assertionTimeout = IS_CI ? 15000 : undefined;
+
+export const remoteDbURL = "http://127.0.0.1:3000/";
+export const syncUrl = "ws://127.0.0.1:3000/sync";

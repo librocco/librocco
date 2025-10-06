@@ -670,13 +670,29 @@ test("should check validity of the transactions and commit the note on 'commit' 
 
 	const invalidTransctionList = dialog.locator("ul");
 
+	// Wait for rows to show up (DB processed the update)
+	// This is not necessary with idb-batch-atomic, but it fails on slower VFS implementations
+	await entries.assertRows([
+		// Forced Withdrawal - the book doesn't exist in warehouse
+		{ isbn: "44444444", quantity: 1, warehouseName: "" },
+		// Forced Withdrawal - the book doesn't exist in warehouse
+		{ isbn: "33333333", quantity: 2, warehouseName: "Warehouse 1" },
+		// All fine, enough books in stock (required 5, 5 available in the warehouse)
+		{ isbn: "22222222", quantity: 5, warehouseName: "" },
+		// Only 2 available in the warehouse
+		{ isbn: "11111111", quantity: 2, warehouseName: "Warehouse 2" },
+		// Forced Withdrawal - 3rd copy doesn't exist in warehouse
+		{ isbn: "11111111", quantity: 1, warehouseName: "Warehouse 2" },
+		// All fine, enough books in stock (required 3, 4 available in the warehouse)
+		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 1" }
+	]);
+
 	// Try to commit the note
 	await page.getByRole("button", { name: "Commit" }).click();
 
 	// We should see the "warehouse selection" validation message, as some rows haven't had warehouses selected
-	const popover = await page.getByTestId("popover-commit");
 	// Selecting for text here is flakey?
-	await expect(popover).toBeVisible();
+	await page.getByTestId("popover-commit").waitFor();
 
 	// "22222222" - reverse order than order of adding/aggregating
 	await entries.row(2).field("warehouseName").set("Warehouse 1");

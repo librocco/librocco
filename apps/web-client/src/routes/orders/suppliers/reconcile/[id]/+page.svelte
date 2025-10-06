@@ -149,7 +149,7 @@
 
 		await deleteReconciliationOrder(db, parseInt($page.params.id));
 
-		await goto(appPath("supplier_orders"));
+		await goto(appPath("supplier_orders", "?filter=ordered"));
 	}
 </script>
 
