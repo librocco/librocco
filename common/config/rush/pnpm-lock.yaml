@@ -13650,7 +13650,7 @@ packages:
     version: 0.22.0
 
   file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz:
-    resolution: {integrity: sha512-pZtUzTuDKs2XhZic4dru8q9rY7qpDmtBElUZi/Fsb9UIcwpzMbHxPFkBfCkMDu65BVC5I5w5/2HhfRKN2i4zAQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
+    resolution: {integrity: sha512-pxRLiArNAL6bj4BhOv+AN+rb3tG7xWeav2L90d76SN1e12qBAUdtq/Z91PL7AXxaPKHQesamzlRbbTP73mb4MA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
     name: '@vlcn.io/ws-browserdb'
     version: 0.2.0
     dependencies:

@@ -295,7 +295,10 @@ const new_order_page = {
 	stats: {
 		total_books: "Total books",
 		total_value: "Total value",
-		selected_books: "Selected books"
+		selected_books: "Selected books",
+		order_format: "Order Format",
+		no_order_format: "Order format needs to be configured",
+		go_to_supplier: "Go to supplier"
 	},
 	table: {
 		quantity: "Quantity",
@@ -307,7 +310,8 @@ const new_order_page = {
 	},
 	labels: {
 		select: "Select",
-		place_order: "Place Order"
+		place_order: "Place Order",
+		no_format_tooltip: "No format configured"
 	}
 };
 
@@ -323,7 +327,9 @@ const order_list_page = {
 		supplier_name: "Supplier name",
 		supplier_email: "Supplier email",
 		supplier_address: "Supplier address",
-		supplier_customerId: "Supplier customer ID"
+		supplier_customerId: "Supplier customer ID",
+		supplier_orderFormat: "Supplier order format"
+
 	},
 	table: {
 		publisher_name: "Publisher name",
@@ -350,7 +356,9 @@ const reconciled_list_page = {
 	labels: {
 		view_reconciliation: "View Reconciliation",
 		reconcile: "Reconcile",
-		print_order: "Print Order"
+		print_order: "Print Order",
+		download_order: "Download Order"
+
 	},
 	stats: {
 		total_books: "Total books",
@@ -426,7 +434,8 @@ const suppliers_page = {
 		email: "Email",
 		address: "Address",
 		assigned_publishers: "Assigned Publishers",
-		actions: "Actions"
+		actions: "Actions",
+		order_format:"Order Format"
 	}
 };
 
@@ -703,7 +712,7 @@ const supplier_orders_component = {
 		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
 		reconcile: "Reconcile",
-		view_reconciliation: "Reconciliation"
+		view_reconciliation: "View Reconciliation",
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",
@@ -911,7 +920,9 @@ const forms = {
 			email: "Email",
 			address: "Address",
 			customer_id: "Customer ID",
-			cancel_button: "Cancel"
+			cancel_button: "Cancel",
+			order_format: "Order Format",
+			order_format_message: "Please select an order format"
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"

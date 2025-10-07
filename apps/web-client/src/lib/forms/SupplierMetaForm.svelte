@@ -7,12 +7,14 @@
 	import type { SupplierSchema } from "./schemas";
 	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
 	import { LL } from "@librocco/shared/i18n-svelte";
+	import type { Format } from "$lib/db/cr-sqlite/types";
 
 	export let saveLabel: string;
 	export let heading = "";
 
 	export let data: SuperValidated<SupplierSchema>;
 	export let options: FormOptions<SupplierSchema>;
+	export let formatList: Record<string, Format>;
 	export let onCancel = () => {};
 
 	const form = superForm(data, options);
@@ -23,7 +25,7 @@
 </script>
 
 <form method="POST" class="form gap-y-4" use:enhance data-sveltekit-keepfocus aria-label={$LL.forms.supplier_meta.aria.form()}>
-	<div class="flex w-full flex-col justify-between gap-y-6 p-6">
+	<div class="flex w-full flex-col justify-between gap-y-6 overflow-y-auto p-6">
 		{#if heading}
 			<div class="prose">
 				<h3>
@@ -57,10 +59,27 @@
 				</FormFieldProxy>
 			</div>
 			<div class="form-control gap-y-2">
-				<FormFieldProxy {form} name="address">
+				<FormFieldProxy {form} name="customerId">
 					<TextControl label={$LL.forms.supplier_meta.labels.customer_id()} let:controlAttrs>
 						<input {...controlAttrs} bind:value={$formStore.customerId} class="input-bordered input w-full" type="number" />
 					</TextControl>
+				</FormFieldProxy>
+			</div>
+			<div class="form-control gap-y-2">
+				<FormFieldProxy {form} let:errors let:errAttrs let:errAction name="orderFormat">
+					<label class="form-control w-full">
+						<div class="label">{$LL.forms.supplier_meta.labels.order_format()}</div>
+						<select bind:value={$formStore.orderFormat} class="select-bordered select w-full">
+							{#each Object.values(formatList) as format}
+								<option>{format}</option>
+							{/each}
+						</select>
+						<span class="font-regular pt-2 text-red-500" {...errAttrs} use:errAction>
+							{#each errors as error}
+								{error}
+							{/each}
+						</span>
+					</label>
 				</FormFieldProxy>
 			</div>
 		</div>
