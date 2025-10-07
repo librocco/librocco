@@ -15,6 +15,7 @@ name: Checks
     branches-ignore:
       - "ci-debug/*"
       - "wip/**"
+      - "vfs-benchmark/**"
 
 jobs:
   build-cr-sqlite: #@ build_crsqlite()
@@ -55,12 +56,19 @@ jobs:
         run: cd apps/e2e && rushx test:ci
         env:
           PLAYWRIGHT_OPTIONS: "--shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}"
+          SHARD_INDEX: "${{ matrix.shardIndex }}"
       #! upload each shard’s blob so we can merge later
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: e2e-blob-report-${{ matrix.shardIndex }}
           path: apps/e2e/blob-report
+          retention-days: 2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sync-server-logs-${{ matrix.shardIndex }}
+          path: apps/web-client/server_output.log
           retention-days: 2
 
   lint-and-typecheck:

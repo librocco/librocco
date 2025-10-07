@@ -92,7 +92,7 @@
 		downloadAsTextFile(generatedLines, `${id}-${supplier.name}-${supplier.orderFormat}`);
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
-		await goto(appHash("supplier_orders", id));
+		await goto(appHash("supplier_orders", "?filter=unordered"));
 	}
 
 	function selectPortion(portion: number) {

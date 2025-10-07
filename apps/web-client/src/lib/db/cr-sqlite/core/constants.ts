@@ -1,1 +1,1 @@
-export const DEFAULT_VFS = "idb-batch-atomic";
+export const DEFAULT_VFS = "sync-opfs-coop-sync";

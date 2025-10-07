@@ -1,0 +1,79 @@
+#!/usr/bin/env node
+
+const fs = require("fs");
+const path = require("path");
+
+const argPath = process.argv[2]
+if (!argPath) {
+	console.error("Usage: parse-vfs-benchmarks <path-to-json-file-or-folder>");
+	process.exit(1);
+}
+
+function readAndParseReport(fpath) {
+	const full_fpath = path.resolve(fpath);
+
+	const fcontent = fs.readFileSync(full_fpath, "utf8");
+	const report = JSON.parse(fcontent);
+
+	const getDurations = ({ results, ...rest }) => results.map(({ duration = 0, status }) => ({ duration, status, ...rest }));
+	const getTests = ({ tests, ...rest }) => tests.flatMap(({ projectId, results }) => getDurations(({ ...rest, projectId, results })));
+	const getSpecs = ({ specs }) => specs.flatMap(({ title, tests }) => getTests({ title, tests }));
+	const getSuites = ({ suites }) => suites.flatMap(({ specs }) => getSpecs({ specs }));
+
+	return getSuites(report)
+}
+
+const tests = (() => {
+	if (fs.statSync(argPath).isDirectory()) {
+		// If the argument is a directory, read all JSON files in it.
+		const files = fs.readdirSync(argPath).filter(file => file.endsWith('.json'));
+		return files.flatMap(file => readAndParseReport(path.join(argPath, file)));
+	}
+
+	return readAndParseReport(argPath)
+})()
+
+// Keep track of all failed test cases.
+// Since we run each test case (identified by title) for each project (browser-vfs combo) and a particular test case
+// might fail for one project, but succeed for another, this might skew the benchmark results (when adding up durations).
+//
+// In order to keep the benchmark results accurate, we skip the failed titles for all projects.
+//
+// This Set will contain titles of every test case that has at least one failure across all projects.
+const failedTests = new Set(tests.filter(({ status }) => status !== "passed").map(({ title }) => title));
+console.log(`skipped ${failedTests.size} failed test cases:`);
+for (const title of failedTests) {
+	console.log(`- ${title}`);
+}
+console.log()
+
+// Filter out the failed tests from the list of tests.
+const testsFiltered = tests.filter(({ title }) => !failedTests.has(title));
+
+// Aggregate durations for each project.
+const statsMap = new Map();
+for (const { projectId, duration } of testsFiltered) {
+	const stats = statsMap.get(projectId) || [0, 0];
+	stats[0] += duration;
+	stats[1] += 1;
+	statsMap.set(projectId, stats);
+}
+
+const stats = [...statsMap.entries()];
+
+const bestRun = Math.min(...stats.map(([_, [totalDuration]]) => totalDuration));
+const bestRunIx = stats.findIndex(([_, [totalDuration]]) => totalDuration === bestRun);
+
+const worstRun = Math.max(...stats.map(([_, [totalDuration]]) => totalDuration));
+const worstRunIx = stats.findIndex(([_, [totalDuration]]) => totalDuration === worstRun);
+
+stats.forEach(([projectId, [totalDuration, count]], ix) => {
+	const secs = `0${(Math.floor(totalDuration / 1000) % 60)}`.slice(-2);
+	const mins = `0${(Math.floor(totalDuration / (1000 * 60)) % 60)}`.slice(-2)
+	const hours = `0${(Math.floor(totalDuration / (1000 * 60 * 60)))}`.slice(-2)
+
+	const tag = (projectId + " ".repeat(30)).slice(0, 30)
+	const check = ix === bestRunIx ? "✅" : ix === worstRunIx ? "❌" : "  ";
+
+	console.log(`${tag} no.tests: ${count} took: ${hours}:${mins}:${secs} (total: ${totalDuration} ms) ${check}`);
+});
