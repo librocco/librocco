@@ -4,9 +4,13 @@ import preprocess from "svelte-preprocess";
 import { preprocessMeltUI } from "@melt-ui/pp";
 import sequence from "svelte-sequential-preprocessor";
 
-import { USE_SUBMODULES } from "./build_constants.js";
+import { DEMO_DB_URL, IS_DEMO, USE_SUBMODULES } from "./build_constants.js";
 
 const BASE_PATH = process.env.BASE_PATH ?? "";
+
+if (IS_DEMO && !DEMO_DB_URL) {
+	throw new Error("Demo DB URL not specified, please specify the demo DB URL as 'PUBLIC_DEMO_DB_URL' env var");
+}
 
 /**
  * A helper used to provide aliases for vlcn.io packages in dev mode:
@@ -96,7 +100,9 @@ const config = {
 				"/history/warehouse/1/1",
 				"/history/warehouse/1/1/1/",
 				"/outbound/1/",
-				"/settings/"
+
+				// If demo, we're using a different settings page (the two are mutually exclusive with respect to env)
+				IS_DEMO ? "/demo_settings/" : "/settings/"
 			]
 		},
 		paths: {

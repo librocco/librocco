@@ -1,5 +1,5 @@
 import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
-import type { SyncProgress } from "./sync-transport-control";
+import type { ProgressState } from "$lib/types";
 
 // Client -> Worker
 
@@ -24,7 +24,7 @@ export type MsgChangesProcessed = {
 
 export type MsgProgress = {
 	_type: "progress";
-	payload: SyncProgress;
+	payload: ProgressState;
 };
 
 export type MsgReady = {

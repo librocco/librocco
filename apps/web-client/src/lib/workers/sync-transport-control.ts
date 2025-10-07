@@ -2,16 +2,12 @@ import { chunks } from "@librocco/shared";
 import type { Transport } from "@vlcn.io/ws-client";
 import type { Changes } from "@vlcn.io/ws-common";
 
+import type { ProgressState } from "$lib/types";
+
 type Listener<M = undefined> = M extends undefined ? () => void : (msg: M) => void;
 
-export type SyncProgress = {
-	active: boolean;
-	nProcessed: number;
-	nTotal: number;
-};
-
 export class SyncEventEmitter {
-	progressListeners = new Set<Listener<SyncProgress>>();
+	progressListeners = new Set<Listener<ProgressState>>();
 	changesReceivedListeners = new Set<Listener<{ timestamp: number }>>();
 	changesProcessedListeners = new Set<Listener<{ timestamp: number }>>();
 
