@@ -22,3 +22,4 @@ yarn.lock
 # Playwright meta files
 /playwright-report
 /test-results
+/vfs-benchmark-results

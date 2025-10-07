@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
-
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -33,10 +32,15 @@
 	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
 	import { getPlacedSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
 
+	import { page } from "$app/stores";
+
 	export let data: PageData;
 
 	let disposer: () => void;
 	onMount(() => {
+		if ($page.url.hash.split("?filter=").length <= 1) {
+			goto(`${$page.url.hash}?filter=unordered`);
+		}
 		const disposer1 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("books:data"));
 		const disposer2 = data.dbCtx?.rx?.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
 		const disposer3 = data.dbCtx?.rx?.onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
@@ -62,7 +66,24 @@
 	$: hasReconcilingOrders = reconcilingOrders?.length;
 	$: hasCompletedOrders = completedOrders?.length;
 
-	let orderStatusFilter: "unordered" | "ordered" | "reconciling" | "completed" = "unordered";
+	type OrderStatus = "unordered" | "ordered" | "reconciling" | "completed";
+
+	let orderStatusFilter: OrderStatus = "unordered";
+	function isOrderStatus(s: string | null): s is OrderStatus {
+		return s === "unordered" || s === "ordered" || s === "reconciling" || s === "completed";
+	}
+	$: {
+		const params = new URLSearchParams($page.url.hash.split("?")[1] ?? "");
+		const s = params.get("filter")?.split("/")[0];
+		orderStatusFilter = isOrderStatus(s) ? s : "unordered";
+	}
+	function setFilter(status: OrderStatus) {
+		const [base, search = ""] = $page.url.hash.split("?");
+		const params = new URLSearchParams(search);
+		params.set("filter", status);
+		// Let URL drive the reactive state; no need to pre-set `orderStatusFilter`.
+		goto(`${base}?${params.toString()}`);
+	}
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
 		/**@TODO replace randomId with incremented id */
@@ -85,7 +106,7 @@
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 
-		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+		const id = Math.floor(Math.random() * 1000000); // Temporary IDgeneration
 		const displayId = await getCustomerDisplayIdSeq(db).then(String);
 
 		await upsertCustomer(db, { ...customer, id, displayId });
@@ -104,7 +125,7 @@
 			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
 				<button
 					class="btn-sm btn {orderStatusFilter === 'unordered' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => (orderStatusFilter = "unordered")}
+					on:click={() => setFilter("unordered")}
 					aria-pressed={orderStatusFilter === "unordered"}
 				>
 					{t.tabs.unordered()}
@@ -112,7 +133,7 @@
 
 				<button
 					class="btn-sm btn {orderStatusFilter === 'ordered' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => (orderStatusFilter = "ordered")}
+					on:click={() => setFilter("ordered")}
 					aria-pressed={orderStatusFilter === "ordered"}
 					disabled={!hasPlacedOrders}
 					data-testid="ordered-list"
@@ -122,7 +143,7 @@
 
 				<button
 					class="btn-sm btn {orderStatusFilter === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => (orderStatusFilter = "reconciling")}
+					on:click={() => setFilter("reconciling")}
 					aria-pressed={orderStatusFilter === "reconciling"}
 					disabled={!hasReconcilingOrders}
 					data-testid="reconciling-list"
@@ -132,10 +153,10 @@
 				<div class="w-fit">
 					<button
 						class="btn-sm btn self-end {orderStatusFilter === 'completed' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => (orderStatusFilter = "completed")}
+						on:click={() => setFilter("completed")}
 						aria-pressed={orderStatusFilter === "completed"}
 						disabled={!hasCompletedOrders}
-						data-testid="reconciling-list"
+						data-testid="completed-list"
 					>
 						{t.tabs.completed()}
 					</button>

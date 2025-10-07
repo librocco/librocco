@@ -5,6 +5,7 @@
 	"scripts": {
 		"start:server:production": "pm2 start syncserver.pm2.config.cjs",
 		"start:server": "npx tsx src/sync_server/index.ts",
+		"start:server:dev": "IS_DEV=true npx tsx src/sync_server/index.ts",
 		"start": "VITE_GIT_SHA=$(git rev-parse --short HEAD) vite dev",
 		"start:debug": "echo \"Starting dev server in DEBUG mode...\" && PUBLIC_IS_DEBUG=true vite dev",
 		"start:e2e": "echo \"Starting dev server for e2e purposes...\" && PUBLIC_IS_E2E=true vite dev",

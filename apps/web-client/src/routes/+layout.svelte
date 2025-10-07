@@ -38,6 +38,7 @@
 
 	import type { SyncProgress } from "$lib/workers/sync-transport-control";
 	import { LL } from "@librocco/shared/i18n-svelte";
+	import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
 
 	export let data: LayoutData;
 
@@ -66,6 +67,7 @@
 		if (browser && dbCtx) {
 			window["db_ready"] = true;
 			window["_db"] = dbCtx.db;
+			window["_getRemoteDB"] = getRemoteDB;
 			window.dispatchEvent(new Event("db_ready"));
 
 			window["books"] = books;
@@ -116,6 +118,7 @@
 		//
 		// Init worker and sync interface
 		const wkr = new WorkerInterface(new SyncWorker());
+		console.log("using vfs:", dbCtx.vfs);
 		wkr.start(dbCtx.vfs); // Use the same VFS as the one in the main-thread-initialized DB
 		sync.init(wkr);
 
