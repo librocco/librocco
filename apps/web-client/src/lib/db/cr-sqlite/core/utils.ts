@@ -39,6 +39,15 @@ export async function reidentifyDbNode(db: DBAsync) {
 		const siteid = uuidV4Bytes();
 		await txDb.exec("INSERT INTO crsql_site_id (site_id, ordinal) VALUES (?, ?)", [siteid, 0]);
 
+		// Store origin as a tracked peer (this is required to avoid re-syncing everything -- pulling changes since the beginning of time)
+		const [[origin_site_id]] = await txDb.execA<[Uint8Array]>("SELECT site_id FROM crsql_site_id WHERE ordinal = 1");
+		const [[db_version]] = await txDb.execA<[number]>("SELECT MAX(db_version) FROM crsql_changes");
+		// Value inferred from usage (inspecting sync worker and ws-server impl)
+		await txDb.exec("INSERT INTO crsql_tracked_peers (site_id, event, version, seq, tag) VALUES (?, 0, ?, 0, 0)", [
+			origin_site_id,
+			db_version
+		]);
+
 		// Attribute all tracked changes to origin node
 		const crsql_clock_tables = await txDb.execA<[string]>("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%crsql_clock'");
 		for (const [tbl] of crsql_clock_tables) {
@@ -110,7 +119,8 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 	// - attribute all *__crsql_clock tracked changes to server (as if they were synced to a pristine DB in the current node)
 	//
 	// NOTE: using opfs-any-context, not ideal, but not terribly important either
-	const db = await getDB(target, "asyncify-opfs-any-context");
+	const reident_vfs = "sync-opfs-coop-sync";
+	const db = await getDB(target, reident_vfs);
 	await reidentifyDbNode(db);
 
 	// Cleanup
