@@ -31,7 +31,8 @@ const books = [
 	{ isbn: "8765", authors: "author4", title: "title4", publisher: "pub2", price: 40 },
 	{ isbn: "9999", authors: "author5", title: "title5", publisher: "pub1", price: 50 },
 	{ isbn: "8888", authors: "author6", title: "title6", publisher: "pub2", price: 60 },
-	{ isbn: "7777", authors: "author7", title: "title7", publisher: "pub1", price: 70 }
+	{ isbn: "7777", authors: "author7", title: "title7", publisher: "pub1", price: 70 },
+	{ isbn: "6666", authors: "author8", title: "title8", publisher: "pub2", price: 80 }
 ];
 const warehouses = [
 	{ id: 1, displayName: "Warehouse 1", discount: 10 },
@@ -40,19 +41,22 @@ const warehouses = [
 ];
 
 const suppliers = [
-	{ id: 1, name: "sup1", email: "sup1@gmail.com" },
-	{ id: 2, name: "sup2" }
+	{ id: 1, name: "sup1", email: "sup1@gmail.com", orderFormat: "PBM" },
+	{ id: 2, name: "sup2", orderFormat: "PBM" },
+	{ id: 3, name: "sup3" }
 ];
 
 const suppliersWithPublishers = [
 	{ ...suppliers[0], publishers: ["pub1"] },
-	{ ...suppliers[1], publishers: ["pub2"] }
+	{ ...suppliers[1], publishers: ["pub2"] },
+	{ ...suppliers[2], publishers: ["pub2"] }
 ];
 
 const customers = [
 	{ id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" },
 	{ id: 2, fullname: "Jane Doe", email: "jane@gmail.com", displayId: "2" },
-	{ id: 3, fullname: "Don Joe", displayId: "3" }
+	{ id: 3, fullname: "Don Joe", displayId: "3" },
+	{ id: 4, fullname: "Joe Don", displayId: "4" }
 ];
 
 const customerOrderLines = [
@@ -64,7 +68,8 @@ const customerOrderLines = [
 	{ customerId: 2, isbn: "4321" },
 	{ customerId: 2, isbn: "7777" },
 	{ customerId: 3, isbn: "1234" },
-	{ customerId: 3, isbn: "9999" }
+	{ customerId: 3, isbn: "9999" },
+	{ customerId: 4, isbn: "6666" }
 ];
 
 type FixtureCustomerOrderLines = {
@@ -162,7 +167,9 @@ type OrderTestFixture = {
 	 *
 	 * id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1"
 	 * id: 2, fullname: "Jane Doe", email: "jane@gmail.com", displayId: "2"
-	 * id: 3, fullname: "Don Joe",  displayId: "3"
+	 * id: 3, fullname: "Don Joe",  displayId: "3",
+	 * id: 4, fullname: "Joe Don",  displayId: "4"
+
 	 */
 	customers: Customer[];
 

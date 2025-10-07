@@ -39,6 +39,7 @@ testOrders("supplier list: new: submits the form with all fields", async ({ page
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
 
+	await dialog.getByLabel("Order Format").selectOption("PBM");
 	await dialog.getByRole("button", { name: "Create" }).click();
 
 	// At this point we're validating the form was closed and considering it a good enough
@@ -62,6 +63,7 @@ testOrders("supplier list: new: submits the form with only name provided", async
 	for (const [key, value] of Object.entries(supplier)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
+	await dialog.getByLabel("Order Format").selectOption("PBM");
 
 	await dialog.getByRole("button", { name: "Create" }).click();
 
@@ -91,6 +93,29 @@ testOrders("supplier list: new: doesn't allow for submission without the name fi
 	await dialog.getByRole("button", { name: "Create" }).click();
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel("Name", { exact: true })).toBeFocused();
+});
+
+testOrders("supplier list: new: doesn't allow for submission without the format field", async ({ page }) => {
+	await page.goto(appHash("suppliers"));
+
+	// NOTE: filling in non-required fields ensures the focus moves away from the name field (asserted to return back in failed validation)
+	const supplier = {
+		Name: "Sup1",
+		Email: "info@suppliers.co"
+	};
+
+	const dialog = page.getByRole("dialog");
+
+	await page.getByRole("button", { name: "New Supplier" }).first().click();
+
+	await dialog.getByText("Create new supplier").waitFor();
+
+	for (const [key, value] of Object.entries(supplier)) {
+		await dialog.getByLabel(key, { exact: true }).fill(value);
+	}
+
+	await dialog.getByRole("button", { name: "Create" }).click();
+	await expect(dialog).toContainText("Invalid input");
 });
 
 testOrders("supplier list: new: doesn't allow for submission with invalid email field", async ({ page }) => {
@@ -292,7 +317,6 @@ testOrders("supplier page: update: allows for blank email string", async ({ page
 	for (const [key, value] of Object.entries(supplier)) {
 		await dialog.getByLabel(key, { exact: true }).fill(value);
 	}
-
 	await dialog.getByRole("button", { name: "Save" }).click();
 
 	// At this point we're validating the form was closed and considering it a good enough
