@@ -1132,6 +1132,10 @@ type RootTranslation = {
 			 * D​a​t​a​b​a​s​e​ ​m​a​n​a​g​e​m​e​n​t
 			 */
 			db_management: string
+			/**
+			 * R​e​s​e​t​ ​t​h​e​ ​D​B​ ​t​o​ ​i​n​i​t​i​a​l​ ​s​t​a​t​e​ ​?
+			 */
+			demo_reset: string
 		}
 		descriptions: {
 			/**
@@ -1150,12 +1154,26 @@ type RootTranslation = {
 			 * M​a​n​a​g​e​ ​c​o​n​n​e​c​t​i​o​n​s​ ​t​o​ ​e​x​t​e​r​n​a​l​ ​d​e​v​i​c​e​s
 			 */
 			device_settings: string
+			/**
+			 * C​l​i​c​k​ ​o​n​ ​t​h​e​ ​b​u​t​t​o​n​ ​b​e​l​o​w​ ​t​o​ ​r​e​s​e​t​ ​t​h​e​ ​D​B​ ​t​o​ ​i​n​i​t​i​a​l​ ​s​t​a​t​e
+			 */
+			demo_reset_1: string
+			/**
+			 * A​l​l​ ​c​h​a​n​g​e​s​ ​m​a​d​e​ ​w​i​l​l​ ​b​e​ ​l​o​s​t​ ​a​n​d​ ​t​h​e​ ​D​B​ ​w​i​l​l​ ​b​e​ ​r​e​s​e​t​ ​t​o​ ​i​n​i​t​i​a​l​ ​d​e​m​o​ ​s​t​a​t​e​.
+			 */
+			demo_reset_2: string
 		}
 		actions: {
 			/**
 			 * N​u​k​e​ ​a​n​d​ ​r​e​s​y​n​c
 			 */
 			nuke_and_resync: string
+		}
+		demo_actions: {
+			/**
+			 * R​e​s​e​t​ ​d​a​t​a​b​a​s​e
+			 */
+			reset_db: string
 		}
 		stats: {
 			/**
@@ -2191,6 +2209,24 @@ type RootTranslation = {
 			}
 		}
 		error_dialog: {
+			demo_db_not_initialised: {
+				/**
+				 * L​o​a​d​ ​t​h​e​ ​D​B​ ​w​i​t​h​ ​d​a​t​a
+				 */
+				title: string
+				/**
+				 * C​l​i​c​k​ ​o​n​ ​t​h​e​ ​b​u​t​t​o​n​ ​b​e​l​o​w​ ​t​o​ ​l​o​a​d​ ​t​h​e​ ​D​B​ ​p​r​e​p​u​p​u​l​a​t​e​d​ ​w​i​t​h​ ​d​e​m​o​ ​d​a​t​a
+				 */
+				call_to_action: string
+				/**
+				 * T​h​i​s​ ​w​i​l​l​ ​d​o​w​n​l​o​a​d​ ​t​h​e​ ​d​e​m​o​ ​D​B​ ​.​s​q​l​i​t​e​3​ ​f​i​l​e​ ​a​n​d​ ​s​t​o​r​e​ ​i​t​ ​t​o​ ​b​r​o​w​s​e​r​'​s​ ​O​P​F​S​ ​(​f​o​r​ ​i​n​ ​a​p​p​ ​u​s​a​g​e​)
+				 */
+				description: string
+				/**
+				 * L​o​a​d​ ​D​B
+				 */
+				button: string
+			}
 			schema_mismatch: {
 				/**
 				 * E​r​r​o​r​:​ ​D​B​ ​S​c​h​e​m​a​ ​m​i​s​m​a​t​c​h
@@ -3872,6 +3908,10 @@ export type TranslationFunctions = {
 			 * Database management
 			 */
 			db_management: () => LocalizedString
+			/**
+			 * Reset the DB to initial state ?
+			 */
+			demo_reset: () => LocalizedString
 		}
 		descriptions: {
 			/**
@@ -3890,12 +3930,26 @@ export type TranslationFunctions = {
 			 * Manage connections to external devices
 			 */
 			device_settings: () => LocalizedString
+			/**
+			 * Click on the button below to reset the DB to initial state
+			 */
+			demo_reset_1: () => LocalizedString
+			/**
+			 * All changes made will be lost and the DB will be reset to initial demo state.
+			 */
+			demo_reset_2: () => LocalizedString
 		}
 		actions: {
 			/**
 			 * Nuke and resync
 			 */
 			nuke_and_resync: () => LocalizedString
+		}
+		demo_actions: {
+			/**
+			 * Reset database
+			 */
+			reset_db: () => LocalizedString
 		}
 		stats: {
 			/**
@@ -4920,6 +4974,24 @@ export type TranslationFunctions = {
 			}
 		}
 		error_dialog: {
+			demo_db_not_initialised: {
+				/**
+				 * Load the DB with data
+				 */
+				title: () => LocalizedString
+				/**
+				 * Click on the button below to load the DB prepupulated with demo data
+				 */
+				call_to_action: () => LocalizedString
+				/**
+				 * This will download the demo DB .sqlite3 file and store it to browser's OPFS (for in app usage)
+				 */
+				description: () => LocalizedString
+				/**
+				 * Load DB
+				 */
+				button: () => LocalizedString
+			}
 			schema_mismatch: {
 				/**
 				 * Error: DB Schema mismatch
