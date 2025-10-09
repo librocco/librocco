@@ -167,7 +167,7 @@ jobs:
           SENTRY_ORG: code-myriad
           SENTRY_PROJECT: librocco
           SENTRY_URL: https://sentry.libroc.co
-          SENTRY_AUTH_TOKEN: ${{ secrets.SETNRY_AUTH_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
       - name: Install lftp
         run: |
@@ -265,7 +265,7 @@ jobs:
           SENTRY_ORG: code-myriad
           SENTRY_PROJECT: librocco
           SENTRY_URL: https://sentry.libroc.co
-          SENTRY_AUTH_TOKEN: ${{ secrets.SETNRY_AUTH_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
           PUBLIC_IS_DEMO: "true"
           PUBLIC_DEMO_DB_URL: "https://librocco.codemyriad.io/demo_db.sqlite3"
