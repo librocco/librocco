@@ -191,7 +191,7 @@ jobs:
         mirror -R playwright-report/ ${{ github.head_ref || github.ref_name }}/tests
         EOF
       env:
-        BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+        BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_PREVIEW_STORAGE_PASSWORD }}
     - name: Purge Bunny cache
       run: |
         curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache \
