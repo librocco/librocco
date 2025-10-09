@@ -244,7 +244,18 @@ jobs:
   deploy-demo:
     name: Deploy demo web-client app to bunny cdn
     runs-on: ubuntu-latest
-    needs: build-cr-sqlite
+    if: github.ref == 'refs/heads/main'
+    needs:
+      [
+        build-cr-sqlite,
+        js-search-test,
+        book-data-extension-test,
+        web-client-test,
+        e2e-test,
+        lint-and-typecheck,
+        check-i18n-sync,
+        perform-monorepo-checks
+      ]
     steps:
       -  #@ checkout()
       - uses: actions/setup-node@v4
