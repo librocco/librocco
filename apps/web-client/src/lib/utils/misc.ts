@@ -1,5 +1,10 @@
+import type { Format } from "$lib/db/cr-sqlite/types";
+import { orderFormats } from "$lib/enums/orders";
 import type { BookData, BookFetchResultEntry } from "@librocco/shared";
-
+type CustomerOrderLineSelection = {
+	isbn: string;
+	quantity: number;
+};
 // #region book data fetching
 /**
  * Merges book data for the same book retrieved from multiple sources
@@ -72,6 +77,92 @@ export function matchesName(needle: string, haystack: string) {
 	return needleConditions.every((condition) => normalizedHaystack.includes(condition));
 }
 
+/**
+ * Generates an order file string for Format A (Pearson/PBM).
+ */
+export function generatePearsonFormat(customerId: number, lines: CustomerOrderLineSelection[]): string {
+	return lines.map((line) => formatLine(customerId, line.isbn, line.quantity, 10, 5, "LL")).join("\n");
+}
+
+/**
+ * Generates an order file string for Format B (Standard Fixed-Width).
+ */
+export function generateStandardFormat(customerId: number, lines: CustomerOrderLineSelection[]): string {
+	return lines.map((line) => formatLine(customerId, line.isbn, line.quantity, 10, 5)).join("\n");
+}
+
+/**
+ * Generates an order file string for Format C (RCS/Rizzoli).
+ */
+export function generateRcsFormat(customerId: number, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
+	return lines.map((line) => formatLine(customerId, line.isbn, line.quantity, 10, quantityLength)).join("\n");
+}
+
+/**
+ * Generates an order file string for Format D (Loescher).
+ */
+export function generateLoescherFormat(customerId: number, lines: CustomerOrderLineSelection[], quantityLength: 3 | 5): string {
+	return lines.map((line) => formatLine(customerId, line.isbn, line.quantity, 6, quantityLength)).join("\n");
+}
+
+export function generateLinesForDownload(customerId: number, orderFormat: Format, lines: CustomerOrderLineSelection[]) {
+	let generatedLines = "";
+	switch (orderFormat) {
+		case orderFormats.pbm:
+			generatedLines = generatePearsonFormat(customerId, lines);
+
+			break;
+		case orderFormats.standard:
+			generatedLines = generateStandardFormat(customerId, lines);
+
+			break;
+		case orderFormats.rcs3:
+			generatedLines = generateRcsFormat(customerId, lines, 3);
+
+			break;
+		case orderFormats.rcs5:
+			generatedLines = generateRcsFormat(customerId, lines, 5);
+
+			break;
+		case orderFormats.loescher3:
+			generatedLines = generateLoescherFormat(customerId, lines, 3);
+
+			break;
+		case orderFormats.loescher5:
+			generatedLines = generateLoescherFormat(customerId, lines, 5);
+
+			break;
+		default:
+			break;
+	}
+	return generatedLines;
+}
+export function downloadAsTextFile(content: string, filename: string) {
+	const blob = new Blob([content], { type: "text/plain" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+
+	a.href = url;
+	a.download = filename;
+	document.body.appendChild(a);
+	a.click();
+
+	document.body.removeChild(a);
+	URL.revokeObjectURL(url);
+}
+function formatLine(cust: number, isbn: string, quantity: number, custLength: number, quantityLength: number, suffix = ""): string {
+	const paddedCode = String(cust).padStart(custLength, "0");
+	let digitsIsbn = isbn.replace(/-/g, "");
+	if (digitsIsbn.length < 13) {
+		digitsIsbn = digitsIsbn.padStart(13, "0");
+	} else if (digitsIsbn.length > 13) {
+		// throw error??
+		console.log("Invalid ISBN length:", digitsIsbn.length);
+		return "";
+	}
+	const paddedQuantity = String(quantity).padStart(quantityLength, "0");
+	return `${paddedCode}${digitsIsbn}${paddedQuantity}${suffix}`;
+}
 export async function retry<R>(cb: () => Promise<R>, pause: number, retries: number): Promise<R> {
 	// Attempt the first time + n - 1 retries
 	for (let i = 0; i < retries; i++) {

@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import Mail from "$lucide/mail";
+	import { Download, PencilLine, Plus, Mail } from "$lucide";
 	import UserCircle from "$lucide/user-circle";
-	import PencilLine from "$lucide/pencil-line";
-	import Plus from "$lucide/plus";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -19,7 +17,12 @@
 	import { Page } from "$lib/controllers";
 
 	import { supplierSchema } from "$lib/forms/schemas";
-	import { upsertSupplier, associatePublisher, removePublisherFromSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import {
+		upsertSupplier,
+		associatePublisher,
+		removePublisherFromSupplier,
+		getPlacedSupplierOrderLines
+	} from "$lib/db/cr-sqlite/suppliers";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
@@ -27,6 +30,8 @@
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 	import LL from "@librocco/shared/i18n-svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
+	import { orderFormats } from "$lib/enums/orders";
 
 	export let data: PageData;
 
@@ -89,6 +94,13 @@
 	const handleUnassignPublisher = (publisher: string) => async () => {
 		await removePublisherFromSupplier(db, supplier.id, publisher);
 	};
+	async function handleDownload(event: CustomEvent<{ supplierOrderId: number }>) {
+		const lines = await getPlacedSupplierOrderLines(db, [event.detail.supplierOrderId]);
+
+		const generatedLines = generateLinesForDownload(lines[0]?.customerId, lines[0]?.orderFormat, lines);
+
+		downloadAsTextFile(generatedLines, `${event.detail.supplierOrderId}-${lines[0]?.supplier_name}-${lines[0]?.orderFormat}`);
+	}
 </script>
 
 <Page title={t.details.supplier_page()} view="orders/suppliers/id" {db} {plugins}>
@@ -139,6 +151,14 @@
 												</dt>
 												<dd class="truncate">{supplier.customerId || "N/A"}</dd>
 											</div>
+
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">{t.details.supplier_orderFormat()}</span>
+													<Download aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">{supplier.orderFormat || "N/A"}</dd>
+											</div>
 										</div>
 									</div>
 
@@ -146,7 +166,7 @@
 										<button
 											class="btn-secondary btn-outline btn-xs btn w-full"
 											type="button"
-											aria-label="Edit supplier name, email or address"
+											aria-label="Edit supplier details"
 											on:click={() => dialogOpen.set(true)}
 										>
 											<PencilLine aria-hidden size={16} />
@@ -250,8 +270,97 @@
 
 				<div class="h-full overflow-x-auto">
 					<div class="h-full">
-						<OrderedTable orders={data.orders} on:reconcile={handleReconcile} />
+						<OrderedTable orders={data.orders} on:reconcile={handleReconcile} on:download={handleDownload} />
 					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
+			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
+				<div class="w-full">
+					<h2 class="text-lg">{$LL.new_order_page.stats.selected_books()}</h2>
+					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
+						<table class="!my-0 flex-col items-stretch overflow-y-auto">
+							<thead class="sticky left-0 right-0 top-0 bg-white shadow">
+								<tr>
+									<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each assignedPublishers as publisher}
+									<tr class="hover flex w-full justify-between focus-within:bg-base-200">
+										<td class="px-2">{publisher}</td>
+										<td class="px-2 text-end"
+											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
+												>{t.labels.remove_publisher()}</button
+											></td
+										>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="w-full">
+					<h2 class="text-lg">{t.table.unassigned_publishers()}</h2>
+					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
+						<table class="!my-0 flex-col items-stretch overflow-y-auto">
+							<thead class="sticky left-0 right-0 top-0 bg-white shadow">
+								<tr>
+									<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each publishersUnassignedToSuppliers as publisher}
+									<tr class="hover focus-within:bg-base-200">
+										<td class="px-2">{publisher}</td>
+										<td class="px-2 text-end"
+											><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
+												>{t.labels.add_to_supplier()}</button
+											></td
+										>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="w-full">
+					<h2 class="text-lg">{t.table.other_supplier_publishers()}</h2>
+					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
+						<table class="!my-0 flex-col items-stretch overflow-hidden">
+							<thead>
+								<tr>
+									<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each publishersAssignedToOtherSuppliers as publisher}
+									<tr class="hover focus-within:bg-base-200">
+										<td class="px-2">{publisher}</td>
+										<td class="px-2 text-end"
+											><button
+												on:click={() => {
+													confirmationPublisher = publisher;
+													confirmationDialogOpen.set(true);
+												}}
+												class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">{t.labels.reassign_publisher()}</button
+											></td
+										>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<div class="h-full overflow-x-auto">
+				<div class="h-full">
+					<OrderedTable orders={data.orders} on:reconcile={handleReconcile} on:download={handleDownload} />
 				</div>
 			</div>
 		</div>
@@ -262,16 +371,17 @@
 	<SupplierMetaForm
 		heading="Update supplier details"
 		saveLabel="Save"
-		data={defaults(stripNulls(supplier), zod(supplierSchema))}
+		data={defaults(stripNulls(supplier), zod(supplierSchema($LL)))}
 		options={{
 			SPA: true,
-			validators: zod(supplierSchema),
+			validators: zod(supplierSchema($LL)),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					handleUpdateSupplier(form.data);
 				}
 			}
 		}}
+		formatList={orderFormats}
 		onCancel={() => dialogOpen.set(false)}
 	/>
 </PageCenterDialog>

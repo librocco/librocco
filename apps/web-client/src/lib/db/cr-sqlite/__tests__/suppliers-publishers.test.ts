@@ -9,6 +9,7 @@ import {
 	getSupplierDetails,
 	removePublisherFromSupplier
 } from "../suppliers";
+import { orderFormats } from "$lib/enums/orders";
 
 // Test fixtures
 const supplier1 = {
@@ -17,7 +18,8 @@ const supplier1 = {
 	customerId: 111,
 	email: "contact@science.books",
 	address: "123 Science St",
-	numPublishers: 0
+	numPublishers: 0,
+	orderFormat: orderFormats.pbm
 };
 const supplier2 = {
 	id: 2,
@@ -25,7 +27,8 @@ const supplier2 = {
 	customerId: 222,
 	email: "info@fantasy.books",
 	address: "456 Fantasy Ave",
-	numPublishers: 0
+	numPublishers: 0,
+	orderFormat: orderFormats.pbm
 };
 const supplier3 = {
 	id: 3,
@@ -33,7 +36,8 @@ const supplier3 = {
 	customerId: 333,
 	email: "hello@history.books",
 	address: "789 History Rd",
-	numPublishers: 0
+	numPublishers: 0,
+	orderFormat: orderFormats.pbm
 };
 
 const publisher1 = "AnimalPublisher";
@@ -64,7 +68,7 @@ describe("Supplier management:", () => {
 			expect(suppliers).toEqual({
 				id: 1,
 				name: "Partial Books",
-
+				orderFormat: null,
 				customerId: null,
 				email: null,
 				address: null,
@@ -82,7 +86,8 @@ describe("Supplier management:", () => {
 			const updates = {
 				id: supplier1.id,
 				name: "Updated Science Books",
-				email: "new@science.books"
+				email: "new@science.books",
+				orderFormat: orderFormats.rcs5
 			};
 			await upsertSupplier(db, updates);
 
@@ -91,7 +96,8 @@ describe("Supplier management:", () => {
 				{
 					...supplier1,
 					name: updates.name,
-					email: updates.email
+					email: updates.email,
+					orderFormat: updates.orderFormat
 				}
 			]);
 		});
@@ -141,13 +147,14 @@ describe("Supplier management:", () => {
 	it("retrieves data for single supplier by id", async () => {
 		const db = await getRandomDb();
 
-		await upsertSupplier(db, { id: 1, name: "Science Books LTD", customerId: 111 });
+		await upsertSupplier(db, { id: 1, name: "Science Books LTD", customerId: 111, orderFormat: orderFormats.pbm });
 		await upsertSupplier(db, {
 			id: 2,
 			name: "Fantasy Books LTD",
 			email: "info@fantasy.com",
 			address: "123 Yellow Brick Rd",
-			customerId: 222
+			customerId: 222,
+			orderFormat: orderFormats.rcs3
 		});
 		await associatePublisher(db, 1, "SciencePublisher");
 		await associatePublisher(db, 1, "PhysicsPublisher");
@@ -158,7 +165,8 @@ describe("Supplier management:", () => {
 			address: null,
 			email: null,
 			customerId: 111,
-			numPublishers: 2
+			numPublishers: 2,
+			orderFormat: orderFormats.pbm
 		});
 
 		expect(await getSupplierDetails(db, 2)).toEqual({
@@ -167,7 +175,8 @@ describe("Supplier management:", () => {
 			address: "123 Yellow Brick Rd",
 			email: "info@fantasy.com",
 			customerId: 222,
-			numPublishers: 0
+			numPublishers: 0,
+			orderFormat: orderFormats.rcs3
 		});
 
 		// Non-existent supplier

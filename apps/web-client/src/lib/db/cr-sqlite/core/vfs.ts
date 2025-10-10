@@ -40,6 +40,6 @@ export const opfsVFSList = new Set<VFSWhitelist>([
 	"jspi-opfs-permuted"
 ]);
 
-export function vfsSupportsOPFS(vfs: string): boolean {
+export function vfsSupportsOPFS(vfs: string): vfs is VFSWhitelist {
 	return opfsVFSList.has(vfs as VFSWhitelist);
 }

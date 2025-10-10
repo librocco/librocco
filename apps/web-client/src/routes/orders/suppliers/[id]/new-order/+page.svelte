@@ -12,7 +12,10 @@
 
 	import type { PageData } from "./$types";
 	import LL from "@librocco/shared/i18n-svelte";
-
+	import { generateLinesForDownload, downloadAsTextFile } from "$lib/utils/misc";
+	import { TooltipWrapper } from "$lib/components";
+	import { testId } from "@librocco/shared";
+	import { SquareArrowUpRight } from "$lucide";
 	export let data: PageData;
 
 	let disposer: () => void;
@@ -27,10 +30,13 @@
 		// Unsubscribe on unmount
 		disposer();
 	});
+
 	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
-	$: ({ orderLines, plugins } = data);
+	$: ({ orderLines, plugins, supplier } = data);
+
+	$: order_format = supplier.orderFormat;
 
 	// Supplier meta data is returned per row. We just need one copy of it
 	$: [orderLine] = orderLines;
@@ -81,6 +87,9 @@
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		await createSupplierOrder(db, id, supplier_id, selection);
 
+		const generatedLines = generateLinesForDownload(supplier.customerId, supplier?.orderFormat, selection);
+
+		downloadAsTextFile(generatedLines, `${id}-${supplier.name}-${supplier.orderFormat}`);
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
 		await goto(appHash("supplier_orders", "?filter=unordered"));
@@ -120,9 +129,18 @@
 						<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
 							<h2 class="text-2xl font-medium">{supplier_name}</h2>
 
-							<span class="badge-primary badge-lg badge badge-md gap-x-2">
-								#{supplier_id}
-							</span>
+							<div class="mt-2 flex flex-row items-center justify-between">
+								<span class="badge-outline badge-lg badge badge-md mr-2 gap-x-2">
+									#{supplier_id}
+								</span>
+								<button
+									class="badge-primary badge-lg badge gap-x-2 hover:badge-outline"
+									on:click={() => goto(appHash("suppliers", supplier_id))}
+								>
+									aaaaa{t.stats.go_to_supplier()}
+									<SquareArrowUpRight size={12} />
+								</button>
+							</div>
 						</div>
 					</div>
 
@@ -136,6 +154,17 @@
 								<dt class="stat-title">{t.stats.total_value()}</dt>
 								<dd class="stat-value text-2xl">€{totalPossiblePrice.toFixed(2)}</dd>
 							</div>
+						</div>
+						<div class="stat bg-base-100 max-md:py-2 md:px-1">
+							<dt class="stat-title">{t.stats.order_format()}</dt>
+							{#if order_format}
+								<p class="stat-value text-xl">{order_format}</p>
+							{:else}
+								<!-- <p class="stat-desc">{t.stats.no_order_format()}</p> -->
+								<a class="badge-primary badge-lg badge gap-x-2 hover:badge-outline" href={appHash("suppliers", supplier_id)}>
+									{t.stats.no_order_format()}
+								</a>
+							{/if}
 						</div>
 					</dl>
 				</div>
@@ -213,10 +242,37 @@
 								</div>
 							</dl>
 
-							<button class="btn-primary btn" on:click={handlePlaceOrder}>
-								{t.labels.place_order()}
-								<Truck aria-hidden size={20} class="hidden md:block" />
-							</button>
+							{#if !order_format}
+								<TooltipWrapper
+									options={{
+										positioning: {
+											placement: "top-start"
+										},
+										openDelay: 0,
+										closeDelay: 0,
+										closeOnPointerDown: true,
+										forceVisible: true,
+										disableHoverableContent: true
+									}}
+									let:trigger={tooltipTrigger}
+								>
+									<span {...tooltipTrigger} use:tooltipTrigger.action data-testid={testId("tooltip-trigger")}>
+										<button disabled class="btn-primary btn">
+											{t.labels.place_order()}
+											<Truck aria-hidden size={20} class="hidden md:block" />
+										</button>
+									</span>
+
+									<div slot="tooltip-content" data-testid={testId("tooltip-container")}>
+										<p class="px-4 py-1 text-white">{t.labels.no_format_tooltip()}</p>
+									</div>
+								</TooltipWrapper>
+							{:else}
+								<button class="btn-primary btn" on:click={handlePlaceOrder}>
+									{t.labels.place_order()}
+									<Truck aria-hidden size={20} class="hidden md:block" />
+								</button>
+							{/if}
 						</div>
 					</div>
 				{/if}
