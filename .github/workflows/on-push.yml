@@ -613,4 +613,4 @@ jobs:
       env:
         BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
     - name: Output link to deployed demo app
-      run: echo You can view the demo app on https://librocco.codemyriad.io/demo | tee -a $GITHUB_STEP_SUMMARY
+      run: echo You can view the demo app on https://libroc.co/demo | tee -a $GITHUB_STEP_SUMMARY
