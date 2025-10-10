@@ -3,3 +3,9 @@ export interface DialogContent {
 	title: string;
 	description: string;
 }
+
+export type ProgressState = {
+	active: boolean;
+	nProcessed: number;
+	nTotal: number;
+};

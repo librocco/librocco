@@ -20,7 +20,7 @@ testOrders("customer list: updates the list as customer orders are added or upda
 	await expect(customerRow).toHaveCount(baseRowCount);
 
 	// Add one more customer order
-	const newCustomer = { id: 4, displayId: "4", fullname: "New Customer", email: "cus@email.com" };
+	const newCustomer = { id: 5, displayId: "5", fullname: "New Customer", email: "cus@email.com" };
 	await dbHandle.evaluate(upsertCustomer, newCustomer);
 
 	// Check for new customer
