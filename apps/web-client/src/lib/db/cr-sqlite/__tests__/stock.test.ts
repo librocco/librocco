@@ -133,9 +133,9 @@ describe("Stock integration tests", async () => {
 		const db = await getRandomDb();
 
 		// create three books
-		await upsertBook(db, { isbn: "1111111111", title: "Book One", authors: "Author A" });
-		await upsertBook(db, { isbn: "2222222222", title: "Book Two", authors: "Author B" });
-		await upsertBook(db, { isbn: "3333333333", title: "Another Book", authors: "Author A" });
+		await upsertBook(db, { isbn: "1111111111", title: "Book One", authors: "Author one" });
+		await upsertBook(db, { isbn: "2222222222", title: "Book Two", authors: "Author two" });
+		await upsertBook(db, { isbn: "3333333333", title: "Another Book", authors: "Author one" });
 
 		// create a warehouse and add some stock
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
@@ -154,7 +154,7 @@ describe("Stock integration tests", async () => {
 		]);
 
 		// check filtering by author string
-		expect(await getStock(db, { searchString: "Author A" })).toEqual([
+		expect(await getStock(db, { searchString: "Author one" })).toEqual([
 			expect.objectContaining({ isbn: "1111111111", quantity: 5, warehouseId: 1 }),
 			expect.objectContaining({ isbn: "3333333333", quantity: 5, warehouseId: 1 })
 		]);
