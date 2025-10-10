@@ -244,7 +244,7 @@ jobs:
   deploy-demo:
     name: Deploy demo web-client app to bunny cdn
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/production-demo'
     needs:
       [
         build-cr-sqlite,
