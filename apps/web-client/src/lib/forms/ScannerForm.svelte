@@ -45,6 +45,7 @@
 			bind:this={input}
 			bind:value={$formStore.isbn}
 			{placeholder}
+			maxlength="13"
 		/>
 	</label>
 </form>
