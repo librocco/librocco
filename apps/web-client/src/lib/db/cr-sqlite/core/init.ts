@@ -1,4 +1,4 @@
-import initWasm from "@vlcn.io/crsqlite-wasm";
+import { createWasmInitializer } from "@vlcn.io/crsqlite-wasm";
 
 import wasmSync from "@vlcn.io/wa-sqlite/dist/crsqlite-sync.wasm?url";
 import wasmAsyncify from "@vlcn.io/wa-sqlite/dist/crsqlite.wasm?url";
@@ -36,13 +36,11 @@ const vfsWasmLookup: Record<VFSWhitelist, string> = {
 
 export async function getCrsqliteDB(dbname: string, vfs: VFSWhitelist): Promise<DBAsync> {
 	const { wasmUrl, getModule } = wasmBuildArtefacts[vfsWasmLookup[vfs]];
-	// NOTE: this should be called ModuleFactory, but this is updated in a separate branch already
-	const APIFactory = await getModule();
 
-	const sqlite = await initWasm({
-		APIFactory,
-		locateWasm: () => wasmUrl,
-		vfsFactory: createVFSFactory(vfs)
-	});
+	const ModuleFactory = await getModule();
+	const vfsFactory = createVFSFactory(vfs);
+
+	const initializer = createWasmInitializer({ ModuleFactory, vfsFactory });
+	const sqlite = await initializer(() => wasmUrl);
 	return sqlite.open(dbname);
 }
