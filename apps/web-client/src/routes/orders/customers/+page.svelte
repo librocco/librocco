@@ -51,7 +51,8 @@
 	$: filteredOrders = customerOrders.filter((order) => {
 		if (!$search) return true;
 
-		return matchesName($search, order.fullname);
+		// Match by exact customer ID (displayId) or by name
+		return order.displayId === $search || matchesName($search, order.fullname);
 	});
 
 	$: tableStore.set(filteredOrders.slice(0, maxResults));
