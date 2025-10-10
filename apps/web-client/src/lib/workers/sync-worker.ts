@@ -1,5 +1,6 @@
 import { type Config, defaultConfig } from "@vlcn.io/ws-client";
 import { start } from "@vlcn.io/ws-client/worker.js";
+import SQLiteESMFactory from "@vlcn.io/wa-sqlite/dist/crsqlite.mjs";
 
 // Interface to WASM sqlite
 import { createDbProvider } from "@vlcn.io/ws-browserdb";
@@ -11,6 +12,7 @@ import { SyncTransportController, SyncEventEmitter } from "./sync-transport-cont
 import type { SyncConfig } from "./sync-transport-control";
 
 import { createVFSFactory } from "$lib/db/cr-sqlite/core";
+import { createWasmInitializer } from "@vlcn.io/crsqlite-wasm";
 
 type InboundMessage = MsgStart;
 type OutboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady;
@@ -52,11 +54,12 @@ function sendMessage(msg: OutboundMessage) {
 }
 
 function handleStart(payload: MsgStart["payload"]) {
+	const ModuleFactory = SQLiteESMFactory;
+	const vfsFactory = createVFSFactory(payload.vfs);
+
+	const initializer = createWasmInitializer({ ModuleFactory, vfsFactory });
 	const config: Config = {
-		dbProvider: createDbProvider({
-			locateWasm: () => wasmUrl,
-			vfsFactory: createVFSFactory(payload.vfs)
-		}),
+		dbProvider: (dbName: string) => createDbProvider(wasmUrl)(dbName, initializer),
 		transportProvider: wrapProvider(defaultConfig.transportProvider, createProgressEmitter(), { maxChunkSize: MAX_SYNC_CHUNK_SIZE })
 	};
 
