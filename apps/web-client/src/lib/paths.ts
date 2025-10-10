@@ -1,5 +1,7 @@
 import { base } from "$app/paths";
 
+import { IS_DEMO } from "$lib/constants";
+
 const HASHES = {
 	debug: "#/debug/",
 	// Inventory mgmt
@@ -9,7 +11,7 @@ const HASHES = {
 	inventory: "#/inventory/",
 	inbound: "#/inventory/inbound/",
 	outbound: "#/outbound/",
-	settings: "#/settings/",
+	settings: IS_DEMO ? "#/demo_settings/" : "#/settings/",
 	"history/date": "#/history/date/",
 	"history/isbn": "#/history/isbn/",
 	"history/notes/date": "#/history/notes/",

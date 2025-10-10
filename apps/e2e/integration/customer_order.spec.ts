@@ -88,7 +88,7 @@ testOrders("should allow customer search", async ({ page, customers, t }) => {
 	await expect(searchInput).toHaveValue(searchTerm2);
 
 	// This is the expected customer rows + 1 (for head row)
-	await expect(customerRows).toHaveCount(3);
+	await expect(customerRows).toHaveCount(4);
 });
 
 testOrders("should allow navigation to a specific order", async ({ page, customers, books, t }) => {

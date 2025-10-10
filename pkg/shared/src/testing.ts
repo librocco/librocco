@@ -74,7 +74,9 @@ export type TestId =
 	| "db-action-delete"
 	| "customer-search-form"
 	| "text-editable-form"
-	| "force-withdrawal-button";
+	| "force-withdrawal-button"
+	| "tooltip-container"
+	| "tooltip-trigger";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-testid] or plain HTML 'id' to the appropriate element */
 export const testId = (name: TestId) => name;

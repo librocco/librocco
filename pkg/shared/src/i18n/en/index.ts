@@ -295,7 +295,10 @@ const new_order_page = {
 	stats: {
 		total_books: "Total books",
 		total_value: "Total value",
-		selected_books: "Selected books"
+		selected_books: "Selected books",
+		order_format: "Order Format",
+		no_order_format: "Order format needs to be configured",
+		go_to_supplier: "Go to supplier"
 	},
 	table: {
 		quantity: "Quantity",
@@ -307,7 +310,8 @@ const new_order_page = {
 	},
 	labels: {
 		select: "Select",
-		place_order: "Place Order"
+		place_order: "Place Order",
+		no_format_tooltip: "No format configured"
 	}
 };
 
@@ -323,7 +327,9 @@ const order_list_page = {
 		supplier_name: "Supplier name",
 		supplier_email: "Supplier email",
 		supplier_address: "Supplier address",
-		supplier_customerId: "Supplier customer ID"
+		supplier_customerId: "Supplier customer ID",
+		supplier_orderFormat: "Supplier order format"
+
 	},
 	table: {
 		publisher_name: "Publisher name",
@@ -350,7 +356,9 @@ const reconciled_list_page = {
 	labels: {
 		view_reconciliation: "View Reconciliation",
 		reconcile: "Reconcile",
-		print_order: "Print Order"
+		print_order: "Print Order",
+		download_order: "Download Order"
+
 	},
 	stats: {
 		total_books: "Total books",
@@ -426,7 +434,8 @@ const suppliers_page = {
 		email: "Email",
 		address: "Address",
 		assigned_publishers: "Assigned Publishers",
-		actions: "Actions"
+		actions: "Actions",
+		order_format:"Order Format"
 	}
 };
 
@@ -650,16 +659,24 @@ const settings_page = {
 		settings: "Settings",
 		device_settings: "Device settings",
 		sync_settings: "Sync settings",
-		db_management: "Database management"
+		db_management: "Database management",
+
+		demo_reset: "Reset the DB to initial state ?"
 	},
 	descriptions: {
 		sync_settings: "Manage DB name, sync URL and the connection. Note: This will be merged with DB selection in the future",
 		db_management: "Use this section to create, select, import, export or delete a database",
 		import: "Drag and drop your .sqlite3 file here to import",
-		device_settings: "Manage connections to external devices"
+		device_settings: "Manage connections to external devices",
+
+		demo_reset_1: "Click on the button below to reset the DB to initial state",
+		demo_reset_2: "All changes made will be lost and the DB will be reset to initial demo state."
 	},
 	actions: {
 		nuke_and_resync: "Nuke and resync"
+	},
+	demo_actions: {
+		reset_db: "Reset database"
 	},
 	stats: {
 		version: "Version"
@@ -703,7 +720,7 @@ const supplier_orders_component = {
 		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
 		reconcile: "Reconcile",
-		view_reconciliation: "Reconciliation"
+		view_reconciliation: "View Reconciliation",
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",
@@ -849,6 +866,13 @@ const layout = {
 		}
 	},
 	error_dialog: {
+		demo_db_not_initialised: {
+			title: "Load the DB with data",
+			call_to_action: "Click on the button below to load the DB prepupulated with demo data",
+			description: "This will download the demo DB .sqlite3 file and store it to browser's OPFS (for in app usage)",
+			button: "Load DB",
+
+		},
 		schema_mismatch: {
 			title: "Error: DB Schema mismatch",
 			description: "Your DB's schema version doesn't match the latest schema version. Click automigrate to migrate to the latest version.",
@@ -911,7 +935,9 @@ const forms = {
 			email: "Email",
 			address: "Address",
 			customer_id: "Customer ID",
-			cancel_button: "Cancel"
+			cancel_button: "Cancel",
+			order_format: "Order Format",
+			order_format_message: "Please select an order format"
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"
