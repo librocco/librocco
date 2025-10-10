@@ -72,8 +72,8 @@ async function _getStock(
 			const tokens = trimmed.split(/\s+/);
 			const tokenClauses = tokens.map(() => `(b.title LIKE ? OR b.authors LIKE ?)`);
 
-			filterClauses.push(`(${tokenClauses.join(' AND ')})`);
-			tokens.forEach(token => {
+			filterClauses.push(`(${tokenClauses.join(" AND ")})`);
+			tokens.forEach((token) => {
 				const pattern = `%${token}%`;
 				filterValues.push(pattern, pattern);
 			});
