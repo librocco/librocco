@@ -199,7 +199,23 @@
 	} = createDialog({
 		forceVisible: true
 	});
-	$: $syncDialogOpen = $syncProgress.active;
+
+	// In order to prevent sync dialog flashing for minor changes
+	// we're delaying the showing of the dialog by some timeout (syncShowDebounce),
+	// and cancelling in case the sync finishes before that
+	const syncShowDebounce = 2000;
+	let tSyncDialog: any = null;
+	$: {
+		if ($syncProgress.active) {
+			tSyncDialog = setTimeout(() => syncDialogOpen.set(true), syncShowDebounce);
+		} else {
+			if (tSyncDialog) {
+				clearTimeout(tSyncDialog);
+				tSyncDialog = null;
+			}
+			syncDialogOpen.set(false);
+		}
+	}
 
 	const {
 		elements: {
