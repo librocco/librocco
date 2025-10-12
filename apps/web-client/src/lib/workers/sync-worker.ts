@@ -1,6 +1,5 @@
 import { type Config, defaultConfig } from "@vlcn.io/ws-client";
 import { start } from "@vlcn.io/ws-client/worker.js";
-import SQLiteESMFactory from "@vlcn.io/wa-sqlite/dist/crsqlite.mjs";
 
 // Interface to WASM sqlite
 import { createDbProvider } from "@vlcn.io/ws-browserdb";
@@ -13,6 +12,7 @@ import type { SyncConfig } from "./sync-transport-control";
 
 import { createVFSFactory } from "$lib/db/cr-sqlite/core";
 import { createWasmInitializer } from "@vlcn.io/crsqlite-wasm";
+import { getWasmBuildArtefacts } from "$lib/db/cr-sqlite/core/init";
 
 type InboundMessage = MsgStart;
 type OutboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady;
@@ -53,8 +53,12 @@ function sendMessage(msg: OutboundMessage) {
 	self.postMessage(msg);
 }
 
-function handleStart(payload: MsgStart["payload"]) {
-	const ModuleFactory = SQLiteESMFactory;
+async function handleStart(payload: MsgStart["payload"]) {
+	const wasmBuildArtefacts = getWasmBuildArtefacts(payload.vfs);
+
+	const { wasmUrl, getModule } = wasmBuildArtefacts;
+
+	const ModuleFactory = await getModule();
 	const vfsFactory = createVFSFactory(payload.vfs);
 
 	const initializer = createWasmInitializer({ ModuleFactory, vfsFactory });
