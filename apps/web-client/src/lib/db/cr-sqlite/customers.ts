@@ -67,21 +67,15 @@ async function _upsertCustomer(db: TXAsync, customer: Omit<Customer, "updatedAt"
 		`INSERT INTO customer (id, fullname, email, phone, deposit, display_id, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
-           fullname = COALESCE(?, fullname),
-           email = COALESCE(?, email),
-           phone = COALESCE(?, phone),
-           deposit = COALESCE(?, deposit),
-           display_id = COALESCE(?, display_id),
-           updated_at = ?
+           fullname = COALESCE(excluded.fullname, customer.fullname),
+           email = COALESCE(excluded.email, customer.email),
+           phone = COALESCE(excluded.phone, customer.phone),
+           deposit = COALESCE(excluded.deposit, customer.deposit),
+           display_id = COALESCE(excluded.display_id, customer.display_id),
+           updated_at = excluded.updated_at
 		   `,
 		[
 			customer.id,
-			customer.fullname ?? null,
-			customer.email ?? null,
-			customer.phone ?? null,
-			customer.deposit ?? null,
-			customer.displayId,
-			timestamp,
 			customer.fullname ?? null,
 			customer.email ?? null,
 			customer.phone ?? null,
@@ -178,7 +172,7 @@ async function _getCustomerOrderList(db: TXAsync): Promise<CustomerOrderListItem
 		FROM customer
 		LEFT JOIN (${orderLineStatusQuery}) AS col ON customer.id = col.customer_id
 		GROUP BY id
-		ORDER BY id ASC -- TODO: check prefered ordering
+		ORDER BY updated_at DESC
 	`;
 
 	const res = await db.execO<DBCustomerOrderListItem>(query);
@@ -363,6 +357,18 @@ export const markCustomerOrderLinesAsCollected = async (db: TXAsync, ids: number
 		`,
 		[timestamp, ...ids]
 	);
+
+	// Update customer order timestamps
+	const updateCustomersSql = `
+		UPDATE customer SET
+			updated_at = ?
+		WHERE id IN (
+			SELECT DISTINCT customer_id
+			FROM customer_order_lines
+			WHERE id IN (${multiplyString("?", ids.length)})
+		)
+	`;
+	await db.exec(updateCustomersSql, [timestamp, ...ids]);
 };
 
 export const upsertCustomer = timed(_upsertCustomer);
