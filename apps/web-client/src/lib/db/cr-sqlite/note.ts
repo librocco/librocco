@@ -458,11 +458,12 @@ async function _addVolumesToNote(db: DBAsync, noteId: number, volume: VolumeStoc
 	const warehouseId = note.warehouseId || volume.warehouseId || 0;
 
 	const insertOrUpdateTxnStmt = `
-		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id, updated_at)
-		VALUES (?, ?, ?, ?, ?)
+		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id, updated_at, last_bubbled_up)
+		VALUES (?, ?, ?, ?, ?, ?)
 		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
 			quantity = book_transaction.quantity + excluded.quantity,
-			updated_at = ?
+			updated_at = excluded.updated_at,
+			last_bubbled_up = excluded.last_bubbled_up
 	`;
 
 	await db.tx(async (txDb) => {
@@ -487,6 +488,9 @@ async function _getNoteEntries(db: TXAsync, id: number): Promise<NoteEntriesItem
 			bt.quantity,
 			bt.warehouse_id AS warehouseId,
 			bt.updated_at,
+			-- NOTE: even though 'last_bubbled_up' genereally represents a date,
+			-- we're not converting it to a Date as it's only used for ordering
+			bt.last_bubbled_up AS lastBubbledUp,
 			bt.committed_at, -- NOTE: committed at is not used in production, but this is useful for testing
 			COALESCE(w.display_name, 'not-found') AS warehouseName,
 			COALESCE(w.discount, 0) AS warehouseDiscount,
@@ -502,13 +506,14 @@ async function _getNoteEntries(db: TXAsync, id: number): Promise<NoteEntriesItem
 		LEFT JOIN book b ON bt.isbn = b.isbn
 		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
 		WHERE bt.note_id = ?
-		ORDER BY bt.updated_at DESC
+		ORDER BY bt.last_bubbled_up DESC
 	`;
 
 	const result = await db.execO<{
 		isbn: string;
 		quantity: number;
 		warehouseId?: number;
+		lastBubbledUp: number;
 		updated_at: number;
 		committed_at: number;
 
@@ -565,8 +570,8 @@ async function _updateNoteTxn(
 	const { warehouseId: nextWarehouseId, quantity: nextQuantity } = next;
 
 	// Check if the transaction exists
-	const [existingTxn] = await db.execO<{ updated_at: number }>(
-		`SELECT updated_at FROM book_transaction WHERE note_id = ? AND isbn = ? AND warehouse_id = ?`,
+	const [existingTxn] = await db.execO<{ last_bubbled_up: number }>(
+		`SELECT last_bubbled_up FROM book_transaction WHERE note_id = ? AND isbn = ? AND warehouse_id = ?`,
 		[noteId, isbn, currWarehouseId]
 	);
 
@@ -576,23 +581,24 @@ async function _updateNoteTxn(
 	}
 
 	// We're deleting the existing txn and placing the new one instead of it
-	// in case of mere update, we're keeping the original `updated_at`
-	const { updated_at } = existingTxn;
-	// In case of merging transactions, we're setting the `updated_at` to current timestamp: bubbling the
-	// merged txn to the top of the list
+	// in case of mere update, we're keeping the original `last_bubbled_up`
+	const { last_bubbled_up } = existingTxn;
+	// In case of merging transactions, we're setting the `last_bubbled_up` to current timestamp (same as 'updated_at'):
+	// bubbling the merged txn to the top of the list
 	const timestamp = Date.now();
 
 	await db.tx(async (txDb) => {
 		await txDb.exec("DELETE FROM book_transaction WHERE isbn = ? AND warehouse_id = ? AND note_id = ?", [isbn, currWarehouseId, noteId]);
 		await txDb.exec(
 			`
-			INSERT INTO book_transaction (isbn, note_id, warehouse_id, quantity, updated_at)
-			VALUES (?, ?, ?, ?, ?)
+			INSERT INTO book_transaction (isbn, note_id, warehouse_id, quantity, updated_at, last_bubbled_up)
+			VALUES (?, ?, ?, ?, ?, ?)
 			ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
 				quantity = book_transaction.quantity + excluded.quantity,
-				updated_at = ?
+				updated_at = excluded.updated_at,
+				last_bubbled_up = ?
 		`,
-			[isbn, noteId, nextWarehouseId, nextQuantity, updated_at, timestamp]
+			[isbn, noteId, nextWarehouseId, nextQuantity, timestamp, last_bubbled_up, timestamp]
 		);
 		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
 	});
@@ -637,7 +643,7 @@ async function _removeNoteTxn(db: DBAsync, noteId: number, match: { isbn: string
  * @param {number} payload.price - Item price
  * @returns {Promise<void>} Resolves when item is added/updated
  */
-async function _upsertNoteCustomItem(db: DBAsync, noteId: number, payload: NoteCustomItem): Promise<void> {
+async function _upsertNoteCustomItem(db: DBAsync, noteId: number, payload: Omit<NoteCustomItem, "lastBubbledUp">): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
 		console.warn("Cannot upsert custom items to a committed note.");
@@ -652,16 +658,16 @@ async function _upsertNoteCustomItem(db: DBAsync, noteId: number, payload: NoteC
 	// NOTE: naming this `created_at` would have worked better in this case, but we're using `updated_at` to keep consistent with
 	// book transactions ordering field
 	const query = `
-		INSERT INTO custom_item(id, note_id, title, price, updated_at)
-		VALUES(?, ?, ?, ?, ?)
+		INSERT INTO custom_item(id, note_id, title, price, updated_at, last_bubbled_up)
+		VALUES(?, ?, ?, ?, ?, ?)
 		ON CONFLICT(id, note_id) DO UPDATE SET
 			title = excluded.title,
 			price = excluded.price,
-			updated_at = custom_item.updated_at
+			updated_at = excluded.updated_at
 	`;
 
 	await db.tx(async (txDb) => {
-		await txDb.exec(query, [id, noteId, title, price, timestamp]);
+		await txDb.exec(query, [id, noteId, title, price, timestamp, timestamp]);
 		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
 	});
 }
@@ -676,13 +682,20 @@ async function _upsertNoteCustomItem(db: DBAsync, noteId: number, payload: NoteC
  */
 async function _getNoteCustomItems(db: TXAsync, noteId: number): Promise<NoteCustomItem[]> {
 	const query = `
-		SELECT id, title, COALESCE(price, 0) AS price, updated_at
+		SELECT
+			id,
+			title,
+			COALESCE(price, 0) AS price,
+			updated_at,
+			-- NOTE: even though 'last_bubbled_up' genereally represents a date,
+			-- we're not converting it to a Date as it's only used for ordering
+			last_bubbled_up AS lastBubbledUp
 		FROM custom_item
 		WHERE note_id = ?
 		ORDER BY updated_at DESC
 	`;
 
-	const res = await db.execO<{ id: number; title: string; price: number; updated_at: number }>(query, [noteId]);
+	const res = await db.execO<{ id: number; title: string; price: number; updated_at: number; lastBubbledUp: number }>(query, [noteId]);
 
 	return res.map(({ updated_at, ...item }) => ({ ...item, updatedAt: new Date(updated_at) }));
 }
