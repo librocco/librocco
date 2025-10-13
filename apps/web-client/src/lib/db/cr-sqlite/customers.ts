@@ -329,22 +329,6 @@ export const multiplyString = (str: string, n: number) => Array(n).fill(str).joi
  * @param {ids[]} ids - Array of supplier order line ids that have been collected
  * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as collected
  */
-export const markCustomerOrderAsCollected = async (db: DBAsync, ids: number[]): Promise<void> => {
-	if (!ids.length) return;
-	return db.tx(async (txDb) => {
-		const timestamp = Date.now();
-		const placeholders = multiplyString("?", ids.length);
-		await txDb.exec(
-			`
-		 UPDATE customer_order_lines
-            SET collected = ?
-            WHERE id IN (${placeholders})
-            ;`,
-			[timestamp, ...ids]
-		);
-	});
-};
-
 export const markCustomerOrderLinesAsCollected = async (db: TXAsync, ids: number[]): Promise<void> => {
 	if (!ids.length) return;
 

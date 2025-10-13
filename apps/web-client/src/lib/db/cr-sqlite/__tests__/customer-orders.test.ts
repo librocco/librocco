@@ -13,8 +13,7 @@ import {
 	getCustomerDisplayIdSeq,
 	isDisplayIdUnique,
 	getCustomerDetails,
-	getCustomerOrderList,
-	markCustomerOrderAsCollected
+	getCustomerOrderList
 } from "../customers";
 
 import { upsertBook } from "../books";
