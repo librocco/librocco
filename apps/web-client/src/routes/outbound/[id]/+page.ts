@@ -59,7 +59,7 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 
 	// If there are no entries, we don't need to go through (potentially expensive) stock query
 	if (!_entries.length) {
-		return { dbCtx, ...note, warehouses, entries: [], customItems, publisherList };
+		return { dbCtx, ...note, warehouses, entries: [] as NoteEntriesItem[], customItems, publisherList };
 	}
 
 	// Get availability by ISBN
