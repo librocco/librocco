@@ -48,6 +48,11 @@ export default class WorkerInterface extends WI {
 	}
 
 	start(vfs: VFSWhitelist) {
+		if (!vfs) {
+			console.warn("[worker] No VFS specified, noop -- worker not started");
+			return;
+		}
+
 		this._sendMessage({
 			_type: "start",
 			payload: { vfs }
