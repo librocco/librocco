@@ -82,9 +82,7 @@ async function validateFetchedDB(dbname: string): Promise<DBAsync> {
 
 		const [name, version] = schemaRes;
 		if (name !== schemaName || version !== schemaVersion) {
-			throw new Error(
-				`Schema mismatch: expected ${schemaName}@${schemaVersion}, got ${name}@${version}`
-			);
+			throw new Error(`Schema mismatch: expected ${schemaName}@${schemaVersion}, got ${name}@${version}`);
 		}
 
 		return db; // Return the open DB for re-identification
