@@ -11,7 +11,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import Menu from "$lucide/menu";
 
-	import { afterNavigate } from "$app/navigation";
+	import { afterNavigate, invalidateAll } from "$app/navigation";
 	import { browser } from "$app/environment";
 	import { beforeNavigate } from "$app/navigation";
 
@@ -25,8 +25,9 @@
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
 	import { sync, syncConfig, syncActive, dbid, syncProgressStore } from "$lib/db";
-	import { clearDb, getDB, schemaName, schemaContent, dbCache } from "$lib/db/cr-sqlite/db";
+	import { clearDb, getDB, schemaName, schemaContent, dbCache, isEmptyDB } from "$lib/db/cr-sqlite/db";
 	import { ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
+	import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -98,12 +99,78 @@
 
 	let availabilitySubscription: Subscription;
 
+	// Track whether we've checked for initial sync optimization
+	let hasCheckedInitialSync = false;
+
+	// Check if this is an initial sync (empty DB) and optimize if possible
+	const checkInitialSyncOptimization = async () => {
+		const _syncActive = get(syncActive);
+		const _vfs = dbCtx.vfs;
+		const _supportsOPFS = vfsSupportsOPFS(_vfs);
+
+		if (_syncActive && _supportsOPFS) {
+			const isEmpty = await isEmptyDB(dbCtx.db);
+
+			if (isEmpty) {
+				const sync_url = get(syncConfig).url;
+
+				if (sync_url) {
+					const dbname = get(dbid);
+					const url = new URL(sync_url);
+					url.pathname = `/${dbname}/file`;
+
+					try {
+						// Stop sync to close worker's DB connection
+						syncActive.set(false);
+
+						// Close main thread's DB connection and clear cache
+						const cached = dbCache.get(dbname);
+						if (cached) {
+							const { db } = await cached;
+							await db.close();
+							dbCache.delete(dbname);
+						}
+
+						// Fetch and replace the DB file
+						await fetchAndStoreDBFile(url.href, dbname, syncProgressStore.progress);
+
+						// Reload to reinitialize with new DB
+						await invalidateAll();
+
+						// Restart sync
+						syncActive.set(true);
+						return true; // Optimization succeeded
+					} catch (err) {
+						console.error("Initial sync file transfer failed:", err);
+						syncActive.set(true);
+						return false; // Optimization failed, need to start regular sync
+					}
+				}
+			}
+		}
+
+		return false; // No optimization attempted
+	};
+
 	// Update sync on each change to settings
 	//
 	// NOTE: This is safe even on server side as it will be a noop until
 	// the worker is initialized
 	$: if ($syncActive) {
-		sync.sync($syncConfig);
+		// On first activation, check if we can optimize with file transfer
+		if (!hasCheckedInitialSync) {
+			hasCheckedInitialSync = true;
+			checkInitialSyncOptimization().then((optimized) => {
+				// If optimization succeeded, sync will be restarted by the optimization logic
+				// If it failed or wasn't attempted, start regular sync
+				if (!optimized && get(syncActive)) {
+					sync.sync(get(syncConfig));
+				}
+			});
+		} else {
+			// Subsequent activations use regular sync
+			sync.sync($syncConfig);
+		}
 	} else {
 		sync.stop();
 	}
@@ -141,11 +208,6 @@
 
 		// Start the sync progress store (listen to sync events)
 		syncProgressStore.start(wkr);
-
-		// Start the sync
-		if (get(syncActive)) {
-			sync.sync(get(syncConfig));
-		}
 
 		// Prevent user from navigating away if sync is in progress (this would result in an invalid DB state)
 		const preventUnloadIfSyncing = (e: BeforeUnloadEvent) => {
