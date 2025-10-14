@@ -634,6 +634,7 @@ This optimization is used in two scenarios:
 The automatic initial sync optimization works by detecting an empty database on app load, stopping sync, closing all DB connections, fetching the file, and reloading with the new database. This provides the same benefit without user intervention.
 
 See implementation in:
+
 - `src/routes/+layout.svelte` (automatic initial sync)
 - `src/routes/settings/+page.svelte` (manual nukeAndResyncOPFS)
 - `src/lib/db/cr-sqlite/core/utils.ts` (fetchAndStoreDBFile, reidentifyDbNode)
