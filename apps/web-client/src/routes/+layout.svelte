@@ -45,6 +45,7 @@
 
 	import { appPath } from "$lib/paths";
 	import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
+	import { goto } from "$lib/utils/navigation";
 
 	export let data: LayoutData;
 
@@ -288,6 +289,8 @@
 		window.location.href = appPath("stock");
 	};
 </script>
+
+<svelte:window on:error={() => goto("#/client_error")} />
 
 <div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
 	<div class="hidden h-full w-72 lg:block">

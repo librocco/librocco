@@ -1,5 +1,5 @@
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async () => {
-	throw new Error("Kaboom");
+	throw new Error("Kaboom! Load time error");
 };
