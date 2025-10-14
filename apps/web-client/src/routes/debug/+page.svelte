@@ -3,6 +3,7 @@
 	import RotateCcw from "$lucide/rotate-ccw";
 	import Play from "$lucide/play";
 	import BookPlus from "$lucide/book-plus";
+	import AlertTriangle from "$lucide/alert-triangle";
 
 	import { onMount } from "svelte";
 
@@ -18,6 +19,8 @@
 	} from "$lib/db/cr-sqlite/order-reconciliation";
 	import { associatePublisher, createSupplierOrder, upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
 	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+
+	import { goto } from "$lib/utils/navigation";
 
 	import { debugData as dd } from "$lib/__testData__/debugData";
 	import { LL } from "@librocco/shared/i18n-svelte";
@@ -286,6 +289,15 @@
 	onMount(async function () {
 		await loadData();
 	});
+
+	const triggerLoadError = () => goto("#/load_error");
+
+	const throwError = () => {
+		throw new Error("Kaboom! Runtime error");
+	};
+
+	let error = false;
+	const triggerRenderError = () => (error = true);
 </script>
 
 <div id="content" class="h-full w-full overflow-y-auto">
@@ -294,6 +306,23 @@
 	</header>
 
 	<div class="flex h-full w-full flex-col px-4">
+		<div class="flex items-center justify-between self-end p-4">
+			<div class="gap-2">
+				<button class="btn-primary btn" on:click={triggerLoadError}>
+					<AlertTriangle size={20} />
+					Trigger load error
+				</button>
+				<button class="btn-primary btn" on:click={triggerRenderError}>
+					<AlertTriangle size={20} />
+					Trigger render error
+				</button>
+				<button class="btn-primary btn" on:click={throwError}>
+					<AlertTriangle size={20} />
+					Trigger runtime error
+				</button>
+			</div>
+		</div>
+
 		<div class="flex items-center justify-between self-end p-4">
 			<div class="gap-2">
 				<button class="btn-primary btn" on:click={() => populateDatabase()}>
@@ -381,6 +410,12 @@
 		</div>
 	</div>
 </div>
+
+{#if error}
+	{@html (() => {
+		throw new Error("Kaboom! Render time error");
+	})()}
+{/if}
 
 <style>
 	.spinner {
