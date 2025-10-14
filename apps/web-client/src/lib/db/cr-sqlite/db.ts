@@ -21,7 +21,7 @@ export const dbCache = new Map<string, Promise<DbCtx>>();
 export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
 
-async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | null> {
+export async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | null> {
 	const nameRes = await db.execA<[string]>("SELECT value FROM crsql_master WHERE key = 'schema_name'");
 	if (!nameRes?.length) return null;
 	const [[name]] = nameRes;

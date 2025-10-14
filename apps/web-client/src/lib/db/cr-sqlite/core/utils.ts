@@ -1,7 +1,7 @@
 import { type Writable, writable } from "svelte/store";
 
 import type { DBAsync } from "$lib/db/cr-sqlite/types";
-import { dbCache, getDB, type DbCtx } from "$lib/db/cr-sqlite/db";
+import { dbCache, getDB, type DbCtx, getSchemaNameAndVersion, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
 import type { ProgressState } from "$lib/types";
 
 import { retry } from "$lib/utils/misc";
@@ -57,77 +57,151 @@ export async function reidentifyDbNode(db: DBAsync) {
 }
 
 /**
+ * Validates a fetched database file to ensure it's a valid SQLite database with the correct schema.
+ *
+ * @param dbname The name of the database file in OPFS to validate.
+ * @returns The opened database handle if validation succeeds.
+ * @throws Error if validation fails (closes the DB before throwing).
+ */
+async function validateFetchedDB(dbname: string): Promise<DBAsync> {
+	const vfs = "sync-opfs-coop-sync";
+	const db = await getDB(dbname, vfs);
+
+	try {
+		// Quick integrity check (faster than full integrity_check)
+		const [[res]] = await db.execA<[string]>("PRAGMA quick_check");
+		if (res !== "ok") {
+			throw new Error(`Database integrity check failed: ${res}`);
+		}
+
+		// Check schema exists and matches
+		const schemaRes = await getSchemaNameAndVersion(db);
+		if (!schemaRes) {
+			throw new Error("Database has no schema (not initialized)");
+		}
+
+		const [name, version] = schemaRes;
+		if (name !== schemaName || version !== schemaVersion) {
+			throw new Error(
+				`Schema mismatch: expected ${schemaName}@${schemaVersion}, got ${name}@${version}`
+			);
+		}
+
+		return db; // Return the open DB for re-identification
+	} catch (err) {
+		// Close DB before re-throwing
+		await db.close();
+		throw err;
+	}
+}
+
+/**
  * Fetches the DB file (.sqlite3) from the provided URL and stores it in OPFS under the given target name.
- * NOTE: doesn't perform any checks if the DB is valid or not -- this shold be done outside the function.
+ * Validates the fetched file is a valid SQLite database with the correct schema.
+ * On any error (fetch failure, validation failure), ensures proper cleanup and file deletion if needed.
  *
  * @param url The URL to fetch the DB file from.
  * @param target The target filename in OPFS (e.g., 'mydb.sqlite3').
  * @param progressStore Optional Svelte writable store to track progress. If not provided, a new one will be created.
  */
 export async function fetchAndStoreDBFile(url: string, target: string, progressStore: Writable<ProgressState> = writable<ProgressState>()) {
-	// OPFS
 	const root = await navigator.storage.getDirectory();
 	const fileHandle = await root.getFileHandle(target, { create: true });
 	const writable = await fileHandle.createWritable();
 
-	// Fetch
-	const res = await fetch(url);
-	if (!res.ok || !res.body) {
-		throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
+	// Track whether fetch/write succeeded to determine if we should commit or abort
+	let fetchSucceeded = false;
+
+	try {
+		// Fetch
+		const res = await fetch(url);
+		if (!res.ok || !res.body) {
+			throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
+		}
+
+		const contentLength = parseInt(res.headers.get("Content-Length") || "0", 10);
+		if (!contentLength) throw new Error("Content-Length header is missing or invalid");
+
+		progressStore.set({ active: true, nProcessed: 0, nTotal: contentLength });
+		let received = 0;
+
+		// Stream write (from res stream to OPFS)
+		const reader = res.body.getReader();
+		// eslint-disable-next-line no-constant-condition
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+
+			await writable.write(value);
+			received += value.length;
+
+			progressStore.set({ active: true, nProcessed: received, nTotal: contentLength });
+		}
+
+		// Verify we received the expected amount
+		if (received !== contentLength) {
+			throw new Error(`Incomplete download: expected ${contentLength} bytes, got ${received}`);
+		}
+
+		fetchSucceeded = true;
+	} finally {
+		// If fetch/write failed, abort to release lock and preserve original file
+		// If fetch succeeded, close to atomically commit the new file
+		if (fetchSucceeded) {
+			await writable.close();
+		} else {
+			await writable.abort();
+		}
 	}
 
-	const contentLength = parseInt(res.headers.get("Content-Length") || "0", 10);
-	if (!contentLength) throw new Error("Content-Length header is missing or invalid");
+	// Validate and process the file (wrap in try-catch to delete file on any error)
+	try {
+		// Validate SQLite magic header
+		const file = await fileHandle.getFile();
+		const buf = await file.arrayBuffer();
+		const view = new Uint8Array(buf, 0, Math.min(100, buf.byteLength));
 
-	progressStore.set({ active: true, nProcessed: 0, nTotal: contentLength });
-	let received = 0;
+		if (view.length < 16) {
+			throw new Error("File too small to be a valid SQLite DB");
+		}
 
-	// Initial write (from res stream to OPFS)
-	const reader = res.body.getReader();
-	// eslint-disable-next-line no-constant-condition
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
+		// Check magic header: "SQLite format 3" (bytes 0-15)
+		const magic = Array.from(view.slice(0, 15));
+		const expected = [83, 81, 76, 105, 116, 101, 32, 102, 111, 114, 109, 97, 116, 32, 51]; // "SQLite format 3"
+		if (!magic.every((byte, i) => byte === expected[i])) {
+			throw new Error("Invalid SQLite file: magic header mismatch");
+		}
 
-		await writable.write(value);
-		received += value.length;
+		// Check and fix WAL mode (if needed)
+		if (view.length >= 20) {
+			const isWal = view[18] === 0x02 || view[19] === 0x02;
+			if (isWal) {
+				const walWritable = await fileHandle.createWritable({ keepExistingData: true });
+				// Make sure the file header says: no WAL (use rollback mode)
+				await walWritable.write({ type: "write", position: 18, data: new Uint8Array([0x01]) });
+				await walWritable.write({ type: "write", position: 19, data: new Uint8Array([0x01]) });
+				await walWritable.close();
+			}
+		}
 
-		progressStore.set({ active: true, nProcessed: received, nTotal: contentLength });
+		// Validate DB integrity and schema
+		const db = await validateFetchedDB(target);
+
+		// Re-identify the DB node (the fetched copy is the exact same as the server one, incl. siteid):
+		// - assign new siteid
+		// - attribute all *__crsql_clock tracked changes to server (as if they were synced to a pristine DB in the current node)
+		await reidentifyDbNode(db);
+
+		// Cleanup
+		await db.close();
+		dbCache.delete(target);
+
+		progressStore.set({ active: false, nProcessed: 0, nTotal: 0 });
+	} catch (err) {
+		// Validation or re-identification failed - delete the invalid file
+		await root.removeEntry(target);
+		throw err;
 	}
-	// Close the initial write
-	await writable.close();
-
-	// Check for locking mode (and disable WAL)
-	const file = await fileHandle.getFile();
-	const buf = await file.arrayBuffer();
-	const view = new Uint8Array(buf, 0, Math.min(32, buf.byteLength));
-	if (view.length < 20) throw new Error("File too small to be a valid SQLite DB.");
-	const isWal = view[18] === 0x02 || view[19] === 0x02;
-
-	// If is WAL mode, update the header to disable it (set to ROLLBACK mode)
-	if (isWal) {
-		const writable = await fileHandle.createWritable({ keepExistingData: true });
-		// Make sure the file header says: no WAL (use rollback mode)
-		await writable.write({ type: "write", position: 18, data: new Uint8Array([0x01]) });
-		await writable.write({ type: "write", position: 19, data: new Uint8Array([0x01]) });
-
-		await writable.close();
-	}
-
-	// Re-identify the DB node (the fetched copy is the exact same as the server one, incl. siteid):
-	// - assign new siteid
-	// - attribute all *__crsql_clock tracked changes to server (as if they were synced to a pristine DB in the current node)
-	//
-	// NOTE: using opfs-any-context, not ideal, but not terribly important either
-	const reident_vfs = "sync-opfs-coop-sync";
-	const db = await getDB(target, reident_vfs);
-	await reidentifyDbNode(db);
-
-	// Cleanup
-	await db.close();
-	dbCache.delete(target);
-
-	progressStore.set({ active: false, nProcessed: 0, nTotal: 0 });
 }
 
 type Params = {
