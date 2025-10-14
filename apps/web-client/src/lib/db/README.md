@@ -5,8 +5,9 @@
 1. [Overview](#overview)
 2. [Local DB](#local-db)
 3. [Sync worker](#sync-worker)
-4. [Sync server](#sync-server)
-5. [DB versioning and migrations](#db-versioning-and-migrations)
+4. [Sync Optimizations](#sync-optimizations)
+5. [Sync server](#sync-server)
+6. [DB versioning and migrations](#db-versioning-and-migrations)
 
 ## Overview
 
@@ -618,6 +619,38 @@ This flow achieves all of the sync reporting goals:
 
 Finally, even though this provides for more control over chunk processing, **we didn't have to massage the chunk application process whatsoever**,
 rather, the mere chopping up of changes into chunks and applying like so resulted in a **speed up of an order of magniture (and slightly more)** compared to (default) monolithic chunk application.
+
+## Sync Optimizations
+
+### Nuke and Resync: File Transfer Optimization
+
+During "nuke and resync", the client deletes its local database and syncs all changes from the server. Though faster than incremental sync, even this approach must process thousands of change records. When using an OPFS-capable VFS, we optimize further by fetching the complete database file directly from the server (`/:dbname/file`) and reidentifying it as a new local node, skipping change processing entirely. If OPFS is unavailable or the fetch fails, we fall back to standard nuke-and-resync.
+
+This optimization is used in two scenarios:
+
+1. **Manual nuke-and-resync** - When the user clicks the "Nuke and Resync" button in settings
+2. **Initial sync** - Automatically when a freshly initialized database (db_version = 0) syncs for the first time with OPFS support
+
+The automatic initial sync optimization works by detecting an empty database on app load, stopping sync, closing all DB connections, fetching the file, and reloading with the new database. This provides the same benefit without user intervention.
+
+See implementation in:
+- `src/routes/+layout.svelte` (automatic initial sync)
+- `src/routes/settings/+page.svelte` (manual nukeAndResyncOPFS)
+- `src/lib/db/cr-sqlite/core/utils.ts` (fetchAndStoreDBFile, reidentifyDbNode)
+- `src/lib/db/cr-sqlite/db.ts` (isEmptyDB)
+- `src/sync_server/index.ts` (file endpoint)
+
+#### WAL to Rollback Conversion
+
+The sync server uses WAL mode for its SQLite file. When the client receives that file, it replaces header bytes 18-19 from `0x02` to `0x01` to disable WAL and make it work with wa-sqlite in the browser. Only the header is modified; WAL files (`-wal`, `-shm`) aren't transferred. See https://www.sqlite.org/fileformat.html for header spec. If wa-sqlite gains WAL support in the future, this can be removed (track at https://github.com/rhashimoto/wa-sqlite/discussions/116).
+
+#### Database Re-identification
+
+The downloaded file contains the server's cr-sqlite identity. In cr-sqlite, ordinal 0 in `crsql_site_id` is always "myself", so the copied database thinks it's the server. We reidentify it by generating a new site_id at ordinal 0, moving the server to ordinal 1, adding the server as a tracked peer (with event=0 and current db_version to prevent re-syncing history), and updating all clock tables to attribute changes to ordinal 1.
+
+cr-sqlite uses integer ordinals instead of UUIDs in clock tables for space efficiency. The tracked peer entry with event=0 marks "received up to version X from peer Y". Updating clock tables flattens all attribution to the server, losing multi-peer granularity if the server synced from multiple peers, but this is correct for snapshot semantics.
+
+If cr-sqlite internals change, check: ordinal→UUID mapping, `crsql_tracked_peers` schema (`bootstrap.rs:53`), clock table schema (`bootstrap.rs:204-214`), and event semantics (0=receive, 1=send, from commit 781c8750).
 
 ## Sync server
 

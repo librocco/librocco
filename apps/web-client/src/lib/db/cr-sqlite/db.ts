@@ -145,6 +145,13 @@ export const getPeerDBVersion = async (db: TXAsync, siteId: Uint8Array): Promise
 	return version ? BigInt(version) : BigInt(0);
 };
 
+export const isEmptyDB = async (db: TXAsync): Promise<boolean> => {
+	// Check if the database has any changes tracked (i.e., has it been used yet)
+	// A freshly initialized database will have db_version = 0
+	const version = await getDBVersion(db);
+	return version === BigInt(0);
+};
+
 /**
  * Clears the current cr-sqlite DB (in IndexedDB)
  *
