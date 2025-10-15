@@ -297,7 +297,6 @@
 	};
 
 	let error = false;
-	const triggerRenderError = () => (error = true);
 </script>
 
 <div id="content" class="h-full w-full overflow-y-auto">
@@ -311,10 +310,6 @@
 				<button class="btn-primary btn" on:click={triggerLoadError}>
 					<AlertTriangle size={20} />
 					Trigger load error
-				</button>
-				<button class="btn-primary btn" on:click={triggerRenderError}>
-					<AlertTriangle size={20} />
-					Trigger render error
 				</button>
 				<button class="btn-primary btn" on:click={throwError}>
 					<AlertTriangle size={20} />
