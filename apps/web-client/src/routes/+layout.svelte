@@ -46,6 +46,7 @@
 	import { appPath } from "$lib/paths";
 	import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
 	import { goto } from "$lib/utils/navigation";
+	import { clientError } from "$lib/stores/errors";
 
 	export let data: LayoutData;
 
@@ -288,9 +289,14 @@
 		// so it's nicer to show a loading state than have a feel of app hanging
 		window.location.href = appPath("stock");
 	};
+
+	const handleClientSideError = (e: ErrorEvent & { currentTarget: EventTarget & Element }) => {
+		clientError.set(e.error);
+		goto("#/error");
+	};
 </script>
 
-<svelte:window on:error={() => goto("#/client_error")} />
+<svelte:window on:error={handleClientSideError} />
 
 <div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
 	<div class="hidden h-full w-72 lg:block">
