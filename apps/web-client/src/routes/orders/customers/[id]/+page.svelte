@@ -283,7 +283,7 @@
 
 					<div class="badge-primary badge-lg badge gap-x-2">
 						<span>{$LL.customer_orders_page.customer_details.total()}</span>
-						<span class="font-bold">€{totalAmount}</span>
+						<span class="font-bold">€{totalAmount.toFixed(2)}</span>
 					</div>
 				</div>
 
@@ -324,7 +324,7 @@
 									<th>{isbn}</th>
 									<td>{title}</td>
 									<td>{authors}</td>
-									<td>{price}</td>
+									<td>€{price.toFixed(2)}</td>
 									<td>{publisher}</td>
 									<td>
 										{#if status === OrderLineStatus.Collected}
