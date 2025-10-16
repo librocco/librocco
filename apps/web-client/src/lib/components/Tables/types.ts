@@ -1,12 +1,12 @@
 import type { NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 import type { VolumeStockKind } from "@librocco/shared";
 
-type InventoryTableDataBook = NoteEntriesItem & {
+type InventoryTableDataBook = Omit<NoteEntriesItem, "lastBubbledUp"> & {
 	__kind?: "book";
 	type?: string;
 	availableWarehouses?: Map<number, { displayName: string; quantity: number }>;
 };
-type InventoryTableDataCustomItem = NoteCustomItem & {
+type InventoryTableDataCustomItem = Omit<NoteCustomItem, "lastBubbledUp"> & {
 	__kind: "custom";
 };
 
