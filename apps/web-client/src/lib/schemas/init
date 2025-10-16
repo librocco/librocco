@@ -168,6 +168,11 @@ CREATE TABLE IF NOT EXISTS book_transaction (
 	warehouse_id INTEGER NOT NULL DEFAULT 0,
 	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	committed_at INTEGER,
+	-- A mere UI thing - gets updated when the element should bubble up, making it
+	-- so that recently updated elements get pushed up (but not always -- conflicting with updated_at).
+	-- This allows us to keep 'updated_at' consistent with its name (increment when the element gets updated -- no more no less),
+	-- whilst having a timestamp used to control the UI
+	last_bubbled_up INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (isbn, note_id, warehouse_id)
 	-- FOREIGN KEY (isbn) REFERENCES book(isbn) ON UPDATE CASCADE ON DELETE CASCADE,
 	-- FOREIGN KEY (note_id) REFERENCES note(id) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -186,6 +191,8 @@ CREATE TABLE IF NOT EXISTS custom_item (
 	price DECIMAL,
 	note_id INTEGER NOT NULL,
 	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
+	-- NOTE: this shouldn't ever get updated, but here for consistency when comparing with book transaction entries
+	last_bubbled_up INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id, note_id)
 	-- FOREIGN KEY (note_id) REFERENCES note(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
