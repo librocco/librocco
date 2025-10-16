@@ -624,7 +624,7 @@ rather, the mere chopping up of changes into chunks and applying like so resulte
 
 ### Nuke and Resync: File Transfer Optimization
 
-During "nuke and resync", the client deletes its local database and syncs all changes from the server. Though faster than incremental sync, even this approach must process thousands of change records. When using an OPFS-capable VFS, we optimize further by fetching the complete database file directly from the server (`/:dbname/file`) and reidentifying it as a new local node, skipping change processing entirely. If OPFS is unavailable or the fetch fails, we fall back to standard nuke-and-resync.
+During "nuke and resync", the client deletes its local database and syncs all changes from the server. This approach might potentially need to process thousands of change records. When using an OPFS-capable VFS, we optimize by fetching the complete database file directly from the server (`/:dbname/file`) and reidentifying it as a new local node, skipping change processing entirely. If OPFS is unavailable or the fetch fails, we fall back to streaming all changes and replaying them locally.
 
 This optimization is used in two scenarios:
 
