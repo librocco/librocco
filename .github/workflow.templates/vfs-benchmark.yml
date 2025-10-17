@@ -6,6 +6,8 @@
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
 #@ load("build-crsqlite.lib.yml", "build_crsqlite")
+#@ load("r2.lib.yml", "install_and_configure_rclone")
+#@ load("r2.lib.yml", "upload_to_r2")
 
 name: Checks
 
@@ -102,28 +104,8 @@ jobs:
       - name: Merge to HTML report
         run: npx playwright merge-reports --reporter html ./all-blob-reports
 
-      - name: Install lftp
-        run: |
-          sudo apt-get update
-          sudo apt-get install lftp
-
-      - name: Upload merged report to Bunny storage
-        run: |
-          lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
-          set ftp:ssl-allow no
-          set mirror:parallel-transfer-count 10
-          mirror -R playwright-report/ ${{ github.head_ref || github.ref_name }}/tests
-          EOF
-        env:
-          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_PREVIEW_STORAGE_PASSWORD }}
-
-      - name: Purge Bunny cache
-        run: |
-          curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache \
-               --header "content-type: application/json" \
-               --header "AccessKey: $BUNNY_API_KEY"
-        env:
-          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+      -  #@ install_and_configure_rclone()
+      -  #@ upload_to_r2("playwright-report/", "${{ github.head_ref || github.ref_name }}/tests/")
 
       - uses: actions/upload-artifact@v4
         if: always()
