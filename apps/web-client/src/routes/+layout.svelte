@@ -24,7 +24,7 @@
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
-	import { sync, syncConfig, syncActive, dbid, newSyncProgressStore } from "$lib/db";
+	import { sync, syncConfig, syncActive, dbid, syncProgressStore } from "$lib/db";
 	import { clearDb, getDB, schemaName, schemaContent, dbCache } from "$lib/db/cr-sqlite/db";
 	import { ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
@@ -119,7 +119,6 @@
 	});
 
 	// Sync
-	const syncProgressStore = newSyncProgressStore();
 	const { progress: syncProgress } = syncProgressStore;
 
 	onMount(() => {
