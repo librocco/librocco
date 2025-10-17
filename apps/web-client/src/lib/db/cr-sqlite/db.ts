@@ -21,7 +21,7 @@ export const dbCache = new Map<string, Promise<DbCtx>>();
 export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
 
-async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | null> {
+export async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, bigint] | null> {
 	const nameRes = await db.execA<[string]>("SELECT value FROM crsql_master WHERE key = 'schema_name'");
 	if (!nameRes?.length) return null;
 	const [[name]] = nameRes;
@@ -143,6 +143,13 @@ export const getPeerDBVersion = async (db: TXAsync, siteId: Uint8Array): Promise
 	// Get the last db version of updates for the given peer site id
 	const version = (await db.execA(`SELECT max(db_version) FROM crsql_changes WHERE site_id = ?`, [siteId]))[0][0];
 	return version ? BigInt(version) : BigInt(0);
+};
+
+export const isEmptyDB = async (db: TXAsync): Promise<boolean> => {
+	// Check if the database has any changes tracked (i.e., has it been used yet)
+	// A freshly initialized database will have db_version = 0
+	const version = await getDBVersion(db);
+	return version === BigInt(0);
 };
 
 /**

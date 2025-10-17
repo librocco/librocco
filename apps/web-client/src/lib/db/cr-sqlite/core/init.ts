@@ -1,3 +1,6 @@
+// NOTE: The `@vlcn.io/crsqlite-wasm` library has a type error - `initWasm` doesn't accept `APIFactory`
+// in its type definition, but we need to pass it to support multiple WASM builds (sync, asyncify, jspi).
+// Using a type assertion to work around this library limitation.
 import initWasm from "@vlcn.io/crsqlite-wasm";
 
 import wasmSync from "@vlcn.io/wa-sqlite/dist/crsqlite-sync.wasm?url";
@@ -23,7 +26,7 @@ const wasmBuildArtefacts = {
 	}
 };
 
-const vfsWasmLookup: Record<VFSWhitelist, string> = {
+const vfsWasmLookup: Record<VFSWhitelist, keyof typeof wasmBuildArtefacts> = {
 	"asyncify-idb-batch-atomic": "asyncify",
 	"asyncify-opfs-any-context": "asyncify",
 	"asyncify-opfs-adaptive": "asyncify",
@@ -42,6 +45,6 @@ export async function getCrsqliteDB(dbname: string, vfs: VFSWhitelist): Promise<
 		APIFactory,
 		locateWasm: () => wasmUrl,
 		vfsFactory: createVFSFactory(vfs)
-	});
+	} as any);
 	return sqlite.open(dbname);
 }
