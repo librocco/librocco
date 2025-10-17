@@ -7,6 +7,8 @@
 #@ load("rush.lib.yml", "rush_build")
 #@ load("test-job.lib.yml", "test_job")
 #@ load("build-crsqlite.lib.yml", "build_crsqlite")
+#@ load("r2.lib.yml", "install_and_configure_rclone")
+#@ load("r2.lib.yml", "upload_to_r2")
 
 name: Checks
 
@@ -137,8 +139,8 @@ jobs:
       - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
         run: rush check-workspace-projects
 
-  deploy-production:
-    name: Deploy web-client app to bunny cdn
+  deploy-preview:
+    name: Deploy preview web-client app to R2
     runs-on: ubuntu-latest
     needs: build-cr-sqlite
     steps:
@@ -167,25 +169,10 @@ jobs:
           SENTRY_ORG: code-myriad
           SENTRY_PROJECT: librocco
           SENTRY_URL: https://sentry.libroc.co
-          SENTRY_AUTH_TOKEN: ${{ secrets.SETNRY_AUTH_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
-      - name: Install lftp
-        run: |
-          sudo apt-get update
-          sudo apt-get install lftp
-      - name: Copy built app to bunny storage zone
-        run: |
-          lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
-          set ftp:ssl-allow no
-          set mirror:parallel-transfer-count 10
-          mirror -R apps/web-client/build/ ${{ github.head_ref || github.ref_name }}
-          EOF
-        env:
-          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
-      - name: Purge bunny cache
-        run: 'curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache --header "content-type: application/json" --header "AccessKey: $BUNNY_API_KEY"'
-        env:
-          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+      -  #@ install_and_configure_rclone()
+      -  #@ upload_to_r2("apps/web-client/build/", "${{ github.head_ref || github.ref_name }}/")
       - name: Output link to deployed app
         run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
   e2e-merge-report:
@@ -208,28 +195,8 @@ jobs:
       - name: Merge to HTML report
         run: npx playwright merge-reports --reporter html ./all-blob-reports
 
-      - name: Install lftp
-        run: |
-          sudo apt-get update
-          sudo apt-get install lftp
-
-      - name: Upload merged report to Bunny storage
-        run: |
-          lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
-          set ftp:ssl-allow no
-          set mirror:parallel-transfer-count 10
-          mirror -R playwright-report/ ${{ github.head_ref || github.ref_name }}/tests
-          EOF
-        env:
-          BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
-
-      - name: Purge Bunny cache
-        run: |
-          curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache \
-               --header "content-type: application/json" \
-               --header "AccessKey: $BUNNY_API_KEY"
-        env:
-          BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+      -  #@ install_and_configure_rclone()
+      -  #@ upload_to_r2("playwright-report/", "${{ github.head_ref || github.ref_name }}/tests/")
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -240,3 +207,47 @@ jobs:
 
       - name: Output link to report
         run: echo "Merged e2e report https://test.libroc.co/${{ github.head_ref || github.ref_name }}/tests/index.html" | tee -a $GITHUB_STEP_SUMMARY
+
+  deploy-demo:
+    name: Deploy demo web-client app to R2
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/production-demo'
+    needs:
+      [
+        build-cr-sqlite,
+        js-search-test,
+        book-data-extension-test,
+        web-client-test,
+        e2e-test,
+        lint-and-typecheck,
+        check-i18n-sync,
+        perform-monorepo-checks
+      ]
+    steps:
+      -  #@ checkout()
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: compute desired compiled artifact version
+        run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      -  #@ rush_build()
+      - name: Build web-client app
+        run: cd apps/web-client && rushx build:prod
+        env:
+          BASE_PATH: "/demo"
+          SENTRY_ORG: code-myriad
+          SENTRY_PROJECT: librocco
+          SENTRY_URL: https://sentry.libroc.co
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
+          PUBLIC_IS_DEMO: "true"
+          PUBLIC_DEMO_DB_URL: "https://librocco.codemyriad.io/demo_db.sqlite3"
+      -  #@ install_and_configure_rclone()
+      -  #@ upload_to_r2("apps/web-client/build/", "demo/")
+      - name: Output link to deployed demo app
+        run: echo You can view the demo app on https://libroc.co/demo | tee -a $GITHUB_STEP_SUMMARY

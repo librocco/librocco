@@ -1337,8 +1337,12 @@ describe("Note custom items", async () => {
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Item 1", price: 10 });
 		await upsertNoteCustomItem(db, 2, { id: 1, title: "Item 2", price: 12 });
 
-		expect(await getNoteCustomItems(db, 1)).toEqual([{ id: 1, title: "Item 1", price: 10, updatedAt: expect.any(Date) }]);
-		expect(await getNoteCustomItems(db, 2)).toEqual([{ id: 1, title: "Item 2", price: 12, updatedAt: expect.any(Date) }]);
+		expect(await getNoteCustomItems(db, 1)).toEqual([
+			{ id: 1, title: "Item 1", price: 10, updatedAt: expect.any(Date), lastBubbledUp: expect.any(Number) }
+		]);
+		expect(await getNoteCustomItems(db, 2)).toEqual([
+			{ id: 1, title: "Item 2", price: 12, updatedAt: expect.any(Date), lastBubbledUp: expect.any(Number) }
+		]);
 	});
 
 	it("custom items with no price fall back to price = 0", async () => {
@@ -1346,7 +1350,9 @@ describe("Note custom items", async () => {
 		await createOutboundNote(db, 1);
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Item 1", price: null as any });
 
-		expect(await getNoteCustomItems(db, 1)).toEqual([{ id: 1, title: "Item 1", price: 0, updatedAt: expect.any(Date) }]);
+		expect(await getNoteCustomItems(db, 1)).toEqual([
+			{ id: 1, title: "Item 1", price: 0, updatedAt: expect.any(Date), lastBubbledUp: expect.any(Number) }
+		]);
 	});
 });
 
