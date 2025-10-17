@@ -1,0 +1,30 @@
+#@ def install_and_configure_rclone():
+name: Install and configure rclone for R2
+run: |
+  wget -q https://downloads.rclone.org/v1.71.1/rclone-v1.71.1-linux-amd64.zip
+  unzip -q rclone-v1.71.1-linux-amd64.zip
+  sudo mv rclone-v1.71.1-linux-amd64/rclone /usr/local/bin/rclone
+  sudo chmod +x /usr/local/bin/rclone
+  rm -rf rclone-v1.71.1-linux-amd64.zip rclone-v1.71.1-linux-amd64
+
+  mkdir -p ~/.config/rclone
+  cat > ~/.config/rclone/rclone.conf <<EOF
+  [r2]
+  type = s3
+  provider = Cloudflare
+  access_key_id = ${CLOUDFLARE_ACCESS_KEY_ID}
+  secret_access_key = ${CLOUDFLARE_SECRET_ACCESS_KEY}
+  endpoint = ${CLOUDFLARE_BUCKET_URL}
+  acl = public-read
+  no_check_bucket = true
+  EOF
+env:
+  CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_ACCESS_KEY_ID }}
+  CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_SECRET_ACCESS_KEY }}
+  CLOUDFLARE_BUCKET_URL: ${{ secrets.CLOUDFLARE_BUCKET_URL }}
+#@ end
+
+#@ def upload_to_r2(source, destination):
+name: #@ "Upload to R2: {} -> {}".format(source, destination)
+run: #@ "rclone copy {} r2:librocco-ci/{}".format(source, destination)
+#@ end
