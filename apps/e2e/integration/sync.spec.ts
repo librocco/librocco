@@ -49,10 +49,11 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 	await customerRow.filter({ hasText: "Customer 5" }).getByText("cus5@email.com").waitFor();
 	// Check for UPDATE A in remote
 	let remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
-	expect(remoteCustomers[3].id).toEqual(4);
-	expect(remoteCustomers[3].fullname).toEqual("Customer 4");
-	expect(remoteCustomers[4].id).toEqual(5);
-	expect(remoteCustomers[4].fullname).toEqual("Customer 5");
+	// updated_at DESC ordering
+	expect(remoteCustomers[0].id).toEqual(5);
+	expect(remoteCustomers[0].fullname).toEqual("Customer 5");
+	expect(remoteCustomers[1].id).toEqual(4);
+	expect(remoteCustomers[1].fullname).toEqual("Customer 4");
 
 	// Update
 	//
@@ -65,8 +66,9 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 	await customerRow.filter({ hasText: "Customer 5 - updated locally" }).getByText("cus5@email.com").waitFor();
 	// Check for UPDATE A in remote
 	remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
-	expect(remoteCustomers[3].id).toEqual(4);
-	expect(remoteCustomers[3].fullname).toEqual("Customer 4 - updated remotely");
-	expect(remoteCustomers[4].id).toEqual(5);
-	expect(remoteCustomers[4].fullname).toEqual("Customer 5 - updated locally");
+	// updated_at DESC ordering
+	expect(remoteCustomers[0].id).toEqual(4);
+	expect(remoteCustomers[0].fullname).toEqual("Customer 4 - updated remotely");
+	expect(remoteCustomers[1].id).toEqual(5);
+	expect(remoteCustomers[1].fullname).toEqual("Customer 5 - updated locally");
 });
