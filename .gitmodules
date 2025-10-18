@@ -1,7 +1,7 @@
 [submodule "3rd-party/js"]
 	path = 3rd-party/js
-	url = git@github.com:codemyriad/vlcn-js
-	branch = feat/track-wa-sqlite-efforts
+	url = git@github.com:vlcn-io/js
+	branch = wa-sqlite-updates
 [submodule "3rd-party/typed-sql"]
 	path = 3rd-party/typed-sql
 	url = git@github.com:vlcn-io/typed-sql
