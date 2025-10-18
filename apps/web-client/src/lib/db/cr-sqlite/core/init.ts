@@ -48,8 +48,11 @@ export async function getCrsqliteDB(dbname: string, vfs: VFSWhitelist): Promise<
 
 	const ModuleFactory = await getModule();
 	const vfsFactory = createVFSFactory(vfs);
+	// We're using the vfs as cache key as it includes all information
+	// about the module: `${build}-${vfs}`
+	const cacheKey = vfs;
 
-	const initializer = createWasmInitializer({ ModuleFactory, vfsFactory });
+	const initializer = createWasmInitializer({ ModuleFactory, vfsFactory, cacheKey });
 	const sqlite = await initializer(() => wasmUrl);
 	return sqlite.open(dbname);
 }
