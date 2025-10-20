@@ -36,6 +36,7 @@ const vfsWasmLookup: Record<VFSWhitelist, string> = {
 
 export async function getCrsqliteDB(dbname: string, vfs: VFSWhitelist): Promise<DBAsync> {
 	const { wasmUrl, getModule } = wasmBuildArtefacts[vfsWasmLookup[vfs]];
+	// NOTE: this should be called ModuleFactory, but this is updated in a separate branch already
 	const APIFactory = await getModule();
 
 	const sqlite = await initWasm({
