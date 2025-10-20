@@ -236,11 +236,12 @@ export type VolumeStock = {
 export type NoteEntriesItem = VolumeStock & {
 	warehouseName?: string;
 	warehouseDiscount: number;
+	lastBubbledUp: number;
 	updatedAt?: Date;
 	committedAt?: Date;
 } & Required<Omit<BookData, "updatedAt">>;
 
-export type NoteCustomItem = { id: number; title: string; price: number; updatedAt?: Date };
+export type NoteCustomItem = { id: number; title: string; price: number; updatedAt?: Date; lastBubbledUp: number };
 
 export type ReceiptItem = {
 	isbn?: string; // undefined for custom_item

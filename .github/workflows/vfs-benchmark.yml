@@ -179,26 +179,31 @@ jobs:
         merge-multiple: true
     - name: Merge to HTML report
       run: npx playwright merge-reports --reporter html ./all-blob-reports
-    - name: Install lftp
+    - name: Install and configure rclone for R2
       run: |
-        sudo apt-get update
-        sudo apt-get install lftp
-    - name: Upload merged report to Bunny storage
-      run: |
-        lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
-        set ftp:ssl-allow no
-        set mirror:parallel-transfer-count 10
-        mirror -R playwright-report/ ${{ github.head_ref || github.ref_name }}/tests
+        wget -q https://downloads.rclone.org/v1.71.1/rclone-v1.71.1-linux-amd64.zip
+        unzip -q rclone-v1.71.1-linux-amd64.zip
+        sudo mv rclone-v1.71.1-linux-amd64/rclone /usr/local/bin/rclone
+        sudo chmod +x /usr/local/bin/rclone
+        rm -rf rclone-v1.71.1-linux-amd64.zip rclone-v1.71.1-linux-amd64
+
+        mkdir -p ~/.config/rclone
+        cat > ~/.config/rclone/rclone.conf <<EOF
+        [r2]
+        type = s3
+        provider = Cloudflare
+        access_key_id = ${CLOUDFLARE_ACCESS_KEY_ID}
+        secret_access_key = ${CLOUDFLARE_SECRET_ACCESS_KEY}
+        endpoint = ${CLOUDFLARE_BUCKET_URL}
+        acl = public-read
+        no_check_bucket = true
         EOF
       env:
-        BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_PREVIEW_STORAGE_PASSWORD }}
-    - name: Purge Bunny cache
-      run: |
-        curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache \
-             --header "content-type: application/json" \
-             --header "AccessKey: $BUNNY_API_KEY"
-      env:
-        BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+        CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_ACCESS_KEY_ID }}
+        CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_SECRET_ACCESS_KEY }}
+        CLOUDFLARE_BUCKET_URL: ${{ secrets.CLOUDFLARE_BUCKET_URL }}
+    - name: 'Upload to R2: playwright-report/ -> ${{ github.head_ref || github.ref_name }}/tests/'
+      run: rclone copy playwright-report/ r2:librocco-ci/${{ github.head_ref || github.ref_name }}/tests/
     - uses: actions/upload-artifact@v4
       if: always()
       with:
