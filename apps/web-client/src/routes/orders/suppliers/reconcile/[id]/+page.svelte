@@ -280,7 +280,7 @@
 											<th>{isbn}</th>
 											<td>{title || "-"}</td>
 											<td>{authors || "-"}</td>
-											<td>€{price || 0}</td>
+											<td>€{(price || 0).toFixed(2)}</td>
 											<td>
 												<button
 													class={`${data?.reconciliationOrder.finalized ? "cursor-default text-gray-400" : ""}`}
