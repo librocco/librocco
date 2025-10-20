@@ -17,14 +17,14 @@
 
 	import type { LayoutData } from "./$types";
 
-	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
+	import { DEFAULT_VFS, DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
-	import { sync, syncConfig, syncActive, dbid, newSyncProgressStore } from "$lib/db";
+	import { sync, syncConfig, syncActive, dbid, syncProgressStore } from "$lib/db";
 	import { clearDb, getDB, schemaName, schemaContent, dbCache } from "$lib/db/cr-sqlite/db";
 	import { ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
@@ -44,6 +44,7 @@
 	import { progressBar } from "$lib/actions";
 
 	import { appPath } from "$lib/paths";
+	import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
 
 	export let data: LayoutData;
 
@@ -118,7 +119,6 @@
 	});
 
 	// Sync
-	const syncProgressStore = newSyncProgressStore();
 	const { progress: syncProgress } = syncProgressStore;
 
 	onMount(() => {
@@ -136,8 +136,11 @@
 		//
 		// Init worker and sync interface
 		const wkr = new WorkerInterface(new SyncWorker());
-		console.log("using vfs:", dbCtx.vfs);
-		wkr.start(dbCtx.vfs); // Use the same VFS as the one in the main-thread-initialized DB
+		// NOTE: It's ok if dbCtx (and, by extension the vfs) is not defined -- this is handled elsewhere
+		// calls to wkr.start(vfs) without vfs provided are noop
+		const vfs = dbCtx?.vfs;
+		console.log("using vfs:", vfs);
+		wkr.start(vfs);
 		sync.init(wkr);
 
 		// Start the sync progress store (listen to sync events)
@@ -248,7 +251,8 @@
 
 	const automigrateDB = async () => {
 		// We need to retrieve the DB directly, as the broken DB won't be passed down from the load function
-		const db = await getDB($dbid);
+		const vfs = (window.localStorage.getItem("vfs") as VFSWhitelist) || DEFAULT_VFS;
+		const db = await getDB($dbid, vfs);
 
 		console.log("automigrating db to latest versin....");
 		await db.automigrateTo(schemaName, schemaContent);
