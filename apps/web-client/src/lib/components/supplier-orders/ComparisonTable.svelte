@@ -1,8 +1,24 @@
 <script lang="ts">
+	import type { Writable } from "svelte/store";
+
 	import { _group, wrapIter } from "@librocco/shared";
 
 	import type { ReconciliationUnmatchedBookLine, ReconciliationProcessedLine } from "./utils";
 	import LL from "@librocco/shared/i18n-svelte";
+
+	export let linesBookedWithSupplier: Writable<Map<string, number>>;
+
+	// NOTE: we're using an internal list here and marshaling [isbn, supplierId] pairs into strings
+	// in order to be able to use the `bind:group` directive with checkboxes.
+	let _linesBookedWithSupplier: string[] = [];
+	const marshalIsbnSupplierPair = (isbn: string, supplierId: number) => `${isbn}___${supplierId}`;
+	const unmarshalIsbnSupplierPair = (str: string): [string, number] => {
+		const [isbn, supplierId] = str.split("___");
+		return [isbn, parseInt(supplierId)];
+	};
+
+	// Unmarshaling the (internal) _linesBookedWithSupplier to a Map -- for caller convenience.
+	$: $linesBookedWithSupplier = new Map(_linesBookedWithSupplier.map(unmarshalIsbnSupplierPair));
 
 	export let reconciledBooks: { processedLines: ReconciliationProcessedLine[]; unmatchedBooks: ReconciliationUnmatchedBookLine[] } = {
 		processedLines: [],
@@ -23,6 +39,8 @@
 				<th> {$LL.supplier_orders_component.comparison_table.price()}</th>
 				<th> {$LL.supplier_orders_component.comparison_table.ordered_quantity()}</th>
 				<th> {$LL.supplier_orders_component.comparison_table.delivered_quantity()}</th>
+				<th></th>
+				<th> {$LL.supplier_orders_component.comparison_table.booked_with_supplier()}</th>
 				<!-- <th class="w-16">
 					<span class="sr-only">Delivered</span>
 				</th> -->
@@ -32,7 +50,7 @@
 		{#if reconciledBooks.unmatchedBooks.length}
 			<thead>
 				<tr class="bg-base-200/50">
-					<th colspan="7" class="text-left"> {$LL.supplier_orders_component.comparison_table.unmatched_books()} </th>
+					<th colspan="8" class="text-left"> {$LL.supplier_orders_component.comparison_table.unmatched_books()} </th>
 				</tr>
 			</thead>
 			<tbody>
@@ -44,6 +62,7 @@
 						<td>€{line.price.toFixed(2)}</td>
 						<td></td>
 						<td class="text-center">{line.deliveredQuantity}</td>
+						<td></td>
 					</tr>
 				{/each}
 			</tbody>
@@ -64,7 +83,8 @@
 			</thead>
 
 			<tbody>
-				{#each reconciledBooksList as { isbn, title, authors, price, deliveredQuantity, orderedQuantity }}
+				{#each reconciledBooksList as { isbn, title, authors, price, deliveredQuantity, orderedQuantity, supplier_id }}
+					{@const fullyDelivered = deliveredQuantity >= orderedQuantity}
 					<tr>
 						<td>{isbn}</td>
 						<td>{title}</td>
@@ -74,7 +94,18 @@
 						<td class="text-center">{deliveredQuantity}</td>
 						<td class="text-center">
 							<!-- is true if book is in delivered books -->
-							<input type="checkbox" checked={deliveredQuantity >= orderedQuantity} disabled class="checkbox" />
+							<input type="checkbox" checked={fullyDelivered} disabled class="checkbox" />
+						</td>
+						<td class="text-center">
+							{#if !fullyDelivered}
+								<!-- checking this marks the line as booked with the supplier, see: https://github.com/librocco/librocco/issues/936 -->
+								<input
+									bind:group={_linesBookedWithSupplier}
+									value={marshalIsbnSupplierPair(isbn, supplier_id)}
+									type="checkbox"
+									class="checkbox"
+								/>
+							{/if}
 						</td>
 					</tr>
 				{/each}

@@ -700,7 +700,8 @@ const supplier_orders_component = {
 		price: "Price",
 		ordered_quantity: "Ordered Quantity",
 		delivered_quantity: "Delivered Quantity",
-		unmatched_books: "Unmatched Books"
+		unmatched_books: "Unmatched Books",
+		booked_with_supplier: "Booked With Supplier"
 	},
 	completed_table: {
 		supplier_id: "Order ID",
