@@ -59,8 +59,25 @@ async function _getStock(
 	const filterValues = [];
 
 	if (searchString) {
-		filterClauses.push(`(bt.isbn LIKE ? OR b.title LIKE ? OR b.authors LIKE ?)`);
-		filterValues.push(`%${searchString}%`, `%${searchString}%`, `%${searchString}%`); // One value for each ?
+		const trimmed = searchString.trim();
+
+		// Only search ISBN if the entire search string is numeric
+		const isISBNSearch = /^\d+$/.test(trimmed);
+
+		if (isISBNSearch) {
+			filterClauses.push(`bt.isbn LIKE ?`);
+			filterValues.push(`%${trimmed}%`);
+		} else {
+			// Split into tokens and search each token in title OR authors
+			const tokens = trimmed.split(/\s+/);
+			const tokenClauses = tokens.map(() => `(b.title LIKE ? OR b.authors LIKE ?)`);
+
+			filterClauses.push(`(${tokenClauses.join(" AND ")})`);
+			tokens.forEach((token) => {
+				const pattern = `%${token}%`;
+				filterValues.push(pattern, pattern);
+			});
+		}
 	}
 
 	if (entries?.length) {
