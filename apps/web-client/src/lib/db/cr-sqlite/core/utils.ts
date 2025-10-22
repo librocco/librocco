@@ -258,3 +258,61 @@ export async function checkOPFSFileExists(fname: string) {
 		throw err;
 	}
 }
+
+type FileSystemFileHandleExt = FileSystemFileHandle & {
+	move(dest: string): Promise<void>;
+	move(destDir: FileSystemDirectoryHandle, dest?: string): Promise<void>;
+};
+
+async function moveImpl(
+	srcDir: FileSystemDirectoryHandle,
+	srcHandle: FileSystemFileHandle,
+	destDir: FileSystemDirectoryHandle,
+	destName: string
+): Promise<void> {
+	// Fallback impl:
+	// 1. create dest
+	// 2. copy from src to dest
+	// 3. delete src
+	const srcFile = await srcHandle.getFile();
+	const srcBuf = await srcFile.arrayBuffer();
+
+	const destHandle = await destDir.getFileHandle(destName);
+	const destWritable = await destHandle.createWritable();
+
+	await destWritable.write(srcBuf);
+	await destWritable.close();
+
+	await srcDir.removeEntry(srcHandle.name);
+}
+
+/**
+ * Wraps file handle
+ */
+export function wrapFileHandle(dirHandle: FileSystemDirectoryHandle, fileHandle: FileSystemFileHandle): FileSystemFileHandleExt {
+	const move = async (...params: any[]) => {
+		const srcDir = dirHandle;
+		const srcHandle = fileHandle;
+
+		// Case params = [destName]
+		if (typeof params[0] === "string") {
+			const destDir = await window.navigator.storage.getDirectory();
+			const dest = params[0];
+			return moveImpl(srcDir, srcHandle, destDir, dest);
+		}
+
+		// Case params = [destDirHandle, destName?]
+		const destDir = params[0] as FileSystemDirectoryHandle;
+		// If dest name not provided, use the same name as current file
+		const dest = params[0] || srcHandle.name;
+		return moveImpl(srcDir, srcHandle, destDir, dest);
+	};
+
+	// Happy path: Google Chrome (for instance) supports FileSystemFileHandle.move(...),
+	// if .move provided, use the native impl
+	if ("move" in fileHandle) {
+		return fileHandle as FileSystemFileHandleExt;
+	}
+
+	return Object.assign(fileHandle, { move });
+}
