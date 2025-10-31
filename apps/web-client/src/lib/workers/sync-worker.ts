@@ -3,7 +3,6 @@ import { start } from "@vlcn.io/ws-client/worker.js";
 
 // Interface to WASM sqlite
 import { createDbProvider } from "@vlcn.io/ws-browserdb";
-import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 
 import type { MsgStart, MsgChangesReceived, MsgChangesProcessed, MsgProgress, MsgReady } from "./types";
 
@@ -11,6 +10,8 @@ import { SyncTransportController, SyncEventEmitter } from "./sync-transport-cont
 import type { SyncConfig } from "./sync-transport-control";
 
 import { createVFSFactory } from "$lib/db/cr-sqlite/core";
+import { createWasmInitializer } from "@vlcn.io/crsqlite-wasm";
+import { getWasmBuildArtefacts } from "$lib/db/cr-sqlite/core/init";
 
 type InboundMessage = MsgStart;
 type OutboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady;
@@ -52,12 +53,39 @@ function sendMessage(msg: OutboundMessage) {
 }
 
 function handleStart(payload: MsgStart["payload"]) {
+	// Get WASM build artefacts for appropriate VFS + WASM build
+	const wasmBuildArtefacts = getWasmBuildArtefacts(payload.vfs);
+	const { wasmUrl, getModule } = wasmBuildArtefacts;
+
+	// Wrap DB provider, to flatten the promise to DB initialization
+	//
+	// dbProvider is async in and of itself, so we can include dynamic module fetching
+	// and async initializations there.
+	//
+	// In theory, we could retrieve the ModuleFactory beforehand, but making the outer
+	// function (handleStart) async breaks the sync initialization (the worker gets initialized, but no sync takes place).
+	// This is a convenient, and somewhat clean workaround (we might cache the ModuleFactory to make it fully kosher).
+	const dbProvider: Config["dbProvider"] = async (dbname: string) => {
+		const { vfs } = payload;
+
+		const ModuleFactory = await getModule();
+		const vfsFactory = createVFSFactory(vfs);
+		// We're using the vfs as cache key as it includes all information
+		// about the module: `${build}-${vfs}`
+		const cacheKey = vfs;
+
+		const initializer = createWasmInitializer({ ModuleFactory, vfsFactory, cacheKey });
+
+		const provider = createDbProvider(wasmUrl, initializer);
+
+		return provider(dbname);
+	};
+
 	const config: Config = {
-		dbProvider: createDbProvider({
-			locateWasm: () => wasmUrl,
-			vfsFactory: createVFSFactory(payload.vfs)
-		}),
-		transportProvider: wrapProvider(defaultConfig.transportProvider, createProgressEmitter(), { maxChunkSize: MAX_SYNC_CHUNK_SIZE })
+		dbProvider,
+		transportProvider: wrapTransportProvider(defaultConfig.transportProvider, createProgressEmitter(), {
+			maxChunkSize: MAX_SYNC_CHUNK_SIZE
+		})
 	};
 
 	// Start the sync process
@@ -88,9 +116,13 @@ function createProgressEmitter() {
 type TransportProvider = Config["transportProvider"];
 
 /**
- * See `wrapTransport` above. This merely wraps the transport provider (rather than transport itself), to
- * fit the signature (shape of the config) passed to the sync service `start` function.
+ * Wraps a transport provider to inject the SyncTransportController (passing `emitter` and `config` to it), allowing
+ * the transport to emit sync events via the emitter.
+ * @param provider The original transport provider
+ * @param emitter The sync event emitter (passed to wrapped SyncTransportController)
+ * @param config
+ * @returns A wrapped transport provider
  */
-function wrapProvider(provider: TransportProvider, emitter: SyncEventEmitter, config: SyncConfig): TransportProvider {
+function wrapTransportProvider(provider: TransportProvider, emitter: SyncEventEmitter, config: SyncConfig): TransportProvider {
 	return (...params: Parameters<TransportProvider>) => new SyncTransportController(provider(...params), emitter, config);
 }
