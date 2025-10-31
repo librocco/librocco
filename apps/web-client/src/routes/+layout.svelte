@@ -100,78 +100,13 @@
 
 	let availabilitySubscription: Subscription;
 
-	// Track whether we've checked for initial sync optimization
-	let hasCheckedInitialSync = false;
-
-	// Check if this is an initial sync (empty DB) and optimize if possible
-	const checkInitialSyncOptimization = async () => {
-		const _syncActive = get(syncActive);
-		const _vfs = dbCtx.vfs;
-		const _supportsOPFS = vfsSupportsOPFS(_vfs);
-
-		if (_syncActive && _supportsOPFS) {
-			const isEmpty = await isEmptyDB(dbCtx.db);
-
-			if (isEmpty) {
-				const sync_url = get(syncConfig).url;
-
-				if (sync_url) {
-					const dbname = get(dbid);
-					const url = new URL(sync_url);
-					url.pathname = `/${dbname}/file`;
-
-					try {
-						// Stop sync to close worker's DB connection
-						syncActive.set(false);
-
-						// Close main thread's DB connection and clear cache
-						const cached = dbCache.get(dbname);
-						if (cached) {
-							const { db } = await cached;
-							await db.close();
-							dbCache.delete(dbname);
-						}
-
-						// Fetch and replace the DB file
-						await fetchAndStoreDBFile(url.href, dbname, syncProgressStore.progress);
-
-						// Reload to reinitialize with new DB
-						await invalidateAll();
-
-						// Restart sync
-						syncActive.set(true);
-						return true; // Optimization succeeded
-					} catch (err) {
-						console.error("Initial sync file transfer failed:", err);
-						syncActive.set(true);
-						return false; // Optimization failed, need to start regular sync
-					}
-				}
-			}
-		}
-
-		return false; // No optimization attempted
-	};
-
 	// Update sync on each change to settings
 	//
 	// NOTE: This is safe even on server side as it will be a noop until
 	// the worker is initialized
 	$: if ($syncActive) {
-		// On first activation, check if we can optimize with file transfer
-		if (!hasCheckedInitialSync) {
-			hasCheckedInitialSync = true;
-			checkInitialSyncOptimization().then((optimized) => {
-				// If optimization succeeded, sync will be restarted by the optimization logic
-				// If it failed or wasn't attempted, start regular sync
-				if (!optimized && get(syncActive)) {
-					sync.sync(get(syncConfig));
-				}
-			});
-		} else {
-			// Subsequent activations use regular sync
-			sync.sync($syncConfig);
-		}
+		// Subsequent activations use regular sync
+		sync.sync($syncConfig, { invalidateAll });
 	} else {
 		sync.stop();
 	}
@@ -206,9 +141,14 @@
 		// NOTE: It's ok if dbCtx (and, by extension the vfs) is not defined -- this is handled elsewhere
 		// calls to wkr.start(vfs) without vfs provided are noop
 		const vfs = dbCtx?.vfs;
-		console.log("using vfs:", vfs);
+
 		wkr.start(vfs);
 		sync.init(wkr);
+
+		// Start the sync is it should be active.
+		if ($syncActive) {
+			sync.sync($syncConfig, { invalidateAll });
+		}
 
 		// Start the sync progress store (listen to sync events)
 		syncProgressStore.start(wkr);
@@ -270,15 +210,22 @@
 	// we're delaying the showing of the dialog by some timeout (syncShowDebounce),
 	// and cancelling in case the sync finishes before that
 	const syncShowDebounce = 2000;
-	let tSyncDialog: any = null;
+	let showSyncDialogTimeout: any = null;
 	$: {
-		if ($syncProgress.active) {
-			tSyncDialog = setTimeout(() => syncDialogOpen.set(true), syncShowDebounce);
-		} else {
-			if (tSyncDialog) {
-				clearTimeout(tSyncDialog);
-				tSyncDialog = null;
+		const _clearTimeout = () => {
+			if (showSyncDialogTimeout) {
+				clearTimeout(showSyncDialogTimeout);
+				showSyncDialogTimeout = null;
 			}
+		};
+
+		if ($syncProgress.active && !showSyncDialogTimeout) {
+			showSyncDialogTimeout = setTimeout(() => {
+				showSyncDialogTimeout.set(true);
+				_clearTimeout();
+			}, syncShowDebounce);
+		} else {
+			_clearTimeout();
 			syncDialogOpen.set(false);
 		}
 	}

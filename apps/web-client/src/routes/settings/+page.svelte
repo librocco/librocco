@@ -193,20 +193,6 @@
 			await deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
 		}
 
-		const sync_url = get(syncConfig).url;
-
-		// TODO: rethink setup around this
-		const url = new URL(sync_url);
-		url.pathname = `/${dbname}/file`;
-
-		try {
-			await fetchAndStoreDBFile(url.href, dbname, syncProgressStore.progress);
-		} catch (err) {
-			// If error fetching the DB file, fallback to regular sync
-			console.error(err);
-			console.log("Error fetching DB file, falling back to regular sync");
-		}
-
 		// Reinstate the sync
 		// - in case of DB file fetched, we should be in-sync
 		// - in case of error fetching DB file, this will trigger a full sync
