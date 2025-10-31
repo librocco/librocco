@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach } from "vitest";
 
 import { sync } from "../sync";
+import { DEFAULT_VFS } from "$lib/constants";
 
 /**
  * Creates a mock worker interface used for testing.
@@ -53,7 +54,9 @@ const createMockWorkerInterface = () => {
 
 	const getOngoingSync = () => ongoingSync;
 
-	return { startSync, stopSync, getOngoingSync };
+	const vfs = () => DEFAULT_VFS;
+
+	return { startSync, stopSync, getOngoingSync, vfs };
 };
 
 const dbid = "db1";
