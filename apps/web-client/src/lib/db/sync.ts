@@ -4,11 +4,10 @@ import type { ProgressState } from "$lib/types";
 
 import type WorkerInterface from "$lib/workers/WorkerInterface";
 import type { VFSWhitelist } from "./cr-sqlite/core";
-import { dbCache, isEmptyDB } from "./cr-sqlite/db";
+import { dbCache, getDB, isEmptyDB } from "./cr-sqlite/db";
 
 import { vfsSupportsOPFS } from "./cr-sqlite/core/vfs";
 import { deleteDBFromOPFS, fetchAndStoreDBFile, wrapFileHandle } from "./cr-sqlite/core/utils";
-import { invalidateAll } from "$app/navigation";
 
 export type SyncConfig = {
 	dbid?: string;
@@ -87,7 +86,13 @@ const newSyncInterface = () => {
 		worker = _worker;
 	};
 
-	const sync = async (config: SyncConfig) => {
+	type SyncOpts = {
+		/** Passing 'invalidateAll' as an argument to avoid direct imports from $app/navigation for stability in tests */
+		invalidateAll?: () => Promise<void>;
+		/** Turn off initial fetch optimisation (usually only used for testing) */
+		optimiseFetch?: boolean;
+	};
+	const sync = async (config: SyncConfig, { invalidateAll, optimiseFetch = true }: SyncOpts = {}) => {
 		console.log("sync started");
 		if (!worker) {
 			console.warn("Trying to start sync without worker initialised: run '.init(worker)' first");
@@ -115,22 +120,27 @@ const newSyncInterface = () => {
 			return;
 		}
 
-		const dbCtx = await dbCache.get(config.dbid);
-		if (!dbCtx) {
-			console.warn("Trying to start sync on uninitialised DB: ", config.dbid);
-			return;
-		}
-
 		// Check if optimisation available (VFS is OPFS)
-		if (vfsSupportsOPFS(vfs) && (await isEmptyDB(dbCtx.db))) {
-			const fileUrl = new URL(config.url);
-			fileUrl.protocol = "http";
-			fileUrl.pathname = `/${config.dbid}/file`;
-			console.time("fetch");
-			await optimiser.fetch(fileUrl.href, config.dbid, syncProgressStore.progress);
-			console.timeEnd("fetch");
-			// Invalidate all to trigger reload of the DB (this works if err as well)
-			await invalidateAll();
+		if (vfsSupportsOPFS(vfs) && optimiseFetch) {
+			// Openning a new DB connection to check if empty.
+			// If DB (for some reason doesn't exist) a new one will be created (and behave as empty)
+			const dbEmpty = await (async () => {
+				const db = await getDB(config.dbid);
+				const res = await isEmptyDB(db);
+				await db.close();
+				return res;
+			})();
+
+			if (dbEmpty) {
+				const fileUrl = new URL(config.url);
+				fileUrl.protocol = "http";
+				fileUrl.pathname = `/${config.dbid}/file`;
+				console.time("fetch");
+				await optimiser.fetch(fileUrl.href, config.dbid, syncProgressStore.progress);
+				console.timeEnd("fetch");
+				// Invalidate all to trigger reload of the DB (this works if err as well)
+				await invalidateAll?.();
+			}
 		}
 
 		// NOTE: the following runs regardless of optimisation being successful (or available for that matter)

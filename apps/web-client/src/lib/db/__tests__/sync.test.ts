@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach } from "vitest";
 
 import { sync } from "../sync";
-import { DEFAULT_VFS } from "$lib/constants";
 
 /**
  * Creates a mock worker interface used for testing.
@@ -54,7 +53,9 @@ const createMockWorkerInterface = () => {
 
 	const getOngoingSync = () => ongoingSync;
 
-	const vfs = () => DEFAULT_VFS;
+	// The VFS is hardcoded to the value we we're using as default at that time.
+	// The vfs return isn't used in tests anyway, TODO: update if necessary
+	const vfs = () => "sync-opfs-coop-sync" as any;
 
 	return { startSync, stopSync, getOngoingSync, vfs };
 };
@@ -66,16 +67,20 @@ afterEach(() => {
 	sync.reset();
 });
 
+const syncOpts = {
+	optimiseFetch: false
+};
+
 describe("sync interface", () => {
 	it("doesn't explode if running .sync() before initialised", () => {
-		sync.sync({});
+		sync.sync({}, syncOpts);
 	});
 
 	it("starts the sync on initialised interface, with passed config, on .sync()", () => {
 		const wkr = createMockWorkerInterface();
 		sync.init(wkr);
 
-		sync.sync({ dbid, url });
+		sync.sync({ dbid, url }, syncOpts);
 
 		expect(wkr.getOngoingSync()).toEqual({ dbid, url });
 	});
@@ -84,8 +89,8 @@ describe("sync interface", () => {
 		const wkr = createMockWorkerInterface();
 		sync.init(wkr);
 
-		sync.sync({ dbid, url });
-		sync.sync({ dbid, url });
+		sync.sync({ dbid, url }, syncOpts);
+		sync.sync({ dbid, url }, syncOpts);
 
 		expect(wkr.getOngoingSync()).toEqual({ dbid, url });
 	});
@@ -94,10 +99,10 @@ describe("sync interface", () => {
 		const wkr = createMockWorkerInterface();
 		sync.init(wkr);
 
-		sync.sync({ dbid, url });
+		sync.sync({ dbid, url }, syncOpts);
 
 		const newConfig = { dbid: "db2", url: "http://new-url.com/db2" };
-		sync.sync(newConfig);
+		sync.sync(newConfig, syncOpts);
 
 		expect(wkr.getOngoingSync()).toEqual(newConfig);
 	});
@@ -106,10 +111,10 @@ describe("sync interface", () => {
 		const wkr = createMockWorkerInterface();
 		sync.init(wkr);
 
-		sync.sync({ dbid });
+		sync.sync({ dbid }, syncOpts);
 		expect(wkr.getOngoingSync()).toEqual(undefined);
 
-		sync.sync({ url });
+		sync.sync({ url }, syncOpts);
 		expect(wkr.getOngoingSync()).toEqual(undefined);
 	});
 
@@ -118,17 +123,17 @@ describe("sync interface", () => {
 		sync.init(wkr);
 
 		// Start the regular sync
-		sync.sync({ dbid, url });
+		sync.sync({ dbid, url }, syncOpts);
 		expect(wkr.getOngoingSync()).toEqual({ dbid, url });
 		// Interrupt by specifying a new config with missing 'dbid'
-		sync.sync({ url });
+		sync.sync({ url }, syncOpts);
 		expect(wkr.getOngoingSync()).toEqual(undefined);
 
 		// Start the regular sync
-		sync.sync({ dbid, url });
+		sync.sync({ dbid, url }, syncOpts);
 		expect(wkr.getOngoingSync()).toEqual({ dbid, url });
 		// Interrupt by specifying a new config with missing 'url'
-		sync.sync({ dbid });
+		sync.sync({ dbid }, syncOpts);
 		expect(wkr.getOngoingSync()).toEqual(undefined);
 	});
 
@@ -136,7 +141,7 @@ describe("sync interface", () => {
 		const wkr = createMockWorkerInterface();
 		sync.init(wkr);
 
-		sync.sync({ dbid, url });
+		sync.sync({ dbid, url }, syncOpts);
 		sync.stop();
 
 		expect(wkr.getOngoingSync()).toBeUndefined();
