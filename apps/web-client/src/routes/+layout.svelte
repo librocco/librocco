@@ -106,7 +106,7 @@
 	// the worker is initialized
 	$: if ($syncActive) {
 		// Subsequent activations use regular sync
-		sync.sync($syncConfig);
+		sync.sync($syncConfig, { invalidateAll });
 	} else {
 		sync.stop();
 	}
@@ -147,7 +147,7 @@
 
 		// Start the sync is it should be active.
 		if ($syncActive) {
-			sync.sync($syncConfig);
+			sync.sync($syncConfig, { invalidateAll });
 		}
 
 		// Start the sync progress store (listen to sync events)
