@@ -41,7 +41,7 @@
 						<td>{line.isbn}</td>
 						<td>{line.title}</td>
 						<td>{line.authors}</td>
-						<td>€{line.price}</td>
+						<td>€{line.price.toFixed(2)}</td>
 						<td></td>
 						<td class="text-center">{line.deliveredQuantity}</td>
 					</tr>
@@ -69,7 +69,7 @@
 						<td>{isbn}</td>
 						<td>{title}</td>
 						<td>{authors}</td>
-						<td>€{price}</td>
+						<td>€{price.toFixed(2)}</td>
 						<td class="text-center">{orderedQuantity}</td>
 						<td class="text-center">{deliveredQuantity}</td>
 						<td class="text-center">

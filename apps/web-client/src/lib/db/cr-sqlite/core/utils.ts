@@ -117,8 +117,6 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 	// Re-identify the DB node (the fetched copy is the exact same as the server one, incl. siteid):
 	// - assign new siteid
 	// - attribute all *__crsql_clock tracked changes to server (as if they were synced to a pristine DB in the current node)
-	//
-	// NOTE: using opfs-any-context, not ideal, but not terribly important either
 	const reident_vfs = "sync-opfs-coop-sync";
 	const db = await getDB(target, reident_vfs);
 	await reidentifyDbNode(db);
