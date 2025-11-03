@@ -1,7 +1,7 @@
 import { type Writable, writable } from "svelte/store";
 
 import type { DBAsync } from "$lib/db/cr-sqlite/types";
-import { dbCache, getDB, type DbCtx, getSchemaNameAndVersion, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
+import { getDB, type DbCtx, getSchemaNameAndVersion, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
 import type { ProgressState } from "$lib/types";
 
 import { retry } from "$lib/utils/misc";
