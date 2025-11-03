@@ -1,4 +1,4 @@
-import initWasm from "@vlcn.io/crsqlite-wasm";
+import { createWasmInitializer } from "@vlcn.io/crsqlite-wasm";
 
 import wasmSync from "@vlcn.io/wa-sqlite/dist/crsqlite-sync.wasm?url";
 import wasmAsyncify from "@vlcn.io/wa-sqlite/dist/crsqlite.wasm?url";
@@ -8,7 +8,12 @@ import type { DBAsync, VFSWhitelist } from "./types";
 
 import { createVFSFactory } from "./vfs";
 
-const wasmBuildArtefacts = {
+type BuildArtefacts = {
+	wasmUrl: string;
+	getModule: () => Promise<any>;
+};
+
+const wasmBuildArtefacts: Record<"sync" | "asyncify" | "jspi", BuildArtefacts> = {
 	sync: {
 		wasmUrl: wasmSync,
 		getModule: () => import("@vlcn.io/wa-sqlite/dist/crsqlite-sync.mjs").then((m) => m.default)
@@ -23,7 +28,7 @@ const wasmBuildArtefacts = {
 	}
 };
 
-const vfsWasmLookup: Record<VFSWhitelist, string> = {
+const vfsWasmLookup: Record<VFSWhitelist, "sync" | "asyncify" | "jspi"> = {
 	"asyncify-idb-batch-atomic": "asyncify",
 	"asyncify-opfs-any-context": "asyncify",
 	"asyncify-opfs-adaptive": "asyncify",
@@ -34,14 +39,20 @@ const vfsWasmLookup: Record<VFSWhitelist, string> = {
 	"jspi-opfs-permuted": "jspi"
 };
 
+export function getWasmBuildArtefacts(vfs: VFSWhitelist) {
+	return wasmBuildArtefacts[vfsWasmLookup[vfs]];
+}
+
 export async function getCrsqliteDB(dbname: string, vfs: VFSWhitelist): Promise<DBAsync> {
 	const { wasmUrl, getModule } = wasmBuildArtefacts[vfsWasmLookup[vfs]];
-	const APIFactory = await getModule();
 
-	const sqlite = await initWasm({
-		APIFactory,
-		locateWasm: () => wasmUrl,
-		vfsFactory: createVFSFactory(vfs)
-	});
+	const ModuleFactory = await getModule();
+	const vfsFactory = createVFSFactory(vfs);
+	// We're using the vfs as cache key as it includes all information
+	// about the module: `${build}-${vfs}`
+	const cacheKey = vfs;
+
+	const initializer = createWasmInitializer({ ModuleFactory, vfsFactory, cacheKey });
+	const sqlite = await initializer(() => wasmUrl);
 	return sqlite.open(dbname);
 }
