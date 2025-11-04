@@ -1,0 +1,9 @@
+[project]
+name = "launcher"
+version = "0.1.0"
+description = "Cross-platform system tray application using PyQt6"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pyqt6>=6.10.0",
+]
