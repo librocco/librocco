@@ -1,10 +1,10 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run
 """
 Minimal cross-platform tray icon application using PyQt6.
 """
 import sys
 import signal
-from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle, QMessageBox
 from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QCoreApplication, QTimer
 
@@ -27,8 +27,8 @@ class TrayApp:
         self.menu = QMenu()
 
         # Add actions
-        show_action = QAction("Show Message", self.menu)
-        show_action.triggered.connect(self.show_message)
+        show_action = QAction("Show Dialog", self.menu)
+        show_action.triggered.connect(self.show_dialog)
         self.menu.addAction(show_action)
 
         self.menu.addSeparator()
@@ -53,22 +53,13 @@ class TrayApp:
         self.timer.timeout.connect(lambda: None)  # Do nothing, just let Python process signals
         self.timer.start(100)  # Check every 100ms
 
-        # Optional: Show a message on startup
-        self.tray_icon.showMessage(
-            "Launcher",
-            "Tray application started",
-            QSystemTrayIcon.MessageIcon.Information,
-            2000
-        )
-
-    def show_message(self):
-        """Show a test notification."""
-        self.tray_icon.showMessage(
-            "Hello",
-            "This is a message from the tray icon!",
-            QSystemTrayIcon.MessageIcon.Information,
-            3000
-        )
+    def show_dialog(self):
+        """Show a test dialog."""
+        msg_box = QMessageBox()
+        msg_box.setWindowTitle("Launcher")
+        msg_box.setText("Hello from the tray icon!")
+        msg_box.setIcon(QMessageBox.Icon.Information)
+        msg_box.exec()
 
     def signal_handler(self, signum, frame):
         """Handle SIGINT (ctrl-c) for graceful shutdown."""

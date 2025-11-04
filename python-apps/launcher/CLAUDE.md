@@ -11,3 +11,5 @@ Use `QStyle.StandardPixmap` not `QApplication.Style.StandardPixmap`. Import `QSt
 from PyQt6.QtWidgets import QStyle
 icon = app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
 ```
+
+Always choose solutions that will work on Linux, Windows and MacOS. Point out if they won't. Development happens on Linux and MacOS, so make sure to catch Windows incompatibilities early.
