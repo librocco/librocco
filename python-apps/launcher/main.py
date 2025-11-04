@@ -3,9 +3,10 @@
 Minimal cross-platform tray icon application using PyQt6.
 """
 import sys
+import signal
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle
 from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtCore import QCoreApplication
+from PyQt6.QtCore import QCoreApplication, QTimer
 
 
 class TrayApp:
@@ -42,6 +43,16 @@ class TrayApp:
         # Show the tray icon
         self.tray_icon.show()
 
+        # Set up signal handlers for graceful shutdown
+        signal.signal(signal.SIGINT, self.signal_handler)
+        signal.signal(signal.SIGTERM, self.sigterm_handler)
+
+        # Create a timer to allow Python to process signals
+        # Qt's event loop blocks Python signal handling, so we need periodic Python execution
+        self.timer = QTimer()
+        self.timer.timeout.connect(lambda: None)  # Do nothing, just let Python process signals
+        self.timer.start(100)  # Check every 100ms
+
         # Optional: Show a message on startup
         self.tray_icon.showMessage(
             "Launcher",
@@ -58,6 +69,16 @@ class TrayApp:
             QSystemTrayIcon.MessageIcon.Information,
             3000
         )
+
+    def signal_handler(self, signum, frame):
+        """Handle SIGINT (ctrl-c) for graceful shutdown."""
+        print(f"\nReceived signal {signum}, shutting down gracefully...")
+        self.quit_app()
+
+    def sigterm_handler(self, signum, frame):
+        """Handle SIGTERM for immediate exit."""
+        print(f"\nReceived signal {signum}, exiting...")
+        sys.exit(0)
 
     def quit_app(self):
         """Quit the application."""
