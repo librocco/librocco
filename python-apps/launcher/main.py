@@ -1,95 +1,125 @@
 #!/usr/bin/env -S uv run
 """
-Minimal cross-platform tray icon application using PyQt6.
+Librocco Launcher - Main entry point for the daemon manager.
 """
 import sys
-import signal
-from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle, QMessageBox
-from PyQt6.QtGui import QIcon, QAction
-from PyQt6.QtCore import QCoreApplication, QTimer
+from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMessageBox
+
+from launcher.config import Config
+from launcher.binary_manager import BinaryManager
+from launcher.daemon_manager import EmbeddedSupervisor
+from launcher.tray_app import TrayApp
 
 
-class TrayApp:
-    """Main tray application class."""
+def show_error_dialog(title: str, message: str) -> None:
+    """Show an error dialog and exit."""
+    app = QApplication(sys.argv)
+    msg_box = QMessageBox()
+    msg_box.setWindowTitle(title)
+    msg_box.setText(message)
+    msg_box.setIcon(QMessageBox.Icon.Critical)
+    msg_box.exec()
+    sys.exit(1)
 
-    def __init__(self):
-        self.app = QApplication(sys.argv)
-        self.app.setQuitOnLastWindowClosed(False)  # Keep running when no windows are open
 
-        # Create the tray icon
-        self.tray_icon = QSystemTrayIcon()
+def initialize_caddy(config: Config) -> bool:
+    """
+    Ensure Caddy binary is available.
+    Returns True if successful, False otherwise.
+    """
+    binary_manager = BinaryManager(config.caddy_binary_path)
 
-        # Use a built-in icon (you can replace this with a custom icon later)
-        icon = self.app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
-        self.tray_icon.setIcon(icon)
+    if binary_manager.verify_binary():
+        print(f"✓ Caddy binary found at {config.caddy_binary_path}")
+        return True
 
-        # Create the menu
-        self.menu = QMenu()
+    print("Caddy binary not found. Downloading...")
 
-        # Add actions
-        show_action = QAction("Show Dialog", self.menu)
-        show_action.triggered.connect(self.show_dialog)
-        self.menu.addAction(show_action)
+    try:
+        binary_manager.download_and_extract(
+            progress_callback=lambda downloaded, total: print(
+                f"  Downloaded: {downloaded / 1024 / 1024:.1f} MB / {total / 1024 / 1024:.1f} MB",
+                end="\r",
+            )
+        )
+        print()  # New line after progress
 
-        self.menu.addSeparator()
+        if binary_manager.verify_binary():
+            print("✓ Caddy binary downloaded and verified")
+            return True
+        else:
+            print("✗ Failed to verify Caddy binary")
+            return False
 
-        quit_action = QAction("Quit", self.menu)
-        quit_action.triggered.connect(self.quit_app)
-        self.menu.addAction(quit_action)
-
-        # Set the menu
-        self.tray_icon.setContextMenu(self.menu)
-
-        # Show the tray icon
-        self.tray_icon.show()
-
-        # Set up signal handlers for graceful shutdown
-        signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.sigterm_handler)
-
-        # Create a timer to allow Python to process signals
-        # Qt's event loop blocks Python signal handling, so we need periodic Python execution
-        self.timer = QTimer()
-        self.timer.timeout.connect(lambda: None)  # Do nothing, just let Python process signals
-        self.timer.start(100)  # Check every 100ms
-
-    def show_dialog(self):
-        """Show a test dialog."""
-        msg_box = QMessageBox()
-        msg_box.setWindowTitle("Launcher")
-        msg_box.setText("Hello from the tray icon!")
-        msg_box.setIcon(QMessageBox.Icon.Information)
-        msg_box.exec()
-
-    def signal_handler(self, signum, frame):
-        """Handle SIGINT (ctrl-c) for graceful shutdown."""
-        print(f"\nReceived signal {signum}, shutting down gracefully...")
-        self.quit_app()
-
-    def sigterm_handler(self, signum, frame):
-        """Handle SIGTERM for immediate exit."""
-        print(f"\nReceived signal {signum}, exiting...")
-        sys.exit(0)
-
-    def quit_app(self):
-        """Quit the application."""
-        self.tray_icon.hide()
-        QCoreApplication.quit()
-
-    def run(self):
-        """Start the application event loop."""
-        return self.app.exec()
+    except Exception as e:
+        print(f"✗ Failed to download Caddy: {e}")
+        return False
 
 
 def main():
     """Main entry point."""
-    app = TrayApp()
+    print("Librocco Launcher starting...")
+
+    # Determine app directory (sibling of main.py)
+    from pathlib import Path
+    app_dir = Path(__file__).parent / "app"
+
+    # Initialize configuration
+    print("Initializing configuration...")
+    config = Config()
+    config.initialize()
+    config.ensure_caddyfile(app_dir)
+    print(f"✓ Data directory: {config.data_dir}")
+    print(f"✓ Config directory: {config.config_dir}")
+    print(f"✓ App directory: {app_dir}")
+
+    # Ensure Caddy binary exists
+    if not initialize_caddy(config):
+        show_error_dialog(
+            "Initialization Error",
+            "Failed to download or verify Caddy binary.\n\n"
+            "Please check your internet connection and try again.",
+        )
+        return 1
+
+    # Create daemon manager
+    print("Initializing daemon manager...")
+    daemon_manager = EmbeddedSupervisor(
+        caddy_binary=config.caddy_binary_path,
+        caddyfile=config.caddyfile_path,
+        caddy_data_dir=config.caddy_data_dir,
+        logs_dir=config.logs_dir,
+    )
+
+    # Start daemon manager
+    daemon_manager.start()
+    print("✓ Daemon manager started")
+
+    # Auto-start Caddy if configured
+    if config.get("auto_start_caddy", True):
+        print("Auto-starting Caddy...")
+        daemon_manager.start_daemon("caddy")
+        print("✓ Caddy started")
+
+    # Create and run tray application
+    print("Starting tray application...")
+    app = TrayApp(config, daemon_manager)
 
     # Check if system tray is available (must be done after QApplication is created)
     if not QSystemTrayIcon.isSystemTrayAvailable():
-        print("System tray is not available on this system", file=sys.stderr)
+        show_error_dialog(
+            "System Tray Unavailable",
+            "System tray is not available on this system.\n\n"
+            "The launcher requires a system tray to function.",
+        )
+        daemon_manager.stop()
         return 1
 
+    print("✓ Tray application running")
+    print(f"\nCaddy is configured to listen on http://{config.get('caddy_host')}:{config.get('caddy_port')}")
+    print("Right-click the tray icon to access controls.\n")
+
+    # Run the application
     return app.run()
 
 
