@@ -19,7 +19,7 @@ jobs:
     - name: Test if artefacts are stale
       id: ts
       shell: bash
-      run: echo "rebuild=yes" >> "$GITHUB_OUTPUT"
+      run: scripts/compare_artefacts_version.sh >> "$GITHUB_OUTPUT"
     - uses: actions/setup-node@v4
       if: steps.ts.outputs.rebuild == 'yes'
       with:
