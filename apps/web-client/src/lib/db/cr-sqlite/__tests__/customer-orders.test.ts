@@ -202,8 +202,8 @@ describe("Customer orders", () => {
 			await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
 
 			expect(await getCustomerOrderList(db)).toEqual([
-				expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" }),
-				expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" })
+				expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" }),
+				expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" })
 			]);
 		});
 
@@ -216,9 +216,9 @@ describe("Customer orders", () => {
 
 			expect(await getCustomerOrderList(db)).toEqual([
 				{
-					id: 1,
-					fullname: "John Doe",
-					displayId: "1",
+					id: 2,
+					fullname: "Jane Doe",
+					displayId: "2",
 					email: "N/A",
 					phone: "N/A",
 					deposit: 0,
@@ -226,9 +226,9 @@ describe("Customer orders", () => {
 					completed: false
 				},
 				{
-					id: 2,
-					fullname: "Jane Doe",
-					displayId: "2",
+					id: 1,
+					fullname: "John Doe",
+					displayId: "1",
 					email: "N/A",
 					phone: "N/A",
 					deposit: 0,
@@ -287,9 +287,9 @@ describe("Customer orders", () => {
 			await addBooksToCustomer(db, 3, ["1"]);
 
 			expect(await getCustomerOrderList(db)).toEqual([
-				expect.objectContaining({ id: 1, completed: false }),
+				expect.objectContaining({ id: 3, completed: false }),
 				expect.objectContaining({ id: 2, completed: false }),
-				expect.objectContaining({ id: 3, completed: false })
+				expect.objectContaining({ id: 1, completed: false })
 			]);
 		});
 
@@ -323,10 +323,10 @@ describe("Customer orders", () => {
 			await db.exec("UPDATE customer_order_lines SET collected = ? WHERE id = ?", [Date.now(), c4line.id]);
 
 			expect(await getCustomerOrderList(db)).toEqual([
-				expect.objectContaining({ id: 1, completed: false }),
-				expect.objectContaining({ id: 2, completed: true }),
+				expect.objectContaining({ id: 4, completed: false }),
 				expect.objectContaining({ id: 3, completed: true }),
-				expect.objectContaining({ id: 4, completed: false })
+				expect.objectContaining({ id: 2, completed: true }),
+				expect.objectContaining({ id: 1, completed: false })
 			]);
 		});
 	});
@@ -714,6 +714,92 @@ describe("Customer order lines", () => {
 				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus.Received })
 			]);
 		});
+	});
+});
+
+describe("Test ordering updates + retrieval", () => {
+	it("upsertCustomer - bubbles up", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
+
+		expect(await getCustomerOrderList(db)).toEqual([
+			expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" }),
+			expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" })
+		]);
+
+		await upsertCustomer(db, { id: 1, fullname: "John Doe - Updated", displayId: "1" });
+
+		expect(await getCustomerOrderList(db)).toEqual([
+			expect.objectContaining({ id: 1, fullname: "John Doe - Updated", displayId: "1" }),
+			expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" })
+		]);
+	});
+
+	it("addBooksToCustomer - bubbles up", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
+
+		expect(await getCustomerOrderList(db)).toEqual([
+			expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" }),
+			expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" })
+		]);
+
+		await addBooksToCustomer(db, 1, ["1111111111"]);
+
+		expect(await getCustomerOrderList(db)).toEqual([
+			expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" }),
+			expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" })
+		]);
+	});
+
+	it("removeBooksFromCustomer - bubbles up", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
+
+		expect(await getCustomerOrderList(db)).toEqual([
+			expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" }),
+			expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" })
+		]);
+
+		// Shouldn't change the order (as both get updated)
+		await addBooksToCustomer(db, 1, ["1111111111"]);
+		await addBooksToCustomer(db, 2, ["1111111111"]);
+
+		// Remove from customer 1 - bubbles it up
+		const bookId = await getCustomerOrderLines(db, 1).then(([{ id }]) => id);
+		await removeBooksFromCustomer(db, 1, [bookId]);
+
+		expect(await getCustomerOrderList(db)).toEqual([
+			expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" }),
+			expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" })
+		]);
+	});
+
+	it("markCustomerOrderLinesAsCollected - bubbles up", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
+
+		expect(await getCustomerOrderList(db)).toEqual([
+			expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" }),
+			expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" })
+		]);
+
+		// Shouldn't change the order (as both get updated)
+		await addBooksToCustomer(db, 1, ["1111111111"]);
+		await addBooksToCustomer(db, 2, ["1111111111"]);
+
+		// Remove from customer 1 - bubbles it up
+		const bookId = await getCustomerOrderLines(db, 1).then(([{ id }]) => id);
+		await markCustomerOrderLinesAsCollected(db, [bookId]);
+
+		expect(await getCustomerOrderList(db)).toEqual([
+			expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" }),
+			expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" })
+		]);
 	});
 });
 
