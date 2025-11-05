@@ -52,6 +52,7 @@ class EmbeddedSupervisor:
     def _create_caddy_watcher(self) -> dict:
         """Create a Circus watcher configuration for Caddy."""
         import os
+        import platform
 
         # Resolve all paths to absolute paths to handle spaces correctly
         # (macOS paths like "Application Support" have spaces)
@@ -69,7 +70,7 @@ class EmbeddedSupervisor:
             "PATH": os.environ.get("PATH", ""),
         }
 
-        return {
+        config = {
             "name": "caddy",
             "cmd": str(caddy_binary),
             "args": ["run", "--config", str(caddyfile), "--adapter", "caddyfile"],
@@ -79,18 +80,23 @@ class EmbeddedSupervisor:
             "shell": False,  # Don't use shell (important for paths with spaces)
             "use_sockets": False,  # Use standard subprocess
             "autostart": False,  # Don't auto-start, let us control it manually
-            "stdout_stream": {
-                "class": "FileStream",
-                "filename": str(stdout_log),
-            },
-            "stderr_stream": {
-                "class": "FileStream",
-                "filename": str(stderr_log),
-            },
             "max_retry": 5,
             "graceful_timeout": 10,
             "max_retry_in": 60,  # Max 5 retries in 60 seconds
         }
+
+        # Streams are not supported on Windows
+        if platform.system() != "Windows":
+            config["stdout_stream"] = {
+                "class": "FileStream",
+                "filename": str(stdout_log),
+            }
+            config["stderr_stream"] = {
+                "class": "FileStream",
+                "filename": str(stderr_log),
+            }
+
+        return config
 
     def start(self) -> None:
         """Start the supervisor arbiter in a background thread."""
