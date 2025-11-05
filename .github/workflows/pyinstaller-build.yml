@@ -3,7 +3,6 @@ name: PyInstaller Build
   push:
     paths:
     - python-apps/**
-    - apps/web-client/**
     - .github/workflows/pyinstaller-build.yml
   workflow_dispatch: null
 jobs:
