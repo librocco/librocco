@@ -1,6 +1,7 @@
 """
 System tray application with daemon management controls.
 """
+
 import sys
 import signal
 import logging
@@ -154,14 +155,14 @@ class TrayApp:
                     "Start Failed",
                     "Failed to start Caddy daemon. Check the logs for details.",
                     show_dialog=True,
-                    parent=None
+                    parent=None,
                 )
         except Exception as e:
             ErrorHandler.handle_critical_error(
                 "Start Error",
                 "An unexpected error occurred while starting Caddy.",
                 exception=e,
-                parent=None
+                parent=None,
             )
         finally:
             self.update_status()
@@ -179,14 +180,14 @@ class TrayApp:
                     "Stop Failed",
                     "Failed to stop Caddy daemon. Check the logs for details.",
                     show_dialog=True,
-                    parent=None
+                    parent=None,
                 )
         except Exception as e:
             ErrorHandler.handle_critical_error(
                 "Stop Error",
                 "An unexpected error occurred while stopping Caddy.",
                 exception=e,
-                parent=None
+                parent=None,
             )
         finally:
             self.update_status()
@@ -204,14 +205,14 @@ class TrayApp:
                     "Restart Failed",
                     "Failed to restart Caddy daemon. Check the logs for details.",
                     show_dialog=True,
-                    parent=None
+                    parent=None,
                 )
         except Exception as e:
             ErrorHandler.handle_critical_error(
                 "Restart Error",
                 "An unexpected error occurred while restarting Caddy.",
                 exception=e,
-                parent=None
+                parent=None,
             )
         finally:
             self.update_status()
@@ -231,12 +232,16 @@ class TrayApp:
                 "Failed to open log viewer window.",
                 exception=e,
                 show_dialog=True,
-                parent=None
+                parent=None,
             )
 
     def show_message(self, title: str, message: str, error: bool = False):
         """Show a system tray message."""
-        icon = QSystemTrayIcon.MessageIcon.Critical if error else QSystemTrayIcon.MessageIcon.Information
+        icon = (
+            QSystemTrayIcon.MessageIcon.Critical
+            if error
+            else QSystemTrayIcon.MessageIcon.Information
+        )
         self.tray_icon.showMessage(title, message, icon, 3000)
 
     def signal_handler(self, signum, frame):

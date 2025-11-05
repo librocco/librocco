@@ -75,6 +75,7 @@ def main():
 
     # Determine app directory (sibling of main.py)
     from pathlib import Path
+
     app_dir = Path(__file__).parent / "app"
 
     # Initialize configuration
@@ -86,7 +87,7 @@ def main():
 
         # Initialize logging now that we have the config and logs directory
         logger = setup_logging(config.logs_dir, logging.INFO)
-        logger.info("="*60)
+        logger.info("=" * 60)
         logger.info("Librocco Launcher starting")
         logger.info(f"Data directory: {config.data_dir}")
         logger.info(f"Config directory: {config.config_dir}")
@@ -136,7 +137,7 @@ def main():
             "Daemon Manager Error",
             "Failed to initialize the daemon manager.\n\n"
             "Check the logs for details.",
-            exception=e
+            exception=e,
         )
         return 1
 
@@ -174,7 +175,9 @@ def main():
 
         logger.info("Tray application started successfully")
         print("✓ Tray application running")
-        print(f"\nCaddy is configured to listen on http://{config.get('caddy_host')}:{config.get('caddy_port')}")
+        print(
+            f"\nCaddy is configured to listen on http://{config.get('caddy_host')}:{config.get('caddy_port')}"
+        )
         print("Right-click the tray icon to access controls.\n")
 
         # Run the application
@@ -184,15 +187,14 @@ def main():
         logger.error("Failed to start tray application", exc_info=e)
         ErrorHandler.handle_critical_error(
             "Application Error",
-            "Failed to start the tray application.\n\n"
-            "Check the logs for details.",
-            exception=e
+            "Failed to start the tray application.\n\n" "Check the logs for details.",
+            exception=e,
         )
         daemon_manager.stop()
         return 1
     finally:
         logger.info("Librocco Launcher exiting")
-        logger.info("="*60)
+        logger.info("=" * 60)
 
 
 if __name__ == "__main__":

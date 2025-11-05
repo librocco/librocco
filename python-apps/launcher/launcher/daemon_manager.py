@@ -1,6 +1,7 @@
 """
 Daemon management using Circus as an embedded supervisor.
 """
+
 import logging
 import threading
 import time
@@ -15,7 +16,13 @@ logger = logging.getLogger("launcher")
 class DaemonStatus:
     """Daemon status information."""
 
-    def __init__(self, name: str, status: str, pid: Optional[int] = None, uptime: Optional[float] = None):
+    def __init__(
+        self,
+        name: str,
+        status: str,
+        pid: Optional[int] = None,
+        uptime: Optional[float] = None,
+    ):
         self.name = name
         self.status = status  # "active", "stopped", "starting", "error"
         self.pid = pid
@@ -25,7 +32,9 @@ class DaemonStatus:
 class EmbeddedSupervisor:
     """Embedded Circus-based process supervisor."""
 
-    def __init__(self, caddy_binary: Path, caddyfile: Path, caddy_data_dir: Path, logs_dir: Path):
+    def __init__(
+        self, caddy_binary: Path, caddyfile: Path, caddy_data_dir: Path, logs_dir: Path
+    ):
         self.caddy_binary = caddy_binary
         self.caddyfile = caddyfile
         self.caddy_data_dir = caddy_data_dir
@@ -108,8 +117,8 @@ class EmbeddedSupervisor:
 
         # Initialize CircusClient to control the arbiter
         # Use the arbiter's endpoint or default
-        endpoint = getattr(self.arbiter, 'ctrl', None)
-        if endpoint and hasattr(endpoint, 'endpoint'):
+        endpoint = getattr(self.arbiter, "ctrl", None)
+        if endpoint and hasattr(endpoint, "endpoint"):
             self.client = CircusClient(endpoint=endpoint.endpoint)
         else:
             # Use default endpoint
@@ -120,6 +129,7 @@ class EmbeddedSupervisor:
         try:
             # Circus/Tornado requires an event loop in the thread
             import asyncio
+
             asyncio.set_event_loop(asyncio.new_event_loop())
             self.arbiter.start()
         except Exception as e:
@@ -144,6 +154,7 @@ class EmbeddedSupervisor:
 
                 # Give watchers time to stop gracefully
                 import time
+
                 time.sleep(1)
 
                 # Then quit the arbiter
@@ -163,7 +174,9 @@ class EmbeddedSupervisor:
                 self.arbiter_thread.join(timeout=2)
                 if self.arbiter_thread.is_alive():
                     # This is okay - daemon thread will be killed on exit
-                    logger.debug("Arbiter thread still running (will be terminated on exit)")
+                    logger.debug(
+                        "Arbiter thread still running (will be terminated on exit)"
+                    )
         finally:
             self._running = False
 
@@ -203,7 +216,9 @@ class EmbeddedSupervisor:
 
         try:
             if not self.client:
-                logger.error(f"CircusClient not initialized, cannot start {daemon_name}")
+                logger.error(
+                    f"CircusClient not initialized, cannot start {daemon_name}"
+                )
                 return False
 
             logger.info(f"Starting daemon: {daemon_name}")
