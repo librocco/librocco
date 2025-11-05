@@ -9,7 +9,7 @@
 #@ load("r2.lib.yml", "install_and_configure_rclone")
 #@ load("r2.lib.yml", "upload_to_r2")
 
-name: Checks
+name: VFS Benchmark
 
 "on":
   push:

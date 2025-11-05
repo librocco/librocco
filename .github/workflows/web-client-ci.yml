@@ -1,10 +1,12 @@
-name: Checks
+name: Web App CI
 "on":
   push:
     branches-ignore:
     - ci-debug/*
     - wip/**
     - vfs-benchmark/**
+    paths-ignore:
+    - python-apps/**
 jobs:
   build-cr-sqlite:
     runs-on: ubuntu-latest
