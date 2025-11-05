@@ -28,6 +28,9 @@ def mock_config(temp_data_dir, monkeypatch):
     config.caddy_config_dir = temp_data_dir / "caddy-config"
     config.logs_dir = temp_data_dir / "logs"
 
+    # Update settings file path to match overridden config_dir
+    config.settings_file = config.config_dir / "settings.toml"
+
     # Create the directories
     config.initialize()
 
