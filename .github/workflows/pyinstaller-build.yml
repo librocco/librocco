@@ -1,0 +1,131 @@
+name: PyInstaller Build
+"on":
+  push:
+    branches:
+    - main
+    paths:
+    - python-apps/**
+    - apps/web-client/**
+    - .github/workflows/pyinstaller-build.yml
+  workflow_dispatch: null
+jobs:
+  check-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 2
+    - name: Check trigger conditions
+      id: check
+      run: |
+        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+          echo "should_build=true" >> "$GITHUB_OUTPUT"
+          echo "Building because pushed to main branch"
+          exit 0
+        fi
+
+        if git log -1 --pretty=%B | grep -q '\[build-pyinstaller\]'; then
+          echo "should_build=true" >> "$GITHUB_OUTPUT"
+          echo "Building because commit message contains [build-pyinstaller]"
+          exit 0
+        fi
+
+        echo "should_build=false" >> "$GITHUB_OUTPUT"
+        echo "Skipping build - not on main and no [build-pyinstaller] tag"
+  build-executable:
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should_build == 'true'
+    name: Build ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - os: linux
+          arch: x64
+          runner: ubuntu-latest
+          artifact_name: librocco-launcher-linux-x64
+        - os: macos
+          arch: x64
+          runner: macos-13
+          artifact_name: librocco-launcher-macos-x64
+        - os: macos
+          arch: arm64
+          runner: macos-14
+          artifact_name: librocco-launcher-macos-arm64
+        - os: windows
+          arch: x64
+          runner: windows-latest
+          artifact_name: librocco-launcher-windows-x64
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: false
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.13"
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: true
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Install Rush
+      run: npm install -g @microsoft/rush
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Build web-client for root path
+      run: cd apps/web-client && rushx build:prod-rootdir
+      shell: bash
+    - name: Build PyInstaller executable
+      run: |
+        cd python-apps/launcher
+        uv run scripts/build_executable.py
+      shell: bash
+    - name: Upload executable artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: |
+          python-apps/launcher/dist/librocco-launcher*
+        retention-days: 90
+        if-no-files-found: error
+    - name: Smoke test (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        cd python-apps/launcher/dist
+        chmod +x librocco-launcher
+        timeout 5 ./librocco-launcher --help || true
+      shell: bash
+    - name: Smoke test (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        cd python-apps/launcher/dist
+        if (Test-Path librocco-launcher.exe) {
+          Write-Host "Executable built successfully"
+        } else {
+          Write-Error "Executable not found!"
+          exit 1
+        }
+      shell: pwsh
