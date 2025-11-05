@@ -11,6 +11,7 @@ from PyQt6.QtCore import QCoreApplication, QTimer
 
 from .log_viewer import LogViewerDialog
 from .error_handler import ErrorHandler
+from .i18n import _
 
 logger = logging.getLogger("launcher")
 
@@ -60,36 +61,36 @@ class TrayApp:
     def _create_menu(self):
         """Create the tray menu."""
         # Status label (will be updated dynamically)
-        self.status_action = QAction("Caddy: Checking...", self.menu)
+        self.status_action = QAction(_("Caddy: Checking..."), self.menu)
         self.status_action.setEnabled(False)
         self.menu.addAction(self.status_action)
 
         self.menu.addSeparator()
 
         # Daemon controls
-        self.start_action = QAction("Start Caddy", self.menu)
+        self.start_action = QAction(_("Start Caddy"), self.menu)
         self.start_action.triggered.connect(self.start_caddy)
         self.menu.addAction(self.start_action)
 
-        self.stop_action = QAction("Stop Caddy", self.menu)
+        self.stop_action = QAction(_("Stop Caddy"), self.menu)
         self.stop_action.triggered.connect(self.stop_caddy)
         self.menu.addAction(self.stop_action)
 
-        self.restart_action = QAction("Restart Caddy", self.menu)
+        self.restart_action = QAction(_("Restart Caddy"), self.menu)
         self.restart_action.triggered.connect(self.restart_caddy)
         self.menu.addAction(self.restart_action)
 
         self.menu.addSeparator()
 
         # View logs
-        self.logs_action = QAction("View Logs...", self.menu)
+        self.logs_action = QAction(_("View Logs..."), self.menu)
         self.logs_action.triggered.connect(self.show_logs)
         self.menu.addAction(self.logs_action)
 
         self.menu.addSeparator()
 
         # Quit
-        quit_action = QAction("Quit", self.menu)
+        quit_action = QAction(_("Quit"), self.menu)
         quit_action.triggered.connect(self.quit_app)
         self.menu.addAction(quit_action)
 
@@ -100,7 +101,7 @@ class TrayApp:
 
             # Update status text
             if status.status == "active":
-                status_text = f"Caddy: ● Running"
+                status_text = _("Caddy: ● Running")
                 if status.pid:
                     status_text += f" (PID {status.pid})"
                 self.status_action.setText(status_text)
@@ -111,19 +112,19 @@ class TrayApp:
                 self.restart_action.setEnabled(True)
 
             elif status.status == "stopped":
-                self.status_action.setText("Caddy: ○ Stopped")
+                self.status_action.setText(_("Caddy: ○ Stopped"))
                 self.start_action.setEnabled(True)
                 self.stop_action.setEnabled(False)
                 self.restart_action.setEnabled(False)
 
             elif status.status == "starting":
-                self.status_action.setText("Caddy: ◐ Starting...")
+                self.status_action.setText(_("Caddy: ◐ Starting..."))
                 self.start_action.setEnabled(False)
                 self.stop_action.setEnabled(True)
                 self.restart_action.setEnabled(False)
 
             elif status.status == "error":
-                self.status_action.setText(f"Caddy: ⚠ Error")
+                self.status_action.setText(_("Caddy: ⚠ Error"))
                 self.start_action.setEnabled(True)
                 self.stop_action.setEnabled(False)
                 self.restart_action.setEnabled(False)
@@ -138,7 +139,7 @@ class TrayApp:
                 logger.warning(f"Unknown Caddy status: {status.status}")
 
         except Exception as e:
-            self.status_action.setText(f"Caddy: ⚠ Error")
+            self.status_action.setText(_("Caddy: ⚠ Error"))
             # Log but don't show dialog - status checks are frequent background operations
             ErrorHandler.log_exception("status update", e)
 
@@ -148,19 +149,19 @@ class TrayApp:
             success = self.daemon_manager.start_daemon("caddy")
             if success:
                 logger.info("User initiated: Start Caddy")
-                self.show_message("Caddy Started", "Caddy daemon is starting...")
+                self.show_message(_("Caddy Started"), _("Caddy daemon is starting..."))
             else:
                 logger.error("Failed to start Caddy daemon")
                 ErrorHandler.handle_error(
-                    "Start Failed",
-                    "Failed to start Caddy daemon. Check the logs for details.",
+                    _("Start Failed"),
+                    _("Failed to start Caddy daemon. Check the logs for details."),
                     show_dialog=True,
                     parent=None,
                 )
         except Exception as e:
             ErrorHandler.handle_critical_error(
-                "Start Error",
-                "An unexpected error occurred while starting Caddy.",
+                _("Start Error"),
+                _("An unexpected error occurred while starting Caddy."),
                 exception=e,
                 parent=None,
             )
@@ -173,19 +174,19 @@ class TrayApp:
             success = self.daemon_manager.stop_daemon("caddy")
             if success:
                 logger.info("User initiated: Stop Caddy")
-                self.show_message("Caddy Stopped", "Caddy daemon is stopping...")
+                self.show_message(_("Caddy Stopped"), _("Caddy daemon is stopping..."))
             else:
                 logger.error("Failed to stop Caddy daemon")
                 ErrorHandler.handle_error(
-                    "Stop Failed",
-                    "Failed to stop Caddy daemon. Check the logs for details.",
+                    _("Stop Failed"),
+                    _("Failed to stop Caddy daemon. Check the logs for details."),
                     show_dialog=True,
                     parent=None,
                 )
         except Exception as e:
             ErrorHandler.handle_critical_error(
-                "Stop Error",
-                "An unexpected error occurred while stopping Caddy.",
+                _("Stop Error"),
+                _("An unexpected error occurred while stopping Caddy."),
                 exception=e,
                 parent=None,
             )
@@ -198,19 +199,19 @@ class TrayApp:
             success = self.daemon_manager.restart_daemon("caddy")
             if success:
                 logger.info("User initiated: Restart Caddy")
-                self.show_message("Caddy Restarted", "Caddy daemon is restarting...")
+                self.show_message(_("Caddy Restarted"), _("Caddy daemon is restarting..."))
             else:
                 logger.error("Failed to restart Caddy daemon")
                 ErrorHandler.handle_error(
-                    "Restart Failed",
-                    "Failed to restart Caddy daemon. Check the logs for details.",
+                    _("Restart Failed"),
+                    _("Failed to restart Caddy daemon. Check the logs for details."),
                     show_dialog=True,
                     parent=None,
                 )
         except Exception as e:
             ErrorHandler.handle_critical_error(
-                "Restart Error",
-                "An unexpected error occurred while restarting Caddy.",
+                _("Restart Error"),
+                _("An unexpected error occurred while restarting Caddy."),
                 exception=e,
                 parent=None,
             )
@@ -228,8 +229,8 @@ class TrayApp:
                 self.log_viewer.raise_()
         except Exception as e:
             ErrorHandler.handle_error(
-                "Log Viewer Error",
-                "Failed to open log viewer window.",
+                _("Log Viewer Error"),
+                _("Failed to open log viewer window."),
                 exception=e,
                 show_dialog=True,
                 parent=None,

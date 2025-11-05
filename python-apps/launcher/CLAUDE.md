@@ -41,5 +41,35 @@ Always choose solutions that will work on Linux, Windows and MacOS. Point out if
 
 ### Quickly get CI output
 You can get output of the latest CI run on github with:
-gh run list --workflow=python-launcher-ci.yml --limit 1 --json conclusion,status,headBranch,databaseId -q '.[] | "\(.conclusion // .status) - 
+gh run list --workflow=python-launcher-ci.yml --limit 1 --json conclusion,status,headBranch,databaseId -q '.[] | "\(.conclusion // .status) -
     \(.headBranch) - \(.databaseId)"' && gh run view $(gh run list --workflow=python-launcher-ci.yml --limit 1 --json databaseId -q '.[0].databaseId') --log-failed
+
+## Internationalization (i18n)
+
+The launcher supports multilingual UI with automatic OS language detection using Babel/gettext.
+
+### Supported Languages
+- English (en) - base language
+- German (de)
+- Italian (it)
+
+### Adding New Translatable Strings
+When adding user-facing strings, wrap them with the translation function:
+```python
+from launcher.i18n import _
+label = _("Click Here")
+message = _("Error: {0}").format(error_detail)
+```
+
+After adding new strings:
+1. Extract: `uv run pybabel extract -F babel.cfg -o launcher/locales/launcher.pot .`
+2. Update: `uv run pybabel update -i launcher/locales/launcher.pot -d launcher/locales`
+3. Edit `.po` files in `launcher/locales/{lang}/LC_MESSAGES/launcher.po`
+4. Compile: `uv run pybabel compile -d launcher/locales -D launcher`
+
+### What to Translate
+- ✅ All UI elements (menus, dialogs, buttons, status messages)
+- ❌ Console output (keep in English for debugging)
+- ❌ Log messages (keep in English for debugging)
+
+See `I18N.md` for full documentation.
