@@ -23,7 +23,7 @@ def is_port_open(host: str, port: int, timeout: float = 1.0) -> bool:
 
 
 @pytest.fixture
-def setup_full_stack(mock_config, simple_caddyfile):
+def setup_full_stack(mock_config, simple_caddyfile, test_port):
     """Set up complete launcher stack: binary + daemon manager + caddy."""
     # Download Caddy binary
     binary_manager = BinaryManager(mock_config.caddy_binary_path)
@@ -38,7 +38,7 @@ def setup_full_stack(mock_config, simple_caddyfile):
         logs_dir=mock_config.logs_dir,
     )
 
-    yield daemon_manager, mock_config
+    yield daemon_manager, mock_config, test_port
 
     # Cleanup
     daemon_manager.stop()
@@ -55,7 +55,7 @@ def test_full_integration_workflow(setup_full_stack):
     4. Caddy HTTP port becomes available
     5. HTTP request to Caddy succeeds
     """
-    daemon_manager, config = setup_full_stack
+    daemon_manager, config, test_port = setup_full_stack
 
     # Step 1: Start the daemon manager (Circus arbiter)
     daemon_manager.start()
@@ -88,22 +88,21 @@ def test_full_integration_workflow(setup_full_stack):
     assert daemon_status.pid is not None and daemon_status.pid > 0, "Caddy should have valid PID"
 
     # Step 5: Verify Caddy HTTP port is open
-    caddy_port = 8080
     caddy_host = "localhost"
 
     # Wait up to 5 seconds for port to become available
     port_available = False
     for _ in range(10):
-        if is_port_open(caddy_host, caddy_port):
+        if is_port_open(caddy_host, test_port):
             port_available = True
             break
         time.sleep(0.5)
 
-    assert port_available, f"Caddy port {caddy_port} should be open"
+    assert port_available, f"Caddy port {test_port} should be open"
 
     # Step 6: Send HTTP request to Caddy and verify response
     try:
-        response = requests.get(f"http://{caddy_host}:{caddy_port}", timeout=5)
+        response = requests.get(f"http://{caddy_host}:{test_port}", timeout=5)
         assert response.status_code == 200, f"Expected HTTP 200, got: {response.status_code}"
         assert "Hello from test Caddy" in response.text, "Should receive test message from Caddy"
     except requests.Timeout:
@@ -119,7 +118,7 @@ def test_circus_endpoint_accessibility(setup_full_stack):
     This validates that the Circus arbiter is running and we can
     communicate with it via the configured endpoint.
     """
-    daemon_manager, config = setup_full_stack
+    daemon_manager, config, test_port = setup_full_stack
 
     # Start daemon manager
     daemon_manager.start()
@@ -141,8 +140,10 @@ def test_circus_endpoint_accessibility(setup_full_stack):
     assert "infos" in response, "Should return stats info"
 
     # Test 3: Get status of specific watcher
+    # Note: For 'status' command, the response contains the watcher's status directly
+    # Response format: {"status": "active"} or {"status": "stopped"}
     response = client.send_message("status", name="caddy")
-    assert response.get("status") == "ok", "Status command should succeed"
+    assert response.get("status") in ["active", "stopped"], f"Status should be active or stopped, got: {response.get('status')}"
 
 
 def test_caddy_restart_workflow(setup_full_stack):
@@ -155,7 +156,7 @@ def test_caddy_restart_workflow(setup_full_stack):
     3. Restart Caddy
     4. Verify it's still running with different PID
     """
-    daemon_manager, config = setup_full_stack
+    daemon_manager, config, test_port = setup_full_stack
 
     # Start everything
     daemon_manager.start()
@@ -183,7 +184,7 @@ def test_caddy_restart_workflow(setup_full_stack):
 
     # Verify HTTP still works after restart
     try:
-        response = requests.get("http://localhost:8080", timeout=5)
+        response = requests.get(f"http://localhost:{test_port}", timeout=5)
         assert response.status_code == 200, "Caddy should respond after restart"
     except Exception as e:
         pytest.fail(f"Caddy not accessible after restart: {e}")
@@ -200,7 +201,7 @@ def test_graceful_shutdown(setup_full_stack):
     4. Verify Caddy process is terminated
     5. Verify Circus arbiter is stopped
     """
-    daemon_manager, config = setup_full_stack
+    daemon_manager, config, test_port = setup_full_stack
 
     # Start everything
     daemon_manager.start()
@@ -221,4 +222,4 @@ def test_graceful_shutdown(setup_full_stack):
     assert not daemon_manager._running, "Daemon manager should not be running after stop"
 
     # Verify Caddy port is closed
-    assert not is_port_open("localhost", 8080, timeout=1.0), "Caddy port should be closed after shutdown"
+    assert not is_port_open("localhost", test_port, timeout=1.0), "Caddy port should be closed after shutdown"
