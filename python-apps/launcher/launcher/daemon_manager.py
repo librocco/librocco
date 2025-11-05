@@ -3,6 +3,9 @@ Daemon management using Circus as an embedded supervisor.
 """
 
 import logging
+import os
+import platform
+import tempfile
 import threading
 import time
 from pathlib import Path
@@ -49,10 +52,26 @@ class EmbeddedSupervisor:
         self.caddy_server_log = logs_dir / "caddy-server.log"
         self.caddy_access_log = logs_dir / "caddy-access.log"
 
+        # Generate IPC endpoint for secure communication
+        self.endpoint = self._generate_ipc_endpoint()
+
+    def _generate_ipc_endpoint(self) -> str:
+        """
+        Generate a platform-specific IPC endpoint for Circus.
+
+        Uses Unix domain sockets on Linux/macOS and named pipes on Windows.
+        This is more secure than TCP as it's only accessible locally and
+        can use filesystem permissions.
+        """
+        if platform.system() == "Windows":
+            # Windows: ZeroMQ translates "ipc://name" to named pipes
+            return f"ipc://librocco-circus-{os.getpid()}"
+        else:
+            # Linux/macOS: Use Unix domain socket
+            return f"ipc://{tempfile.gettempdir()}/librocco-circus-{os.getpid()}.sock"
+
     def _create_caddy_watcher(self) -> dict:
         """Create a Circus watcher configuration for Caddy."""
-        import os
-
         # Resolve all paths to absolute paths to handle spaces correctly
         # (macOS paths like "Application Support" have spaces)
         caddy_binary = self.caddy_binary.resolve()
@@ -89,14 +108,17 @@ class EmbeddedSupervisor:
         if self._running:
             return
 
+        logger.info(f"Using IPC endpoint for Circus: {self.endpoint}")
+
         # Create watchers
         watchers = [self._create_caddy_watcher()]
 
-        # Create arbiter
+        # Create arbiter with explicit IPC endpoint for security
         self.arbiter = get_arbiter(
             watchers,
             background=False,
             loglevel="INFO",
+            controller=self.endpoint,
         )
 
         # Start arbiter in a background thread
@@ -107,14 +129,8 @@ class EmbeddedSupervisor:
         # Give it time to initialize watchers
         time.sleep(2)
 
-        # Initialize CircusClient to control the arbiter
-        # Use the arbiter's endpoint or default
-        endpoint = getattr(self.arbiter, "ctrl", None)
-        if endpoint and hasattr(endpoint, "endpoint"):
-            self.client = CircusClient(endpoint=endpoint.endpoint)
-        else:
-            # Use default endpoint
-            self.client = CircusClient()
+        # Initialize CircusClient with the same IPC endpoint
+        self.client = CircusClient(endpoint=self.endpoint)
 
     def _run_arbiter(self) -> None:
         """Run the arbiter (called in background thread)."""

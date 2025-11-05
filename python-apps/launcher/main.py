@@ -20,7 +20,10 @@ logger = None
 
 def show_error_dialog(title: str, message: str) -> None:
     """Show an error dialog and exit."""
-    app = QApplication(sys.argv)
+    # Check if QApplication instance already exists
+    app = QApplication.instance()
+    if app is None:
+        app = QApplication(sys.argv)
     msg_box = QMessageBox()
     msg_box.setWindowTitle(title)
     msg_box.setText(message)

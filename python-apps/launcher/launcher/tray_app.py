@@ -23,7 +23,10 @@ class TrayApp:
         self.config = config
         self.daemon_manager = daemon_manager
 
-        self.app = QApplication(sys.argv)
+        # Get or create QApplication instance
+        self.app = QApplication.instance()
+        if self.app is None:
+            self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)
 
         # Create the tray icon
@@ -40,7 +43,9 @@ class TrayApp:
 
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self.signal_handler)
-        signal.signal(signal.SIGTERM, self.sigterm_handler)
+        # SIGTERM is not available on Windows
+        if hasattr(signal, 'SIGTERM'):
+            signal.signal(signal.SIGTERM, self.sigterm_handler)
 
         # Timer to allow Python to process signals
         self.signal_timer = QTimer()
