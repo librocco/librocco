@@ -35,15 +35,18 @@ def test_start_caddy_daemon(setup_caddy_and_daemon):
     # Start the daemon manager (arbiter)
     daemon_manager.start()
 
-    # Give it a moment to initialize
-    time.sleep(1)
+    # Wait for arbiter to initialize (intelligent polling)
+    from conftest import wait_for_circus_ready, wait_for_caddy_ready
+    if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
+        pytest.fail("Circus arbiter failed to initialize")
 
     # Start the Caddy process via Circus
     result = daemon_manager.start_daemon("caddy")
     assert result, "start_daemon should return True"
 
-    # Give Caddy time to start
-    time.sleep(2)
+    # Wait for Caddy to be ready
+    if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
+        pytest.fail("Caddy failed to start")
 
     # Check status - should be running
     daemon_status = daemon_manager.get_status("caddy")
@@ -60,9 +63,16 @@ def test_stop_caddy_daemon(setup_caddy_and_daemon):
 
     # Start the daemon manager and Caddy
     daemon_manager.start()
-    time.sleep(1)
+
+    # Wait for arbiter and Caddy (intelligent polling)
+    from conftest import wait_for_circus_ready, wait_for_caddy_ready
+    if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
+        pytest.fail("Circus arbiter failed to initialize")
+
     daemon_manager.start_daemon("caddy")
-    time.sleep(2)
+
+    if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
+        pytest.fail("Caddy failed to start")
 
     # Verify it's running
     daemon_status = daemon_manager.get_status("caddy")
@@ -71,7 +81,9 @@ def test_stop_caddy_daemon(setup_caddy_and_daemon):
     # Stop the daemon
     result = daemon_manager.stop_daemon("caddy")
     assert result, "stop_daemon should return True"
-    time.sleep(1)
+
+    # Brief wait for stop to complete
+    time.sleep(0.5)
 
     # Check status - should be stopped
     daemon_status = daemon_manager.get_status("caddy")
@@ -88,9 +100,16 @@ def test_caddy_working_directory(setup_caddy_and_daemon, mock_config):
 
     # Start the daemon manager and Caddy
     daemon_manager.start()
-    time.sleep(1)
+
+    # Wait for arbiter and Caddy (intelligent polling)
+    from conftest import wait_for_circus_ready, wait_for_caddy_ready
+    if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
+        pytest.fail("Circus arbiter failed to initialize")
+
     daemon_manager.start_daemon("caddy")
-    time.sleep(2)
+
+    if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
+        pytest.fail("Caddy failed to start")
 
     # Verify Caddy is running
     daemon_status = daemon_manager.get_status("caddy")
@@ -116,9 +135,17 @@ def test_verify_caddy_responds(setup_caddy_and_daemon):
 
     # Start the daemon manager and Caddy
     daemon_manager.start()
-    time.sleep(1)
+
+    # Wait for arbiter and Caddy (intelligent polling)
+    from conftest import wait_for_circus_ready, wait_for_caddy_ready
+    if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
+        pytest.fail("Circus arbiter failed to initialize")
+
     daemon_manager.start_daemon("caddy")
-    time.sleep(3)  # Give Caddy extra time to bind to port
+
+    # Wait for Caddy to be ready (this also verifies HTTP response)
+    if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
+        pytest.fail("Caddy failed to start and respond on HTTP")
 
     # Verify Caddy is running
     daemon_status = daemon_manager.get_status("caddy")
