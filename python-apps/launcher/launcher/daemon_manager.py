@@ -67,12 +67,15 @@ class EmbeddedSupervisor:
         """
         if platform.system() == "Windows":
             # Windows: Use TCP with random port (ZeroMQ doesn't support ipc:// on Windows)
-            # Find an available port
+            # Find an available port using SO_REUSEADDR to minimize race conditions
             import socket
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             sock.bind(('127.0.0.1', 0))
             port = sock.getsockname()[1]
             sock.close()
+            # Note: Small race condition still exists between close() and Circus bind,
+            # but SO_REUSEADDR minimizes the window and allows immediate port reuse
             return f"tcp://127.0.0.1:{port}"
         else:
             # Linux/macOS: Use Unix domain socket for better security
@@ -297,7 +300,7 @@ class EmbeddedSupervisor:
 
     def get_logs(self, daemon_name: str = "caddy", lines: int = 100) -> tuple[str, str]:
         """
-        Get recent log lines for a daemon.
+        Get recent log lines for a daemon without loading entire file into memory.
         Returns: (server_logs, access_logs)
         """
         server_logs = ""
@@ -305,16 +308,29 @@ class EmbeddedSupervisor:
 
         try:
             if self.caddy_server_log.exists():
-                with open(self.caddy_server_log, "r") as f:
-                    all_lines = f.readlines()
-                    server_logs = "".join(all_lines[-lines:])
+                server_logs = self._read_last_lines(self.caddy_server_log, lines)
 
             if self.caddy_access_log.exists():
-                with open(self.caddy_access_log, "r") as f:
-                    all_lines = f.readlines()
-                    access_logs = "".join(all_lines[-lines:])
+                access_logs = self._read_last_lines(self.caddy_access_log, lines)
 
         except Exception as exc:
             logger.error(f"Failed to read logs for {daemon_name}", exc_info=exc)
 
         return server_logs, access_logs
+
+    def _read_last_lines(self, file_path: Path, lines: int) -> str:
+        """
+        Read last N lines from a file efficiently without loading entire file.
+
+        Uses collections.deque for memory-efficient tail operation.
+        """
+        from collections import deque
+
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+                # deque with maxlen automatically discards old items
+                last_lines = deque(f, maxlen=lines)
+                return "".join(last_lines)
+        except Exception as exc:
+            logger.error(f"Failed to read file {file_path}", exc_info=exc)
+            return ""

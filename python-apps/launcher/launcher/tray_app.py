@@ -260,25 +260,38 @@ class TrayApp:
         self.quit_app()
 
     def sigterm_handler(self, signum, _frame):
-        """Handle SIGTERM for immediate exit."""
-        logger.info(f"Received signal {signum}, exiting immediately...")
-        sys.exit(0)
+        """Handle SIGTERM for graceful shutdown."""
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
+        self.quit_app()
 
     def quit_app(self):
-        """Quit the application."""
+        """Quit the application with proper resource cleanup."""
+        # Stop daemon manager (don't let this block other cleanup)
         try:
-            # Stop daemon manager
             logger.info("Stopping daemon manager...")
             self.daemon_manager.stop()
+        except Exception as exc:
+            ErrorHandler.log_exception("daemon manager shutdown", exc)
 
-            # Hide tray icon
+        # Stop timers (don't let this block other cleanup)
+        try:
+            self.status_timer.stop()
+            self.signal_timer.stop()
+        except Exception as exc:
+            ErrorHandler.log_exception("timer cleanup", exc)
+
+        # Hide tray icon (don't let this block Qt quit)
+        try:
             self.tray_icon.hide()
+        except Exception as exc:
+            ErrorHandler.log_exception("tray icon cleanup", exc)
 
-            # Quit Qt
+        # Always quit Qt, even if previous steps failed
+        try:
             QCoreApplication.quit()
         except Exception as exc:
-            ErrorHandler.log_exception("application shutdown", e)
-            # Force exit even if shutdown fails
+            ErrorHandler.log_exception("Qt shutdown", exc)
+            # Last resort: force exit
             sys.exit(1)
 
     def run(self):
