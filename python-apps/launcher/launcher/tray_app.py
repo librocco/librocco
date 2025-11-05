@@ -64,6 +64,11 @@ class TrayApp:
         # Log viewer window reference
         self.log_viewer = None
 
+        # Connect to daemon manager worker signals for async operations
+        self.daemon_manager.worker.status_ready.connect(self._handle_status_update)
+        self.daemon_manager.worker.operation_complete.connect(self._handle_operation_complete)
+        self.daemon_manager.worker.error_occurred.connect(self._handle_worker_error)
+
         # Initial status update
         self.update_status()
 
@@ -104,9 +109,20 @@ class TrayApp:
         self.menu.addAction(quit_action)
 
     def update_status(self):
-        """Update the status display and enable/disable menu items."""
+        """Request status update from daemon manager (async, non-blocking)."""
+        # Call async method - result will arrive via status_ready signal
+        self.daemon_manager.get_status("caddy")
+
+    def _handle_status_update(self, status):
+        """Handle status update from worker thread."""
         try:
-            status = self.daemon_manager.get_status("caddy")
+            if status is None:
+                # Error occurred in worker (already logged there)
+                self.status_action.setText(_("Caddy: ⚠ Error"))
+                self.start_action.setEnabled(True)
+                self.stop_action.setEnabled(False)
+                self.restart_action.setEnabled(False)
+                return
 
             # Update status text
             if status.status == "active":
@@ -150,82 +166,57 @@ class TrayApp:
         except Exception as exc:
             self.status_action.setText(_("Caddy: ⚠ Error"))
             # Log but don't show dialog - status checks are frequent background operations
-            ErrorHandler.log_exception("status update", exc)
+            ErrorHandler.log_exception("status update handler", exc)
+
+    def _handle_operation_complete(self, operation: str, success: bool):
+        """Handle daemon operation completion from worker thread."""
+        try:
+            if success:
+                # Show success message
+                if operation == "start":
+                    self.show_message(_("Caddy Started"), _("Caddy daemon is starting..."))
+                elif operation == "stop":
+                    self.show_message(_("Caddy Stopped"), _("Caddy daemon is stopping..."))
+                elif operation == "restart":
+                    self.show_message(_("Caddy Restarted"), _("Caddy daemon is restarting..."))
+            else:
+                # Show error message
+                logger.error(f"Failed to {operation} Caddy daemon")
+                ErrorHandler.handle_error(
+                    _(f"{operation.title()} Failed"),
+                    _(f"Failed to {operation} Caddy daemon. Check the logs for details."),
+                    show_dialog=True,
+                    parent=None,
+                )
+
+            # Trigger status update after operation
+            self.update_status()
+        except Exception as exc:
+            ErrorHandler.log_exception(f"operation complete handler ({operation})", exc)
+
+    def _handle_worker_error(self, operation: str, error_message: str):
+        """Handle worker errors."""
+        logger.error(f"Worker error during {operation}: {error_message}")
+        # Most errors are already handled by operation_complete with success=False
+        # This handler is for unexpected errors in the worker thread
 
     def start_caddy(self):
-        """Start the Caddy daemon."""
-        try:
-            success = self.daemon_manager.start_daemon("caddy")
-            if success:
-                logger.info("User initiated: Start Caddy")
-                self.show_message(_("Caddy Started"), _("Caddy daemon is starting..."))
-            else:
-                logger.error("Failed to start Caddy daemon")
-                ErrorHandler.handle_error(
-                    _("Start Failed"),
-                    _("Failed to start Caddy daemon. Check the logs for details."),
-                    show_dialog=True,
-                    parent=None,
-                )
-        except Exception as exc:
-            ErrorHandler.handle_critical_error(
-                _("Start Error"),
-                _("An unexpected error occurred while starting Caddy."),
-                exception=exc,
-                parent=None,
-            )
-        finally:
-            self.update_status()
+        """Start the Caddy daemon (async, non-blocking)."""
+        logger.info("User initiated: Start Caddy")
+        # Call async method - result will arrive via operation_complete signal
+        self.daemon_manager.start_daemon("caddy")
 
     def stop_caddy(self):
-        """Stop the Caddy daemon."""
-        try:
-            success = self.daemon_manager.stop_daemon("caddy")
-            if success:
-                logger.info("User initiated: Stop Caddy")
-                self.show_message(_("Caddy Stopped"), _("Caddy daemon is stopping..."))
-            else:
-                logger.error("Failed to stop Caddy daemon")
-                ErrorHandler.handle_error(
-                    _("Stop Failed"),
-                    _("Failed to stop Caddy daemon. Check the logs for details."),
-                    show_dialog=True,
-                    parent=None,
-                )
-        except Exception as exc:
-            ErrorHandler.handle_critical_error(
-                _("Stop Error"),
-                _("An unexpected error occurred while stopping Caddy."),
-                exception=exc,
-                parent=None,
-            )
-        finally:
-            self.update_status()
+        """Stop the Caddy daemon (async, non-blocking)."""
+        logger.info("User initiated: Stop Caddy")
+        # Call async method - result will arrive via operation_complete signal
+        self.daemon_manager.stop_daemon("caddy")
 
     def restart_caddy(self):
-        """Restart the Caddy daemon."""
-        try:
-            success = self.daemon_manager.restart_daemon("caddy")
-            if success:
-                logger.info("User initiated: Restart Caddy")
-                self.show_message(_("Caddy Restarted"), _("Caddy daemon is restarting..."))
-            else:
-                logger.error("Failed to restart Caddy daemon")
-                ErrorHandler.handle_error(
-                    _("Restart Failed"),
-                    _("Failed to restart Caddy daemon. Check the logs for details."),
-                    show_dialog=True,
-                    parent=None,
-                )
-        except Exception as exc:
-            ErrorHandler.handle_critical_error(
-                _("Restart Error"),
-                _("An unexpected error occurred while restarting Caddy."),
-                exception=exc,
-                parent=None,
-            )
-        finally:
-            self.update_status()
+        """Restart the Caddy daemon (async, non-blocking)."""
+        logger.info("User initiated: Restart Caddy")
+        # Call async method - result will arrive via operation_complete signal
+        self.daemon_manager.restart_daemon("caddy")
 
     def show_logs(self):
         """Show the log viewer window."""
