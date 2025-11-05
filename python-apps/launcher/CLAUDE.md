@@ -28,4 +28,11 @@ def _get_watcher(self, daemon_name: str):
     return None
 ```
 
+### Cross platform requirements
 Always choose solutions that will work on Linux, Windows and MacOS. Point out if they won't. Development happens on Linux and MacOS, so make sure to catch Windows incompatibilities early.
+
+
+### Quickly get CI output
+You can get output of the latest CI run on github with:
+gh run list --workflow=python-launcher-ci.yml --limit 1 --json conclusion,status,headBranch,databaseId -q '.[] | "\(.conclusion // .status) - 
+    \(.headBranch) - \(.databaseId)"' && gh run view $(gh run list --workflow=python-launcher-ci.yml --limit 1 --json databaseId -q '.[0].databaseId') --log-failed
