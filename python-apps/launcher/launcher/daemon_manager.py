@@ -44,6 +44,14 @@ class EmbeddedSupervisor:
         """Create a Circus watcher configuration for Caddy."""
         import os
 
+        # Resolve all paths to absolute paths to handle spaces correctly
+        # (macOS paths like "Application Support" have spaces)
+        caddy_binary = self.caddy_binary.resolve()
+        caddyfile = self.caddyfile.resolve()
+        caddy_data_dir = self.caddy_data_dir.resolve()
+        stdout_log = self.caddy_stdout_log.resolve()
+        stderr_log = self.caddy_stderr_log.resolve()
+
         # Pass through essential environment variables
         env = {
             "HOME": os.environ.get("HOME", ""),
@@ -54,19 +62,21 @@ class EmbeddedSupervisor:
 
         return {
             "name": "caddy",
-            "cmd": str(self.caddy_binary),
-            "args": ["run", "--config", str(self.caddyfile), "--adapter", "caddyfile"],
-            "working_dir": str(self.caddy_data_dir),
+            "cmd": str(caddy_binary),
+            "args": ["run", "--config", str(caddyfile), "--adapter", "caddyfile"],
+            "working_dir": str(caddy_data_dir),
             "env": env,
             "copy_env": True,  # Copy all environment variables
+            "shell": False,  # Don't use shell (important for paths with spaces)
+            "use_sockets": False,  # Use standard subprocess
             "autostart": False,  # Don't auto-start, let us control it manually
             "stdout_stream": {
                 "class": "FileStream",
-                "filename": str(self.caddy_stdout_log),
+                "filename": str(stdout_log),
             },
             "stderr_stream": {
                 "class": "FileStream",
-                "filename": str(self.caddy_stderr_log),
+                "filename": str(stderr_log),
             },
             "max_retry": 5,
             "graceful_timeout": 10,

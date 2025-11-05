@@ -127,6 +127,18 @@ class BinaryManager:
                     self.binary_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
                 )
 
+                # On macOS, remove quarantine attribute to bypass Gatekeeper
+                # This is necessary for downloaded binaries to run via subprocess
+                if platform.system() == "Darwin":
+                    try:
+                        subprocess.run(
+                            ["xattr", "-d", "com.apple.quarantine", str(self.binary_path)],
+                            capture_output=True,
+                            check=False,  # Don't fail if attribute doesn't exist
+                        )
+                    except Exception:
+                        pass  # Ignore errors, attribute may not exist
+
     def verify_binary(self) -> bool:
         """
         Verify the binary works by running 'caddy version'.

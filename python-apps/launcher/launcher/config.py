@@ -16,8 +16,16 @@ class Config:
 
     def __init__(self):
         # Setup directory paths
-        self.data_dir = Path(user_data_dir(self.APP_NAME, self.APP_AUTHOR))
-        self.config_dir = Path(user_config_dir(self.APP_NAME, self.APP_AUTHOR))
+        # On macOS, use ~/.librocco/ instead of ~/Library/Application Support/
+        # to avoid issues with spaces in paths when using Circus subprocess
+        import platform
+        if platform.system() == "Darwin":
+            home = Path.home()
+            self.data_dir = home / f".{self.APP_NAME}"
+            self.config_dir = home / f".{self.APP_NAME}" / "config"
+        else:
+            self.data_dir = Path(user_data_dir(self.APP_NAME, self.APP_AUTHOR))
+            self.config_dir = Path(user_config_dir(self.APP_NAME, self.APP_AUTHOR))
 
         # Sub-directories in data dir
         self.binaries_dir = self.data_dir / "binaries"
