@@ -1,8 +1,11 @@
 #@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "load_artefacts")
 #@ load("cache.lib.yml", "cache_node")
+#@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
+#@ load("build-crsqlite.lib.yml", "build_crsqlite")
 
 name: PyInstaller Build
 
@@ -15,8 +18,11 @@ name: PyInstaller Build
   workflow_dispatch:
 
 jobs:
+  build-cr-sqlite: #@ build_crsqlite()
+
   #! Check if we should build (main branch OR [build-pyinstaller] in commit message)
   check-trigger:
+    needs: build-cr-sqlite
     runs-on: ubuntu-latest
     outputs:
       should_build: ${{ steps.check.outputs.should_build }}
@@ -44,7 +50,7 @@ jobs:
           echo "Skipping build - not on main and no [build-pyinstaller] tag"
 
   build-executable:
-    needs: check-trigger
+    needs: [build-cr-sqlite, check-trigger]
     if: needs.check-trigger.outputs.should_build == 'true'
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
@@ -93,6 +99,14 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+
+      #! Compute cr-sqlite artefacts version
+      - name: Compute desired compiled artifact version
+        run: ./scripts/compute_artefacts_version.sh
+
+      #! Load cr-sqlite artefacts (built or cached)
+      -  #@ load_artefacts()
+      -  #@ load_cached_artefacts()
 
       #! Python setup
       - name: Set up Python
