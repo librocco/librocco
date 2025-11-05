@@ -1,8 +1,8 @@
 """Tests for Circus-based daemon management of Caddy."""
 
 import time
-import subprocess
 import pytest
+import requests
 from launcher.binary_manager import BinaryManager
 from launcher.daemon_manager import EmbeddedSupervisor
 
@@ -113,27 +113,11 @@ def test_verify_caddy_responds(setup_caddy_and_daemon):
     daemon_status = daemon_manager.get_status("caddy")
     assert daemon_status.status == "active"
 
-    # Try to connect to Caddy's test endpoint
+    # Try to connect to Caddy's test endpoint using requests library
     try:
-        result = subprocess.run(
-            [
-                "curl",
-                "-s",
-                "-o",
-                "/dev/null",
-                "-w",
-                "%{http_code}",
-                "http://localhost:8080",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-
-        # Should get HTTP 200 response
-        assert result.returncode == 0, "curl should succeed"
-        assert result.stdout == "200", f"Expected HTTP 200, got: {result.stdout}"
-    except subprocess.TimeoutExpired:
+        response = requests.get("http://localhost:8080", timeout=5)
+        assert response.status_code == 200, f"Expected HTTP 200, got: {response.status_code}"
+    except requests.Timeout:
         pytest.fail("Caddy did not respond within timeout")
-    except FileNotFoundError:
-        pytest.skip("curl not available for HTTP test")
+    except requests.ConnectionError as e:
+        pytest.fail(f"Could not connect to Caddy: {e}")
