@@ -1,6 +1,7 @@
 """Pytest configuration and fixtures for launcher tests."""
 
 import tempfile
+import socket
 from pathlib import Path
 import pytest
 
@@ -38,18 +39,29 @@ def mock_config(temp_data_dir, monkeypatch):
 
 
 @pytest.fixture
-def simple_caddyfile(temp_data_dir):
-    """Create a minimal Caddyfile for testing."""
+def test_port():
+    """Find and return an available port for testing."""
+    # Create a socket, bind to port 0 (OS will assign free port), then close it
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.bind(('localhost', 0))
+    port = sock.getsockname()[1]
+    sock.close()
+    return port
+
+
+@pytest.fixture
+def simple_caddyfile(temp_data_dir, test_port):
+    """Create a minimal Caddyfile for testing with a free port."""
     caddyfile_path = temp_data_dir / "Caddyfile"
-    caddyfile_content = """
-{
+    caddyfile_content = f"""
+{{
     # Global options
     admin off
-}
+}}
 
-:8080 {
+:{test_port} {{
     respond "Hello from test Caddy" 200
-}
+}}
 """
     caddyfile_path.write_text(caddyfile_content)
     return caddyfile_path
