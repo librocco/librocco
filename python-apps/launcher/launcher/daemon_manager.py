@@ -59,15 +59,20 @@ class EmbeddedSupervisor:
         """
         Generate a platform-specific IPC endpoint for Circus.
 
-        Uses Unix domain sockets on Linux/macOS and named pipes on Windows.
-        This is more secure than TCP as it's only accessible locally and
-        can use filesystem permissions.
+        Uses Unix domain sockets on Linux/macOS for security.
+        Falls back to TCP on Windows (ZeroMQ's ipc:// protocol is not supported on Windows).
         """
         if platform.system() == "Windows":
-            # Windows: ZeroMQ translates "ipc://name" to named pipes
-            return f"ipc://librocco-circus-{os.getpid()}"
+            # Windows: Use TCP with random port (ZeroMQ doesn't support ipc:// on Windows)
+            # Find an available port
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+            sock.close()
+            return f"tcp://127.0.0.1:{port}"
         else:
-            # Linux/macOS: Use Unix domain socket
+            # Linux/macOS: Use Unix domain socket for better security
             return f"ipc://{tempfile.gettempdir()}/librocco-circus-{os.getpid()}.sock"
 
     def _create_caddy_watcher(self) -> dict:
