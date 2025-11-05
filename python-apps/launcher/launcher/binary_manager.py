@@ -13,6 +13,7 @@ import stat
 from pathlib import Path
 from typing import Optional, Tuple
 import requests
+from launcher.config import get_binary_name
 
 logger = logging.getLogger("launcher")
 
@@ -142,24 +143,20 @@ class BinaryManager:
         with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp_file:
             tmp_path = Path(tmp_file.name)
 
-            try:
-                print(f"Downloading Caddy from {url}...")
-                response = requests.get(url, stream=True, timeout=30)
-                response.raise_for_status()
+            print(f"Downloading Caddy from {url}...")
+            response = requests.get(url, stream=True, timeout=30)
+            response.raise_for_status()
 
-                total_size = int(response.headers.get("content-length", 0))
-                downloaded = 0
+            total_size = int(response.headers.get("content-length", 0))
+            downloaded = 0
 
-                for chunk in response.iter_content(chunk_size=8192):
-                    tmp_file.write(chunk)
-                    downloaded += len(chunk)
-                    if progress_callback:
-                        progress_callback(downloaded, total_size)
+            for chunk in response.iter_content(chunk_size=8192):
+                tmp_file.write(chunk)
+                downloaded += len(chunk)
+                if progress_callback:
+                    progress_callback(downloaded, total_size)
 
-                tmp_file.flush()
-
-            finally:
-                pass  # File handle will be closed when exiting with block
+            tmp_file.flush()
 
         # Verify checksum before extraction
         if not self._verify_checksum(tmp_path):
@@ -181,7 +178,7 @@ class BinaryManager:
 
     def _extract_binary(self, archive_path: Path, ext: str) -> None:
         """Extract the caddy binary from the archive."""
-        binary_name = "caddy.exe" if platform.system() == "Windows" else "caddy"
+        binary_name = get_binary_name("caddy")
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_dir_path = Path(tmp_dir)
@@ -266,6 +263,6 @@ class BinaryManager:
         try:
             self.download_and_extract()
             return self.verify_binary()
-        except Exception as e:
-            print(f"Failed to download Caddy: {e}")
+        except Exception as exc:
+            print(f"Failed to download Caddy: {exc}")
             return False

@@ -12,9 +12,35 @@ from pathlib import Path
 from typing import Optional
 
 
-# Supported languages (must match available translation catalogs)
-SUPPORTED_LANGUAGES = ["en", "de", "it"]
 DEFAULT_LANGUAGE = "en"
+
+
+def _get_supported_languages() -> list[str]:
+    """
+    Auto-detect supported languages from available translation files.
+
+    Scans the locales directory for compiled translation catalogs (.mo files)
+    and returns a list of available language codes.
+
+    Returns:
+        List of language codes (e.g., ['en', 'de', 'it'])
+    """
+    locale_dir = Path(__file__).parent / "locales"
+    if not locale_dir.exists():
+        return [DEFAULT_LANGUAGE]
+
+    languages = [DEFAULT_LANGUAGE]  # Always include default language
+    for lang_dir in locale_dir.iterdir():
+        if lang_dir.is_dir():
+            mo_file = lang_dir / "LC_MESSAGES" / "launcher.mo"
+            if mo_file.exists() and lang_dir.name != DEFAULT_LANGUAGE:
+                languages.append(lang_dir.name)
+
+    return sorted(languages)
+
+
+# Supported languages (auto-detected from available .mo files)
+SUPPORTED_LANGUAGES = _get_supported_languages()
 
 # Global translation function (initialized by setup_i18n)
 _translate = None
@@ -82,9 +108,9 @@ def setup_i18n(language: Optional[str] = None) -> None:
             fallback=True,  # Fall back to default if translation not found
         )
         _translate = translation.gettext
-    except Exception as e:
+    except Exception as exc:
         # If loading fails, use fallback (returns untranslated strings)
-        print(f"Warning: Failed to load translations for '{language}': {e}")
+        print(f"Warning: Failed to load translations for '{language}': {exc}")
         _translate = lambda s: s
 
 

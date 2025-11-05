@@ -19,6 +19,10 @@ logger = logging.getLogger("launcher")
 class TrayApp:
     """Main tray application with daemon management."""
 
+    # Timer intervals (milliseconds)
+    SIGNAL_CHECK_INTERVAL_MS = 100  # Check for Python signals every 100ms
+    STATUS_UPDATE_INTERVAL_MS = 2000  # Update daemon status every 2 seconds
+
     def __init__(self, config, daemon_manager):
         self.config = config
         self.daemon_manager = daemon_manager
@@ -50,12 +54,12 @@ class TrayApp:
         # Timer to allow Python to process signals
         self.signal_timer = QTimer()
         self.signal_timer.timeout.connect(lambda: None)
-        self.signal_timer.start(100)
+        self.signal_timer.start(self.SIGNAL_CHECK_INTERVAL_MS)
 
         # Timer to update status
         self.status_timer = QTimer()
         self.status_timer.timeout.connect(self.update_status)
-        self.status_timer.start(2000)  # Update every 2 seconds
+        self.status_timer.start(self.STATUS_UPDATE_INTERVAL_MS)
 
         # Log viewer window reference
         self.log_viewer = None
@@ -143,10 +147,10 @@ class TrayApp:
                 self.restart_action.setEnabled(False)
                 logger.warning(f"Unknown Caddy status: {status.status}")
 
-        except Exception as e:
+        except Exception as exc:
             self.status_action.setText(_("Caddy: ⚠ Error"))
             # Log but don't show dialog - status checks are frequent background operations
-            ErrorHandler.log_exception("status update", e)
+            ErrorHandler.log_exception("status update", exc)
 
     def start_caddy(self):
         """Start the Caddy daemon."""
@@ -163,11 +167,11 @@ class TrayApp:
                     show_dialog=True,
                     parent=None,
                 )
-        except Exception as e:
+        except Exception as exc:
             ErrorHandler.handle_critical_error(
                 _("Start Error"),
                 _("An unexpected error occurred while starting Caddy."),
-                exception=e,
+                exception=exc,
                 parent=None,
             )
         finally:
@@ -188,11 +192,11 @@ class TrayApp:
                     show_dialog=True,
                     parent=None,
                 )
-        except Exception as e:
+        except Exception as exc:
             ErrorHandler.handle_critical_error(
                 _("Stop Error"),
                 _("An unexpected error occurred while stopping Caddy."),
-                exception=e,
+                exception=exc,
                 parent=None,
             )
         finally:
@@ -213,11 +217,11 @@ class TrayApp:
                     show_dialog=True,
                     parent=None,
                 )
-        except Exception as e:
+        except Exception as exc:
             ErrorHandler.handle_critical_error(
                 _("Restart Error"),
                 _("An unexpected error occurred while restarting Caddy."),
-                exception=e,
+                exception=exc,
                 parent=None,
             )
         finally:
@@ -232,11 +236,11 @@ class TrayApp:
             else:
                 self.log_viewer.activateWindow()
                 self.log_viewer.raise_()
-        except Exception as e:
+        except Exception as exc:
             ErrorHandler.handle_error(
                 _("Log Viewer Error"),
                 _("Failed to open log viewer window."),
-                exception=e,
+                exception=exc,
                 show_dialog=True,
                 parent=None,
             )
@@ -250,12 +254,12 @@ class TrayApp:
         )
         self.tray_icon.showMessage(title, message, icon, 3000)
 
-    def signal_handler(self, signum, frame):
+    def signal_handler(self, signum, _frame):
         """Handle SIGINT (ctrl-c) for graceful shutdown."""
         logger.info(f"Received signal {signum}, shutting down gracefully...")
         self.quit_app()
 
-    def sigterm_handler(self, signum, frame):
+    def sigterm_handler(self, signum, _frame):
         """Handle SIGTERM for immediate exit."""
         logger.info(f"Received signal {signum}, exiting immediately...")
         sys.exit(0)
@@ -272,7 +276,7 @@ class TrayApp:
 
             # Quit Qt
             QCoreApplication.quit()
-        except Exception as e:
+        except Exception as exc:
             ErrorHandler.log_exception("application shutdown", e)
             # Force exit even if shutdown fails
             sys.exit(1)

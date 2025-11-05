@@ -21,6 +21,9 @@ from .i18n import _
 class LogViewerDialog(QDialog):
     """Dialog for viewing daemon logs with auto-refresh."""
 
+    # Refresh interval (milliseconds)
+    LOG_REFRESH_INTERVAL_MS = 1000  # Refresh logs every second
+
     def __init__(self, daemon_manager, daemon_name: str = "caddy", parent=None):
         super().__init__(parent)
         self.daemon_manager = daemon_manager
@@ -36,7 +39,7 @@ class LogViewerDialog(QDialog):
         # Auto-refresh timer
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh_logs)
-        self.refresh_timer.start(1000)  # Refresh every second
+        self.refresh_timer.start(self.LOG_REFRESH_INTERVAL_MS)
 
         # Initial load
         self.refresh_logs()
@@ -113,7 +116,7 @@ class LogViewerDialog(QDialog):
             self._update_text_widget(self.stdout_text, stdout)
             self._update_text_widget(self.stderr_text, stderr)
 
-        except Exception as e:
+        except Exception as exc:
             # Translators: {0} is replaced with the error message
             self.status_label.setText(_("Error: {0}").format(str(e)))
 
