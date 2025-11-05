@@ -1,12 +1,15 @@
 """
 Daemon management using Circus as an embedded supervisor.
 """
+import logging
 import threading
 import time
 from pathlib import Path
 from typing import Dict, Optional
 from circus import get_arbiter
 from circus.client import CircusClient
+
+logger = logging.getLogger("launcher")
 
 
 class DaemonStatus:
@@ -110,7 +113,7 @@ class EmbeddedSupervisor:
             asyncio.set_event_loop(asyncio.new_event_loop())
             self.arbiter.start()
         except Exception as e:
-            print(f"Arbiter error: {e}")
+            logger.error("Arbiter failed to start", exc_info=e)
             self._running = False
 
     def stop(self) -> None:
@@ -122,35 +125,35 @@ class EmbeddedSupervisor:
             # Use CircusClient to send commands (proper async way)
             if self.client:
                 # First, explicitly stop all watchers to ensure clean shutdown
-                print("Stopping all watchers...")
+                logger.info("Stopping all watchers...")
                 try:
                     stop_response = self.client.send_message("stop")
-                    print(f"Stop watchers response: {stop_response}")
+                    logger.debug(f"Stop watchers response: {stop_response}")
                 except Exception as e:
-                    print(f"Error stopping watchers: {e}")
+                    logger.error("Failed to stop watchers", exc_info=e)
 
                 # Give watchers time to stop gracefully
                 import time
                 time.sleep(1)
 
                 # Then quit the arbiter
-                print("Sending quit command to Circus...")
+                logger.info("Sending quit command to Circus...")
                 try:
                     quit_response = self.client.send_message("quit")
-                    print(f"Quit response: {quit_response}")
+                    logger.debug(f"Quit response: {quit_response}")
                 except Exception as e:
-                    print(f"Error sending quit command: {e}")
+                    logger.error("Failed to send quit command to Circus", exc_info=e)
 
                 self.client = None
 
             # Wait briefly for arbiter thread to finish
             # It's a daemon thread so it will be killed when main process exits
             if self.arbiter_thread:
-                print("Waiting for arbiter thread to stop...")
+                logger.info("Waiting for arbiter thread to stop...")
                 self.arbiter_thread.join(timeout=2)
                 if self.arbiter_thread.is_alive():
                     # This is okay - daemon thread will be killed on exit
-                    print("Arbiter thread still running (will be terminated on exit)")
+                    logger.debug("Arbiter thread still running (will be terminated on exit)")
         finally:
             self._running = False
 
@@ -178,9 +181,7 @@ class EmbeddedSupervisor:
             return DaemonStatus(daemon_name, watcher_status)
 
         except Exception as e:
-            print(f"Error getting status: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Failed to get status for {daemon_name}", exc_info=e)
             return DaemonStatus(daemon_name, "error")
 
     def start_daemon(self, daemon_name: str = "caddy") -> bool:
@@ -192,45 +193,65 @@ class EmbeddedSupervisor:
 
         try:
             if not self.client:
-                print(f"CircusClient not initialized")
+                logger.error(f"CircusClient not initialized, cannot start {daemon_name}")
                 return False
 
+            logger.info(f"Starting daemon: {daemon_name}")
             response = self.client.send_message("start", name=daemon_name)
-            return response.get("status") == "ok"
+            success = response.get("status") == "ok"
+
+            if success:
+                logger.info(f"Successfully started daemon: {daemon_name}")
+            else:
+                logger.warning(f"Failed to start daemon {daemon_name}: {response}")
+
+            return success
         except Exception as e:
-            print(f"Error starting daemon {daemon_name}: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Failed to start daemon {daemon_name}", exc_info=e)
             return False
 
     def stop_daemon(self, daemon_name: str = "caddy") -> bool:
         """Stop a specific daemon using CircusClient."""
         # TODO: Move to background thread to avoid blocking Qt event loop
         if not self._running or not self.client:
+            logger.warning(f"Cannot stop {daemon_name}: supervisor not running")
             return False
 
         try:
+            logger.info(f"Stopping daemon: {daemon_name}")
             response = self.client.send_message("stop", name=daemon_name)
-            return response.get("status") == "ok"
+            success = response.get("status") == "ok"
+
+            if success:
+                logger.info(f"Successfully stopped daemon: {daemon_name}")
+            else:
+                logger.warning(f"Failed to stop daemon {daemon_name}: {response}")
+
+            return success
         except Exception as e:
-            print(f"Error stopping daemon {daemon_name}: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Failed to stop daemon {daemon_name}", exc_info=e)
             return False
 
     def restart_daemon(self, daemon_name: str = "caddy") -> bool:
         """Restart a specific daemon using CircusClient."""
         # TODO: Move to background thread to avoid blocking Qt event loop
         if not self._running or not self.client:
+            logger.warning(f"Cannot restart {daemon_name}: supervisor not running")
             return False
 
         try:
+            logger.info(f"Restarting daemon: {daemon_name}")
             response = self.client.send_message("restart", name=daemon_name)
-            return response.get("status") == "ok"
+            success = response.get("status") == "ok"
+
+            if success:
+                logger.info(f"Successfully restarted daemon: {daemon_name}")
+            else:
+                logger.warning(f"Failed to restart daemon {daemon_name}: {response}")
+
+            return success
         except Exception as e:
-            print(f"Error restarting daemon {daemon_name}: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error(f"Failed to restart daemon {daemon_name}", exc_info=e)
             return False
 
     def get_logs(self, daemon_name: str = "caddy", lines: int = 100) -> tuple[str, str]:
@@ -253,6 +274,6 @@ class EmbeddedSupervisor:
                     stderr_lines = "".join(all_lines[-lines:])
 
         except Exception as e:
-            print(f"Error reading logs: {e}")
+            logger.error(f"Failed to read logs for {daemon_name}", exc_info=e)
 
         return stdout_lines, stderr_lines

@@ -15,12 +15,7 @@ icon = app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
 ## Circus Process Supervisor Gotchas
 
 ### Circus arbiter requires event loop in thread
-When running Circus arbiter in a background thread, you must set up an asyncio event loop for that thread:
-```python
-import asyncio
-asyncio.set_event_loop(asyncio.new_event_loop())
-self.arbiter.start()
-```
+Circus/Tornado requires an asyncio event loop when running the arbiter in a background thread. The `_run_arbiter()` method in `daemon_manager.py` already handles this setup - don't call `arbiter.start()` directly without it.
 
 ### Circus watcher configuration
 - `get_arbiter()` expects watcher configs as **dictionaries**, not `Watcher` objects
