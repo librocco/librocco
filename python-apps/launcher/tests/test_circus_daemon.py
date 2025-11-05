@@ -3,21 +3,18 @@
 import time
 import pytest
 import requests
-from launcher.binary_manager import BinaryManager
 from launcher.daemon_manager import EmbeddedSupervisor
 
 
 @pytest.fixture
 def setup_caddy_and_daemon(mock_config, simple_caddyfile, test_port):
-    """Set up BinaryManager and EmbeddedSupervisor with Caddy binary and config."""
-    # Download Caddy binary
-    binary_manager = BinaryManager(mock_config.caddy_binary_path)
-    success = binary_manager.ensure_binary()
-    assert success, "Caddy binary download should succeed"
+    """Set up EmbeddedSupervisor with Caddy binary and config.
 
-    # Create EmbeddedSupervisor
+    Uses session-scoped caddy_binary_path from mock_config (already downloaded).
+    """
+    # Create EmbeddedSupervisor with pre-downloaded binary
     daemon_manager = EmbeddedSupervisor(
-        caddy_binary=binary_manager.binary_path,
+        caddy_binary=mock_config.caddy_binary_path,
         caddyfile=simple_caddyfile,
         caddy_data_dir=mock_config.caddy_data_dir,
         logs_dir=mock_config.logs_dir,
@@ -29,6 +26,8 @@ def setup_caddy_and_daemon(mock_config, simple_caddyfile, test_port):
     daemon_manager.stop()
 
 
+@pytest.mark.slow
+@pytest.mark.integration
 def test_start_caddy_daemon(setup_caddy_and_daemon):
     """Test that Circus can start the Caddy daemon."""
     daemon_manager, test_port = setup_caddy_and_daemon
@@ -53,6 +52,8 @@ def test_start_caddy_daemon(setup_caddy_and_daemon):
     ), f"Expected Caddy to be active, got: {daemon_status.status}"
 
 
+@pytest.mark.slow
+@pytest.mark.integration
 def test_stop_caddy_daemon(setup_caddy_and_daemon):
     """Test that Circus can stop the Caddy daemon."""
     daemon_manager, test_port = setup_caddy_and_daemon
@@ -79,6 +80,8 @@ def test_stop_caddy_daemon(setup_caddy_and_daemon):
     ), f"Expected Caddy to be stopped, got: {daemon_status.status}"
 
 
+@pytest.mark.slow
+@pytest.mark.integration
 def test_caddy_working_directory(setup_caddy_and_daemon, mock_config):
     """Test that Caddy runs with correct working directory (catches MacOS path bug)."""
     daemon_manager, test_port = setup_caddy_and_daemon
@@ -105,6 +108,8 @@ def test_caddy_working_directory(setup_caddy_and_daemon, mock_config):
     assert mock_config.logs_dir.exists(), "Logs dir should exist"
 
 
+@pytest.mark.slow
+@pytest.mark.integration
 def test_verify_caddy_responds(setup_caddy_and_daemon):
     """Test that Caddy actually serves HTTP requests (integration test)."""
     daemon_manager, test_port = setup_caddy_and_daemon

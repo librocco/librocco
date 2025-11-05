@@ -6,6 +6,7 @@ import pytest
 from launcher.binary_manager import BinaryManager
 
 
+@pytest.mark.binary
 def test_caddy_download_and_run(mock_config):
     """Test that we can run 'caddy version' command."""
     manager = BinaryManager(mock_config.caddy_binary_path)

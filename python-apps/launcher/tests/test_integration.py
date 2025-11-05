@@ -5,7 +5,6 @@ import socket
 import pytest
 import requests
 from circus.client import CircusClient
-from launcher.binary_manager import BinaryManager
 from launcher.daemon_manager import EmbeddedSupervisor
 
 
@@ -24,15 +23,13 @@ def is_port_open(host: str, port: int, timeout: float = 1.0) -> bool:
 
 @pytest.fixture
 def setup_full_stack(mock_config, simple_caddyfile, test_port):
-    """Set up complete launcher stack: binary + daemon manager + caddy."""
-    # Download Caddy binary
-    binary_manager = BinaryManager(mock_config.caddy_binary_path)
-    success = binary_manager.ensure_binary()
-    assert success, "Caddy binary download should succeed"
+    """Set up complete launcher stack: binary + daemon manager + caddy.
 
-    # Create EmbeddedSupervisor
+    Uses session-scoped caddy_binary_path from mock_config (already downloaded).
+    """
+    # Create EmbeddedSupervisor with pre-downloaded binary
     daemon_manager = EmbeddedSupervisor(
-        caddy_binary=binary_manager.binary_path,
+        caddy_binary=mock_config.caddy_binary_path,
         caddyfile=simple_caddyfile,
         caddy_data_dir=mock_config.caddy_data_dir,
         logs_dir=mock_config.logs_dir,
@@ -44,6 +41,8 @@ def setup_full_stack(mock_config, simple_caddyfile, test_port):
     daemon_manager.stop()
 
 
+@pytest.mark.slow
+@pytest.mark.integration
 def test_full_integration_workflow(setup_full_stack):
     """
     Integration test: Full workflow from startup to HTTP request.
@@ -111,6 +110,8 @@ def test_full_integration_workflow(setup_full_stack):
         pytest.fail(f"Could not connect to Caddy: {e}")
 
 
+@pytest.mark.slow
+@pytest.mark.integration
 def test_circus_endpoint_accessibility(setup_full_stack):
     """
     Test that Circus endpoint is accessible and responds to commands.
@@ -146,6 +147,8 @@ def test_circus_endpoint_accessibility(setup_full_stack):
     assert response.get("status") in ["active", "stopped"], f"Status should be active or stopped, got: {response.get('status')}"
 
 
+@pytest.mark.slow
+@pytest.mark.integration
 def test_caddy_restart_workflow(setup_full_stack):
     """
     Test that Caddy can be restarted via Circus.
@@ -190,6 +193,8 @@ def test_caddy_restart_workflow(setup_full_stack):
         pytest.fail(f"Caddy not accessible after restart: {e}")
 
 
+@pytest.mark.slow
+@pytest.mark.integration
 def test_graceful_shutdown(setup_full_stack):
     """
     Test that the entire stack shuts down gracefully.
