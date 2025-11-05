@@ -36,6 +36,9 @@ class LogViewerDialog(QDialog):
         # Create UI
         self._setup_ui()
 
+        # Connect to daemon manager worker signals
+        self.daemon_manager.worker.status_ready.connect(self._handle_status_update)
+
         # Auto-refresh timer
         self.refresh_timer = QTimer()
         self.refresh_timer.timeout.connect(self.refresh_logs)
@@ -94,10 +97,29 @@ class LogViewerDialog(QDialog):
         self.setLayout(layout)
 
     def refresh_logs(self):
-        """Refresh the log contents."""
+        """Refresh the log contents (async status, sync logs)."""
         try:
-            # Get status
-            status = self.daemon_manager.get_status(self.daemon_name)
+            # Request status update asynchronously (result comes via signal)
+            self.daemon_manager.get_status(self.daemon_name)
+
+            # Get logs synchronously (just file reading, not a Circus operation)
+            stdout, stderr = self.daemon_manager.get_logs(self.daemon_name, lines=500)
+
+            # Update text widgets (preserve scroll position if at bottom)
+            self._update_text_widget(self.stdout_text, stdout)
+            self._update_text_widget(self.stderr_text, stderr)
+
+        except Exception as exc:
+            # Translators: {0} is replaced with the error message
+            self.status_label.setText(_("Error: {0}").format(str(exc)))
+
+    def _handle_status_update(self, status):
+        """Handle status update from worker thread."""
+        try:
+            if status is None:
+                self.status_label.setText(_("Status: ERROR"))
+                return
+
             # Translators: {0} is replaced with the status (e.g., "RUNNING", "STOPPED")
             status_text = _("Status: {0}").format(status.status.upper())
             if status.pid:
@@ -109,16 +131,9 @@ class LogViewerDialog(QDialog):
                 status_text += f" | {_('Uptime: {0}').format(uptime_str)}"
             self.status_label.setText(status_text)
 
-            # Get logs
-            stdout, stderr = self.daemon_manager.get_logs(self.daemon_name, lines=500)
-
-            # Update text widgets (preserve scroll position if at bottom)
-            self._update_text_widget(self.stdout_text, stdout)
-            self._update_text_widget(self.stderr_text, stderr)
-
         except Exception as exc:
             # Translators: {0} is replaced with the error message
-            self.status_label.setText(_("Error: {0}").format(str(e)))
+            self.status_label.setText(_("Error: {0}").format(str(exc)))
 
     def _update_text_widget(self, widget: QTextEdit, text: str):
         """Update text widget while preserving scroll position."""

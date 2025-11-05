@@ -40,16 +40,16 @@ def test_start_caddy_daemon(setup_caddy_and_daemon):
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
-    # Start the Caddy process via Circus
-    result = daemon_manager.start_daemon("caddy")
+    # Start the Caddy process via Circus (using sync method for tests)
+    result = daemon_manager._start_daemon_sync("caddy")
     assert result, "start_daemon should return True"
 
     # Wait for Caddy to be ready
     if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
         pytest.fail("Caddy failed to start")
 
-    # Check status - should be running
-    daemon_status = daemon_manager.get_status("caddy")
+    # Check status - should be running (using sync method for tests)
+    daemon_status = daemon_manager._get_status_sync("caddy")
     assert (
         daemon_status.status == "active"
     ), f"Expected Caddy to be active, got: {daemon_status.status}"
@@ -69,24 +69,24 @@ def test_stop_caddy_daemon(setup_caddy_and_daemon):
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
-    daemon_manager.start_daemon("caddy")
+    daemon_manager._start_daemon_sync("caddy")
 
     if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
         pytest.fail("Caddy failed to start")
 
-    # Verify it's running
-    daemon_status = daemon_manager.get_status("caddy")
+    # Verify it's running (using sync method for tests)
+    daemon_status = daemon_manager._get_status_sync("caddy")
     assert daemon_status.status == "active", "Caddy should be running before stop test"
 
-    # Stop the daemon
-    result = daemon_manager.stop_daemon("caddy")
+    # Stop the daemon (using sync method for tests)
+    result = daemon_manager._stop_daemon_sync("caddy")
     assert result, "stop_daemon should return True"
 
     # Brief wait for stop to complete
     time.sleep(0.5)
 
-    # Check status - should be stopped
-    daemon_status = daemon_manager.get_status("caddy")
+    # Check status - should be stopped (using sync method for tests)
+    daemon_status = daemon_manager._get_status_sync("caddy")
     assert (
         daemon_status.status == "stopped"
     ), f"Expected Caddy to be stopped, got: {daemon_status.status}"
@@ -106,13 +106,13 @@ def test_caddy_working_directory(setup_caddy_and_daemon, mock_config):
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
-    daemon_manager.start_daemon("caddy")
+    daemon_manager._start_daemon_sync("caddy")
 
     if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
         pytest.fail("Caddy failed to start")
 
-    # Verify Caddy is running
-    daemon_status = daemon_manager.get_status("caddy")
+    # Verify Caddy is running (using sync method for tests)
+    daemon_status = daemon_manager._get_status_sync("caddy")
     assert daemon_status.status == "active", "Caddy should be running"
 
     # Verify the process has a PID (indicates it's actually running)
@@ -141,14 +141,14 @@ def test_verify_caddy_responds(setup_caddy_and_daemon):
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
-    daemon_manager.start_daemon("caddy")
+    daemon_manager._start_daemon_sync("caddy")
 
     # Wait for Caddy to be ready (this also verifies HTTP response)
     if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
         pytest.fail("Caddy failed to start and respond on HTTP")
 
-    # Verify Caddy is running
-    daemon_status = daemon_manager.get_status("caddy")
+    # Verify Caddy is running (using sync method for tests)
+    daemon_status = daemon_manager._get_status_sync("caddy")
     assert daemon_status.status == "active"
 
     # Try to connect to Caddy's test endpoint using requests library

@@ -78,8 +78,8 @@ def test_full_integration_workflow(setup_full_stack):
     except Exception as e:
         pytest.fail(f"Failed to connect to Circus endpoint: {e}")
 
-    # Step 3: Start Caddy daemon via Circus
-    result = daemon_manager.start_daemon("caddy")
+    # Step 3: Start Caddy daemon via Circus (using sync method for tests)
+    result = daemon_manager._start_daemon_sync("caddy")
     assert result, "start_daemon should return True"
 
     # Wait for Caddy to be ready (intelligent polling instead of fixed sleep)
@@ -89,8 +89,8 @@ def test_full_integration_workflow(setup_full_stack):
     if not wait_for_caddy_ready(caddy_host, test_port, timeout=10.0):
         pytest.fail(f"Caddy failed to start and respond on port {test_port} within 10 seconds")
 
-    # Step 4: Verify Caddy status is active
-    daemon_status = daemon_manager.get_status("caddy")
+    # Step 4: Verify Caddy status is active (using sync method for tests)
+    daemon_status = daemon_manager._get_status_sync("caddy")
     assert daemon_status.status == "active", f"Caddy should be active, got: {daemon_status.status}"
     assert daemon_status.pid is not None and daemon_status.pid > 0, "Caddy should have valid PID"
 
@@ -167,27 +167,27 @@ def test_caddy_restart_workflow(setup_full_stack):
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
-    daemon_manager.start_daemon("caddy")
+    daemon_manager._start_daemon_sync("caddy")
 
     # Wait for Caddy to be ready
     if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
         pytest.fail("Caddy failed to start")
 
-    # Get initial status
-    status1 = daemon_manager.get_status("caddy")
+    # Get initial status (using sync method for tests)
+    status1 = daemon_manager._get_status_sync("caddy")
     assert status1.status == "active", "Caddy should be running"
     original_pid = status1.pid
 
-    # Restart Caddy
-    result = daemon_manager.restart_daemon("caddy")
+    # Restart Caddy (using sync method for tests)
+    result = daemon_manager._restart_daemon_sync("caddy")
     assert result, "restart_daemon should return True"
 
     # Wait for Caddy to be ready after restart
     if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
         pytest.fail("Caddy failed to restart")
 
-    # Verify Caddy is still active but with new PID
-    status2 = daemon_manager.get_status("caddy")
+    # Verify Caddy is still active but with new PID (using sync method for tests)
+    status2 = daemon_manager._get_status_sync("caddy")
     assert status2.status == "active", "Caddy should still be active after restart"
 
     # Note: PID might be the same if restart was very fast, but usually it changes
@@ -225,14 +225,14 @@ def test_graceful_shutdown(setup_full_stack):
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
-    daemon_manager.start_daemon("caddy")
+    daemon_manager._start_daemon_sync("caddy")
 
     # Wait for Caddy to be ready
     if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
         pytest.fail("Caddy failed to start")
 
-    # Verify Caddy is running
-    status = daemon_manager.get_status("caddy")
+    # Verify Caddy is running (using sync method for tests)
+    status = daemon_manager._get_status_sync("caddy")
     assert status.status == "active", "Caddy should be running before shutdown"
     caddy_pid = status.pid
 
