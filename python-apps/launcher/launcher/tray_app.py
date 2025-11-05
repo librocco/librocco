@@ -3,11 +3,15 @@ System tray application with daemon management controls.
 """
 import sys
 import signal
+import logging
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle, QMessageBox
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import QCoreApplication, QTimer
 
 from .log_viewer import LogViewerDialog
+from .error_handler import ErrorHandler
+
+logger = logging.getLogger("launcher")
 
 
 class TrayApp:
@@ -117,51 +121,118 @@ class TrayApp:
                 self.stop_action.setEnabled(True)
                 self.restart_action.setEnabled(False)
 
+            elif status.status == "error":
+                self.status_action.setText(f"Caddy: ⚠ Error")
+                self.start_action.setEnabled(True)
+                self.stop_action.setEnabled(False)
+                self.restart_action.setEnabled(False)
+                # Log error but don't show dialog - status updates happen frequently
+                logger.warning("Caddy status check returned error state")
+
             else:
                 self.status_action.setText(f"Caddy: ⚠ {status.status}")
                 self.start_action.setEnabled(True)
                 self.stop_action.setEnabled(False)
                 self.restart_action.setEnabled(False)
+                logger.warning(f"Unknown Caddy status: {status.status}")
 
         except Exception as e:
             self.status_action.setText(f"Caddy: ⚠ Error")
-            print(f"Error updating status: {e}")
+            # Log but don't show dialog - status checks are frequent background operations
+            ErrorHandler.log_exception("status update", e)
 
     def start_caddy(self):
         """Start the Caddy daemon."""
-        success = self.daemon_manager.start_daemon("caddy")
-        if success:
-            self.show_message("Caddy Started", "Caddy daemon is starting...")
-        else:
-            self.show_message("Error", "Failed to start Caddy daemon", error=True)
-        self.update_status()
+        try:
+            success = self.daemon_manager.start_daemon("caddy")
+            if success:
+                logger.info("User initiated: Start Caddy")
+                self.show_message("Caddy Started", "Caddy daemon is starting...")
+            else:
+                logger.error("Failed to start Caddy daemon")
+                ErrorHandler.handle_error(
+                    "Start Failed",
+                    "Failed to start Caddy daemon. Check the logs for details.",
+                    show_dialog=True,
+                    parent=None
+                )
+        except Exception as e:
+            ErrorHandler.handle_critical_error(
+                "Start Error",
+                "An unexpected error occurred while starting Caddy.",
+                exception=e,
+                parent=None
+            )
+        finally:
+            self.update_status()
 
     def stop_caddy(self):
         """Stop the Caddy daemon."""
-        success = self.daemon_manager.stop_daemon("caddy")
-        if success:
-            self.show_message("Caddy Stopped", "Caddy daemon is stopping...")
-        else:
-            self.show_message("Error", "Failed to stop Caddy daemon", error=True)
-        self.update_status()
+        try:
+            success = self.daemon_manager.stop_daemon("caddy")
+            if success:
+                logger.info("User initiated: Stop Caddy")
+                self.show_message("Caddy Stopped", "Caddy daemon is stopping...")
+            else:
+                logger.error("Failed to stop Caddy daemon")
+                ErrorHandler.handle_error(
+                    "Stop Failed",
+                    "Failed to stop Caddy daemon. Check the logs for details.",
+                    show_dialog=True,
+                    parent=None
+                )
+        except Exception as e:
+            ErrorHandler.handle_critical_error(
+                "Stop Error",
+                "An unexpected error occurred while stopping Caddy.",
+                exception=e,
+                parent=None
+            )
+        finally:
+            self.update_status()
 
     def restart_caddy(self):
         """Restart the Caddy daemon."""
-        success = self.daemon_manager.restart_daemon("caddy")
-        if success:
-            self.show_message("Caddy Restarted", "Caddy daemon is restarting...")
-        else:
-            self.show_message("Error", "Failed to restart Caddy daemon", error=True)
-        self.update_status()
+        try:
+            success = self.daemon_manager.restart_daemon("caddy")
+            if success:
+                logger.info("User initiated: Restart Caddy")
+                self.show_message("Caddy Restarted", "Caddy daemon is restarting...")
+            else:
+                logger.error("Failed to restart Caddy daemon")
+                ErrorHandler.handle_error(
+                    "Restart Failed",
+                    "Failed to restart Caddy daemon. Check the logs for details.",
+                    show_dialog=True,
+                    parent=None
+                )
+        except Exception as e:
+            ErrorHandler.handle_critical_error(
+                "Restart Error",
+                "An unexpected error occurred while restarting Caddy.",
+                exception=e,
+                parent=None
+            )
+        finally:
+            self.update_status()
 
     def show_logs(self):
         """Show the log viewer window."""
-        if self.log_viewer is None or not self.log_viewer.isVisible():
-            self.log_viewer = LogViewerDialog(self.daemon_manager, "caddy")
-            self.log_viewer.show()
-        else:
-            self.log_viewer.activateWindow()
-            self.log_viewer.raise_()
+        try:
+            if self.log_viewer is None or not self.log_viewer.isVisible():
+                self.log_viewer = LogViewerDialog(self.daemon_manager, "caddy")
+                self.log_viewer.show()
+            else:
+                self.log_viewer.activateWindow()
+                self.log_viewer.raise_()
+        except Exception as e:
+            ErrorHandler.handle_error(
+                "Log Viewer Error",
+                "Failed to open log viewer window.",
+                exception=e,
+                show_dialog=True,
+                parent=None
+            )
 
     def show_message(self, title: str, message: str, error: bool = False):
         """Show a system tray message."""
@@ -170,25 +241,30 @@ class TrayApp:
 
     def signal_handler(self, signum, frame):
         """Handle SIGINT (ctrl-c) for graceful shutdown."""
-        print(f"\nReceived signal {signum}, shutting down gracefully...")
+        logger.info(f"Received signal {signum}, shutting down gracefully...")
         self.quit_app()
 
     def sigterm_handler(self, signum, frame):
         """Handle SIGTERM for immediate exit."""
-        print(f"\nReceived signal {signum}, exiting...")
+        logger.info(f"Received signal {signum}, exiting immediately...")
         sys.exit(0)
 
     def quit_app(self):
         """Quit the application."""
-        # Stop daemon manager
-        print("Stopping daemon manager...")
-        self.daemon_manager.stop()
+        try:
+            # Stop daemon manager
+            logger.info("Stopping daemon manager...")
+            self.daemon_manager.stop()
 
-        # Hide tray icon
-        self.tray_icon.hide()
+            # Hide tray icon
+            self.tray_icon.hide()
 
-        # Quit Qt
-        QCoreApplication.quit()
+            # Quit Qt
+            QCoreApplication.quit()
+        except Exception as e:
+            ErrorHandler.log_exception("application shutdown", e)
+            # Force exit even if shutdown fails
+            sys.exit(1)
 
     def run(self):
         """Start the application event loop."""
