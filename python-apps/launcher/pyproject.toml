@@ -31,3 +31,12 @@ packages = ["launcher"]
 
 [tool.setuptools.package-data]
 launcher = ["locales/*/LC_MESSAGES/*.mo"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (integration tests with process startup/shutdown)",
+    "integration: marks tests as integration tests requiring full stack",
+    "binary: marks tests requiring Caddy binary download/verification",
+]
+# Enable verbose output by default
+addopts = "-v"

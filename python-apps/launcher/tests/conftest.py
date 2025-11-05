@@ -4,6 +4,28 @@ import tempfile
 import socket
 from pathlib import Path
 import pytest
+from launcher.binary_manager import BinaryManager
+
+
+@pytest.fixture(scope="session")
+def caddy_binary_path():
+    """Download Caddy binary once for entire test session.
+
+    This session-scoped fixture ensures the binary is downloaded only once,
+    significantly speeding up the test suite (saves ~40-80 seconds).
+    """
+    with tempfile.TemporaryDirectory() as tmpdir:
+        binary_path = Path(tmpdir) / "binaries" / "caddy"
+        binary_path.parent.mkdir(parents=True, exist_ok=True)
+
+        manager = BinaryManager(binary_path)
+        success = manager.ensure_binary()
+
+        if not success:
+            pytest.fail("Failed to download Caddy binary for test session")
+
+        yield binary_path
+        # Cleanup happens automatically when tmpdir context exits
 
 
 @pytest.fixture
@@ -14,8 +36,11 @@ def temp_data_dir():
 
 
 @pytest.fixture
-def mock_config(temp_data_dir, monkeypatch):
-    """Provide a mock Config instance with temporary directories."""
+def mock_config(temp_data_dir, caddy_binary_path, monkeypatch):
+    """Provide a mock Config instance with temporary directories.
+
+    Uses the session-scoped caddy_binary_path to avoid redundant downloads.
+    """
     from launcher.config import Config
 
     # Create a Config instance
@@ -34,6 +59,13 @@ def mock_config(temp_data_dir, monkeypatch):
 
     # Create the directories
     config.initialize()
+
+    # Override the caddy_binary_path property to use session-scoped binary
+    monkeypatch.setattr(
+        type(config),
+        "caddy_binary_path",
+        property(lambda self: caddy_binary_path)
+    )
 
     return config
 
