@@ -15,6 +15,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import QTimer, Qt
 from PyQt6.QtGui import QFont
 
+from .i18n import _
+
 
 class LogViewerDialog(QDialog):
     """Dialog for viewing daemon logs with auto-refresh."""
@@ -24,7 +26,8 @@ class LogViewerDialog(QDialog):
         self.daemon_manager = daemon_manager
         self.daemon_name = daemon_name
 
-        self.setWindowTitle(f"{daemon_name.capitalize()} Logs")
+        # Translators: {0} is replaced with the daemon name (e.g., "Caddy")
+        self.setWindowTitle(_("{0} Logs").format(daemon_name.capitalize()))
         self.resize(800, 600)
 
         # Create UI
@@ -55,31 +58,31 @@ class LogViewerDialog(QDialog):
         self.stdout_text.setReadOnly(True)
         self.stdout_text.setFont(QFont("Monospace", 9))
         self.stdout_text.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-        self.tabs.addTab(self.stdout_text, "Standard Output")
+        self.tabs.addTab(self.stdout_text, _("Standard Output"))
 
         # Stderr tab
         self.stderr_text = QTextEdit()
         self.stderr_text.setReadOnly(True)
         self.stderr_text.setFont(QFont("Monospace", 9))
         self.stderr_text.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-        self.tabs.addTab(self.stderr_text, "Standard Error")
+        self.tabs.addTab(self.stderr_text, _("Standard Error"))
 
         layout.addWidget(self.tabs)
 
         # Buttons
         button_layout = QHBoxLayout()
 
-        self.refresh_button = QPushButton("Refresh Now")
+        self.refresh_button = QPushButton(_("Refresh Now"))
         self.refresh_button.clicked.connect(self.refresh_logs)
         button_layout.addWidget(self.refresh_button)
 
-        self.clear_button = QPushButton("Clear")
+        self.clear_button = QPushButton(_("Clear"))
         self.clear_button.clicked.connect(self.clear_logs)
         button_layout.addWidget(self.clear_button)
 
         button_layout.addStretch()
 
-        self.close_button = QPushButton("Close")
+        self.close_button = QPushButton(_("Close"))
         self.close_button.clicked.connect(self.close)
         button_layout.addWidget(self.close_button)
 
@@ -92,12 +95,15 @@ class LogViewerDialog(QDialog):
         try:
             # Get status
             status = self.daemon_manager.get_status(self.daemon_name)
-            status_text = f"Status: {status.status.upper()}"
+            # Translators: {0} is replaced with the status (e.g., "RUNNING", "STOPPED")
+            status_text = _("Status: {0}").format(status.status.upper())
             if status.pid:
-                status_text += f" (PID: {status.pid})"
+                # Translators: {0} is replaced with the process ID number
+                status_text += f" ({_('PID: {0}').format(status.pid)})"
             if status.uptime:
                 uptime_str = self._format_uptime(status.uptime)
-                status_text += f" | Uptime: {uptime_str}"
+                # Translators: {0} is replaced with the uptime string (e.g., "5m", "2h 30m")
+                status_text += f" | {_('Uptime: {0}').format(uptime_str)}"
             self.status_label.setText(status_text)
 
             # Get logs
@@ -108,7 +114,8 @@ class LogViewerDialog(QDialog):
             self._update_text_widget(self.stderr_text, stderr)
 
         except Exception as e:
-            self.status_label.setText(f"Error: {str(e)}")
+            # Translators: {0} is replaced with the error message
+            self.status_label.setText(_("Error: {0}").format(str(e)))
 
     def _update_text_widget(self, widget: QTextEdit, text: str):
         """Update text widget while preserving scroll position."""

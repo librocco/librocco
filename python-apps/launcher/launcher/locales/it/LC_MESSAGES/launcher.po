@@ -1,0 +1,256 @@
+# Italian translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-11-05 11:59+0100\n"
+"PO-Revision-Date: 2025-11-05 12:00+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: it\n"
+"Language-Team: it <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: main.py:108
+msgid "Configuration Error"
+msgstr "Errore di configurazione"
+
+#: main.py:109
+#, python-brace-format
+msgid ""
+"Failed to initialize configuration:\n"
+"\n"
+"{0}"
+msgstr ""
+"Impossibile inizializzare la configurazione:\n"
+"\n"
+"{0}"
+
+#: main.py:116
+msgid "Initialization Error"
+msgstr "Errore di inizializzazione"
+
+#: main.py:117
+msgid ""
+"Failed to download or verify Caddy binary.\n"
+"\n"
+"Please check your internet connection and try again."
+msgstr ""
+"Impossibile scaricare o verificare il binario di Caddy.\n"
+"\n"
+"Controlla la tua connessione internet e riprova."
+
+#: main.py:141
+msgid "Daemon Manager Error"
+msgstr "Errore del gestore daemon"
+
+#: main.py:142
+msgid ""
+"Failed to initialize the daemon manager.\n"
+"\n"
+"Check the logs for details."
+msgstr ""
+"Impossibile inizializzare il gestore daemon.\n"
+"\n"
+"Controlla i log per i dettagli."
+
+#: main.py:173
+msgid "System Tray Unavailable"
+msgstr "Barra di sistema non disponibile"
+
+#: main.py:174
+msgid ""
+"System tray is not available on this system.\n"
+"\n"
+"The launcher requires a system tray to function."
+msgstr ""
+"La barra di sistema non è disponibile su questo sistema.\n"
+"\n"
+"Il launcher richiede una barra di sistema per funzionare."
+
+#: main.py:193
+msgid "Application Error"
+msgstr "Errore dell'applicazione"
+
+#: main.py:194
+msgid ""
+"Failed to start the tray application.\n"
+"\n"
+"Check the logs for details."
+msgstr ""
+"Impossibile avviare l'applicazione della barra.\n"
+"\n"
+"Controlla i log per i dettagli."
+
+#: launcher/log_viewer.py:30
+#, python-brace-format
+msgid "{0} Logs"
+msgstr "Log di {0}"
+
+#: launcher/log_viewer.py:61
+msgid "Standard Output"
+msgstr "Output standard"
+
+#: launcher/log_viewer.py:68
+msgid "Standard Error"
+msgstr "Errore standard"
+
+#: launcher/log_viewer.py:75
+msgid "Refresh Now"
+msgstr "Aggiorna ora"
+
+#: launcher/log_viewer.py:79
+msgid "Clear"
+msgstr "Cancella"
+
+#: launcher/log_viewer.py:85
+msgid "Close"
+msgstr "Chiudi"
+
+#: launcher/log_viewer.py:99
+#, python-brace-format
+msgid "Status: {0}"
+msgstr "Stato: {0}"
+
+#: launcher/log_viewer.py:102
+#, python-brace-format
+msgid "PID: {0}"
+msgstr "PID: {0}"
+
+#: launcher/log_viewer.py:106
+#, python-brace-format
+msgid "Uptime: {0}"
+msgstr "Tempo di attività: {0}"
+
+#: launcher/log_viewer.py:118
+#, python-brace-format
+msgid "Error: {0}"
+msgstr "Errore: {0}"
+
+#: launcher/tray_app.py:64
+msgid "Caddy: Checking..."
+msgstr "Caddy: Controllo..."
+
+#: launcher/tray_app.py:71
+msgid "Start Caddy"
+msgstr "Avvia Caddy"
+
+#: launcher/tray_app.py:75
+msgid "Stop Caddy"
+msgstr "Ferma Caddy"
+
+#: launcher/tray_app.py:79
+msgid "Restart Caddy"
+msgstr "Riavvia Caddy"
+
+#: launcher/tray_app.py:86
+msgid "View Logs..."
+msgstr "Visualizza log..."
+
+#: launcher/tray_app.py:93
+msgid "Quit"
+msgstr "Esci"
+
+#: launcher/tray_app.py:104
+msgid "Caddy: ● Running"
+msgstr "Caddy: ● In esecuzione"
+
+#: launcher/tray_app.py:115
+msgid "Caddy: ○ Stopped"
+msgstr "Caddy: ○ Fermato"
+
+#: launcher/tray_app.py:121
+msgid "Caddy: ◐ Starting..."
+msgstr "Caddy: ◐ Avvio..."
+
+#: launcher/tray_app.py:127 launcher/tray_app.py:142
+msgid "Caddy: ⚠ Error"
+msgstr "Caddy: ⚠ Errore"
+
+#: launcher/tray_app.py:152
+msgid "Caddy Started"
+msgstr "Caddy avviato"
+
+#: launcher/tray_app.py:152
+msgid "Caddy daemon is starting..."
+msgstr "Il daemon Caddy si sta avviando..."
+
+#: launcher/tray_app.py:156
+msgid "Start Failed"
+msgstr "Avvio fallito"
+
+#: launcher/tray_app.py:157
+msgid "Failed to start Caddy daemon. Check the logs for details."
+msgstr "Impossibile avviare il daemon Caddy. Controlla i log per i dettagli."
+
+#: launcher/tray_app.py:163
+msgid "Start Error"
+msgstr "Errore di avvio"
+
+#: launcher/tray_app.py:164
+msgid "An unexpected error occurred while starting Caddy."
+msgstr "Si è verificato un errore imprevisto durante l'avvio di Caddy."
+
+#: launcher/tray_app.py:177
+msgid "Caddy Stopped"
+msgstr "Caddy fermato"
+
+#: launcher/tray_app.py:177
+msgid "Caddy daemon is stopping..."
+msgstr "Il daemon Caddy si sta fermando..."
+
+#: launcher/tray_app.py:181
+msgid "Stop Failed"
+msgstr "Arresto fallito"
+
+#: launcher/tray_app.py:182
+msgid "Failed to stop Caddy daemon. Check the logs for details."
+msgstr "Impossibile fermare il daemon Caddy. Controlla i log per i dettagli."
+
+#: launcher/tray_app.py:188
+msgid "Stop Error"
+msgstr "Errore di arresto"
+
+#: launcher/tray_app.py:189
+msgid "An unexpected error occurred while stopping Caddy."
+msgstr "Si è verificato un errore imprevisto durante l'arresto di Caddy."
+
+#: launcher/tray_app.py:202
+msgid "Caddy Restarted"
+msgstr "Caddy riavviato"
+
+#: launcher/tray_app.py:202
+msgid "Caddy daemon is restarting..."
+msgstr "Il daemon Caddy si sta riavviando..."
+
+#: launcher/tray_app.py:206
+msgid "Restart Failed"
+msgstr "Riavvio fallito"
+
+#: launcher/tray_app.py:207
+msgid "Failed to restart Caddy daemon. Check the logs for details."
+msgstr "Impossibile riavviare il daemon Caddy. Controlla i log per i dettagli."
+
+#: launcher/tray_app.py:213
+msgid "Restart Error"
+msgstr "Errore di riavvio"
+
+#: launcher/tray_app.py:214
+msgid "An unexpected error occurred while restarting Caddy."
+msgstr "Si è verificato un errore imprevisto durante il riavvio di Caddy."
+
+#: launcher/tray_app.py:232
+msgid "Log Viewer Error"
+msgstr "Errore del visualizzatore log"
+
+#: launcher/tray_app.py:233
+msgid "Failed to open log viewer window."
+msgstr "Impossibile aprire la finestra del visualizzatore log."
+

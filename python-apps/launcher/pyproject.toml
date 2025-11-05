@@ -15,6 +15,7 @@ dependencies = [
     "requests>=2.31.0",
     "psutil>=6.0.0",
     "tomli-w>=1.0.0",
+    "babel>=2.14.0",
 ]
 
 [project.optional-dependencies]
@@ -27,3 +28,6 @@ test = [
 
 [tool.setuptools]
 packages = ["launcher"]
+
+[tool.setuptools.package-data]
+launcher = ["locales/*/LC_MESSAGES/*.mo"]

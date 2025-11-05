@@ -12,6 +12,7 @@ from launcher.daemon_manager import EmbeddedSupervisor
 from launcher.tray_app import TrayApp
 from launcher.logging_config import setup_logging
 from launcher.error_handler import ErrorHandler
+from launcher.i18n import setup_i18n, _
 
 # Logger will be initialized in main() after config is loaded
 logger = None
@@ -71,6 +72,9 @@ def main():
     """Main entry point."""
     global logger
 
+    # Initialize i18n (must be done before any UI strings are used)
+    setup_i18n()
+
     print("Librocco Launcher starting...")
 
     # Determine app directory (sibling of main.py)
@@ -101,17 +105,17 @@ def main():
     except Exception as e:
         print(f"✗ Failed to initialize configuration: {e}")
         show_error_dialog(
-            "Configuration Error",
-            f"Failed to initialize configuration:\n\n{e}",
+            _("Configuration Error"),
+            _("Failed to initialize configuration:\n\n{0}").format(e),
         )
         return 1
 
     # Ensure Caddy binary exists
     if not initialize_caddy(config):
         ErrorHandler.handle_critical_error(
-            "Initialization Error",
-            "Failed to download or verify Caddy binary.\n\n"
-            "Please check your internet connection and try again.",
+            _("Initialization Error"),
+            _("Failed to download or verify Caddy binary.\n\n"
+            "Please check your internet connection and try again."),
         )
         return 1
 
@@ -134,9 +138,9 @@ def main():
     except Exception as e:
         logger.error("Failed to initialize daemon manager", exc_info=e)
         ErrorHandler.handle_critical_error(
-            "Daemon Manager Error",
-            "Failed to initialize the daemon manager.\n\n"
-            "Check the logs for details.",
+            _("Daemon Manager Error"),
+            _("Failed to initialize the daemon manager.\n\n"
+            "Check the logs for details."),
             exception=e,
         )
         return 1
@@ -166,9 +170,9 @@ def main():
         if not QSystemTrayIcon.isSystemTrayAvailable():
             logger.error("System tray is not available on this system")
             ErrorHandler.handle_critical_error(
-                "System Tray Unavailable",
-                "System tray is not available on this system.\n\n"
-                "The launcher requires a system tray to function.",
+                _("System Tray Unavailable"),
+                _("System tray is not available on this system.\n\n"
+                "The launcher requires a system tray to function."),
             )
             daemon_manager.stop()
             return 1
@@ -186,8 +190,9 @@ def main():
     except Exception as e:
         logger.error("Failed to start tray application", exc_info=e)
         ErrorHandler.handle_critical_error(
-            "Application Error",
-            "Failed to start the tray application.\n\n" "Check the logs for details.",
+            _("Application Error"),
+            _("Failed to start the tray application.\n\n"
+            "Check the logs for details."),
             exception=e,
         )
         daemon_manager.stop()
