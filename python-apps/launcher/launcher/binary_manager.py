@@ -85,13 +85,16 @@ class BinaryManager:
 
                 tmp_file.flush()
 
-                # Extract the binary
-                self._extract_binary(tmp_path, ext)
-                print(f"Caddy binary extracted to {self.binary_path}")
-
             finally:
-                # Clean up temporary file
-                tmp_path.unlink(missing_ok=True)
+                pass  # File handle will be closed when exiting with block
+
+        # Extract the binary (outside with block to ensure file is closed on Windows)
+        try:
+            self._extract_binary(tmp_path, ext)
+            print(f"Caddy binary extracted to {self.binary_path}")
+        finally:
+            # Clean up temporary file
+            tmp_path.unlink(missing_ok=True)
 
     def _extract_binary(self, archive_path: Path, ext: str) -> None:
         """Extract the caddy binary from the archive."""
