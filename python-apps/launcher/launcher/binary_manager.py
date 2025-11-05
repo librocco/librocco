@@ -4,7 +4,9 @@ Binary download and management for Caddy.
 
 import hashlib
 import logging
+import os
 import platform
+import sys
 import tarfile
 import zipfile
 import tempfile
@@ -37,6 +39,35 @@ class BinaryManager:
 
     def __init__(self, binary_path: Path):
         self.binary_path = binary_path
+
+    @staticmethod
+    def is_bundled_mode() -> bool:
+        """
+        Check if running from PyInstaller bundle.
+        PyInstaller sets sys._MEIPASS when running from a bundle.
+        """
+        return getattr(sys, '_MEIPASS', None) is not None
+
+    @staticmethod
+    def get_bundled_binary_path() -> Optional[Path]:
+        """
+        Get the path to the bundled Caddy binary if running from PyInstaller bundle.
+        Returns None if not running in bundled mode.
+        """
+        if not BinaryManager.is_bundled_mode():
+            return None
+
+        bundle_dir = Path(sys._MEIPASS)
+        binary_name = "caddy.exe" if platform.system() == "Windows" else "caddy"
+        bundled_path = bundle_dir / "bundled_binaries" / binary_name
+
+        if bundled_path.exists():
+            return bundled_path
+        else:
+            logger.warning(
+                f"Running in bundled mode but Caddy binary not found at {bundled_path}"
+            )
+            return None
 
     def get_download_url(self) -> Tuple[str, str]:
         """
@@ -255,15 +286,35 @@ class BinaryManager:
     def ensure_binary(self) -> bool:
         """
         Ensure binary exists and is functional. Download if needed.
+        In bundled mode, uses pre-bundled Caddy. In development mode, downloads if needed.
         Returns True if binary is ready, False if download failed.
         """
+        # IMPORTANT: Check for bundled mode FIRST before any other checks
+        # This ensures PyInstaller executables always use the bundled binary
+        bundled_path = self.get_bundled_binary_path()
+        if bundled_path:
+            logger.info(f"Running in bundled mode, using Caddy from {bundled_path}")
+            print(f"Using bundled Caddy binary from {bundled_path}")
+            # Update binary_path to point to bundled binary
+            self.binary_path = bundled_path
+            if self.verify_binary():
+                return True
+            else:
+                logger.error(f"Bundled Caddy binary failed verification at {bundled_path}")
+                return False
+
+        # Development mode: check if already exists
         if self.verify_binary():
+            logger.info(f"Caddy binary already exists at {self.binary_path}")
             print(f"Caddy binary already exists at {self.binary_path}")
             return True
 
+        # Development mode: download if needed
+        logger.info("Caddy binary not found. Starting download...")
         try:
             self.download_and_extract()
             return self.verify_binary()
-        except Exception as exc:
-            print(f"Failed to download Caddy: {exc}")
+        except Exception as e:
+            logger.error(f"Failed to download Caddy: {e}")
+            print(f"Failed to download Caddy: {e}")
             return False
