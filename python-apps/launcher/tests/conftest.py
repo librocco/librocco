@@ -2,9 +2,63 @@
 
 import tempfile
 import socket
+import time
 from pathlib import Path
 import pytest
+import requests
+from circus.client import CircusClient
 from launcher.binary_manager import BinaryManager
+
+
+# Helper functions for intelligent waiting (replaces fixed time.sleep() calls)
+
+
+def wait_for_circus_ready(client: CircusClient, timeout: float = 5.0) -> bool:
+    """Poll Circus endpoint until ready or timeout.
+
+    Args:
+        client: CircusClient instance to poll
+        timeout: Maximum time to wait in seconds
+
+    Returns:
+        True if Circus is ready, False if timeout
+    """
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            response = client.send_message("list")
+            if response.get("status") == "ok":
+                return True
+        except Exception:
+            pass
+        time.sleep(0.1)
+    return False
+
+
+def wait_for_caddy_ready(host: str, port: int, timeout: float = 10.0) -> bool:
+    """Poll Caddy HTTP endpoint until ready or timeout.
+
+    Args:
+        host: Hostname to connect to
+        port: Port to connect to
+        timeout: Maximum time to wait in seconds
+
+    Returns:
+        True if Caddy responds with HTTP 200, False if timeout
+    """
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            response = requests.get(
+                f"http://{host}:{port}",
+                timeout=1.0
+            )
+            if response.status_code == 200:
+                return True
+        except (requests.ConnectionError, requests.Timeout, requests.RequestException):
+            pass
+        time.sleep(0.1)
+    return False
 
 
 @pytest.fixture(scope="session")

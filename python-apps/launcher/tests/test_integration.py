@@ -58,7 +58,12 @@ def test_full_integration_workflow(setup_full_stack):
 
     # Step 1: Start the daemon manager (Circus arbiter)
     daemon_manager.start()
-    time.sleep(2)  # Wait for arbiter to initialize
+
+    # Wait for arbiter to initialize (intelligent polling instead of fixed sleep)
+    from conftest import wait_for_circus_ready
+    client = daemon_manager.client
+    if not wait_for_circus_ready(client, timeout=5.0):
+        pytest.fail("Circus arbiter failed to initialize within 5 seconds")
 
     assert daemon_manager._running, "Daemon manager should be running"
     assert daemon_manager.arbiter is not None, "Arbiter should be initialized"
@@ -66,7 +71,6 @@ def test_full_integration_workflow(setup_full_stack):
     # Step 2: Verify Circus endpoint is accessible
     # The client should be able to connect and get stats
     try:
-        client = daemon_manager.client
         # Try to list watchers - this verifies the endpoint is working
         response = client.send_message("list")
         assert response.get("status") == "ok", "Circus endpoint should be accessible"
@@ -78,28 +82,19 @@ def test_full_integration_workflow(setup_full_stack):
     result = daemon_manager.start_daemon("caddy")
     assert result, "start_daemon should return True"
 
-    # Wait for Caddy to start
-    time.sleep(3)
+    # Wait for Caddy to be ready (intelligent polling instead of fixed sleep)
+    from conftest import wait_for_caddy_ready
+    caddy_host = "localhost"
+
+    if not wait_for_caddy_ready(caddy_host, test_port, timeout=10.0):
+        pytest.fail(f"Caddy failed to start and respond on port {test_port} within 10 seconds")
 
     # Step 4: Verify Caddy status is active
     daemon_status = daemon_manager.get_status("caddy")
     assert daemon_status.status == "active", f"Caddy should be active, got: {daemon_status.status}"
     assert daemon_status.pid is not None and daemon_status.pid > 0, "Caddy should have valid PID"
 
-    # Step 5: Verify Caddy HTTP port is open
-    caddy_host = "localhost"
-
-    # Wait up to 5 seconds for port to become available
-    port_available = False
-    for _ in range(10):
-        if is_port_open(caddy_host, test_port):
-            port_available = True
-            break
-        time.sleep(0.5)
-
-    assert port_available, f"Caddy port {test_port} should be open"
-
-    # Step 6: Send HTTP request to Caddy and verify response
+    # Step 5: Send HTTP request to Caddy and verify response
     try:
         response = requests.get(f"http://{caddy_host}:{test_port}", timeout=5)
         assert response.status_code == 200, f"Expected HTTP 200, got: {response.status_code}"
@@ -123,10 +118,13 @@ def test_circus_endpoint_accessibility(setup_full_stack):
 
     # Start daemon manager
     daemon_manager.start()
-    time.sleep(2)
 
-    # Get the Circus client
+    # Wait for arbiter to initialize (intelligent polling)
+    from conftest import wait_for_circus_ready
     client = daemon_manager.client
+    if not wait_for_circus_ready(client, timeout=5.0):
+        pytest.fail("Circus arbiter failed to initialize within 5 seconds")
+
     assert client is not None, "Circus client should be initialized"
 
     # Test 1: List watchers
@@ -163,9 +161,17 @@ def test_caddy_restart_workflow(setup_full_stack):
 
     # Start everything
     daemon_manager.start()
-    time.sleep(1)
+
+    # Wait for arbiter (intelligent polling)
+    from conftest import wait_for_circus_ready, wait_for_caddy_ready
+    if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
+        pytest.fail("Circus arbiter failed to initialize")
+
     daemon_manager.start_daemon("caddy")
-    time.sleep(3)
+
+    # Wait for Caddy to be ready
+    if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
+        pytest.fail("Caddy failed to start")
 
     # Get initial status
     status1 = daemon_manager.get_status("caddy")
@@ -175,7 +181,10 @@ def test_caddy_restart_workflow(setup_full_stack):
     # Restart Caddy
     result = daemon_manager.restart_daemon("caddy")
     assert result, "restart_daemon should return True"
-    time.sleep(3)
+
+    # Wait for Caddy to be ready after restart
+    if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
+        pytest.fail("Caddy failed to restart")
 
     # Verify Caddy is still active but with new PID
     status2 = daemon_manager.get_status("caddy")
@@ -210,9 +219,17 @@ def test_graceful_shutdown(setup_full_stack):
 
     # Start everything
     daemon_manager.start()
-    time.sleep(1)
+
+    # Wait for arbiter (intelligent polling)
+    from conftest import wait_for_circus_ready, wait_for_caddy_ready
+    if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
+        pytest.fail("Circus arbiter failed to initialize")
+
     daemon_manager.start_daemon("caddy")
-    time.sleep(3)
+
+    # Wait for Caddy to be ready
+    if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
+        pytest.fail("Caddy failed to start")
 
     # Verify Caddy is running
     status = daemon_manager.get_status("caddy")
@@ -221,7 +238,9 @@ def test_graceful_shutdown(setup_full_stack):
 
     # Graceful shutdown
     daemon_manager.stop()
-    time.sleep(2)
+
+    # Give a brief moment for processes to terminate
+    time.sleep(1)
 
     # Verify daemon manager stopped
     assert not daemon_manager._running, "Daemon manager should not be running after stop"
