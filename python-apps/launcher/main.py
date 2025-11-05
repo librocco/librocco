@@ -153,7 +153,8 @@ def main():
         try:
             logger.info("Auto-starting Caddy...")
             print("Auto-starting Caddy...")
-            if daemon_manager.start_daemon("caddy"):
+            # Use synchronous method during startup to wait for result
+            if daemon_manager._start_daemon_sync("caddy"):
                 logger.info("Caddy auto-started successfully")
                 print("✓ Caddy started")
             else:
