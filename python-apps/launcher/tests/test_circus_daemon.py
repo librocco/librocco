@@ -8,7 +8,7 @@ from launcher.daemon_manager import EmbeddedSupervisor
 
 
 @pytest.fixture
-def setup_caddy_and_daemon(mock_config, simple_caddyfile):
+def setup_caddy_and_daemon(mock_config, simple_caddyfile, test_port):
     """Set up BinaryManager and EmbeddedSupervisor with Caddy binary and config."""
     # Download Caddy binary
     binary_manager = BinaryManager(mock_config.caddy_binary_path)
@@ -23,7 +23,7 @@ def setup_caddy_and_daemon(mock_config, simple_caddyfile):
         logs_dir=mock_config.logs_dir,
     )
 
-    yield daemon_manager
+    yield daemon_manager, test_port
 
     # Cleanup: stop daemon if running
     daemon_manager.stop()
@@ -31,21 +31,23 @@ def setup_caddy_and_daemon(mock_config, simple_caddyfile):
 
 def test_start_caddy_daemon(setup_caddy_and_daemon):
     """Test that Circus can start the Caddy daemon."""
+    daemon_manager, test_port = setup_caddy_and_daemon
+
     # Start the daemon manager (arbiter)
-    setup_caddy_and_daemon.start()
+    daemon_manager.start()
 
     # Give it a moment to initialize
     time.sleep(1)
 
     # Start the Caddy process via Circus
-    result = setup_caddy_and_daemon.start_daemon("caddy")
+    result = daemon_manager.start_daemon("caddy")
     assert result, "start_daemon should return True"
 
     # Give Caddy time to start
     time.sleep(2)
 
     # Check status - should be running
-    daemon_status = setup_caddy_and_daemon.get_status("caddy")
+    daemon_status = daemon_manager.get_status("caddy")
     assert (
         daemon_status.status == "active"
     ), f"Expected Caddy to be active, got: {daemon_status.status}"
@@ -53,23 +55,25 @@ def test_start_caddy_daemon(setup_caddy_and_daemon):
 
 def test_stop_caddy_daemon(setup_caddy_and_daemon):
     """Test that Circus can stop the Caddy daemon."""
+    daemon_manager, test_port = setup_caddy_and_daemon
+
     # Start the daemon manager and Caddy
-    setup_caddy_and_daemon.start()
+    daemon_manager.start()
     time.sleep(1)
-    setup_caddy_and_daemon.start_daemon("caddy")
+    daemon_manager.start_daemon("caddy")
     time.sleep(2)
 
     # Verify it's running
-    daemon_status = setup_caddy_and_daemon.get_status("caddy")
+    daemon_status = daemon_manager.get_status("caddy")
     assert daemon_status.status == "active", "Caddy should be running before stop test"
 
     # Stop the daemon
-    result = setup_caddy_and_daemon.stop_daemon("caddy")
+    result = daemon_manager.stop_daemon("caddy")
     assert result, "stop_daemon should return True"
     time.sleep(1)
 
     # Check status - should be stopped
-    daemon_status = setup_caddy_and_daemon.get_status("caddy")
+    daemon_status = daemon_manager.get_status("caddy")
     assert (
         daemon_status.status == "stopped"
     ), f"Expected Caddy to be stopped, got: {daemon_status.status}"
@@ -77,14 +81,16 @@ def test_stop_caddy_daemon(setup_caddy_and_daemon):
 
 def test_caddy_working_directory(setup_caddy_and_daemon, mock_config):
     """Test that Caddy runs with correct working directory (catches MacOS path bug)."""
+    daemon_manager, test_port = setup_caddy_and_daemon
+
     # Start the daemon manager and Caddy
-    setup_caddy_and_daemon.start()
+    daemon_manager.start()
     time.sleep(1)
-    setup_caddy_and_daemon.start_daemon("caddy")
+    daemon_manager.start_daemon("caddy")
     time.sleep(2)
 
     # Verify Caddy is running
-    daemon_status = setup_caddy_and_daemon.get_status("caddy")
+    daemon_status = daemon_manager.get_status("caddy")
     assert daemon_status.status == "active", "Caddy should be running"
 
     # Verify the process has a PID (indicates it's actually running)
@@ -101,7 +107,7 @@ def test_caddy_working_directory(setup_caddy_and_daemon, mock_config):
 
 def test_verify_caddy_responds(setup_caddy_and_daemon):
     """Test that Caddy actually serves HTTP requests (integration test)."""
-    daemon_manager = setup_caddy_and_daemon
+    daemon_manager, test_port = setup_caddy_and_daemon
 
     # Start the daemon manager and Caddy
     daemon_manager.start()
@@ -115,7 +121,7 @@ def test_verify_caddy_responds(setup_caddy_and_daemon):
 
     # Try to connect to Caddy's test endpoint using requests library
     try:
-        response = requests.get("http://localhost:8080", timeout=5)
+        response = requests.get(f"http://localhost:{test_port}", timeout=5)
         assert response.status_code == 200, f"Expected HTTP 200, got: {response.status_code}"
     except requests.Timeout:
         pytest.fail("Caddy did not respond within timeout")
