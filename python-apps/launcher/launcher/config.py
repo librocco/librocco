@@ -31,8 +31,11 @@ class Config:
 
     def __init__(self):
         # Setup directory paths
-        # On macOS, use ~/.librocco/ instead of ~/Library/Application Support/
-        # to avoid issues with spaces in paths when using Circus subprocess
+        # NOTE: On macOS, we use ~/.librocco-launcher/ instead of the standard
+        # ~/Library/Application Support/librocco-launcher/ to avoid spaces in paths.
+        # While daemon_manager.py properly handles spaces (shell=False, resolved paths),
+        # this workaround provides extra safety and matches Unix conventions.
+        # TODO: Test removing this workaround on macOS to use standard platformdirs paths
         import platform
 
         if platform.system() == "Darwin":

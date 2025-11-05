@@ -206,18 +206,19 @@ class BinaryManager:
 
             shutil.copy2(extracted_binary, self.binary_path)
 
-            # Make executable on Unix systems
-            if platform.system() != "Windows":
-                self.binary_path.chmod(
-                    self.binary_path.stat().st_mode
-                    | stat.S_IXUSR
-                    | stat.S_IXGRP
-                    | stat.S_IXOTH
-                )
+            # Make executable (Windows ignores this, which is fine)
+            self.binary_path.chmod(
+                self.binary_path.stat().st_mode
+                | stat.S_IXUSR
+                | stat.S_IXGRP
+                | stat.S_IXOTH
+            )
 
-                # On macOS, remove quarantine attribute to bypass Gatekeeper
-                # This is necessary for downloaded binaries to run via subprocess
-                if platform.system() == "Darwin":
+            # On macOS, remove Gatekeeper quarantine attribute from downloaded binaries
+            # NOTE: This is macOS-specific and cannot be eliminated. macOS automatically
+            # adds the com.apple.quarantine attribute to files downloaded from the internet,
+            # which prevents them from running via subprocess without user interaction.
+            if platform.system() == "Darwin":
                     try:
                         subprocess.run(
                             [
