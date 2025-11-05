@@ -1,6 +1,7 @@
 """
 Log viewer window for viewing daemon logs.
 """
+
 from PyQt6.QtWidgets import (
     QDialog,
     QVBoxLayout,

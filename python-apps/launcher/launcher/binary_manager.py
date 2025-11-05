@@ -1,6 +1,7 @@
 """
 Binary download and management for Caddy.
 """
+
 import platform
 import tarfile
 import zipfile
@@ -53,7 +54,9 @@ class BinaryManager:
         url = f"{self.CADDY_RELEASE_BASE}/v{self.CADDY_VERSION}/{filename}"
         return url, ext
 
-    def download_and_extract(self, progress_callback: Optional[callable] = None) -> None:
+    def download_and_extract(
+        self, progress_callback: Optional[callable] = None
+    ) -> None:
         """
         Download Caddy binary for current OS and extract it.
 
@@ -110,21 +113,23 @@ class BinaryManager:
             # Find and copy the binary (ignore .sbom, .pem, .sig, LICENSE, README)
             extracted_binary = tmp_dir_path / binary_name
             if not extracted_binary.exists():
-                raise FileNotFoundError(
-                    f"Binary {binary_name} not found in archive"
-                )
+                raise FileNotFoundError(f"Binary {binary_name} not found in archive")
 
             # Ensure parent directory exists
             self.binary_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Copy binary to final location
             import shutil
+
             shutil.copy2(extracted_binary, self.binary_path)
 
             # Make executable on Unix systems
             if platform.system() != "Windows":
                 self.binary_path.chmod(
-                    self.binary_path.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
+                    self.binary_path.stat().st_mode
+                    | stat.S_IXUSR
+                    | stat.S_IXGRP
+                    | stat.S_IXOTH
                 )
 
                 # On macOS, remove quarantine attribute to bypass Gatekeeper
@@ -132,7 +137,12 @@ class BinaryManager:
                 if platform.system() == "Darwin":
                     try:
                         subprocess.run(
-                            ["xattr", "-d", "com.apple.quarantine", str(self.binary_path)],
+                            [
+                                "xattr",
+                                "-d",
+                                "com.apple.quarantine",
+                                str(self.binary_path),
+                            ],
                             capture_output=True,
                             check=False,  # Don't fail if attribute doesn't exist
                         )

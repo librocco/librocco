@@ -1,6 +1,7 @@
 """
 Error handling and user notification utilities.
 """
+
 import logging
 import traceback
 from typing import Optional
@@ -24,7 +25,7 @@ class ErrorHandler:
         title: str,
         message: str,
         exception: Optional[Exception] = None,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ) -> None:
         """
         Handle a critical error that requires user attention.
@@ -44,7 +45,9 @@ class ErrorHandler:
             logger.error(f"CRITICAL: {title} - {message}")
 
         # Show modal dialog to user
-        ErrorHandler._show_error_dialog(title, message, QMessageBox.Icon.Critical, parent)
+        ErrorHandler._show_error_dialog(
+            title, message, QMessageBox.Icon.Critical, parent
+        )
 
     @staticmethod
     def handle_error(
@@ -52,7 +55,7 @@ class ErrorHandler:
         message: str,
         exception: Optional[Exception] = None,
         show_dialog: bool = True,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ) -> None:
         """
         Handle a non-critical error.
@@ -74,14 +77,16 @@ class ErrorHandler:
 
         # Optionally show dialog
         if show_dialog:
-            ErrorHandler._show_error_dialog(title, message, QMessageBox.Icon.Warning, parent)
+            ErrorHandler._show_error_dialog(
+                title, message, QMessageBox.Icon.Warning, parent
+            )
 
     @staticmethod
     def handle_warning(
         title: str,
         message: str,
         show_dialog: bool = False,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ) -> None:
         """
         Handle a warning condition.
@@ -97,7 +102,9 @@ class ErrorHandler:
         logger.warning(f"{title} - {message}")
 
         if show_dialog:
-            ErrorHandler._show_error_dialog(title, message, QMessageBox.Icon.Warning, parent)
+            ErrorHandler._show_error_dialog(
+                title, message, QMessageBox.Icon.Warning, parent
+            )
 
     @staticmethod
     def log_exception(context: str, exception: Exception) -> None:
@@ -117,7 +124,7 @@ class ErrorHandler:
         title: str,
         message: str,
         icon: QMessageBox.Icon,
-        parent: Optional[QWidget] = None
+        parent: Optional[QWidget] = None,
     ) -> None:
         """
         Show a modal error dialog to the user.
@@ -152,6 +159,7 @@ def log_and_handle_exception(context: str):
     Args:
         context: Description of the operation for logging
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
@@ -160,5 +168,7 @@ def log_and_handle_exception(context: str):
                 ErrorHandler.log_exception(context, e)
                 # Re-raise to let caller decide how to handle
                 raise
+
         return wrapper
+
     return decorator

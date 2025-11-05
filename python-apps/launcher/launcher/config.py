@@ -1,6 +1,7 @@
 """
 Configuration and directory management using platformdirs.
 """
+
 import tomllib
 import tomli_w
 from pathlib import Path
@@ -19,6 +20,7 @@ class Config:
         # On macOS, use ~/.librocco/ instead of ~/Library/Application Support/
         # to avoid issues with spaces in paths when using Circus subprocess
         import platform
+
         if platform.system() == "Darwin":
             home = Path.home()
             self.data_dir = home / f".{self.APP_NAME}"
@@ -105,6 +107,7 @@ http://{host}:{port} {{
     def caddy_binary_path(self) -> Path:
         """Get the path to the Caddy binary."""
         import platform
+
         binary_name = "caddy.exe" if platform.system() == "Windows" else "caddy"
         return self.binaries_dir / binary_name
 

@@ -1,6 +1,7 @@
 """
 Logging configuration for the launcher application.
 """
+
 import logging
 import sys
 from pathlib import Path
@@ -34,10 +35,7 @@ def setup_logging(logs_dir: Path, log_level: int = logging.INFO) -> logging.Logg
     # File handler with rotation (10MB max, keep 5 backup files)
     log_file = logs_dir / "launcher.log"
     file_handler = RotatingFileHandler(
-        log_file,
-        maxBytes=10 * 1024 * 1024,  # 10MB
-        backupCount=5,
-        encoding="utf-8"
+        log_file, maxBytes=10 * 1024 * 1024, backupCount=5, encoding="utf-8"  # 10MB
     )
     file_handler.setLevel(log_level)
 
@@ -47,8 +45,8 @@ def setup_logging(logs_dir: Path, log_level: int = logging.INFO) -> logging.Logg
 
     # Formatter with timestamps and level
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S'
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
     )
     file_handler.setFormatter(formatter)
     console_handler.setFormatter(formatter)
