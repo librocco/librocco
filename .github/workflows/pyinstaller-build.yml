@@ -164,6 +164,11 @@ jobs:
     - name: Build web-client for root path
       run: cd apps/web-client && rushx build:prod-rootdir
       shell: bash
+    - name: Install launcher package with dependencies
+      run: |
+        cd python-apps/launcher
+        uv pip install -e .
+      shell: bash
     - name: Build PyInstaller executable
       run: |
         cd python-apps/launcher
