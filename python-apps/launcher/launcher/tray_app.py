@@ -5,6 +5,7 @@ System tray application with daemon management controls.
 import sys
 import signal
 import logging
+import webbrowser
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle, QMessageBox
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import QCoreApplication, QTimer
@@ -43,6 +44,10 @@ class TrayApp:
         self._create_menu()
 
         self.tray_icon.setContextMenu(self.menu)
+
+        # Connect left-click to open browser
+        self.tray_icon.activated.connect(self.on_tray_activated)
+
         self.tray_icon.show()
 
         # Set up signal handlers for graceful shutdown
@@ -74,6 +79,13 @@ class TrayApp:
 
     def _create_menu(self):
         """Create the tray menu."""
+        # Open browser action
+        open_browser_action = QAction(_("Open in Browser"), self.menu)
+        open_browser_action.triggered.connect(self.open_browser)
+        self.menu.addAction(open_browser_action)
+
+        self.menu.addSeparator()
+
         # Status label (will be updated dynamically)
         self.status_action = QAction(_("Caddy: Checking..."), self.menu)
         self.status_action.setEnabled(False)
@@ -107,6 +119,42 @@ class TrayApp:
         quit_action = QAction(_("Quit"), self.menu)
         quit_action.triggered.connect(self.quit_app)
         self.menu.addAction(quit_action)
+
+    def on_tray_activated(self, reason):
+        """Handle tray icon activation (clicks)."""
+        # Only handle left-click (Trigger reason)
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self.open_browser()
+
+    def open_browser(self):
+        """Open the web application in the default browser."""
+        try:
+            # Check if Caddy is running
+            status = self.daemon_manager.get_status("caddy")
+            if status.status != "active":
+                logger.warning("User tried to open browser but Caddy is not running")
+                self.show_message(
+                    _("Caddy Not Running"),
+                    _("Please start Caddy first using the tray menu."),
+                    error=True,
+                )
+                return
+
+            # Get the web URL from config
+            url = self.config.get_web_url()
+            logger.info(f"Opening browser to: {url}")
+
+            # Open in default browser
+            webbrowser.open(url)
+
+        except Exception as e:
+            ErrorHandler.handle_error(
+                _("Browser Error"),
+                _("Failed to open browser."),
+                exception=e,
+                show_dialog=True,
+                parent=None,
+            )
 
     def update_status(self):
         """Request status update from daemon manager (async, non-blocking)."""

@@ -137,15 +137,27 @@ class LogViewerDialog(QDialog):
 
     def _update_text_widget(self, widget: QTextEdit, text: str):
         """Update text widget while preserving scroll position."""
+        # Only update if content changed
+        if widget.toPlainText() == text:
+            return
+
         # Check if we're at the bottom
         scrollbar = widget.verticalScrollBar()
         at_bottom = scrollbar.value() >= scrollbar.maximum() - 10
 
+        # Save cursor position
+        cursor = widget.textCursor()
+        cursor_position = cursor.position()
+
         # Update text
         widget.setPlainText(text)
 
-        # Scroll to bottom if we were at bottom
-        if at_bottom:
+        # Restore cursor position if not at end
+        if not at_bottom and cursor_position < len(text):
+            cursor.setPosition(min(cursor_position, len(text)))
+            widget.setTextCursor(cursor)
+        elif at_bottom:
+            # Scroll to bottom if we were at bottom
             scrollbar.setValue(scrollbar.maximum())
 
     def _format_uptime(self, seconds: float) -> str:

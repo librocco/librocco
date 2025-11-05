@@ -60,6 +60,7 @@ class Config:
             "auto_start_caddy": True,
             "caddy_port": 8080,
             "caddy_host": "localhost",
+            "https_enabled": True,  # Enable HTTPS by default
         }
 
         self._settings: Dict[str, Any] = {}
@@ -104,12 +105,58 @@ class Config:
         """Create a default Caddyfile if it doesn't exist."""
         caddyfile_path = self.caddy_config_dir / "Caddyfile"
         if not caddyfile_path.exists():
+            from .network_utils import get_local_hostname
+
             port = self.get("caddy_port", 8080)
-            host = self.get("caddy_host", "localhost")
+            https_enabled = self.get("https_enabled", True)
             server_log = self.logs_dir / "caddy-server.log"
             access_log = self.logs_dir / "caddy-access.log"
 
-            default_caddyfile = f"""{{
+            # Get or auto-detect hostname
+            hostname = self.get("hostname")
+            if not hostname:
+                hostname = get_local_hostname()
+                self.set("hostname", hostname)
+
+            # Build Caddyfile based on HTTPS settings
+            if https_enabled:
+                # HTTPS with internal CA
+                default_caddyfile = f"""{{
+    # Global logging for server logs (startup, errors, admin API)
+    log {{
+        output file {server_log} {{
+            roll_size 10mb
+            roll_keep 10
+            roll_keep_for 720h
+        }}
+        format json
+        level INFO
+    }}
+}}
+
+https://{hostname}:{port} {{
+    # Use Caddy's internal CA for certificate
+    tls internal
+
+    # Serve the app directory
+    root * {app_dir}
+    file_server browse
+
+    # Access logs (HTTP requests)
+    log {{
+        output file {access_log} {{
+            roll_size 10mb
+            roll_keep 10
+            roll_keep_for 720h
+        }}
+        format json
+    }}
+}}
+"""
+            else:
+                # HTTP only (for testing/debugging)
+                host = self.get("caddy_host", "localhost")
+                default_caddyfile = f"""{{
     # Disable automatic HTTPS
     auto_https off
 
@@ -152,3 +199,22 @@ http://{host}:{port} {{
     def caddyfile_path(self) -> Path:
         """Get the path to the Caddyfile."""
         return self.caddy_config_dir / "Caddyfile"
+
+    def get_web_url(self) -> str:
+        """
+        Get the URL for accessing the web application.
+
+        Returns the HTTPS URL if enabled, otherwise HTTP.
+        """
+        port = self.get("caddy_port", 8080)
+        https_enabled = self.get("https_enabled", True)
+
+        if https_enabled:
+            hostname = self.get("hostname")
+            if not hostname:
+                from .network_utils import get_local_hostname
+                hostname = get_local_hostname()
+            return f"https://{hostname}:{port}"
+        else:
+            host = self.get("caddy_host", "localhost")
+            return f"http://{host}:{port}"
