@@ -1,0 +1,47 @@
+#@ load("github.lib.yml", "checkout")
+
+name: Python Launcher CI
+
+"on":
+  push:
+    branches-ignore:
+      - "ci-debug/*"
+      - "wip/**"
+    paths:
+      - "python-apps/**"
+      - ".github/workflows/python-launcher-ci.yml"
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      -  #@ checkout()
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Run tests
+        run: |
+          cd python-apps/launcher
+          uv run --extra test pytest tests/ -v --tb=short
+        shell: bash
+
+      - name: Run tests with coverage
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd python-apps/launcher
+          uv run --extra test pytest tests/ --cov=launcher --cov-report=term-missing
+        shell: bash
