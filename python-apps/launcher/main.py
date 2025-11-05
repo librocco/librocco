@@ -13,6 +13,11 @@ from launcher.tray_app import TrayApp
 from launcher.logging_config import setup_logging
 from launcher.error_handler import ErrorHandler
 from launcher.i18n import setup_i18n, _
+from launcher.network_utils import (
+    get_caddy_root_ca_path,
+    install_ca_certificate,
+    check_ca_installed,
+)
 
 # Logger will be initialized in main() after config is loaded
 logger = None
@@ -30,6 +35,53 @@ def show_error_dialog(title: str, message: str) -> None:
     msg_box.setIcon(QMessageBox.Icon.Critical)
     msg_box.exec()
     sys.exit(1)
+
+
+def setup_ca_certificate(config: Config) -> None:
+    """
+    Check if Caddy's CA certificate needs to be installed and show info.
+
+    This should be called after Caddy has started at least once, so the CA
+    certificate has been generated.
+    """
+    # Only relevant if HTTPS is enabled
+    if not config.get("https_enabled", True):
+        return
+
+    ca_path = get_caddy_root_ca_path(config.caddy_data_dir)
+
+    # Wait a bit for Caddy to generate the certificate
+    import time
+    max_wait = 10  # seconds
+    waited = 0
+    while not ca_path.exists() and waited < max_wait:
+        time.sleep(0.5)
+        waited += 0.5
+
+    if not ca_path.exists():
+        logger.warning("Caddy CA certificate not found yet. It will be created on first HTTPS request.")
+        print("⚠ Caddy CA certificate not generated yet (will be created on first HTTPS request)")
+        return
+
+    # Check if already installed
+    if check_ca_installed(ca_path):
+        logger.info("Caddy CA certificate is already installed in system trust store")
+        print("✓ Caddy CA certificate already trusted by system")
+        return
+
+    # Just inform the user about the certificate
+    logger.info("Caddy CA certificate available for installation")
+    print("\n" + "=" * 60)
+    print("HTTPS Certificate Setup")
+    print("=" * 60)
+    print(f"\nTo access the application over HTTPS without browser warnings,")
+    print(f"you can install Caddy's CA certificate to your system trust store.")
+    print(f"\nCertificate location: {ca_path}")
+    print(f"Application URL: {config.get_web_url()}")
+    print(f"\nTo install the certificate, run:")
+    print(f"  sudo cp {ca_path} /usr/local/share/ca-certificates/librocco-launcher.crt")
+    print(f"  sudo update-ca-certificates")
+    print("=" * 60 + "\n")
 
 
 def initialize_caddy(config: Config) -> bool:
@@ -157,6 +209,9 @@ def main():
             if daemon_manager._start_daemon_sync("caddy"):
                 logger.info("Caddy auto-started successfully")
                 print("✓ Caddy started")
+
+                # Setup CA certificate if HTTPS is enabled
+                setup_ca_certificate(config)
             else:
                 logger.warning("Failed to auto-start Caddy")
                 print("⚠ Failed to auto-start Caddy (will retry later)")
@@ -183,9 +238,8 @@ def main():
 
         logger.info("Tray application started successfully")
         print("✓ Tray application running")
-        print(
-            f"\nCaddy is configured to listen on http://{config.get('caddy_host')}:{config.get('caddy_port')}"
-        )
+        print(f"\nApplication URL: {config.get_web_url()}")
+        print("Left-click the tray icon to open in browser.")
         print("Right-click the tray icon to access controls.\n")
 
         # Run the application
