@@ -27,13 +27,7 @@ def _get_watcher(self, daemon_name: str):
             return watcher
     return None
 ```
-
-### Circus streams not supported on Windows
-Circus does not support `stdout_stream` and `stderr_stream` on Windows. These must be conditionally excluded:
-```python
-if platform.system() != "Windows":
-    config["stdout_stream"] = {"class": "FileStream", "filename": str(log_path)}
-```
+- Don't use Circus streams (`stdout_stream`/`stderr_stream`) - they're not supported on Windows. Instead, configure processes to write logs directly to files (e.g., Caddy's native logging in Caddyfile).
 
 ### Cross platform requirements
 Always choose solutions that will work on Linux, Windows and MacOS. Point out if they won't. Development happens on Linux and MacOS, so make sure to catch Windows incompatibilities early.

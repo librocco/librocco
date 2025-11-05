@@ -45,22 +45,19 @@ class EmbeddedSupervisor:
         self.client = None
         self._running = False
 
-        # Create log files if they don't exist
-        self.caddy_stdout_log = logs_dir / "caddy-stdout.log"
-        self.caddy_stderr_log = logs_dir / "caddy-stderr.log"
+        # Caddy writes logs directly to these files
+        self.caddy_server_log = logs_dir / "caddy-server.log"
+        self.caddy_access_log = logs_dir / "caddy-access.log"
 
     def _create_caddy_watcher(self) -> dict:
         """Create a Circus watcher configuration for Caddy."""
         import os
-        import platform
 
         # Resolve all paths to absolute paths to handle spaces correctly
         # (macOS paths like "Application Support" have spaces)
         caddy_binary = self.caddy_binary.resolve()
         caddyfile = self.caddyfile.resolve()
         caddy_data_dir = self.caddy_data_dir.resolve()
-        stdout_log = self.caddy_stdout_log.resolve()
-        stderr_log = self.caddy_stderr_log.resolve()
 
         # Pass through essential environment variables
         env = {
@@ -70,7 +67,9 @@ class EmbeddedSupervisor:
             "PATH": os.environ.get("PATH", ""),
         }
 
-        config = {
+        # No stream configuration needed - Caddy writes logs directly to files
+        # configured in the Caddyfile (works cross-platform)
+        return {
             "name": "caddy",
             "cmd": str(caddy_binary),
             "args": ["run", "--config", str(caddyfile), "--adapter", "caddyfile"],
@@ -84,19 +83,6 @@ class EmbeddedSupervisor:
             "graceful_timeout": 10,
             "max_retry_in": 60,  # Max 5 retries in 60 seconds
         }
-
-        # Streams are not supported on Windows
-        if platform.system() != "Windows":
-            config["stdout_stream"] = {
-                "class": "FileStream",
-                "filename": str(stdout_log),
-            }
-            config["stderr_stream"] = {
-                "class": "FileStream",
-                "filename": str(stderr_log),
-            }
-
-        return config
 
     def start(self) -> None:
         """Start the supervisor arbiter in a background thread."""
@@ -288,23 +274,23 @@ class EmbeddedSupervisor:
     def get_logs(self, daemon_name: str = "caddy", lines: int = 100) -> tuple[str, str]:
         """
         Get recent log lines for a daemon.
-        Returns: (stdout_lines, stderr_lines)
+        Returns: (server_logs, access_logs)
         """
-        stdout_lines = ""
-        stderr_lines = ""
+        server_logs = ""
+        access_logs = ""
 
         try:
-            if self.caddy_stdout_log.exists():
-                with open(self.caddy_stdout_log, "r") as f:
+            if self.caddy_server_log.exists():
+                with open(self.caddy_server_log, "r") as f:
                     all_lines = f.readlines()
-                    stdout_lines = "".join(all_lines[-lines:])
+                    server_logs = "".join(all_lines[-lines:])
 
-            if self.caddy_stderr_log.exists():
-                with open(self.caddy_stderr_log, "r") as f:
+            if self.caddy_access_log.exists():
+                with open(self.caddy_access_log, "r") as f:
                     all_lines = f.readlines()
-                    stderr_lines = "".join(all_lines[-lines:])
+                    access_logs = "".join(all_lines[-lines:])
 
         except Exception as e:
             logger.error(f"Failed to read logs for {daemon_name}", exc_info=e)
 
-        return stdout_lines, stderr_lines
+        return server_logs, access_logs

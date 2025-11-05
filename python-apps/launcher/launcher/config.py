@@ -89,16 +89,39 @@ class Config:
         if not caddyfile_path.exists():
             port = self.get("caddy_port", 8080)
             host = self.get("caddy_host", "localhost")
+            server_log = self.logs_dir / "caddy-server.log"
+            access_log = self.logs_dir / "caddy-access.log"
 
             default_caddyfile = f"""{{
     # Disable automatic HTTPS
     auto_https off
+
+    # Global logging for server logs (startup, errors, admin API)
+    log {{
+        output file {server_log} {{
+            roll_size 10mb
+            roll_keep 10
+            roll_keep_for 720h
+        }}
+        format json
+        level INFO
+    }}
 }}
 
 http://{host}:{port} {{
     # Serve the app directory
     root * {app_dir}
     file_server browse
+
+    # Access logs (HTTP requests)
+    log {{
+        output file {access_log} {{
+            roll_size 10mb
+            roll_keep 10
+            roll_keep_for 720h
+        }}
+        format json
+    }}
 }}
 """
             caddyfile_path.write_text(default_caddyfile)
