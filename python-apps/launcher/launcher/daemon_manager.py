@@ -35,6 +35,9 @@ class DaemonStatus:
 class EmbeddedSupervisor:
     """Embedded Circus-based process supervisor."""
 
+    # Initialization timing (seconds)
+    ARBITER_INIT_WAIT_SECONDS = 2  # Wait for arbiter to initialize watchers
+
     def __init__(
         self, caddy_binary: Path, caddyfile: Path, caddy_data_dir: Path, logs_dir: Path
     ):
@@ -132,7 +135,7 @@ class EmbeddedSupervisor:
         self._running = True
 
         # Give it time to initialize watchers
-        time.sleep(2)
+        time.sleep(self.ARBITER_INIT_WAIT_SECONDS)
 
         # Initialize CircusClient with the same IPC endpoint
         self.client = CircusClient(endpoint=self.endpoint)
@@ -145,8 +148,8 @@ class EmbeddedSupervisor:
 
             asyncio.set_event_loop(asyncio.new_event_loop())
             self.arbiter.start()
-        except Exception as e:
-            logger.error("Arbiter failed to start", exc_info=e)
+        except Exception as exc:
+            logger.error("Arbiter failed to start", exc_info=exc)
             self._running = False
 
     def stop(self) -> None:
@@ -162,8 +165,8 @@ class EmbeddedSupervisor:
                 try:
                     stop_response = self.client.send_message("stop")
                     logger.debug(f"Stop watchers response: {stop_response}")
-                except Exception as e:
-                    logger.error("Failed to stop watchers", exc_info=e)
+                except Exception as exc:
+                    logger.error("Failed to stop watchers", exc_info=exc)
 
                 # Give watchers time to stop gracefully
                 import time
@@ -175,8 +178,8 @@ class EmbeddedSupervisor:
                 try:
                     quit_response = self.client.send_message("quit")
                     logger.debug(f"Quit response: {quit_response}")
-                except Exception as e:
-                    logger.error("Failed to send quit command to Circus", exc_info=e)
+                except Exception as exc:
+                    logger.error("Failed to send quit command to Circus", exc_info=exc)
 
                 self.client = None
 
@@ -216,8 +219,8 @@ class EmbeddedSupervisor:
 
             return DaemonStatus(daemon_name, watcher_status)
 
-        except Exception as e:
-            logger.error(f"Failed to get status for {daemon_name}", exc_info=e)
+        except Exception as exc:
+            logger.error(f"Failed to get status for {daemon_name}", exc_info=exc)
             return DaemonStatus(daemon_name, "error")
 
     def start_daemon(self, daemon_name: str = "caddy") -> bool:
@@ -244,8 +247,8 @@ class EmbeddedSupervisor:
                 logger.warning(f"Failed to start daemon {daemon_name}: {response}")
 
             return success
-        except Exception as e:
-            logger.error(f"Failed to start daemon {daemon_name}", exc_info=e)
+        except Exception as exc:
+            logger.error(f"Failed to start daemon {daemon_name}", exc_info=exc)
             return False
 
     def stop_daemon(self, daemon_name: str = "caddy") -> bool:
@@ -266,8 +269,8 @@ class EmbeddedSupervisor:
                 logger.warning(f"Failed to stop daemon {daemon_name}: {response}")
 
             return success
-        except Exception as e:
-            logger.error(f"Failed to stop daemon {daemon_name}", exc_info=e)
+        except Exception as exc:
+            logger.error(f"Failed to stop daemon {daemon_name}", exc_info=exc)
             return False
 
     def restart_daemon(self, daemon_name: str = "caddy") -> bool:
@@ -288,8 +291,8 @@ class EmbeddedSupervisor:
                 logger.warning(f"Failed to restart daemon {daemon_name}: {response}")
 
             return success
-        except Exception as e:
-            logger.error(f"Failed to restart daemon {daemon_name}", exc_info=e)
+        except Exception as exc:
+            logger.error(f"Failed to restart daemon {daemon_name}", exc_info=exc)
             return False
 
     def get_logs(self, daemon_name: str = "caddy", lines: int = 100) -> tuple[str, str]:
@@ -311,7 +314,7 @@ class EmbeddedSupervisor:
                     all_lines = f.readlines()
                     access_logs = "".join(all_lines[-lines:])
 
-        except Exception as e:
-            logger.error(f"Failed to read logs for {daemon_name}", exc_info=e)
+        except Exception as exc:
+            logger.error(f"Failed to read logs for {daemon_name}", exc_info=exc)
 
         return server_logs, access_logs

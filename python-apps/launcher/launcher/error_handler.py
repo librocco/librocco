@@ -164,8 +164,8 @@ def log_and_handle_exception(context: str):
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
-            except Exception as e:
-                ErrorHandler.log_exception(context, e)
+            except Exception as exc:
+                ErrorHandler.log_exception(context, exc)
                 # Re-raise to let caller decide how to handle
                 raise
 

@@ -7,6 +7,20 @@ import tomli_w
 from pathlib import Path
 from typing import Dict, Any
 from platformdirs import user_data_dir, user_config_dir
+import platform
+
+
+def get_binary_name(base_name: str) -> str:
+    """
+    Get platform-specific binary name.
+
+    Args:
+        base_name: Base name of the binary (e.g., 'caddy')
+
+    Returns:
+        Platform-specific binary name (adds .exe on Windows)
+    """
+    return f"{base_name}.exe" if platform.system() == "Windows" else base_name
 
 
 class Config:
@@ -129,10 +143,7 @@ http://{host}:{port} {{
     @property
     def caddy_binary_path(self) -> Path:
         """Get the path to the Caddy binary."""
-        import platform
-
-        binary_name = "caddy.exe" if platform.system() == "Windows" else "caddy"
-        return self.binaries_dir / binary_name
+        return self.binaries_dir / get_binary_name("caddy")
 
     @property
     def caddyfile_path(self) -> Path:
