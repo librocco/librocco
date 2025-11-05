@@ -1,8 +1,6 @@
 name: PyInstaller Build
 "on":
   push:
-    branches:
-    - main
     paths:
     - python-apps/**
     - apps/web-client/**
