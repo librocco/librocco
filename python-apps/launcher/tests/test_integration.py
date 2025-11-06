@@ -186,6 +186,9 @@ def test_caddy_restart_workflow(setup_full_stack):
     if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
         pytest.fail("Caddy failed to restart")
 
+    # Give Circus a moment to update its status after restart completes
+    time.sleep(0.5)
+
     # Verify Caddy is still active but with new PID (using sync method for tests)
     status2 = daemon_manager._get_status_sync("caddy")
     assert status2.status == "active", "Caddy should still be active after restart"
