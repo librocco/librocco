@@ -22,7 +22,8 @@ jobs:
 
   #! TEMPORARY: Build Windows crsqlite.dll separately
   #! Remove this job when upstream supports Windows MSVC builds
-  build-windows-crsqlite: #@ build_windows_crsqlite()
+  #! DISABLED: Windows build currently not working, needs investigation
+  #! build-windows-crsqlite: #@ build_windows_crsqlite()
 
   build-executable:
     #! Windows build needs the windows-crsqlite job, but don't block Linux/macOS if it fails
@@ -59,10 +60,11 @@ jobs:
             artifact_name: librocco-launcher-macos-arm64
 
           #! Windows builds
-          - os: windows
-            arch: x64
-            runner: windows-latest
-            artifact_name: librocco-launcher-windows-x64
+          #! DISABLED: Windows build currently not working, needs investigation
+          #! - os: windows
+          #!   arch: x64
+          #!   runner: windows-latest
+          #!   artifact_name: librocco-launcher-windows-x64
           #! NOTE: Windows ARM64 - GitHub doesn't provide ARM64 runners yet
           #! - os: windows
           #!   arch: arm64
