@@ -189,7 +189,7 @@ class TrayApp:
             # Open in default browser
             webbrowser.open(url)
 
-        except Exception as e:
+        except (OSError, AttributeError, RuntimeError) as e:
             ErrorHandler.handle_error(
                 _("Browser Error"),
                 _("Failed to open browser."),
@@ -253,7 +253,7 @@ class TrayApp:
                 self.restart_action.setEnabled(False)
                 logger.warning(f"Unknown Caddy status: {status.status}")
 
-        except Exception as exc:
+        except AttributeError as exc:
             self.status_action.setText(_("Caddy: ⚠ Error"))
             # Log but don't show dialog - status checks are frequent background operations
             ErrorHandler.log_exception("status update handler", exc)
@@ -281,7 +281,7 @@ class TrayApp:
 
             # Trigger status update after operation
             self.update_status()
-        except Exception as exc:
+        except (RuntimeError, AttributeError, TypeError) as exc:
             ErrorHandler.log_exception(f"operation complete handler ({operation})", exc)
 
     def _handle_worker_error(self, operation: str, error_message: str):

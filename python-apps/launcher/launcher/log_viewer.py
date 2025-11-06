@@ -109,7 +109,7 @@ class LogViewerDialog(QDialog):
             self._update_text_widget(self.stdout_text, stdout)
             self._update_text_widget(self.stderr_text, stderr)
 
-        except Exception as exc:
+        except (OSError, RuntimeError, AttributeError) as exc:
             # Translators: {0} is replaced with the error message
             self.status_label.setText(_("Error: {0}").format(str(exc)))
 
@@ -131,7 +131,7 @@ class LogViewerDialog(QDialog):
                 status_text += f" | {_('Uptime: {0}').format(uptime_str)}"
             self.status_label.setText(status_text)
 
-        except Exception as exc:
+        except AttributeError as exc:
             # Translators: {0} is replaced with the error message
             self.status_label.setText(_("Error: {0}").format(str(exc)))
 
