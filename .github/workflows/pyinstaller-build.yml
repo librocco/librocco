@@ -130,3 +130,20 @@ jobs:
           exit 1
         }
       shell: pwsh
+    - name: Start launcher
+      if: runner.os != 'Windows'
+      env:
+        QT_QPA_PLATFORM: offscreen
+      run: |
+        cd python-apps/launcher/dist
+        ./librocco-launcher &
+      shell: bash
+    - name: Verify Caddy responds
+      if: runner.os != 'Windows'
+      run: |
+        curl --silent --show-error --fail --insecure \
+             --retry 15 --retry-delay 1 \
+             --retry-connrefused --retry-all-errors \
+             --max-time 16 \
+             https://localhost:8080/
+      shell: bash
