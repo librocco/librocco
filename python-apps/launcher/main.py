@@ -5,6 +5,7 @@ Librocco Launcher - Main entry point for the daemon manager.
 import sys
 import logging
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMessageBox
+from circus import exc as circus_exc
 
 from launcher.config import Config
 from launcher.binary_manager import BinaryManager
@@ -50,18 +51,41 @@ def setup_ca_certificate(config: Config) -> None:
 
     ca_path = get_caddy_root_ca_path(config.caddy_data_dir)
 
-    # Wait for Caddy to generate the certificate (usually happens quickly)
-    import time
-    max_wait = 5  # seconds
-    poll_interval = 0.1  # seconds
-    waited = 0
-    attempts = 0
-    while not ca_path.exists() and waited < max_wait:
-        attempts += 1
-        if attempts == 1:
-            logger.info("Waiting for Caddy to generate CA certificate...")
-        time.sleep(poll_interval)
-        waited += poll_interval
+    # Caddy generates its internal CA certificate lazily - only when it needs to
+    # issue a certificate for an HTTPS request. We need to make a request to trigger this.
+    if not ca_path.exists():
+        import urllib.request
+        import ssl
+        import time
+
+        # Wait a bit for Caddy to fully start up before making the request
+        logger.info("Waiting for Caddy to fully start before triggering CA generation...")
+        time.sleep(2)
+
+        logger.info("Triggering Caddy CA certificate generation with HTTPS request...")
+        try:
+            # Create SSL context that accepts self-signed certificates
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
+            # Make request to trigger CA certificate generation
+            url = config.get_web_url()
+            req = urllib.request.Request(url, method='HEAD')
+            with urllib.request.urlopen(req, context=ssl_context, timeout=10) as response:
+                logger.info(f"Made request to {url}, status: {response.status}")
+        except Exception as e:
+            logger.debug(f"Request to trigger CA generation: {e}")
+            # This is expected - Caddy may still be starting or the request may fail
+            # The important thing is that the request was attempted
+
+        # Now wait for CA certificate to be created
+        max_wait = 3  # seconds
+        poll_interval = 0.1  # seconds
+        waited = 0
+        while not ca_path.exists() and waited < max_wait:
+            time.sleep(poll_interval)
+            waited += poll_interval
 
     if not ca_path.exists():
         logger.warning("Caddy CA certificate not found yet. It will be created on first HTTPS request.")
@@ -217,7 +241,7 @@ def main():
             else:
                 logger.warning("Failed to auto-start Caddy")
                 print("⚠ Failed to auto-start Caddy (will retry later)")
-        except Exception as e:
+        except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
             logger.error("Exception during Caddy auto-start", exc_info=e)
             print("⚠ Error auto-starting Caddy (will retry later)")
 
