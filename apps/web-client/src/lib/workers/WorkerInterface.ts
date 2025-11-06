@@ -11,6 +11,7 @@ type InboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | M
 export default class WorkerInterface extends WI {
 	#worker: Worker;
 	#emitter: SyncEventEmitter;
+	#vfs: VFSWhitelist | null = null;
 
 	constructor(worker: Worker) {
 		super(worker);
@@ -53,10 +54,16 @@ export default class WorkerInterface extends WI {
 			return;
 		}
 
+		this.#vfs = vfs;
+
 		this._sendMessage({
 			_type: "start",
 			payload: { vfs }
 		});
+	}
+
+	vfs() {
+		return this.#vfs;
 	}
 
 	onChangesReceived(cb: (msg: { timestamp: number }) => void) {
