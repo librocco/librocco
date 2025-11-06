@@ -642,16 +642,6 @@ type RootTranslation = {
 				 */
 				title: string
 			}
-			non_unique_id: {
-				/**
-				 * N​o​n​ ​u​n​i​q​u​e​ ​c​u​s​t​o​m​e​r​ ​I​D
-				 */
-				title: string
-				/**
-				 * T​h​e​r​e​'​s​ ​a​t​ ​l​e​a​s​t​ ​o​n​e​ ​m​o​r​e​ ​o​r​d​e​r​ ​w​i​t​h​ ​t​h​e​ ​s​a​m​e​ ​I​D​.​ ​P​l​e​a​s​e​ ​c​o​n​f​i​r​m​ ​y​o​u​'​r​e​ ​o​k​ ​w​i​t​h​ ​t​h​i​s​?
-				 */
-				description: string
-			}
 		}
 	}
 	suppliers_page: {
@@ -2699,6 +2689,12 @@ type RootTranslation = {
 				 */
 				cancel_button: string
 			}
+			validation: {
+				/**
+				 * T​h​i​s​ ​c​u​s​t​o​m​e​r​ ​I​D​ ​i​s​ ​a​l​r​e​a​d​y​ ​t​a​k​e​n
+				 */
+				display_id_not_unique: string
+			}
 			aria: {
 				/**
 				 * E​d​i​t​ ​c​u​s​t​o​m​e​r​ ​o​r​d​e​r​ ​n​a​m​e​,​ ​e​m​a​i​l​ ​o​r​ ​d​e​p​o​s​i​t
@@ -3433,16 +3429,6 @@ export type TranslationFunctions = {
 				 * Edit customer details
 				 */
 				title: () => LocalizedString
-			}
-			non_unique_id: {
-				/**
-				 * Non unique customer ID
-				 */
-				title: () => LocalizedString
-				/**
-				 * There's at least one more order with the same ID. Please confirm you're ok with this?
-				 */
-				description: () => LocalizedString
 			}
 		}
 	}
@@ -5459,6 +5445,12 @@ export type TranslationFunctions = {
 				 * Cancel
 				 */
 				cancel_button: () => LocalizedString
+			}
+			validation: {
+				/**
+				 * This customer ID is already taken
+				 */
+				display_id_not_unique: () => LocalizedString
 			}
 			aria: {
 				/**

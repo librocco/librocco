@@ -279,10 +279,6 @@ const customer_orders_page = {
 		},
 		edit_customer: {
 			title: "Edit customer details"
-		},
-		non_unique_id: {
-			title: "Non unique customer ID",
-			description: "There's at least one more order with the same ID. Please confirm you're ok with this?"
 		}
 	}
 };
@@ -1007,6 +1003,9 @@ const forms = {
 			phone1: "Phone 1",
 			phone2: "Phone 2",
 			cancel_button: "Cancel"
+		},
+		validation: {
+			display_id_not_unique: "This customer ID is already taken"
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"

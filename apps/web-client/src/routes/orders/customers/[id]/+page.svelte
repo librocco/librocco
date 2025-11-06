@@ -28,7 +28,6 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { ScannerForm, DaisyUIBookForm, bookSchema, scannerSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
-	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	import { Page } from "$lib/controllers";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
@@ -38,7 +37,7 @@
 	import {
 		addBooksToCustomer,
 		removeBooksFromCustomer,
-		isDisplayIdUnique,
+		getAllCustomerDisplayIds,
 		upsertCustomer,
 		markCustomerOrderLinesAsCollected
 	} from "$lib/db/cr-sqlite/customers";
@@ -83,31 +82,18 @@
 		states: { open: customerMetaDialogOpen }
 	} = customerMetaDialog;
 
+	// State for edit customer form
+	let existingDisplayIds: string[] = [];
+
+	// Get existing display IDs when opening the edit dialog
+	const handleOpenCustomerMetaDialog = async () => {
+		existingDisplayIds = await getAllCustomerDisplayIds(db);
+		customerMetaDialogOpen.set(true);
+	};
+
 	const handleUpdateCustomer = async (_data: Partial<Customer>) => {
 		const data = { ...stripNulls(customer), ..._data };
-
-		if (!(await isDisplayIdUnique(db, data))) {
-			return handleOpenNonUniqueIdDialog(data);
-		}
-
 		await upsertCustomer(db, data);
-	};
-
-	const nonUniqueIdDialog = createDialog(defaultDialogConfig);
-	const {
-		states: { open: nonUniqueIdDialogOpen }
-	} = nonUniqueIdDialog;
-	let submittingCustomer: Customer | null = null;
-
-	const handleOpenNonUniqueIdDialog = (data: Customer) => {
-		submittingCustomer = data;
-		nonUniqueIdDialogOpen.set(true);
-	};
-
-	const handleConfirmNonUniqueIdDialog = async () => {
-		await upsertCustomer(db, submittingCustomer);
-		submittingCustomer = null;
-		nonUniqueIdDialogOpen.set(false);
 	};
 
 	// #endregion dialog
@@ -260,7 +246,7 @@
 								class="btn-secondary btn-outline btn-sm btn w-full"
 								type="button"
 								aria-label={$LL.forms.customer_order_meta.aria.form()}
-								on:click={() => customerMetaDialogOpen.set(true)}
+								on:click={handleOpenCustomerMetaDialog}
 								disabled={!data?.customer}
 							>
 								{$LL.customer_orders_page.labels.edit_customer()}
@@ -516,10 +502,10 @@
 		heading={$LL.customer_orders_page.dialogs.edit_customer.title()}
 		saveLabel={$LL.customer_orders_page.labels.save()}
 		kind="update"
-		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema("update")))}
+		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema(existingDisplayIds, customer?.displayId)))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema("update")),
+			validators: zod(createCustomerOrderSchema(existingDisplayIds, customer?.displayId)),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					const phone = [form.data.phone1, form.data.phone2].join(",");
@@ -535,12 +521,3 @@
 		onCancel={() => customerMetaDialogOpen.set(false)}
 	/>
 </PageCenterDialog>
-
-<ConfirmDialog
-	dialog={nonUniqueIdDialog}
-	title={$LL.customer_orders_page.dialogs.non_unique_id.title()}
-	description={$LL.customer_orders_page.dialogs.non_unique_id.description()}
-	onConfirm={handleConfirmNonUniqueIdDialog}
-	onCancel={() => nonUniqueIdDialogOpen.set(false)}
-	labels={{ confirm: $LL.common.actions.confirm(), cancel: $LL.common.actions.cancel() }}
-/>

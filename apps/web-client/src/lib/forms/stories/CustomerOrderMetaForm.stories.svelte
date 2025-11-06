@@ -27,7 +27,7 @@
 
 	import { createCustomerOrderSchema } from "../schemas";
 
-	const form = defaults(zod(createCustomerOrderSchema("update")));
+	const form = defaults(zod(createCustomerOrderSchema()));
 </script>
 
 <Story name="Customer Order Meta">
