@@ -50,13 +50,18 @@ def setup_ca_certificate(config: Config) -> None:
 
     ca_path = get_caddy_root_ca_path(config.caddy_data_dir)
 
-    # Wait a bit for Caddy to generate the certificate
+    # Wait for Caddy to generate the certificate (usually happens quickly)
     import time
-    max_wait = 10  # seconds
+    max_wait = 5  # seconds
+    poll_interval = 0.1  # seconds
     waited = 0
+    attempts = 0
     while not ca_path.exists() and waited < max_wait:
-        time.sleep(0.5)
-        waited += 0.5
+        attempts += 1
+        if attempts == 1:
+            logger.info("Waiting for Caddy to generate CA certificate...")
+        time.sleep(poll_interval)
+        waited += poll_interval
 
     if not ca_path.exists():
         logger.warning("Caddy CA certificate not found yet. It will be created on first HTTPS request.")
@@ -209,9 +214,6 @@ def main():
             if daemon_manager._start_daemon_sync("caddy"):
                 logger.info("Caddy auto-started successfully")
                 print("✓ Caddy started")
-
-                # Setup CA certificate if HTTPS is enabled
-                setup_ca_certificate(config)
             else:
                 logger.warning("Failed to auto-start Caddy")
                 print("⚠ Failed to auto-start Caddy (will retry later)")
@@ -238,6 +240,12 @@ def main():
 
         logger.info("Tray application started successfully")
         print("✓ Tray application running")
+
+        # Setup CA certificate after tray icon is visible
+        # This prevents the CA cert polling from blocking tray icon display
+        if config.get("auto_start_caddy", True):
+            setup_ca_certificate(config)
+
         print(f"\nApplication URL: {config.get_web_url()}")
         print("Left-click the tray icon to open in browser.")
         print("Right-click the tray icon to access controls.\n")
