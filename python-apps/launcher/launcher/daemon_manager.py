@@ -245,11 +245,14 @@ class EmbeddedSupervisor(QObject):
         self.arbiter_thread.start()
         self._running = True
 
-        # Give it time to initialize watchers
-        time.sleep(self.ARBITER_INIT_WAIT_SECONDS)
-
         # Initialize CircusClient with the same IPC endpoint
         self.client = CircusClient(endpoint=self.endpoint)
+
+        # Wait for arbiter to be ready with intelligent polling
+        if not self._wait_for_arbiter_ready():
+            logger.error("Arbiter did not become ready within timeout")
+            self._running = False
+            raise RuntimeError("Failed to start Circus arbiter")
 
     def _run_arbiter(self) -> None:
         """Run the arbiter (called in background thread)."""
@@ -262,6 +265,38 @@ class EmbeddedSupervisor(QObject):
         except Exception as exc:
             logger.error("Arbiter failed to start", exc_info=exc)
             self._running = False
+
+    def _wait_for_arbiter_ready(self, timeout: float = 5.0, poll_interval: float = 0.1) -> bool:
+        """Wait for arbiter to be ready by polling with CircusClient.
+
+        Args:
+            timeout: Maximum time to wait in seconds (default: 5.0)
+            poll_interval: Time between polling attempts in seconds (default: 0.1)
+
+        Returns:
+            True if arbiter is ready, False if timeout occurred
+        """
+        start_time = time.time()
+        attempt = 0
+
+        while time.time() - start_time < timeout:
+            attempt += 1
+            try:
+                # Try to get the number of watchers - if this succeeds, arbiter is ready
+                response = self.client.send_message("numwatchers")
+                if response.get("status") == "ok":
+                    elapsed = time.time() - start_time
+                    logger.info(f"Arbiter ready after {elapsed:.2f}s ({attempt} attempts)")
+                    return True
+            except Exception as exc:
+                # Arbiter not ready yet, continue polling
+                logger.debug(f"Arbiter not ready yet (attempt {attempt}): {exc}")
+                pass
+
+            time.sleep(poll_interval)
+
+        logger.error(f"Arbiter not ready after {timeout}s ({attempt} attempts)")
+        return False
 
     def stop(self) -> None:
         """Stop the supervisor and all managed processes."""

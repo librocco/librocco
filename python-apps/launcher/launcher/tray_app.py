@@ -23,6 +23,8 @@ class TrayApp:
     # Timer intervals (milliseconds)
     SIGNAL_CHECK_INTERVAL_MS = 100  # Check for Python signals every 100ms
     STATUS_UPDATE_INTERVAL_MS = 2000  # Update daemon status every 2 seconds
+    TRAY_RETRY_INTERVAL_MS = 500  # Check tray availability every 500ms
+    TRAY_MAX_WAIT_SECONDS = 30  # Give up after 30 seconds
 
     def __init__(self, config, daemon_manager):
         self.config = config
@@ -48,7 +50,10 @@ class TrayApp:
         # Connect left-click to open browser
         self.tray_icon.activated.connect(self.on_tray_activated)
 
-        self.tray_icon.show()
+        # Defer showing tray icon until event loop starts
+        # This prevents the "ghost" empty space issue where show() is called
+        # before the event loop is running
+        QTimer.singleShot(0, self._show_tray_icon_with_retry)
 
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self.signal_handler)
@@ -76,6 +81,43 @@ class TrayApp:
 
         # Initial status update
         self.update_status()
+
+    def _show_tray_icon_with_retry(self):
+        """Show tray icon, retrying if system tray is not available yet.
+
+        This handles the race condition where the system tray might not be
+        available immediately on application startup.
+        """
+        if QSystemTrayIcon.isSystemTrayAvailable():
+            self.tray_icon.show()
+            logger.info("Tray icon shown successfully")
+        else:
+            logger.warning("System tray not available yet, will retry...")
+            self._tray_retry_count = 0
+            self._tray_retry_timer = QTimer()
+            self._tray_retry_timer.timeout.connect(self._retry_show_tray_icon)
+            self._tray_retry_timer.start(self.TRAY_RETRY_INTERVAL_MS)
+
+    def _retry_show_tray_icon(self):
+        """Retry showing the tray icon if system tray becomes available."""
+        self._tray_retry_count += 1
+        max_retries = (self.TRAY_MAX_WAIT_SECONDS * 1000) // self.TRAY_RETRY_INTERVAL_MS
+
+        if QSystemTrayIcon.isSystemTrayAvailable():
+            self.tray_icon.show()
+            self._tray_retry_timer.stop()
+            logger.info(f"Tray icon shown successfully after {self._tray_retry_count} retries")
+        elif self._tray_retry_count >= max_retries:
+            self._tray_retry_timer.stop()
+            logger.error(f"System tray not available after {self.TRAY_MAX_WAIT_SECONDS} seconds")
+            QMessageBox.critical(
+                None,
+                _("System Tray Error"),
+                _("Could not create system tray icon. The system tray may not be available.")
+            )
+            sys.exit(1)
+        else:
+            logger.debug(f"Retrying tray icon creation (attempt {self._tray_retry_count}/{max_retries})...")
 
     def _create_menu(self):
         """Create the tray menu."""
