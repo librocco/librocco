@@ -81,7 +81,9 @@
 	 * Filters the combobox list to show relevant options as input is provided
 	 */
 	const filteredPublishers = derived([touchedInput, inputValue], ([$touchedInput, $inputValue]) => {
-		return $touchedInput ? publisherList.filter((publisher) => publisher.includes($inputValue)) : publisherList;
+		// NOTE: we have guardrails on the publisher query upstream, but in spirit of defensive development
+		// we're also checking that no `null` value creeped up as publisher
+		return $touchedInput ? publisherList.filter((publisher) => publisher && publisher.includes($inputValue)) : publisherList;
 	});
 
 	// Derive selected and highlighted states
