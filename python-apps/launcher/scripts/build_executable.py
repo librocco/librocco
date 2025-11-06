@@ -64,7 +64,8 @@ def main():
         print(f"✗ Download script not found: {download_script}", file=sys.stderr)
         return 1
 
-    if not run_command([str(download_script)], "Download Caddy binary"):
+    # Run with python instead of relying on shebang to use current environment
+    if not run_command([sys.executable, str(download_script)], "Download Caddy binary"):
         return 1
 
     # Step 2: Verify web client build
