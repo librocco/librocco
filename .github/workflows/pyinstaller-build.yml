@@ -60,38 +60,60 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: compile-assets
-  check-trigger:
-    needs: build-cr-sqlite
-    runs-on: ubuntu-latest
+  build-windows-crsqlite:
+    runs-on: windows-latest
     outputs:
-      should_build: ${{ steps.check.outputs.should_build }}
+      artifact_name: ${{ steps.output.outputs.artifact_name }}
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
+    - name: Install Rust Toolchain
+      uses: actions-rs/toolchain@v1
       with:
-        fetch-depth: 2
-    - name: Check trigger conditions
-      id: check
+        toolchain: nightly-2023-10-05
+        target: x86_64-pc-windows-msvc
+        override: true
+    - name: Configure git for HTTPS
+      shell: bash
       run: |
-        if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-          echo "should_build=true" >> "$GITHUB_OUTPUT"
-          echo "Building because pushed to main branch"
-          exit 0
-        fi
+        git config --global url."https://github.com/".insteadOf "git@github.com:"
+    - name: Clone cr-sqlite repository
+      shell: pwsh
+      run: |
+        git clone --recurse-submodules --depth 1 --branch v0.16.1 https://github.com/vlcn-io/cr-sqlite.git cr-sqlite-build
 
-        if git log -1 --pretty=%B | grep -q '\[build-pyinstaller\]'; then
-          echo "should_build=true" >> "$GITHUB_OUTPUT"
-          echo "Building because commit message contains [build-pyinstaller]"
-          exit 0
-        fi
+        if ($LASTEXITCODE -ne 0) {
+          Write-Error "Git clone failed"
+          exit 1
+        }
 
-        echo "should_build=false" >> "$GITHUB_OUTPUT"
-        echo "Skipping build - not on main and no [build-pyinstaller] tag"
+        Set-Location cr-sqlite-build
+        git log -1 --oneline
+        Get-ChildItem
+    - name: Build crsqlite.dll with make
+      shell: bash
+      working-directory: cr-sqlite-build/core
+      run: |
+        # Try using make (might work with Git Bash on Windows)
+        make loadable || {
+          echo "Make failed, will try manual build next"
+          exit 1
+        }
+
+        ls -la dist/
+    - name: Upload Windows crsqlite.dll
+      uses: actions/upload-artifact@v4
+      with:
+        name: crsqlite-windows-dll
+        path: cr-sqlite-build/core/dist/crsqlite.dll
+        retention-days: 90
+        if-no-files-found: error
+    - name: Set output
+      id: output
+      shell: bash
+      run: echo "artifact_name=crsqlite-windows-dll" >> "$GITHUB_OUTPUT"
   build-executable:
     needs:
     - build-cr-sqlite
-    - check-trigger
-    if: needs.check-trigger.outputs.should_build == 'true'
+    if: ${{ !cancelled() }}
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -101,7 +123,7 @@ jobs:
         include:
         - os: linux
           arch: x64
-          runner: ubuntu-latest
+          runner: ubuntu-22.04
           artifact_name: librocco-launcher-linux-x64
         - os: macos
           arch: x64
@@ -136,10 +158,39 @@ jobs:
       with:
         path: 3rd-party/artefacts
         key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Download Windows crsqlite.dll (workaround)
+      if: runner.os == 'Windows'
+      continue-on-error: true
+      id: download-windows-dll
+      uses: actions/download-artifact@v4
       with:
-        python-version: "3.13"
+        name: crsqlite-windows-dll
+        path: temp-crsqlite-dll
+    - name: Inject Windows crsqlite.dll into tarball (workaround)
+      if: runner.os == 'Windows' && steps.download-windows-dll.outcome == 'success'
+      shell: pwsh
+      run: |
+        # Extract the tarball
+        $tarball = "3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz"
+        $tempDir = "temp-crsqlite-inject"
+
+        New-Item -ItemType Directory -Force -Path $tempDir
+        tar -xzf $tarball -C $tempDir
+
+        # Create dist directory in the package
+        New-Item -ItemType Directory -Force -Path "$tempDir/package/dist"
+
+        # Copy our pre-built dll
+        Copy-Item "temp-crsqlite-dll/crsqlite.dll" "$tempDir/package/dist/crsqlite.dll"
+
+        # Repack the tarball with the dll included
+        tar -czf $tarball -C $tempDir package
+
+        Write-Host "Injected crsqlite.dll into tarball"
+
+        # Cleanup
+        Remove-Item -Recurse -Force $tempDir
+        Remove-Item -Recurse -Force temp-crsqlite-dll
     - name: Install uv
       uses: astral-sh/setup-uv@v5
       with:
@@ -164,15 +215,17 @@ jobs:
     - name: Build web-client for root path
       run: cd apps/web-client && rushx build:prod-rootdir
       shell: bash
-    - name: Install launcher package with dependencies
+    - name: Create virtual environment and install launcher
       run: |
         cd python-apps/launcher
-        uv pip install -e .
+        uv venv --python 3.13 --python-preference only-managed
+        uv pip install -e '.[build]'
       shell: bash
     - name: Build PyInstaller executable
       run: |
         cd python-apps/launcher
-        uv run scripts/build_executable.py
+        source .venv/bin/activate
+        python scripts/build_executable.py
       shell: bash
     - name: Upload executable artifact
       uses: actions/upload-artifact@v4
