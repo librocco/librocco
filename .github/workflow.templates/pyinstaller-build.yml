@@ -1,12 +1,8 @@
 #@ load("github.lib.yml", "checkout")
-#@ load("github.lib.yml", "load_artefacts")
 #@ load("cache.lib.yml", "cache_node")
-#@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
-#@ load("build-crsqlite.lib.yml", "build_crsqlite")
-#@ load("windows-crsqlite.lib.yml", "build_windows_crsqlite")
 
 name: PyInstaller Build
 
@@ -18,18 +14,7 @@ name: PyInstaller Build
   workflow_dispatch:
 
 jobs:
-  build-cr-sqlite: #@ build_crsqlite()
-
-  #! TEMPORARY: Build Windows crsqlite.dll separately
-  #! Remove this job when upstream supports Windows MSVC builds
-  #! DISABLED: Windows build currently not working, needs investigation
-  #! build-windows-crsqlite: #@ build_windows_crsqlite()
-
   build-executable:
-    #! Windows build needs the windows-crsqlite job, but don't block Linux/macOS if it fails
-    needs: [build-cr-sqlite]
-    #! Allow Windows build to proceed even if build-windows-crsqlite fails (will fail at rush update instead)
-    if: ${{ !cancelled() }}
     name: Build ${{ matrix.os }}-${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 30
@@ -78,14 +63,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-
-      #! Compute cr-sqlite artefacts version
-      - name: Compute desired compiled artifact version
-        run: ./scripts/compute_artefacts_version.sh
-
-      #! Load cr-sqlite artefacts (built or cached)
-      -  #@ load_artefacts()
-      -  #@ load_cached_artefacts()
 
       #! TEMPORARY: Download pre-built Windows crsqlite.dll
       #! This step downloads the dll built in the build-windows-crsqlite job
