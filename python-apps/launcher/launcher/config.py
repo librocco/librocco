@@ -122,6 +122,17 @@ class Config:
             if https_enabled:
                 # HTTPS with internal CA
                 default_caddyfile = f"""{{
+    # Disable automatic HTTP->HTTPS redirects (requires port 80 / root privileges)
+    auto_https disable_redirects
+
+    # Use custom data directory for certificates and PKI
+    storage file_system {{
+        root {self.caddy_data_dir}
+    }}
+
+    # Skip automatic root certificate installation (requires sudo)
+    skip_install_trust
+
     # Global logging for server logs (startup, errors, admin API)
     log {{
         output file {server_log} {{
