@@ -5,6 +5,7 @@ Librocco Launcher - Main entry point for the daemon manager.
 import sys
 import logging
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMessageBox
+from circus import exc as circus_exc
 
 from launcher.config import Config
 from launcher.binary_manager import BinaryManager
@@ -217,7 +218,7 @@ def main():
             else:
                 logger.warning("Failed to auto-start Caddy")
                 print("⚠ Failed to auto-start Caddy (will retry later)")
-        except Exception as e:
+        except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
             logger.error("Exception during Caddy auto-start", exc_info=e)
             print("⚠ Error auto-starting Caddy (will retry later)")
 
