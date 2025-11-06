@@ -171,8 +171,8 @@ class TrayApp:
     def open_browser(self):
         """Open the web application in the default browser."""
         try:
-            # Check if Caddy is running
-            status = self.daemon_manager.get_status("caddy")
+            # Check if Caddy is running (use synchronous method for immediate result)
+            status = self.daemon_manager._get_status_sync("caddy")
             if status.status != "active":
                 logger.warning("User tried to open browser but Caddy is not running")
                 self.show_message(

@@ -197,23 +197,25 @@ class EmbeddedSupervisor(QObject):
         caddyfile = self.caddyfile.resolve()
         caddy_data_dir = self.caddy_data_dir.resolve()
 
-        # Pass through essential environment variables
-        env = {
-            "HOME": os.environ.get("HOME", ""),
-            "XDG_CONFIG_HOME": os.environ.get("XDG_CONFIG_HOME", ""),
-            "XDG_DATA_HOME": os.environ.get("XDG_DATA_HOME", ""),
-            "PATH": os.environ.get("PATH", ""),
-        }
+        # Build environment dict by copying current env
+        env = os.environ.copy()
+
+        # Standard Caddy run arguments (storage is configured in Caddyfile)
+        args = [
+            "run",
+            "--config", str(caddyfile),
+            "--adapter", "caddyfile"
+        ]
 
         # No stream configuration needed - Caddy writes logs directly to files
         # configured in the Caddyfile (works cross-platform)
         return {
             "name": "caddy",
             "cmd": str(caddy_binary),
-            "args": ["run", "--config", str(caddyfile), "--adapter", "caddyfile"],
+            "args": args,
             "working_dir": str(caddy_data_dir),
             "env": env,
-            "copy_env": True,  # Copy all environment variables
+            "copy_env": False,  # Use our env dict instead of copying
             "shell": False,  # Don't use shell (important for paths with spaces)
             "use_sockets": False,  # Use standard subprocess
             "autostart": False,  # Don't auto-start, let us control it manually
