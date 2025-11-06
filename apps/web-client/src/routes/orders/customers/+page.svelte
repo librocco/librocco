@@ -24,7 +24,7 @@
 	import { Page } from "$lib/controllers";
 	import { createIntersectionObserver } from "$lib/actions";
 
-	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { getCustomerDisplayIdSeq, getAllCustomerDisplayIds, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import type { Customer, CustomerOrderListItem } from "$lib/db/cr-sqlite/types";
 
 	import type { PageData } from "./$types";
@@ -81,7 +81,19 @@
 		orderFilterStatus = status;
 	}
 
-	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
+	// State for new customer form
+	let nextDisplayId = "";
+	let existingDisplayIds: string[] = [];
+
+	// Generate display ID and get existing IDs when opening the dialog
+	const handleOpenNewOrderDialog = async () => {
+		const { db } = data.dbCtx;
+		nextDisplayId = await getCustomerDisplayIdSeq(db).then(String);
+		existingDisplayIds = await getAllCustomerDisplayIds(db);
+		newOrderDialogOpen.set(true);
+	};
+
+	const createCustomer = async (customer: Omit<Customer, "id">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 
@@ -89,9 +101,8 @@
 		const { db } = data.dbCtx;
 
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
-		const displayId = await getCustomerDisplayIdSeq(db).then(String);
 
-		await upsertCustomer(db, { ...customer, id, displayId });
+		await upsertCustomer(db, { ...customer, id });
 
 		newOrderDialogOpen.set(false);
 
@@ -121,7 +132,7 @@
 					}
 				}}
 			/>
-			<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+			<button class="btn-primary btn gap-2" on:click={handleOpenNewOrderDialog}>
 				<Plus size={20} />
 				{t.labels.new_order()}
 			</button>
@@ -132,7 +143,7 @@
 					<PlaceholderBox title={t.placeholder.no_orders.title()} description={t.placeholder.no_orders.description()}>
 						<User slot="icon" />
 
-						<button slot="actions" class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+						<button slot="actions" class="btn-primary btn gap-2" on:click={handleOpenNewOrderDialog}>
 							<Plus size={20} />
 							{t.labels.new_order()}
 						</button>
@@ -190,10 +201,10 @@
 		heading={t.dialogs.new_customer.title()}
 		saveLabel={t.labels.create()}
 		kind="create"
-		data={defaults(zod(createCustomerOrderSchema("create")))}
+		data={defaults({ displayId: nextDisplayId }, zod(createCustomerOrderSchema(existingDisplayIds)))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema("create")),
+			validators: zod(createCustomerOrderSchema(existingDisplayIds)),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					const phone = [form.data.phone1, form.data.phone2].join(",");

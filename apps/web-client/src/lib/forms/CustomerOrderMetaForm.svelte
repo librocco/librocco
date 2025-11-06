@@ -34,15 +34,13 @@
 		{/if}
 
 		<div class="form-fields w-full">
-			{#if kind === "update"}
-				<div class="form-control gap-y-2">
-					<FormFieldProxy {form} name="displayId">
-						<TextControl label={$LL.forms.customer_order_meta.labels.display_id()} let:controlAttrs>
-							<input {...controlAttrs} bind:value={$formStore.displayId} class="input-bordered input w-full" />
-						</TextControl>
-					</FormFieldProxy>
-				</div>
-			{/if}
+			<div class="form-control gap-y-2">
+				<FormFieldProxy {form} name="displayId">
+					<TextControl label={$LL.forms.customer_order_meta.labels.display_id()} let:controlAttrs>
+						<input {...controlAttrs} bind:value={$formStore.displayId} class="input-bordered input w-full" />
+					</TextControl>
+				</FormFieldProxy>
+			</div>
 
 			<div class="form-control gap-y-2">
 				<FormFieldProxy {form} name="fullname">

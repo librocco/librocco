@@ -221,10 +221,6 @@
       },
       "edit_customer": {
         "title": ""
-      },
-      "non_unique_id": {
-        "title": "",
-        "description": ""
       }
     }
   },
@@ -932,6 +928,9 @@
         "phone1": "",
         "phone2": "",
         "cancel_button": ""
+      },
+      "validation": {
+        "display_id_not_unique": ""
       },
       "aria": {
         "form": ""

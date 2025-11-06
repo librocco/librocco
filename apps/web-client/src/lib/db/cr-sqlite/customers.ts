@@ -86,20 +86,17 @@ async function _upsertCustomer(db: TXAsync, customer: Omit<Customer, "updatedAt"
 	);
 }
 
-/** Checks if there's another customer with the same display ID */
-export const isDisplayIdUnique = async (db: TXAsync, customer: Customer) => {
-	const [res] = await db.execO<{ count: number }>("SELECT COUNT(*) as count FROM customer WHERE display_id = ? AND id != ?", [
-		customer.displayId,
-		customer.id
-	]);
-	return !res.count;
-};
-
 export const getCustomerDisplayIdSeq = async (db: TXAsync): Promise<number> => {
 	const [result] = await db.execO<{ nextId: number }>(
 		"SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer WHERE CAST(display_id AS INTEGER) < 10000;"
 	);
 	return result.nextId;
+};
+
+/** Get all existing customer display IDs for validation */
+export const getAllCustomerDisplayIds = async (db: TXAsync): Promise<string[]> => {
+	const results = await db.execO<{ displayId: string }>("SELECT display_id as displayId FROM customer");
+	return results.map((r) => r.displayId);
 };
 
 /**

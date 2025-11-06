@@ -1,6 +1,9 @@
 import { z } from "zod";
 import type { Infer } from "sveltekit-superforms";
+import { get } from "svelte/store";
+
 import type { TranslationFunctions } from "@librocco/shared";
+import LL from "@librocco/shared/i18n-svelte";
 
 export type DeviceSettingsSchema = Infer<typeof deviceSettingsSchema>;
 export const deviceSettingsSchema = z.object({
@@ -72,13 +75,22 @@ export type CustomerSearchSchema = Infer<typeof customerSearchSchema>;
 export const customerSearchSchema = z.object({
 	fullname: z.string()
 });
+
 export type CustomerOrderSchema = Infer<ReturnType<typeof createCustomerOrderSchema>>;
-export const createCustomerOrderSchema = (kind: "create" | "update") => {
-	const isUpdate = kind === "update";
-	const displayId = isUpdate ? z.string().min(1) : z.string().optional();
+export const createCustomerOrderSchema = (existingDisplayIds: string[] = [], currentDisplayId?: string) => {
+	const forbiddenIds = new Set(existingDisplayIds);
+	if (currentDisplayId) {
+		forbiddenIds.delete(currentDisplayId);
+	}
+
+	const errorMessage = get(LL)?.forms.customer_order_meta.validation.display_id_not_unique() ?? "This customer ID is already taken";
+
 	return z.object({
 		id: z.number(),
-		displayId,
+		displayId: z
+			.string()
+			.min(1)
+			.refine((val) => !forbiddenIds.has(val), { message: errorMessage }),
 		fullname: z.string().min(1),
 		email: z.string().max(0).optional().or(z.string().email()),
 		deposit: z.number().default(0),
