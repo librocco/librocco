@@ -61,6 +61,54 @@ def wait_for_caddy_ready(host: str, port: int, timeout: float = 10.0) -> bool:
     return False
 
 
+def wait_for_daemon_status(daemon_manager, daemon_name: str, expected_status: str, timeout: float = 5.0) -> bool:
+    """Poll daemon status until it reaches expected state or timeout.
+
+    Args:
+        daemon_manager: EmbeddedSupervisor instance
+        daemon_name: Name of daemon to check
+        expected_status: Expected status ('active', 'stopped', etc.)
+        timeout: Maximum time to wait in seconds
+
+    Returns:
+        True if daemon reaches expected status, False if timeout
+    """
+    start = time.time()
+    while time.time() - start < timeout:
+        status = daemon_manager._get_status_sync(daemon_name)
+        if status.status == expected_status:
+            return True
+        time.sleep(0.1)
+    return False
+
+
+def wait_for_port_closed(host: str, port: int, timeout: float = 5.0) -> bool:
+    """Poll until port is no longer open or timeout.
+
+    Args:
+        host: Hostname to check
+        port: Port to check
+        timeout: Maximum time to wait in seconds
+
+    Returns:
+        True if port closes, False if timeout
+    """
+    start = time.time()
+    while time.time() - start < timeout:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1.0)
+        try:
+            result = sock.connect_ex((host, port))
+            if result != 0:  # Port is closed
+                return True
+        except socket.error:
+            return True  # Port is closed (connection refused)
+        finally:
+            sock.close()
+        time.sleep(0.1)
+    return False
+
+
 @pytest.fixture(scope="session")
 def caddy_binary_path():
     """Download Caddy binary once for entire test session.

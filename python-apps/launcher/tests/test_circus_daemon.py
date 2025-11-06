@@ -82,8 +82,10 @@ def test_stop_caddy_daemon(setup_caddy_and_daemon):
     result = daemon_manager._stop_daemon_sync("caddy")
     assert result, "stop_daemon should return True"
 
-    # Brief wait for stop to complete
-    time.sleep(0.5)
+    # Wait for daemon to reach stopped status
+    from conftest import wait_for_daemon_status
+    if not wait_for_daemon_status(daemon_manager, "caddy", "stopped", timeout=5.0):
+        pytest.fail("Caddy failed to stop within 5 seconds")
 
     # Check status - should be stopped (using sync method for tests)
     daemon_status = daemon_manager._get_status_sync("caddy")

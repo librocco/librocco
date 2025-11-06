@@ -186,8 +186,10 @@ def test_caddy_restart_workflow(setup_full_stack):
     if not wait_for_caddy_ready("localhost", test_port, timeout=10.0):
         pytest.fail("Caddy failed to restart")
 
-    # Give Circus a moment to update its status after restart completes
-    time.sleep(0.5)
+    # Wait for Circus status to update after restart completes
+    from conftest import wait_for_daemon_status
+    if not wait_for_daemon_status(daemon_manager, "caddy", "active", timeout=5.0):
+        pytest.fail("Caddy status failed to update to 'active' after restart")
 
     # Verify Caddy is still active but with new PID (using sync method for tests)
     status2 = daemon_manager._get_status_sync("caddy")
@@ -242,8 +244,10 @@ def test_graceful_shutdown(setup_full_stack):
     # Graceful shutdown
     daemon_manager.stop()
 
-    # Give a brief moment for processes to terminate
-    time.sleep(1)
+    # Wait for Caddy port to close
+    from conftest import wait_for_port_closed
+    if not wait_for_port_closed("localhost", test_port, timeout=5.0):
+        pytest.fail("Caddy port failed to close within 5 seconds after shutdown")
 
     # Verify daemon manager stopped
     assert not daemon_manager._running, "Daemon manager should not be running after stop"
