@@ -1,7 +1,7 @@
 import { type Writable, writable } from "svelte/store";
 
 import type { DBAsync } from "$lib/db/cr-sqlite/types";
-import { dbCache, getDB, type DbCtx, getSchemaNameAndVersion, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
+import { getDB, type DbCtx, getSchemaNameAndVersion, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
 import type { ProgressState } from "$lib/types";
 
 import { retry } from "$lib/utils/misc";
@@ -63,33 +63,22 @@ export async function reidentifyDbNode(db: DBAsync) {
  * @returns The opened database handle if validation succeeds.
  * @throws Error if validation fails (closes the DB before throwing).
  */
-async function validateFetchedDB(dbname: string): Promise<DBAsync> {
-	const vfs = "sync-opfs-coop-sync";
-	const db = await getDB(dbname, vfs);
+async function validateFetchedDB(db: DBAsync): Promise<void> {
+	// Quick integrity check (faster than full integrity_check)
+	const [[res]] = await db.execA<[string]>("PRAGMA quick_check");
+	if (res !== "ok") {
+		throw new Error(`Database integrity check failed: ${res}`);
+	}
 
-	try {
-		// Quick integrity check (faster than full integrity_check)
-		const [[res]] = await db.execA<[string]>("PRAGMA quick_check");
-		if (res !== "ok") {
-			throw new Error(`Database integrity check failed: ${res}`);
-		}
+	// Check schema exists and matches
+	const schemaRes = await getSchemaNameAndVersion(db);
+	if (!schemaRes) {
+		throw new Error("Database has no schema (not initialized)");
+	}
 
-		// Check schema exists and matches
-		const schemaRes = await getSchemaNameAndVersion(db);
-		if (!schemaRes) {
-			throw new Error("Database has no schema (not initialized)");
-		}
-
-		const [name, version] = schemaRes;
-		if (name !== schemaName || version !== schemaVersion) {
-			throw new Error(`Schema mismatch: expected ${schemaName}@${schemaVersion}, got ${name}@${version}`);
-		}
-
-		return db; // Return the open DB for re-identification
-	} catch (err) {
-		// Close DB before re-throwing
-		await db.close();
-		throw err;
+	const [name, version] = schemaRes;
+	if (name !== schemaName || version !== schemaVersion) {
+		throw new Error(`Schema mismatch: expected ${schemaName}@${schemaVersion}, got ${name}@${version}`);
 	}
 }
 
@@ -107,8 +96,10 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 	const fileHandle = await root.getFileHandle(target, { create: true });
 	const writable = await fileHandle.createWritable();
 
-	// Track whether fetch/write succeeded to determine if we should commit or abort
-	let fetchSucceeded = false;
+	const deleteTargetFile = async () => {
+		if (!(await checkOPFSFileExists(target))) return;
+		await root.removeEntry(target);
+	};
 
 	try {
 		// Fetch
@@ -140,19 +131,15 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 		if (received !== contentLength) {
 			throw new Error(`Incomplete download: expected ${contentLength} bytes, got ${received}`);
 		}
-
-		fetchSucceeded = true;
-	} finally {
-		// If fetch/write failed, abort to release lock and preserve original file
-		// If fetch succeeded, close to atomically commit the new file
-		if (fetchSucceeded) {
-			await writable.close();
-		} else {
-			await writable.abort();
-		}
+	} catch (err) {
+		await writable.abort();
+		await retry(deleteTargetFile, 100, 5);
+		throw err;
 	}
+	await writable.close();
 
-	// Validate and process the file (wrap in try-catch to delete file on any error)
+	// TODO: update progress to show a loading spinner (idea: nProcessed > nTotal -- unkonwn remaining -- loading spinner)
+
 	try {
 		// Validate SQLite magic header
 		const file = await fileHandle.getFile();
@@ -181,25 +168,38 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 				await walWritable.close();
 			}
 		}
+	} catch (err) {
+		await retry(deleteTargetFile, 100, 5);
+		throw err;
+	}
 
+	const vfs = "sync-opfs-coop-sync";
+	const db = await getDB(target, vfs);
+
+	// Validate and process the file (wrap in try-catch to delete file on any error)
+	try {
 		// Validate DB integrity and schema
-		const db = await validateFetchedDB(target);
+		await validateFetchedDB(db);
 
 		// Re-identify the DB node (the fetched copy is the exact same as the server one, incl. siteid):
 		// - assign new siteid
 		// - attribute all *__crsql_clock tracked changes to server (as if they were synced to a pristine DB in the current node)
 		await reidentifyDbNode(db);
-
-		// Cleanup
-		await db.close();
-		dbCache.delete(target);
-
-		progressStore.set({ active: false, nProcessed: 0, nTotal: 0 });
 	} catch (err) {
-		// Validation or re-identification failed - delete the invalid file
-		await root.removeEntry(target);
+		await db.close();
+		await retry(deleteTargetFile, 100, 5);
+
 		throw err;
+	} finally {
+		// Cleanup
+		//
+		// NOTE: no need to clear the cache -- the DB was opened using 'getDB'
+		// which doesn't cache (unlike 'getInitializedDB')
+		progressStore.set({ active: false, nProcessed: 0, nTotal: 0 });
 	}
+
+	// Close the DB before handing the control back to the caller (on success)
+	await db.close();
 }
 
 type Params = {
@@ -257,4 +257,62 @@ export async function checkOPFSFileExists(fname: string) {
 		// Unknown - throw
 		throw err;
 	}
+}
+
+type FileSystemFileHandleExt = FileSystemFileHandle & {
+	move(dest: string): Promise<void>;
+	move(destDir: FileSystemDirectoryHandle, dest?: string): Promise<void>;
+};
+
+async function moveImpl(
+	srcDir: FileSystemDirectoryHandle,
+	srcHandle: FileSystemFileHandle,
+	destDir: FileSystemDirectoryHandle,
+	destName: string
+): Promise<void> {
+	// Fallback impl:
+	// 1. create dest
+	// 2. copy from src to dest
+	// 3. delete src
+	const srcFile = await srcHandle.getFile();
+	const srcBuf = await srcFile.arrayBuffer();
+
+	const destHandle = await destDir.getFileHandle(destName);
+	const destWritable = await destHandle.createWritable();
+
+	await destWritable.write(srcBuf);
+	await destWritable.close();
+
+	await srcDir.removeEntry(srcHandle.name);
+}
+
+/**
+ * Wraps file handle
+ */
+export function wrapFileHandle(dirHandle: FileSystemDirectoryHandle, fileHandle: FileSystemFileHandle): FileSystemFileHandleExt {
+	const move = async (...params: any[]) => {
+		const srcDir = dirHandle;
+		const srcHandle = fileHandle;
+
+		// Case params = [destName]
+		if (typeof params[0] === "string") {
+			const destDir = await window.navigator.storage.getDirectory();
+			const dest = params[0];
+			return moveImpl(srcDir, srcHandle, destDir, dest);
+		}
+
+		// Case params = [destDirHandle, destName?]
+		const destDir = params[0] as FileSystemDirectoryHandle;
+		// If dest name not provided, use the same name as current file
+		const dest = params[0] || srcHandle.name;
+		return moveImpl(srcDir, srcHandle, destDir, dest);
+	};
+
+	// Happy path: Google Chrome (for instance) supports FileSystemFileHandle.move(...),
+	// if .move provided, use the native impl
+	if ("move" in fileHandle) {
+		return fileHandle as FileSystemFileHandleExt;
+	}
+
+	return Object.assign(fileHandle, { move });
 }
