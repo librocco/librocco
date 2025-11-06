@@ -60,56 +60,6 @@ jobs:
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         branch: compile-assets
-  build-windows-crsqlite:
-    runs-on: windows-latest
-    outputs:
-      artifact_name: ${{ steps.output.outputs.artifact_name }}
-    steps:
-    - name: Install Rust Toolchain
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: nightly-2023-10-05
-        target: x86_64-pc-windows-msvc
-        override: true
-    - name: Configure git for HTTPS
-      shell: bash
-      run: |
-        git config --global url."https://github.com/".insteadOf "git@github.com:"
-    - name: Clone cr-sqlite repository
-      shell: pwsh
-      run: |
-        git clone --recurse-submodules --depth 1 --branch v0.16.1 https://github.com/vlcn-io/cr-sqlite.git cr-sqlite-build
-
-        if ($LASTEXITCODE -ne 0) {
-          Write-Error "Git clone failed"
-          exit 1
-        }
-
-        Set-Location cr-sqlite-build
-        git log -1 --oneline
-        Get-ChildItem
-    - name: Build crsqlite.dll with make
-      shell: bash
-      working-directory: cr-sqlite-build/core
-      run: |
-        # Try using make (might work with Git Bash on Windows)
-        make loadable || {
-          echo "Make failed, will try manual build next"
-          exit 1
-        }
-
-        ls -la dist/
-    - name: Upload Windows crsqlite.dll
-      uses: actions/upload-artifact@v4
-      with:
-        name: crsqlite-windows-dll
-        path: cr-sqlite-build/core/dist/crsqlite.dll
-        retention-days: 90
-        if-no-files-found: error
-    - name: Set output
-      id: output
-      shell: bash
-      run: echo "artifact_name=crsqlite-windows-dll" >> "$GITHUB_OUTPUT"
   build-executable:
     needs:
     - build-cr-sqlite
@@ -133,10 +83,6 @@ jobs:
           arch: arm64
           runner: macos-14
           artifact_name: librocco-launcher-macos-arm64
-        - os: windows
-          arch: x64
-          runner: windows-latest
-          artifact_name: librocco-launcher-windows-x64
     steps:
     - name: Checkout repository and submodules
       uses: actions/checkout@v4
