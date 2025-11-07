@@ -13,6 +13,7 @@ from typing import Dict, Optional
 from circus import get_arbiter
 from circus.client import CircusClient
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot as Slot
+import requests
 
 logger = logging.getLogger("launcher")
 
@@ -353,6 +354,27 @@ class EmbeddedSupervisor(QObject):
         finally:
             self._running = False
 
+    def _wait_for_caddy_ready(self, timeout=30, interval=0.5):
+        """
+        Waits for Caddy's admin API to become responsive.
+        """
+        logger.info("Waiting for Caddy admin API to be ready...")
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                # Caddy's admin API runs on port 2019 by default
+                response = requests.get("http://127.0.0.1:2019/config", timeout=1)
+                if response.status_code == 200:
+                    logger.info("Caddy admin API is ready.")
+                    return True
+            except requests.exceptions.ConnectionError:
+                pass  # Caddy not yet ready, continue polling
+            except Exception as e:
+                logger.warning(f"Error while waiting for Caddy: {e}")
+            time.sleep(interval)
+        logger.error("Caddy admin API did not become ready within the specified timeout.")
+        return False
+
     def _get_status_sync(self, daemon_name: str = "caddy") -> DaemonStatus:
         """Get status of a daemon using CircusClient (synchronous, blocking)."""
         if not self._running or not self.client:
@@ -398,6 +420,12 @@ class EmbeddedSupervisor(QObject):
 
             if success:
                 logger.info(f"Successfully started daemon: {daemon_name}")
+                # Add a readiness check for Caddy
+                if daemon_name == "caddy":
+                    if not self._wait_for_caddy_ready():
+                        logger.error("Caddy did not become ready within timeout")
+                        return False
+
             else:
                 logger.warning(f"Failed to start daemon {daemon_name}: {response}")
 
