@@ -3,6 +3,7 @@
 PyInstaller spec file for Librocco Launcher.
 
 This spec file bundles the launcher application with all necessary dependencies:
+- Node.js binary (pre-downloaded to bundled_binaries/)
 - Caddy binary (pre-downloaded to bundled_binaries/)
 - Web client build (from apps/web-client/build/)
 - Translation files (launcher/locales/)
@@ -27,8 +28,9 @@ PROJECT_ROOT = LAUNCHER_DIR.parent.parent
 WEB_CLIENT_BUILD = PROJECT_ROOT / 'apps' / 'web-client' / 'build'
 BUNDLED_BINARIES = LAUNCHER_DIR / 'bundled_binaries'
 
-# Binary name
+# Binary names
 CADDY_BINARY = 'caddy.exe' if IS_WINDOWS else 'caddy'
+NODE_BINARY = 'node.exe' if IS_WINDOWS else 'node'
 
 # Collect data files
 datas = []
@@ -51,6 +53,15 @@ if locales_dir.exists():
 
 # Collect binaries
 binaries = []
+
+# Node.js binary (must be downloaded first using scripts/download_node_for_build.py)
+node_path = BUNDLED_BINARIES / NODE_BINARY
+if node_path.exists():
+    binaries.append((str(node_path), 'bundled_binaries'))
+else:
+    print(f"ERROR: Node.js binary not found at {node_path}")
+    print("Please run: ./scripts/download_node_for_build.py")
+    sys.exit(1)
 
 # Caddy binary (must be downloaded first using scripts/download_caddy_for_build.py)
 caddy_path = BUNDLED_BINARIES / CADDY_BINARY

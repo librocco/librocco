@@ -166,6 +166,11 @@ https://{hostname}:{CADDY_PORT}, https://localhost:{CADDY_PORT} {{
         return self.binaries_dir / get_binary_name("caddy")
 
     @property
+    def node_binary_path(self) -> Path:
+        """Get the path to the Node.js binary."""
+        return self.binaries_dir / get_binary_name("node")
+
+    @property
     def caddyfile_path(self) -> Path:
         """Get the path to the Caddyfile."""
         return self.caddy_config_dir / "Caddyfile"

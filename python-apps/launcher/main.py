@@ -122,6 +122,14 @@ def initialize_caddy(config: Config) -> Optional[Path]:
     return None
 
 
+def initialize_node(config: Config) -> Optional[Path]:
+    """Ensure Node.js binary is available for use by the launcher."""
+    node_manager = BinaryManager(config.node_binary_path, binary_type="node")
+    if node_manager.ensure_binary():
+        return node_manager.binary_path
+    return None
+
+
 def main():
     """Main entry point."""
     global logger
@@ -171,6 +179,18 @@ def main():
             "Please check your internet connection and try again."),
         )
         return 1
+
+    # Ensure Node.js binary is available (non-fatal if missing for now)
+    node_binary_path = initialize_node(config)
+    if node_binary_path:
+        logger.info(f"Node.js binary ready at {node_binary_path}")
+        print(f"✓ Node.js binary ready at {node_binary_path}")
+    else:
+        warning_message = (
+            "Node.js binary is not available. Node-powered features will be disabled."
+        )
+        logger.warning(warning_message)
+        print(f"⚠ {warning_message}")
 
     # Create daemon manager
     try:
