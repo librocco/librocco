@@ -45,10 +45,6 @@ def setup_ca_certificate(config: Config) -> None:
     This should be called after Caddy has started at least once, so the CA
     certificate has been generated.
     """
-    # Only relevant if HTTPS is enabled
-    if not config.get("https_enabled", True):
-        return
-
     ca_path = get_caddy_root_ca_path(config.caddy_data_dir)
 
     # Caddy generates its internal CA certificate lazily - only when it needs to
