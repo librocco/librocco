@@ -4,6 +4,8 @@ Librocco Launcher - Main entry point for the daemon manager.
 """
 import sys
 import logging
+from pathlib import Path
+from typing import Optional
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMessageBox
 from circus import exc as circus_exc
 
@@ -109,13 +111,15 @@ def setup_ca_certificate(config: Config) -> None:
     print("=" * 60 + "\n")
 
 
-def initialize_caddy(config: Config) -> bool:
+def initialize_caddy(config: Config) -> Optional[Path]:
     """
     Ensure Caddy binary is available, using bundled binary if packaged.
-    Returns True if successful, False otherwise.
+    Returns the path to the Caddy binary if successful, None otherwise.
     """
     binary_manager = BinaryManager(config.caddy_binary_path)
-    return binary_manager.ensure_binary()
+    if binary_manager.ensure_binary():
+        return binary_manager.binary_path
+    return None
 
 
 def main():
@@ -128,8 +132,6 @@ def main():
     print("Librocco Launcher starting...")
 
     # Determine app directory (sibling of main.py)
-    from pathlib import Path
-
     app_dir = Path(__file__).parent / "app"
 
     # Initialize configuration
@@ -161,7 +163,8 @@ def main():
         return 1
 
     # Ensure Caddy binary exists
-    if not initialize_caddy(config):
+    caddy_binary_path = initialize_caddy(config)
+    if not caddy_binary_path:
         ErrorHandler.handle_critical_error(
             _("Initialization Error"),
             _("Failed to download or verify Caddy binary.\n\n"
@@ -174,7 +177,7 @@ def main():
         logger.info("Initializing daemon manager...")
         print("Initializing daemon manager...")
         daemon_manager = EmbeddedSupervisor(
-            caddy_binary=config.caddy_binary_path,
+            caddy_binary=caddy_binary_path,
             caddyfile=config.caddyfile_path,
             caddy_data_dir=config.caddy_data_dir,
             logs_dir=config.logs_dir,
