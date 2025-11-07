@@ -147,7 +147,7 @@ jobs:
       run: |
         echo "Waiting for Caddy to respond..."
         for i in {1..60}; do
-          if curl --silent --show-error --fail --insecure https://127.0.0.1:8080/; then
+          if curl --silent --show-error --fail --insecure https://localhost:8080/; then
             echo "Caddy is responding."
             exit 0
           fi
