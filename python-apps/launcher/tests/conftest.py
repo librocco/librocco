@@ -188,11 +188,6 @@ def simple_caddyfile(temp_data_dir, test_port):
     """Create a minimal Caddyfile for testing with a free port."""
     caddyfile_path = temp_data_dir / "Caddyfile"
     caddyfile_content = f"""
-{{
-    # Global options
-    admin off
-}}
-
 :{test_port} {{
     respond "Hello from test Caddy" 200
 }}

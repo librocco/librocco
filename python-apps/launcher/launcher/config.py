@@ -120,8 +120,8 @@ class Config:
 
             # Build Caddyfile based on HTTPS settings
             if https_enabled:
-                # For HTTPS, bind to 127.0.0.1 to avoid issues with dynamic hostnames in CI
-                host = "127.0.0.1"
+                # Generate certificates for both the detected hostname and localhost
+                # This allows access via mDNS (e.g., hostname.local) and standard localhost
                 default_caddyfile = f"""{{
     # Disable automatic HTTP->HTTPS redirects (requires port 80 / root privileges)
     auto_https disable_redirects
@@ -146,7 +146,7 @@ class Config:
     }}
 }}
 
-https://{host}:{port} {{
+https://{hostname}:{port}, https://localhost:{port} {{
     # Use Caddy's internal CA for certificate
     tls internal
 
