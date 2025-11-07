@@ -37,11 +37,11 @@ jobs:
           #! macOS builds
           - os: macos
             arch: x64
-            runner: macos-13  #! Intel runner
+            runner: macos-13 #! Intel runner
             artifact_name: librocco-launcher-macos-x64
           - os: macos
             arch: arm64
-            runner: macos-14  #! Apple Silicon runner
+            runner: macos-14 #! Apple Silicon runner
             artifact_name: librocco-launcher-macos-arm64
 
           #! Windows builds
@@ -176,6 +176,12 @@ jobs:
         shell: pwsh
 
       #! Integration test - verify launcher starts and Caddy responds
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1-mesa
+
       - name: Start launcher
         if: runner.os != 'Windows'
         env:
@@ -186,11 +192,39 @@ jobs:
         shell: bash
 
       - name: Verify Caddy responds
-        if: runner.os != 'Windows'
         run: |
-          curl --silent --show-error --fail --insecure \
-               --retry 15 --retry-delay 1 \
-               --retry-connrefused --retry-all-errors \
-               --max-time 16 \
-               https://localhost:8080/
+          echo "Waiting for Caddy to respond..."
+          for i in {1..60}; do
+            if curl --silent --show-error --fail --insecure https://127.0.0.1:8080/; then
+              echo "Caddy is responding."
+              exit 0
+            fi
+            echo "Attempt $i failed. Retrying in 1 second..."
+            sleep 1
+          done
+          echo "Caddy did not respond after 60 seconds."
+          exit 1
+
+      - name: Display Caddy Logs
+        if: always()
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            LOG_DIR="/home/runner/.local/share/librocco-launcher/logs"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            LOG_DIR="/Users/runner/.librocco-launcher/logs"
+          else
+            echo "Unsupported OS for log dumping."
+            exit 0
+          fi
+
+          if [ -d "$LOG_DIR" ]; then
+            echo "--- Caddy log directory contents ($LOG_DIR) ---"
+            ls -la "$LOG_DIR"
+            echo "--- caddy-server.log ---"
+            cat "$LOG_DIR/caddy-server.log" || echo "caddy-server.log not found."
+            echo "--- caddy-access.log ---"
+            cat "$LOG_DIR/caddy-access.log" || echo "caddy-access.log not found."
+          else
+            echo "Log directory not found: $LOG_DIR"
+          fi
         shell: bash

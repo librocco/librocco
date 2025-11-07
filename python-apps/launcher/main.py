@@ -171,6 +171,9 @@ def main():
     try:
         config = Config()
         config.initialize()
+        # For CI/testing, force Caddy to bind to 127.0.0.1 for HTTPS
+        if config.get("https_enabled", True):
+            config.set("hostname", "127.0.0.1")
         config.ensure_caddyfile(app_dir)
 
         # Initialize logging now that we have the config and logs directory
