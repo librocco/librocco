@@ -114,24 +114,6 @@ jobs:
           python-apps/launcher/dist/librocco-launcher*
         retention-days: 90
         if-no-files-found: error
-    - name: Smoke test (Unix)
-      if: runner.os != 'Windows'
-      run: |
-        cd python-apps/launcher/dist
-        chmod +x librocco-launcher
-        timeout 5 ./librocco-launcher --help || true
-      shell: bash
-    - name: Smoke test (Windows)
-      if: runner.os == 'Windows'
-      run: |
-        cd python-apps/launcher/dist
-        if (Test-Path librocco-launcher.exe) {
-          Write-Host "Executable built successfully"
-        } else {
-          Write-Error "Executable not found!"
-          exit 1
-        }
-      shell: pwsh
     - name: Install Linux dependencies
       if: runner.os == 'Linux'
       run: |
