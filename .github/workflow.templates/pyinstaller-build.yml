@@ -37,11 +37,11 @@ jobs:
           #! macOS builds
           - os: macos
             arch: x64
-            runner: macos-13 #! Intel runner
+            runner: macos-15-intel #! Intel runner (macOS 15)
             artifact_name: librocco-launcher-macos-x64
           - os: macos
             arch: arm64
-            runner: macos-14 #! Apple Silicon runner
+            runner: macos-15 #! Apple Silicon runner (macOS 15)
             artifact_name: librocco-launcher-macos-arm64
 
           #! Windows builds
@@ -138,6 +138,9 @@ jobs:
 
       #! Build executable
       - name: Build PyInstaller executable
+        env:
+          #! Target macOS 10.14+ for backward compatibility (limited by PyQt6 requirement)
+          MACOSX_DEPLOYMENT_TARGET: "10.14"
         run: |
           cd python-apps/launcher
           source .venv/bin/activate
