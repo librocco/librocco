@@ -24,6 +24,17 @@ This project uses [uv](https://github.com/astral-sh/uv) for dependency managemen
 uv sync
 ```
 
+### Prepare Bundled Binaries
+
+The launcher bundles both Caddy and Node.js for local development and packaged builds.
+
+```bash
+uv run python scripts/download_caddy_for_build.py
+uv run python scripts/download_node_for_build.py
+```
+
+These scripts download platform-specific binaries into `python-apps/launcher/bundled_binaries/`.
+
 ### Run the Application
 
 ```bash

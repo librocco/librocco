@@ -3,9 +3,10 @@
 Build orchestration script for Librocco Launcher executable.
 
 This script orchestrates the complete build process:
-1. Downloads Caddy binary for current platform
-2. Verifies web client is built
-3. Runs PyInstaller to create executable
+1. Downloads Node.js binary for current platform
+2. Downloads Caddy binary for current platform
+3. Verifies web client is built
+4. Runs PyInstaller to create executable
 
 Usage:
     uv run scripts/build_executable.py
@@ -49,7 +50,8 @@ def main():
     project_root = launcher_dir.parent.parent
     web_client_build = project_root / 'apps' / 'web-client' / 'build'
     spec_file = launcher_dir / 'librocco-launcher.spec'
-    download_script = launcher_dir / 'scripts' / 'download_caddy_for_build.py'
+    download_caddy_script = launcher_dir / 'scripts' / 'download_caddy_for_build.py'
+    download_node_script = launcher_dir / 'scripts' / 'download_node_for_build.py'
 
     print("=" * 70)
     print("Librocco Launcher - Build Executable")
@@ -57,19 +59,29 @@ def main():
     print(f"Platform: {sys.platform}")
     print(f"Working directory: {launcher_dir}")
 
-    # Step 1: Download Caddy
-    print_step(1, 3, "Downloading Caddy binary")
+    # Step 1: Download Node.js
+    print_step(1, 4, "Downloading Node.js binary")
 
-    if not download_script.exists():
-        print(f"✗ Download script not found: {download_script}", file=sys.stderr)
+    if not download_node_script.exists():
+        print(f"✗ Download script not found: {download_node_script}", file=sys.stderr)
+        return 1
+
+    if not run_command([sys.executable, str(download_node_script)], "Download Node.js binary"):
+        return 1
+
+    # Step 2: Download Caddy
+    print_step(2, 4, "Downloading Caddy binary")
+
+    if not download_caddy_script.exists():
+        print(f"✗ Download script not found: {download_caddy_script}", file=sys.stderr)
         return 1
 
     # Run with python instead of relying on shebang to use current environment
-    if not run_command([sys.executable, str(download_script)], "Download Caddy binary"):
+    if not run_command([sys.executable, str(download_caddy_script)], "Download Caddy binary"):
         return 1
 
-    # Step 2: Verify web client build
-    print_step(2, 3, "Verifying web client build")
+    # Step 3: Verify web client build
+    print_step(3, 4, "Verifying web client build")
 
     if not web_client_build.exists():
         print(f"\n✗ Web client build not found at: {web_client_build}", file=sys.stderr)
@@ -86,8 +98,8 @@ def main():
 
     print(f"✓ Web client build found ({len(build_files)} files)")
 
-    # Step 3: Run PyInstaller
-    print_step(3, 3, "Building executable with PyInstaller")
+    # Step 4: Run PyInstaller
+    print_step(4, 4, "Building executable with PyInstaller")
 
     if not spec_file.exists():
         print(f"✗ Spec file not found: {spec_file}", file=sys.stderr)
