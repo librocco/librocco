@@ -111,41 +111,11 @@ def setup_ca_certificate(config: Config) -> None:
 
 def initialize_caddy(config: Config) -> bool:
     """
-    Ensure Caddy binary is available.
+    Ensure Caddy binary is available, using bundled binary if packaged.
     Returns True if successful, False otherwise.
     """
     binary_manager = BinaryManager(config.caddy_binary_path)
-
-    if binary_manager.verify_binary():
-        logger.info(f"Caddy binary found at {config.caddy_binary_path}")
-        print(f"✓ Caddy binary found at {config.caddy_binary_path}")
-        return True
-
-    logger.info("Caddy binary not found. Starting download...")
-    print("Caddy binary not found. Downloading...")
-
-    try:
-        binary_manager.download_and_extract(
-            progress_callback=lambda downloaded, total: print(
-                f"  Downloaded: {downloaded / 1024 / 1024:.1f} MB / {total / 1024 / 1024:.1f} MB",
-                end="\r",
-            )
-        )
-        print()  # New line after progress
-
-        if binary_manager.verify_binary():
-            logger.info("Caddy binary downloaded and verified successfully")
-            print("✓ Caddy binary downloaded and verified")
-            return True
-        else:
-            logger.error("Caddy binary verification failed after download")
-            print("✗ Failed to verify Caddy binary")
-            return False
-
-    except Exception as e:
-        logger.error("Failed to download Caddy", exc_info=e)
-        print(f"✗ Failed to download Caddy: {e}")
-        return False
+    return binary_manager.ensure_binary()
 
 
 def main():
