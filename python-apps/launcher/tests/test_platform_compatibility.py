@@ -73,6 +73,10 @@ def test_tray_app_initialization_on_windows(mock_config):
             caddyfile=mock_config.caddy_config_dir / "Caddyfile",
             caddy_data_dir=mock_config.caddy_data_dir,
             logs_dir=mock_config.logs_dir,
+            node_binary=mock_config.node_binary_path,
+            syncserver_script=mock_config.syncserver_script_path,
+            syncserver_dir=mock_config.syncserver_dir_path,
+            db_dir=mock_config.db_dir,
         )
 
         # Try to create TrayApp
