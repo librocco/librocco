@@ -201,6 +201,10 @@ def main():
             caddyfile=config.caddyfile_path,
             caddy_data_dir=config.caddy_data_dir,
             logs_dir=config.logs_dir,
+            node_binary=config.node_binary_path,
+            syncserver_script=config.syncserver_script_path,
+            syncserver_dir=config.syncserver_dir_path,
+            db_dir=config.db_dir,
         )
 
         # Start daemon manager

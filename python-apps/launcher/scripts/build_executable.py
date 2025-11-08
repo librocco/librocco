@@ -5,8 +5,9 @@ Build orchestration script for Librocco Launcher executable.
 This script orchestrates the complete build process:
 1. Downloads Node.js binary for current platform
 2. Downloads Caddy binary for current platform
-3. Verifies web client is built
-4. Runs PyInstaller to create executable
+3. Packages sync server with dependencies
+4. Verifies web client is built
+5. Runs PyInstaller to create executable
 
 Usage:
     uv run scripts/build_executable.py
@@ -27,12 +28,12 @@ def print_step(step_num: int, total: int, message: str):
     print('=' * 70)
 
 
-def run_command(cmd: list, description: str) -> bool:
+def run_command(cmd: list, description: str, cwd: Path = None) -> bool:
     """
     Run a command and return True if successful.
     """
     print(f"\n$ {' '.join(cmd)}")
-    result = subprocess.run(cmd)
+    result = subprocess.run(cmd, cwd=cwd)
 
     if result.returncode != 0:
         print(f"\n✗ Failed: {description}", file=sys.stderr)
@@ -52,6 +53,7 @@ def main():
     spec_file = launcher_dir / 'librocco-launcher.spec'
     download_caddy_script = launcher_dir / 'scripts' / 'download_caddy_for_build.py'
     download_node_script = launcher_dir / 'scripts' / 'download_node_for_build.py'
+    package_syncserver_script = launcher_dir / 'scripts' / 'package_syncserver_for_build.py'
 
     print("=" * 70)
     print("Librocco Launcher - Build Executable")
@@ -60,28 +62,40 @@ def main():
     print(f"Working directory: {launcher_dir}")
 
     # Step 1: Download Node.js
-    print_step(1, 4, "Downloading Node.js binary")
+    print_step(1, 5, "Downloading Node.js binary")
 
     if not download_node_script.exists():
         print(f"✗ Download script not found: {download_node_script}", file=sys.stderr)
         return 1
 
-    if not run_command([sys.executable, str(download_node_script)], "Download Node.js binary"):
+    # Run with uv since these scripts have uv shebangs and dependencies
+    if not run_command(["uv", "run", str(download_node_script)], "Download Node.js binary"):
         return 1
 
     # Step 2: Download Caddy
-    print_step(2, 4, "Downloading Caddy binary")
+    print_step(2, 5, "Downloading Caddy binary")
 
     if not download_caddy_script.exists():
         print(f"✗ Download script not found: {download_caddy_script}", file=sys.stderr)
         return 1
 
-    # Run with python instead of relying on shebang to use current environment
-    if not run_command([sys.executable, str(download_caddy_script)], "Download Caddy binary"):
+    # Run with uv since these scripts have uv shebangs and dependencies
+    if not run_command(["uv", "run", str(download_caddy_script)], "Download Caddy binary"):
         return 1
 
-    # Step 3: Verify web client build
-    print_step(3, 4, "Verifying web client build")
+    # Step 3: Package sync server
+    print_step(3, 5, "Packaging sync server")
+
+    if not package_syncserver_script.exists():
+        print(f"✗ Package script not found: {package_syncserver_script}", file=sys.stderr)
+        return 1
+
+    # Run with uv since these scripts have uv shebangs and dependencies
+    if not run_command(["uv", "run", str(package_syncserver_script)], "Package sync server"):
+        return 1
+
+    # Step 4: Verify web client build
+    print_step(4, 5, "Verifying web client build")
 
     if not web_client_build.exists():
         print(f"\n✗ Web client build not found at: {web_client_build}", file=sys.stderr)
@@ -98,17 +112,18 @@ def main():
 
     print(f"✓ Web client build found ({len(build_files)} files)")
 
-    # Step 4: Run PyInstaller
-    print_step(4, 4, "Building executable with PyInstaller")
+    # Step 5: Run PyInstaller
+    print_step(5, 5, "Building executable with PyInstaller")
 
     if not spec_file.exists():
         print(f"✗ Spec file not found: {spec_file}", file=sys.stderr)
         return 1
 
-    # Run PyInstaller from the launcher directory
+    # Run PyInstaller from the launcher directory via uv
     if not run_command(
-        ['pyinstaller', '--clean', str(spec_file)],
-        "PyInstaller build"
+        ['uv', 'run', 'pyinstaller', '--clean', str(spec_file)],
+        "PyInstaller build",
+        cwd=launcher_dir
     ):
         return 1
 

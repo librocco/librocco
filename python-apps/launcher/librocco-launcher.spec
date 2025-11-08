@@ -27,6 +27,7 @@ LAUNCHER_DIR = Path('.').resolve()
 PROJECT_ROOT = LAUNCHER_DIR.parent.parent
 WEB_CLIENT_BUILD = PROJECT_ROOT / 'apps' / 'web-client' / 'build'
 BUNDLED_BINARIES = LAUNCHER_DIR / 'bundled_binaries'
+BUNDLED_SYNCSERVER = LAUNCHER_DIR / 'bundled_syncserver'
 
 # Binary names
 CADDY_BINARY = 'caddy.exe' if IS_WINDOWS else 'caddy'
@@ -42,7 +43,14 @@ else:
     print(f"WARNING: Web client build not found at {WEB_CLIENT_BUILD}")
     print("Please build the web client first: cd apps/web-client && rushx build:prod-rootdir")
 
-# 2. Translation files
+# 2. Sync server bundle (Node.js sync server with dependencies)
+if BUNDLED_SYNCSERVER.exists():
+    datas.append((str(BUNDLED_SYNCSERVER), 'bundled_binaries/syncserver'))
+else:
+    print(f"WARNING: Sync server bundle not found at {BUNDLED_SYNCSERVER}")
+    print("Please run: ./scripts/package_syncserver_for_build.py")
+
+# 3. Translation files
 locales_dir = LAUNCHER_DIR / 'launcher' / 'locales'
 if locales_dir.exists():
     for lang_dir in locales_dir.iterdir():
