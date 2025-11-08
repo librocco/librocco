@@ -87,28 +87,15 @@ def setup_ca_certificate(config: Config) -> None:
 
     if not ca_path.exists():
         logger.warning("Caddy CA certificate not found yet. It will be created on first HTTPS request.")
-        print("⚠ Caddy CA certificate not generated yet (will be created on first HTTPS request)")
         return
 
     # Check if already installed
     if check_ca_installed(ca_path):
         logger.info("Caddy CA certificate is already installed in system trust store")
-        print("✓ Caddy CA certificate already trusted by system")
         return
 
     # Just inform the user about the certificate
     logger.info("Caddy CA certificate available for installation")
-    print("\n" + "=" * 60)
-    print("HTTPS Certificate Setup")
-    print("=" * 60)
-    print(f"\nTo access the application over HTTPS without browser warnings,")
-    print(f"you can install Caddy's CA certificate to your system trust store.")
-    print(f"\nCertificate location: {ca_path}")
-    print(f"Application URL: {config.get_web_url()}")
-    print(f"\nTo install the certificate, run:")
-    print(f"  sudo cp {ca_path} /usr/local/share/ca-certificates/librocco-launcher.crt")
-    print(f"  sudo update-ca-certificates")
-    print("=" * 60 + "\n")
 
 
 def initialize_caddy(config: Config) -> Optional[Path]:
@@ -137,13 +124,11 @@ def main():
     # Initialize i18n (must be done before any UI strings are used)
     setup_i18n()
 
-    print("Librocco Launcher starting...")
 
     # Determine app directory (sibling of main.py)
     app_dir = Path(__file__).parent / "app"
 
     # Initialize configuration
-    print("Initializing configuration...")
     try:
         config = Config()
         config.initialize()
@@ -158,12 +143,7 @@ def main():
         logger.info(f"Logs directory: {config.logs_dir}")
         logger.info(f"App directory: {app_dir}")
 
-        print(f"✓ Data directory: {config.data_dir}")
-        print(f"✓ Config directory: {config.config_dir}")
-        print(f"✓ App directory: {app_dir}")
-
     except Exception as e:
-        print(f"✗ Failed to initialize configuration: {e}")
         show_error_dialog(
             _("Configuration Error"),
             _("Failed to initialize configuration:\n\n{0}").format(e),
@@ -184,18 +164,16 @@ def main():
     node_binary_path = initialize_node(config)
     if node_binary_path:
         logger.info(f"Node.js binary ready at {node_binary_path}")
-        print(f"✓ Node.js binary ready at {node_binary_path}")
     else:
         warning_message = (
             "Node.js binary is not available. Node-powered features will be disabled."
         )
         logger.warning(warning_message)
-        print(f"⚠ {warning_message}")
 
     # Create daemon manager
+    daemon_manager = None
     try:
         logger.info("Initializing daemon manager...")
-        print("Initializing daemon manager...")
         daemon_manager = EmbeddedSupervisor(
             caddy_binary=caddy_binary_path,
             caddyfile=config.caddyfile_path,
@@ -210,7 +188,6 @@ def main():
         # Start daemon manager
         daemon_manager.start()
         logger.info("Daemon manager started successfully")
-        print("✓ Daemon manager started")
 
     except Exception as e:
         logger.error("Failed to initialize daemon manager", exc_info=e)
@@ -226,36 +203,27 @@ def main():
     if config.get("auto_start_caddy", True):
         try:
             logger.info("Auto-starting Caddy...")
-            print("Auto-starting Caddy...")
             # Use synchronous method during startup to wait for result
             if daemon_manager._start_daemon_sync("caddy"):
                 logger.info("Caddy auto-started successfully")
-                print("✓ Caddy started")
             else:
                 logger.warning("Failed to auto-start Caddy")
-                print("⚠ Failed to auto-start Caddy (will retry later)")
         except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
             logger.error("Exception during Caddy auto-start", exc_info=e)
-            print("⚠ Error auto-starting Caddy (will retry later)")
 
     # Auto-start sync server
     try:
         logger.info("Auto-starting sync server...")
-        print("Auto-starting sync server...")
         if daemon_manager._start_daemon_sync("syncserver"):
             logger.info("Sync server auto-started successfully")
-            print("✓ Sync server started")
         else:
             logger.warning("Failed to auto-start sync server")
-            print("⚠ Failed to auto-start sync server (will retry later)")
     except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
         logger.error("Exception during sync server auto-start", exc_info=e)
-        print("⚠ Error auto-starting sync server (will retry later)")
 
     # Create and run tray application
     try:
         logger.info("Starting tray application...")
-        print("Starting tray application...")
         app = TrayApp(config, daemon_manager)
 
         # Check if system tray is available (must be done after QApplication is created)
@@ -270,16 +238,11 @@ def main():
             return 1
 
         logger.info("Tray application started successfully")
-        print("✓ Tray application running")
 
         # Setup CA certificate after tray icon is visible
         # This prevents the CA cert polling from blocking tray icon display
         if config.get("auto_start_caddy", True):
             setup_ca_certificate(config)
-
-        print(f"\nApplication URL: {config.get_web_url()}")
-        print("Left-click the tray icon to open in browser.")
-        print("Right-click the tray icon to access controls.\n")
 
         # Run the application
         return app.run()
@@ -295,6 +258,10 @@ def main():
         daemon_manager.stop()
         return 1
     finally:
+        # Always stop daemon manager on exit to clean up child processes
+        if daemon_manager:
+            logger.info("Stopping daemon manager...")
+            daemon_manager.stop()
         logger.info("Librocco Launcher exiting")
         logger.info("=" * 60)
 
