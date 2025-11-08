@@ -155,6 +155,7 @@ def mock_config(temp_data_dir, caddy_binary_path, monkeypatch):
     config.caddy_data_dir = temp_data_dir / "caddy-data"
     config.caddy_config_dir = temp_data_dir / "caddy-config"
     config.logs_dir = temp_data_dir / "logs"
+    config.db_dir = temp_data_dir / "db"
 
     # Update settings file path to match overridden config_dir
     config.settings_file = config.config_dir / "settings.toml"
@@ -167,6 +168,23 @@ def mock_config(temp_data_dir, caddy_binary_path, monkeypatch):
         type(config),
         "caddy_binary_path",
         property(lambda self: caddy_binary_path)
+    )
+
+    # Add mock properties for node and syncserver (tests don't need real ones)
+    monkeypatch.setattr(
+        type(config),
+        "node_binary_path",
+        property(lambda self: temp_data_dir / "binaries" / "node")
+    )
+    monkeypatch.setattr(
+        type(config),
+        "syncserver_script_path",
+        property(lambda self: temp_data_dir / "binaries" / "syncserver" / "syncserver.mjs")
+    )
+    monkeypatch.setattr(
+        type(config),
+        "syncserver_dir_path",
+        property(lambda self: temp_data_dir / "binaries" / "syncserver")
     )
 
     return config
