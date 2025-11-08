@@ -96,10 +96,13 @@ server.listen(Number(PORT), "127.0.0.1", () => {
 });
 
 // Gracefully shut down the server on process termination
-process.on("SIGINT", () => {
-	console.log("info", "[SIGINT] Shutting down server...");
+const shutdown = (signal: string) => {
+	console.log("info", `[${signal}] Shutting down server...`);
 	server.close(() => {
 		console.log("info", "Server closed");
 		process.exit(0);
 	});
-});
+};
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));
