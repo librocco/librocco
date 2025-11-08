@@ -294,7 +294,7 @@ class EmbeddedSupervisor(QObject):
             "copy_env": False,
             "shell": False,
             "use_sockets": False,
-            "autostart": True,  # Auto-start sync server with Circus
+            "autostart": False,  # Don't auto-start, let us control it manually
             "max_retry": 5,
             "graceful_timeout": 10,
             "max_retry_in": 60,
