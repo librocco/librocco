@@ -132,13 +132,25 @@ class EmbeddedSupervisor(QObject):
     _request_restart = pyqtSignal(str)
 
     def __init__(
-        self, caddy_binary: Path, caddyfile: Path, caddy_data_dir: Path, logs_dir: Path
+        self,
+        caddy_binary: Path,
+        caddyfile: Path,
+        caddy_data_dir: Path,
+        logs_dir: Path,
+        node_binary: Path,
+        syncserver_script: Path,
+        syncserver_dir: Path,
+        db_dir: Path,
     ):
         super().__init__()
         self.caddy_binary = caddy_binary
         self.caddyfile = caddyfile
         self.caddy_data_dir = caddy_data_dir
         self.logs_dir = logs_dir
+        self.node_binary = node_binary
+        self.syncserver_script = syncserver_script
+        self.syncserver_dir = syncserver_dir
+        self.db_dir = db_dir
 
         self.arbiter = None
         self.arbiter_thread = None
@@ -148,6 +160,9 @@ class EmbeddedSupervisor(QObject):
         # Caddy writes logs directly to these files
         self.caddy_server_log = logs_dir / "caddy-server.log"
         self.caddy_access_log = logs_dir / "caddy-access.log"
+
+        # Sync server log file
+        self.syncserver_log = logs_dir / "syncserver.log"
 
         # Generate IPC endpoint for secure communication
         self.endpoint = self._generate_ipc_endpoint()
@@ -225,6 +240,66 @@ class EmbeddedSupervisor(QObject):
             "max_retry_in": 60,  # Max 5 retries in 60 seconds
         }
 
+    def _create_syncserver_watcher(self) -> dict:
+        """Create a Circus watcher configuration for the sync server."""
+        import sys
+
+        # Detect if running in bundled (PyInstaller) mode or development mode
+        is_bundled = getattr(sys, 'frozen', False)
+
+        if is_bundled:
+            # Bundled mode: use packaged sync server from PyInstaller bundle
+            bundle_dir = Path(sys._MEIPASS)
+            node_binary = (bundle_dir / "bundled_binaries" / "node").resolve()
+            syncserver_dir = (bundle_dir / "bundled_binaries" / "syncserver").resolve()
+            syncserver_script = (syncserver_dir / "syncserver.mjs").resolve()
+            schema_folder = str(syncserver_dir / "schemas")
+        else:
+            # Development mode: use source sync server from repo
+            # Find project root (launcher -> python-apps -> root)
+            launcher_dir = Path(__file__).parent.parent
+            project_root = launcher_dir.parent.parent
+            sync_server_dir = project_root / "apps" / "sync-server"
+
+            # Use tsx to run TypeScript directly in development
+            node_binary_path = Path("node")  # Use system node (via nvm or PATH)
+            tsx_binary = sync_server_dir / "node_modules" / ".bin" / "tsx"
+            syncserver_script = sync_server_dir / "src" / "index.ts"
+            syncserver_dir = sync_server_dir
+            schema_folder = str(sync_server_dir / "schemas")
+
+            # In dev mode, use tsx to execute TypeScript
+            node_binary = tsx_binary if tsx_binary.exists() else node_binary_path
+
+        db_dir = self.db_dir.resolve()
+
+        # Build environment dict
+        env = os.environ.copy()
+        env["NODE_ENV"] = "production" if is_bundled else "development"
+        env["PORT"] = "3000"  # Sync server port
+        env["DB_FOLDER"] = str(db_dir)
+        env["SCHEMA_FOLDER"] = schema_folder
+        # Set NODE_PATH so Node can find node_modules in bundled syncserver directory
+        env["NODE_PATH"] = str(syncserver_dir / "node_modules")
+
+        # Sync server runs with node executing the script
+        args = [str(syncserver_script)]
+
+        return {
+            "name": "syncserver",
+            "cmd": str(node_binary),
+            "args": args,
+            "working_dir": str(syncserver_dir),
+            "env": env,
+            "copy_env": False,
+            "shell": False,
+            "use_sockets": False,
+            "autostart": True,  # Auto-start sync server with Circus
+            "max_retry": 5,
+            "graceful_timeout": 10,
+            "max_retry_in": 60,
+        }
+
     def start(self) -> None:
         """Start the supervisor arbiter in a background thread."""
         if self._running:
@@ -233,7 +308,10 @@ class EmbeddedSupervisor(QObject):
         logger.info(f"Using IPC endpoint for Circus: {self.endpoint}")
 
         # Create watchers
-        watchers = [self._create_caddy_watcher()]
+        watchers = [
+            self._create_caddy_watcher(),
+            self._create_syncserver_watcher(),
+        ]
 
         # Create arbiter with explicit IPC endpoint for security
         self.arbiter = get_arbiter(

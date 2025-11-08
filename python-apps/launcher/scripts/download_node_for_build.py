@@ -1,7 +1,4 @@
-#!/usr/bin/env -S uv run --quiet --script
-# /// script
-# dependencies = ["requests"]
-# ///
+#!/usr/bin/env -S uv run --quiet
 """Download Node.js binary for PyInstaller bundling."""
 
 import subprocess

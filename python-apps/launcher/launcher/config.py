@@ -54,6 +54,7 @@ class Config:
         self.caddy_data_dir = self.data_dir / "caddy-data"
         self.caddy_config_dir = self.data_dir / "caddy-config"
         self.logs_dir = self.data_dir / "logs"
+        self.db_dir = self.data_dir / "db"  # Database directory for sync server
 
         # Settings file
         self.settings_file = self.config_dir / "settings.toml"
@@ -74,6 +75,7 @@ class Config:
         self.caddy_data_dir.mkdir(parents=True, exist_ok=True)
         self.caddy_config_dir.mkdir(parents=True, exist_ok=True)
         self.logs_dir.mkdir(parents=True, exist_ok=True)
+        self.db_dir.mkdir(parents=True, exist_ok=True)
 
         # Load or create settings
         if self.settings_file.exists():
@@ -143,7 +145,10 @@ https://{hostname}:{CADDY_PORT}, https://localhost:{CADDY_PORT} {{
     # Use Caddy's internal CA for certificate
     tls internal
 
-    # Serve the app directory
+    # Proxy /sync requests to the sync server (WebSocket support)
+    reverse_proxy /sync* localhost:3000
+
+    # Serve the app directory for all other requests
     root * {app_dir}
     file_server browse
 
@@ -166,14 +171,24 @@ https://{hostname}:{CADDY_PORT}, https://localhost:{CADDY_PORT} {{
         return self.binaries_dir / get_binary_name("caddy")
 
     @property
-    def node_binary_path(self) -> Path:
-        """Get the path to the Node.js binary."""
-        return self.binaries_dir / get_binary_name("node")
-
-    @property
     def caddyfile_path(self) -> Path:
         """Get the path to the Caddyfile."""
         return self.caddy_config_dir / "Caddyfile"
+
+    @property
+    def node_binary_path(self) -> Path:
+        """Get the path to the Node binary."""
+        return self.binaries_dir / get_binary_name("node")
+
+    @property
+    def syncserver_script_path(self) -> Path:
+        """Get the path to the sync server script."""
+        return self.binaries_dir / "syncserver" / "syncserver.mjs"
+
+    @property
+    def syncserver_dir_path(self) -> Path:
+        """Get the path to the sync server directory."""
+        return self.binaries_dir / "syncserver"
 
     def get_web_url(self) -> str:
         """
