@@ -5,6 +5,7 @@ Daemon management using Circus as an embedded supervisor.
 import logging
 import os
 import platform
+import signal
 import tempfile
 import threading
 import time
@@ -295,6 +296,8 @@ class EmbeddedSupervisor(QObject):
             "shell": False,
             "use_sockets": False,
             "autostart": False,  # Don't auto-start, let us control it manually
+            "stop_signal": signal.SIGTERM,  # Explicitly send SIGTERM on stop
+            "stop_children": True,  # Also send signals to any child processes
             "max_retry": 5,
             "graceful_timeout": 10,
             "max_retry_in": 60,
