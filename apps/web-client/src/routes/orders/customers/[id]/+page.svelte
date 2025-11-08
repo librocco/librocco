@@ -2,7 +2,6 @@
 	import { onDestroy, onMount } from "svelte";
 	import { filter, scan } from "rxjs";
 	import BookUp from "$lucide/book-up";
-	import X from "$lucide/x";
 	import Trash2 from "$lucide/trash-2";
 	import Mail from "$lucide/mail";
 	import FileEdit from "$lucide/file-edit";
@@ -465,9 +464,6 @@
 						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
 						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
 					</div>
-					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
-						<X class="square-4" />
-					</button>
 				</div>
 				<div class="px-6">
 					<!-- {$connectivity} -->
