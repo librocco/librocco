@@ -18,6 +18,10 @@ def setup_caddy_and_daemon(mock_config, simple_caddyfile, test_port):
         caddyfile=simple_caddyfile,
         caddy_data_dir=mock_config.caddy_data_dir,
         logs_dir=mock_config.logs_dir,
+        node_binary=mock_config.node_binary_path,
+        syncserver_script=mock_config.syncserver_script_path,
+        syncserver_dir=mock_config.syncserver_dir_path,
+        db_dir=mock_config.db_dir,
     )
 
     yield daemon_manager, test_port
