@@ -104,9 +104,14 @@ class Config:
         self.save_settings()
 
     def ensure_caddyfile(self, app_dir: Path) -> None:
-        """Create a default Caddyfile if it doesn't exist."""
+        """Generate the Caddyfile, overwriting any existing configuration.
+
+        The Caddyfile is a system-managed file that should be regenerated on each
+        startup to ensure it stays in sync with the launcher's requirements.
+        """
         caddyfile_path = self.caddy_config_dir / "Caddyfile"
-        if not caddyfile_path.exists():
+        # Always regenerate to ensure config stays up to date
+        if True:  # Changed from: if not caddyfile_path.exists()
             from .network_utils import get_local_hostname
 
             server_log = self.logs_dir / "caddy-server.log"
