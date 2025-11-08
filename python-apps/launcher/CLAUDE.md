@@ -38,6 +38,9 @@ You can get output of the latest CI run on github with:
 gh run list --workflow=python-launcher-ci.yml --limit 1 --json conclusion,status,headBranch,databaseId -q '.[] | "\(.conclusion // .status) -
     \(.headBranch) - \(.databaseId)"' && gh run view $(gh run list --workflow=python-launcher-ci.yml --limit 1 --json databaseId -q '.[0].databaseId') --log-failed
 
+### Kill process by port
+Use `fuser -k 3000/tcp` to kill processes listening on a specific port. More reliable than `kill <pid>` when dealing with zombie node processes.
+
 ## Internationalization (i18n)
 
 The launcher supports multilingual UI with automatic OS language detection using Babel/gettext.
