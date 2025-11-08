@@ -268,7 +268,7 @@ export const getCustomerOrderLines = async (db: TXAsync, customerId: number): Pr
 		FROM customer_order_lines col
 		LEFT JOIN book ON col.isbn = book.isbn
 		WHERE customer_id = ?
-		ORDER BY col.isbn ASC
+		ORDER BY created DESC, col.isbn ASC
 		`,
 		[customerId]
 	);
