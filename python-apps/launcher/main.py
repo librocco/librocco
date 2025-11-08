@@ -238,6 +238,20 @@ def main():
             logger.error("Exception during Caddy auto-start", exc_info=e)
             print("⚠ Error auto-starting Caddy (will retry later)")
 
+    # Auto-start sync server
+    try:
+        logger.info("Auto-starting sync server...")
+        print("Auto-starting sync server...")
+        if daemon_manager._start_daemon_sync("syncserver"):
+            logger.info("Sync server auto-started successfully")
+            print("✓ Sync server started")
+        else:
+            logger.warning("Failed to auto-start sync server")
+            print("⚠ Failed to auto-start sync server (will retry later)")
+    except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
+        logger.error("Exception during sync server auto-start", exc_info=e)
+        print("⚠ Error auto-starting sync server (will retry later)")
+
     # Create and run tray application
     try:
         logger.info("Starting tray application...")
