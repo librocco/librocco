@@ -80,7 +80,7 @@ jobs:
           ~/.pnpm-store
           common/temp
           ./common/temp/node_modules/
-        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Install Rush
       run: npm install -g @microsoft/rush
     - name: Add local rush scripts to PATH
