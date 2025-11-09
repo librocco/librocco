@@ -10,7 +10,7 @@
 		"test:debug": "PLAYWRIGHT_HTML_OPEN=never playwright test $1 --debug",
 		"test:run": "PLAYWRIGHT_HTML_OPEN=never playwright test",
 		"test:codegen": "playwright codegen",
-		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; (cd ../web-client && rushx start:server:dev 2>&1 | tee server_output.log) & SYNC_SERVER_PID=$!; sleep 1 && CI=true playwright test ${PLAYWRIGHT_OPTIONS:-} \"$@\"; RESULT=$?; kill $PREVIEW_PID; kill $SYNC_SERVER_PID; exit $RESULT",
+		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; (cd ../sync-server && rushx start:dev 2>&1 | tee server_output.log) & SYNC_SERVER_PID=$!; sleep 1 && CI=true playwright test ${PLAYWRIGHT_OPTIONS:-} \"$@\"; RESULT=$?; kill $PREVIEW_PID; kill $SYNC_SERVER_PID; exit $RESULT",
 		"typecheck": "tsc",
 		"lint": "prettier --check . && eslint .",
 		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
