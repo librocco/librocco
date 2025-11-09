@@ -656,6 +656,7 @@ If cr-sqlite internals change, check: ordinal→UUID mapping, `crsql_tracked_pee
 ## Sync server
 
 > **Architecture Note:** The sync server is maintained as a separate package in `apps/sync-server/` and is managed externally from the web-client:
+>
 > - **Development/E2E Testing:** Run directly from `apps/sync-server` using `rushx start:dev`
 > - **Production:** Managed as a daemon process by the Python launcher (`python-apps/launcher`)
 >
