@@ -38,6 +38,11 @@
 				if (validationError) {
 					// Set error on displayId field and prevent submission
 					errors.update((e) => ({ ...e, displayId: [validationError] }));
+
+					// Focus the displayId field to match standard validation UX
+					const displayIdInput = event.formElement.querySelector<HTMLInputElement>('[name="displayId"]');
+					displayIdInput?.focus();
+
 					event.cancel();
 				}
 			}
