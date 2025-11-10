@@ -35,10 +35,17 @@
 
 		<div class="form-fields w-full">
 			<div class="form-control gap-y-2">
-				<FormFieldProxy {form} name="displayId">
+				<FormFieldProxy {form} name="displayId" let:errors let:errAttrs let:errAction>
 					<TextControl label={$LL.forms.customer_order_meta.labels.display_id()} let:controlAttrs>
-						<input {...controlAttrs} bind:value={$formStore.displayId} class="input-bordered input w-full" />
+						<input {...controlAttrs} bind:value={$formStore.displayId} class="input-bordered input w-full" autocomplete="off" />
 					</TextControl>
+					{#if errors.length}
+						<span class="font-regular text-sm text-error" {...errAttrs} use:errAction>
+							{#each errors as error}
+								{error}
+							{/each}
+						</span>
+					{/if}
 				</FormFieldProxy>
 			</div>
 

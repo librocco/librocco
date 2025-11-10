@@ -77,20 +77,43 @@ export const customerSearchSchema = z.object({
 });
 
 export type CustomerOrderSchema = Infer<ReturnType<typeof createCustomerOrderSchema>>;
-export const createCustomerOrderSchema = (existingDisplayIds: string[] = [], currentDisplayId?: string) => {
-	const forbiddenIds = new Set(existingDisplayIds);
-	if (currentDisplayId) {
-		forbiddenIds.delete(currentDisplayId);
-	}
+export const createCustomerOrderSchema = (
+	existingCustomers: Array<{ displayId: string; fullname: string; bookCount: number }> = [],
+	currentDisplayId?: string
+) => {
+	// Create a map for quick lookup
+	const customerMap = new Map(existingCustomers.map((c) => [c.displayId, c]));
 
-	const errorMessage = get(LL)?.forms.customer_order_meta.validation.display_id_not_unique() ?? "This customer ID is already taken";
+	// Remove current customer ID from validation if editing
+	if (currentDisplayId) {
+		customerMap.delete(currentDisplayId);
+	}
 
 	return z.object({
 		id: z.number(),
 		displayId: z
 			.string()
 			.min(1)
-			.refine((val) => !forbiddenIds.has(val), { message: errorMessage }),
+			.refine(
+				(val) => !customerMap.has(val),
+				(val) => {
+					const existing = customerMap.get(val);
+					if (!existing) {
+						return {
+							message: get(LL)?.forms.customer_order_meta.validation.display_id_not_unique() ?? "This customer ID is already taken"
+						};
+					}
+
+					return {
+						message:
+							get(LL)?.forms.customer_order_meta.validation.display_id_in_use({
+								fullname: existing.fullname,
+								bookCount: existing.bookCount
+							}) ??
+							`This ID is already in use by customer "${existing.fullname}" with ${existing.bookCount} ordered book${existing.bookCount === 1 ? "" : "s"}`
+					};
+				}
+			),
 		fullname: z.string().min(1),
 		email: z.string().max(0).optional().or(z.string().email()),
 		deposit: z.number().default(0),

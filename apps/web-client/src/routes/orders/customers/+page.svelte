@@ -24,7 +24,12 @@
 	import { Page } from "$lib/controllers";
 	import { createIntersectionObserver } from "$lib/actions";
 
-	import { getCustomerDisplayIdSeq, getAllCustomerDisplayIds, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import {
+		getCustomerDisplayIdSeq,
+		getCustomerDisplayIdInfo,
+		upsertCustomer,
+		type CustomerDisplayIdInfo
+	} from "$lib/db/cr-sqlite/customers";
 	import type { Customer, CustomerOrderListItem } from "$lib/db/cr-sqlite/types";
 
 	import type { PageData } from "./$types";
@@ -83,13 +88,13 @@
 
 	// State for new customer form
 	let nextDisplayId = "";
-	let existingDisplayIds: string[] = [];
+	let existingCustomers: CustomerDisplayIdInfo[] = [];
 
 	// Generate display ID and get existing IDs when opening the dialog
 	const handleOpenNewOrderDialog = async () => {
 		const { db } = data.dbCtx;
 		nextDisplayId = await getCustomerDisplayIdSeq(db).then(String);
-		existingDisplayIds = await getAllCustomerDisplayIds(db);
+		existingCustomers = await getCustomerDisplayIdInfo(db);
 		newOrderDialogOpen.set(true);
 	};
 
@@ -201,10 +206,10 @@
 		heading={t.dialogs.new_customer.title()}
 		saveLabel={t.labels.create()}
 		kind="create"
-		data={defaults({ displayId: nextDisplayId }, zod(createCustomerOrderSchema(existingDisplayIds)))}
+		data={defaults({ displayId: nextDisplayId }, zod(createCustomerOrderSchema(existingCustomers)))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema(existingDisplayIds)),
+			validators: zod(createCustomerOrderSchema(existingCustomers)),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					const phone = [form.data.phone1, form.data.phone2].join(",");
