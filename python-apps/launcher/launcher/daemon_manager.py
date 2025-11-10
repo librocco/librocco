@@ -557,6 +557,11 @@ class EmbeddedSupervisor(QObject):
 
             if success:
                 logger.info(f"Successfully restarted daemon: {daemon_name}")
+                # Add a readiness check for Caddy (same as _start_daemon_sync)
+                if daemon_name == "caddy":
+                    if not self._wait_for_caddy_ready():
+                        logger.error("Caddy did not become ready within timeout after restart")
+                        return False
             else:
                 logger.warning(f"Failed to restart daemon {daemon_name}: {response}")
 
