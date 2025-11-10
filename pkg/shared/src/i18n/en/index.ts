@@ -1005,7 +1005,8 @@ const forms = {
 			cancel_button: "Cancel"
 		},
 		validation: {
-			display_id_not_unique: "This customer ID is already taken"
+			display_id_not_unique: "This customer ID is already taken",
+			display_id_in_use: "This ID is already in use by customer \"{fullname}\" with {bookCount} ordered book{{s}}"
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"

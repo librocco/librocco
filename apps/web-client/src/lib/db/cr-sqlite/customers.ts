@@ -99,6 +99,28 @@ export const getAllCustomerDisplayIds = async (db: TXAsync): Promise<string[]> =
 	return results.map((r) => r.displayId);
 };
 
+/** Customer display ID info for validation feedback */
+export type CustomerDisplayIdInfo = {
+	displayId: string;
+	fullname: string;
+	bookCount: number;
+};
+
+/** Get all existing customer display IDs with additional info for validation feedback */
+export const getCustomerDisplayIdInfo = async (db: TXAsync): Promise<CustomerDisplayIdInfo[]> => {
+	const query = `
+		SELECT
+			c.display_id as displayId,
+			COALESCE(c.fullname, 'N/A') as fullname,
+			COUNT(col.id) as bookCount
+		FROM customer c
+		LEFT JOIN customer_order_lines col ON c.id = col.customer_id
+		GROUP BY c.id, c.display_id, c.fullname
+	`;
+	const results = await db.execO<CustomerDisplayIdInfo>(query);
+	return results;
+};
+
 /**
  * Retrieves customer details from the database for a specific customer ID.
  *

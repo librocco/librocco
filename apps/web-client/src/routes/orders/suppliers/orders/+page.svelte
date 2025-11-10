@@ -26,7 +26,12 @@
 	import PlaceholderBox from "$lib/components/Placeholders/PlaceholderBox.svelte";
 
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
-	import { getCustomerDisplayIdSeq, getAllCustomerDisplayIds, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import {
+		getCustomerDisplayIdSeq,
+		getCustomerDisplayIdInfo,
+		upsertCustomer,
+		type CustomerDisplayIdInfo
+	} from "$lib/db/cr-sqlite/customers";
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
@@ -64,13 +69,13 @@
 
 	// State for new customer form
 	let nextDisplayId = "";
-	let existingDisplayIds: string[] = [];
+	let existingCustomers: CustomerDisplayIdInfo[] = [];
 
 	// Generate display ID and get existing IDs when opening the dialog
 	const handleOpenNewOrderDialog = async () => {
 		const { db } = data.dbCtx;
 		nextDisplayId = String(await getCustomerDisplayIdSeq(db));
-		existingDisplayIds = await getAllCustomerDisplayIds(db);
+		existingCustomers = await getCustomerDisplayIdInfo(db);
 		newOrderDialogOpen.set(true);
 	};
 
@@ -212,10 +217,10 @@
 		heading="Create new order"
 		saveLabel="Create"
 		kind="create"
-		data={defaults({ displayId: nextDisplayId }, zod(createCustomerOrderSchema(existingDisplayIds)))}
+		data={defaults({ displayId: nextDisplayId }, zod(createCustomerOrderSchema(existingCustomers)))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema(existingDisplayIds)),
+			validators: zod(createCustomerOrderSchema(existingCustomers)),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					const phone = [form.data.phone1, form.data.phone2].join(",");

@@ -37,9 +37,10 @@
 	import {
 		addBooksToCustomer,
 		removeBooksFromCustomer,
-		getAllCustomerDisplayIds,
+		getCustomerDisplayIdInfo,
 		upsertCustomer,
-		markCustomerOrderLinesAsCollected
+		markCustomerOrderLinesAsCollected,
+		type CustomerDisplayIdInfo
 	} from "$lib/db/cr-sqlite/customers";
 	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
@@ -83,11 +84,11 @@
 	} = customerMetaDialog;
 
 	// State for edit customer form
-	let existingDisplayIds: string[] = [];
+	let existingCustomers: CustomerDisplayIdInfo[] = [];
 
 	// Get existing display IDs when opening the edit dialog
 	const handleOpenCustomerMetaDialog = async () => {
-		existingDisplayIds = await getAllCustomerDisplayIds(db);
+		existingCustomers = await getCustomerDisplayIdInfo(db);
 		customerMetaDialogOpen.set(true);
 	};
 
@@ -502,10 +503,10 @@
 		heading={$LL.customer_orders_page.dialogs.edit_customer.title()}
 		saveLabel={$LL.customer_orders_page.labels.save()}
 		kind="update"
-		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema(existingDisplayIds, customer?.displayId)))}
+		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema(existingCustomers, customer?.displayId)))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema(existingDisplayIds, customer?.displayId)),
+			validators: zod(createCustomerOrderSchema(existingCustomers, customer?.displayId)),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					const phone = [form.data.phone1, form.data.phone2].join(",");

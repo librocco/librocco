@@ -2694,6 +2694,12 @@ type RootTranslation = {
 				 * T​h​i​s​ ​c​u​s​t​o​m​e​r​ ​I​D​ ​i​s​ ​a​l​r​e​a​d​y​ ​t​a​k​e​n
 				 */
 				display_id_not_unique: string
+				/**
+				 * T​h​i​s​ ​I​D​ ​i​s​ ​a​l​r​e​a​d​y​ ​i​n​ ​u​s​e​ ​b​y​ ​c​u​s​t​o​m​e​r​ ​"​{​f​u​l​l​n​a​m​e​}​"​ ​w​i​t​h​ ​{​b​o​o​k​C​o​u​n​t​}​ ​o​r​d​e​r​e​d​ ​b​o​o​k​{​{​s​}​}
+				 * @param {string | number | boolean} bookCount
+				 * @param {unknown} fullname
+				 */
+				display_id_in_use: RequiredParams<'bookCount' | 'fullname'>
 			}
 			aria: {
 				/**
@@ -5451,6 +5457,10 @@ export type TranslationFunctions = {
 				 * This customer ID is already taken
 				 */
 				display_id_not_unique: () => LocalizedString
+				/**
+				 * This ID is already in use by customer "{fullname}" with {bookCount} ordered book{{s}}
+				 */
+				display_id_in_use: (arg: { bookCount: string | number | boolean, fullname: unknown }) => LocalizedString
 			}
 			aria: {
 				/**
