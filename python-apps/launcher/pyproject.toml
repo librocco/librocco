@@ -18,6 +18,10 @@ dependencies = [
     "babel>=2.14.0",
 ]
 
+[project.scripts]
+librocco = "launcher.main:main"
+librocco-headless = "launcher.main_headless:main"
+
 [project.optional-dependencies]
 test = [
     "pytest>=8.0.0",
