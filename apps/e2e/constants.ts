@@ -54,5 +54,7 @@ export const appHash = (location: keyof typeof HASHES, ...segments: (number | st
 /** Max timeout for DOM assertions (waitFor, etc. - longer in CI, default in non-CI) */
 export const assertionTimeout = IS_CI ? 15000 : undefined;
 
-export const remoteDbURL = "http://127.0.0.1:3000/";
-export const syncUrl = "ws://127.0.0.1:3000/sync";
+// In CI, use Caddy's HTTPS proxy to avoid mixed content issues (page loads via HTTPS)
+// Locally, connect directly to sync server on port 3000
+export const remoteDbURL = IS_CI ? "https://localhost:8080/" : "http://127.0.0.1:3000/";
+export const syncUrl = IS_CI ? "wss://localhost:8080/sync" : "ws://127.0.0.1:3000/sync";
