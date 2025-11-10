@@ -321,7 +321,7 @@ jobs:
       if: always()
       with:
         name: sync-server-logs-${{ matrix.shardIndex }}
-        path: apps/sync-server/server_output.log
+        path: apps/web-client/server_output.log
         retention-days: 2
   lint-and-typecheck:
     runs-on: ubuntu-latest
