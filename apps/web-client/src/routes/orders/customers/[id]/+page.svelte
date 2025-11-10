@@ -40,6 +40,7 @@
 		getCustomerDisplayIdInfo,
 		upsertCustomer,
 		markCustomerOrderLinesAsCollected,
+		validateCustomerDisplayId,
 		type CustomerDisplayIdInfo
 	} from "$lib/db/cr-sqlite/customers";
 	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
@@ -504,6 +505,7 @@
 		saveLabel={$LL.customer_orders_page.labels.save()}
 		kind="update"
 		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema(existingCustomers, customer?.displayId)))}
+		validateBeforeSubmit={async (formData) => await validateCustomerDisplayId(db, formData.displayId, customer?.displayId)}
 		options={{
 			SPA: true,
 			validators: zod(createCustomerOrderSchema(existingCustomers, customer?.displayId)),

@@ -30,6 +30,7 @@
 		getCustomerDisplayIdSeq,
 		getCustomerDisplayIdInfo,
 		upsertCustomer,
+		validateCustomerDisplayId,
 		type CustomerDisplayIdInfo
 	} from "$lib/db/cr-sqlite/customers";
 
@@ -218,6 +219,7 @@
 		saveLabel="Create"
 		kind="create"
 		data={defaults({ displayId: nextDisplayId }, zod(createCustomerOrderSchema(existingCustomers)))}
+		validateBeforeSubmit={async (formData) => await validateCustomerDisplayId(data.dbCtx.db, formData.displayId)}
 		options={{
 			SPA: true,
 			validators: zod(createCustomerOrderSchema(existingCustomers)),
