@@ -284,6 +284,7 @@ class EmbeddedSupervisor(QObject):
         # Build environment dict
         env = os.environ.copy()
         env["NODE_ENV"] = "production" if is_bundled else "development"
+        env["IS_DEV"] = "false" if is_bundled else "true"  # Enable RPC endpoint in dev mode
         env["PORT"] = "3000"  # Sync server port
         env["DB_FOLDER"] = str(db_dir)
         env["SCHEMA_FOLDER"] = schema_folder
