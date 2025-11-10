@@ -96,23 +96,9 @@ export const createCustomerOrderSchema = (
 			.min(1)
 			.refine(
 				(val) => !customerMap.has(val),
-				(val) => {
-					const existing = customerMap.get(val);
-					if (!existing) {
-						return {
-							message: get(LL)?.forms.customer_order_meta.validation.display_id_not_unique() ?? "This customer ID is already taken"
-						};
-					}
-
-					return {
-						message:
-							get(LL)?.forms.customer_order_meta.validation.display_id_in_use({
-								fullname: existing.fullname,
-								bookCount: existing.bookCount
-							}) ??
-							`This ID is already in use by customer "${existing.fullname}" with ${existing.bookCount} ordered book${existing.bookCount === 1 ? "" : "s"}`
-					};
-				}
+				() => ({
+					message: get(LL)?.forms.customer_order_meta.validation.display_id_not_unique() ?? "This customer ID is already taken"
+				})
 			),
 		fullname: z.string().min(1),
 		email: z.string().max(0).optional().or(z.string().email()),

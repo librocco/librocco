@@ -122,6 +122,25 @@ export const getCustomerDisplayIdInfo = async (db: TXAsync): Promise<CustomerDis
 };
 
 /**
+ * Validates that a customer display ID is not already in use.
+ * Used to prevent race conditions when creating/updating customers.
+ *
+ * @param db - The database connection instance
+ * @param displayId - The display ID to validate
+ * @param currentDisplayId - Optional current display ID (when editing, to exclude self)
+ * @returns Error message if invalid, null if valid
+ */
+export const validateCustomerDisplayId = async (db: TXAsync, displayId: string, currentDisplayId?: string): Promise<string | null> => {
+	const existing = await getCustomerDisplayIdInfo(db);
+	const conflict = existing.find((c) => c.displayId === displayId && c.displayId !== currentDisplayId);
+
+	if (conflict) {
+		return `Display ID "${displayId}" is already taken by customer "${conflict.fullname}" with ${conflict.bookCount} book${conflict.bookCount === 1 ? "" : "s"}`;
+	}
+	return null;
+};
+
+/**
  * Retrieves customer details from the database for a specific customer ID.
  *
  * @param {DB} db - The database connection instance
