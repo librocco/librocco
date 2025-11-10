@@ -23,7 +23,8 @@ export function getPort(): Promise<number> {
 }
 
 const port = await getPort();
-export const baseURL = `http://localhost:${port}/preview/`;
+// In CI, use Caddy's HTTPS endpoint; locally use detected dev/preview server
+export const baseURL = IS_CI ? `https://localhost:8080/preview/` : `http://localhost:${port}/preview/`;
 export const HASHES = {
 	debug: "#/debug/",
 	// Inventory mgmt
