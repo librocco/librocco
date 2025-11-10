@@ -142,6 +142,7 @@ class EmbeddedSupervisor(QObject):
         syncserver_script: Path,
         syncserver_dir: Path,
         db_dir: Path,
+        gui_mode: bool = True,
     ):
         super().__init__()
         self.caddy_binary = caddy_binary
@@ -152,6 +153,7 @@ class EmbeddedSupervisor(QObject):
         self.syncserver_script = syncserver_script
         self.syncserver_dir = syncserver_dir
         self.db_dir = db_dir
+        self.gui_mode = gui_mode
 
         self.arbiter = None
         self.arbiter_thread = None
@@ -168,20 +170,25 @@ class EmbeddedSupervisor(QObject):
         # Generate IPC endpoint for secure communication
         self.endpoint = self._generate_ipc_endpoint()
 
-        # Set up worker thread for non-blocking Circus operations
-        self.worker_thread = QThread()
-        self.worker = DaemonWorker(self)
-        self.worker.moveToThread(self.worker_thread)
+        # Set up worker thread for non-blocking Circus operations (GUI mode only)
+        self.worker_thread = None
+        self.worker = None
+        if gui_mode:
+            self.worker_thread = QThread()
+            self.worker = DaemonWorker(self)
+            self.worker.moveToThread(self.worker_thread)
 
-        # Connect internal signals to worker slots
-        self._request_status.connect(self.worker.do_get_status)
-        self._request_start.connect(self.worker.do_start_daemon)
-        self._request_stop.connect(self.worker.do_stop_daemon)
-        self._request_restart.connect(self.worker.do_restart_daemon)
+            # Connect internal signals to worker slots
+            self._request_status.connect(self.worker.do_get_status)
+            self._request_start.connect(self.worker.do_start_daemon)
+            self._request_stop.connect(self.worker.do_stop_daemon)
+            self._request_restart.connect(self.worker.do_restart_daemon)
 
-        # Start worker thread
-        self.worker_thread.start()
-        logger.info("Worker thread started for non-blocking daemon operations")
+            # Start worker thread
+            self.worker_thread.start()
+            logger.info("Worker thread started for non-blocking daemon operations")
+        else:
+            logger.info("Running in headless mode (no worker thread)")
 
     def _generate_ipc_endpoint(self) -> str:
         """
@@ -424,8 +431,8 @@ class EmbeddedSupervisor(QObject):
                         "Arbiter thread still running (will be terminated on exit)"
                     )
 
-            # Stop worker thread gracefully
-            if self.worker_thread and self.worker_thread.isRunning():
+            # Stop worker thread gracefully (GUI mode only)
+            if self.gui_mode and self.worker_thread and self.worker_thread.isRunning():
                 logger.info("Stopping worker thread...")
                 self.worker_thread.quit()
                 if not self.worker_thread.wait(5000):  # 5 second timeout
@@ -563,13 +570,20 @@ class EmbeddedSupervisor(QObject):
         """
         Get status of a daemon asynchronously (non-blocking).
 
+        Only available in GUI mode. Use _get_status_sync() in headless mode.
+
         Connect to worker.status_ready signal to receive result:
             worker = manager.get_status("caddy")
             worker.status_ready.connect(lambda status: handle_status(status))
 
         Returns:
             DaemonWorker instance - connect to its status_ready signal
+
+        Raises:
+            RuntimeError: If called in headless mode
         """
+        if not self.gui_mode:
+            raise RuntimeError("Async methods not available in headless mode. Use _get_status_sync() instead.")
         self._request_status.emit(daemon_name)
         return self.worker
 
@@ -577,13 +591,20 @@ class EmbeddedSupervisor(QObject):
         """
         Start a daemon asynchronously (non-blocking).
 
+        Only available in GUI mode. Use _start_daemon_sync() in headless mode.
+
         Connect to worker.operation_complete signal to receive result:
             worker = manager.start_daemon("caddy")
             worker.operation_complete.connect(lambda op, success: handle_result(op, success))
 
         Returns:
             DaemonWorker instance - connect to its operation_complete signal
+
+        Raises:
+            RuntimeError: If called in headless mode
         """
+        if not self.gui_mode:
+            raise RuntimeError("Async methods not available in headless mode. Use _start_daemon_sync() instead.")
         self._request_start.emit(daemon_name)
         return self.worker
 
@@ -591,13 +612,20 @@ class EmbeddedSupervisor(QObject):
         """
         Stop a daemon asynchronously (non-blocking).
 
+        Only available in GUI mode. Use _stop_daemon_sync() in headless mode.
+
         Connect to worker.operation_complete signal to receive result:
             worker = manager.stop_daemon("caddy")
             worker.operation_complete.connect(lambda op, success: handle_result(op, success))
 
         Returns:
             DaemonWorker instance - connect to its operation_complete signal
+
+        Raises:
+            RuntimeError: If called in headless mode
         """
+        if not self.gui_mode:
+            raise RuntimeError("Async methods not available in headless mode. Use _stop_daemon_sync() instead.")
         self._request_stop.emit(daemon_name)
         return self.worker
 
@@ -605,13 +633,20 @@ class EmbeddedSupervisor(QObject):
         """
         Restart a daemon asynchronously (non-blocking).
 
+        Only available in GUI mode. Use _restart_daemon_sync() in headless mode.
+
         Connect to worker.operation_complete signal to receive result:
             worker = manager.restart_daemon("caddy")
             worker.operation_complete.connect(lambda op, success: handle_result(op, success))
 
         Returns:
             DaemonWorker instance - connect to its operation_complete signal
+
+        Raises:
+            RuntimeError: If called in headless mode
         """
+        if not self.gui_mode:
+            raise RuntimeError("Async methods not available in headless mode. Use _restart_daemon_sync() instead.")
         self._request_restart.emit(daemon_name)
         return self.worker
 

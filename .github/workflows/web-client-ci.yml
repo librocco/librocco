@@ -306,11 +306,35 @@ jobs:
       run: cd apps/web-client && rushx build:e2e
     - name: Download playwright browsers
       run: cd apps/e2e && npx playwright install
+    - name: Install uv (Python package manager)
+      uses: astral-sh/setup-uv@v5
+    - name: Install headless launcher
+      run: cd python-apps/launcher && uv pip install --system -e .
+    - name: Clean stale test DBs (fix schema mismatch)
+      run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
+    - name: Start headless launcher in background
+      run: |
+        cd apps/web-client && rushx preview &
+        echo $! > /tmp/preview.pid
+        librocco-headless &
+        echo $! > /tmp/launcher.pid
+        echo "Started preview (PID: $(cat /tmp/preview.pid)) and launcher (PID: $(cat /tmp/launcher.pid))"
+    - name: Wait for services to be ready
+      run: |
+        echo "Waiting for sync server..."
+        timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
+        echo "Waiting for preview server..."
+        timeout 30 bash -c 'until curl -f http://localhost:4173/ 2>/dev/null; do sleep 1; done'
+        echo "All services ready!"
     - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
-      run: cd apps/e2e && rushx test:ci
+      run: cd apps/e2e && CI=true playwright test --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
       env:
-        PLAYWRIGHT_OPTIONS: --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         SHARD_INDEX: ${{ matrix.shardIndex }}
+    - name: Stop services
+      if: always()
+      run: |
+        if [ -f /tmp/launcher.pid ]; then kill $(cat /tmp/launcher.pid) || true; fi
+        if [ -f /tmp/preview.pid ]; then kill $(cat /tmp/preview.pid) || true; fi
     - uses: actions/upload-artifact@v4
       if: always()
       with:
@@ -320,8 +344,8 @@ jobs:
     - uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: sync-server-logs-${{ matrix.shardIndex }}
-        path: apps/web-client/server_output.log
+        name: launcher-logs-${{ matrix.shardIndex }}
+        path: ~/.librocco-launcher/logs/
         retention-days: 2
   lint-and-typecheck:
     runs-on: ubuntu-latest
