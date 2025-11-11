@@ -14,7 +14,7 @@ name: Python Launcher CI
 jobs:
   test:
     name: Test on ${{ matrix.os }}
-    runs-on: ${{ matrix.os == 'macos-latest' && 'self-hosted' || matrix.os }}
+    runs-on: ${{ matrix.os == 'macos-latest' && 'localmacos' || matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
