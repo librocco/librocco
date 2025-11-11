@@ -42,11 +42,19 @@ jobs:
           uv pip install -e .[test]
         shell: bash
 
-      - name: Run tests
+      - name: Run unit tests
         run: |
           cd python-apps/launcher
-          uv run pytest tests/ -v --tb=short
+          uv run pytest tests/ -v --tb=short -k "not integration"
         shell: bash
+
+      - name: Run integration tests (certificate installation)
+        run: |
+          cd python-apps/launcher
+          CI=true uv run pytest tests/test_network_utils.py -v --tb=short -k "integration"
+        shell: bash
+        env:
+          CI: "true"
 
       - name: Run tests with coverage
         if: matrix.os == 'ubuntu-latest'
