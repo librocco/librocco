@@ -9,8 +9,9 @@ from typing import Dict, Any
 from platformdirs import user_data_dir, user_config_dir
 import platform
 
-# Caddy server port (hardcoded, not user-configurable)
+# Server ports (hardcoded, not user-configurable)
 CADDY_PORT = 8080
+SYNC_SERVER_PORT = 3000
 
 
 def get_binary_name(base_name: str) -> str:
@@ -62,6 +63,7 @@ class Config:
         # Default settings
         self._default_settings = {
             "auto_start_caddy": True,
+            "auto_start_sync_server": True,
         }
 
         self._settings: Dict[str, Any] = {}
