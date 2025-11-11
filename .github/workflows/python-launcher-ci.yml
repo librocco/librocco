@@ -10,7 +10,7 @@ name: Python Launcher CI
 jobs:
   test:
     name: Test on ${{ matrix.os }}
-    runs-on: ${{ matrix.os == 'macos-latest' && 'self-hosted' || matrix.os }}
+    runs-on: ${{ matrix.os == 'macos-latest' && fromJSON('["self-hosted", "macOS", "X64"]') || matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
