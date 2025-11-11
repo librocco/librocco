@@ -152,12 +152,21 @@ https://{hostname}:{CADDY_PORT}, https://localhost:{CADDY_PORT} {{
     # Use Caddy's internal CA for certificate
     tls internal
 
-    # Proxy /sync requests to the sync server (WebSocket support)
-    reverse_proxy /sync* localhost:3000
+    # Proxy sync WebSocket requests to the sync server
+    handle /sync* {{
+        reverse_proxy localhost:3000
+    }}
+
+    # Proxy database RPC endpoints to the sync server (for testing/dev)
+    handle /*.db/* {{
+        reverse_proxy localhost:3000
+    }}
 
     # Serve the app directory for all other requests
-    root * {app_dir}
-    file_server browse
+    handle {{
+        root * {app_dir}
+        file_server browse
+    }}
 
     # Access logs (HTTP requests)
     log {{
