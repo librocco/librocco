@@ -66,4 +66,10 @@ if ! cmp -s assets/favicon.svg apps/web-client/static/favicon.svg; then
   exit 1
 fi
 
+if ! cmp -s apps/web-client/src/lib/schemas/init apps/sync-server/schemas/init; then
+  echo "❌ files out of sync: apps/sync-server/schemas/init must match apps/web-client/src/lib/schemas/init"
+  echo "   Sync server schema must be identical to web-client schema for sync to work"
+  exit 1
+fi
+
 echo "✅ all checks passed."
