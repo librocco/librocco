@@ -1,6 +1,7 @@
 """
 Common launcher startup logic shared between GUI and headless modes.
 """
+
 import sys
 import logging
 import time
@@ -27,7 +28,9 @@ def initialize_i18n() -> None:
     setup_i18n()
 
 
-def setup_logging_for_mode(logs_dir: Optional[Path] = None, level: int = logging.INFO, to_file: bool = True):
+def setup_logging_for_mode(
+    logs_dir: Optional[Path] = None, level: int = logging.INFO, to_file: bool = True
+):
     """
     Setup logging for either GUI (file) or headless (stdout) mode.
 
@@ -49,9 +52,9 @@ def setup_logging_for_mode(logs_dir: Optional[Path] = None, level: int = logging
         # Headless mode: log to stdout with simple format
         logging.basicConfig(
             level=level,
-            format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-            stream=sys.stdout
+            format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+            stream=sys.stdout,
         )
         logger = logging.getLogger("launcher")
 
@@ -96,8 +99,10 @@ def download_binaries(config: Config) -> Tuple[Optional[Path], Optional[Path]]:
     caddy_manager = BinaryManager(config.caddy_binary_path)
     if not caddy_manager.ensure_binary():
         raise RuntimeError(
-            _("Failed to download or verify Caddy binary. "
-              "Please check your internet connection and try again.")
+            _(
+                "Failed to download or verify Caddy binary. "
+                "Please check your internet connection and try again."
+            )
         )
     caddy_binary_path = caddy_manager.binary_path
     logger.info(f"Caddy binary ready at {caddy_binary_path}")
@@ -109,15 +114,15 @@ def download_binaries(config: Config) -> Tuple[Optional[Path], Optional[Path]]:
         node_binary_path = node_manager.binary_path
         logger.info(f"Node.js binary ready at {node_binary_path}")
     else:
-        logger.warning("Node.js binary is not available. Node-powered features will be disabled.")
+        logger.warning(
+            "Node.js binary is not available. Node-powered features will be disabled."
+        )
 
     return caddy_binary_path, node_binary_path
 
 
 def create_daemon_manager(
-    config: Config,
-    caddy_binary_path: Path,
-    gui_mode: bool = True
+    config: Config, caddy_binary_path: Path, gui_mode: bool = True
 ) -> EmbeddedSupervisor:
     """
     Create and initialize the daemon manager.
@@ -173,7 +178,12 @@ def auto_start_daemons(daemon_manager: EmbeddedSupervisor, config: Config) -> No
                 logger.info("All services auto-started successfully")
             else:
                 logger.warning("Failed to auto-start all services")
-        except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
+        except (
+            RuntimeError,
+            OSError,
+            circus_exc.CallError,
+            circus_exc.MessageError,
+        ) as e:
             logger.error("Exception during system auto-start", exc_info=e)
     else:
         # Start individually based on configuration
@@ -184,7 +194,12 @@ def auto_start_daemons(daemon_manager: EmbeddedSupervisor, config: Config) -> No
                     logger.info("Caddy auto-started successfully")
                 else:
                     logger.warning("Failed to auto-start Caddy")
-            except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
+            except (
+                RuntimeError,
+                OSError,
+                circus_exc.CallError,
+                circus_exc.MessageError,
+            ) as e:
                 logger.error("Exception during Caddy auto-start", exc_info=e)
 
         if should_start_syncserver:
@@ -194,7 +209,12 @@ def auto_start_daemons(daemon_manager: EmbeddedSupervisor, config: Config) -> No
                     logger.info("Sync server auto-started successfully")
                 else:
                     logger.warning("Failed to auto-start sync server")
-            except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
+            except (
+                RuntimeError,
+                OSError,
+                circus_exc.CallError,
+                circus_exc.MessageError,
+            ) as e:
                 logger.error("Exception during sync server auto-start", exc_info=e)
 
 
@@ -214,7 +234,9 @@ def setup_ca_certificate(config: Config) -> None:
     # issue a certificate for an HTTPS request. We need to make a request to trigger this.
     if not ca_path.exists():
         # Wait a bit for Caddy to fully start up before making the request
-        logger.info("Waiting for Caddy to fully start before triggering CA generation...")
+        logger.info(
+            "Waiting for Caddy to fully start before triggering CA generation..."
+        )
         time.sleep(2)
 
         logger.info("Triggering Caddy CA certificate generation with HTTPS request...")
@@ -226,8 +248,10 @@ def setup_ca_certificate(config: Config) -> None:
 
             # Make request to trigger CA certificate generation
             url = config.get_web_url()
-            req = urllib.request.Request(url, method='HEAD')
-            with urllib.request.urlopen(req, context=ssl_context, timeout=10) as response:
+            req = urllib.request.Request(url, method="HEAD")
+            with urllib.request.urlopen(
+                req, context=ssl_context, timeout=10
+            ) as response:
                 logger.info(f"Made request to {url}, status: {response.status}")
         except Exception as e:
             logger.debug(f"Request to trigger CA generation: {e}")
@@ -243,7 +267,9 @@ def setup_ca_certificate(config: Config) -> None:
             waited += poll_interval
 
     if not ca_path.exists():
-        logger.warning("Caddy CA certificate not found yet. It will be created on first HTTPS request.")
+        logger.warning(
+            "Caddy CA certificate not found yet. It will be created on first HTTPS request."
+        )
         return
 
     # Check if already installed

@@ -13,10 +13,10 @@ class IconManager:
 
     # State color definitions (maps daemon status to colors)
     COLORS = {
-        "active": "#00C853",       # Green - service running
-        "starting": "#FFB300",     # Yellow - service starting
-        "error": "#D50000",        # Red - service error
-        "stopped": "#757575",      # Gray - service stopped
+        "active": "#00C853",  # Green - service running
+        "starting": "#FFB300",  # Yellow - service starting
+        "error": "#D50000",  # Red - service error
+        "stopped": "#757575",  # Gray - service stopped
     }
 
     def __init__(self):
@@ -51,7 +51,9 @@ class IconManager:
 
         return pixmap
 
-    def _create_icon_with_badges(self, caddy_color: str, syncserver_color: str) -> QIcon:
+    def _create_icon_with_badges(
+        self, caddy_color: str, syncserver_color: str
+    ) -> QIcon:
         """Create an icon with two colored badge dots (one per service).
 
         Args:
@@ -105,6 +107,8 @@ class IconManager:
         if cache_key not in self._icon_cache:
             caddy_color = self.COLORS.get(caddy_state, self.COLORS["stopped"])
             syncserver_color = self.COLORS.get(syncserver_state, self.COLORS["stopped"])
-            self._icon_cache[cache_key] = self._create_icon_with_badges(caddy_color, syncserver_color)
+            self._icon_cache[cache_key] = self._create_icon_with_badges(
+                caddy_color, syncserver_color
+            )
 
         return self._icon_cache[cache_key]

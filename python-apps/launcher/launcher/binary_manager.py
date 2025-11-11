@@ -62,7 +62,7 @@ class BinaryManager:
         Check if running from PyInstaller bundle.
         PyInstaller sets sys._MEIPASS when running from a bundle.
         """
-        return getattr(sys, '_MEIPASS', None) is not None
+        return getattr(sys, "_MEIPASS", None) is not None
 
     def get_bundled_binary_path(self) -> Optional[Path]:
         """
@@ -263,7 +263,9 @@ class BinaryManager:
         # Extract the binary (outside with block to ensure file is closed on Windows)
         try:
             self._extract_binary(tmp_path, ext)
-            print(f"{self.binary_type.capitalize()} binary extracted to {self.binary_path}")
+            print(
+                f"{self.binary_type.capitalize()} binary extracted to {self.binary_path}"
+            )
         finally:
             # Clean up temporary file
             tmp_path.unlink(missing_ok=True)
@@ -285,7 +287,9 @@ class BinaryManager:
             else:
                 raise ValueError(f"Unsupported archive format: {ext}")
 
-            extracted_binary = self._find_extracted_binary(tmp_dir_path, binary_name, ext)
+            extracted_binary = self._find_extracted_binary(
+                tmp_dir_path, binary_name, ext
+            )
             if not extracted_binary.exists():
                 raise FileNotFoundError(f"Binary {binary_name} not found in archive")
 
@@ -369,12 +373,18 @@ class BinaryManager:
 
         # Development mode: check if already exists
         if self.verify_binary():
-            logger.info(f"{self.binary_type.capitalize()} binary already exists at {self.binary_path}")
-            print(f"{self.binary_type.capitalize()} binary already exists at {self.binary_path}")
+            logger.info(
+                f"{self.binary_type.capitalize()} binary already exists at {self.binary_path}"
+            )
+            print(
+                f"{self.binary_type.capitalize()} binary already exists at {self.binary_path}"
+            )
             return True
 
         # Development mode: download if needed
-        logger.info(f"{self.binary_type.capitalize()} binary not found. Starting download...")
+        logger.info(
+            f"{self.binary_type.capitalize()} binary not found. Starting download..."
+        )
         try:
             self.download_and_extract()
             return self.verify_binary()
@@ -383,7 +393,9 @@ class BinaryManager:
             print(f"Failed to download {self.binary_type}: {e}")
             return False
 
-    def _find_extracted_binary(self, tmp_dir_path: Path, binary_name: str, ext: str) -> Path:
+    def _find_extracted_binary(
+        self, tmp_dir_path: Path, binary_name: str, ext: str
+    ) -> Path:
         if self.binary_type == "caddy":
             return tmp_dir_path / binary_name
 

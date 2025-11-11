@@ -41,6 +41,7 @@ def test_start_caddy_daemon(setup_caddy_and_daemon):
 
     # Wait for arbiter to initialize (intelligent polling)
     from conftest import wait_for_circus_ready, wait_for_caddy_ready
+
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
@@ -70,6 +71,7 @@ def test_stop_caddy_daemon(setup_caddy_and_daemon):
 
     # Wait for arbiter and Caddy (intelligent polling)
     from conftest import wait_for_circus_ready, wait_for_caddy_ready
+
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
@@ -88,6 +90,7 @@ def test_stop_caddy_daemon(setup_caddy_and_daemon):
 
     # Wait for daemon to reach stopped status
     from conftest import wait_for_daemon_status
+
     if not wait_for_daemon_status(daemon_manager, "caddy", "stopped", timeout=5.0):
         pytest.fail("Caddy failed to stop within 5 seconds")
 
@@ -109,6 +112,7 @@ def test_caddy_working_directory(setup_caddy_and_daemon, mock_config):
 
     # Wait for arbiter and Caddy (intelligent polling)
     from conftest import wait_for_circus_ready, wait_for_caddy_ready
+
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
@@ -144,6 +148,7 @@ def test_verify_caddy_responds(setup_caddy_and_daemon):
 
     # Wait for arbiter and Caddy (intelligent polling)
     from conftest import wait_for_circus_ready, wait_for_caddy_ready
+
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
@@ -160,7 +165,9 @@ def test_verify_caddy_responds(setup_caddy_and_daemon):
     # Try to connect to Caddy's test endpoint using requests library
     try:
         response = requests.get(f"http://localhost:{test_port}", timeout=5)
-        assert response.status_code == 200, f"Expected HTTP 200, got: {response.status_code}"
+        assert (
+            response.status_code == 200
+        ), f"Expected HTTP 200, got: {response.status_code}"
     except requests.Timeout:
         pytest.fail("Caddy did not respond within timeout")
     except requests.ConnectionError as e:

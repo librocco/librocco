@@ -49,7 +49,7 @@ class DaemonWorker(QObject):
     operation_complete = pyqtSignal(str, bool)  # (operation_name, success)
     error_occurred = pyqtSignal(str, str)  # (operation, error_message)
 
-    def __init__(self, supervisor: 'EmbeddedSupervisor'):
+    def __init__(self, supervisor: "EmbeddedSupervisor"):
         """
         Initialize worker.
 
@@ -70,7 +70,9 @@ class DaemonWorker(QObject):
             status = self.supervisor._get_status_sync(daemon_name)
             self.status_ready.emit(status)
         except Exception as exc:
-            logger.error(f"Worker: Failed to get status for {daemon_name}", exc_info=exc)
+            logger.error(
+                f"Worker: Failed to get status for {daemon_name}", exc_info=exc
+            )
             self.error_occurred.emit("get_status", str(exc))
             self.status_ready.emit(None)
 
@@ -270,9 +272,10 @@ class EmbeddedSupervisor(QObject):
             # Windows: Use TCP with random port (ZeroMQ doesn't support ipc:// on Windows)
             # Find an available port using SO_REUSEADDR to minimize race conditions
             import socket
+
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.bind(('127.0.0.1', 0))
+            sock.bind(("127.0.0.1", 0))
             port = sock.getsockname()[1]
             sock.close()
             # Note: Small race condition still exists between close() and Circus bind,
@@ -294,11 +297,7 @@ class EmbeddedSupervisor(QObject):
         env = os.environ.copy()
 
         # Standard Caddy run arguments (storage is configured in Caddyfile)
-        args = [
-            "run",
-            "--config", str(caddyfile),
-            "--adapter", "caddyfile"
-        ]
+        args = ["run", "--config", str(caddyfile), "--adapter", "caddyfile"]
 
         # No stream configuration needed - Caddy writes logs directly to files
         # configured in the Caddyfile (works cross-platform)
@@ -322,7 +321,7 @@ class EmbeddedSupervisor(QObject):
         import sys
 
         # Detect if running in bundled (PyInstaller) mode or development mode
-        is_bundled = getattr(sys, 'frozen', False)
+        is_bundled = getattr(sys, "frozen", False)
 
         if is_bundled:
             # Bundled mode: use packaged sync server from PyInstaller bundle
@@ -353,7 +352,9 @@ class EmbeddedSupervisor(QObject):
         # Build environment dict
         env = os.environ.copy()
         env["NODE_ENV"] = "production" if is_bundled else "development"
-        env["IS_DEV"] = "false" if is_bundled else "true"  # Enable RPC endpoint in dev mode
+        env["IS_DEV"] = (
+            "false" if is_bundled else "true"
+        )  # Enable RPC endpoint in dev mode
         env["PORT"] = "3000"  # Sync server port
         env["DB_FOLDER"] = str(db_dir)
         env["SCHEMA_FOLDER"] = schema_folder
@@ -427,7 +428,9 @@ class EmbeddedSupervisor(QObject):
             logger.error("Arbiter failed to start", exc_info=exc)
             self._running = False
 
-    def _wait_for_arbiter_ready(self, timeout: float = 5.0, poll_interval: float = 0.1) -> bool:
+    def _wait_for_arbiter_ready(
+        self, timeout: float = 5.0, poll_interval: float = 0.1
+    ) -> bool:
         """Wait for arbiter to be ready by polling with CircusClient.
 
         Args:
@@ -447,7 +450,9 @@ class EmbeddedSupervisor(QObject):
                 response = self.client.send_message("numwatchers")
                 if response.get("status") == "ok":
                     elapsed = time.time() - start_time
-                    logger.info(f"Arbiter ready after {elapsed:.2f}s ({attempt} attempts)")
+                    logger.info(
+                        f"Arbiter ready after {elapsed:.2f}s ({attempt} attempts)"
+                    )
                     return True
             except Exception as exc:
                 # Arbiter not ready yet, continue polling
@@ -530,7 +535,9 @@ class EmbeddedSupervisor(QObject):
             except Exception as e:
                 logger.warning(f"Error while waiting for Caddy: {e}")
             time.sleep(interval)
-        logger.error("Caddy admin API did not become ready within the specified timeout.")
+        logger.error(
+            "Caddy admin API did not become ready within the specified timeout."
+        )
         return False
 
     def _get_status_sync(self, daemon_name: str = "caddy") -> DaemonStatus:
@@ -562,19 +569,25 @@ class EmbeddedSupervisor(QObject):
     def _start_daemon_sync(self, daemon_name: str = "caddy") -> bool:
         """Start a specific daemon using CircusClient (synchronous, blocking)."""
         if not self._running:
-            logger.info(f"Supervisor not running, starting it before starting {daemon_name}")
+            logger.info(
+                f"Supervisor not running, starting it before starting {daemon_name}"
+            )
             self.start()
             # Fall through to actually start the watcher
 
         try:
             if not self.client:
-                logger.error(f"CircusClient not initialized, cannot start {daemon_name}")
+                logger.error(
+                    f"CircusClient not initialized, cannot start {daemon_name}"
+                )
                 return False
 
             # First check if daemon is already running
             status_info = self._get_status_sync(daemon_name)
             if status_info.status == "active":
-                logger.info(f"Daemon {daemon_name} is already running (PID {status_info.pid})")
+                logger.info(
+                    f"Daemon {daemon_name} is already running (PID {status_info.pid})"
+                )
                 return True  # Consider this a success - the goal is achieved
 
             logger.info(f"Starting daemon: {daemon_name}")
@@ -593,22 +606,34 @@ class EmbeddedSupervisor(QObject):
             else:
                 # Log the full response to understand why it failed
                 response_str = str(response)
-                logger.error(f"Failed to start daemon {daemon_name}. Circus response: {response}")
+                logger.error(
+                    f"Failed to start daemon {daemon_name}. Circus response: {response}"
+                )
 
                 # Check if it's actually running despite the error
-                if "already started" in response_str.lower() or "already running" in response_str.lower():
-                    logger.info(f"Daemon {daemon_name} reported as already running by Circus")
+                if (
+                    "already started" in response_str.lower()
+                    or "already running" in response_str.lower()
+                ):
+                    logger.info(
+                        f"Daemon {daemon_name} reported as already running by Circus"
+                    )
                     return True  # Treat as success - daemon is running
 
                 return False
         except Exception as exc:
-            logger.error(f"Exception while starting daemon {daemon_name}: {type(exc).__name__}: {exc}", exc_info=exc)
+            logger.error(
+                f"Exception while starting daemon {daemon_name}: {type(exc).__name__}: {exc}",
+                exc_info=exc,
+            )
             return False
 
     def _stop_daemon_sync(self, daemon_name: str = "caddy") -> bool:
         """Stop a specific daemon using CircusClient (synchronous, blocking)."""
         if not self._running:
-            logger.warning(f"Cannot stop {daemon_name}: supervisor not running (arbiter stopped)")
+            logger.warning(
+                f"Cannot stop {daemon_name}: supervisor not running (arbiter stopped)"
+            )
             return False
 
         if not self.client:
@@ -632,26 +657,40 @@ class EmbeddedSupervisor(QObject):
             else:
                 # Log the full response to understand why it failed
                 response_str = str(response)
-                logger.error(f"Failed to stop daemon {daemon_name}. Circus response: {response}")
+                logger.error(
+                    f"Failed to stop daemon {daemon_name}. Circus response: {response}"
+                )
 
                 # Check if it's actually stopped despite the error
-                if "already stopped" in response_str.lower() or "not running" in response_str.lower():
-                    logger.info(f"Daemon {daemon_name} reported as already stopped by Circus")
+                if (
+                    "already stopped" in response_str.lower()
+                    or "not running" in response_str.lower()
+                ):
+                    logger.info(
+                        f"Daemon {daemon_name} reported as already stopped by Circus"
+                    )
                     return True  # Treat as success - daemon is stopped
 
                 return False
         except Exception as exc:
-            logger.error(f"Exception while stopping daemon {daemon_name}: {type(exc).__name__}: {exc}", exc_info=exc)
+            logger.error(
+                f"Exception while stopping daemon {daemon_name}: {type(exc).__name__}: {exc}",
+                exc_info=exc,
+            )
             return False
 
     def _restart_daemon_sync(self, daemon_name: str = "caddy") -> bool:
         """Restart a specific daemon using CircusClient (synchronous, blocking)."""
         if not self._running:
-            logger.warning(f"Cannot restart {daemon_name}: supervisor not running (arbiter stopped)")
+            logger.warning(
+                f"Cannot restart {daemon_name}: supervisor not running (arbiter stopped)"
+            )
             return False
 
         if not self.client:
-            logger.warning(f"Cannot restart {daemon_name}: CircusClient not initialized")
+            logger.warning(
+                f"Cannot restart {daemon_name}: CircusClient not initialized"
+            )
             return False
 
         try:
@@ -664,16 +703,23 @@ class EmbeddedSupervisor(QObject):
                 # Add a readiness check for Caddy (same as _start_daemon_sync)
                 if daemon_name == "caddy":
                     if not self._wait_for_caddy_ready():
-                        logger.error("Caddy did not become ready within timeout after restart")
+                        logger.error(
+                            "Caddy did not become ready within timeout after restart"
+                        )
                         return False
                 logger.info(f"Successfully restarted daemon: {daemon_name}")
                 return True
             else:
                 # Log the full response to understand why it failed
-                logger.error(f"Failed to restart daemon {daemon_name}. Circus response: {response}")
+                logger.error(
+                    f"Failed to restart daemon {daemon_name}. Circus response: {response}"
+                )
                 return False
         except Exception as exc:
-            logger.error(f"Exception while restarting daemon {daemon_name}: {type(exc).__name__}: {exc}", exc_info=exc)
+            logger.error(
+                f"Exception while restarting daemon {daemon_name}: {type(exc).__name__}: {exc}",
+                exc_info=exc,
+            )
             return False
 
     def _start_all_daemons_sync(self) -> bool:
@@ -776,7 +822,9 @@ class EmbeddedSupervisor(QObject):
             RuntimeError: If called in headless mode
         """
         if not self.gui_mode:
-            raise RuntimeError("Async methods not available in headless mode. Use _get_status_sync() instead.")
+            raise RuntimeError(
+                "Async methods not available in headless mode. Use _get_status_sync() instead."
+            )
         self._request_status.emit(daemon_name)
         return self.worker
 
@@ -797,7 +845,9 @@ class EmbeddedSupervisor(QObject):
             RuntimeError: If called in headless mode
         """
         if not self.gui_mode:
-            raise RuntimeError("Async methods not available in headless mode. Use _start_daemon_sync() instead.")
+            raise RuntimeError(
+                "Async methods not available in headless mode. Use _start_daemon_sync() instead."
+            )
         self._request_start.emit(daemon_name)
         return self.worker
 
@@ -818,7 +868,9 @@ class EmbeddedSupervisor(QObject):
             RuntimeError: If called in headless mode
         """
         if not self.gui_mode:
-            raise RuntimeError("Async methods not available in headless mode. Use _stop_daemon_sync() instead.")
+            raise RuntimeError(
+                "Async methods not available in headless mode. Use _stop_daemon_sync() instead."
+            )
         self._request_stop.emit(daemon_name)
         return self.worker
 
@@ -839,7 +891,9 @@ class EmbeddedSupervisor(QObject):
             RuntimeError: If called in headless mode
         """
         if not self.gui_mode:
-            raise RuntimeError("Async methods not available in headless mode. Use _restart_daemon_sync() instead.")
+            raise RuntimeError(
+                "Async methods not available in headless mode. Use _restart_daemon_sync() instead."
+            )
         self._request_restart.emit(daemon_name)
         return self.worker
 
@@ -860,7 +914,9 @@ class EmbeddedSupervisor(QObject):
             RuntimeError: If called in headless mode
         """
         if not self.gui_mode:
-            raise RuntimeError("Async methods not available in headless mode. Use _start_all_daemons_sync() instead.")
+            raise RuntimeError(
+                "Async methods not available in headless mode. Use _start_all_daemons_sync() instead."
+            )
         self._request_start_all.emit()
         return self.worker
 
@@ -881,7 +937,9 @@ class EmbeddedSupervisor(QObject):
             RuntimeError: If called in headless mode
         """
         if not self.gui_mode:
-            raise RuntimeError("Async methods not available in headless mode. Use _stop_all_daemons_sync() instead.")
+            raise RuntimeError(
+                "Async methods not available in headless mode. Use _stop_all_daemons_sync() instead."
+            )
         self._request_stop_all.emit()
         return self.worker
 
@@ -902,7 +960,9 @@ class EmbeddedSupervisor(QObject):
             RuntimeError: If called in headless mode
         """
         if not self.gui_mode:
-            raise RuntimeError("Async methods not available in headless mode. Use _restart_all_daemons_sync() instead.")
+            raise RuntimeError(
+                "Async methods not available in headless mode. Use _restart_all_daemons_sync() instead."
+            )
         self._request_restart_all.emit()
         return self.worker
 

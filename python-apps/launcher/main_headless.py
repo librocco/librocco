@@ -60,7 +60,9 @@ def main():
     # Create daemon manager (headless mode)
     daemon_manager = None
     try:
-        daemon_manager = create_daemon_manager(config, caddy_binary_path, gui_mode=False)
+        daemon_manager = create_daemon_manager(
+            config, caddy_binary_path, gui_mode=False
+        )
     except (RuntimeError, OSError, ValueError) as e:
         logger.error("Failed to initialize daemon manager", exc_info=e)
         return 1
@@ -95,11 +97,12 @@ def main():
         # Block forever (or until signal)
         # On Unix, signal.pause() is more efficient than a sleep loop
         # On Windows, we'll use an infinite loop with short sleeps
-        if hasattr(signal, 'pause'):
+        if hasattr(signal, "pause"):
             signal.pause()  # Unix only
         else:
             # Windows: poll in a loop
             import time
+
             while True:
                 time.sleep(1)
     except KeyboardInterrupt:

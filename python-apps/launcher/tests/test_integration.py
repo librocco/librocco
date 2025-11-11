@@ -65,6 +65,7 @@ def test_full_integration_workflow(setup_full_stack):
 
     # Wait for arbiter to initialize (intelligent polling instead of fixed sleep)
     from conftest import wait_for_circus_ready
+
     client = daemon_manager.client
     if not wait_for_circus_ready(client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize within 5 seconds")
@@ -88,21 +89,32 @@ def test_full_integration_workflow(setup_full_stack):
 
     # Wait for Caddy to be ready (intelligent polling instead of fixed sleep)
     from conftest import wait_for_caddy_ready
+
     caddy_host = "localhost"
 
     if not wait_for_caddy_ready(caddy_host, test_port, timeout=10.0):
-        pytest.fail(f"Caddy failed to start and respond on port {test_port} within 10 seconds")
+        pytest.fail(
+            f"Caddy failed to start and respond on port {test_port} within 10 seconds"
+        )
 
     # Step 4: Verify Caddy status is active (using sync method for tests)
     daemon_status = daemon_manager._get_status_sync("caddy")
-    assert daemon_status.status == "active", f"Caddy should be active, got: {daemon_status.status}"
-    assert daemon_status.pid is not None and daemon_status.pid > 0, "Caddy should have valid PID"
+    assert (
+        daemon_status.status == "active"
+    ), f"Caddy should be active, got: {daemon_status.status}"
+    assert (
+        daemon_status.pid is not None and daemon_status.pid > 0
+    ), "Caddy should have valid PID"
 
     # Step 5: Send HTTP request to Caddy and verify response
     try:
         response = requests.get(f"http://{caddy_host}:{test_port}", timeout=5)
-        assert response.status_code == 200, f"Expected HTTP 200, got: {response.status_code}"
-        assert "Hello from test Caddy" in response.text, "Should receive test message from Caddy"
+        assert (
+            response.status_code == 200
+        ), f"Expected HTTP 200, got: {response.status_code}"
+        assert (
+            "Hello from test Caddy" in response.text
+        ), "Should receive test message from Caddy"
     except requests.Timeout:
         pytest.fail("Caddy did not respond within timeout")
     except requests.ConnectionError as e:
@@ -125,6 +137,7 @@ def test_circus_endpoint_accessibility(setup_full_stack):
 
     # Wait for arbiter to initialize (intelligent polling)
     from conftest import wait_for_circus_ready
+
     client = daemon_manager.client
     if not wait_for_circus_ready(client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize within 5 seconds")
@@ -146,7 +159,10 @@ def test_circus_endpoint_accessibility(setup_full_stack):
     # Note: For 'status' command, the response contains the watcher's status directly
     # Response format: {"status": "active"} or {"status": "stopped"}
     response = client.send_message("status", name="caddy")
-    assert response.get("status") in ["active", "stopped"], f"Status should be active or stopped, got: {response.get('status')}"
+    assert response.get("status") in [
+        "active",
+        "stopped",
+    ], f"Status should be active or stopped, got: {response.get('status')}"
 
 
 @pytest.mark.slow
@@ -168,6 +184,7 @@ def test_caddy_restart_workflow(setup_full_stack):
 
     # Wait for arbiter (intelligent polling)
     from conftest import wait_for_circus_ready, wait_for_caddy_ready
+
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
@@ -192,6 +209,7 @@ def test_caddy_restart_workflow(setup_full_stack):
 
     # Wait for Circus status to update after restart completes
     from conftest import wait_for_daemon_status
+
     if not wait_for_daemon_status(daemon_manager, "caddy", "active", timeout=5.0):
         pytest.fail("Caddy status failed to update to 'active' after restart")
 
@@ -201,7 +219,9 @@ def test_caddy_restart_workflow(setup_full_stack):
 
     # Note: PID might be the same if restart was very fast, but usually it changes
     # Just verify it's a valid PID
-    assert status2.pid is not None and status2.pid > 0, "Caddy should have valid PID after restart"
+    assert (
+        status2.pid is not None and status2.pid > 0
+    ), "Caddy should have valid PID after restart"
 
     # Verify HTTP still works after restart
     try:
@@ -231,6 +251,7 @@ def test_graceful_shutdown(setup_full_stack):
 
     # Wait for arbiter (intelligent polling)
     from conftest import wait_for_circus_ready, wait_for_caddy_ready
+
     if not wait_for_circus_ready(daemon_manager.client, timeout=5.0):
         pytest.fail("Circus arbiter failed to initialize")
 
@@ -250,11 +271,16 @@ def test_graceful_shutdown(setup_full_stack):
 
     # Wait for Caddy port to close
     from conftest import wait_for_port_closed
+
     if not wait_for_port_closed("localhost", test_port, timeout=5.0):
         pytest.fail("Caddy port failed to close within 5 seconds after shutdown")
 
     # Verify daemon manager stopped
-    assert not daemon_manager._running, "Daemon manager should not be running after stop"
+    assert (
+        not daemon_manager._running
+    ), "Daemon manager should not be running after stop"
 
     # Verify Caddy port is closed
-    assert not is_port_open("localhost", test_port, timeout=1.0), "Caddy port should be closed after shutdown"
+    assert not is_port_open(
+        "localhost", test_port, timeout=1.0
+    ), "Caddy port should be closed after shutdown"

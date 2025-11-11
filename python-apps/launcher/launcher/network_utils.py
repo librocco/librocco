@@ -22,7 +22,7 @@ def get_local_hostname() -> str:
     """
     hostname = socket.gethostname()
     # Remove any domain suffix if present
-    hostname = hostname.split('.')[0]
+    hostname = hostname.split(".")[0]
     # Return hostname with .local suffix for mDNS
     return f"{hostname}.local"
 
@@ -58,17 +58,23 @@ def install_ca_certificate(cert_path: Path) -> tuple[bool, Optional[str]]:
             # Add to system keychain with trust settings
             subprocess.run(
                 [
-                    "sudo", "security", "add-trusted-cert",
+                    "sudo",
+                    "security",
+                    "add-trusted-cert",
                     "-d",  # Add to admin cert store
-                    "-r", "trustRoot",  # Trust as root
-                    "-k", "/Library/Keychains/System.keychain",
-                    str(cert_path)
+                    "-r",
+                    "trustRoot",  # Trust as root
+                    "-k",
+                    "/Library/Keychains/System.keychain",
+                    str(cert_path),
                 ],
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
             )
-            logger.info("Successfully installed CA certificate to macOS system keychain")
+            logger.info(
+                "Successfully installed CA certificate to macOS system keychain"
+            )
             return True, None
 
         elif system == "Linux":
@@ -81,14 +87,14 @@ def install_ca_certificate(cert_path: Path) -> tuple[bool, Optional[str]]:
                 subprocess.run(
                     ["sudo", "cp", str(cert_path), str(target)],
                     check=True,
-                    capture_output=True
+                    capture_output=True,
                 )
                 subprocess.run(
-                    ["sudo", "update-ca-certificates"],
-                    check=True,
-                    capture_output=True
+                    ["sudo", "update-ca-certificates"], check=True, capture_output=True
                 )
-                logger.info("Successfully installed CA certificate using update-ca-certificates")
+                logger.info(
+                    "Successfully installed CA certificate using update-ca-certificates"
+                )
                 return True, None
 
             # Method 2: Try trust command (RHEL/Fedora)
@@ -96,7 +102,7 @@ def install_ca_certificate(cert_path: Path) -> tuple[bool, Optional[str]]:
                 subprocess.run(
                     ["sudo", "trust", "anchor", str(cert_path)],
                     check=True,
-                    capture_output=True
+                    capture_output=True,
                 )
                 logger.info("Successfully installed CA certificate using trust command")
                 return True, None
@@ -107,6 +113,7 @@ def install_ca_certificate(cert_path: Path) -> tuple[bool, Optional[str]]:
             try:
                 # Find NSS certificate databases in common locations
                 import os
+
                 home = Path.home()
                 nss_dirs = [
                     home / ".pki" / "nssdb",  # Chrome/Chromium
@@ -120,19 +127,37 @@ def install_ca_certificate(cert_path: Path) -> tuple[bool, Optional[str]]:
                             for profile_dir in nss_dir.iterdir():
                                 if profile_dir.is_dir():
                                     subprocess.run(
-                                        ["certutil", "-A", "-n", "Librocco Launcher CA",
-                                         "-t", "C,,", "-i", str(cert_path),
-                                         "-d", f"sql:{profile_dir}"],
+                                        [
+                                            "certutil",
+                                            "-A",
+                                            "-n",
+                                            "Librocco Launcher CA",
+                                            "-t",
+                                            "C,,",
+                                            "-i",
+                                            str(cert_path),
+                                            "-d",
+                                            f"sql:{profile_dir}",
+                                        ],
                                         check=True,
-                                        capture_output=True
+                                        capture_output=True,
                                     )
                         else:
                             subprocess.run(
-                                ["certutil", "-A", "-n", "Librocco Launcher CA",
-                                 "-t", "C,,", "-i", str(cert_path),
-                                 "-d", f"sql:{nss_dir}"],
+                                [
+                                    "certutil",
+                                    "-A",
+                                    "-n",
+                                    "Librocco Launcher CA",
+                                    "-t",
+                                    "C,,",
+                                    "-i",
+                                    str(cert_path),
+                                    "-d",
+                                    f"sql:{nss_dir}",
+                                ],
                                 check=True,
-                                capture_output=True
+                                capture_output=True,
                             )
 
                 logger.info("Successfully installed CA certificate to NSS databases")
@@ -140,7 +165,10 @@ def install_ca_certificate(cert_path: Path) -> tuple[bool, Optional[str]]:
             except (subprocess.CalledProcessError, FileNotFoundError):
                 pass
 
-            return False, "Could not install certificate: No supported method found (tried update-ca-certificates, trust, certutil)"
+            return (
+                False,
+                "Could not install certificate: No supported method found (tried update-ca-certificates, trust, certutil)",
+            )
 
         elif system == "Windows":
             # Use certutil.exe to add to Root store
@@ -148,7 +176,7 @@ def install_ca_certificate(cert_path: Path) -> tuple[bool, Optional[str]]:
                 ["certutil", "-addstore", "Root", str(cert_path)],
                 check=True,
                 capture_output=True,
-                text=True
+                text=True,
             )
             logger.info("Successfully installed CA certificate to Windows Root store")
             return True, None
@@ -181,10 +209,16 @@ def check_ca_installed(cert_path: Path) -> bool:
         if system == "Darwin":  # macOS
             # Check system keychain
             result = subprocess.run(
-                ["security", "find-certificate", "-a", "-c", "Caddy Local Authority",
-                 "/Library/Keychains/System.keychain"],
+                [
+                    "security",
+                    "find-certificate",
+                    "-a",
+                    "-c",
+                    "Caddy Local Authority",
+                    "/Library/Keychains/System.keychain",
+                ],
                 capture_output=True,
-                text=True
+                text=True,
             )
             return result.returncode == 0
 
@@ -196,9 +230,7 @@ def check_ca_installed(cert_path: Path) -> bool:
         elif system == "Windows":
             # Check Root store
             result = subprocess.run(
-                ["certutil", "-store", "Root"],
-                capture_output=True,
-                text=True
+                ["certutil", "-store", "Root"], capture_output=True, text=True
             )
             return "Caddy Local Authority" in result.stdout
 
