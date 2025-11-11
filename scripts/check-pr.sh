@@ -58,4 +58,12 @@ if (( LARGE_DETECTED || BINARY_DETECTED )); then
   exit 1
 fi
 
+##########################
+# 3. Check that copied files stay in sync with their source
+##########################
+if ! cmp -s assets/favicon.svg apps/web-client/static/favicon.svg; then
+  echo "❌ files out of sync: apps/web-client/static/favicon.svg must match assets/favicon.svg"
+  exit 1
+fi
+
 echo "✅ all checks passed."
