@@ -71,7 +71,8 @@ jobs:
         run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
       - name: Start headless launcher in background
         run: |
-          uv run --directory python-apps/launcher python main_headless.py &
+          mkdir -p ~/.local/share/librocco-launcher/logs
+          uv run --directory python-apps/launcher python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
           echo $! > /tmp/launcher.pid
           echo "Started launcher (PID: $(cat /tmp/launcher.pid))"
       - name: Wait for services to be ready
@@ -100,7 +101,7 @@ jobs:
         if: always()
         with:
           name: launcher-logs-${{ matrix.shardIndex }}
-          path: ~/.librocco-launcher/logs/
+          path: ~/.local/share/librocco-launcher/logs/
           retention-days: 2
 
   lint-and-typecheck:
