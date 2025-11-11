@@ -12,6 +12,7 @@ from PyQt6.QtCore import QCoreApplication, QTimer
 
 from .error_handler import ErrorHandler
 from .i18n import _
+from .icon_manager import IconManager
 
 logger = logging.getLogger("launcher")
 
@@ -35,10 +36,12 @@ class TrayApp:
             self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)
 
-        # Create the tray icon
+        # Initialize icon manager
+        self.icon_manager = IconManager()
+
+        # Create the tray icon with initial "stopped" state for both services
         self.tray_icon = QSystemTrayIcon()
-        icon = self.app.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon)
-        self.tray_icon.setIcon(icon)
+        self.tray_icon.setIcon(self.icon_manager.get_icon_for_states("stopped", "stopped"))
 
         # Create menu
         self.menu = QMenu()
@@ -213,6 +216,7 @@ class TrayApp:
                 self.system_status_action.setText(_("System Status: ⚠ Error"))
                 self.caddy_status_action.setText(_("  Caddy: ⚠ Error"))
                 self.syncserver_status_action.setText(_("  Sync Server: ⚠ Error"))
+                self.tray_icon.setIcon(self.icon_manager.get_icon_for_states("error", "error"))
                 self._update_menu_states(None, None)
                 return
 
@@ -230,7 +234,12 @@ class TrayApp:
             self._update_daemon_status_label(caddy_status, self.caddy_status_action, "Caddy")
             self._update_daemon_status_label(syncserver_status, self.syncserver_status_action, "Sync Server")
 
-            # Determine overall system status
+            # Update tray icon with both service states (two badges)
+            caddy_state = caddy_status.status if caddy_status else "stopped"
+            syncserver_state = syncserver_status.status if syncserver_status else "stopped"
+            self.tray_icon.setIcon(self.icon_manager.get_icon_for_states(caddy_state, syncserver_state))
+
+            # Determine overall system status for text display
             caddy_running = caddy_status and caddy_status.status == "active"
             syncserver_running = syncserver_status and syncserver_status.status == "active"
             caddy_starting = caddy_status and caddy_status.status == "starting"
