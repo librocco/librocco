@@ -13,6 +13,7 @@ from PyQt6.QtCore import QCoreApplication, QTimer
 from .error_handler import ErrorHandler
 from .i18n import _
 from .icon_manager import IconManager
+from .network_utils import get_caddy_root_ca_path, check_ca_installed, install_ca_certificate
 
 logger = logging.getLogger("launcher")
 
@@ -136,6 +137,11 @@ class TrayApp:
         open_browser_action = QAction(_("Open in Browser"), self.menu)
         open_browser_action.triggered.connect(self.open_browser)
         self.menu.addAction(open_browser_action)
+
+        # Certificate installation action (only shown when CA is not installed)
+        self.install_ca_action = QAction(_("Remove Browser Warning..."), self.menu)
+        self.install_ca_action.triggered.connect(self.install_certificate)
+        self.menu.addAction(self.install_ca_action)
 
         self.menu.addSeparator()
 
@@ -298,6 +304,9 @@ class TrayApp:
             # Update menu item states
             self._update_menu_states(caddy_status, syncserver_status)
 
+            # Update certificate menu state
+            self._update_certificate_menu_state()
+
         except (AttributeError, TypeError) as exc:
             self.system_status_action.setText(_("System Status: ⚠ Error"))
             ErrorHandler.log_exception("status update handler", exc)
@@ -403,6 +412,92 @@ class TrayApp:
         """Restart all daemons (async, non-blocking)."""
         logger.info("User initiated: Restart System")
         self.daemon_manager.restart_all_daemons()
+
+    def install_certificate(self):
+        """Install the CA certificate to remove browser security warnings."""
+        try:
+            logger.info("User initiated: Install CA Certificate")
+
+            # Get the CA certificate path
+            ca_path = get_caddy_root_ca_path(self.config.caddy_data_dir)
+
+            # Check if certificate file exists
+            if not ca_path.exists():
+                self.show_message(
+                    _("Certificate Not Found"),
+                    _("The CA certificate hasn't been generated yet. Please start Caddy first."),
+                    error=True,
+                )
+                return
+
+            # Check if already installed
+            if check_ca_installed(ca_path):
+                self.show_message(
+                    _("Already Installed"),
+                    _("The CA certificate is already installed in your system trust store."),
+                )
+                return
+
+            # Show confirmation dialog
+            reply = QMessageBox.question(
+                None,
+                _("Install CA Certificate"),
+                _(
+                    "This will install Caddy's CA certificate into your system trust store.\n\n"
+                    "This requires administrator privileges and will allow your browser to trust "
+                    "the local HTTPS connection without security warnings.\n\n"
+                    "Continue?"
+                ),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+
+            if reply != QMessageBox.StandardButton.Yes:
+                logger.info("User cancelled CA certificate installation")
+                return
+
+            # Perform installation
+            logger.info(f"Installing CA certificate from: {ca_path}")
+            success, error = install_ca_certificate(ca_path, use_elevation=True)
+
+            if success:
+                self.show_message(
+                    _("Certificate Installed"),
+                    _("The CA certificate has been installed successfully. "
+                      "Your browser should now trust the HTTPS connection."),
+                )
+                # Update menu to hide the install action
+                self._update_certificate_menu_state()
+            else:
+                ErrorHandler.handle_error(
+                    _("Installation Failed"),
+                    _("Failed to install the CA certificate: ") + (error or _("Unknown error")),
+                    show_dialog=True,
+                    parent=None,
+                )
+
+        except Exception as e:
+            ErrorHandler.handle_error(
+                _("Certificate Error"),
+                _("An unexpected error occurred while installing the certificate."),
+                exception=e,
+                show_dialog=True,
+                parent=None,
+            )
+
+    def _update_certificate_menu_state(self):
+        """Update the visibility of the certificate installation menu item."""
+        try:
+            ca_path = get_caddy_root_ca_path(self.config.caddy_data_dir)
+            is_installed = ca_path.exists() and check_ca_installed(ca_path)
+
+            # Show the menu item only if CA is not installed
+            self.install_ca_action.setVisible(not is_installed)
+
+        except Exception as e:
+            logger.debug(f"Error checking CA installation status: {e}")
+            # On error, show the menu item to be safe
+            self.install_ca_action.setVisible(True)
 
     def show_message(self, title: str, message: str, error: bool = False):
         """Show a system tray message."""
