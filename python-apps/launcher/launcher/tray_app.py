@@ -41,7 +41,9 @@ class TrayApp:
 
         # Create the tray icon with initial "stopped" state for both services
         self.tray_icon = QSystemTrayIcon()
-        self.tray_icon.setIcon(self.icon_manager.get_icon_for_states("stopped", "stopped"))
+        self.tray_icon.setIcon(
+            self.icon_manager.get_icon_for_states("stopped", "stopped")
+        )
 
         # Create menu
         self.menu = QMenu()
@@ -60,7 +62,7 @@ class TrayApp:
         # Set up signal handlers for graceful shutdown
         signal.signal(signal.SIGINT, self.signal_handler)
         # SIGTERM is not available on Windows
-        if hasattr(signal, 'SIGTERM'):
+        if hasattr(signal, "SIGTERM"):
             signal.signal(signal.SIGTERM, self.sigterm_handler)
 
         # Timer to allow Python to process signals
@@ -75,7 +77,9 @@ class TrayApp:
 
         # Connect to daemon manager worker signals for async operations
         self.daemon_manager.worker.status_ready.connect(self._handle_status_update)
-        self.daemon_manager.worker.operation_complete.connect(self._handle_operation_complete)
+        self.daemon_manager.worker.operation_complete.connect(
+            self._handle_operation_complete
+        )
         self.daemon_manager.worker.error_occurred.connect(self._handle_worker_error)
 
         # Initial status update
@@ -105,18 +109,26 @@ class TrayApp:
         if QSystemTrayIcon.isSystemTrayAvailable():
             self.tray_icon.show()
             self._tray_retry_timer.stop()
-            logger.info(f"Tray icon shown successfully after {self._tray_retry_count} retries")
+            logger.info(
+                f"Tray icon shown successfully after {self._tray_retry_count} retries"
+            )
         elif self._tray_retry_count >= max_retries:
             self._tray_retry_timer.stop()
-            logger.error(f"System tray not available after {self.TRAY_MAX_WAIT_SECONDS} seconds")
+            logger.error(
+                f"System tray not available after {self.TRAY_MAX_WAIT_SECONDS} seconds"
+            )
             QMessageBox.critical(
                 None,
                 _("System Tray Error"),
-                _("Could not create system tray icon. The system tray may not be available.")
+                _(
+                    "Could not create system tray icon. The system tray may not be available."
+                ),
             )
             sys.exit(1)
         else:
-            logger.debug(f"Retrying tray icon creation (attempt {self._tray_retry_count}/{max_retries})...")
+            logger.debug(
+                f"Retrying tray icon creation (attempt {self._tray_retry_count}/{max_retries})..."
+            )
 
     def _create_menu(self):
         """Create the tray menu with status-first design."""
@@ -128,7 +140,9 @@ class TrayApp:
         self.menu.addSeparator()
 
         # System status labels (will be updated dynamically)
-        self.system_status_action = QAction(_("System Status: ◐ Checking..."), self.menu)
+        self.system_status_action = QAction(
+            _("System Status: ◐ Checking..."), self.menu
+        )
         self.system_status_action.setEnabled(False)
         self.menu.addAction(self.system_status_action)
 
@@ -136,7 +150,9 @@ class TrayApp:
         self.caddy_status_action.setEnabled(False)
         self.menu.addAction(self.caddy_status_action)
 
-        self.syncserver_status_action = QAction(_("  Sync Server: Checking..."), self.menu)
+        self.syncserver_status_action = QAction(
+            _("  Sync Server: Checking..."), self.menu
+        )
         self.syncserver_status_action.setEnabled(False)
         self.menu.addAction(self.syncserver_status_action)
 
@@ -198,7 +214,6 @@ class TrayApp:
                 parent=None,
             )
 
-
     def update_status(self):
         """Request status update from daemon manager (async, non-blocking)."""
         # Call async method - result will arrive via status_ready signal
@@ -216,7 +231,9 @@ class TrayApp:
                 self.system_status_action.setText(_("System Status: ⚠ Error"))
                 self.caddy_status_action.setText(_("  Caddy: ⚠ Error"))
                 self.syncserver_status_action.setText(_("  Sync Server: ⚠ Error"))
-                self.tray_icon.setIcon(self.icon_manager.get_icon_for_states("error", "error"))
+                self.tray_icon.setIcon(
+                    self.icon_manager.get_icon_for_states("error", "error")
+                )
                 self._update_menu_states(None, None)
                 return
 
@@ -225,27 +242,43 @@ class TrayApp:
                 caddy_status, syncserver_status = statuses
             else:
                 # Legacy: single DaemonStatus object (shouldn't happen with new code)
-                logger.warning("Received single DaemonStatus instead of tuple - updating to use get_system_status")
+                logger.warning(
+                    "Received single DaemonStatus instead of tuple - updating to use get_system_status"
+                )
                 # Request a proper system status update
                 self.daemon_manager.get_system_status()
                 return
 
             # Update individual daemon status labels
-            self._update_daemon_status_label(caddy_status, self.caddy_status_action, "Caddy")
-            self._update_daemon_status_label(syncserver_status, self.syncserver_status_action, "Sync Server")
+            self._update_daemon_status_label(
+                caddy_status, self.caddy_status_action, "Caddy"
+            )
+            self._update_daemon_status_label(
+                syncserver_status, self.syncserver_status_action, "Sync Server"
+            )
 
             # Update tray icon with both service states (two badges)
             caddy_state = caddy_status.status if caddy_status else "stopped"
-            syncserver_state = syncserver_status.status if syncserver_status else "stopped"
-            self.tray_icon.setIcon(self.icon_manager.get_icon_for_states(caddy_state, syncserver_state))
+            syncserver_state = (
+                syncserver_status.status if syncserver_status else "stopped"
+            )
+            self.tray_icon.setIcon(
+                self.icon_manager.get_icon_for_states(caddy_state, syncserver_state)
+            )
 
             # Determine overall system status for text display
             caddy_running = caddy_status and caddy_status.status == "active"
-            syncserver_running = syncserver_status and syncserver_status.status == "active"
+            syncserver_running = (
+                syncserver_status and syncserver_status.status == "active"
+            )
             caddy_starting = caddy_status and caddy_status.status == "starting"
-            syncserver_starting = syncserver_status and syncserver_status.status == "starting"
+            syncserver_starting = (
+                syncserver_status and syncserver_status.status == "starting"
+            )
             caddy_stopped = caddy_status and caddy_status.status == "stopped"
-            syncserver_stopped = syncserver_status and syncserver_status.status == "stopped"
+            syncserver_stopped = (
+                syncserver_status and syncserver_status.status == "stopped"
+            )
 
             if caddy_running and syncserver_running:
                 self.system_status_action.setText(_("System Status: ● All Running"))
@@ -253,8 +286,12 @@ class TrayApp:
                 self.system_status_action.setText(_("System Status: ○ Stopped"))
             elif caddy_starting or syncserver_starting:
                 self.system_status_action.setText(_("System Status: ◐ Starting..."))
-            elif (caddy_running and not syncserver_running) or (not caddy_running and syncserver_running):
-                self.system_status_action.setText(_("System Status: ⚠ Partially Running"))
+            elif (caddy_running and not syncserver_running) or (
+                not caddy_running and syncserver_running
+            ):
+                self.system_status_action.setText(
+                    _("System Status: ⚠ Partially Running")
+                )
             else:
                 self.system_status_action.setText(_("System Status: ⚠ Unknown"))
 
@@ -303,17 +340,29 @@ class TrayApp:
             if success:
                 # Show success message
                 if operation == "start":
-                    self.show_message(_("Caddy Started"), _("Caddy daemon is starting..."))
+                    self.show_message(
+                        _("Caddy Started"), _("Caddy daemon is starting...")
+                    )
                 elif operation == "stop":
-                    self.show_message(_("Caddy Stopped"), _("Caddy daemon is stopping..."))
+                    self.show_message(
+                        _("Caddy Stopped"), _("Caddy daemon is stopping...")
+                    )
                 elif operation == "restart":
-                    self.show_message(_("Caddy Restarted"), _("Caddy daemon is restarting..."))
+                    self.show_message(
+                        _("Caddy Restarted"), _("Caddy daemon is restarting...")
+                    )
                 elif operation == "start_all":
-                    self.show_message(_("System Started"), _("Starting all services..."))
+                    self.show_message(
+                        _("System Started"), _("Starting all services...")
+                    )
                 elif operation == "stop_all":
-                    self.show_message(_("System Stopped"), _("Stopping all services..."))
+                    self.show_message(
+                        _("System Stopped"), _("Stopping all services...")
+                    )
                 elif operation == "restart_all":
-                    self.show_message(_("System Restarted"), _("Restarting all services..."))
+                    self.show_message(
+                        _("System Restarted"), _("Restarting all services...")
+                    )
             else:
                 # Show error message
                 logger.error(f"Failed to {operation}")
@@ -340,7 +389,6 @@ class TrayApp:
             parent=None,
         )
 
-
     def start_system(self):
         """Start all daemons (async, non-blocking)."""
         logger.info("User initiated: Start System")
@@ -355,7 +403,6 @@ class TrayApp:
         """Restart all daemons (async, non-blocking)."""
         logger.info("User initiated: Restart System")
         self.daemon_manager.restart_all_daemons()
-
 
     def show_message(self, title: str, message: str, error: bool = False):
         """Show a system tray message."""

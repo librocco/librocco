@@ -13,6 +13,7 @@ def test_sigterm_availability_on_windows():
     As of Python 3.13, SIGTERM is available on Windows, so this test
     verifies that signal.SIGTERM can be registered successfully on all platforms.
     """
+
     def dummy_handler(sig, frame):
         pass
 
@@ -41,7 +42,7 @@ def test_sigterm_proper_handling():
     signal.signal(signal.SIGINT, dummy_handler)
 
     # SIGTERM should be conditionally registered
-    if hasattr(signal, 'SIGTERM'):
+    if hasattr(signal, "SIGTERM"):
         signal.signal(signal.SIGTERM, dummy_handler)
         assert True, "SIGTERM handler registered successfully"
     else:
@@ -51,7 +52,7 @@ def test_sigterm_proper_handling():
 
 @pytest.mark.skipif(
     platform.system() != "Windows",
-    reason="This test only runs on Windows to validate the fix"
+    reason="This test only runs on Windows to validate the fix",
 )
 def test_tray_app_initialization_on_windows(mock_config):
     """
@@ -109,8 +110,8 @@ def test_platform_specific_signal_constants():
         "SIGINT": hasattr(signal, "SIGINT"),
         "SIGTERM": hasattr(signal, "SIGTERM"),
         "SIGBREAK": hasattr(signal, "SIGBREAK"),  # Windows-specific
-        "SIGHUP": hasattr(signal, "SIGHUP"),      # Unix-specific
-        "SIGKILL": hasattr(signal, "SIGKILL"),    # Unix-specific
+        "SIGHUP": hasattr(signal, "SIGHUP"),  # Unix-specific
+        "SIGKILL": hasattr(signal, "SIGKILL"),  # Unix-specific
     }
 
     # Log what's available on this platform
@@ -122,10 +123,16 @@ def test_platform_specific_signal_constants():
     assert available_signals["SIGINT"], "SIGINT should be available on all platforms"
 
     # SIGTERM is now available on all platforms (Python 3.13+)
-    assert available_signals["SIGTERM"], "SIGTERM should be available on all platforms (Python 3.13+)"
+    assert available_signals[
+        "SIGTERM"
+    ], "SIGTERM should be available on all platforms (Python 3.13+)"
 
     if current_platform == "Windows":
         assert available_signals["SIGBREAK"], "SIGBREAK should be available on Windows"
     else:
-        assert available_signals["SIGHUP"], "SIGHUP should be available on Unix-like systems"
-        assert available_signals["SIGKILL"], "SIGKILL should be available on Unix-like systems"
+        assert available_signals[
+            "SIGHUP"
+        ], "SIGHUP should be available on Unix-like systems"
+        assert available_signals[
+            "SIGKILL"
+        ], "SIGKILL should be available on Unix-like systems"

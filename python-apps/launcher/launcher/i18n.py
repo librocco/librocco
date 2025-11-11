@@ -128,11 +128,15 @@ def _(message: str) -> str:
         Translated message, or original message if translation not available
     """
     if _translate is None:
-        raise RuntimeError(
-            "i18n not initialized. Call setup_i18n() before using _()."
-        )
+        raise RuntimeError("i18n not initialized. Call setup_i18n() before using _().")
     return _translate(message)
 
 
 # Export the translation function
-__all__ = ["setup_i18n", "detect_locale", "_", "SUPPORTED_LANGUAGES", "DEFAULT_LANGUAGE"]
+__all__ = [
+    "setup_i18n",
+    "detect_locale",
+    "_",
+    "SUPPORTED_LANGUAGES",
+    "DEFAULT_LANGUAGE",
+]

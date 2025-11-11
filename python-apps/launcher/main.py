@@ -86,8 +86,10 @@ def main():
         logger.error("Failed to initialize daemon manager", exc_info=e)
         ErrorHandler.handle_critical_error(
             _("Daemon Manager Error"),
-            _("Failed to initialize the daemon manager.\n\n"
-            "Check the logs for details."),
+            _(
+                "Failed to initialize the daemon manager.\n\n"
+                "Check the logs for details."
+            ),
             exception=e,
         )
         return 1
@@ -105,8 +107,10 @@ def main():
             logger.error("System tray is not available on this system")
             ErrorHandler.handle_critical_error(
                 _("System Tray Unavailable"),
-                _("System tray is not available on this system.\n\n"
-                "The launcher requires a system tray to function."),
+                _(
+                    "System tray is not available on this system.\n\n"
+                    "The launcher requires a system tray to function."
+                ),
             )
             daemon_manager.stop()
             return 1
@@ -125,8 +129,10 @@ def main():
         logger.error("Failed to start tray application", exc_info=e)
         ErrorHandler.handle_critical_error(
             _("Application Error"),
-            _("Failed to start the tray application.\n\n"
-            "Check the logs for details."),
+            _(
+                "Failed to start the tray application.\n\n"
+                "Check the logs for details."
+            ),
             exception=e,
         )
         daemon_manager.stop()

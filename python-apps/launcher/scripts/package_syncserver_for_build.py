@@ -32,13 +32,7 @@ def run_command(cmd: list[str], cwd: Path = None, description: str = ""):
     """Run a command and handle errors."""
     print(f"→ {description or ' '.join(cmd)}")
     try:
-        subprocess.run(
-            cmd,
-            cwd=cwd,
-            check=True,
-            capture_output=True,
-            text=True
-        )
+        subprocess.run(cmd, cwd=cwd, check=True, capture_output=True, text=True)
     except subprocess.CalledProcessError as e:
         print(f"✗ Command failed: {' '.join(cmd)}", file=sys.stderr)
         print(f"  Error: {e.stderr}", file=sys.stderr)
@@ -56,9 +50,7 @@ def main():
     # Step 1: Build sync server with esbuild
     print("[1/4] Building sync server with esbuild...")
     run_command(
-        ["npm", "run", "build"],
-        cwd=sync_server_dir,
-        description="Building sync server"
+        ["npm", "run", "build"], cwd=sync_server_dir, description="Building sync server"
     )
 
     # Verify build output
@@ -66,7 +58,9 @@ def main():
     if not compiled_server.exists():
         print(f"✗ Build failed: {compiled_server} not found", file=sys.stderr)
         return 1
-    print(f"✓ Built: {compiled_server} ({compiled_server.stat().st_size / 1024:.0f} KB)")
+    print(
+        f"✓ Built: {compiled_server} ({compiled_server.stat().st_size / 1024:.0f} KB)"
+    )
     print()
 
     # Step 2: Create bundled directory structure
@@ -97,8 +91,8 @@ def main():
             "@vlcn.io/crsqlite": "0.16.1",
             "@vlcn.io/logger-provider": "0.2.0",
             "@vlcn.io/ws-common": "0.2.0",
-            "better-sqlite3": "~11.4.0"
-        }
+            "better-sqlite3": "~11.4.0",
+        },
     }
 
     # Write package.json
@@ -112,15 +106,25 @@ def main():
     run_command(
         ["npm", "install", "--production", "--no-optional"],
         cwd=bundled_dir,
-        description="Installing dependencies with npm"
+        description="Installing dependencies with npm",
     )
 
     # Count packages installed
     node_modules_dest = bundled_dir / "node_modules"
     if node_modules_dest.exists():
-        package_count = len([d for d in node_modules_dest.iterdir() if d.is_dir() and not d.name.startswith(".")])
-        node_modules_size = sum(f.stat().st_size for f in node_modules_dest.rglob("*") if f.is_file())
-        print(f"✓ Installed {package_count} top-level packages (~{node_modules_size / 1024 / 1024:.0f} MB)")
+        package_count = len(
+            [
+                d
+                for d in node_modules_dest.iterdir()
+                if d.is_dir() and not d.name.startswith(".")
+            ]
+        )
+        node_modules_size = sum(
+            f.stat().st_size for f in node_modules_dest.rglob("*") if f.is_file()
+        )
+        print(
+            f"✓ Installed {package_count} top-level packages (~{node_modules_size / 1024 / 1024:.0f} MB)"
+        )
     else:
         print(f"✗ node_modules not created", file=sys.stderr)
         return 1

@@ -49,10 +49,7 @@ def wait_for_caddy_ready(host: str, port: int, timeout: float = 10.0) -> bool:
     start = time.time()
     while time.time() - start < timeout:
         try:
-            response = requests.get(
-                f"http://{host}:{port}",
-                timeout=1.0
-            )
+            response = requests.get(f"http://{host}:{port}", timeout=1.0)
             if response.status_code == 200:
                 return True
         except (requests.ConnectionError, requests.Timeout, requests.RequestException):
@@ -61,7 +58,9 @@ def wait_for_caddy_ready(host: str, port: int, timeout: float = 10.0) -> bool:
     return False
 
 
-def wait_for_daemon_status(daemon_manager, daemon_name: str, expected_status: str, timeout: float = 5.0) -> bool:
+def wait_for_daemon_status(
+    daemon_manager, daemon_name: str, expected_status: str, timeout: float = 5.0
+) -> bool:
     """Poll daemon status until it reaches expected state or timeout.
 
     Args:
@@ -165,26 +164,26 @@ def mock_config(temp_data_dir, caddy_binary_path, monkeypatch):
 
     # Override the caddy_binary_path property to use session-scoped binary
     monkeypatch.setattr(
-        type(config),
-        "caddy_binary_path",
-        property(lambda self: caddy_binary_path)
+        type(config), "caddy_binary_path", property(lambda self: caddy_binary_path)
     )
 
     # Add mock properties for node and syncserver (tests don't need real ones)
     monkeypatch.setattr(
         type(config),
         "node_binary_path",
-        property(lambda self: temp_data_dir / "binaries" / "node")
+        property(lambda self: temp_data_dir / "binaries" / "node"),
     )
     monkeypatch.setattr(
         type(config),
         "syncserver_script_path",
-        property(lambda self: temp_data_dir / "binaries" / "syncserver" / "syncserver.mjs")
+        property(
+            lambda self: temp_data_dir / "binaries" / "syncserver" / "syncserver.mjs"
+        ),
     )
     monkeypatch.setattr(
         type(config),
         "syncserver_dir_path",
-        property(lambda self: temp_data_dir / "binaries" / "syncserver")
+        property(lambda self: temp_data_dir / "binaries" / "syncserver"),
     )
 
     return config
@@ -195,7 +194,7 @@ def test_port():
     """Find and return an available port for testing."""
     # Create a socket, bind to port 0 (OS will assign free port), then close it
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.bind(('localhost', 0))
+    sock.bind(("localhost", 0))
     port = sock.getsockname()[1]
     sock.close()
     return port

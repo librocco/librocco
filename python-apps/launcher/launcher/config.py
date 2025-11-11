@@ -204,5 +204,6 @@ https://{hostname}:{CADDY_PORT}, https://localhost:{CADDY_PORT} {{
         Always returns HTTPS URL with auto-detected hostname.
         """
         from .network_utils import get_local_hostname
+
         hostname = get_local_hostname()
         return f"https://{hostname}:{CADDY_PORT}"

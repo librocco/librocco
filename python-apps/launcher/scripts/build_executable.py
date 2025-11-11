@@ -25,7 +25,7 @@ def print_step(step_num: int, total: int, message: str):
     """Print a formatted step message."""
     print(f"\n{'=' * 70}")
     print(f"Step {step_num}/{total}: {message}")
-    print('=' * 70)
+    print("=" * 70)
 
 
 def run_command(cmd: list, description: str, cwd: Path = None) -> bool:
@@ -49,11 +49,13 @@ def main():
     # Paths
     launcher_dir = Path(__file__).parent.parent
     project_root = launcher_dir.parent.parent
-    web_client_build = project_root / 'apps' / 'web-client' / 'build'
-    spec_file = launcher_dir / 'librocco-launcher.spec'
-    download_caddy_script = launcher_dir / 'scripts' / 'download_caddy_for_build.py'
-    download_node_script = launcher_dir / 'scripts' / 'download_node_for_build.py'
-    package_syncserver_script = launcher_dir / 'scripts' / 'package_syncserver_for_build.py'
+    web_client_build = project_root / "apps" / "web-client" / "build"
+    spec_file = launcher_dir / "librocco-launcher.spec"
+    download_caddy_script = launcher_dir / "scripts" / "download_caddy_for_build.py"
+    download_node_script = launcher_dir / "scripts" / "download_node_for_build.py"
+    package_syncserver_script = (
+        launcher_dir / "scripts" / "package_syncserver_for_build.py"
+    )
 
     print("=" * 70)
     print("Librocco Launcher - Build Executable")
@@ -69,7 +71,9 @@ def main():
         return 1
 
     # Run with uv since these scripts have uv shebangs and dependencies
-    if not run_command(["uv", "run", str(download_node_script)], "Download Node.js binary"):
+    if not run_command(
+        ["uv", "run", str(download_node_script)], "Download Node.js binary"
+    ):
         return 1
 
     # Step 2: Download Caddy
@@ -80,18 +84,24 @@ def main():
         return 1
 
     # Run with uv since these scripts have uv shebangs and dependencies
-    if not run_command(["uv", "run", str(download_caddy_script)], "Download Caddy binary"):
+    if not run_command(
+        ["uv", "run", str(download_caddy_script)], "Download Caddy binary"
+    ):
         return 1
 
     # Step 3: Package sync server
     print_step(3, 5, "Packaging sync server")
 
     if not package_syncserver_script.exists():
-        print(f"✗ Package script not found: {package_syncserver_script}", file=sys.stderr)
+        print(
+            f"✗ Package script not found: {package_syncserver_script}", file=sys.stderr
+        )
         return 1
 
     # Run with uv since these scripts have uv shebangs and dependencies
-    if not run_command(["uv", "run", str(package_syncserver_script)], "Package sync server"):
+    if not run_command(
+        ["uv", "run", str(package_syncserver_script)], "Package sync server"
+    ):
         return 1
 
     # Step 4: Verify web client build
@@ -107,7 +117,10 @@ def main():
     # Check if build has files
     build_files = list(web_client_build.iterdir())
     if not build_files:
-        print(f"\n✗ Web client build directory is empty: {web_client_build}", file=sys.stderr)
+        print(
+            f"\n✗ Web client build directory is empty: {web_client_build}",
+            file=sys.stderr,
+        )
         return 1
 
     print(f"✓ Web client build found ({len(build_files)} files)")
@@ -121,9 +134,9 @@ def main():
 
     # Run PyInstaller from the launcher directory via uv
     if not run_command(
-        ['uv', 'run', 'pyinstaller', '--clean', str(spec_file)],
+        ["uv", "run", "pyinstaller", "--clean", str(spec_file)],
         "PyInstaller build",
-        cwd=launcher_dir
+        cwd=launcher_dir,
     ):
         return 1
 
@@ -133,9 +146,9 @@ def main():
     print("=" * 70)
 
     # Show output location
-    dist_dir = launcher_dir / 'dist'
+    dist_dir = launcher_dir / "dist"
     if dist_dir.exists():
-        executables = list(dist_dir.glob('librocco-launcher*'))
+        executables = list(dist_dir.glob("librocco-launcher*"))
         if executables:
             print(f"\nExecutable created at:")
             for exe in executables:
