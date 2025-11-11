@@ -61,7 +61,7 @@ def main():
         logger.info(f"Logs directory: {config.logs_dir}")
         logger.info(f"App directory: {app_dir}")
 
-    except Exception as e:
+    except (OSError, PermissionError, ValueError, FileNotFoundError) as e:
         show_error_dialog(
             _("Configuration Error"),
             _("Failed to initialize configuration:\n\n{0}").format(e),
@@ -82,7 +82,7 @@ def main():
     daemon_manager = None
     try:
         daemon_manager = create_daemon_manager(config, caddy_binary_path, gui_mode=True)
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError) as e:
         logger.error("Failed to initialize daemon manager", exc_info=e)
         ErrorHandler.handle_critical_error(
             _("Daemon Manager Error"),
@@ -121,7 +121,7 @@ def main():
         # Run the application
         return app.run()
 
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError) as e:
         logger.error("Failed to start tray application", exc_info=e)
         ErrorHandler.handle_critical_error(
             _("Application Error"),

@@ -46,7 +46,7 @@ def main():
         logger.info(f"Logs directory: {config.logs_dir}")
         logger.info(f"App directory: {app_dir}")
 
-    except Exception as e:
+    except (OSError, PermissionError, ValueError, FileNotFoundError) as e:
         print(f"ERROR: Failed to initialize configuration: {e}", file=sys.stderr)
         return 1
 
@@ -61,7 +61,7 @@ def main():
     daemon_manager = None
     try:
         daemon_manager = create_daemon_manager(config, caddy_binary_path, gui_mode=False)
-    except Exception as e:
+    except (RuntimeError, OSError, ValueError) as e:
         logger.error("Failed to initialize daemon manager", exc_info=e)
         return 1
 
