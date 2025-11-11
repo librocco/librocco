@@ -56,22 +56,33 @@ class LogViewerDialog(QDialog):
         self.status_label.setStyleSheet("font-weight: bold; padding: 5px;")
         layout.addWidget(self.status_label)
 
-        # Tab widget for stdout and stderr
+        # Tab widget for log streams
         self.tabs = QTabWidget()
 
-        # Stdout tab
+        # Primary log tab
         self.stdout_text = QTextEdit()
         self.stdout_text.setReadOnly(True)
         self.stdout_text.setFont(QFont("Monospace", 9))
         self.stdout_text.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-        self.tabs.addTab(self.stdout_text, _("Standard Output"))
 
-        # Stderr tab
+        # Secondary log tab
         self.stderr_text = QTextEdit()
         self.stderr_text.setReadOnly(True)
         self.stderr_text.setFont(QFont("Monospace", 9))
         self.stderr_text.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-        self.tabs.addTab(self.stderr_text, _("Standard Error"))
+
+        # Set tab labels based on daemon type
+        if self.daemon_name == "caddy":
+            self.tabs.addTab(self.stdout_text, _("Server Logs"))
+            self.tabs.addTab(self.stderr_text, _("Access Logs"))
+        elif self.daemon_name == "syncserver":
+            self.tabs.addTab(self.stdout_text, _("Sync Server Logs"))
+            # Hide second tab for syncserver (no secondary logs)
+            # Still create it but don't add it to tabs
+        else:
+            # Generic fallback
+            self.tabs.addTab(self.stdout_text, _("Primary Logs"))
+            self.tabs.addTab(self.stderr_text, _("Secondary Logs"))
 
         layout.addWidget(self.tabs)
 
@@ -120,6 +131,23 @@ class LogViewerDialog(QDialog):
                 self.status_label.setText(_("Status: ERROR"))
                 return
 
+            # Handle tuple from get_system_status (extract our daemon's status)
+            if isinstance(status, tuple):
+                caddy_status, syncserver_status = status
+                # Pick the status for the daemon we're viewing
+                if self.daemon_name == "caddy":
+                    status = caddy_status
+                elif self.daemon_name == "syncserver":
+                    status = syncserver_status
+                else:
+                    # Unknown daemon, just use the first status
+                    status = caddy_status
+
+            # Now process the single daemon status
+            if not status:
+                self.status_label.setText(_("Status: UNKNOWN"))
+                return
+
             # Translators: {0} is replaced with the status (e.g., "RUNNING", "STOPPED")
             status_text = _("Status: {0}").format(status.status.upper())
             if status.pid:
@@ -131,7 +159,7 @@ class LogViewerDialog(QDialog):
                 status_text += f" | {_('Uptime: {0}').format(uptime_str)}"
             self.status_label.setText(status_text)
 
-        except AttributeError as exc:
+        except (AttributeError, TypeError) as exc:
             # Translators: {0} is replaced with the error message
             self.status_label.setText(_("Error: {0}").format(str(exc)))
 

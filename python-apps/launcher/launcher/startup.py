@@ -161,26 +161,41 @@ def auto_start_daemons(daemon_manager: EmbeddedSupervisor, config: Config) -> No
     """
     from circus import exc as circus_exc
 
-    # Auto-start Caddy if configured
-    if config.get("auto_start_caddy", True):
-        try:
-            logger.info("Auto-starting Caddy...")
-            if daemon_manager._start_daemon_sync("caddy"):
-                logger.info("Caddy auto-started successfully")
-            else:
-                logger.warning("Failed to auto-start Caddy")
-        except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
-            logger.error("Exception during Caddy auto-start", exc_info=e)
+    # Check if we should start both together
+    should_start_caddy = config.get("auto_start_caddy", True)
+    should_start_syncserver = config.get("auto_start_sync_server", True)
 
-    # Auto-start sync server
-    try:
-        logger.info("Auto-starting sync server...")
-        if daemon_manager._start_daemon_sync("syncserver"):
-            logger.info("Sync server auto-started successfully")
-        else:
-            logger.warning("Failed to auto-start sync server")
-    except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
-        logger.error("Exception during sync server auto-start", exc_info=e)
+    # If both are configured to auto-start, use system-level start for efficiency
+    if should_start_caddy and should_start_syncserver:
+        try:
+            logger.info("Auto-starting all services (Caddy + Sync Server)...")
+            if daemon_manager._start_all_daemons_sync():
+                logger.info("All services auto-started successfully")
+            else:
+                logger.warning("Failed to auto-start all services")
+        except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
+            logger.error("Exception during system auto-start", exc_info=e)
+    else:
+        # Start individually based on configuration
+        if should_start_caddy:
+            try:
+                logger.info("Auto-starting Caddy...")
+                if daemon_manager._start_daemon_sync("caddy"):
+                    logger.info("Caddy auto-started successfully")
+                else:
+                    logger.warning("Failed to auto-start Caddy")
+            except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
+                logger.error("Exception during Caddy auto-start", exc_info=e)
+
+        if should_start_syncserver:
+            try:
+                logger.info("Auto-starting sync server...")
+                if daemon_manager._start_daemon_sync("syncserver"):
+                    logger.info("Sync server auto-started successfully")
+                else:
+                    logger.warning("Failed to auto-start sync server")
+            except (RuntimeError, OSError, circus_exc.CallError, circus_exc.MessageError) as e:
+                logger.error("Exception during sync server auto-start", exc_info=e)
 
 
 def setup_ca_certificate(config: Config) -> None:
