@@ -6,15 +6,86 @@ import sys
 import signal
 import logging
 import webbrowser
-from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMenu, QStyle, QMessageBox
-from PyQt6.QtGui import QAction
-from PyQt6.QtCore import QCoreApplication, QTimer
+import io
+from PyQt6.QtWidgets import (
+    QApplication,
+    QSystemTrayIcon,
+    QMenu,
+    QStyle,
+    QMessageBox,
+    QDialog,
+    QLabel,
+    QVBoxLayout,
+)
+from PyQt6.QtGui import QAction, QPixmap, QImage
+from PyQt6.QtCore import QCoreApplication, QTimer, Qt
 
 from .error_handler import ErrorHandler
 from .i18n import _
 from .icon_manager import IconManager
 
 logger = logging.getLogger("launcher")
+
+
+class QRCodeDialog(QDialog):
+    """Dialog to display QR code for local network access."""
+
+    def __init__(self, url: str, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(_("Scan QR Code to Connect"))
+        self.setModal(True)
+
+        # Generate QR code
+        try:
+            import qrcode
+
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=10,
+                border=4,
+            )
+            qr.add_data(url)
+            qr.make(fit=True)
+
+            # Create image from QR code
+            img = qr.make_image(fill_color="black", back_color="white")
+
+            # Convert PIL image to QPixmap
+            buffer = io.BytesIO()
+            img.save(buffer, format="PNG")
+            buffer.seek(0)
+
+            qimage = QImage.fromData(buffer.getvalue())
+            pixmap = QPixmap.fromImage(qimage)
+
+            # Create label to display QR code
+            qr_label = QLabel()
+            qr_label.setPixmap(pixmap)
+            qr_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            # Create label for URL text
+            url_label = QLabel(url)
+            url_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            url_label.setWordWrap(True)
+            url_label.setStyleSheet("font-weight: bold; margin: 10px;")
+
+            # Layout
+            layout = QVBoxLayout()
+            layout.addWidget(qr_label)
+            layout.addWidget(url_label)
+            self.setLayout(layout)
+
+            # Set fixed size based on QR code size
+            self.setFixedSize(pixmap.width() + 40, pixmap.height() + 80)
+
+        except Exception as e:
+            logger.error(f"Failed to generate QR code: {e}")
+            error_label = QLabel(_("Failed to generate QR code"))
+            error_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            layout = QVBoxLayout()
+            layout.addWidget(error_label)
+            self.setLayout(layout)
 
 
 class TrayApp:
@@ -137,6 +208,11 @@ class TrayApp:
         open_browser_action.triggered.connect(self.open_browser)
         self.menu.addAction(open_browser_action)
 
+        # Show QR code action
+        show_qr_action = QAction(_("Show QR Code"), self.menu)
+        show_qr_action.triggered.connect(self.show_qr_code)
+        self.menu.addAction(show_qr_action)
+
         self.menu.addSeparator()
 
         # System status labels (will be updated dynamically)
@@ -209,6 +285,37 @@ class TrayApp:
             ErrorHandler.handle_error(
                 _("Browser Error"),
                 _("Failed to open browser."),
+                exception=e,
+                show_dialog=True,
+                parent=None,
+            )
+
+    def show_qr_code(self):
+        """Display QR code dialog for local network access."""
+        try:
+            # Check if Caddy is running (use synchronous method for immediate result)
+            status = self.daemon_manager._get_status_sync("caddy")
+            if status.status != "active":
+                logger.warning("User tried to show QR code but Caddy is not running")
+                self.show_message(
+                    _("Caddy Not Running"),
+                    _("Please start Caddy first using the tray menu."),
+                    error=True,
+                )
+                return
+
+            # Get the web URL from config
+            url = self.config.get_web_url()
+            logger.info(f"Showing QR code for: {url}")
+
+            # Show QR code dialog
+            dialog = QRCodeDialog(url, parent=None)
+            dialog.exec()
+
+        except (OSError, AttributeError, RuntimeError) as e:
+            ErrorHandler.handle_error(
+                _("QR Code Error"),
+                _("Failed to generate QR code."),
                 exception=e,
                 show_dialog=True,
                 parent=None,
