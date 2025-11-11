@@ -8,6 +8,7 @@ set -euo pipefail
 BASE_BRANCH="${BASE_BRANCH:-origin/main}"   # branch you will merge into
 TARGET_REF="${TARGET_REF:-HEAD}"            # tip of the PR (HEAD in CI)
 
+cd "$(dirname $0)/.."
 git fetch --quiet origin "$(echo "$BASE_BRANCH" | cut -d/ -f2-)"
 
 echo "🔍 scanning commits between $BASE_BRANCH and $TARGET_REF …"
@@ -46,7 +47,7 @@ for f in "${added_files[@]}"; do
   fi
 
   mime=$(file -b --mime -- "$f")
-  if ! grep -Eq '^(text/|application/(javascript|json|x-gettext-translation)(; charset=.*)?|inode/x-empty)' <<< "$mime"; then
+  if ! grep -Eq '^(text/|application/(javascript|json|x-gettext-translation)(; charset=.*)?|inode/x-empty|image/svg\+xml)' <<< "$mime"; then
     echo "❌ binary/blob file detected: $f ($mime)"
     BINARY_DETECTED=1
   fi
