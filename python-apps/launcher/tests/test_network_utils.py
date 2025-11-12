@@ -224,14 +224,25 @@ class TestCheckCaInstalled:
         platform.system() != "Linux",
         reason="Linux-specific test"
     )
+    @patch("subprocess.run")
+    @patch("launcher.network_utils.check_certutil_available")
     @patch("pathlib.Path.exists")
-    def test_linux_ca_installed(self, mock_exists, temp_data_dir):
-        """Test checking if CA is installed on Linux."""
+    def test_linux_ca_installed(self, mock_exists, mock_certutil, mock_run, temp_data_dir):
+        """Test checking if CA is installed on Linux (system + NSS database)."""
         cert_path = temp_data_dir / "test.crt"
         cert_path.write_text("dummy cert")
 
-        # Mock that the cert file exists in ca-certificates directory
+        # Mock that the system cert file exists in ca-certificates directory
         mock_exists.return_value = True
+
+        # Mock that certutil is available
+        mock_certutil.return_value = True
+
+        # Mock certutil output showing the certificate is installed
+        mock_run.return_value = MagicMock(
+            returncode=0,
+            stdout="Librocco Launcher CA\n"
+        )
 
         result = check_ca_installed(cert_path)
 
