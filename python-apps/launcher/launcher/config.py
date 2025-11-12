@@ -114,16 +114,11 @@ class Config:
         caddyfile_path = self.caddy_config_dir / "Caddyfile"
         # Always regenerate to ensure config stays up to date
         if True:  # Changed from: if not caddyfile_path.exists()
-            from .network_utils import get_local_hostname
-
             server_log = self.logs_dir / "caddy-server.log"
             access_log = self.logs_dir / "caddy-access.log"
 
-            # Always detect hostname at runtime
-            hostname = get_local_hostname()
-
-            # Generate certificates for both the detected hostname and localhost
-            # This allows access via mDNS (e.g., hostname.local) and standard localhost
+            # Generate certificates on-demand for any hostname
+            # This allows access via localhost, mDNS (hostname.local), Tailscale, or any IP
             default_caddyfile = f"""{{
     # Disable automatic HTTP->HTTPS redirects (requires port 80 / root privileges)
     auto_https disable_redirects
@@ -155,9 +150,12 @@ class Config:
     }}
 }}
 
-https://{hostname}:{CADDY_PORT}, https://localhost:{CADDY_PORT} {{
-    # Use Caddy's internal CA for certificate
-    tls internal
+https://:{CADDY_PORT} {{
+    # Use Caddy's internal CA for on-demand certificate generation
+    # This automatically issues certificates for any hostname that connects (SNI-based)
+    tls internal {{
+        on_demand
+    }}
 
     # Proxy sync WebSocket requests to the sync server
     handle /sync* {{
