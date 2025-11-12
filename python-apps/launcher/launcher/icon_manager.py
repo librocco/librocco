@@ -1,5 +1,6 @@
 """Icon manager for generating status-aware tray icons with badge indicators."""
 
+import sys
 from pathlib import Path
 from typing import Dict
 
@@ -26,9 +27,16 @@ class IconManager:
 
     def _load_favicon(self) -> QPixmap:
         """Load the favicon.svg from the shared assets directory."""
-        # Find project root (go up from launcher/launcher/ to project root)
-        project_root = Path(__file__).parent.parent.parent.parent
-        favicon_path = project_root / "assets" / "favicon.svg"
+        # Check if running in PyInstaller bundle
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            # Running in PyInstaller bundle - use _MEIPASS directory
+            bundle_dir = Path(sys._MEIPASS)
+            favicon_path = bundle_dir / "assets" / "favicon.svg"
+        else:
+            # Running in development mode - find project root
+            # (go up from launcher/launcher/ to project root)
+            project_root = Path(__file__).parent.parent.parent.parent
+            favicon_path = project_root / "assets" / "favicon.svg"
 
         if not favicon_path.exists():
             raise FileNotFoundError(f"Favicon not found at {favicon_path}")
