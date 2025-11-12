@@ -93,12 +93,6 @@ export const getCustomerDisplayIdSeq = async (db: TXAsync): Promise<number> => {
 	return result.nextId;
 };
 
-/** Get all existing customer display IDs for validation */
-export const getAllCustomerDisplayIds = async (db: TXAsync): Promise<string[]> => {
-	const results = await db.execO<{ displayId: string }>("SELECT display_id as displayId FROM customer");
-	return results.map((r) => r.displayId);
-};
-
 /** Customer display ID info for validation feedback */
 export type CustomerDisplayIdInfo = {
 	displayId: string;

@@ -4,6 +4,7 @@ import { get } from "svelte/store";
 
 import type { TranslationFunctions } from "@librocco/shared";
 import LL from "@librocco/shared/i18n-svelte";
+import type { CustomerDisplayIdInfo } from "$lib/db/cr-sqlite/customers";
 
 export type DeviceSettingsSchema = Infer<typeof deviceSettingsSchema>;
 export const deviceSettingsSchema = z.object({
@@ -77,10 +78,7 @@ export const customerSearchSchema = z.object({
 });
 
 export type CustomerOrderSchema = Infer<ReturnType<typeof createCustomerOrderSchema>>;
-export const createCustomerOrderSchema = (
-	existingCustomers: Array<{ displayId: string; fullname: string; bookCount: number }> = [],
-	currentDisplayId?: string
-) => {
+export const createCustomerOrderSchema = (existingCustomers: Array<CustomerDisplayIdInfo> = [], currentDisplayId?: string) => {
 	// Create a map for quick lookup
 	const customerMap = new Map(existingCustomers.map((c) => [c.displayId, c]));
 
