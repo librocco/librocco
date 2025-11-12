@@ -23,7 +23,15 @@ from PyQt6.QtCore import QCoreApplication, QTimer, Qt
 from .error_handler import ErrorHandler
 from .i18n import _
 from .icon_manager import IconManager
-from .network_utils import get_caddy_root_ca_path, check_ca_installed, install_ca_certificate
+from .network_utils import (
+    get_caddy_root_ca_path,
+    check_ca_installed,
+    install_ca_certificate,
+    check_certutil_available,
+    install_nss_tools,
+    detect_running_browsers,
+)
+import platform
 
 logger = logging.getLogger("launcher")
 
@@ -87,6 +95,73 @@ class QRCodeDialog(QDialog):
             layout = QVBoxLayout()
             layout.addWidget(error_label)
             self.setLayout(layout)
+
+
+class CloseBrowserDialog(QDialog):
+    """Dialog that prompts user to close browsers and polls until they are closed."""
+
+    POLL_INTERVAL_MS = 1000  # Check every second
+
+    def __init__(self, initial_browsers: list[str], parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(_("Close Browsers to Continue"))
+        self.setModal(True)
+        self.setMinimumWidth(400)
+
+        # Create message label
+        self.message_label = QLabel()
+        self.message_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.message_label.setWordWrap(True)
+        self.message_label.setStyleSheet("font-size: 12pt; margin: 20px;")
+
+        # Create cancel button
+        from PyQt6.QtWidgets import QPushButton, QHBoxLayout
+        cancel_button = QPushButton(_("Cancel"))
+        cancel_button.clicked.connect(self.reject)
+
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(cancel_button)
+        button_layout.addStretch()
+
+        # Layout
+        layout = QVBoxLayout()
+        layout.addWidget(self.message_label)
+        layout.addLayout(button_layout)
+        self.setLayout(layout)
+
+        # Update message with initial browsers
+        self.update_message(initial_browsers)
+
+        # Set up polling timer
+        self.poll_timer = QTimer()
+        self.poll_timer.timeout.connect(self.check_browsers)
+        self.poll_timer.start(self.POLL_INTERVAL_MS)
+
+    def update_message(self, browsers: list[str]):
+        """Update the message with the list of running browsers."""
+        if not browsers:
+            # All browsers closed, accept the dialog
+            self.poll_timer.stop()
+            self.accept()
+            return
+
+        # Format browser list
+        if len(browsers) == 1:
+            browser_text = browsers[0]
+        elif len(browsers) == 2:
+            browser_text = _("{} and {}").format(browsers[0], browsers[1])
+        else:
+            browser_text = _(", ").join(browsers[:-1]) + _(", and {}").format(browsers[-1])
+
+        message = _("Please close all {} windows to proceed with certificate installation.\n\n"
+                   "Browser databases are locked while browsers are running.").format(browser_text)
+        self.message_label.setText(message)
+
+    def check_browsers(self):
+        """Poll for running browsers and update the message."""
+        running_browsers = detect_running_browsers()
+        self.update_message(running_browsers)
 
 
 class TrayApp:
@@ -541,14 +616,77 @@ class TrayApp:
             if check_ca_installed(ca_path):
                 self.show_message(
                     _("Already Installed"),
-                    _("The CA certificate is already installed in your system trust store."),
+                    _("The browser warning has already been removed."),
                 )
                 return
+
+            # Check if we need to install NSS tools on Linux
+            if platform.system() == "Linux" and not check_certutil_available():
+                logger.info("certutil not available, prompting to install NSS tools")
+
+                reply = QMessageBox.question(
+                    None,
+                    _("Additional Tools Needed"),
+                    _(
+                        "To remove the browser warning, we need to install additional tools.\n\n"
+                        "This will install the NSS certificate tools package and requires "
+                        "administrator privileges.\n\n"
+                        "Install now?"
+                    ),
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.Yes,
+                )
+
+                if reply != QMessageBox.StandardButton.Yes:
+                    logger.info("User declined NSS tools installation")
+                    self.show_message(
+                        _("Installation Incomplete"),
+                        _("Browser warning removal requires additional tools. "
+                          "Most applications will work, but Chrome and Firefox may still show warnings."),
+                        error=True,
+                    )
+                    return
+
+                # Install NSS tools
+                logger.info("Installing NSS tools...")
+                success, error = install_nss_tools(use_elevation=True)
+
+                if not success:
+                    ErrorHandler.handle_error(
+                        _("Installation Failed"),
+                        _("Failed to install required tools: ") + (error or _("Unknown error")),
+                        show_dialog=True,
+                        parent=None,
+                    )
+                    return
+
+                logger.info("NSS tools installed successfully")
+
+            # Check if browsers are running (on Linux, they lock the NSS database)
+            if platform.system() == "Linux":
+                running_browsers = detect_running_browsers()
+                if running_browsers:
+                    logger.info(f"Detected running browsers: {running_browsers}")
+
+                    # Show dialog asking user to close browsers
+                    browser_dialog = CloseBrowserDialog(running_browsers, parent=None)
+                    result = browser_dialog.exec()
+
+                    if result != QDialog.DialogCode.Accepted:
+                        logger.info("User cancelled - browsers still running")
+                        self.show_message(
+                            _("Installation Cancelled"),
+                            _("Browser warning removal requires closing all browser windows."),
+                            error=True,
+                        )
+                        return
+
+                    logger.info("All browsers closed, proceeding with installation")
 
             # Show confirmation dialog
             reply = QMessageBox.question(
                 None,
-                _("Install CA Certificate"),
+                _("Remove Browser Warning"),
                 _(
                     "This will install Caddy's CA certificate into your system trust store.\n\n"
                     "This requires administrator privileges and will allow your browser to trust "
@@ -569,16 +707,15 @@ class TrayApp:
 
             if success:
                 self.show_message(
-                    _("Certificate Installed"),
-                    _("The CA certificate has been installed successfully. "
-                      "Your browser should now trust the HTTPS connection."),
+                    _("Browser Warning Removed"),
+                    _("Your browser will now trust the HTTPS connection without warnings."),
                 )
                 # Update menu to hide the install action
                 self._update_certificate_menu_state()
             else:
                 ErrorHandler.handle_error(
                     _("Installation Failed"),
-                    _("Failed to install the CA certificate: ") + (error or _("Unknown error")),
+                    _("Failed to remove the browser warning: ") + (error or _("Unknown error")),
                     show_dialog=True,
                     parent=None,
                 )
@@ -586,7 +723,7 @@ class TrayApp:
         except Exception as e:
             ErrorHandler.handle_error(
                 _("Certificate Error"),
-                _("An unexpected error occurred while installing the certificate."),
+                _("An unexpected error occurred while removing the browser warning."),
                 exception=e,
                 show_dialog=True,
                 parent=None,

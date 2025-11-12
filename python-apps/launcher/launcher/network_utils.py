@@ -7,6 +7,7 @@ import platform
 import subprocess
 import logging
 import sys
+import psutil
 from pathlib import Path
 from typing import Optional, Callable
 
@@ -183,6 +184,150 @@ def run_with_elevation(command: list[str], graphical: bool = True) -> tuple[bool
         return False, error_msg
 
 
+def detect_running_browsers() -> list[str]:
+    """
+    Detect which browsers are currently running.
+
+    Returns:
+        List of browser names (e.g., ["Chrome", "Firefox", "Brave"])
+    """
+    running_browsers = []
+
+    # Browser process names to check
+    browser_patterns = {
+        "Chrome": ["chrome", "google-chrome"],
+        "Firefox": ["firefox"],
+        "Brave": ["brave", "brave-browser"],
+    }
+
+    try:
+        for proc in psutil.process_iter(['name', 'exe']):
+            try:
+                proc_name = proc.info['name'].lower() if proc.info['name'] else ""
+                proc_exe = proc.info['exe'].lower() if proc.info['exe'] else ""
+
+                for browser, patterns in browser_patterns.items():
+                    if browser not in running_browsers:
+                        for pattern in patterns:
+                            if pattern in proc_name or pattern in proc_exe:
+                                running_browsers.append(browser)
+                                break
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+    except Exception as e:
+        logger.debug(f"Error detecting running browsers: {e}")
+
+    return running_browsers
+
+
+def check_certutil_available() -> bool:
+    """
+    Check if certutil is available on the system.
+
+    Returns:
+        True if certutil is available, False otherwise
+    """
+    try:
+        result = subprocess.run(
+            ["certutil", "--help"],
+            capture_output=True,
+            check=False,
+            timeout=5
+        )
+        return result.returncode in (0, 1)  # certutil returns 1 for --help on some systems
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
+
+
+def detect_package_manager() -> Optional[tuple[str, list[str]]]:
+    """
+    Detect the package manager and return the command to install libnss3-tools.
+
+    Returns:
+        (package_manager_name, install_command) or None if not detected
+    """
+    system = platform.system()
+
+    if system != "Linux":
+        return None
+
+    # Check for apt (Debian/Ubuntu)
+    try:
+        subprocess.run(["apt", "--version"], capture_output=True, check=True, timeout=5)
+        return ("apt", ["apt", "install", "-y", "libnss3-tools"])
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        pass
+
+    # Check for dnf (Fedora/RHEL 8+)
+    try:
+        subprocess.run(["dnf", "--version"], capture_output=True, check=True, timeout=5)
+        return ("dnf", ["dnf", "install", "-y", "nss-tools"])
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        pass
+
+    # Check for yum (RHEL/CentOS 7)
+    try:
+        subprocess.run(["yum", "--version"], capture_output=True, check=True, timeout=5)
+        return ("yum", ["yum", "install", "-y", "nss-tools"])
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        pass
+
+    # Check for zypper (openSUSE)
+    try:
+        subprocess.run(["zypper", "--version"], capture_output=True, check=True, timeout=5)
+        return ("zypper", ["zypper", "install", "-y", "mozilla-nss-tools"])
+    except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        pass
+
+    return None
+
+
+def install_nss_tools(use_elevation: bool = True) -> tuple[bool, Optional[str]]:
+    """
+    Install NSS tools (certutil) using the system package manager.
+
+    Args:
+        use_elevation: Whether to use privilege elevation (default: True)
+
+    Returns:
+        (success, error_message)
+    """
+    pm_info = detect_package_manager()
+
+    if pm_info is None:
+        return False, "Could not detect package manager"
+
+    pm_name, install_cmd = pm_info
+    logger.info(f"Installing NSS tools using {pm_name}...")
+
+    if use_elevation:
+        success, error = run_with_elevation(install_cmd, graphical=True)
+        if success:
+            logger.info(f"Successfully installed NSS tools using {pm_name}")
+            return True, None
+        else:
+            return False, error
+    else:
+        try:
+            result = subprocess.run(
+                install_cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=300  # 5 minutes timeout for package installation
+            )
+            if result.returncode == 0:
+                logger.info(f"Successfully installed NSS tools using {pm_name}")
+                return True, None
+            else:
+                error_msg = result.stderr.strip() if result.stderr else "Installation failed"
+                return False, error_msg
+        except subprocess.TimeoutExpired:
+            return False, "Package installation timed out"
+        except Exception as e:
+            return False, f"Installation failed: {str(e)}"
+
+
 def install_ca_certificate(cert_path: Path, use_elevation: bool = True) -> tuple[bool, Optional[str]]:
     """
     Install a CA certificate to the system trust store.
@@ -245,6 +390,10 @@ def install_ca_certificate(cert_path: Path, use_elevation: bool = True) -> tuple
 
         elif system == "Linux":
             # Try multiple methods as different distros use different tools
+            # We try ALL methods (system-level AND NSS database) to ensure both curl and browsers work
+
+            system_installed = False
+            nss_installed = False
 
             # Method 1: Try update-ca-certificates (Debian/Ubuntu)
             ca_dir = Path("/usr/local/share/ca-certificates")
@@ -270,39 +419,41 @@ def install_ca_certificate(cert_path: Path, use_elevation: bool = True) -> tuple
                             logger.info(
                                 "Successfully installed CA certificate using update-ca-certificates"
                             )
-                            return True, None
+                            system_installed = True
                         else:
                             logger.warning(f"Failed to update CA certificates: {error2}")
 
-            # Method 2: Try trust command (RHEL/Fedora)
-            try:
-                command = ["trust", "anchor", str(cert_path)]
+            # Method 2: Try trust command (RHEL/Fedora) - only if Method 1 didn't work
+            if not system_installed:
+                try:
+                    command = ["trust", "anchor", str(cert_path)]
 
-                if use_elevation:
-                    success, error = run_with_elevation(command, graphical=True)
-                    if success:
-                        logger.info("Successfully installed CA certificate using trust command")
-                        return True, None
+                    if use_elevation:
+                        success, error = run_with_elevation(command, graphical=True)
+                        if success:
+                            logger.info("Successfully installed CA certificate using trust command")
+                            system_installed = True
+                        else:
+                            logger.warning(f"Failed with trust command: {error}")
                     else:
-                        logger.warning(f"Failed with trust command: {error}")
-                else:
-                    result = subprocess.run(
-                        command,
-                        capture_output=True,
-                        text=True,
-                        check=False
-                    )
-                    if result.returncode == 0:
-                        logger.info("Successfully installed CA certificate using trust command")
-                        return True, None
-            except FileNotFoundError:
-                logger.debug("trust command not available on this system")
+                        result = subprocess.run(
+                            command,
+                            capture_output=True,
+                            text=True,
+                            check=False
+                        )
+                        if result.returncode == 0:
+                            logger.info("Successfully installed CA certificate using trust command")
+                            system_installed = True
+                except FileNotFoundError:
+                    logger.debug("trust command not available on this system")
 
-            # Method 3: Try certutil for NSS databases (Firefox, Chrome) - no elevation needed
+            # Method 3: Try certutil for NSS databases (Firefox, Chrome, Brave) - no elevation needed
+            # Always try this, even if system-level installation succeeded
             try:
                 home = Path.home()
                 nss_dirs = [
-                    home / ".pki" / "nssdb",  # Chrome/Chromium
+                    home / ".pki" / "nssdb",  # Chrome/Chromium/Brave (shared database)
                     home / ".mozilla" / "firefox",  # Firefox
                 ]
 
@@ -355,9 +506,17 @@ def install_ca_certificate(cert_path: Path, use_elevation: bool = True) -> tuple
 
                 if installed_count > 0:
                     logger.info(f"Successfully installed CA certificate to {installed_count} NSS databases")
-                    return True, None
+                    nss_installed = True
             except FileNotFoundError:
                 logger.debug("certutil not available on this system")
+
+            # Return success if at least system-level installation worked
+            if system_installed:
+                return True, None
+
+            # If system-level failed but NSS succeeded, that's still somewhat useful
+            if nss_installed:
+                return True, None
 
             return (
                 False,
@@ -432,7 +591,29 @@ def check_ca_installed(cert_path: Path) -> bool:
         elif system == "Linux":
             # Check if the cert file exists in the CA certificates directory
             ca_file = Path("/usr/local/share/ca-certificates/librocco-launcher.crt")
-            return ca_file.exists()
+            system_installed = ca_file.exists()
+
+            # Also check if NSS database has the certificate (for Chrome/Firefox)
+            nss_installed = False
+            if check_certutil_available():
+                try:
+                    # Check Chrome/Chromium NSS database
+                    nss_dir = Path.home() / ".pki" / "nssdb"
+                    if nss_dir.exists():
+                        result = subprocess.run(
+                            ["certutil", "-L", "-d", f"sql:{nss_dir}"],
+                            capture_output=True,
+                            text=True,
+                            check=False,
+                            timeout=5
+                        )
+                        if "Librocco Launcher CA" in result.stdout:
+                            nss_installed = True
+                except (FileNotFoundError, subprocess.TimeoutExpired):
+                    pass
+
+            # Return True only if both system and NSS database have the certificate
+            return system_installed and nss_installed
 
         elif system == "Windows":
             # Check Root store
