@@ -132,10 +132,18 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libegl1-mesa
+    - name: Grant screen recording permissions (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        # Grant screen recording permission to Terminal.app
+        # This allows screencapture to capture the menu bar and tray icons
+        sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" \
+          "INSERT OR REPLACE INTO access VALUES('kTCCServiceScreenCapture','com.apple.Terminal',0,2,4,1,NULL,NULL,0,'UNUSED',NULL,0,$(date +%s));" || true
+      shell: bash
     - name: Start launcher
       if: runner.os != 'Windows'
       env:
-        QT_QPA_PLATFORM: offscreen
+        QT_QPA_PLATFORM: ${{ runner.os == 'Linux' && 'offscreen' || '' }}
       run: |
         cd python-apps/launcher/dist
         ./librocco-launcher > launcher.log 2>&1 &
@@ -177,6 +185,16 @@ jobs:
         fi
 
         echo "Launcher initialized successfully (no tracebacks detected)"
+      shell: bash
+    - name: Capture macOS desktop screenshot
+      if: runner.os == 'macOS'
+      run: |
+        cd python-apps/launcher/dist
+        # Wait a bit for tray icon to fully render
+        sleep 3
+        # Capture screenshot (-x: no sound, -C: include cursor)
+        screencapture -x -C macos-tray-screenshot.png
+        echo "Screenshot captured: macos-tray-screenshot.png"
       shell: bash
     - name: Verify Caddy responds
       run: |
@@ -225,3 +243,11 @@ jobs:
           echo "Log directory not found: $LOG_DIR"
         fi
       shell: bash
+    - name: Upload macOS screenshot
+      if: always() && runner.os == 'macOS'
+      uses: actions/upload-artifact@v4
+      with:
+        name: macos-tray-screenshot-${{ matrix.arch }}
+        path: python-apps/launcher/dist/macos-tray-screenshot.png
+        retention-days: 30
+        if-no-files-found: warn
