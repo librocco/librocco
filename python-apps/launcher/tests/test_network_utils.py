@@ -374,11 +374,11 @@ class TestInstallCaCertificate:
 
 
 @pytest.mark.skipif(
-    not os.environ.get("CI"),
-    reason="Integration tests only run in CI with actual system modification"
+    not os.environ.get("CI") or platform.system() == "Darwin",
+    reason="Integration tests only run in CI with actual system modification (skip macOS due to interactive elevation)"
 )
 class TestCertificateInstallationIntegration:
-    """Integration tests that actually install certificates (CI only)."""
+    """Integration tests that actually install certificates (CI only, except macOS)."""
 
     def test_install_and_verify_certificate(self, temp_data_dir):
         """Test actual certificate installation in CI environment."""
