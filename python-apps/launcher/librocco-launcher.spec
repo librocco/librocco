@@ -59,6 +59,14 @@ if locales_dir.exists():
             if mo_files.exists():
                 datas.append((str(mo_files), f'launcher/locales/{lang_dir.name}/LC_MESSAGES'))
 
+# 4. Favicon for tray icon
+favicon_path = PROJECT_ROOT / 'assets' / 'favicon.svg'
+if favicon_path.exists():
+    datas.append((str(favicon_path), 'assets'))
+else:
+    print(f"WARNING: Favicon not found at {favicon_path}")
+    print("Tray icon will not work without the favicon.")
+
 # Collect binaries
 binaries = []
 
