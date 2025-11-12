@@ -138,7 +138,37 @@ jobs:
         QT_QPA_PLATFORM: offscreen
       run: |
         cd python-apps/launcher/dist
-        ./librocco-launcher &
+        ./librocco-launcher > launcher.log 2>&1 &
+        echo $! > launcher.pid
+      shell: bash
+    - name: Check for launcher initialization errors
+      if: runner.os != 'Windows'
+      run: |
+        echo "Waiting for launcher to initialize..."
+        sleep 3
+
+        cd python-apps/launcher/dist
+
+        # Check if launcher process is still running
+        if [ -f launcher.pid ]; then
+          LAUNCHER_PID=$(cat launcher.pid)
+          if ! kill -0 $LAUNCHER_PID 2>/dev/null; then
+            echo "ERROR: Launcher process died shortly after startup"
+            echo "--- Launcher Output ---"
+            cat launcher.log
+            exit 1
+          fi
+        fi
+
+        # Check for Python tracebacks in output
+        if grep -q "Traceback" launcher.log; then
+          echo "ERROR: Found Python traceback in launcher output"
+          echo "--- Launcher Output ---"
+          cat launcher.log
+          exit 1
+        fi
+
+        echo "Launcher initialized successfully (no tracebacks detected)"
       shell: bash
     - name: Verify Caddy responds
       run: |
@@ -153,6 +183,17 @@ jobs:
         done
         echo "Caddy did not respond after 60 seconds."
         exit 1
+    - name: Display Launcher Logs
+      if: always() && runner.os != 'Windows'
+      run: |
+        cd python-apps/launcher/dist
+        if [ -f launcher.log ]; then
+          echo "--- Launcher Output (stdout/stderr) ---"
+          cat launcher.log
+        else
+          echo "launcher.log not found"
+        fi
+      shell: bash
     - name: Display Caddy Logs
       if: always()
       run: |
