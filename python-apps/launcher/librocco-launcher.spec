@@ -37,15 +37,28 @@ NODE_BINARY = 'node.exe' if IS_WINDOWS else 'node'
 datas = []
 
 # 1. Web client build directory (served by Caddy)
+# Explicitly collect all files in the directory recursively
 if WEB_CLIENT_BUILD.exists():
-    datas.append((str(WEB_CLIENT_BUILD), 'app'))
+    # Manually add all files in the web client build directory
+    for file_path in WEB_CLIENT_BUILD.rglob('*'):
+        if file_path.is_file():
+            # Get relative path from web client build dir
+            rel_path = file_path.relative_to(WEB_CLIENT_BUILD)
+            # Add as (source, destination_dir)
+            datas.append((str(file_path), str(Path('app') / rel_path.parent)))
+    print(f"INFO: Collected {len([d for d in datas if 'app' in str(d[1])])} web client files")
 else:
     print(f"WARNING: Web client build not found at {WEB_CLIENT_BUILD}")
     print("Please build the web client first: cd apps/web-client && rushx build:prod-rootdir")
 
 # 2. Sync server bundle (Node.js sync server with dependencies)
+# Explicitly collect all files in the sync server directory
 if BUNDLED_SYNCSERVER.exists():
-    datas.append((str(BUNDLED_SYNCSERVER), 'bundled_binaries/syncserver'))
+    for file_path in BUNDLED_SYNCSERVER.rglob('*'):
+        if file_path.is_file():
+            rel_path = file_path.relative_to(BUNDLED_SYNCSERVER)
+            datas.append((str(file_path), str(Path('bundled_binaries/syncserver') / rel_path.parent)))
+    print(f"INFO: Collected {len([d for d in datas if 'syncserver' in str(d[1])])} sync server files")
 else:
     print(f"WARNING: Sync server bundle not found at {BUNDLED_SYNCSERVER}")
     print("Please run: ./scripts/package_syncserver_for_build.py")
