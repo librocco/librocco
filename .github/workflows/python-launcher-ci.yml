@@ -30,6 +30,9 @@ jobs:
         enable-cache: true
         python-version: "3.13"
         working-directory: python-apps/launcher
+    - name: Set Qt to run in offscreen mode (macOS)
+      if: matrix.os == 'macos-latest'
+      run: echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
     - name: Create virtual environment
       run: |
         cd python-apps/launcher
