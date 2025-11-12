@@ -328,21 +328,21 @@
 									<td>{publisher}</td>
 									<td>
 										{#if status === OrderLineStatus.Collected}
-											<div class="badge-primary badge-outline badge bg-[#DC143C] text-xs font-semibold">
+											<div class="badge-primary badge-outline badge bg-red-400 text-xs font-semibold">
 												{$LL.customer_orders_page.status.collected()} -
 												<time datetime={collected.toISOString()} class="badge-xs badge border-0 bg-transparent"
 													>{collected.toDateString()}</time
 												>
 											</div>
 										{:else if status === OrderLineStatus.Received}
-											<div class="badge-primary badge-outline badge bg-[#2E8B57] text-xs font-semibold">
+											<div class="badge-primary badge-outline badge bg-green-600 text-xs font-semibold">
 												{$LL.customer_orders_page.status.delivered()} -
 												<time datetime={received.toISOString()} class="badge-xs badge border-0 bg-transparent"
 													>{received.toDateString()}</time
 												>
 											</div>
 										{:else if status === OrderLineStatus.Placed}
-											<div class="badge-primary badge-outline badge bg-[#FFD700] text-xs font-semibold">
+											<div class="badge-primary badge-outline badge bg-yellow-400 text-xs font-semibold">
 												{$LL.customer_orders_page.status.placed()} -
 												<time datetime={placed.toISOString()} class="badge-xs badge border-0 bg-transparent">{placed.toDateString()}</time>
 											</div>
