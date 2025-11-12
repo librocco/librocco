@@ -135,7 +135,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=not IS_WINDOWS,  # Show console on Linux/macOS, hide on Windows
+    console=IS_WINDOWS or IS_LINUX,  # Hide console on macOS (GUI-only app), show on Windows/Linux
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -153,5 +153,6 @@ if IS_MACOS:
         info_plist={
             'CFBundleShortVersionString': '1.0.0',
             'NSHighResolutionCapable': True,
+            'LSUIElement': '1',  # Run as menu bar app only (no Dock icon, no empty menu bar)
         },
     )
