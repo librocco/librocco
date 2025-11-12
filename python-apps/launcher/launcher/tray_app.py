@@ -303,7 +303,7 @@ class TrayApp:
         self.system_status_action.setEnabled(False)
         self.menu.addAction(self.system_status_action)
 
-        self.caddy_status_action = QAction(_("  Caddy: Checking..."), self.menu)
+        self.caddy_status_action = QAction(_("  Web Server: Checking..."), self.menu)
         self.caddy_status_action.setEnabled(False)
         self.menu.addAction(self.caddy_status_action)
 
@@ -349,8 +349,8 @@ class TrayApp:
             if status.status != "active":
                 logger.warning("User tried to open browser but Caddy is not running")
                 self.show_message(
-                    _("Caddy Not Running"),
-                    _("Please start Caddy first using the tray menu."),
+                    _("Web Server Not Running"),
+                    _("Please start the web server first using the tray menu."),
                     error=True,
                 )
                 return
@@ -379,8 +379,8 @@ class TrayApp:
             if status.status != "active":
                 logger.warning("User tried to show QR code but Caddy is not running")
                 self.show_message(
-                    _("Caddy Not Running"),
-                    _("Please start Caddy first using the tray menu."),
+                    _("Web Server Not Running"),
+                    _("Please start the web server first using the tray menu."),
                     error=True,
                 )
                 return
@@ -417,7 +417,7 @@ class TrayApp:
             if statuses is None:
                 # Error occurred in worker (already logged there)
                 self.system_status_action.setText(_("System Status: ⚠ Error"))
-                self.caddy_status_action.setText(_("  Caddy: ⚠ Error"))
+                self.caddy_status_action.setText(_("  Web Server: ⚠ Error"))
                 self.syncserver_status_action.setText(_("  Sync Server: ⚠ Error"))
                 self.tray_icon.setIcon(
                     self.icon_manager.get_icon_for_states("error", "error")
@@ -439,7 +439,7 @@ class TrayApp:
 
             # Update individual daemon status labels
             self._update_daemon_status_label(
-                caddy_status, self.caddy_status_action, "Caddy"
+                caddy_status, self.caddy_status_action, "Web Server"
             )
             self._update_daemon_status_label(
                 syncserver_status, self.syncserver_status_action, "Sync Server"
@@ -532,15 +532,15 @@ class TrayApp:
                 # Show success message
                 if operation == "start":
                     self.show_message(
-                        _("Caddy Started"), _("Caddy daemon is starting...")
+                        _("Web Server Started"), _("Web server is starting...")
                     )
                 elif operation == "stop":
                     self.show_message(
-                        _("Caddy Stopped"), _("Caddy daemon is stopping...")
+                        _("Web Server Stopped"), _("Web server is stopping...")
                     )
                 elif operation == "restart":
                     self.show_message(
-                        _("Caddy Restarted"), _("Caddy daemon is restarting...")
+                        _("Web Server Restarted"), _("Web server is restarting...")
                     )
                 elif operation == "start_all":
                     self.show_message(
@@ -607,7 +607,7 @@ class TrayApp:
             if not ca_path.exists():
                 self.show_message(
                     _("Certificate Not Found"),
-                    _("The CA certificate hasn't been generated yet. Please start Caddy first."),
+                    _("The CA certificate hasn't been generated yet. Please start the web server first."),
                     error=True,
                 )
                 return
@@ -688,7 +688,7 @@ class TrayApp:
                 None,
                 _("Remove Browser Warning"),
                 _(
-                    "This will install Caddy's CA certificate into your system trust store.\n\n"
+                    "This will install Librocco's CA certificate into your system trust store.\n\n"
                     "This requires administrator privileges and will allow your browser to trust "
                     "the local HTTPS connection without security warnings.\n\n"
                     "Continue?"

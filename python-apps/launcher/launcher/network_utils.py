@@ -398,7 +398,7 @@ def install_ca_certificate(cert_path: Path, use_elevation: bool = True) -> tuple
             # Method 1: Try update-ca-certificates (Debian/Ubuntu)
             ca_dir = Path("/usr/local/share/ca-certificates")
             if ca_dir.exists():
-                target = ca_dir / "librocco-launcher.crt"
+                target = ca_dir / "librocco.crt"
 
                 if use_elevation:
                     # Copy cert file with elevation
@@ -469,7 +469,7 @@ def install_ca_certificate(cert_path: Path, use_elevation: bool = True) -> tuple
                                             "certutil",
                                             "-A",
                                             "-n",
-                                            "Librocco Launcher CA",
+                                            "Librocco CA",
                                             "-t",
                                             "C,,",
                                             "-i",
@@ -489,7 +489,7 @@ def install_ca_certificate(cert_path: Path, use_elevation: bool = True) -> tuple
                                     "certutil",
                                     "-A",
                                     "-n",
-                                    "Librocco Launcher CA",
+                                    "Librocco CA",
                                     "-t",
                                     "C,,",
                                     "-i",
@@ -580,7 +580,7 @@ def check_ca_installed(cert_path: Path) -> bool:
                     "find-certificate",
                     "-a",
                     "-c",
-                    "Caddy Local Authority",
+                    "Librocco CA",
                     "/Library/Keychains/System.keychain",
                 ],
                 capture_output=True,
@@ -590,7 +590,7 @@ def check_ca_installed(cert_path: Path) -> bool:
 
         elif system == "Linux":
             # Check if the cert file exists in the CA certificates directory
-            ca_file = Path("/usr/local/share/ca-certificates/librocco-launcher.crt")
+            ca_file = Path("/usr/local/share/ca-certificates/librocco.crt")
             system_installed = ca_file.exists()
 
             # Also check if NSS database has the certificate (for Chrome/Firefox)
@@ -607,7 +607,7 @@ def check_ca_installed(cert_path: Path) -> bool:
                             check=False,
                             timeout=5
                         )
-                        if "Librocco Launcher CA" in result.stdout:
+                        if "Librocco CA" in result.stdout:
                             nss_installed = True
                 except (FileNotFoundError, subprocess.TimeoutExpired):
                     pass
@@ -620,7 +620,7 @@ def check_ca_installed(cert_path: Path) -> bool:
             result = subprocess.run(
                 ["certutil", "-store", "Root"], capture_output=True, text=True
             )
-            return "Caddy Local Authority" in result.stdout
+            return "Librocco CA" in result.stdout
 
         else:
             return False

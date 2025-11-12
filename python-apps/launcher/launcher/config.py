@@ -133,6 +133,13 @@ class Config:
         root {self.caddy_data_dir}
     }}
 
+    # Configure PKI with custom CA name
+    pki {{
+        ca local {{
+            name "Librocco CA"
+        }}
+    }}
+
     # Skip automatic root certificate installation (requires sudo)
     skip_install_trust
 

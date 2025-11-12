@@ -1,10 +1,10 @@
 #!/bin/bash
-# Script to remove Librocco Launcher CA certificates for testing
+# Script to remove Librocco CA certificates for testing
 # Usage: ./remove-test-certs.sh
 
 set -e
 
-echo "=== Removing Librocco Launcher CA Certificates ==="
+echo "=== Removing Librocco CA Certificates ==="
 echo ""
 
 # Check for running browsers (they lock NSS databases)
@@ -43,7 +43,7 @@ echo ""
 
 # 1. Remove system-level certificate
 echo "1. Removing system certificate..."
-SYSTEM_CERT="/usr/local/share/ca-certificates/librocco-launcher.crt"
+SYSTEM_CERT="/usr/local/share/ca-certificates/librocco.crt"
 if [ -f "$SYSTEM_CERT" ]; then
     sudo rm -f "$SYSTEM_CERT"
     echo "   ✓ Removed $SYSTEM_CERT"
@@ -63,8 +63,8 @@ NSS_DIR="$HOME/.pki/nssdb"
 if [ -d "$NSS_DIR" ]; then
     if command -v certutil &> /dev/null; then
         # Check if certificate exists
-        if certutil -L -d "sql:$NSS_DIR" 2>/dev/null | grep -q "Librocco Launcher CA"; then
-            certutil -D -n "Librocco Launcher CA" -d "sql:$NSS_DIR"
+        if certutil -L -d "sql:$NSS_DIR" 2>/dev/null | grep -q "Librocco CA"; then
+            certutil -D -n "Librocco CA" -d "sql:$NSS_DIR"
             echo "   ✓ Removed from $NSS_DIR"
         else
             echo "   - Certificate not found in NSS database (already removed or never installed)"
@@ -93,8 +93,8 @@ if [ -d "$FIREFOX_DIR" ]; then
 
             if command -v certutil &> /dev/null; then
                 # Check if certificate exists
-                if certutil -L -d "sql:$profile_dir" 2>/dev/null | grep -q "Librocco Launcher CA"; then
-                    certutil -D -n "Librocco Launcher CA" -d "sql:$profile_dir"
+                if certutil -L -d "sql:$profile_dir" 2>/dev/null | grep -q "Librocco CA"; then
+                    certutil -D -n "Librocco CA" -d "sql:$profile_dir"
                     echo "   ✓ Removed from Firefox profile: $profile_name"
                     REMOVED_COUNT=$((REMOVED_COUNT + 1))
                 fi
