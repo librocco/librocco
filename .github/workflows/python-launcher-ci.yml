@@ -10,7 +10,7 @@ name: Python Launcher CI
 jobs:
   test:
     name: Test on ${{ matrix.os }}
-    runs-on: ${{ matrix.os == 'macos-latest' && 'localmacos' || matrix.os }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     strategy:
       fail-fast: false
@@ -20,19 +20,20 @@ jobs:
         - macos-latest
         - windows-latest
     steps:
-    - name: Checkout repository
+    - name: Checkout repository and submodules
       uses: actions/checkout@v4
       with:
-        lfs: false
+        submodules: recursive
+        lfs: true
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
         enable-cache: true
         python-version: "3.13"
         working-directory: python-apps/launcher
-    - name: Set Qt to run in offscreen mode (macOS)
-      if: matrix.os == 'macos-latest'
+    - name: Set Qt to run in offscreen mode
       run: echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
+      shell: bash
     - name: Create virtual environment
       run: |
         cd python-apps/launcher
