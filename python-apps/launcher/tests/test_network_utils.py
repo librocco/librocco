@@ -241,7 +241,7 @@ class TestCheckCaInstalled:
         # Mock certutil output showing the certificate is installed
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout="Librocco Launcher CA\n"
+            stdout="Librocco CA\n"
         )
 
         result = check_ca_installed(cert_path)
@@ -262,7 +262,7 @@ class TestCheckCaInstalled:
         mock_run.return_value = subprocess.CompletedProcess(
             args=["certutil", "-store", "Root"],
             returncode=0,
-            stdout="Caddy Local Authority\nSome other cert",
+            stdout="Librocco CA\nSome other cert",
             stderr=""
         )
 
@@ -415,5 +415,5 @@ Z8YHQ0YK5YHQ8YQ5YHQ8YQ6YHQ8YQ7YHQ8YQ8YHQ8YQ9YHQ8YQ0=
         # In CI, we have passwordless sudo/admin, so this should succeed
         # We just verify the command executes without error; verification with
         # check_ca_installed() requires the certificate to have a specific name
-        # ("Caddy Local Authority") which our test cert doesn't have
+        # ("Librocco CA") which our test cert doesn't have
         assert success, f"Installation should succeed in CI environment: {error}"
