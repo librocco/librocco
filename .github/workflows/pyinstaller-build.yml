@@ -209,6 +209,17 @@ jobs:
         done
         echo "Caddy did not respond after 60 seconds."
         exit 1
+    - name: Verify web client is accessible
+      run: |
+        echo "Checking if web client is being served..."
+        HTTP_CODE=$(curl --silent --output /dev/null --write-out "%{http_code}" --insecure https://localhost:8080/)
+        if [ "$HTTP_CODE" -eq 200 ]; then
+          echo "✓ Web client is accessible (HTTP $HTTP_CODE)"
+        else
+          echo "✗ Web client returned HTTP $HTTP_CODE (expected 200)"
+          echo "This likely means the app directory was not bundled correctly."
+          exit 1
+        fi
     - name: Display Launcher Logs
       if: always() && runner.os != 'Windows'
       run: |

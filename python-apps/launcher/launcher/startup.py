@@ -72,8 +72,13 @@ def initialize_config(app_dir: Optional[Path] = None) -> Config:
         Initialized Config object
     """
     if not app_dir:
-        # Default to sibling of main.py
-        app_dir = Path(__file__).parent.parent / "app"
+        # Check if running in PyInstaller bundle
+        if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+            # Running in PyInstaller bundle - use _MEIPASS directory
+            app_dir = Path(sys._MEIPASS) / "app"
+        else:
+            # Development mode - default to sibling of main.py
+            app_dir = Path(__file__).parent.parent / "app"
 
     config = Config()
     config.initialize()
