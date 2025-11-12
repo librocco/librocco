@@ -144,10 +144,18 @@ jobs:
     - name: Check for launcher initialization errors
       if: runner.os != 'Windows'
       run: |
-        echo "Waiting for launcher to initialize..."
-        sleep 3
-
         cd python-apps/launcher/dist
+
+        echo "Waiting for tray application to initialize..."
+        # Wait up to 30 seconds for "Starting tray application..." to appear
+        for i in {1..30}; do
+          if grep -q "Starting tray application" launcher.log 2>/dev/null; then
+            echo "Tray initialization started, waiting a bit more..."
+            sleep 2
+            break
+          fi
+          sleep 1
+        done
 
         # Check if launcher process is still running
         if [ -f launcher.pid ]; then
