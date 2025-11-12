@@ -21,7 +21,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
-      -  #@ checkout()
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: false
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
