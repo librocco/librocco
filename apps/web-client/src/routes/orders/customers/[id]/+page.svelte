@@ -199,7 +199,7 @@
 									<span class="sr-only">{$LL.customer_orders_page.customer_details.last_updated()}</span>
 									<ClockArrowUp size={16} aria-hidden />
 									<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}>
-										{new Date(data?.customer?.updatedAt || "").toLocaleString()}
+										{$LL.dateTime(data?.customer?.updatedAt || "")}
 									</time>
 								</span>
 							</div>

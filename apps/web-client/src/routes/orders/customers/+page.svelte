@@ -165,7 +165,7 @@
 									<td>
 										<span class="badge-primary badge-outline badge gap-x-2">
 											<ClockArrowUp size={16} />
-											<time dateTime={new Date(updatedAt).toISOString()}>{new Date(updatedAt).toLocaleString()}</time>
+											<time dateTime={new Date(updatedAt).toISOString()}>{$LL.dateTime(updatedAt)}</time>
 										</span>
 									</td>
 									<td>

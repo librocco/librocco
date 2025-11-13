@@ -105,7 +105,7 @@
 							<div class="stat bg-base-100 max-md:py-2 md:px-1">
 								<dt class="stat-title">{t.stats.ordered()}</dt>
 								<dd class="stat-value text-2xl">
-									<time dateTime={createdDate.toString()}>{createdDate.toLocaleDateString()}</time>
+									<time dateTime={createdDate.toString()}>{$LL.dateMedium(createdDate)}</time>
 								</dd>
 							</div>
 						</div>

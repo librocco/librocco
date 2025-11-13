@@ -159,14 +159,14 @@
 								<span class="sr-only">{t.stats.created()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.created).toISOString()}
-									>{new Date(data?.reconciliationOrder.created).toLocaleString()}</time
+									>{$LL.dateTime(data?.reconciliationOrder.created)}</time
 								>
 							</span>
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">{t.stats.last_updated()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
-									>{new Date(data?.reconciliationOrder.updatedAt).toLocaleString()}</time
+									>{$LL.dateTime(data?.reconciliationOrder.updatedAt)}</time
 								>
 							</span>
 							{#if data?.reconciliationOrder.finalized}
@@ -174,7 +174,7 @@
 									<span class="sr-only">{t.stats.finalized_at()}</span>
 									<ClockArrowUp size={16} aria-hidden />
 									<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
-										>{new Date(data?.reconciliationOrder.updatedAt).toLocaleString()}</time
+										>{$LL.dateTime(data?.reconciliationOrder.updatedAt)}</time
 									>
 								</span>
 							{/if}
