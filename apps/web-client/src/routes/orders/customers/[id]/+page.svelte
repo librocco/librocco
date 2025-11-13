@@ -329,22 +329,22 @@
 										{#if status === OrderLineStatus.Collected}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
 												{$LL.customer_orders_page.status.collected()} -
-												<time datetime={collected.toISOString()} class="badge-xs badge">{collected.toDateString()}</time>
+												<time datetime={collected.toISOString()} class="badge-xs badge">{$LL.dateShort(collected)}</time>
 											</div>
 										{:else if status === OrderLineStatus.Received}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
 												{$LL.customer_orders_page.status.delivered()} -
-												<time datetime={received.toISOString()} class="badge-xs badge">{received.toDateString()}</time>
+												<time datetime={received.toISOString()} class="badge-xs badge">{$LL.dateShort(received)}</time>
 											</div>
 										{:else if status === OrderLineStatus.Placed}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
 												{$LL.customer_orders_page.status.placed()} -
-												<time datetime={placed.toISOString()} class="badge-xs badge">{placed.toDateString()}</time>
+												<time datetime={placed.toISOString()} class="badge-xs badge">{$LL.dateShort(placed)}</time>
 											</div>
 										{:else}
 											<div class="badge-primary badge-outline badge text-xs font-semibold">
 												{$LL.customer_orders_page.status.pending()} -
-												<time datetime={created.toISOString()} class="badge-xs badge">{created.toDateString()}</time>
+												<time datetime={created.toISOString()} class="badge-xs badge">{$LL.dateShort(created)}</time>
 											</div>
 										{/if}
 									</td>
