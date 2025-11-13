@@ -41,6 +41,9 @@ gh run list --workflow=python-launcher-ci.yml --limit 1 --json conclusion,status
 ### github action files are templated
 You can find them in .github/workflow.templates (note the dot, not a hyphen)
 
+### PyInstaller macOS artifacts require tar archiving
+GitHub Actions `upload-artifact` doesn't preserve symlinks. PyInstaller 6.0+ creates symlinks between `Contents/Resources/` and `Contents/Frameworks/` in macOS .app bundles. Without preservation, symlinks become duplicate files (~450MB bloat). Solution: `tar -czf` the .app before upload, extract after download.
+
 ### Kill process by port
 Use `fuser -k 3000/tcp` to kill processes listening on a specific port. More reliable than `kill <pid>` when dealing with zombie node processes.
 
