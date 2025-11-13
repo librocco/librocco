@@ -18,7 +18,6 @@
 
 	import { createSearchDropdown } from "./actions";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
@@ -148,7 +147,7 @@
 							<li class="col-span-12 grid grid-cols-12">
 								<div class="entity-list-row col-span-8 grid grid-cols-8 items-center text-base-content">
 									<p data-property="committedAt" class="col-span-2">
-										{generateUpdatedAtString(committedAt)}
+										{$LL.dateTime(committedAt)}
 									</p>
 
 									<div class="col-span-2 flex items-center">

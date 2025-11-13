@@ -13,7 +13,6 @@
 	import { PlaceholderBox } from "$lib/components";
 	import { HistoryPage } from "$lib/controllers";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { appPath } from "$lib/paths";
@@ -102,7 +101,7 @@
 
 								<p class="order-3 col-span-2 lg:order-2">
 									<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-										{t.date.committed()}: {generateUpdatedAtString(note.committedAt, "time-only")}
+										{t.date.committed()}: {$LL.timeOnly(note.committedAt)}
 									</span>
 								</p>
 

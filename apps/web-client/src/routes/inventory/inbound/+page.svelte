@@ -17,8 +17,6 @@
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
-
 	import { appPath } from "$lib/paths";
 	import { deleteNote } from "$lib/db/cr-sqlite/note";
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
@@ -112,7 +110,7 @@
 				{#each notes as note}
 					{@const noteName = note.displayName || `Note - ${note.id}`}
 					{@const displayName = `${note.warehouseName} / ${noteName}`}
-					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+					{@const updatedAt = $LL.dateTime(note.updatedAt)}
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("inbound", note.id)}
 

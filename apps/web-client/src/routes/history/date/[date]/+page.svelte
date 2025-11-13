@@ -17,7 +17,6 @@
 	import { HistoryPage } from "$lib/controllers";
 
 	import { appPath } from "$lib/paths";
-	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
@@ -141,7 +140,7 @@
 								</p>
 								<p class="lg:order-4 xl:order-none xl:col-span-2">
 									<span data-property="committedAt" class="badge badge-md {noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-										{t.transactions.committed()}: {generateUpdatedAtString(committedAt)}
+										{t.transactions.committed()}: {$LL.dateTime(committedAt)}
 									</span>
 								</p>
 

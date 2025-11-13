@@ -19,8 +19,6 @@
 	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
 	import { HistoryPage } from "$lib/controllers";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
-
 	import { appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
 	import type { LocalizedString } from "typesafe-i18n";
@@ -192,7 +190,7 @@
 					{#each transactions as txn}
 						<li class="entity-list-row col-span-12 grid grid-cols-12 items-center gap-4 whitespace-nowrap text-base-content">
 							<p data-property="committedAt" class="col-span-12 overflow-hidden font-semibold lg:col-span-2 lg:font-normal">
-								{generateUpdatedAtString(txn.committedAt)}
+								{$LL.dateTime(txn.committedAt)}
 							</p>
 
 							<div class="col-span-8 grid items-center gap-x-4 md:grid-cols-1 lg:col-span-7 lg:grid-cols-7 xl:col-span-8 xl:grid-cols-8">

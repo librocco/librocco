@@ -19,8 +19,6 @@
 	import { PlaceholderBox, Dialog } from "$lib/components";
 	import { Page } from "$lib/controllers";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
-
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import LL from "@librocco/shared/i18n-svelte";
@@ -118,7 +116,7 @@
 					<!-- Start entity list -->
 					{#each notes as note}
 						{@const displayName = note.displayName || `Note - ${note.id}`}
-						{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+						{@const updatedAt = $LL.dateTime(note.updatedAt)}
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", note.id)}
 
