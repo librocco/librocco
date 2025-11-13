@@ -49,6 +49,20 @@ const plugins = [
 				"@apply bg-gray-200 text-gray-800": {}
 			},
 
+			// Order line status badges used in customer order detail view
+			".orderline-collected": {
+				"@apply bg-red-200 text-red-900": {}
+			},
+			".orderline-received": {
+				"@apply bg-green-200 text-green-900": {}
+			},
+			".orderline-placed": {
+				"@apply bg-yellow-200 text-yellow-900": {}
+			},
+			".orderline-pending": {
+				"@apply bg-gray-200 text-gray-900": {}
+			},
+
 			// Lists
 			".entity-list-container": {
 				"@apply h-full w-full select-none divide-y divide-gray-300 overflow-y-auto": {}
