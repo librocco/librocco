@@ -127,13 +127,21 @@ jobs:
         tar -czf Librocco.app.tar.gz Librocco.app
         echo "Created Librocco.app.tar.gz ($(du -sh Librocco.app.tar.gz | cut -f1))"
       shell: bash
-    - name: Upload executable artifact
+    - name: Upload macOS artifact
+      if: runner.os == 'macOS'
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact_name }}
-        path: |
-          python-apps/launcher/dist/Librocco.app.tar.gz
-          python-apps/launcher/dist/librocco
+        path: python-apps/launcher/dist/Librocco.app.tar.gz
+        retention-days: 90
+        if-no-files-found: error
+        compression-level: 0
+    - name: Upload Linux/Windows artifact
+      if: runner.os != 'macOS'
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact_name }}
+        path: python-apps/launcher/dist/librocco
         retention-days: 90
         if-no-files-found: error
     - name: Install Linux dependencies

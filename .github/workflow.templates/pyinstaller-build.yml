@@ -163,15 +163,24 @@ jobs:
           echo "Created Librocco.app.tar.gz ($(du -sh Librocco.app.tar.gz | cut -f1))"
         shell: bash
 
-      #! On macOS: Upload the tar.gz archive (preserves symlinks)
-      #! On Linux/Windows: Upload the directory directly
-      - name: Upload executable artifact
+      #! macOS: Upload tar.gz archive (preserves symlinks)
+      - name: Upload macOS artifact
+        if: runner.os == 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: |
-            python-apps/launcher/dist/Librocco.app.tar.gz
-            python-apps/launcher/dist/librocco
+          path: python-apps/launcher/dist/Librocco.app.tar.gz
+          retention-days: 90
+          if-no-files-found: error
+          compression-level: 0  #! Already compressed as .tar.gz, no need to compress again
+
+      #! Linux/Windows: Upload directory directly
+      - name: Upload Linux/Windows artifact
+        if: runner.os != 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: python-apps/launcher/dist/librocco
           retention-days: 90
           if-no-files-found: error
 
