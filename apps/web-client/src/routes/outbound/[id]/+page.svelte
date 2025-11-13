@@ -15,7 +15,6 @@
 	import Plus from "$lucide/plus";
 
 	import MoreVertical from "$lucide/more-vertical";
-	import X from "$lucide/x";
 	import FileCheck from "$lucide/file-check";
 
 	import { desc, testId } from "@librocco/shared";
@@ -836,9 +835,6 @@
 						{tCommon.edit_book_dialog.description()}
 					</p>
 				</div>
-				<button use:melt={$editBookDialogClose} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
-					<X size={16} />
-				</button>
 			</div>
 			<div class="px-6">
 				<BookForm
@@ -899,9 +895,6 @@
 						<!-- TODO: no string for this -->
 					</p>
 				</div>
-				<button use:melt={$customItemDialogClose} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
-					<X size={16} />
-				</button>
 			</div>
 			<div class="px-6">
 				<CustomItemForm

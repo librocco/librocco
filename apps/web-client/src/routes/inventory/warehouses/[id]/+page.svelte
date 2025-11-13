@@ -9,8 +9,6 @@
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import FileEdit from "$lucide/file-edit";
-	import X from "$lucide/x";
-	import Loader from "$lucide/loader-2";
 	import Printer from "$lucide/printer";
 	import MoreVertical from "$lucide/more-vertical";
 	import FilePlus from "$lucide/file-plus";
@@ -291,9 +289,6 @@
 						{tLabels.manually_edit_book_details()}
 					</p>
 				</div>
-				<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
-					<X size={16} />
-				</button>
 			</div>
 			<div class="px-6">
 				<BookForm
