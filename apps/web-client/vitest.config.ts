@@ -44,6 +44,45 @@ function alias_vlcn_dev() {
 export default defineConfig({
 	plugins: [svelte({ hot: !process.env.VITEST })],
 
+	resolve: {
+		alias: {
+			$lib: path.resolve(__dirname, "src/lib"),
+
+			// (conditionally) alias the vlcn-io submodules
+			...alias_vlcn_dev(),
+
+			// some mocks used to not break the tests while testing components using them
+			$lucide: path.resolve(__dirname, "node_modules/lucide-svelte/dist/icons"),
+
+			// sveltekit module mocks for test environment
+			//
+			// NOTE: these defaults shouldn't be terribly relevant for testing usage,
+			// but do check them out in case some tested functionality DOES depend on correct values
+			"$app/paths": path.resolve(__dirname, "src/__mocks__/$app-paths.ts"),
+			"$app/navigation": path.resolve(__dirname, "src/__mocks__/$app-navigation.ts"),
+			"$app/stores": path.resolve(__dirname, "src/__mocks__/$app-stores.ts"),
+			"$app/environment": path.resolve(__dirname, "src/__mocks__/$app-environment.ts"),
+			"$app/forms": path.resolve(__dirname, "src/__mocks__/$app-forms.ts"),
+			"$env/static/public": path.resolve(__dirname, "src/__mocks__/$env-static-public.ts"),
+			"$env/dynamic/public": path.resolve(__dirname, "src/__mocks__/$env-dynamic-public.ts")
+		}
+	},
+
+	optimizeDeps: {
+		exclude: ["sveltekit-superforms"],
+		esbuildOptions: {
+			alias: {
+				"$app/paths": path.resolve(__dirname, "src/__mocks__/$app-paths.ts"),
+				"$app/navigation": path.resolve(__dirname, "src/__mocks__/$app-navigation.ts"),
+				"$app/stores": path.resolve(__dirname, "src/__mocks__/$app-stores.ts"),
+				"$app/environment": path.resolve(__dirname, "src/__mocks__/$app-environment.ts"),
+				"$app/forms": path.resolve(__dirname, "src/__mocks__/$app-forms.ts"),
+				"$env/static/public": path.resolve(__dirname, "src/__mocks__/$env-static-public.ts"),
+				"$env/dynamic/public": path.resolve(__dirname, "src/__mocks__/$env-dynamic-public.ts")
+			}
+		}
+	},
+
 	test: {
 		include: [
 			"src/lib/db/cr-sqlite/__tests__/**/*.{test,spec}.{js,ts}",
@@ -56,13 +95,9 @@ export default defineConfig({
 			enabled: true,
 			provider: "playwright",
 			name: "chromium"
-		},
-		alias: {
-			$lib: path.resolve(__dirname, "src/lib"),
-			...alias_vlcn_dev(),
-			$lucide: path.resolve(__dirname, "node_modules/lucide-svelte/dist/icons")
 		}
 	},
+
 	server: {
 		hmr: {
 			// Force the HMR websocket to use the same protocol as the page
