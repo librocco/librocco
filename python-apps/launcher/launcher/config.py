@@ -30,13 +30,13 @@ def get_binary_name(base_name: str) -> str:
 class Config:
     """Manages application directories and settings."""
 
-    APP_NAME = "librocco-launcher"
+    APP_NAME = "librocco"
     APP_AUTHOR = "librocco"
 
     def __init__(self):
         # Setup directory paths
-        # NOTE: On macOS, we use ~/.librocco-launcher/ instead of the standard
-        # ~/Library/Application Support/librocco-launcher/ to avoid spaces in paths.
+        # NOTE: On macOS, we use ~/.librocco/ instead of the standard
+        # ~/Library/Application Support/librocco/ to avoid spaces in paths.
         # While daemon_manager.py properly handles spaces (shell=False, resolved paths),
         # this workaround provides extra safety and matches Unix conventions.
         # TODO: Test removing this workaround on macOS to use standard platformdirs paths

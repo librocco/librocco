@@ -17,15 +17,15 @@ jobs:
         - os: linux
           arch: x64
           runner: ubuntu-22.04
-          artifact_name: librocco-launcher-linux-x64
+          artifact_name: librocco-linux-x64
         - os: macos
           arch: x64
           runner: macos-15-intel
-          artifact_name: librocco-launcher-macos-x64
+          artifact_name: librocco-macos-x64
         - os: macos
           arch: arm64
           runner: macos-15
-          artifact_name: librocco-launcher-macos-arm64
+          artifact_name: librocco-macos-arm64
     steps:
     - name: Checkout repository and submodules
       uses: actions/checkout@v4
@@ -124,7 +124,8 @@ jobs:
       with:
         name: ${{ matrix.artifact_name }}
         path: |
-          python-apps/launcher/dist/librocco-launcher*
+          python-apps/launcher/dist/Librocco.app
+          python-apps/launcher/dist/librocco
         retention-days: 90
         if-no-files-found: error
     - name: Install Linux dependencies
@@ -146,7 +147,13 @@ jobs:
         QT_QPA_PLATFORM: ${{ runner.os == 'Linux' && 'offscreen' || '' }}
       run: |
         cd python-apps/launcher/dist
-        ./librocco-launcher > launcher.log 2>&1 &
+        if [ "$RUNNER_OS" == "macOS" ]; then
+          # On macOS, run the executable inside the .app bundle
+          ./Librocco.app/Contents/MacOS/librocco > launcher.log 2>&1 &
+        else
+          # On Linux, run from the onedir directory
+          ./librocco/librocco > launcher.log 2>&1 &
+        fi
         echo $! > launcher.pid
       shell: bash
     - name: Check for launcher initialization errors
@@ -235,9 +242,9 @@ jobs:
       if: always()
       run: |
         if [[ "$RUNNER_OS" == "Linux" ]]; then
-          LOG_DIR="/home/runner/.local/share/librocco-launcher/logs"
+          LOG_DIR="/home/runner/.local/share/librocco/logs"
         elif [[ "$RUNNER_OS" == "macOS" ]]; then
-          LOG_DIR="/Users/runner/.librocco-launcher/logs"
+          LOG_DIR="/Users/runner/.librocco/logs"
         else
           echo "Unsupported OS for log dumping."
           exit 0
