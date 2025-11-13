@@ -328,29 +328,24 @@
 									<td>{publisher}</td>
 									<td>
 										{#if status === OrderLineStatus.Collected}
-											<div class="badge-primary badge-outline badge bg-red-400 text-xs font-semibold">
+											<div class="badge-outline badge orderline-collected text-xs font-semibold">
 												{$LL.customer_orders_page.status.collected()} -
-												<time datetime={collected.toISOString()} class="badge-xs badge border-0 bg-transparent"
-													>{collected.toDateString()}</time
-												>
+												<time datetime={collected.toISOString()} class="text-xs opacity-80">{collected.toDateString()}</time>
 											</div>
 										{:else if status === OrderLineStatus.Received}
-											<div class="badge-primary badge-outline badge bg-green-600 text-xs font-semibold">
+											<div class="badge-outline badge orderline-received text-xs font-semibold">
 												{$LL.customer_orders_page.status.delivered()} -
-												<time datetime={received.toISOString()} class="badge-xs badge border-0 bg-transparent"
-													>{received.toDateString()}</time
-												>
+												<time datetime={received.toISOString()} class="text-xs opacity-80">{received.toDateString()}</time>
 											</div>
 										{:else if status === OrderLineStatus.Placed}
-											<div class="badge-primary badge-outline badge bg-yellow-400 text-xs font-semibold">
+											<div class="badge-outline badge orderline-placed text-xs font-semibold">
 												{$LL.customer_orders_page.status.placed()} -
-												<time datetime={placed.toISOString()} class="badge-xs badge border-0 bg-transparent">{placed.toDateString()}</time>
+												<time datetime={placed.toISOString()} class="text-xs opacity-80">{placed.toDateString()}</time>
 											</div>
 										{:else}
-											<div class="badge-primary badge-outline badge text-xs font-semibold">
+											<div class="badge-outline badge orderline-pending text-xs font-semibold">
 												{$LL.customer_orders_page.status.pending()} -
-												<time datetime={created.toISOString()} class="badge-xs badge border-0 bg-transparent">{created.toDateString()}</time
-												>
+												<time datetime={created.toISOString()} class="text-xs opacity-80">{created.toDateString()}</time>
 											</div>
 										{/if}
 									</td>
