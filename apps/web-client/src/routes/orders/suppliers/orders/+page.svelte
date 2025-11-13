@@ -26,7 +26,12 @@
 	import PlaceholderBox from "$lib/components/Placeholders/PlaceholderBox.svelte";
 
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
-	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import {
+		getCustomerDisplayIdSeq,
+		getCustomerDisplayIdInfo,
+		upsertCustomer,
+		type CustomerDisplayIdInfo
+	} from "$lib/db/cr-sqlite/customers";
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
@@ -61,6 +66,18 @@
 	const {
 		states: { open: newOrderDialogOpen }
 	} = newOrderDialog;
+
+	// State for new customer form
+	let nextDisplayId = "";
+	let existingCustomers: CustomerDisplayIdInfo[] = [];
+
+	// Generate display ID and get existing IDs when opening the dialog
+	const handleOpenNewOrderDialog = async () => {
+		const { db } = data.dbCtx;
+		nextDisplayId = String(await getCustomerDisplayIdSeq(db));
+		existingCustomers = await getCustomerDisplayIdInfo(db);
+		newOrderDialogOpen.set(true);
+	};
 
 	$: hasPlacedOrders = placedOrders?.length;
 	$: hasReconcilingOrders = reconcilingOrders?.length;
@@ -102,14 +119,13 @@
 		downloadAsTextFile(generatedLines, `${event.detail.supplierOrderId}-${lines[0]?.supplier_name}-${lines[0]?.orderFormat}`);
 	}
 
-	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
+	const createCustomer = async (customer: Omit<Customer, "id">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 
-		const id = Math.floor(Math.random() * 1000000); // Temporary IDgeneration
-		const displayId = await getCustomerDisplayIdSeq(db).then(String);
+		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 
-		await upsertCustomer(db, { ...customer, id, displayId });
+		await upsertCustomer(db, { ...customer, id });
 
 		newOrderDialogOpen.set(false);
 
@@ -176,7 +192,7 @@
 						<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()}>
 							<PackageOpen slot="icon" />
 
-							<button slot="actions" class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+							<button slot="actions" class="btn-primary btn gap-2" on:click={handleOpenNewOrderDialog}>
 								<Plus size={20} />
 								<p>{t.placeholder.button()}</p>
 							</button>
@@ -200,14 +216,24 @@
 	<CustomerOrderMetaForm
 		heading="Create new order"
 		saveLabel="Create"
-		kind="create"
-		data={defaults(zod(createCustomerOrderSchema("create")))}
+		data={defaults({ displayId: nextDisplayId }, zod(createCustomerOrderSchema($LL, existingCustomers)))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema("create")),
-			onUpdate: ({ form }) => {
+			validators: zod(createCustomerOrderSchema($LL, existingCustomers)),
+			onSubmit: async ({ validators }) => {
+				// Get the latest customer data to ensure we're validating against current state
+				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+
+				// Create a new schema instance with the latest data and error message generator
+				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds);
+
+				// Update the validator with the new schema
+				validators(zod(updatedSchema));
+			},
+			onUpdate: async ({ form }) => {
 				if (form.valid) {
-					createCustomer(form.data);
+					const phone = [form.data.phone1, form.data.phone2].join(",");
+					await createCustomer({ ...form.data, phone });
 				}
 			}
 		}}
