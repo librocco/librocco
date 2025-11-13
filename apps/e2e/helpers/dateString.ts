@@ -7,17 +7,18 @@ import { assertionTimeout } from "@/constants";
 export function getDateString(parent: DashboardNode, prefix: string, extractDate: (str: string) => Date): UpdatedAtInterface {
 	const dashboard = parent.dashboard;
 
-	const container = parent.getByText(prefix);
+	// If prefix is empty, use parent directly; otherwise find element containing prefix text
+	const container = prefix ? parent.getByText(prefix) : parent;
 
 	const value = async (opts: WaitForOpts = {}) => {
 		await container.waitFor({ timeout: assertionTimeout, ...opts });
 
 		// Try to find a <time> element with datetime attribute first (for i18n formatted dates)
-		const timeElement = container.locator('time[datetime]');
-		const hasTimeElement = await timeElement.count().then(count => count > 0);
+		const timeElement = container.locator("time[datetime]");
+		const hasTimeElement = await timeElement.count().then((count) => count > 0);
 
 		if (hasTimeElement) {
-			const dateTimeAttr = await timeElement.getAttribute('datetime');
+			const dateTimeAttr = await timeElement.getAttribute("datetime");
 			if (dateTimeAttr) {
 				return new Date(dateTimeAttr);
 			}
