@@ -56,7 +56,6 @@ def main():
     package_syncserver_script = (
         launcher_dir / "scripts" / "package_syncserver_for_build.py"
     )
-    create_icon_script = launcher_dir / "scripts" / "create_icon.py"
 
     print("=" * 70)
     print("Librocco Launcher - Build Executable")
@@ -64,20 +63,8 @@ def main():
     print(f"Platform: {sys.platform}")
     print(f"Working directory: {launcher_dir}")
 
-    # Step 1: Create icon (macOS only, but harmless on other platforms)
-    print_step(1, 6, "Creating application icon")
-
-    if not create_icon_script.exists():
-        print(f"✗ Create icon script not found: {create_icon_script}", file=sys.stderr)
-        return 1
-
-    if not run_command(
-        ["uv", "run", str(create_icon_script)], "Create application icon"
-    ):
-        return 1
-
-    # Step 2: Download Node.js
-    print_step(2, 6, "Downloading Node.js binary")
+    # Step 1: Download Node.js
+    print_step(1, 5, "Downloading Node.js binary")
 
     if not download_node_script.exists():
         print(f"✗ Download script not found: {download_node_script}", file=sys.stderr)
@@ -89,8 +76,8 @@ def main():
     ):
         return 1
 
-    # Step 3: Download Caddy
-    print_step(3, 6, "Downloading Caddy binary")
+    # Step 2: Download Caddy
+    print_step(2, 5, "Downloading Caddy binary")
 
     if not download_caddy_script.exists():
         print(f"✗ Download script not found: {download_caddy_script}", file=sys.stderr)
@@ -102,8 +89,8 @@ def main():
     ):
         return 1
 
-    # Step 4: Package sync server
-    print_step(4, 6, "Packaging sync server")
+    # Step 3: Package sync server
+    print_step(3, 5, "Packaging sync server")
 
     if not package_syncserver_script.exists():
         print(
@@ -117,8 +104,8 @@ def main():
     ):
         return 1
 
-    # Step 5: Verify web client build
-    print_step(5, 6, "Verifying web client build")
+    # Step 4: Verify web client build
+    print_step(4, 5, "Verifying web client build")
 
     if not web_client_build.exists():
         print(f"\n✗ Web client build not found at: {web_client_build}", file=sys.stderr)
@@ -138,8 +125,8 @@ def main():
 
     print(f"✓ Web client build found ({len(build_files)} files)")
 
-    # Step 6: Run PyInstaller
-    print_step(6, 6, "Building executable with PyInstaller")
+    # Step 5: Run PyInstaller
+    print_step(5, 5, "Building executable with PyInstaller")
 
     if not spec_file.exists():
         print(f"✗ Spec file not found: {spec_file}", file=sys.stderr)
