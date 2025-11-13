@@ -174,7 +174,8 @@ jobs:
           if-no-files-found: error
           compression-level: 0  #! Already compressed as .tar.gz, no need to compress again
 
-      #! Linux/Windows: Upload directory directly
+      #! Linux: Upload single-file executable
+      #! Windows: Upload directory (if we ever enable Windows builds)
       - name: Upload Linux/Windows artifact
         if: runner.os != 'macOS'
         uses: actions/upload-artifact@v4
@@ -221,8 +222,8 @@ jobs:
             # On macOS, run the executable inside the .app bundle
             ./Librocco.app/Contents/MacOS/librocco > launcher.log 2>&1 &
           else
-            # On Linux, run from the onedir directory
-            ./librocco/librocco > launcher.log 2>&1 &
+            # On Linux, run the single-file executable
+            ./librocco > launcher.log 2>&1 &
           fi
           echo $! > launcher.pid
         shell: bash
