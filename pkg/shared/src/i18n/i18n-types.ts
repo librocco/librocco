@@ -5570,4 +5570,9 @@ export type TranslationFunctions = {
 	}
 }
 
-export type Formatters = {}
+export type Formatters = {
+	dateShort: (date: Date | string) => string
+	dateMedium: (date: Date | string) => string
+	dateTime: (date: Date | string) => string
+	timeOnly: (date: Date | string) => string
+}
