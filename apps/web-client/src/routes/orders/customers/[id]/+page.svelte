@@ -40,7 +40,6 @@
 		getCustomerDisplayIdInfo,
 		upsertCustomer,
 		markCustomerOrderLinesAsCollected,
-		validateCustomerDisplayId,
 		type CustomerDisplayIdInfo
 	} from "$lib/db/cr-sqlite/customers";
 	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
@@ -180,7 +179,7 @@
 			<div class="card md:h-full">
 				{#if customer}
 					<div class="card-body gap-y-2 p-0">
-						<div class="flex flex-col gap-y-2 border-b bg-base-200 px-4 py-2.5 max-md:sticky max-md:top-0">
+						<div class="flex flex-col gap-y-2 border-b px-4 py-2.5 max-md:sticky max-md:top-0">
 							<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
 								<h2 class="text-2xl font-medium">{customer.fullname}</h2>
 
@@ -500,19 +499,31 @@
 </div>
 
 <PageCenterDialog dialog={customerMetaDialog} title="" description="">
+	<!-- * It's important to pass the current display ID to the schema to ensure we're not validating against the current customer's display ID -->
 	<CustomerOrderMetaForm
 		heading={$LL.customer_orders_page.dialogs.edit_customer.title()}
 		saveLabel={$LL.customer_orders_page.labels.save()}
-		kind="update"
-		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema(existingCustomers, customer?.displayId)))}
-		validateBeforeSubmit={async (formData) => await validateCustomerDisplayId(db, formData.displayId, customer?.displayId)}
+		data={defaults(
+			stripNulls({ ...customer, phone1, phone2 }),
+			zod(createCustomerOrderSchema($LL, existingCustomers, customer?.displayId))
+		)}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema(existingCustomers, customer?.displayId)),
-			onUpdate: ({ form }) => {
+			validators: zod(createCustomerOrderSchema($LL, existingCustomers, customer?.displayId)),
+			onSubmit: async ({ validators }) => {
+				// Get the latest customer data to ensure we're validating against current state
+				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+
+				// Create a new schema instance with the latest data and error message generator
+				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds, customer?.displayId);
+
+				// Update the validator with the new schema
+				validators(zod(updatedSchema));
+			},
+			onUpdate: async ({ form }) => {
 				if (form.valid) {
 					const phone = [form.data.phone1, form.data.phone2].join(",");
-					handleUpdateCustomer({ ...form.data, phone });
+					await handleUpdateCustomer({ ...form.data, phone });
 				}
 			},
 			onUpdated: async ({ form }) => {

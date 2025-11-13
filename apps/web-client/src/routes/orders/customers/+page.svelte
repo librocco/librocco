@@ -28,7 +28,6 @@
 		getCustomerDisplayIdSeq,
 		getCustomerDisplayIdInfo,
 		upsertCustomer,
-		validateCustomerDisplayId,
 		type CustomerDisplayIdInfo
 	} from "$lib/db/cr-sqlite/customers";
 	import type { Customer, CustomerOrderListItem } from "$lib/db/cr-sqlite/types";
@@ -206,16 +205,24 @@
 	<CustomerOrderMetaForm
 		heading={t.dialogs.new_customer.title()}
 		saveLabel={t.labels.create()}
-		kind="create"
-		data={defaults({ displayId: nextDisplayId }, zod(createCustomerOrderSchema(existingCustomers)))}
-		validateBeforeSubmit={async (formData) => await validateCustomerDisplayId(data.dbCtx.db, formData.displayId)}
+		data={defaults({ displayId: nextDisplayId }, zod(createCustomerOrderSchema($LL, existingCustomers)))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema(existingCustomers)),
-			onUpdate: ({ form }) => {
+			validators: zod(createCustomerOrderSchema($LL, existingCustomers)),
+			onSubmit: async ({ validators }) => {
+				// Get the latest customer data to ensure we're validating against current state
+				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+
+				// Create a new schema instance with the latest data and error message generator
+				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds);
+
+				// Update the validator with the new schema
+				validators(zod(updatedSchema));
+			},
+			onUpdate: async ({ form }) => {
 				if (form.valid) {
 					const phone = [form.data.phone1, form.data.phone2].join(",");
-					createCustomer({ ...form.data, phone });
+					await createCustomer({ ...form.data, phone });
 				}
 			}
 		}}

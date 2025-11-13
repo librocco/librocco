@@ -1,9 +1,7 @@
 import { z } from "zod";
 import type { Infer } from "sveltekit-superforms";
-import { get } from "svelte/store";
 
 import type { TranslationFunctions } from "@librocco/shared";
-import LL from "@librocco/shared/i18n-svelte";
 import type { CustomerDisplayIdInfo } from "$lib/db/cr-sqlite/customers";
 
 export type DeviceSettingsSchema = Infer<typeof deviceSettingsSchema>;
@@ -78,26 +76,37 @@ export const customerSearchSchema = z.object({
 });
 
 export type CustomerOrderSchema = Infer<ReturnType<typeof createCustomerOrderSchema>>;
-export const createCustomerOrderSchema = (existingCustomers: Array<CustomerDisplayIdInfo> = [], currentDisplayId?: string) => {
-	// Create a map for quick lookup
-	const customerMap = new Map(existingCustomers.map((c) => [c.displayId, c]));
-
-	// Remove current customer ID from validation if editing
-	if (currentDisplayId) {
-		customerMap.delete(currentDisplayId);
-	}
-
+/**
+ *
+ * @param existingCustomers - Array of existing customer display ID info
+ * @param currentDisplayId - The current display ID of the customer being edited (when editing, to exclude self)
+ * @param LL - Translation functions for internationalization
+ * @returns A zod schema for the customer order form
+ */
+export const createCustomerOrderSchema = (
+	LL: TranslationFunctions,
+	existingCustomers: Array<CustomerDisplayIdInfo> = [],
+	currentDisplayId?: string
+) => {
 	return z.object({
 		id: z.number(),
 		displayId: z
 			.string()
 			.min(1)
-			.refine(
-				(val) => !customerMap.has(val),
-				() => ({
-					message: get(LL)?.forms.customer_order_meta.validation.display_id_not_unique() ?? "This customer ID is already taken"
-				})
-			),
+			.superRefine((data, ctx) => {
+				// * Check if the display ID is already taken by another customer and exclude the current customer if editing
+				const conflict = existingCustomers.find((c) => c.displayId === data && c.displayId !== currentDisplayId);
+
+				if (conflict) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: LL.forms.customer_order_meta.validation.display_id_not_unique({
+							fullname: conflict.fullname,
+							bookCount: conflict.bookCount
+						})
+					});
+				}
+			}),
 		fullname: z.string().min(1),
 		email: z.string().max(0).optional().or(z.string().email()),
 		deposit: z.number().default(0),
