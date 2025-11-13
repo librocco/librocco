@@ -7,8 +7,8 @@
 # ///
 """
 Create .icns icon file for macOS from SVG.
-
 This script converts the favicon.svg to a .icns file with multiple resolutions.
+The generated icon (assets/icon.icns) is checked into git and used by PyInstaller.
 """
 
 import io
