@@ -5568,7 +5568,7 @@ export type TranslationFunctions = {
 			}
 		}
 	}
-}
+} & Formatters
 
 export type Formatters = {
 	dateShort: (date: Date | string) => string

@@ -147,7 +147,9 @@
 							<li class="col-span-12 grid grid-cols-12">
 								<div class="entity-list-row col-span-8 grid grid-cols-8 items-center text-base-content">
 									<p data-property="committedAt" class="col-span-2">
-										{$LL.dateTime(committedAt)}
+										<time dateTime={new Date(committedAt).toISOString()}>
+											{$LL.dateTime(committedAt)}
+										</time>
 									</p>
 
 									<div class="col-span-2 flex items-center">

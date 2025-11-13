@@ -135,7 +135,9 @@
 										<div class="flex items-center gap-x-2 text-sm text-base-content">
 											<ClockArrowUp size={18} />
 											{tOutboundPage.stats.last_updated()}:
-											{updatedAt}
+											<time dateTime={new Date(note.updatedAt).toISOString()}>
+												{updatedAt}
+											</time>
 										</div>
 									{/if}
 								</div>

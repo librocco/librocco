@@ -12,6 +12,18 @@ export function getDateString(parent: DashboardNode, prefix: string, extractDate
 	const value = async (opts: WaitForOpts = {}) => {
 		await container.waitFor({ timeout: assertionTimeout, ...opts });
 
+		// Try to find a <time> element with datetime attribute first (for i18n formatted dates)
+		const timeElement = container.locator('time[datetime]');
+		const hasTimeElement = await timeElement.count().then(count => count > 0);
+
+		if (hasTimeElement) {
+			const dateTimeAttr = await timeElement.getAttribute('datetime');
+			if (dateTimeAttr) {
+				return new Date(dateTimeAttr);
+			}
+		}
+
+		// Fallback to extracting date from text content (legacy format)
 		const matchedString = await container.evaluate((element) => element.textContent, null, {
 			timeout: assertionTimeout,
 			...opts

@@ -8,7 +8,7 @@ export const initFormatters: FormattersInitializer<Locales, Formatters> = (local
 
 		// Short date format: month + day only (no year)
 		// Examples: "Jan 13" (en), "13 gen" (it)
-		dateShort: (date: Date | string) =>
+		dateShort: (date: Date | string): string =>
 			new Date(date).toLocaleDateString(locale, {
 				month: 'short',
 				day: 'numeric'
@@ -16,7 +16,7 @@ export const initFormatters: FormattersInitializer<Locales, Formatters> = (local
 
 		// Medium date format: month + day + year
 		// Examples: "Jan 13, 2024" (en), "13 gen 2024" (it)
-		dateMedium: (date: Date | string) =>
+		dateMedium: (date: Date | string): string =>
 			new Date(date).toLocaleDateString(locale, {
 				month: 'short',
 				day: 'numeric',
@@ -25,7 +25,7 @@ export const initFormatters: FormattersInitializer<Locales, Formatters> = (local
 
 		// Full date and time format
 		// Examples: "Jan 13, 2024, 3:45 PM" (en), "13 gen 2024, 15:45" (it)
-		dateTime: (date: Date | string) =>
+		dateTime: (date: Date | string): string =>
 			new Date(date).toLocaleDateString(locale, {
 				month: 'short',
 				day: 'numeric',
@@ -36,7 +36,7 @@ export const initFormatters: FormattersInitializer<Locales, Formatters> = (local
 
 		// Time only format
 		// Examples: "3:45 PM" (en), "15:45" (it)
-		timeOnly: (date: Date | string) =>
+		timeOnly: (date: Date | string): string =>
 			new Date(date).toLocaleTimeString(locale, {
 				hour: '2-digit',
 				minute: 'numeric'

@@ -140,7 +140,10 @@
 								</p>
 								<p class="lg:order-4 xl:order-none xl:col-span-2">
 									<span data-property="committedAt" class="badge badge-md {noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-										{t.transactions.committed()}: {$LL.dateTime(committedAt)}
+										{t.transactions.committed()}:
+										<time dateTime={new Date(committedAt).toISOString()}>
+											{$LL.dateTime(committedAt)}
+										</time>
 									</span>
 								</p>
 

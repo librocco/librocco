@@ -101,7 +101,10 @@
 
 								<p class="order-3 col-span-2 lg:order-2">
 									<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-										{t.date.committed()}: {$LL.timeOnly(note.committedAt)}
+										{t.date.committed()}:
+										<time dateTime={new Date(note.committedAt).toISOString()}>
+											{$LL.timeOnly(note.committedAt)}
+										</time>
 									</span>
 								</p>
 

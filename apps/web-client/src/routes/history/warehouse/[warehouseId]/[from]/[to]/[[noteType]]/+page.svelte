@@ -190,7 +190,9 @@
 					{#each transactions as txn}
 						<li class="entity-list-row col-span-12 grid grid-cols-12 items-center gap-4 whitespace-nowrap text-base-content">
 							<p data-property="committedAt" class="col-span-12 overflow-hidden font-semibold lg:col-span-2 lg:font-normal">
-								{$LL.dateTime(txn.committedAt)}
+								<time dateTime={new Date(txn.committedAt).toISOString()}>
+									{$LL.dateTime(txn.committedAt)}
+								</time>
 							</p>
 
 							<div class="col-span-8 grid items-center gap-x-4 md:grid-cols-1 lg:col-span-7 lg:grid-cols-7 xl:col-span-8 xl:grid-cols-8">

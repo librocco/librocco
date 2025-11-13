@@ -102,7 +102,12 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">{t.committed_at()}: {$LL.dateTime(updatedAt)}</span>
+						<span class="badge badge-md badge-green">
+							{t.committed_at()}:
+							<time dateTime={new Date(updatedAt).toISOString()}>
+								{$LL.dateTime(updatedAt)}
+							</time>
+						</span>
 					{/if}
 				</div>
 			</div>
