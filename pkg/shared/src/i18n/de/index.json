@@ -9,6 +9,11 @@
     "history": "Verlauf",
     "supplier_orders": "Lieferantenbestellungen"
   },
+  "page_headings": {
+    "outbound": "",
+    "inbound": "",
+    "warehouse": ""
+  },
   "search": {
     "title": "Suche",
     "empty": {
@@ -221,10 +226,6 @@
       },
       "edit_customer": {
         "title": ""
-      },
-      "non_unique_id": {
-        "title": "",
-        "description": ""
       }
     }
   },
@@ -249,7 +250,8 @@
       "email": "",
       "address": "",
       "assigned_publishers": "",
-      "actions": ""
+      "actions": "",
+      "order_format": ""
     }
   },
   "warehouse_list_page": {
@@ -299,8 +301,15 @@
     "commit_dialog": {
       "title": "",
       "description": "",
-      "review_transaction": "",
-      "quantity": ""
+      "stock_adjustement_detail": {
+        "summary": "",
+        "detail_list": {
+          "row": "",
+          "requested": "",
+          "available": "",
+          "adjustment": ""
+        }
+      }
     },
     "force_withdrawal_dialog": {
       "title": "",
@@ -333,6 +342,7 @@
     },
     "placeholder": {
       "select_warehouse": "",
+      "any_warehouse": "",
       "no_warehouses": "",
       "scan_title": "",
       "scan_description": ""
@@ -385,16 +395,22 @@
       "settings": "",
       "device_settings": "",
       "sync_settings": "",
-      "db_management": ""
+      "db_management": "",
+      "demo_reset": ""
     },
     "descriptions": {
       "sync_settings": "",
       "db_management": "",
       "import": "",
-      "device_settings": ""
+      "device_settings": "",
+      "demo_reset_1": "",
+      "demo_reset_2": ""
     },
     "actions": {
       "nuke_and_resync": ""
+    },
+    "demo_actions": {
+      "reset_db": ""
     },
     "stats": {
       "version": ""
@@ -441,6 +457,7 @@
       "title": "",
       "description": ""
     },
+    "action_dropdown_trigger_aria": "",
     "actions": {
       "cancel": "",
       "confirm": "",
@@ -482,7 +499,10 @@
     "stats": {
       "total_books": "",
       "total_value": "",
-      "selected_books": ""
+      "selected_books": "",
+      "order_format": "",
+      "no_order_format": "",
+      "go_to_supplier": ""
     },
     "table": {
       "quantity": "",
@@ -494,7 +514,8 @@
     },
     "labels": {
       "select": "",
-      "place_order": ""
+      "place_order": "",
+      "no_format_tooltip": ""
     }
   },
   "reconcile_page": {
@@ -544,7 +565,8 @@
     "labels": {
       "view_reconciliation": "",
       "reconcile": "",
-      "print_order": ""
+      "print_order": "",
+      "download_order": ""
     },
     "stats": {
       "total_books": "",
@@ -572,7 +594,8 @@
       "supplier_name": "",
       "supplier_email": "",
       "supplier_address": "",
-      "supplier_customerId": ""
+      "supplier_customerId": "",
+      "supplier_orderFormat": ""
     },
     "table": {
       "publisher_name": "",
@@ -755,6 +778,12 @@
       }
     },
     "error_dialog": {
+      "demo_db_not_initialised": {
+        "title": "",
+        "call_to_action": "",
+        "description": "",
+        "button": ""
+      },
       "schema_mismatch": {
         "title": "",
         "description": "",
@@ -862,7 +891,9 @@
         "email": "",
         "address": "",
         "customer_id": "",
-        "cancel_button": ""
+        "cancel_button": "",
+        "order_format": "",
+        "order_format_message": ""
       },
       "aria": {
         "form": ""
@@ -932,6 +963,10 @@
         "phone1": "",
         "phone2": "",
         "cancel_button": ""
+      },
+      "validation": {
+        "display_id_not_unique": "Diese Kunden-ID wird bereits verwendet",
+        "display_id_in_use": "Diese ID wird bereits vom Kunden \"{fullname}\" mit {bookCount} bestellte{{m|n}} {{Buch|Büchern}} verwendet"
       },
       "aria": {
         "form": ""

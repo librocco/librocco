@@ -27,7 +27,6 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { ScannerForm, DaisyUIBookForm, bookSchema, scannerSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
-	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	import { Page } from "$lib/controllers";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
@@ -37,9 +36,10 @@
 	import {
 		addBooksToCustomer,
 		removeBooksFromCustomer,
-		isDisplayIdUnique,
+		getCustomerDisplayIdInfo,
 		upsertCustomer,
-		markCustomerOrderLinesAsCollected
+		markCustomerOrderLinesAsCollected,
+		type CustomerDisplayIdInfo
 	} from "$lib/db/cr-sqlite/customers";
 	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
@@ -82,31 +82,18 @@
 		states: { open: customerMetaDialogOpen }
 	} = customerMetaDialog;
 
+	// State for edit customer form
+	let existingCustomers: CustomerDisplayIdInfo[] = [];
+
+	// Get existing display IDs when opening the edit dialog
+	const handleOpenCustomerMetaDialog = async () => {
+		existingCustomers = await getCustomerDisplayIdInfo(db);
+		customerMetaDialogOpen.set(true);
+	};
+
 	const handleUpdateCustomer = async (_data: Partial<Customer>) => {
 		const data = { ...stripNulls(customer), ..._data };
-
-		if (!(await isDisplayIdUnique(db, data))) {
-			return handleOpenNonUniqueIdDialog(data);
-		}
-
 		await upsertCustomer(db, data);
-	};
-
-	const nonUniqueIdDialog = createDialog(defaultDialogConfig);
-	const {
-		states: { open: nonUniqueIdDialogOpen }
-	} = nonUniqueIdDialog;
-	let submittingCustomer: Customer | null = null;
-
-	const handleOpenNonUniqueIdDialog = (data: Customer) => {
-		submittingCustomer = data;
-		nonUniqueIdDialogOpen.set(true);
-	};
-
-	const handleConfirmNonUniqueIdDialog = async () => {
-		await upsertCustomer(db, submittingCustomer);
-		submittingCustomer = null;
-		nonUniqueIdDialogOpen.set(false);
 	};
 
 	// #endregion dialog
@@ -191,7 +178,7 @@
 			<div class="card md:h-full">
 				{#if customer}
 					<div class="card-body gap-y-2 p-0">
-						<div class="flex flex-col gap-y-2 border-b bg-base-200 px-4 py-2.5 max-md:sticky max-md:top-0">
+						<div class="flex flex-col gap-y-2 border-b px-4 py-2.5 max-md:sticky max-md:top-0">
 							<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
 								<h2 class="text-2xl font-medium">{customer.fullname}</h2>
 
@@ -259,7 +246,7 @@
 								class="btn-secondary btn-outline btn-sm btn w-full"
 								type="button"
 								aria-label={$LL.forms.customer_order_meta.aria.form()}
-								on:click={() => customerMetaDialogOpen.set(true)}
+								on:click={handleOpenCustomerMetaDialog}
 								disabled={!data?.customer}
 							>
 								{$LL.customer_orders_page.labels.edit_customer()}
@@ -508,18 +495,31 @@
 </div>
 
 <PageCenterDialog dialog={customerMetaDialog} title="" description="">
+	<!-- * It's important to pass the current display ID to the schema to ensure we're not validating against the current customer's display ID -->
 	<CustomerOrderMetaForm
 		heading={$LL.customer_orders_page.dialogs.edit_customer.title()}
 		saveLabel={$LL.customer_orders_page.labels.save()}
-		kind="update"
-		data={defaults(stripNulls({ ...customer, phone1, phone2 }), zod(createCustomerOrderSchema("update")))}
+		data={defaults(
+			stripNulls({ ...customer, phone1, phone2 }),
+			zod(createCustomerOrderSchema($LL, existingCustomers, customer?.displayId))
+		)}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema("update")),
-			onUpdate: ({ form }) => {
+			validators: zod(createCustomerOrderSchema($LL, existingCustomers, customer?.displayId)),
+			onSubmit: async ({ validators }) => {
+				// Get the latest customer data to ensure we're validating against current state
+				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+
+				// Create a new schema instance with the latest data and error message generator
+				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds, customer?.displayId);
+
+				// Update the validator with the new schema
+				validators(zod(updatedSchema));
+			},
+			onUpdate: async ({ form }) => {
 				if (form.valid) {
 					const phone = [form.data.phone1, form.data.phone2].join(",");
-					handleUpdateCustomer({ ...form.data, phone });
+					await handleUpdateCustomer({ ...form.data, phone });
 				}
 			},
 			onUpdated: async ({ form }) => {
@@ -531,12 +531,3 @@
 		onCancel={() => customerMetaDialogOpen.set(false)}
 	/>
 </PageCenterDialog>
-
-<ConfirmDialog
-	dialog={nonUniqueIdDialog}
-	title={$LL.customer_orders_page.dialogs.non_unique_id.title()}
-	description={$LL.customer_orders_page.dialogs.non_unique_id.description()}
-	onConfirm={handleConfirmNonUniqueIdDialog}
-	onCancel={() => nonUniqueIdDialogOpen.set(false)}
-	labels={{ confirm: $LL.common.actions.confirm(), cancel: $LL.common.actions.cancel() }}
-/>

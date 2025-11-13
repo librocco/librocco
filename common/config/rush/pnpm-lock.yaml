@@ -366,7 +366,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(@types/node@16.18.126)
+        version: 6.0.15(tsx@4.20.3)
 
   ../../pkg/scaffold:
     dependencies:
@@ -553,7 +553,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(@types/node@16.18.126)
+        version: 6.0.15(tsx@4.20.3)
 
   ../../plugins/open-library-api:
     devDependencies:
@@ -583,7 +583,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(@types/node@16.18.126)
+        version: 6.0.15(tsx@4.20.3)
 
 packages:
 
