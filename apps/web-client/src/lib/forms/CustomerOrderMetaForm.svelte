@@ -10,44 +10,12 @@
 
 	export let saveLabel: string;
 	export let heading = "";
-	export let kind: "create" | "update";
 
 	export let data: SuperValidated<CustomerOrderSchema>;
 	export let options: FormOptions<CustomerOrderSchema>;
 	export let onCancel = () => {};
 
-	/**
-	 * Optional function to perform additional validation before submission.
-	 * Called before form validation. Should return error message if invalid, null if valid.
-	 */
-	export let validateBeforeSubmit: ((data: CustomerOrderSchema) => Promise<string | null>) | undefined = undefined;
-
-	const originalOnSubmit = options.onSubmit;
-
-	const form = superForm(data, {
-		...options,
-		onSubmit: async (event) => {
-			// Call original onSubmit first if it exists
-			if (originalOnSubmit) {
-				await originalOnSubmit(event);
-			}
-
-			// Run custom pre-submission validation if provided
-			if (validateBeforeSubmit) {
-				const validationError = await validateBeforeSubmit($formStore as CustomerOrderSchema);
-				if (validationError) {
-					// Set error on displayId field and prevent submission
-					errors.update((e) => ({ ...e, displayId: [validationError] }));
-
-					// Focus the displayId field to match standard validation UX
-					const displayIdInput = event.formElement.querySelector<HTMLInputElement>('[name="displayId"]');
-					displayIdInput?.focus();
-
-					event.cancel();
-				}
-			}
-		}
-	});
+	const form = superForm(data, options);
 
 	const { form: formStore, enhance, tainted, isTainted, errors } = form;
 
