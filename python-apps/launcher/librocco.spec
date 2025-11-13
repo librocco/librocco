@@ -134,14 +134,13 @@ a = Analysis(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
+# Use onedir mode (not onefile) for proper .app bundle support on macOS
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
-    name='librocco-launcher',
+    exclude_binaries=True,  # This enables onedir mode
+    name='librocco',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -156,15 +155,30 @@ exe = EXE(
     entitlements_file=None,
 )
 
+# Collect all binaries and data files (onedir mode)
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name='librocco',
+)
+
 # Platform-specific settings
 if IS_MACOS:
+    # Look for icon file
+    icon_path = PROJECT_ROOT / 'assets' / 'icon.icns'
     app = BUNDLE(
-        exe,
-        name='Librocco Launcher.app',
-        icon=None,
+        coll,  # Bundle uses COLLECT in onedir mode
+        name='Librocco.app',
+        icon=str(icon_path) if icon_path.exists() else None,
         bundle_identifier='com.librocco.launcher',
         info_plist={
             'CFBundleShortVersionString': '1.0.0',
+            'CFBundleName': 'Librocco',
             'NSHighResolutionCapable': True,
             'LSUIElement': '1',  # Run as menu bar app only (no Dock icon, no empty menu bar)
         },
