@@ -151,14 +151,26 @@ jobs:
         shell: bash
 
       #! Upload artifacts
-      #! On macOS: Upload the .app bundle (onedir mode creates Librocco.app)
-      #! On Linux/Windows: Upload the librocco directory (onedir mode)
+      #! On macOS: Create tar.gz to preserve symlinks (prevents 450MB duplication)
+      #! GitHub Actions upload-artifact doesn't preserve symlinks, causing PyInstaller's
+      #! cross-linked Contents/Resources and Contents/Frameworks to be duplicated
+      - name: Create macOS archive (preserve symlinks)
+        if: runner.os == 'macOS'
+        run: |
+          cd python-apps/launcher/dist
+          # Use tar to preserve symlinks created by PyInstaller
+          tar -czf Librocco.app.tar.gz Librocco.app
+          echo "Created Librocco.app.tar.gz ($(du -sh Librocco.app.tar.gz | cut -f1))"
+        shell: bash
+
+      #! On macOS: Upload the tar.gz archive (preserves symlinks)
+      #! On Linux/Windows: Upload the directory directly
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: |
-            python-apps/launcher/dist/Librocco.app
+            python-apps/launcher/dist/Librocco.app.tar.gz
             python-apps/launcher/dist/librocco
           retention-days: 90
           if-no-files-found: error
@@ -178,6 +190,15 @@ jobs:
           # This allows screencapture to capture the menu bar and tray icons
           sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" \
             "INSERT OR REPLACE INTO access VALUES('kTCCServiceScreenCapture','com.apple.Terminal',0,2,4,1,NULL,NULL,0,'UNUSED',NULL,0,$(date +%s));" || true
+        shell: bash
+
+      #! Extract macOS archive for testing
+      - name: Extract macOS archive for testing
+        if: runner.os == 'macOS'
+        run: |
+          cd python-apps/launcher/dist
+          tar -xzf Librocco.app.tar.gz
+          echo "Extracted Librocco.app for integration testing"
         shell: bash
 
       - name: Start launcher

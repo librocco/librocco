@@ -119,12 +119,20 @@ jobs:
         source .venv/bin/activate
         python scripts/build_executable.py
       shell: bash
+    - name: Create macOS archive (preserve symlinks)
+      if: runner.os == 'macOS'
+      run: |
+        cd python-apps/launcher/dist
+        # Use tar to preserve symlinks created by PyInstaller
+        tar -czf Librocco.app.tar.gz Librocco.app
+        echo "Created Librocco.app.tar.gz ($(du -sh Librocco.app.tar.gz | cut -f1))"
+      shell: bash
     - name: Upload executable artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.artifact_name }}
         path: |
-          python-apps/launcher/dist/Librocco.app
+          python-apps/launcher/dist/Librocco.app.tar.gz
           python-apps/launcher/dist/librocco
         retention-days: 90
         if-no-files-found: error
@@ -140,6 +148,13 @@ jobs:
         # This allows screencapture to capture the menu bar and tray icons
         sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" \
           "INSERT OR REPLACE INTO access VALUES('kTCCServiceScreenCapture','com.apple.Terminal',0,2,4,1,NULL,NULL,0,'UNUSED',NULL,0,$(date +%s));" || true
+      shell: bash
+    - name: Extract macOS archive for testing
+      if: runner.os == 'macOS'
+      run: |
+        cd python-apps/launcher/dist
+        tar -xzf Librocco.app.tar.gz
+        echo "Extracted Librocco.app for integration testing"
       shell: bash
     - name: Start launcher
       if: runner.os != 'Windows'
