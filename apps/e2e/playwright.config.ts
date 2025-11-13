@@ -1,8 +1,8 @@
-import { defineConfig, devices, PlaywrightTestConfig, ReporterDescription } from "@playwright/test";
+import { defineConfig, devices } from "@playwright/test";
 
 import { IS_CI, VFS_TEST, SHARD_INDEX, baseURL } from "./constants";
 
-const reporter: ReporterDescription[] = [["list"]];
+const reporter = [["list"] as const];
 // Produce a merge‑able blob report when running in CI
 if (IS_CI) {
 	reporter.push(["blob"]);
@@ -52,7 +52,7 @@ const browsers = [
 
 const locales = ["en"];
 
-const baseConfig: PlaywrightTestConfig = {
+const baseConfig = {
 	testDir: "./integration",
 	/* Run tests in files in parallel */
 	fullyParallel: false,
@@ -78,7 +78,7 @@ const baseConfig: PlaywrightTestConfig = {
 	}
 };
 
-const defaultConfig: PlaywrightTestConfig = {
+const defaultConfig = {
 	...baseConfig,
 	reporter,
 	projects: browsers
@@ -101,7 +101,7 @@ const vfsList = [
 ];
 const outputFile =
 	SHARD_INDEX === undefined ? `vfs-benchmark-results/test-results.json` : `vfs-benchmark-results/test-results-${SHARD_INDEX}.json`;
-const vfsTestConfig: PlaywrightTestConfig = {
+const vfsTestConfig = {
 	...baseConfig,
 	reporter: [...reporter, ["json", { outputFile }]],
 	projects: browsers // NOTE: using all browsers, but only the default locale in this scenario
