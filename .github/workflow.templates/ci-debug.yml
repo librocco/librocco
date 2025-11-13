@@ -4,7 +4,7 @@
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
 
-name: Checks
+name: CI Debug
 
 "on":
   push:

@@ -639,7 +639,7 @@ See implementation in:
 - `src/routes/settings/+page.svelte` (manual nukeAndResyncOPFS)
 - `src/lib/db/cr-sqlite/core/utils.ts` (fetchAndStoreDBFile, reidentifyDbNode)
 - `src/lib/db/cr-sqlite/db.ts` (isEmptyDB)
-- `src/sync_server/index.ts` (file endpoint)
+- Sync server `/file` endpoint (see `apps/sync-server/src/index.ts`)
 
 #### WAL to Rollback Conversion
 
@@ -655,7 +655,14 @@ If cr-sqlite internals change, check: ordinal→UUID mapping, `crsql_tracked_pee
 
 ## Sync server
 
-Sync server is scaffolded using exports from [vlcn.io/ws-server] package, namely `attachWebSocketServer` (using Express server app):
+> **Architecture Note:** The sync server is maintained as a separate package in `apps/sync-server/` and is managed externally from the web-client:
+>
+> - **Development/E2E Testing:** Run directly from `apps/sync-server` using `rushx start:dev`
+> - **Production:** Managed as a daemon process by the Python launcher (`python-apps/launcher`)
+>
+> This section documents the sync server's technical implementation using the vlcn.io packages, which remains consistent across all deployment modes.
+
+The sync server is scaffolded using exports from [vlcn.io/ws-server] package, namely `attachWebSocketServer` (using Express server app):
 
 ```ts
 import * as http from "http";

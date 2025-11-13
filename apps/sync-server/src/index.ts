@@ -5,16 +5,19 @@ import path from "path";
 import fs from "fs";
 
 import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
-import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack";
+import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack.js";
 
 const IS_DEV = process.env.IS_DEV === "true";
 const PORT = process.env.PORT || 3000;
+const DB_FOLDER = process.env.DB_FOLDER || "./test-dbs";
+const SCHEMA_FOLDER = process.env.SCHEMA_FOLDER || "./schemas";
+
 const app = express();
 const server = http.createServer(app);
 
 const wsConfig = {
-	dbFolder: "./test-dbs",
-	schemaFolder: "./src/lib/schemas",
+	dbFolder: DB_FOLDER,
+	schemaFolder: SCHEMA_FOLDER,
 	pathPattern: /\/sync/
 };
 
@@ -87,15 +90,19 @@ app.get("/:dbname/file", async (req, res) => {
 	return res.sendFile(dbPath);
 });
 
-server.listen(PORT, () => {
-	console.log("info", `listening on http://localhost:${PORT}!`);
+// Bind only to localhost for security (not accessible from network)
+server.listen(Number(PORT), "127.0.0.1", () => {
+	console.log("info", `listening on http://127.0.0.1:${PORT}!`);
 });
 
 // Gracefully shut down the server on process termination
-process.on("SIGINT", () => {
-	console.log("info", "[SIGINT] Shutting down server...");
+const shutdown = (signal: string) => {
+	console.log("info", `[${signal}] Shutting down server...`);
 	server.close(() => {
 		console.log("info", "Server closed");
 		process.exit(0);
 	});
-});
+};
+
+process.on("SIGINT", () => shutdown("SIGINT"));
+process.on("SIGTERM", () => shutdown("SIGTERM"));

@@ -71,6 +71,8 @@ const baseConfig: PlaywrightTestConfig = {
 		/* Base URL to use in actions like `await page.goto('/')`. */
 		// baseURL: 'http://127.0.0.1:3000',
 		baseURL: baseURL,
+		/* Accept self-signed certificates from Caddy in CI */
+		ignoreHTTPSErrors: true,
 		/* Collect trace for failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: "retain-on-failure",
 		/** Record video for all test runs and retain for failed tests. See https://playwright.dev/docs/videos */

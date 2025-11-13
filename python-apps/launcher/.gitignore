@@ -1,0 +1,5 @@
+__pycache__
+.claude
+*.egg-info
+bundled_binaries
+bundled_syncserver

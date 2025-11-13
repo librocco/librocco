@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "launcher"
+version = "0.1.0"
+description = "Cross-platform system tray application using PyQt6"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pyqt6>=6.10.0",
+    "circus>=0.18.0",
+    "platformdirs>=4.0.0",
+    "requests>=2.31.0",
+    "psutil>=6.0.0",
+    "tomli-w>=1.0.0",
+    "babel>=2.14.0",
+    "qrcode[pil]>=7.4.0",
+]
+
+[project.scripts]
+librocco = "launcher.main:main"
+librocco-headless = "launcher.main_headless:main"
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-mock>=3.12.0",
+]
+build = [
+    "pyinstaller>=6.0.0",
+]
+
+[tool.setuptools]
+packages = ["launcher"]
+
+[tool.setuptools.package-data]
+launcher = ["locales/*/LC_MESSAGES/*.mo"]
+
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks tests as slow (integration tests with process startup/shutdown)",
+    "integration: marks tests as integration tests requiring full stack",
+    "binary: marks tests requiring Caddy binary download/verification",
+]
+# Enable verbose output by default
+addopts = "-v"

@@ -10,7 +10,7 @@
 #@ load("r2.lib.yml", "install_and_configure_rclone")
 #@ load("r2.lib.yml", "upload_to_r2")
 
-name: Checks
+name: Web App CI
 
 "on":
   push:
@@ -18,6 +18,8 @@ name: Checks
       - "ci-debug/*"
       - "wip/**"
       - "vfs-benchmark/**"
+    paths-ignore:
+      - "python-apps/**"
 
 jobs:
   build-cr-sqlite: #@ build_crsqlite()
@@ -52,14 +54,43 @@ jobs:
       -  #@ rush_build()
       - name: Build the app
         run: cd apps/web-client && rushx build:e2e
+      - name: Restructure build for /preview base path
+        run: |
+          cd apps/web-client
+          mkdir preview
+          mv build/* preview/
+          mv preview build/
       - name: Download playwright browsers
         run: cd apps/e2e && npx playwright install
+      - name: Install uv (Python package manager)
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          working-directory: python-apps/launcher
+      - name: Clean stale test DBs (fix schema mismatch)
+        run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
+      - name: Start headless launcher in background
+        run: |
+          mkdir -p ~/.local/share/librocco-launcher/logs
+          uv run --directory python-apps/launcher python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
+          echo $! > /tmp/launcher.pid
+          echo "Started launcher (PID: $(cat /tmp/launcher.pid))"
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for sync server..."
+          timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
+          echo "Waiting for Caddy/web app..."
+          timeout 30 bash -c 'until curl -f -k https://localhost:8080/preview/ 2>/dev/null; do sleep 1; done'
+          echo "All services ready!"
       - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
-        run: cd apps/e2e && rushx test:ci
+        run: cd apps/e2e && rushx test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
-          PLAYWRIGHT_OPTIONS: "--shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}"
           SHARD_INDEX: "${{ matrix.shardIndex }}"
-      #! upload each shard’s blob so we can merge later
+      - name: Stop services
+        if: always()
+        run: |
+          if [ -f /tmp/launcher.pid ]; then kill $(cat /tmp/launcher.pid) || true; fi
+      #! upload each shard's blob so we can merge later
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -69,8 +100,8 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: sync-server-logs-${{ matrix.shardIndex }}
-          path: apps/web-client/server_output.log
+          name: launcher-logs-${{ matrix.shardIndex }}
+          path: ~/.local/share/librocco-launcher/logs/
           retention-days: 2
 
   lint-and-typecheck:

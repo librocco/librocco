@@ -1,0 +1,68 @@
+#@ load("github.lib.yml", "checkout")
+
+name: Python Launcher CI
+
+"on":
+  push:
+    branches-ignore:
+      - "ci-debug/*"
+      - "wip/**"
+    paths:
+      - "python-apps/**"
+      - ".github/workflows/python-launcher-ci.yml"
+
+jobs:
+  test:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      -  #@ checkout()
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: "3.13"
+          working-directory: python-apps/launcher
+
+      - name: Set Qt to run in offscreen mode
+        run: echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Create virtual environment
+        run: |
+          cd python-apps/launcher
+          uv venv
+        shell: bash
+
+      - name: Install package with test dependencies
+        run: |
+          cd python-apps/launcher
+          uv pip install -e .[test]
+        shell: bash
+
+      - name: Run unit tests
+        run: |
+          cd python-apps/launcher
+          uv run pytest tests/ -v --tb=short -k "not integration"
+        shell: bash
+
+      - name: Run integration tests (certificate installation)
+        run: |
+          cd python-apps/launcher
+          CI=true uv run pytest tests/test_network_utils.py -v --tb=short -k "integration"
+        shell: bash
+        env:
+          CI: "true"
+
+      - name: Run tests with coverage
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd python-apps/launcher
+          uv run pytest tests/ --cov=launcher --cov-report=term-missing
+        shell: bash
