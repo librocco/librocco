@@ -26,8 +26,9 @@
 	import { zod } from "sveltekit-superforms/adapters";
 
 	import { createCustomerOrderSchema } from "../schemas";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
-	const form = defaults(zod(createCustomerOrderSchema()));
+	const form = defaults(zod(createCustomerOrderSchema($LL)));
 </script>
 
 <Story name="Customer Order Meta">
@@ -40,6 +41,5 @@
 		}}
 		heading="Create a new customer order"
 		saveLabel="Update"
-		kind="update"
 	/>
 </Story>
