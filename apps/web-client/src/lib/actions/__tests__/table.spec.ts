@@ -1,12 +1,13 @@
-import { render, screen, waitFor } from "@testing-library/svelte";
-import html from "svelte-htm";
+import { render } from "@testing-library/svelte";
 import { writable, get } from "svelte/store";
 import { vi, expect, test, describe } from "vitest";
-import userEvent from "@testing-library/user-event";
+import { page } from "@vitest/browser/context";
 
 import { createTable } from "../table";
 
 import { StockTable } from "$lib/components";
+import TableRowHarness from "./TableRowHarness.svelte";
+import TableHarness from "./TableHarness.svelte";
 
 import { rows } from "$lib/__testData__/rowData";
 
@@ -44,32 +45,29 @@ describe("Table row action:", () => {
 
 	const table = createTable(tableOptions);
 
-	test("Sets the row aria-rowindex attribute", () => {
-		render(
-			html`
-			<tr use:action=${(node: HTMLTableRowElement) => table.tableRow(node, { position: 0 })}></table>
-		`
-		);
+	test("Sets the row aria-rowindex attribute", async () => {
+		const { container } = render(TableRowHarness, {
+			action: (node: HTMLTableRowElement) => table.tableRow(node, { position: 0 })
+		});
 
-		// TODO: Fix types (jest matchers - installed, but, for some reason, not picked up by TS)
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		expect(screen.getByRole("row")).toHaveAttribute("aria-rowindex", `${1}`);
+		const row = page.elementLocator(container).getByRole("row");
+
+		await expect.element(row).toBeInTheDocument();
+		await expect.element(row).toHaveAttribute("aria-rowindex", "1");
 	});
 
 	test("Manages select event & handler", async () => {
-		const user = userEvent.setup();
 		const handleSelectMock = vi.fn();
 
-		render(
-			html`
-			<tr use:action=${(node: HTMLTableRowElement) => table.tableRow(node, { on: "click", handleSelect: handleSelectMock })}></table>
-		`
-		);
+		const { container } = render(TableRowHarness, {
+			action: (node: HTMLTableRowElement) => table.tableRow(node, { on: "click", handleSelect: handleSelectMock })
+		});
 
-		const row = screen.getByRole("row");
+		const row = page.elementLocator(container).getByRole("row");
 
-		await user.click(row);
+		await expect.element(row).toBeInTheDocument();
+
+		(row.element() as HTMLElement).click();
 
 		expect(handleSelectMock).toHaveBeenCalledOnce();
 	});
@@ -85,12 +83,14 @@ describe("Table action:", () => {
 
 		const initialRowCount = rows.length;
 
-		render(html` <table use:action=${(node: HTMLTableElement) => table.table(node, { rowCount: initialRowCount })}></table> `);
+		const { container } = render(TableHarness, {
+			action: (node: HTMLTableElement) => table.table(node, { rowCount: initialRowCount }) as NonNullable<ReturnType<typeof table.table>>
+		});
 
-		// TODO: Fix types (jest matchers - installed, but, for some reason, not picked up by TS)
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		expect(screen.getByRole("table")).toHaveAttribute("aria-rowcount", `${initialRowCount}`);
+		const tableEl = page.elementLocator(container).getByRole("table");
+
+		await expect.element(tableEl).toBeInTheDocument();
+		await expect.element(tableEl).toHaveAttribute("aria-rowcount", `${initialRowCount}`);
 	});
 });
 
@@ -98,54 +98,33 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	const tableOptions = writable({
 		data: rows
 	});
-
 	const table = createTable(tableOptions);
 
-	render(html` <${StockTable} interactive table=${table} /> `);
+	const { container } = render(StockTable, { table });
 
-	const row2 = rows[1];
+	const tableEl = page.elementLocator(container).getByRole("table");
+	await expect.element(tableEl).toBeInTheDocument();
+	await expect.element(tableEl).toHaveAttribute("aria-rowcount", "4");
 
-	// TODO: This is a pain to fix aany time there is a slight update to the table, and it looks terribly inaccessible
-	// 917289012381 title: Hellenistic history and culture authors: Peter Green year: 2017 Hellenistic history and culture Peter Green Discounted price: €99.90 Original price: (€100.00) Percentage discount: -10% 3 Penguin 2017
-	const row2Name = `${row2.isbn} title: ${row2.title} authors: ${row2.authors} year: ${row2.year} ${row2.title} ${
-		row2.authors
-	} Discounted price: €${((row2.price * (100 - row2.warehouseDiscount)) / 100).toFixed(2)} Original price: (€${row2.price.toFixed(
-		2
-	)}) Percentage discount: -${row2.warehouseDiscount}% ${row2.quantity} ${row2.publisher} ${row2.year}`;
+	const tbody = container.querySelector("tbody")!;
+	const row = page.elementLocator(tbody).getByRole("row");
 
-	const dataRow2 = screen.getByRole("row", { name: row2Name });
-
-	// TODO: Fix types (jest matchers - installed, but, for some reason, not picked up by TS)
-	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-ignore
-	expect(screen.getByRole("table")).toHaveAttribute("aria-rowcount", "4");
-	// TODO: Fix types (jest matchers - installed, but, for some reason, not picked up by TS)
-	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-	// @ts-ignore
-	expect(dataRow2).toHaveAttribute("aria-rowindex", "2");
+	// Check row 2 (rows[1]):
+	await expect.element(row.nth(1)).toHaveAttribute("aria-rowindex", "2");
+	await expect.element(row.nth(1)).toHaveTextContent(rows[1].isbn);
 
 	// Remove data row 1
-	const dataRow1 = get(table).rows[0];
+	tableOptions.update(({ data }) => ({ data: data.slice(1) }));
 
-	tableOptions.update(({ data }) => {
-		const filtered = data.filter((row) => row.isbn !== dataRow1.isbn);
+	// Wait for reactive updates
+	await new Promise((resolve) => setTimeout(resolve, 100));
 
-		return { data: filtered };
-	});
+	// Re-query the table element after update
+	const updatedTableEl = page.elementLocator(container).getByRole("table");
+	await expect.element(updatedTableEl).toHaveAttribute("aria-rowcount", "3");
 
-	await waitFor(() => {
-		// TODO: Fix types (jest matchers - installed, but, for some reason, not picked up by TS)
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		expect(screen.getByRole("table")).toHaveAttribute("aria-rowcount", "3");
-
-		const dataRow2 = screen.getByRole("row", { name: row2Name });
-
-		// With data row 1 gone, row 2 should drop index by 1
-		//
-		// TODO: Fix types (jest matchers - installed, but, for some reason, not picked up by TS)
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		expect(dataRow2).toHaveAttribute("aria-rowindex", "1");
-	});
+	// After removing first row, what was row 2 should now be row 1
+	// Row 1 shows data for rows[1]
+	await expect.element(row.nth(0)).toHaveAttribute("aria-rowindex", "1");
+	await expect.element(row.nth(0)).toHaveTextContent(rows[1].isbn);
 });
