@@ -40,7 +40,7 @@
 	},
 	"types": "dist/index.d.ts",
 	"scripts": {
-		"dev": "vite dev",
+		"dev": "vite build --watch",
 		"build": "vite build && tsc --project tsconfig.build.json",
 		"lint": "prettier --check . && eslint .",
 		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
