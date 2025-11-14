@@ -16,7 +16,8 @@
       "name": "build",
       "summary": "Builds all projects, skipping any that don't have a 'build' script.",
       "enableParallelism": true,
-      "ignoreMissingScript": true
+      "ignoreMissingScript": true,
+      "incremental": true
     },
     // {
     //   /**
