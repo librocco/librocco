@@ -80,6 +80,21 @@ else:
     print(f"WARNING: Favicon not found at {favicon_path}")
     print("Tray icon will not work without the favicon.")
 
+# 5. PNG icons for Linux AppImage
+if IS_LINUX:
+    for size in [16, 32, 48, 64, 128, 256]:
+        icon_path = PROJECT_ROOT / 'assets' / f'icon_{size}x{size}.png'
+        if icon_path.exists():
+            datas.append((str(icon_path), 'assets'))
+        else:
+            print(f"WARNING: Icon not found at {icon_path}")
+    # Desktop file for AppImage
+    desktop_file = LAUNCHER_DIR / 'librocco.desktop'
+    if desktop_file.exists():
+        datas.append((str(desktop_file), '.'))
+    else:
+        print(f"WARNING: Desktop file not found at {desktop_file}")
+
 # Collect binaries
 binaries = []
 
