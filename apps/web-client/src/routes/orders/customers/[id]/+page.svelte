@@ -314,54 +314,54 @@
 									<td>€{price.toFixed(2)}</td>
 									<td>{publisher}</td>
 									<td>
-									{#if status === OrderLineStatus.Collected}
-										{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
-											status: $LL.customer_orders_page.status.collected(),
-											date: collected
-										})}
-										<div
-											class="badge-outline badge orderline-collected text-xs font-semibold gap-x-1 whitespace-nowrap"
-											aria-label={badgeLabel}
-											title={collected.toISOString()}
-										>
-											{badgeLabel}
-										</div>
-									{:else if status === OrderLineStatus.Received}
-										{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
-											status: $LL.customer_orders_page.status.delivered(),
-											date: received
-										})}
-										<div
-											class="badge-outline badge orderline-received text-xs font-semibold gap-x-1 whitespace-nowrap"
-											aria-label={badgeLabel}
-											title={received.toISOString()}
-										>
-											{badgeLabel}
-										</div>
-									{:else if status === OrderLineStatus.Placed}
-										{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
-											status: $LL.customer_orders_page.status.placed(),
-											date: placed
-										})}
-										<div
-											class="badge-outline badge orderline-placed text-xs font-semibold gap-x-1 whitespace-nowrap"
-											aria-label={badgeLabel}
-											title={placed.toISOString()}
-										>
-											{badgeLabel}
-										</div>
-									{:else}
-										{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
-											status: $LL.customer_orders_page.status.pending(),
-											date: created
-										})}
-										<div
-											class="badge-outline badge orderline-pending text-xs font-semibold gap-x-1 whitespace-nowrap"
-											aria-label={badgeLabel}
-											title={created.toISOString()}
-										>
-											{badgeLabel}
-										</div>
+										{#if status === OrderLineStatus.Collected}
+											{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+												status: $LL.customer_orders_page.status.collected(),
+												date: collected
+											})}
+											<div
+												class="badge-outline badge orderline-collected gap-x-1 whitespace-nowrap text-xs font-semibold"
+												aria-label={badgeLabel}
+												title={collected.toISOString()}
+											>
+												{badgeLabel}
+											</div>
+										{:else if status === OrderLineStatus.Received}
+											{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+												status: $LL.customer_orders_page.status.delivered(),
+												date: received
+											})}
+											<div
+												class="badge-outline badge orderline-received gap-x-1 whitespace-nowrap text-xs font-semibold"
+												aria-label={badgeLabel}
+												title={received.toISOString()}
+											>
+												{badgeLabel}
+											</div>
+										{:else if status === OrderLineStatus.Placed}
+											{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+												status: $LL.customer_orders_page.status.placed(),
+												date: placed
+											})}
+											<div
+												class="badge-outline badge orderline-placed gap-x-1 whitespace-nowrap text-xs font-semibold"
+												aria-label={badgeLabel}
+												title={placed.toISOString()}
+											>
+												{badgeLabel}
+											</div>
+										{:else}
+											{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+												status: $LL.customer_orders_page.status.pending(),
+												date: created
+											})}
+											<div
+												class="badge-outline badge orderline-pending gap-x-1 whitespace-nowrap text-xs font-semibold"
+												aria-label={badgeLabel}
+												title={created.toISOString()}
+											>
+												{badgeLabel}
+											</div>
 										{/if}
 									</td>
 
