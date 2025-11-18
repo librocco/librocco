@@ -150,6 +150,21 @@ jobs:
           python scripts/build_executable.py
         shell: bash
 
+      #! Build AppImage for Linux
+      - name: Install AppImage tools
+        if: runner.os == 'Linux'
+        run: |
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O /tmp/appimagetool
+          chmod +x /tmp/appimagetool
+        shell: bash
+
+      - name: Build AppImage
+        if: runner.os == 'Linux'
+        run: |
+          cd python-apps/launcher
+          ./scripts/build_appimage.sh
+        shell: bash
+
       #! Upload artifacts
       #! On macOS: Create tar.gz to preserve symlinks (prevents 450MB duplication)
       #! GitHub Actions upload-artifact doesn't preserve symlinks, causing PyInstaller's
@@ -174,10 +189,19 @@ jobs:
           if-no-files-found: error
           compression-level: 0  #! Already compressed as .tar.gz, no need to compress again
 
-      #! Linux: Upload single-file executable
+      #! Linux: Upload AppImage
+      - name: Upload Linux artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: python-apps/launcher/dist/Librocco-x86_64.AppImage
+          retention-days: 90
+          if-no-files-found: error
+
       #! Windows: Upload directory (if we ever enable Windows builds)
-      - name: Upload Linux/Windows artifact
-        if: runner.os != 'macOS'
+      - name: Upload Windows artifact
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
