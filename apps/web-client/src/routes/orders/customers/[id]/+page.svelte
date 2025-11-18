@@ -22,6 +22,7 @@
 
 	import { testId, stripNulls, type BookData } from "@librocco/shared";
 	import LL from "@librocco/shared/i18n-svelte";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	import { PopoverWrapper, Dialog } from "$lib/components";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -185,8 +186,8 @@
 								<span class="badge-accent badge-outline badge badge-md gap-x-2">
 									<span class="sr-only">{$LL.customer_orders_page.customer_details.last_updated()}</span>
 									<ClockArrowUp size={16} aria-hidden />
-									<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}>
-										{new Date(data?.customer?.updatedAt || "").toLocaleString()}
+									<time dateTime={data?.customer?.updatedAt ? new Date(data.customer.updatedAt).toISOString() : ""}>
+										{$dateFormatters.dateTime(data?.customer?.updatedAt)}
 									</time>
 								</span>
 							</div>
@@ -316,22 +317,22 @@
 										{#if status === OrderLineStatus.Collected}
 											<div class="badge-outline badge orderline-collected text-xs font-semibold">
 												{$LL.customer_orders_page.status.collected()} -
-												<time datetime={collected.toISOString()} class="text-xs opacity-80">{collected.toDateString()}</time>
+												<time datetime={collected.toISOString()} class="text-xs opacity-80">{$dateFormatters.dateShort(collected)}</time>
 											</div>
 										{:else if status === OrderLineStatus.Received}
 											<div class="badge-outline badge orderline-received text-xs font-semibold">
 												{$LL.customer_orders_page.status.delivered()} -
-												<time datetime={received.toISOString()} class="text-xs opacity-80">{received.toDateString()}</time>
+												<time datetime={received.toISOString()} class="text-xs opacity-80">{$dateFormatters.dateShort(received)}</time>
 											</div>
 										{:else if status === OrderLineStatus.Placed}
 											<div class="badge-outline badge orderline-placed text-xs font-semibold">
 												{$LL.customer_orders_page.status.placed()} -
-												<time datetime={placed.toISOString()} class="text-xs opacity-80">{placed.toDateString()}</time>
+												<time datetime={placed.toISOString()} class="text-xs opacity-80">{$dateFormatters.dateShort(placed)}</time>
 											</div>
 										{:else}
 											<div class="badge-outline badge orderline-pending text-xs font-semibold">
 												{$LL.customer_orders_page.status.pending()} -
-												<time datetime={created.toISOString()} class="text-xs opacity-80">{created.toDateString()}</time>
+												<time datetime={created.toISOString()} class="text-xs opacity-80">{$dateFormatters.dateShort(created)}</time>
 											</div>
 										{/if}
 									</td>

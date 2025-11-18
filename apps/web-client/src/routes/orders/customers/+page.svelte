@@ -11,6 +11,7 @@
 	import ClockArrowUp from "$lucide/clock-arrow-up";
 
 	import LL from "@librocco/shared/i18n-svelte";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
@@ -181,7 +182,9 @@
 									<td>
 										<span class="badge-primary badge-outline badge gap-x-2">
 											<ClockArrowUp size={16} />
-											<time dateTime={new Date(updatedAt).toISOString()}>{new Date(updatedAt).toLocaleString()}</time>
+											<time dateTime={new Date(updatedAt).toISOString()}>
+												{$dateFormatters.dateTime(updatedAt)}
+											</time>
 										</span>
 									</td>
 									<td>

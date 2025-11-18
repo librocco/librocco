@@ -36,6 +36,10 @@
 		"./i18n-util": {
 			"types": "./dist/i18n/i18n-util.d.ts",
 			"default": "./src/i18n/i18n-util.ts"
+		},
+		"./i18n-formatters": {
+			"types": "./dist/i18n/formatters.svelte.d.ts",
+			"default": "./src/i18n/formatters.svelte.ts"
 		}
 	},
 	"types": "dist/index.d.ts",
