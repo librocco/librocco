@@ -13,7 +13,7 @@
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
@@ -104,7 +104,7 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">{t.committed_at()}: {generateUpdatedAtString(updatedAt)}</span>
+						<span class="badge badge-md badge-green">{t.committed_at()}: {$dateFormatters.dateTime(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>

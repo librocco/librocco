@@ -45,10 +45,10 @@
 						</div>
 					</td>
 					<td>
-					<span class="badge-primary badge-outline badge badge-md gap-x-2 py-2.5">
-						<ClockArrowUp size={16} aria-hidden />
-						<time dateTime={updatedDate.toISOString()}>{$dateFormatters.dateTime(updatedDate)}</time>
-					</span>
+						<span class="badge-primary badge-outline badge badge-md gap-x-2 py-2.5">
+							<ClockArrowUp size={16} aria-hidden />
+							<time dateTime={updatedDate.toISOString()}>{$dateFormatters.dateTime(updatedDate)}</time>
+						</span>
 					</td>
 					<td class="text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleUpdateOrder(id)}>
