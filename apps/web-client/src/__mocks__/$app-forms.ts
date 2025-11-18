@@ -5,6 +5,10 @@
 
 import { vi } from "vitest";
 
-export const enhance = vi.fn();
+// Mock enhance to return an object with destroy method, matching SvelteKit's enhance API
+export const enhance = vi.fn(() => ({
+	destroy: vi.fn()
+}));
+
 export const applyAction = vi.fn();
 export const deserialize = vi.fn();
