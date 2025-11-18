@@ -26,3 +26,6 @@
 - **Rush managed**: Node 20, pnpm 8.7.0, projects in `apps/`, `pkg/`, `plugins/`
 - **Workspace deps**: Use `"workspace:*"` for local package dependencies
 - **Add deps**: `rush add -p <package>` (+ `--dev` for devDeps) from package dir, then `rush update`
+
+## Caveats
+- Github actions in `.github/workflows` are generated from `.github/workflow.templates` and built running `.github/build-workflows.sh`
