@@ -315,60 +315,52 @@
 									<td>{publisher}</td>
 									<td>
 									{#if status === OrderLineStatus.Collected}
+										{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+											status: $LL.customer_orders_page.status.collected(),
+											date: collected
+										})}
 										<div
 											class="badge-outline badge orderline-collected text-xs font-semibold gap-x-1 whitespace-nowrap"
-											aria-label={$LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.collected(),
-												date: collected
-											})}
+											aria-label={badgeLabel}
 											title={collected.toISOString()}
 										>
-											{$LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.collected(),
-												date: collected
-											})}
+											{badgeLabel}
 										</div>
 									{:else if status === OrderLineStatus.Received}
+										{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+											status: $LL.customer_orders_page.status.delivered(),
+											date: received
+										})}
 										<div
 											class="badge-outline badge orderline-received text-xs font-semibold gap-x-1 whitespace-nowrap"
-											aria-label={$LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.delivered(),
-												date: received
-											})}
+											aria-label={badgeLabel}
 											title={received.toISOString()}
 										>
-											{$LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.delivered(),
-												date: received
-											})}
+											{badgeLabel}
 										</div>
 									{:else if status === OrderLineStatus.Placed}
+										{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+											status: $LL.customer_orders_page.status.placed(),
+											date: placed
+										})}
 										<div
 											class="badge-outline badge orderline-placed text-xs font-semibold gap-x-1 whitespace-nowrap"
-											aria-label={$LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.placed(),
-												date: placed
-											})}
+											aria-label={badgeLabel}
 											title={placed.toISOString()}
 										>
-											{$LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.placed(),
-												date: placed
-											})}
+											{badgeLabel}
 										</div>
 									{:else}
+										{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+											status: $LL.customer_orders_page.status.pending(),
+											date: created
+										})}
 										<div
 											class="badge-outline badge orderline-pending text-xs font-semibold gap-x-1 whitespace-nowrap"
-											aria-label={$LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.pending(),
-												date: created
-											})}
+											aria-label={badgeLabel}
 											title={created.toISOString()}
 										>
-											{$LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.pending(),
-												date: created
-											})}
+											{badgeLabel}
 										</div>
 										{/if}
 									</td>
