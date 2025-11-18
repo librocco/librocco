@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 	import { expoInOut } from "svelte/easing";
-	import X from "$lucide/x";
 
 	import { melt } from "@melt-ui/svelte";
 	import type { Dialog } from "@melt-ui/svelte";
@@ -31,10 +30,6 @@
 				<p class="sr-only" use:melt={$titleStore}>{title}</p>
 
 				<p class="sr-only" use:melt={$desciptionStore}>{description}</p>
-
-				<button use:melt={$close} class="btn-ghost btn-outline btn-sm btn absolute right-8 top-4" aria-label="Close">
-					<X size={16} />
-				</button>
 
 				<slot />
 			</div>

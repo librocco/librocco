@@ -1,6 +1,8 @@
 import { z } from "zod";
 import type { Infer } from "sveltekit-superforms";
+
 import type { TranslationFunctions } from "@librocco/shared";
+import type { CustomerDisplayIdInfo } from "$lib/db/cr-sqlite/customers";
 
 export type DeviceSettingsSchema = Infer<typeof deviceSettingsSchema>;
 export const deviceSettingsSchema = z.object({
@@ -72,13 +74,39 @@ export type CustomerSearchSchema = Infer<typeof customerSearchSchema>;
 export const customerSearchSchema = z.object({
 	fullname: z.string()
 });
+
 export type CustomerOrderSchema = Infer<ReturnType<typeof createCustomerOrderSchema>>;
-export const createCustomerOrderSchema = (kind: "create" | "update") => {
-	const isUpdate = kind === "update";
-	const displayId = isUpdate ? z.string().min(1) : z.string().optional();
+/**
+ *
+ * @param existingCustomers - Array of existing customer display ID info
+ * @param currentDisplayId - The current display ID of the customer being edited (when editing, to exclude self)
+ * @param LL - Translation functions for internationalization
+ * @returns A zod schema for the customer order form
+ */
+export const createCustomerOrderSchema = (
+	LL: TranslationFunctions,
+	existingCustomers: Array<CustomerDisplayIdInfo> = [],
+	currentDisplayId?: string
+) => {
 	return z.object({
 		id: z.number(),
-		displayId,
+		displayId: z
+			.string()
+			.min(1)
+			.superRefine((data, ctx) => {
+				// * Check if the display ID is already taken by another customer and exclude the current customer if editing
+				const conflict = existingCustomers.find((c) => c.displayId === data && c.displayId !== currentDisplayId);
+
+				if (conflict) {
+					ctx.addIssue({
+						code: z.ZodIssueCode.custom,
+						message: LL.forms.customer_order_meta.validation.display_id_not_unique({
+							fullname: conflict.fullname,
+							bookCount: conflict.bookCount
+						})
+					});
+				}
+			}),
 		fullname: z.string().min(1),
 		email: z.string().max(0).optional().or(z.string().email()),
 		deposit: z.number().default(0),
