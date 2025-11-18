@@ -246,8 +246,8 @@ jobs:
             # On macOS, run the executable inside the .app bundle
             ./Librocco.app/Contents/MacOS/librocco > launcher.log 2>&1 &
           else
-            # On Linux, run the single-file executable
-            ./librocco > launcher.log 2>&1 &
+            # On Linux, run the directory-mode executable
+            ./librocco/librocco > launcher.log 2>&1 &
           fi
           echo $! > launcher.pid
         shell: bash

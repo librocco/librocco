@@ -150,18 +150,17 @@ a = Analysis(
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 # Platform-specific build modes:
-# - Linux: Single-file executable (onefile mode)
+# - Linux: Directory mode (onedir) for efficient AppImage packaging
 # - macOS: Directory with .app bundle (onedir mode, required for proper .app structure)
 # - Windows: Directory (onedir mode)
 if IS_LINUX:
-    # Linux: Create single executable with all dependencies bundled
+    # Linux: Use onedir mode to avoid double-extraction with AppImage
+    # AppImage mounts the filesystem, so files are directly accessible without extraction
     exe = EXE(
         pyz,
         a.scripts,
-        a.binaries,      # Include all binaries in the executable
-        a.zipfiles,      # Include all zipfiles in the executable
-        a.datas,         # Include all data files in the executable
         [],
+        exclude_binaries=True,  # This enables onedir mode
         name='librocco',
         debug=False,
         bootloader_ignore_signals=False,
@@ -175,6 +174,18 @@ if IS_LINUX:
         target_arch=None,
         codesign_identity=None,
         entitlements_file=None,
+    )
+
+    # Collect all binaries and data files (onedir mode)
+    coll = COLLECT(
+        exe,
+        a.binaries,
+        a.zipfiles,
+        a.datas,
+        strip=False,
+        upx=True,
+        upx_exclude=[],
+        name='librocco',
     )
 else:
     # macOS/Windows: Use onedir mode (required for .app bundle on macOS)

@@ -12,9 +12,9 @@ mkdir -p AppDir/usr/bin
 mkdir -p AppDir/usr/share/icons/hicolor/{16x16,32x32,48x48,64x64,128x128,256x256}/apps
 mkdir -p AppDir/usr/share/applications
 
-# Copy executable
-echo "Copying executable..."
-cp librocco AppDir/usr/bin/
+# Copy executable directory (onedir mode)
+echo "Copying executable directory..."
+cp -r librocco/* AppDir/usr/bin/
 
 # Copy desktop file
 echo "Copying desktop file..."
