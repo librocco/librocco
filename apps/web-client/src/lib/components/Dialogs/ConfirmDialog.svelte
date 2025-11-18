@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 	import { expoInOut } from "svelte/easing";
-	import X from "$lucide/x";
 	import Save from "$lucide/save";
 
 	import { melt } from "@melt-ui/svelte";
@@ -48,9 +47,6 @@
 				</div>
 
 				<p class="w-full p-6" use:melt={$desciptionStore}>{description}</p>
-				<button use:melt={$close} on:click={onCancel} class="btn-ghost btn-outline btn-sm btn absolute right-8 top-4" aria-label="Close">
-					<X size={16} />
-				</button>
 
 				<div class="stretch flex w-full gap-x-4 p-6">
 					<div class="basis-fit">

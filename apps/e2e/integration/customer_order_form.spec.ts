@@ -53,32 +53,35 @@ testOrders("customer list: new: submits the form with all fields", async ({ page
 	await dialog.waitFor({ state: "detached" });
 });
 
-testOrders("customer list: new: submits the form with only name provided", async ({ page, t }) => {
-	const { customer_orders_page: tCustomers } = t;
-	const { forms: tForms } = t;
+testOrders(
+	"customer list: new: submits the form with only name provided (display id is automatically added to the field)",
+	async ({ page, t }) => {
+		const { customer_orders_page: tCustomers } = t;
+		const { forms: tForms } = t;
 
-	await page.goto(appHash("customers"));
+		await page.goto(appHash("customers"));
 
-	const customer = {
-		[tForms.customer_order_meta.labels.name()]: "John Doe"
-	};
+		const customer = {
+			[tForms.customer_order_meta.labels.name()]: "John Doe"
+		};
 
-	const dialog = page.getByRole("dialog");
+		const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.new_order() }).first().click(); // First as there might be 2 (in case of no customer orders)
+		await page.getByRole("button", { name: tCustomers.labels.new_order() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await dialog.getByText("Create new order").waitFor();
+		await dialog.getByText("Create new order").waitFor();
 
-	for (const [key, value] of Object.entries(customer)) {
-		await dialog.getByLabel(key, { exact: true }).fill(value);
+		for (const [key, value] of Object.entries(customer)) {
+			await dialog.getByLabel(key, { exact: true }).fill(value);
+		}
+
+		await dialog.getByRole("button", { name: "Create" }).click({ force: true });
+
+		// At this point we're validating the form was closed and considering it a good enough
+		// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
+		await dialog.waitFor({ state: "detached" });
 	}
-
-	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
-
-	// At this point we're validating the form was closed and considering it a good enough
-	// indicator of all fields having been validated (the impact of saving a customer is tested elsewhere)
-	await dialog.waitFor({ state: "detached" });
-});
+);
 
 testOrders("customer list: new: doesn't allow for submission without the name field", async ({ page, t }) => {
 	const { customer_orders_page: tCustomers } = t;
@@ -132,6 +135,39 @@ testOrders("customer list: new: doesn't allow for submission with invalid email 
 	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel(tForms.customer_order_meta.labels.email(), { exact: true })).toBeFocused();
+});
+
+testOrders("customer list: new: verifies the display id: required + unique", async ({ page, t, customers }) => {
+	const { customer_orders_page: tCustomers } = t;
+	const { forms: tForms } = t;
+
+	await page.goto(appHash("customers"));
+
+	const dialog = page.getByRole("dialog");
+
+	// Test 1: Try to create without display id (should fail)
+	await page.getByRole("button", { name: tCustomers.labels.new_order() }).first().click();
+	await dialog.getByText("Create new order").waitFor();
+
+	// Fill in name and clear the display id field
+	await dialog.getByLabel(tForms.customer_order_meta.labels.name(), { exact: true }).fill("Test Customer");
+	await dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true }).clear();
+	await dialog.getByLabel(tForms.customer_order_meta.labels.deposit(), { exact: true }).fill("10"); // Move focus away
+
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
+	// Focusing of the field indicates this field failed validation
+	await expect(dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true })).toBeFocused();
+
+	// Test 2: Try to create with duplicate display id (should fail)
+	//
+	// Use an existing customer's display id
+	await dialog.getByLabel(tForms.customer_order_meta.labels.name(), { exact: true }).fill("Another Test Customer");
+	await dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true }).fill(customers[0].displayId);
+	await dialog.getByLabel(tForms.customer_order_meta.labels.deposit(), { exact: true }).fill("10"); // Move focus away
+
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
+	// Focusing of the field indicates this field failed validation
+	await expect(dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true })).toBeFocused();
 });
 
 testOrders("customer page: update: doesn't submit the form without any changes made", async ({ page, customers, t }) => {
@@ -473,6 +509,43 @@ testOrders("customer page: update: allows for blank email string", async ({ page
 	await dialog.waitFor({ state: "detached" });
 });
 
+testOrders("customer page: update: verifies the display id: required + unique", async ({ page, t, customers }) => {
+	const { customer_orders_page: tCustomers } = t;
+	const { forms: tForms } = t;
+
+	await page.goto(appHash("customers"));
+	await page
+		.getByRole("table")
+		.getByRole("row")
+		.filter({ hasText: customers[0].fullname })
+		.getByRole("link", { name: tCustomers.labels.edit() })
+		.click();
+
+	const dialog = page.getByRole("dialog");
+
+	// Test 1: Try to update without display id (should fail)
+	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click();
+	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
+
+	await dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true }).clear();
+	await dialog.getByLabel(tForms.customer_order_meta.labels.deposit(), { exact: true }).fill("10"); // Move focus away
+
+	await dialog.getByRole("button", { name: tCustomers.labels.save() }).click({ force: true });
+	// Focusing of the field indicates this field failed validation
+	await expect(dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true })).toBeFocused();
+
+	// Test 2: Try to update with duplicate display id (should fail)
+	//
+	// Use another existing customer's display id (customers[1])
+	// NOTE: an edge case of updating with the same display id is tested implicitly in other update tests
+	await dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true }).fill(customers[1].displayId);
+	await dialog.getByLabel(tForms.customer_order_meta.labels.deposit(), { exact: true }).fill("10"); // Move focus away
+
+	await dialog.getByRole("button", { name: tCustomers.labels.save() }).click({ force: true });
+	// Focusing of the field indicates this field failed validation
+	await expect(dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true })).toBeFocused();
+});
+
 testOrders("supplier order list: new: submits the form with all fields", async ({ page, t }) => {
 	const { supplier_orders_page: tSuppliers } = t;
 	const { forms: tForms } = t;
@@ -583,4 +656,37 @@ testOrders("supplier order list: new: doesn't allow for submission with invalid 
 	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
 	// Focusing of the field indicates this field failed validation
 	await expect(dialog.getByLabel(tForms.customer_order_meta.labels.email(), { exact: true })).toBeFocused();
+});
+
+testOrders("supplier order list: new: verifies the display id: required + unique", async ({ page, t, customers }) => {
+	const { supplier_orders_page: tSuppliers } = t;
+	const { forms: tForms } = t;
+
+	await page.goto(appHash("supplier_orders"));
+
+	const dialog = page.getByRole("dialog");
+
+	// Test 1: Try to create without display id (should fail)
+	await page.getByRole("button", { name: tSuppliers.placeholder.button() }).first().click();
+	await dialog.getByText("Create new order").waitFor();
+
+	// Fill in name and clear the display id field
+	await dialog.getByLabel(tForms.customer_order_meta.labels.name(), { exact: true }).fill("Test Supplier");
+	await dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true }).clear();
+	await dialog.getByLabel(tForms.customer_order_meta.labels.deposit(), { exact: true }).fill("10"); // Move focus away
+
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
+	// Focusing of the field indicates this field failed validation
+	await expect(dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true })).toBeFocused();
+
+	// Test 2: Try to create with duplicate display id (should fail)
+	//
+	// Use an existing customer's display id
+	await dialog.getByLabel(tForms.customer_order_meta.labels.name(), { exact: true }).fill("Another Test Supplier");
+	await dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true }).fill(customers[0].displayId);
+	await dialog.getByLabel(tForms.customer_order_meta.labels.deposit(), { exact: true }).fill("10"); // Move focus away
+
+	await dialog.getByRole("button", { name: "Create" }).click({ force: true });
+	// Focusing of the field indicates this field failed validation
+	await expect(dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true })).toBeFocused();
 });
