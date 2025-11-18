@@ -19,7 +19,7 @@
 	import { PlaceholderBox, Dialog } from "$lib/components";
 	import { Page } from "$lib/controllers";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
@@ -118,7 +118,7 @@
 					<!-- Start entity list -->
 					{#each notes as note}
 						{@const displayName = note.displayName || `Note - ${note.id}`}
-						{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+						{@const updatedAt = $dateFormatters.dateTime(note.updatedAt)}
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", note.id)}
 
