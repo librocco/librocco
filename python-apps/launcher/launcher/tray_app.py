@@ -17,8 +17,8 @@ from PyQt6.QtWidgets import (
     QLabel,
     QVBoxLayout,
 )
-from PyQt6.QtGui import QAction, QPixmap, QImage, QCursor
-from PyQt6.QtCore import QCoreApplication, QTimer, Qt, QPoint
+from PyQt6.QtGui import QAction, QPixmap, QImage
+from PyQt6.QtCore import QCoreApplication, QTimer, Qt
 
 from .error_handler import ErrorHandler
 from .i18n import _
@@ -196,9 +196,9 @@ class TrayApp:
         self.menu = QMenu()
         self._create_menu()
 
-        # Handle both left and right clicks to show menu
-        # Note: We don't use setContextMenu() because it blocks the activated signal
-        # on some platforms (macOS, GNOME). Instead, we handle all clicks manually.
+        self.tray_icon.setContextMenu(self.menu)
+
+        # Connect left-click to open browser
         self.tray_icon.activated.connect(self.on_tray_activated)
 
         # Defer showing tray icon until event loop starts
@@ -337,31 +337,9 @@ class TrayApp:
 
     def on_tray_activated(self, reason):
         """Handle tray icon activation (clicks)."""
-        if reason in (
-            QSystemTrayIcon.ActivationReason.Trigger,
-            QSystemTrayIcon.ActivationReason.Context,
-            QSystemTrayIcon.ActivationReason.DoubleClick,
-        ):
-            self._show_tray_menu()
-
-    def _show_tray_menu(self):
-        """Display the tray menu near the cursor with platform fallbacks."""
-        cursor_pos = QCursor.pos()
-        if cursor_pos.x() >= 0 and cursor_pos.y() >= 0:
-            self.menu.popup(cursor_pos)
-            return
-
-        tray_geometry = self.tray_icon.geometry()
-        if tray_geometry and tray_geometry.isValid() and not tray_geometry.isNull():
-            self.menu.popup(tray_geometry.center())
-            return
-
-        screen = self.app.primaryScreen() if hasattr(self.app, "primaryScreen") else None
-        if screen is not None:
-            self.menu.popup(screen.availableGeometry().center())
-            return
-
-        self.menu.popup(QPoint(0, 0))
+        # Only handle left-click (Trigger reason)
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self.open_browser()
 
     def open_browser(self):
         """Open the web application in the default browser."""
