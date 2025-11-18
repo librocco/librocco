@@ -629,6 +629,14 @@ type RootTranslation = {
 			 */
 			pending: string
 		}
+		status_badges: {
+			/**
+			 * {​s​t​a​t​u​s​}​ ​-​ ​{​d​a​t​e​|​d​a​t​e​S​h​o​r​t​}
+			 * @param {Date} date
+			 * @param {unknown} status
+			 */
+			with_date: RequiredParams<'date|dateShort' | 'status'>
+		}
 		dialogs: {
 			new_customer: {
 				/**
@@ -3419,6 +3427,12 @@ export type TranslationFunctions = {
 			 */
 			pending: () => LocalizedString
 		}
+		status_badges: {
+			/**
+			 * {status} - {date|dateShort}
+			 */
+			with_date: (arg: { date: Date, status: unknown }) => LocalizedString
+		}
 		dialogs: {
 			new_customer: {
 				/**
@@ -5564,4 +5578,6 @@ export type TranslationFunctions = {
 	}
 }
 
-export type Formatters = {}
+export type Formatters = {
+	dateShort: (value: Date) => unknown
+}
