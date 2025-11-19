@@ -1,5 +1,6 @@
 import { render } from "@testing-library/svelte";
 import { writable, get } from "svelte/store";
+import { tick } from "svelte";
 import { vi, expect, test, describe } from "vitest";
 import { page } from "@vitest/browser/context";
 
@@ -106,8 +107,9 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	await expect.element(tableEl).toBeInTheDocument();
 	await expect.element(tableEl).toHaveAttribute("aria-rowcount", "4");
 
-	const tbody = container.querySelector("tbody")!;
-	const row = page.elementLocator(tbody).getByRole("row");
+	const tbody = container.querySelector("tbody");
+	expect(tbody).not.toBeNull();
+	const row = page.elementLocator(tbody!).getByRole("row");
 
 	// Check row 2 (rows[1]):
 	await expect.element(row.nth(1)).toHaveAttribute("aria-rowindex", "2");
@@ -116,10 +118,10 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	// Remove data row 1
 	tableOptions.update(({ data }) => ({ data: data.slice(1) }));
 
-	// Wait for reactive updates
-	await new Promise((resolve) => setTimeout(resolve, 100));
+	// Wait for Svelte's reactive updates to complete
+	await tick();
 
-	// Re-query the table element after update
+	// Verify the table element has been updated
 	const updatedTableEl = page.elementLocator(container).getByRole("table");
 	await expect.element(updatedTableEl).toHaveAttribute("aria-rowcount", "3");
 
