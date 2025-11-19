@@ -24,7 +24,7 @@
 		"story:dev": "storybook dev",
 		"story:preview": "storybook preview",
 		"test": "vitest --ui",
-		"test:ci": "npx playwright install --with-deps && vitest --",
+		"test:ci": "CI=True vitest",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold error",
 		"typesafe-i18n": "echo please run this in ../../pkg/shared ; exit 1",
 		"typesafe-i18n-check": "echo please run this in ../../pkg/shared ; exit 1"
