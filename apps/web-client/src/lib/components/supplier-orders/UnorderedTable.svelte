@@ -12,7 +12,9 @@
 	import { appHash } from "$lib/paths";
 
 	function handlePlaceOrder(supplierId: number) {
-		goto(appHash("suppliers", supplierId, "new-order"));
+		// String(supplierId) as supplierId might be 'null' (general supplier)
+		// - this is perfectly fine and is handled appropriately in new-order view
+		goto(appHash("suppliers", String(supplierId), "new-order"));
 	}
 
 	$: t = $LL.supplier_orders_component.unordered_table;
