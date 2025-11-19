@@ -207,7 +207,7 @@ jobs:
     - name: Build packages
       run: rush build
     - name: Run tests
-      run: cd apps/web-client && rushx test:ci
+      run: cd apps/web-client && npx playwright install && rushx test:ci
   e2e-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
