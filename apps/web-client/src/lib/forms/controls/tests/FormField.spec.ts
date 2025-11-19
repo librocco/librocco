@@ -51,7 +51,7 @@ describe("The FormFieldProxy controller and Text|CheckControl combo should", () 
 
 		// The control is required and constraints are spread on it
 		await expect.element(control).toHaveAttribute("aria-required", "true");
-		await expect.element(control).toHaveAttribute("maxLength", "2");
+		await expect.element(control).toHaveAttribute("maxlength", "2");
 
 		// The control is not invalid in this state
 		await expect.element(control).not.toHaveAttribute("aria-invalid");
