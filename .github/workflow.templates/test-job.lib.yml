@@ -6,11 +6,15 @@
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
 
-#@ def test_script(workdir):
-#@  return "cd "+workdir+" && rushx test:ci"
+#@ def test_script(workdir, install_playwright):
+#@  if install_playwright:
+#@    return "cd "+workdir+" && npx playwright install && rushx test:ci"
+#@  else:
+#@    return "cd "+workdir+" && rushx test:ci"
+#@  end
 #@ end
 
-#@ def test_job(name, workdir, reporter=None):
+#@ def test_job(name, workdir, reporter=None, install_playwright=False):
 name: #@ name
 runs-on: ubuntu-latest
 timeout-minutes: 10
@@ -33,7 +37,7 @@ steps:
   -  #@ rush_install()
   -  #@ rush_build()
   - name: Run tests
-    run: #@ test_script(workdir)
+    run: #@ test_script(workdir, install_playwright)
   #@ if reporter!=None:
   - name: Test Report
     uses: dorny/test-reporter@v1
