@@ -968,8 +968,7 @@
         "cancel_button": ""
       },
       "validation": {
-        "display_id_not_unique": "Diese Kunden-ID wird bereits verwendet",
-        "display_id_in_use": "Diese ID wird bereits vom Kunden \"{fullname}\" mit {bookCount} bestellte{{m|n}} {{Buch|Büchern}} verwendet"
+        "display_id_not_unique": "Diese Kunden-ID wird bereits verwendet"
       },
       "aria": {
         "form": ""
