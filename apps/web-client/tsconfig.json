@@ -1,7 +1,7 @@
 {
 	"extends": "./.svelte-kit/tsconfig.json",
 	"compilerOptions": {
-		"types": ["svelte", "@sveltejs/kit"],
+		"types": ["svelte", "@sveltejs/kit", "@vitest/browser/matchers"],
 		"skipLibCheck": true
 	}
 }
