@@ -46,7 +46,6 @@
 
 	import { appPath } from "$lib/paths";
 	import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
-	import ErrorView from "$lib/components/ErrorView.svelte";
 
 	export let data: LayoutData;
 
@@ -309,35 +308,26 @@
 
 <svelte:window on:error={handleClientSideError} />
 
-<!-- Not showing the layout (sidenav) in error view -->
-{#if !isErrorView}
-	<div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
-		<div class="hidden h-full w-72 lg:block">
-			<Sidebar />
-		</div>
-
-		<!-- flex flex-1 flex-col justify-items-center overflow-y-auto -->
-		<main class="h-full w-full overflow-y-auto">
-			{#if !$mobileNavOpen}
-				<button
-					use:melt={$mobileNavTrigger}
-					class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden"
-					aria-label={tLayout.mobile_nav.trigger.aria_label()}
-				>
-					<Menu size={24} aria-hidden />
-				</button>
-			{/if}
-
-			<slot />
-		</main>
+<div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
+	<div class="hidden h-full w-72 lg:block">
+		<Sidebar />
 	</div>
-{:else if isClientError}
-	<!-- If client side error, we're staying on the same route, just display the error view -->
-	<ErrorView source="runtime" message={clientError.message} />
-{:else}
-	<!-- Load time error displays +error.svelte (as slot) -->
-	<slot />
-{/if}
+
+	<!-- flex flex-1 flex-col justify-items-center overflow-y-auto -->
+	<main class="h-full w-full overflow-y-auto">
+		{#if !$mobileNavOpen}
+			<button
+				use:melt={$mobileNavTrigger}
+				class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden"
+				aria-label={tLayout.mobile_nav.trigger.aria_label()}
+			>
+				<Menu size={24} aria-hidden />
+			</button>
+		{/if}
+
+		<slot />
+	</main>
+</div>
 
 {#if $mobileNavOpen}
 	<div use:melt={$mobileNavPortalled}>
