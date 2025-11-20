@@ -5,6 +5,7 @@
 	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 
 	import LL from "@librocco/shared/i18n-svelte";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	export let orders: PlacedSupplierOrder[];
 
@@ -41,9 +42,7 @@
 					<td class="whitespace-nowrap">{supplier_name}</td>
 					<td>
 						<span class="badge-primary badge-outline badge">
-							<time dateTime={finalized.toISOString()}>
-								{finalized.toLocaleString()}
-							</time>
+							<time dateTime={finalized.toISOString()}>{$dateFormatters.dateTime(finalized)}</time>
 						</span>
 					</td>
 					<td class="whitespace-nowrap text-right">
