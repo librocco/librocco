@@ -84,7 +84,7 @@
 			{#if !bookList?.length}
 				<div id="empty" class="flex grow justify-center">
 					<div class="mx-auto max-w-xl translate-y-1/2">
-						<PlaceholderBox title="No Books on that date" description="Try selecting a different date." />
+						<PlaceholderBox title={t.placeholder_box.title()} description={t.placeholder_box.description()} />
 					</div>
 				</div>
 			{:else}
@@ -137,7 +137,7 @@
 									data-property="title"
 									class="col-span-2 overflow-hidden whitespace-nowrap text-xl font-medium lg:col-span-5 xl:col-span-3"
 								>
-									{title || "Unknown Title"}
+									{title || tCommon.placeholders.unknown_title()}
 								</p>
 								<p class="lg:order-4 xl:order-none xl:col-span-2">
 									<span data-property="committedAt" class="badge badge-md {noteType === 'inbound' ? 'badge-green' : 'badge-red'}">

@@ -50,7 +50,7 @@
 		<div class="flex w-full p-4">
 			<label class="input-bordered input flex flex-1 items-center gap-2">
 				<Search />
-				<input data-testid={testId("search-input")} use:input placeholder="Search" class="w-full" />
+				<input data-testid={testId("search-input")} use:input placeholder={t.search.placeholder()} class="w-full" />
 			</label>
 		</div>
 		<!-- Start entity list contaier -->

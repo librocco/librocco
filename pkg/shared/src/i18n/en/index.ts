@@ -11,7 +11,8 @@ const nav = {
 	history: "History",
 
 	// Orders mgmt
-	supplier_orders: "Suppliers orders"
+	supplier_orders: "Suppliers orders",
+	customers: "Customers"
 };
 
 const page_headings = {
@@ -30,6 +31,13 @@ const search = {
 };
 
 const history_page = {
+	title: "History",
+	tabs: {
+		by_date: "By Date",
+		by_isbn: "By ISBN",
+		notes_by_date: "Notes by date",
+		by_warehouse: "by Warehouse"
+	},
 	date_tab: {
 		stats: {
 			title: "Stats",
@@ -43,6 +51,10 @@ const history_page = {
 		transactions: {
 			title: "Transactions",
 			committed: "Committed"
+		},
+		placeholder_box: {
+			title: "No Books on that date",
+			description: "Try selecting a different date."
 		}
 	},
 	isbn_tab: {
@@ -556,7 +568,8 @@ const common = {
 	},
 	placeholders: {
 		no_results: "No results",
-		search_found_no_results: "Search found no results"
+		search_found_no_results: "Search found no results",
+		unknown_title: "Unknown Title"
 	},
 	loading: "Loading"
 };
