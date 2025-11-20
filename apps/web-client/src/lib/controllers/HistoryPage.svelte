@@ -7,35 +7,38 @@
 
 	import { Page } from "$lib/controllers";
 	import { appHash } from "$lib/paths";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import type { HistoryView } from "@librocco/shared";
 
 	import type { DBAsync } from "$lib/db/cr-sqlite/types";
 	import type { PluginsInterface } from "$lib/plugins";
 
+	$: t = $LL.history_page;
+
 	$: tabs = [
 		{
 			icon: Calendar,
-			label: "By Date",
+			label: t.tabs.by_date(),
 			// Keep the date when switching from one dated tab to another.
 			// We're doing this in browser only so as to not produce errors during static build.
 			href: appHash("history/date", (browser && $page.params?.date) || "")
 		},
 		{
 			icon: Book,
-			label: "By ISBN",
+			label: t.tabs.by_isbn(),
 			href: appHash("history/isbn")
 		},
 		{
 			icon: Book,
-			label: "Notes by date",
+			label: t.tabs.notes_by_date(),
 			// Keep the date when switching from one dated tab to another
 			// We're doing this in browser only so as to not produce errors during static build.
 			href: appHash("history/notes/date", (browser && $page.params?.date) || "")
 		},
 		{
 			icon: Book,
-			label: "by Warehouse",
+			label: t.tabs.by_warehouse(),
 			href: appHash("history/warehouse") // Keep the date when switching from one dated tab to another
 		}
 	];
@@ -45,7 +48,7 @@
 	export let plugins: PluginsInterface;
 </script>
 
-<Page title="History" {view} {db} {plugins}>
+<Page title={t.title()} {view} {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col">
 		<div id="history-tabs" class="tabs tabs-bordered w-full py-4">
 			{#each tabs as { label, icon, href }}

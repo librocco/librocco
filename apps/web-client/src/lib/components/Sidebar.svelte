@@ -62,7 +62,7 @@
 			icon: CalendarClock
 		},
 		{
-			label: "Customers",
+			label: tNav.customers(),
 			href: appHash("customers"),
 			icon: PersonStanding
 		},

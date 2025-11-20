@@ -7,7 +7,8 @@
     "purchase": "Acquisto",
     "settings": "Impostazioni",
     "history": "Storico",
-    "supplier_orders": "Ordini fornitori"
+    "supplier_orders": "Ordini fornitori",
+    "customers": "Clienti"
   },
   "page_headings": {
     "outbound": "Vendite",
@@ -23,6 +24,13 @@
     "placeholder": "Cerca per ISBN"
   },
   "history_page": {
+    "title": "Storico",
+    "tabs": {
+      "by_date": "Per Data",
+      "by_isbn": "Per ISBN",
+      "notes_by_date": "Note per data",
+      "by_warehouse": "per Magazzino"
+    },
     "date_tab": {
       "stats": {
         "title": "Statistiche",
@@ -36,6 +44,10 @@
       "transactions": {
         "title": "Transazioni",
         "committed": "Confermate"
+      },
+      "placeholder_box": {
+        "title": "Nessun libro in quella data",
+        "description": "Prova a selezionare una data diversa."
       }
     },
     "isbn_tab": {
@@ -469,7 +481,8 @@
     },
     "placeholders": {
       "no_results": "Nessun risultato",
-      "search_found_no_results": "La ricerca non ha prodotto risultati"
+      "search_found_no_results": "La ricerca non ha prodotto risultati",
+      "unknown_title": "Titolo sconosciuto"
     },
     "loading": "Caricamento"
   },
