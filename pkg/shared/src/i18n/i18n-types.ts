@@ -2268,6 +2268,16 @@ type RootTranslation = {
 				button: string
 			}
 		}
+		runtime_error_toast: {
+			/**
+			 * A​n​ ​u​n​e​x​p​e​c​t​e​d​ ​e​r​r​o​r​ ​o​c​c​u​r​r​e​d
+			 */
+			title: string
+			/**
+			 * I​f​ ​i​t​ ​p​e​r​s​i​s​t​s​,​ ​t​r​y​ ​r​e​l​o​a​d​i​n​g​ ​t​h​e​ ​p​a​g​e​.
+			 */
+			description: string
+		}
 	}
 	error_page: {
 		/**
@@ -2340,7 +2350,21 @@ type RootTranslation = {
 		 * D​e​b​u​g
 		 */
 		title: string
+		labels: {
+			/**
+			 * K​a​b​o​o​m​!​ ​R​u​n​t​i​m​e​ ​e​r​r​o​r
+			 */
+			runtime_error: string
+		}
 		actions: {
+			/**
+			 * T​r​i​g​g​e​r​ ​L​o​a​d​ ​E​r​r​o​r
+			 */
+			trigger_load_error: string
+			/**
+			 * T​r​i​g​g​e​r​ ​R​u​n​t​i​m​e​ ​E​r​r​o​r
+			 */
+			trigger_runtime_error: string
 			/**
 			 * P​o​p​u​l​a​t​e​ ​D​a​t​a​b​a​s​e
 			 */
@@ -5035,6 +5059,16 @@ export type TranslationFunctions = {
 				button: () => LocalizedString
 			}
 		}
+		runtime_error_toast: {
+			/**
+			 * An unexpected error occurred
+			 */
+			title: () => LocalizedString
+			/**
+			 * If it persists, try reloading the page.
+			 */
+			description: () => LocalizedString
+		}
 	}
 	error_page: {
 		/**
@@ -5107,7 +5141,21 @@ export type TranslationFunctions = {
 		 * Debug
 		 */
 		title: () => LocalizedString
+		labels: {
+			/**
+			 * Kaboom! Runtime error
+			 */
+			runtime_error: () => LocalizedString
+		}
 		actions: {
+			/**
+			 * Trigger Load Error
+			 */
+			trigger_load_error: () => LocalizedString
+			/**
+			 * Trigger Runtime Error
+			 */
+			trigger_runtime_error: () => LocalizedString
 			/**
 			 * Populate Database
 			 */

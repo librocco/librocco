@@ -504,7 +504,12 @@ const books_page = {
 
 const debug_page = {
 	title: "Debug",
+	labels: {
+		runtime_error: "Kaboom! Runtime error"
+	},
 	actions: {
+		trigger_load_error: "Trigger Load Error",
+		trigger_runtime_error: "Trigger Runtime Error",
 		populate_database: "Populate Database",
 		reset_database: "Reset Database",
 		upsert_100_books: "Upsert 100 Books",
@@ -881,6 +886,10 @@ const layout = {
 			note: "Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page (after reinitialisation)",
 			button: "Click to delete the DB"
 		}
+	},
+	runtime_error_toast: {
+		title: "An unexpected error occurred",
+		description: "If it persists, try reloading the page."
 	}
 };
 

@@ -8,8 +8,8 @@
 	import { fade, fly } from "svelte/transition";
 
 	import { Subscription } from "rxjs";
-	import { createDialog, melt } from "@melt-ui/svelte";
 	import Menu from "$lucide/menu";
+	import { createDialog, melt } from "@melt-ui/svelte";
 
 	import { afterNavigate, invalidateAll } from "$app/navigation";
 	import { browser } from "$app/environment";
@@ -27,7 +27,6 @@
 	import { sync, syncConfig, syncActive, dbid, syncProgressStore } from "$lib/db";
 	import { clearDb, getDB, schemaName, schemaContent, dbCache, isEmptyDB } from "$lib/db/cr-sqlite/db";
 	import { ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
-	import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -37,6 +36,8 @@
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
+
+	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
 	import { LL } from "@librocco/shared/i18n-svelte";
 	import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
@@ -295,7 +296,17 @@
 		// so it's nicer to show a loading state than have a feel of app hanging
 		window.location.href = appPath("stock");
 	};
+
+	const handleClientSideError = (e: ErrorEvent & { currentTarget: EventTarget & Element }) => {
+		toastError({
+			title: tLayout.runtime_error_toast.title(),
+			description: tLayout.runtime_error_toast.description(),
+			detail: e.error?.message || e.message || ""
+		});
+	};
 </script>
+
+<svelte:window on:error={handleClientSideError} />
 
 <div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
 	<div class="hidden h-full w-72 lg:block">
@@ -317,6 +328,8 @@
 		<slot />
 	</main>
 </div>
+
+<Toaster />
 
 {#if $mobileNavOpen}
 	<div use:melt={$mobileNavPortalled}>
