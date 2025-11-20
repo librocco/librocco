@@ -366,7 +366,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(tsx@4.20.3)
+        version: 6.0.15(@types/node@16.18.126)
 
   ../../pkg/scaffold:
     dependencies:
@@ -434,6 +434,9 @@ importers:
       '@vitest/ui':
         specifier: ~3.0.4
         version: 3.0.9(vitest@3.0.9)
+      concurrently:
+        specifier: ^9.1.0
+        version: 9.2.1
       eslint:
         specifier: ^8.13.0
         version: 8.57.1
@@ -553,7 +556,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(tsx@4.20.3)
+        version: 6.0.15(@types/node@16.18.126)
 
   ../../plugins/open-library-api:
     devDependencies:
@@ -583,7 +586,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(tsx@4.20.3)
+        version: 6.0.15(@types/node@16.18.126)
 
 packages:
 
@@ -6344,6 +6347,19 @@ packages:
   /concat-map@0.0.1:
     resolution: {integrity: sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg==}
 
+  /concurrently@9.2.1:
+    resolution: {integrity: sha512-fsfrO0MxV64Znoy8/l1vVIjjHa29SZyyqPgQBwhiDcaW8wJc2W3XWVOGx4M3oJBnv/zdUZIIp1gDeS98GzP8Ng==}
+    engines: {node: '>=18'}
+    hasBin: true
+    dependencies:
+      chalk: 4.1.2
+      rxjs: 7.8.2
+      shell-quote: 1.8.3
+      supports-color: 8.1.1
+      tree-kill: 1.2.2
+      yargs: 17.7.2
+    dev: true
+
   /content-disposition@0.5.4:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
     engines: {node: '>= 0.6'}
@@ -11437,6 +11453,11 @@ packages:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
 
+  /shell-quote@1.8.3:
+    resolution: {integrity: sha512-ObmnIF4hXNg1BqhnHmgbDETF8dLPCggZWBjkQfhZpbszZnYur5DUljTcCHii5LC3J5E0yeO/1LIMyH+UvHQgyw==}
+    engines: {node: '>= 0.4'}
+    dev: true
+
   /shimmer@1.2.1:
     resolution: {integrity: sha512-sQTKC1Re/rM6XyFM6fIAGHRPVGvyXfgzIDvzoq608vM+jeyVD0Tu1E6Np0Kc2zAIFWIj963V2800iF/9LPieQw==}
 
@@ -12422,6 +12443,11 @@ packages:
     engines: {node: '>=18'}
     dependencies:
       punycode: 2.3.1
+    dev: true
+
+  /tree-kill@1.2.2:
+    resolution: {integrity: sha512-L0Orpi8qGpRG//Nd+H90vFB+3iHnue1zSSGmNOOCh1GLJ7rUKVwV2HvijphGQS2UmhUZewS9VgvxYIdgr+fG1A==}
+    hasBin: true
     dev: true
 
   /triple-beam@1.4.1:
