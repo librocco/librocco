@@ -293,7 +293,7 @@
 	const triggerLoadError = () => goto("#/load_error");
 
 	const throwError = () => {
-		throw new Error("Kaboom! Runtime error");
+		throw new Error($LL.debug_page.labels.runtime_error());
 	};
 
 	let error = false;
@@ -309,11 +309,11 @@
 			<div class="gap-2">
 				<button class="btn-primary btn" on:click={triggerLoadError}>
 					<AlertTriangle size={20} />
-					Trigger load error
+					{$LL.debug_page.actions.trigger_load_error()}
 				</button>
 				<button class="btn-primary btn" on:click={throwError}>
 					<AlertTriangle size={20} />
-					Trigger runtime error
+					{$LL.debug_page.actions.trigger_runtime_error()}
 				</button>
 			</div>
 		</div>
