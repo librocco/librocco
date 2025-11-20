@@ -2268,6 +2268,16 @@ type RootTranslation = {
 				button: string
 			}
 		}
+		runtime_error_toast: {
+			/**
+			 * A​n​ ​u​n​e​x​p​e​c​t​e​d​ ​e​r​r​o​r​ ​o​c​c​u​r​r​e​d​.
+			 */
+			title: string
+			/**
+			 * I​f​ ​i​t​ ​p​e​r​s​i​s​t​s​,​ ​t​r​y​ ​r​e​l​o​a​d​i​n​g​ ​t​h​e​ ​p​a​g​e​.
+			 */
+			description: string
+		}
 	}
 	error_page: {
 		/**
@@ -5034,6 +5044,16 @@ export type TranslationFunctions = {
 				 */
 				button: () => LocalizedString
 			}
+		}
+		runtime_error_toast: {
+			/**
+			 * An unexpected error occurred.
+			 */
+			title: () => LocalizedString
+			/**
+			 * If it persists, try reloading the page.
+			 */
+			description: () => LocalizedString
 		}
 	}
 	error_page: {
