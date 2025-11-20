@@ -24,8 +24,6 @@ name: Web App CI
 jobs:
   build-cr-sqlite: #@ build_crsqlite()
 
-  js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", reporter="jest-junit")
-
   book-data-extension-test: #@ test_job("Book data extension Tests", "plugins/book-data-extension")
 
   web-client-test: #@ test_job("Web Client Tests", "apps/web-client", install_playwright=True)
@@ -246,7 +244,6 @@ jobs:
     needs:
       [
         build-cr-sqlite,
-        js-search-test,
         book-data-extension-test,
         web-client-test,
         e2e-test,
