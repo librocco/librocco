@@ -11,7 +11,6 @@ import {
 	addBooksToCustomer,
 	removeBooksFromCustomer,
 	getCustomerDisplayIdSeq,
-	isDisplayIdUnique,
 	getCustomerDetails,
 	getCustomerOrderList
 } from "../customers";
@@ -142,28 +141,6 @@ describe("Customer orders", () => {
 
 			const displayId = await getCustomerDisplayIdSeq(db);
 			expect(displayId).toBe(4);
-		});
-	});
-
-	describe("isDisplayIdUnique should", () => {
-		it("return true if unique", async () => {
-			const db = await getRandomDb();
-			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-			expect(await isDisplayIdUnique(db, { id: 1, displayId: "2" })).toEqual(true);
-		});
-
-		it("return false if one or more entries have the same value", async () => {
-			const db = await getRandomDb();
-			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-			await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "1" });
-			await upsertCustomer(db, { fullname: "James Doe", id: 3, displayId: "3" });
-			expect(await isDisplayIdUnique(db, { id: 3, displayId: "1" })).toEqual(false);
-		});
-
-		it("return true if the only entry with the same value is the exact one comparing", async () => {
-			const db = await getRandomDb();
-			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-			expect(await isDisplayIdUnique(db, { id: 1, displayId: "1" })).toEqual(true);
 		});
 	});
 

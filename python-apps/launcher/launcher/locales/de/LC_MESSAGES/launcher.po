@@ -1,0 +1,554 @@
+# German translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-11-11 22:14+0100\n"
+"PO-Revision-Date: 2025-11-05 12:00+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: de\n"
+"Language-Team: de <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: main.py:66
+msgid "Configuration Error"
+msgstr "Konfigurationsfehler"
+
+#: main.py:67
+#, python-brace-format
+msgid ""
+"Failed to initialize configuration:\n"
+"\n"
+"{0}"
+msgstr ""
+"Fehler beim Initialisieren der Konfiguration:\n"
+"\n"
+"{0}"
+
+#: main.py:76
+msgid "Initialization Error"
+msgstr "Initialisierungsfehler"
+
+#: main.py:88
+msgid "Daemon Manager Error"
+msgstr "Daemon-Manager-Fehler"
+
+#: main.py:90
+msgid ""
+"Failed to initialize the daemon manager.\n"
+"\n"
+"Check the logs for details."
+msgstr ""
+"Fehler beim Initialisieren des Daemon-Managers.\n"
+"\n"
+"Überprüfen Sie die Protokolle für Details."
+
+#: main.py:109
+msgid "System Tray Unavailable"
+msgstr "Systemleiste nicht verfügbar"
+
+#: main.py:111
+msgid ""
+"System tray is not available on this system.\n"
+"\n"
+"The launcher requires a system tray to function."
+msgstr ""
+"Die Systemleiste ist auf diesem System nicht verfügbar.\n"
+"\n"
+"Der Launcher benötigt eine Systemleiste, um zu funktionieren."
+
+#: main.py:131
+msgid "Application Error"
+msgstr "Anwendungsfehler"
+
+#: main.py:133
+msgid ""
+"Failed to start the tray application.\n"
+"\n"
+"Check the logs for details."
+msgstr ""
+"Fehler beim Starten der Tray-Anwendung.\n"
+"\n"
+"Überprüfen Sie die Protokolle für Details."
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:281
+msgid "January"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:282
+msgid "February"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:283
+msgid "March"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:284
+msgid "April"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:285
+msgid "May"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:286
+msgid "June"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:287
+msgid "July"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:288
+msgid "August"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:289
+msgid "September"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:290
+msgid "October"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:291
+msgid "November"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:292
+msgid "December"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:295
+msgid "Monday"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:296
+msgid "Tuesday"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:297
+msgid "Wednesday"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:298
+msgid "Thursday"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:299
+msgid "Friday"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:300
+msgid "Saturday"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:301
+msgid "Sunday"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:377
+msgid "1 second ago"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:383
+msgid "1 minute ago"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:388
+msgid "1 hour ago"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:391
+#, python-format
+msgid "%(time)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:393
+msgid "yesterday"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:393
+#, python-format
+msgid "yesterday at %(time)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:395
+#, python-format
+msgid "%(weekday)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:395
+#, python-format
+msgid "%(weekday)s at %(time)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:398
+#: activate/lib/python3.13/site-packages/tornado/locale.py:451
+#, python-format
+msgid "%(month_name)s %(day)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:400
+#, python-format
+msgid "%(month_name)s %(day)s at %(time)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:405
+#, python-format
+msgid "%(month_name)s %(day)s, %(year)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:407
+#, python-format
+msgid "%(month_name)s %(day)s, %(year)s at %(time)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:445
+#, python-format
+msgid "%(weekday)s, %(month_name)s %(day)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/locale.py:468
+#, python-format
+msgid "%(commas)s and %(last)s"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/test/locale_test.py:68
+msgctxt "law"
+msgid "right"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/test/locale_test.py:69
+msgctxt "good"
+msgid "right"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/test/locale_test.py:70
+#: activate/lib/python3.13/site-packages/tornado/test/locale_test.py:72
+msgctxt "organization"
+msgid "club"
+msgstr ""
+
+#: activate/lib/python3.13/site-packages/tornado/test/locale_test.py:74
+#: activate/lib/python3.13/site-packages/tornado/test/locale_test.py:75
+msgctxt "stick"
+msgid "club"
+msgstr ""
+
+#: launcher/log_viewer.py:33
+#, python-brace-format
+msgid "{0} Logs"
+msgstr "{0}-Protokolle"
+
+#: launcher/log_viewer.py:76
+#, fuzzy
+msgid "Server Logs"
+msgstr "Protokolle anzeigen..."
+
+#: launcher/log_viewer.py:77
+msgid "Access Logs"
+msgstr ""
+
+#: launcher/log_viewer.py:79
+msgid "Sync Server Logs"
+msgstr ""
+
+#: launcher/log_viewer.py:84
+msgid "Primary Logs"
+msgstr ""
+
+#: launcher/log_viewer.py:85
+msgid "Secondary Logs"
+msgstr ""
+
+#: launcher/log_viewer.py:92
+msgid "Refresh Now"
+msgstr "Jetzt aktualisieren"
+
+#: launcher/log_viewer.py:96
+msgid "Clear"
+msgstr "Löschen"
+
+#: launcher/log_viewer.py:102
+msgid "Close"
+msgstr "Schließen"
+
+#: launcher/log_viewer.py:125 launcher/log_viewer.py:164
+#, python-brace-format
+msgid "Error: {0}"
+msgstr "Fehler: {0}"
+
+#: launcher/log_viewer.py:131
+#, fuzzy
+msgid "Status: ERROR"
+msgstr "Startfehler"
+
+#: launcher/log_viewer.py:148
+#, fuzzy, python-brace-format
+msgid "Status: UNKNOWN"
+msgstr "Status: {0}"
+
+#: launcher/log_viewer.py:152
+#, python-brace-format
+msgid "Status: {0}"
+msgstr "Status: {0}"
+
+#: launcher/log_viewer.py:155
+#, python-brace-format
+msgid "PID: {0}"
+msgstr "PID: {0}"
+
+#: launcher/log_viewer.py:159
+#, python-brace-format
+msgid "Uptime: {0}"
+msgstr "Laufzeit: {0}"
+
+#: launcher/startup.py:103
+#, fuzzy
+msgid ""
+"Failed to download or verify Caddy binary. Please check your internet "
+"connection and try again."
+msgstr ""
+"Fehler beim Herunterladen oder Überprüfen der Caddy-Binärdatei.\n"
+"\n"
+"Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut."
+
+#: launcher/tray_app.py:35
+msgid "Scan QR Code to Connect"
+msgstr "QR-Code scannen zum Verbinden"
+
+#: launcher/tray_app.py:84
+msgid "Failed to generate QR code"
+msgstr "QR-Code konnte nicht erstellt werden"
+
+#: launcher/tray_app.py:193
+#, fuzzy
+msgid "System Tray Error"
+msgstr "Systemleiste nicht verfügbar"
+
+#: launcher/tray_app.py:195
+msgid "Could not create system tray icon. The system tray may not be available."
+msgstr ""
+
+#: launcher/tray_app.py:207
+msgid "Open in Browser"
+msgstr ""
+
+#: launcher/tray_app.py:212
+msgid "Show QR Code"
+msgstr "QR-Code anzeigen"
+
+#: launcher/tray_app.py:220
+#, fuzzy
+msgid "System Status: ◐ Checking..."
+msgstr "Caddy: Überprüfe..."
+
+#: launcher/tray_app.py:225
+#, fuzzy
+msgid "  Caddy: Checking..."
+msgstr "Caddy: Überprüfe..."
+
+#: launcher/tray_app.py:230
+#, fuzzy
+msgid "  Sync Server: Checking..."
+msgstr "Caddy: Überprüfe..."
+
+#: launcher/tray_app.py:238
+#, fuzzy
+msgid "Start System"
+msgstr "Startfehler"
+
+#: launcher/tray_app.py:242
+msgid "Stop System"
+msgstr ""
+
+#: launcher/tray_app.py:246
+#, fuzzy
+msgid "Restart System"
+msgstr "Neustartfehler"
+
+#: launcher/tray_app.py:253
+msgid "Quit"
+msgstr "Beenden"
+
+#: launcher/tray_app.py:271 launcher/tray_app.py:301
+#, fuzzy
+msgid "Caddy Not Running"
+msgstr "Caddy: ● Läuft"
+
+#: launcher/tray_app.py:272 launcher/tray_app.py:302
+msgid "Please start Caddy first using the tray menu."
+msgstr ""
+
+#: launcher/tray_app.py:286
+#, fuzzy
+msgid "Browser Error"
+msgstr "Neustartfehler"
+
+#: launcher/tray_app.py:287
+#, fuzzy
+msgid "Failed to open browser."
+msgstr "Fehler beim Öffnen des Protokollbetrachter-Fensters."
+
+#: launcher/tray_app.py:317
+msgid "QR Code Error"
+msgstr "QR-Code-Fehler"
+
+#: launcher/tray_app.py:318
+msgid "Failed to generate QR code."
+msgstr "QR-Code konnte nicht erstellt werden."
+
+#: launcher/tray_app.py:338 launcher/tray_app.py:409
+#, fuzzy
+msgid "System Status: ⚠ Error"
+msgstr "Neustartfehler"
+
+#: launcher/tray_app.py:339
+#, fuzzy
+msgid "  Caddy: ⚠ Error"
+msgstr "Caddy: ⚠ Fehler"
+
+#: launcher/tray_app.py:340
+msgid "  Sync Server: ⚠ Error"
+msgstr ""
+
+#: launcher/tray_app.py:391
+msgid "System Status: ● All Running"
+msgstr ""
+
+#: launcher/tray_app.py:393
+#, fuzzy
+msgid "System Status: ○ Stopped"
+msgstr "Caddy: ○ Gestoppt"
+
+#: launcher/tray_app.py:395
+#, fuzzy
+msgid "System Status: ◐ Starting..."
+msgstr "Caddy: ◐ Startet..."
+
+#: launcher/tray_app.py:400
+msgid "System Status: ⚠ Partially Running"
+msgstr ""
+
+#: launcher/tray_app.py:403
+msgid "System Status: ⚠ Unknown"
+msgstr ""
+
+#: launcher/tray_app.py:451
+msgid "Caddy Started"
+msgstr "Caddy gestartet"
+
+#: launcher/tray_app.py:451
+msgid "Caddy daemon is starting..."
+msgstr "Caddy-Daemon wird gestartet..."
+
+#: launcher/tray_app.py:455
+msgid "Caddy Stopped"
+msgstr "Caddy gestoppt"
+
+#: launcher/tray_app.py:455
+msgid "Caddy daemon is stopping..."
+msgstr "Caddy-Daemon wird gestoppt..."
+
+#: launcher/tray_app.py:459
+msgid "Caddy Restarted"
+msgstr "Caddy neu gestartet"
+
+#: launcher/tray_app.py:459
+msgid "Caddy daemon is restarting..."
+msgstr "Caddy-Daemon wird neu gestartet..."
+
+#: launcher/tray_app.py:463
+#, fuzzy
+msgid "System Started"
+msgstr "Caddy gestartet"
+
+#: launcher/tray_app.py:463
+msgid "Starting all services..."
+msgstr ""
+
+#: launcher/tray_app.py:467
+#, fuzzy
+msgid "System Stopped"
+msgstr "Caddy gestoppt"
+
+#: launcher/tray_app.py:467
+msgid "Stopping all services..."
+msgstr ""
+
+#: launcher/tray_app.py:471
+#, fuzzy
+msgid "System Restarted"
+msgstr "Caddy neu gestartet"
+
+#: launcher/tray_app.py:471
+msgid "Restarting all services..."
+msgstr ""
+
+#: launcher/tray_app.py:478
+#, fuzzy
+msgid "Operation failed. Check the logs for details."
+msgstr ""
+"Fehler beim Stoppen des Caddy-Daemons. Überprüfen Sie die Protokolle für "
+"Details."
+
+#~ msgid "Standard Output"
+#~ msgstr "Standardausgabe"
+
+#~ msgid "Standard Error"
+#~ msgstr "Standardfehler"
+
+#~ msgid "Start Caddy"
+#~ msgstr "Caddy starten"
+
+#~ msgid "Stop Caddy"
+#~ msgstr "Caddy stoppen"
+
+#~ msgid "Restart Caddy"
+#~ msgstr "Caddy neu starten"
+
+#~ msgid "Start Failed"
+#~ msgstr "Start fehlgeschlagen"
+
+#~ msgid "Failed to start Caddy daemon. Check the logs for details."
+#~ msgstr ""
+#~ "Fehler beim Starten des Caddy-Daemons."
+#~ " Überprüfen Sie die Protokolle für "
+#~ "Details."
+
+#~ msgid "An unexpected error occurred while starting Caddy."
+#~ msgstr "Ein unerwarteter Fehler ist beim Starten von Caddy aufgetreten."
+
+#~ msgid "Stop Failed"
+#~ msgstr "Stoppen fehlgeschlagen"
+
+#~ msgid "Stop Error"
+#~ msgstr "Stoppfehler"
+
+#~ msgid "An unexpected error occurred while stopping Caddy."
+#~ msgstr "Ein unerwarteter Fehler ist beim Stoppen von Caddy aufgetreten."
+
+#~ msgid "Restart Failed"
+#~ msgstr "Neustart fehlgeschlagen"
+
+#~ msgid "Failed to restart Caddy daemon. Check the logs for details."
+#~ msgstr ""
+#~ "Fehler beim Neustarten des Caddy-"
+#~ "Daemons. Überprüfen Sie die Protokolle "
+#~ "für Details."
+
+#~ msgid "An unexpected error occurred while restarting Caddy."
+#~ msgstr "Ein unerwarteter Fehler ist beim Neustarten von Caddy aufgetreten."
+
+#~ msgid "Log Viewer Error"
+#~ msgstr "Protokollbetrachter-Fehler"
+

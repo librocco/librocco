@@ -273,16 +273,15 @@ const customer_orders_page = {
 		placed: "Placed",
 		pending: "Pending"
 	},
+	status_badges: {
+		with_date: "{status} - {date:Date|dateShort}"
+	},
 	dialogs: {
 		new_customer: {
 			title: "Create new order"
 		},
 		edit_customer: {
 			title: "Edit customer details"
-		},
-		non_unique_id: {
-			title: "Non unique customer ID",
-			description: "There's at least one more order with the same ID. Please confirm you're ok with this?"
 		}
 	}
 };
@@ -329,7 +328,6 @@ const order_list_page = {
 		supplier_address: "Supplier address",
 		supplier_customerId: "Supplier customer ID",
 		supplier_orderFormat: "Supplier order format"
-
 	},
 	table: {
 		publisher_name: "Publisher name",
@@ -358,7 +356,6 @@ const reconciled_list_page = {
 		reconcile: "Reconcile",
 		print_order: "Print Order",
 		download_order: "Download Order"
-
 	},
 	stats: {
 		total_books: "Total books",
@@ -435,7 +432,7 @@ const suppliers_page = {
 		address: "Address",
 		assigned_publishers: "Assigned Publishers",
 		actions: "Actions",
-		order_format:"Order Format"
+		order_format: "Order Format"
 	}
 };
 
@@ -613,8 +610,7 @@ const sale_note = {
 		any_warehouse: "Any warehouse",
 		no_warehouses: "No available warehouses",
 		scan_title: "Scan to select books from...",
-		scan_description: "Plugin your barcode scanner and pull the trigger",
-
+		scan_description: "Plugin your barcode scanner and pull the trigger"
 	},
 	alerts: {
 		insufficient_quantity:
@@ -720,7 +716,7 @@ const supplier_orders_component = {
 		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
 		reconcile: "Reconcile",
-		view_reconciliation: "View Reconciliation",
+		view_reconciliation: "View Reconciliation"
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",
@@ -870,8 +866,7 @@ const layout = {
 			title: "Load the DB with data",
 			call_to_action: "Click on the button below to load the DB prepupulated with demo data",
 			description: "This will download the demo DB .sqlite3 file and store it to browser's OPFS (for in app usage)",
-			button: "Load DB",
-
+			button: "Load DB"
 		},
 		schema_mismatch: {
 			title: "Error: DB Schema mismatch",
@@ -1007,6 +1002,9 @@ const forms = {
 			phone1: "Phone 1",
 			phone2: "Phone 2",
 			cancel_button: "Cancel"
+		},
+		validation: {
+			display_id_not_unique: 'This ID is already in use by customer "{fullname}" with {bookCount} ordered book{{s}}'
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"
