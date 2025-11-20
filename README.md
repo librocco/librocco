@@ -92,10 +92,6 @@ Suite of E2E tests (Paywright), stored in `apps` as it doesn't provide any expor
 
 This package contains the spec and implementations of the db interface (interfacing with Pouch/Couch DB instance(s)). [see more](./pkg/db/README.md)
 
-#### Pkg: JS-Search
-
-A fork of [bvaughn/js-search](https://github.com/bvaughn/js-search) (js implementation of full text search) refactored a bit for interoperability with our app. [see-more](./pkg/js-search/README.md)
-
 #### Pkg: Scaffold
 
 A collection of tooling config(s) used for scaffolding of each package.
