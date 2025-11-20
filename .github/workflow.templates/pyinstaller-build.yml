@@ -1,0 +1,376 @@
+#@ load("github.lib.yml", "checkout")
+#@ load("cache.lib.yml", "cache_node")
+#@ load("rush.lib.yml", "rush_add_path")
+#@ load("rush.lib.yml", "rush_install")
+#@ load("rush.lib.yml", "rush_build")
+
+name: PyInstaller Build
+
+"on":
+  push:
+    paths:
+      - "python-apps/**"
+      - ".github/workflows/pyinstaller-build.yml"
+  workflow_dispatch:
+
+jobs:
+  build-executable:
+    name: Build ${{ matrix.os }}-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          #! Linux builds - using ubuntu-22.04 for better glibc compatibility
+          - os: linux
+            arch: x64
+            runner: ubuntu-22.04
+            artifact_name: librocco-linux-x64
+          #! NOTE: Linux ARM64 - GitHub doesn't provide native ARM64 runners yet
+          #! We could use QEMU or cross-compilation, but skipping for now
+          #! - os: linux
+          #!   arch: arm64
+          #!   runner: ubuntu-latest
+          #!   artifact_name: librocco-linux-arm64
+
+          #! macOS builds
+          - os: macos
+            arch: x64
+            runner: macos-15-intel #! Intel runner (macOS 15)
+            artifact_name: librocco-macos-x64
+          - os: macos
+            arch: arm64
+            runner: macos-15 #! Apple Silicon runner (macOS 15)
+            artifact_name: librocco-macos-arm64
+
+          #! Windows builds
+          #! DISABLED: Windows build currently not working, needs investigation
+          #! - os: windows
+          #!   arch: x64
+          #!   runner: windows-latest
+          #!   artifact_name: librocco-launcher-windows-x64
+          #! NOTE: Windows ARM64 - GitHub doesn't provide ARM64 runners yet
+          #! - os: windows
+          #!   arch: arm64
+          #!   runner: windows-latest
+          #!   artifact_name: librocco-launcher-windows-arm64
+
+    steps:
+      -  #@ checkout()
+
+      #! Node.js setup for web-client build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      #! TEMPORARY: Download pre-built Windows crsqlite.dll
+      #! This step downloads the dll built in the build-windows-crsqlite job
+      #! and places it where pnpm expects it, preventing the broken Makefile build
+      #! Remove when upstream supports Windows MSVC builds
+      - name: Download Windows crsqlite.dll (workaround)
+        if: runner.os == 'Windows'
+        continue-on-error: true
+        id: download-windows-dll
+        uses: actions/download-artifact@v4
+        with:
+          name: crsqlite-windows-dll
+          path: temp-crsqlite-dll
+
+      - name: Inject Windows crsqlite.dll into tarball (workaround)
+        if: runner.os == 'Windows' && steps.download-windows-dll.outcome == 'success'
+        shell: pwsh
+        run: |
+          # Extract the tarball
+          $tarball = "3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz"
+          $tempDir = "temp-crsqlite-inject"
+
+          New-Item -ItemType Directory -Force -Path $tempDir
+          tar -xzf $tarball -C $tempDir
+
+          # Create dist directory in the package
+          New-Item -ItemType Directory -Force -Path "$tempDir/package/dist"
+
+          # Copy our pre-built dll
+          Copy-Item "temp-crsqlite-dll/crsqlite.dll" "$tempDir/package/dist/crsqlite.dll"
+
+          # Repack the tarball with the dll included
+          tar -czf $tarball -C $tempDir package
+
+          Write-Host "Injected crsqlite.dll into tarball"
+
+          # Cleanup
+          Remove-Item -Recurse -Force $tempDir
+          Remove-Item -Recurse -Force temp-crsqlite-dll
+
+      #! Install uv (which will manage Python installation)
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: "3.13"
+          cache-python: true
+          working-directory: python-apps/launcher
+
+      #! Cache node modules
+      -  #@ cache_node()
+
+      #! Install Rush globally
+      - name: Install Rush
+        run: npm install -g @microsoft/rush
+
+      #! Add Rush scripts to PATH
+      -  #@ rush_add_path()
+
+      #! Build web client
+      -  #@ rush_install()
+      -  #@ rush_build()
+
+      - name: Build web-client for root path
+        run: cd apps/web-client && rushx build:prod-rootdir
+        shell: bash
+
+      #! Install Python launcher dependencies (needed for build scripts)
+      #! Use uv-managed Python to ensure dev headers are available
+      - name: Create virtual environment and install launcher
+        run: |
+          cd python-apps/launcher
+          uv venv --python 3.13 --python-preference only-managed
+          uv pip install -e '.[build]'
+        shell: bash
+
+      #! Build executable
+      - name: Build PyInstaller executable
+        env:
+          #! Target macOS 10.14+ for backward compatibility (limited by PyQt6 requirement)
+          MACOSX_DEPLOYMENT_TARGET: "10.14"
+        run: |
+          cd python-apps/launcher
+          source .venv/bin/activate
+          python scripts/build_executable.py
+        shell: bash
+
+      #! Build AppImage for Linux
+      - name: Install AppImage tools
+        if: runner.os == 'Linux'
+        run: |
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O /tmp/appimagetool
+          chmod +x /tmp/appimagetool
+        shell: bash
+
+      - name: Build AppImage
+        if: runner.os == 'Linux'
+        run: |
+          cd python-apps/launcher
+          ./scripts/build_appimage.sh
+        shell: bash
+
+      #! Upload artifacts
+      #! On macOS: Create tar.gz to preserve symlinks (prevents 450MB duplication)
+      #! GitHub Actions upload-artifact doesn't preserve symlinks, causing PyInstaller's
+      #! cross-linked Contents/Resources and Contents/Frameworks to be duplicated
+      - name: Create macOS archive (preserve symlinks)
+        if: runner.os == 'macOS'
+        run: |
+          cd python-apps/launcher/dist
+          # Use tar to preserve symlinks created by PyInstaller
+          tar -czf Librocco.app.tar.gz Librocco.app
+          echo "Created Librocco.app.tar.gz ($(du -sh Librocco.app.tar.gz | cut -f1))"
+        shell: bash
+
+      #! macOS: Upload tar.gz archive (preserves symlinks)
+      - name: Upload macOS artifact
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: python-apps/launcher/dist/Librocco.app.tar.gz
+          retention-days: 90
+          if-no-files-found: error
+          compression-level: 0  #! Already compressed as .tar.gz, no need to compress again
+
+      #! Linux: Upload AppImage
+      - name: Upload Linux artifact
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: python-apps/launcher/dist/Librocco-x86_64.AppImage
+          retention-days: 90
+          if-no-files-found: error
+
+      #! Windows: Upload directory (if we ever enable Windows builds)
+      - name: Upload Windows artifact
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: python-apps/launcher/dist/librocco
+          retention-days: 90
+          if-no-files-found: error
+
+      #! Integration test - verify launcher starts and Caddy responds
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1-mesa
+
+      #! Grant screen recording permissions on macOS for screenshot capture
+      - name: Grant screen recording permissions (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          # Grant screen recording permission to Terminal.app
+          # This allows screencapture to capture the menu bar and tray icons
+          sudo sqlite3 "/Library/Application Support/com.apple.TCC/TCC.db" \
+            "INSERT OR REPLACE INTO access VALUES('kTCCServiceScreenCapture','com.apple.Terminal',0,2,4,1,NULL,NULL,0,'UNUSED',NULL,0,$(date +%s));" || true
+        shell: bash
+
+      #! Extract macOS archive for testing
+      - name: Extract macOS archive for testing
+        if: runner.os == 'macOS'
+        run: |
+          cd python-apps/launcher/dist
+          tar -xzf Librocco.app.tar.gz
+          echo "Extracted Librocco.app for integration testing"
+        shell: bash
+
+      - name: Start launcher
+        if: runner.os != 'Windows'
+        env:
+          #! Only use offscreen mode on Linux (headless). macOS needs real GUI for screenshot.
+          QT_QPA_PLATFORM: ${{ runner.os == 'Linux' && 'offscreen' || '' }}
+        run: |
+          cd python-apps/launcher/dist
+          if [ "$RUNNER_OS" == "macOS" ]; then
+            # On macOS, run the executable inside the .app bundle
+            ./Librocco.app/Contents/MacOS/librocco > launcher.log 2>&1 &
+          else
+            # On Linux, run the directory-mode executable
+            ./librocco/librocco > launcher.log 2>&1 &
+          fi
+          echo $! > launcher.pid
+        shell: bash
+
+      - name: Check for launcher initialization errors
+        if: runner.os != 'Windows'
+        run: |
+          cd python-apps/launcher/dist
+
+          echo "Waiting for tray application to initialize..."
+          # Wait up to 30 seconds for "Starting tray application..." to appear
+          for i in {1..30}; do
+            if grep -q "Starting tray application" launcher.log 2>/dev/null; then
+              echo "Tray initialization started, waiting a bit more..."
+              sleep 2
+              break
+            fi
+            sleep 1
+          done
+
+          # Check if launcher process is still running
+          if [ -f launcher.pid ]; then
+            LAUNCHER_PID=$(cat launcher.pid)
+            if ! kill -0 $LAUNCHER_PID 2>/dev/null; then
+              echo "ERROR: Launcher process died shortly after startup"
+              echo "--- Launcher Output ---"
+              cat launcher.log
+              exit 1
+            fi
+          fi
+
+          # Check for Python tracebacks in output
+          if grep -q "Traceback" launcher.log; then
+            echo "ERROR: Found Python traceback in launcher output"
+            echo "--- Launcher Output ---"
+            cat launcher.log
+            exit 1
+          fi
+
+          echo "Launcher initialized successfully (no tracebacks detected)"
+        shell: bash
+
+      #! Capture screenshot on macOS to verify tray icon appearance
+      - name: Capture macOS desktop screenshot
+        if: runner.os == 'macOS'
+        run: |
+          cd python-apps/launcher/dist
+          # Wait a bit for tray icon to fully render
+          sleep 3
+          # Capture screenshot (-x: no sound, -C: include cursor)
+          screencapture -x -C macos-tray-screenshot.png
+          echo "Screenshot captured: macos-tray-screenshot.png"
+        shell: bash
+
+      - name: Verify Caddy responds
+        run: |
+          echo "Waiting for Caddy to respond..."
+          for i in {1..60}; do
+            if curl --silent --show-error --fail --insecure https://localhost:8080/; then
+              echo "Caddy is responding."
+              exit 0
+            fi
+            echo "Attempt $i failed. Retrying in 1 second..."
+            sleep 1
+          done
+          echo "Caddy did not respond after 60 seconds."
+          exit 1
+
+      #! Verify web client is being served (not 404)
+      - name: Verify web client is accessible
+        run: |
+          echo "Checking if web client is being served..."
+          HTTP_CODE=$(curl --silent --output /dev/null --write-out "%{http_code}" --insecure https://localhost:8080/)
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✓ Web client is accessible (HTTP $HTTP_CODE)"
+          else
+            echo "✗ Web client returned HTTP $HTTP_CODE (expected 200)"
+            echo "This likely means the app directory was not bundled correctly."
+            exit 1
+          fi
+
+      - name: Display Launcher Logs
+        if: always() && runner.os != 'Windows'
+        run: |
+          cd python-apps/launcher/dist
+          if [ -f launcher.log ]; then
+            echo "--- Launcher Output (stdout/stderr) ---"
+            cat launcher.log
+          else
+            echo "launcher.log not found"
+          fi
+        shell: bash
+
+      - name: Display Caddy Logs
+        if: always()
+        run: |
+          if [[ "$RUNNER_OS" == "Linux" ]]; then
+            LOG_DIR="/home/runner/.local/share/librocco/logs"
+          elif [[ "$RUNNER_OS" == "macOS" ]]; then
+            LOG_DIR="/Users/runner/.librocco/logs"
+          else
+            echo "Unsupported OS for log dumping."
+            exit 0
+          fi
+
+          if [ -d "$LOG_DIR" ]; then
+            echo "--- Caddy log directory contents ($LOG_DIR) ---"
+            ls -la "$LOG_DIR"
+            echo "--- caddy-server.log ---"
+            cat "$LOG_DIR/caddy-server.log" || echo "caddy-server.log not found."
+            echo "--- caddy-access.log ---"
+            cat "$LOG_DIR/caddy-access.log" || echo "caddy-access.log not found."
+          else
+            echo "Log directory not found: $LOG_DIR"
+          fi
+        shell: bash
+
+      #! Upload macOS screenshot as artifact
+      - name: Upload macOS screenshot
+        if: always() && runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-tray-screenshot-${{ matrix.arch }}
+          path: python-apps/launcher/dist/macos-tray-screenshot.png
+          retention-days: 30
+          if-no-files-found: warn
