@@ -300,10 +300,6 @@
 			"projectFolder": "pkg/scaffold"
 		},
 		{
-			"packageName": "js-search",
-			"projectFolder": "pkg/js-search"
-		},
-		{
 			"packageName": "@librocco/shared",
 			"projectFolder": "pkg/shared"
 		},

@@ -1,6 +1,6 @@
 # @libroco/web-client
 
-This is our main app, using modules from `db`, `js-search` and `shared` packages (with `book-data-extension` plugin), putting them together and creating a user facing dashboard, used to manipluate and view the book store inventory.
+This is our main app, using modules from `db` and `shared` packages (with `book-data-extension` plugin), putting them together and creating a user facing dashboard, used to manipluate and view the book store inventory.
 
 ## TOC
 
