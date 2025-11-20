@@ -120,7 +120,7 @@
 					dataType: "json",
 					validators: zod(scannerSchema),
 					validationMethod: "submit-only",
-					resetForm: true,
+					resetForm: false,
 					onUpdated: async ({ form }) => {
 						const { isbn } = form?.data as BookData;
 						search.set(isbn);
