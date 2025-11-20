@@ -14,6 +14,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { invalidate } from "$app/navigation";
 	import LL from "@librocco/shared/i18n-svelte";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
 
 	export let data: PageData;
@@ -105,7 +106,7 @@
 							<div class="stat bg-base-100 max-md:py-2 md:px-1">
 								<dt class="stat-title">{t.stats.ordered()}</dt>
 								<dd class="stat-value text-2xl">
-									<time dateTime={createdDate.toString()}>{createdDate.toLocaleDateString()}</time>
+									<time dateTime={createdDate.toISOString()}>{$dateFormatters.dateMedium(createdDate)}</time>
 								</dd>
 							</div>
 						</div>
