@@ -8,10 +8,9 @@
 	import { fade, fly } from "svelte/transition";
 
 	import { Subscription } from "rxjs";
-	import { createDialog, melt } from "@melt-ui/svelte";
 	import Menu from "$lucide/menu";
+	import { createDialog, melt } from "@melt-ui/svelte";
 
-	import { page } from "$app/stores";
 	import { afterNavigate, invalidateAll } from "$app/navigation";
 	import { browser } from "$app/environment";
 	import { beforeNavigate } from "$app/navigation";
@@ -37,6 +36,8 @@
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
+
+	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
 	import { LL } from "@librocco/shared/i18n-svelte";
 	import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
@@ -296,14 +297,13 @@
 		window.location.href = appPath("stock");
 	};
 
-	// Errors
-	let clientError: Error | null = null;
-	$: isClientError = Boolean(clientError);
-	$: isErrorView = isClientError || $page.error;
-
-	function handleClientSideError(e: ErrorEvent & { currentTarget: EventTarget & Element }) {
-		clientError = e.error;
-	}
+	const handleClientSideError = (e: ErrorEvent & { currentTarget: EventTarget & Element }) => {
+		toastError({
+			title: tLayout.runtime_error_toast.title(),
+			description: tLayout.runtime_error_toast.description(),
+			detail: e.error?.message || e.message || ""
+		});
+	};
 </script>
 
 <svelte:window on:error={handleClientSideError} />
@@ -328,6 +328,8 @@
 		<slot />
 	</main>
 </div>
+
+<Toaster />
 
 {#if $mobileNavOpen}
 	<div use:melt={$mobileNavPortalled}>

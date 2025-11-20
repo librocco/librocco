@@ -881,6 +881,10 @@ const layout = {
 			note: "Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page (after reinitialisation)",
 			button: "Click to delete the DB"
 		}
+	},
+	runtime_error_toast: {
+		title: "An unexpected error occurred",
+		description: "If it persists, try reloading the page."
 	}
 };
 
