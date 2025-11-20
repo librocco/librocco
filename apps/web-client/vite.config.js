@@ -63,14 +63,6 @@ const config = {
 	},
 	build: {
 		sourcemap: true
-	},
-	test: {
-		include: ["./src/**/*.(test|spec).ts"],
-		globals: true,
-		environment: "jsdom",
-		// deps: { inline: true },
-		// Add @testing-library/jest-dom matchers and mock modules
-		setupFiles: ["./src/vitest.setup.ts"]
 	}
 	// TODO: Uncomment this when we figure out how to make it work
 	// preview: {

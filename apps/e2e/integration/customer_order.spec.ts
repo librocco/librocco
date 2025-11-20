@@ -96,7 +96,8 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn] });
-	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
+	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn] });
+	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[1].isbn] });
 	await page.goto(appHash("customers"));
 	const updateButton = page.getByRole("link", { name: tCustomers.labels.edit() }).first();
 	await updateButton.click();
@@ -110,17 +111,18 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 	const secondRow = table.getByRole("row").nth(2);
 	const thirdRow = table.getByRole("row").nth(3);
 
-	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: `€${books[0].price.toFixed(2)}`, exact: true })).toBeVisible();
+	// Sorted: last-created-first
+	await expect(firstRow.getByRole("cell", { name: books[1].isbn })).toBeVisible();
 
 	await expect(secondRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: books[0].title })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: `€${books[0].price.toFixed(2)}`, exact: true })).toBeVisible();
 
-	await expect(thirdRow.getByRole("cell", { name: books[1].isbn })).toBeVisible();
+	await expect(thirdRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
+	await expect(thirdRow.getByRole("cell", { name: books[0].title })).toBeVisible();
+	await expect(thirdRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
+	await expect(thirdRow.getByRole("cell", { name: `€${books[0].price.toFixed(2)}`, exact: true })).toBeVisible();
 });
 
 testOrders("should update a customer details", async ({ page, customers, t }) => {
@@ -157,7 +159,6 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 
 	const table = page.getByRole("table");
 	const firstRow = table.getByRole("row").nth(1);
-	const secondRow = table.getByRole("row").nth(2);
 
 	const isbnField = page.getByRole("textbox");
 	isbnField.fill(books[0].isbn);
@@ -166,17 +167,18 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
-
+	await expect(firstRow.getByRole("cell", { name: `€${books[0].price.toFixed(2)}`, exact: true })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: /Pending - .+/ })).toBeVisible();
+
 	isbnField.fill(books[2].isbn);
 	isbnField.press("Enter");
 
-	await expect(secondRow.getByRole("cell", { name: books[2].isbn })).toBeVisible();
-	await expect(secondRow.getByRole("cell", { name: books[2].title })).toBeVisible();
-	await expect(secondRow.getByRole("cell", { name: books[2].authors })).toBeVisible();
-
-	await expect(secondRow.getByRole("cell", { name: `€${books[2].price.toFixed(2)}`, exact: true })).toBeVisible();
-	await expect(secondRow.getByRole("cell", { name: /Pending - .+/ })).toBeVisible();
+	// Sorted: last-created-first => the book we've just added should be the first row
+	await expect(firstRow.getByRole("cell", { name: books[2].isbn })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: books[2].title })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: books[2].authors })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: `€${books[2].price.toFixed(2)}`, exact: true })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: /Pending - .+/ })).toBeVisible();
 });
 
 testOrders("should delete books from a customer order", async ({ page, books }) => {
@@ -206,18 +208,24 @@ testOrders("should mark order lines as collected", async ({ page, collectCustome
 	await page.goto(appHash("customers", "1"));
 
 	const table = page.getByRole("table");
-	const firstBookRow = table.getByRole("row").nth(1);
-	const secondBookRow = table.getByRole("row").nth(2);
 
-	await expect(firstBookRow.getByRole("cell", { name: customerOrderLines[0].isbn })).toBeVisible();
+	// Test row = a row with initiel status 'delivered'
+	const { isbn } = customerOrderLines[0];
+	const testRow = table.getByRole("row").filter({ has: page.getByRole("cell", { name: isbn }) });
 
-	await firstBookRow.getByTestId("popover-control").click();
-	await expect(page.getByTestId("collect-row")).toBeVisible();
+	// Collect the row
+	await testRow.waitFor();
+	await testRow.getByTestId("popover-control").click();
 	await page.getByTestId("collect-row").click();
-	await firstBookRow.getByTestId("popover-control").click();
-	await expect(page.getByTestId("collect-row")).not.toBeVisible();
-	await expect(firstBookRow.getByText(tCustomers.status.collected())).toBeVisible();
+	await page.getByTestId("collect-row").waitFor({ state: "detached" });
 
-	await secondBookRow.getByTestId("popover-control").click();
-	await expect(page.getByTestId("collect-row")).not.toBeVisible();
+	await testRow.getByText(tCustomers.status.collected()).waitFor();
+
+	// The other row doesn't have a collect button (not delivered)
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: customerOrderLines[0].isbn }) })
+		.getByTestId("popover-control")
+		.click();
+	await page.getByTestId("collect-row").waitFor({ state: "detached" });
 });
