@@ -1,7 +1,7 @@
 import { type Writable, writable } from "svelte/store";
 
 import type { DBAsync } from "$lib/db/cr-sqlite/types";
-import { dbCache, getDB, type DbCtx } from "$lib/db/cr-sqlite/db";
+import { getDB, type DbCtx, getSchemaNameAndVersion, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
 import type { ProgressState } from "$lib/types";
 
 import { retry } from "$lib/utils/misc";
@@ -57,75 +57,149 @@ export async function reidentifyDbNode(db: DBAsync) {
 }
 
 /**
+ * Validates a fetched database file to ensure it's a valid SQLite database with the correct schema.
+ *
+ * @param dbname The name of the database file in OPFS to validate.
+ * @returns The opened database handle if validation succeeds.
+ * @throws Error if validation fails (closes the DB before throwing).
+ */
+async function validateFetchedDB(db: DBAsync): Promise<void> {
+	// Quick integrity check (faster than full integrity_check)
+	const [[res]] = await db.execA<[string]>("PRAGMA quick_check");
+	if (res !== "ok") {
+		throw new Error(`Database integrity check failed: ${res}`);
+	}
+
+	// Check schema exists and matches
+	const schemaRes = await getSchemaNameAndVersion(db);
+	if (!schemaRes) {
+		throw new Error("Database has no schema (not initialized)");
+	}
+
+	const [name, version] = schemaRes;
+	if (name !== schemaName || version !== schemaVersion) {
+		throw new Error(`Schema mismatch: expected ${schemaName}@${schemaVersion}, got ${name}@${version}`);
+	}
+}
+
+/**
  * Fetches the DB file (.sqlite3) from the provided URL and stores it in OPFS under the given target name.
- * NOTE: doesn't perform any checks if the DB is valid or not -- this shold be done outside the function.
+ * Validates the fetched file is a valid SQLite database with the correct schema.
+ * On any error (fetch failure, validation failure), ensures proper cleanup and file deletion if needed.
  *
  * @param url The URL to fetch the DB file from.
  * @param target The target filename in OPFS (e.g., 'mydb.sqlite3').
  * @param progressStore Optional Svelte writable store to track progress. If not provided, a new one will be created.
  */
 export async function fetchAndStoreDBFile(url: string, target: string, progressStore: Writable<ProgressState> = writable<ProgressState>()) {
-	// OPFS
 	const root = await navigator.storage.getDirectory();
 	const fileHandle = await root.getFileHandle(target, { create: true });
 	const writable = await fileHandle.createWritable();
 
-	// Fetch
-	const res = await fetch(url);
-	if (!res.ok || !res.body) {
-		throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
+	const deleteTargetFile = async () => {
+		if (!(await checkOPFSFileExists(target))) return;
+		await root.removeEntry(target);
+	};
+
+	try {
+		// Fetch
+		const res = await fetch(url);
+		if (!res.ok || !res.body) {
+			throw new Error(`Failed to fetch ${url}: ${res.status} ${res.statusText}`);
+		}
+
+		const contentLength = parseInt(res.headers.get("Content-Length") || "0", 10);
+		if (!contentLength) throw new Error("Content-Length header is missing or invalid");
+
+		progressStore.set({ active: true, nProcessed: 0, nTotal: contentLength });
+		let received = 0;
+
+		// Stream write (from res stream to OPFS)
+		const reader = res.body.getReader();
+		// eslint-disable-next-line no-constant-condition
+		while (true) {
+			const { done, value } = await reader.read();
+			if (done) break;
+
+			await writable.write(value);
+			received += value.length;
+
+			progressStore.set({ active: true, nProcessed: received, nTotal: contentLength });
+		}
+
+		// Verify we received the expected amount
+		if (received !== contentLength) {
+			throw new Error(`Incomplete download: expected ${contentLength} bytes, got ${received}`);
+		}
+	} catch (err) {
+		await writable.abort();
+		await retry(deleteTargetFile, 100, 5);
+		throw err;
 	}
-
-	const contentLength = parseInt(res.headers.get("Content-Length") || "0", 10);
-	if (!contentLength) throw new Error("Content-Length header is missing or invalid");
-
-	progressStore.set({ active: true, nProcessed: 0, nTotal: contentLength });
-	let received = 0;
-
-	// Initial write (from res stream to OPFS)
-	const reader = res.body.getReader();
-	// eslint-disable-next-line no-constant-condition
-	while (true) {
-		const { done, value } = await reader.read();
-		if (done) break;
-
-		await writable.write(value);
-		received += value.length;
-
-		progressStore.set({ active: true, nProcessed: received, nTotal: contentLength });
-	}
-	// Close the initial write
 	await writable.close();
 
-	// Check for locking mode (and disable WAL)
-	const file = await fileHandle.getFile();
-	const buf = await file.arrayBuffer();
-	const view = new Uint8Array(buf, 0, Math.min(32, buf.byteLength));
-	if (view.length < 20) throw new Error("File too small to be a valid SQLite DB.");
-	const isWal = view[18] === 0x02 || view[19] === 0x02;
+	// TODO: update progress to show a loading spinner (idea: nProcessed > nTotal -- unkonwn remaining -- loading spinner)
 
-	// If is WAL mode, update the header to disable it (set to ROLLBACK mode)
-	if (isWal) {
-		const writable = await fileHandle.createWritable({ keepExistingData: true });
-		// Make sure the file header says: no WAL (use rollback mode)
-		await writable.write({ type: "write", position: 18, data: new Uint8Array([0x01]) });
-		await writable.write({ type: "write", position: 19, data: new Uint8Array([0x01]) });
+	try {
+		// Validate SQLite magic header
+		const file = await fileHandle.getFile();
+		const buf = await file.arrayBuffer();
+		const view = new Uint8Array(buf, 0, Math.min(100, buf.byteLength));
 
-		await writable.close();
+		if (view.length < 16) {
+			throw new Error("File too small to be a valid SQLite DB");
+		}
+
+		// Check magic header: "SQLite format 3" (bytes 0-15)
+		const magic = Array.from(view.slice(0, 15));
+		const expected = [83, 81, 76, 105, 116, 101, 32, 102, 111, 114, 109, 97, 116, 32, 51]; // "SQLite format 3"
+		if (!magic.every((byte, i) => byte === expected[i])) {
+			throw new Error("Invalid SQLite file: magic header mismatch");
+		}
+
+		// Check and fix WAL mode (if needed)
+		if (view.length >= 20) {
+			const isWal = view[18] === 0x02 || view[19] === 0x02;
+			if (isWal) {
+				const walWritable = await fileHandle.createWritable({ keepExistingData: true });
+				// Make sure the file header says: no WAL (use rollback mode)
+				await walWritable.write({ type: "write", position: 18, data: new Uint8Array([0x01]) });
+				await walWritable.write({ type: "write", position: 19, data: new Uint8Array([0x01]) });
+				await walWritable.close();
+			}
+		}
+	} catch (err) {
+		await retry(deleteTargetFile, 100, 5);
+		throw err;
 	}
 
-	// Re-identify the DB node (the fetched copy is the exact same as the server one, incl. siteid):
-	// - assign new siteid
-	// - attribute all *__crsql_clock tracked changes to server (as if they were synced to a pristine DB in the current node)
-	const reident_vfs = "sync-opfs-coop-sync";
-	const db = await getDB(target, reident_vfs);
-	await reidentifyDbNode(db);
+	const vfs = "sync-opfs-coop-sync";
+	const db = await getDB(target, vfs);
 
-	// Cleanup
+	// Validate and process the file (wrap in try-catch to delete file on any error)
+	try {
+		// Validate DB integrity and schema
+		await validateFetchedDB(db);
+
+		// Re-identify the DB node (the fetched copy is the exact same as the server one, incl. siteid):
+		// - assign new siteid
+		// - attribute all *__crsql_clock tracked changes to server (as if they were synced to a pristine DB in the current node)
+		await reidentifyDbNode(db);
+	} catch (err) {
+		await db.close();
+		await retry(deleteTargetFile, 100, 5);
+
+		throw err;
+	} finally {
+		// Cleanup
+		//
+		// NOTE: no need to clear the cache -- the DB was opened using 'getDB'
+		// which doesn't cache (unlike 'getInitializedDB')
+		progressStore.set({ active: false, nProcessed: 0, nTotal: 0 });
+	}
+
+	// Close the DB before handing the control back to the caller (on success)
 	await db.close();
-	dbCache.delete(target);
-
-	progressStore.set({ active: false, nProcessed: 0, nTotal: 0 });
 }
 
 type Params = {
@@ -183,4 +257,62 @@ export async function checkOPFSFileExists(fname: string) {
 		// Unknown - throw
 		throw err;
 	}
+}
+
+type FileSystemFileHandleExt = FileSystemFileHandle & {
+	move(dest: string): Promise<void>;
+	move(destDir: FileSystemDirectoryHandle, dest?: string): Promise<void>;
+};
+
+async function moveImpl(
+	srcDir: FileSystemDirectoryHandle,
+	srcHandle: FileSystemFileHandle,
+	destDir: FileSystemDirectoryHandle,
+	destName: string
+): Promise<void> {
+	// Fallback impl:
+	// 1. create dest
+	// 2. copy from src to dest
+	// 3. delete src
+	const srcFile = await srcHandle.getFile();
+	const srcBuf = await srcFile.arrayBuffer();
+
+	const destHandle = await destDir.getFileHandle(destName);
+	const destWritable = await destHandle.createWritable();
+
+	await destWritable.write(srcBuf);
+	await destWritable.close();
+
+	await srcDir.removeEntry(srcHandle.name);
+}
+
+/**
+ * Wraps file handle
+ */
+export function wrapFileHandle(dirHandle: FileSystemDirectoryHandle, fileHandle: FileSystemFileHandle): FileSystemFileHandleExt {
+	const move = async (...params: any[]) => {
+		const srcDir = dirHandle;
+		const srcHandle = fileHandle;
+
+		// Case params = [destName]
+		if (typeof params[0] === "string") {
+			const destDir = await window.navigator.storage.getDirectory();
+			const dest = params[0];
+			return moveImpl(srcDir, srcHandle, destDir, dest);
+		}
+
+		// Case params = [destDirHandle, destName?]
+		const destDir = params[0] as FileSystemDirectoryHandle;
+		// If dest name not provided, use the same name as current file
+		const dest = params[0] || srcHandle.name;
+		return moveImpl(srcDir, srcHandle, destDir, dest);
+	};
+
+	// Happy path: Google Chrome (for instance) supports FileSystemFileHandle.move(...),
+	// if .move provided, use the native impl
+	if ("move" in fileHandle) {
+		return fileHandle as FileSystemFileHandleExt;
+	}
+
+	return Object.assign(fileHandle, { move });
 }

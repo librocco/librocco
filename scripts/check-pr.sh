@@ -8,6 +8,7 @@ set -euo pipefail
 BASE_BRANCH="${BASE_BRANCH:-origin/main}"   # branch you will merge into
 TARGET_REF="${TARGET_REF:-HEAD}"            # tip of the PR (HEAD in CI)
 
+cd "$(dirname $0)/.."
 git fetch --quiet origin "$(echo "$BASE_BRANCH" | cut -d/ -f2-)"
 
 echo "🔍 scanning commits between $BASE_BRANCH and $TARGET_REF …"
@@ -46,7 +47,7 @@ for f in "${added_files[@]}"; do
   fi
 
   mime=$(file -b --mime -- "$f")
-  if ! grep -Eq '^(text/|application/(javascript|json))' <<< "$mime"; then    
+  if ! grep -Eq '^(text/|application/(javascript|json|x-gettext-translation)(; charset=.*)?|inode/x-empty|image/svg\+xml|image/x-icns)' <<< "$mime"; then
     echo "❌ binary/blob file detected: $f ($mime)"
     BINARY_DETECTED=1
   fi
@@ -54,6 +55,20 @@ done
 
 if (( LARGE_DETECTED || BINARY_DETECTED )); then
   echo "❌ PR contains large or binary files. Refactor before merging."
+  exit 1
+fi
+
+##########################
+# 3. Check that copied files stay in sync with their source
+##########################
+if ! cmp -s assets/favicon.svg apps/web-client/static/favicon.svg; then
+  echo "❌ files out of sync: apps/web-client/static/favicon.svg must match assets/favicon.svg"
+  exit 1
+fi
+
+if ! cmp -s apps/web-client/src/lib/schemas/init apps/sync-server/schemas/init; then
+  echo "❌ files out of sync: apps/sync-server/schemas/init must match apps/web-client/src/lib/schemas/init"
+  echo "   Sync server schema must be identical to web-client schema for sync to work"
   exit 1
 fi
 

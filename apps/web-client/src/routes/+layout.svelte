@@ -12,7 +12,7 @@
 	import Menu from "$lucide/menu";
 
 	import { page } from "$app/stores";
-	import { afterNavigate } from "$app/navigation";
+	import { afterNavigate, invalidateAll } from "$app/navigation";
 	import { browser } from "$app/environment";
 	import { beforeNavigate } from "$app/navigation";
 
@@ -26,7 +26,7 @@
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
 	import { sync, syncConfig, syncActive, dbid, syncProgressStore } from "$lib/db";
-	import { clearDb, getDB, schemaName, schemaContent, dbCache } from "$lib/db/cr-sqlite/db";
+	import { clearDb, getDB, schemaName, schemaContent, dbCache, isEmptyDB } from "$lib/db/cr-sqlite/db";
 	import { ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
@@ -106,7 +106,8 @@
 	// NOTE: This is safe even on server side as it will be a noop until
 	// the worker is initialized
 	$: if ($syncActive) {
-		sync.sync($syncConfig);
+		// Subsequent activations use regular sync
+		sync.sync($syncConfig, { invalidateAll });
 	} else {
 		sync.stop();
 	}
@@ -141,17 +142,17 @@
 		// NOTE: It's ok if dbCtx (and, by extension the vfs) is not defined -- this is handled elsewhere
 		// calls to wkr.start(vfs) without vfs provided are noop
 		const vfs = dbCtx?.vfs;
-		console.log("using vfs:", vfs);
+
 		wkr.start(vfs);
 		sync.init(wkr);
 
+		// Start the sync is it should be active.
+		if ($syncActive) {
+			sync.sync($syncConfig, { invalidateAll });
+		}
+
 		// Start the sync progress store (listen to sync events)
 		syncProgressStore.start(wkr);
-
-		// Start the sync
-		if (get(syncActive)) {
-			sync.sync(get(syncConfig));
-		}
 
 		// Prevent user from navigating away if sync is in progress (this would result in an invalid DB state)
 		const preventUnloadIfSyncing = (e: BeforeUnloadEvent) => {
@@ -210,15 +211,22 @@
 	// we're delaying the showing of the dialog by some timeout (syncShowDebounce),
 	// and cancelling in case the sync finishes before that
 	const syncShowDebounce = 2000;
-	let tSyncDialog: any = null;
+	let showSyncDialogTimeout: any = null;
 	$: {
-		if ($syncProgress.active) {
-			tSyncDialog = setTimeout(() => syncDialogOpen.set(true), syncShowDebounce);
-		} else {
-			if (tSyncDialog) {
-				clearTimeout(tSyncDialog);
-				tSyncDialog = null;
+		const _clearTimeout = () => {
+			if (showSyncDialogTimeout) {
+				clearTimeout(showSyncDialogTimeout);
+				showSyncDialogTimeout = null;
 			}
+		};
+
+		if ($syncProgress.active && !showSyncDialogTimeout) {
+			showSyncDialogTimeout = setTimeout(() => {
+				showSyncDialogTimeout.set(true);
+				_clearTimeout();
+			}, syncShowDebounce);
+		} else {
+			_clearTimeout();
 			syncDialogOpen.set(false);
 		}
 	}

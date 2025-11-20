@@ -17,7 +17,7 @@
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	import { appPath } from "$lib/paths";
 	import { deleteNote } from "$lib/db/cr-sqlite/note";
@@ -112,7 +112,7 @@
 				{#each notes as note}
 					{@const noteName = note.displayName || `Note - ${note.id}`}
 					{@const displayName = `${note.warehouseName} / ${noteName}`}
-					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+					{@const updatedAt = $dateFormatters.dateTime(note.updatedAt)}
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("inbound", note.id)}
 

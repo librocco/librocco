@@ -86,20 +86,33 @@ async function _upsertCustomer(db: TXAsync, customer: Omit<Customer, "updatedAt"
 	);
 }
 
-/** Checks if there's another customer with the same display ID */
-export const isDisplayIdUnique = async (db: TXAsync, customer: Customer) => {
-	const [res] = await db.execO<{ count: number }>("SELECT COUNT(*) as count FROM customer WHERE display_id = ? AND id != ?", [
-		customer.displayId,
-		customer.id
-	]);
-	return !res.count;
-};
-
 export const getCustomerDisplayIdSeq = async (db: TXAsync): Promise<number> => {
 	const [result] = await db.execO<{ nextId: number }>(
 		"SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer WHERE CAST(display_id AS INTEGER) < 10000;"
 	);
 	return result.nextId;
+};
+
+/** Customer display ID info for validation feedback */
+export type CustomerDisplayIdInfo = {
+	displayId: string;
+	fullname: string;
+	bookCount: number;
+};
+
+/** Get all existing customer display IDs with additional info for validation feedback */
+export const getCustomerDisplayIdInfo = async (db: TXAsync): Promise<CustomerDisplayIdInfo[]> => {
+	const query = `
+		SELECT
+			c.display_id as displayId,
+			COALESCE(c.fullname, 'N/A') as fullname,
+			COUNT(col.id) as bookCount
+		FROM customer c
+		LEFT JOIN customer_order_lines col ON c.id = col.customer_id
+		GROUP BY c.id, c.display_id, c.fullname
+	`;
+	const results = await db.execO<CustomerDisplayIdInfo>(query);
+	return results;
 };
 
 /**
@@ -268,7 +281,7 @@ export const getCustomerOrderLines = async (db: TXAsync, customerId: number): Pr
 		FROM customer_order_lines col
 		LEFT JOIN book ON col.isbn = book.isbn
 		WHERE customer_id = ?
-		ORDER BY col.isbn ASC
+		ORDER BY created DESC, col.isbn ASC
 		`,
 		[customerId]
 	);

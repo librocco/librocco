@@ -66,3 +66,5 @@ common/autoinstallers/*/.npmrc
 .aider*
 
 caddy-data
+.llm-utils/
+.claude

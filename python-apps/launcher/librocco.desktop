@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Librocco
+Comment=Librocco Launcher - Local-first library management
+Exec=librocco
+Icon=librocco
+Terminal=false
+Categories=Office;Education;
+Keywords=library;books;catalog;

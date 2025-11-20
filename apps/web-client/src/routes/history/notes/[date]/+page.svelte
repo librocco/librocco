@@ -13,7 +13,7 @@
 	import { PlaceholderBox } from "$lib/components";
 	import { HistoryPage } from "$lib/controllers";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { appPath } from "$lib/paths";
@@ -102,7 +102,7 @@
 
 								<p class="order-3 col-span-2 lg:order-2">
 									<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-										{t.date.committed()}: {generateUpdatedAtString(note.committedAt, "time-only")}
+										{t.date.committed()}: {$dateFormatters.timeOnly(note.committedAt)}
 									</span>
 								</p>
 
