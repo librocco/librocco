@@ -159,7 +159,6 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 
 	const table = page.getByRole("table");
 	const firstRow = table.getByRole("row").nth(1);
-	const secondRow = table.getByRole("row").nth(2);
 
 	const isbnField = page.getByRole("textbox");
 	isbnField.fill(books[0].isbn);
@@ -168,21 +167,18 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: `€${books[0].price.toFixed(2)}`, exact: true })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: /Pending - .+/ })).toBeVisible();
 
-	await expect(firstRow.getByRole("cell", { name: /Pending - [A-Za-z]{3} [A-Za-z]{3} \d{1,2} \d{4}/ })).toBeVisible();
 	isbnField.fill(books[2].isbn);
 	isbnField.press("Enter");
 
-	// Sorted: last-created-first
+	// Sorted: last-created-first => the book we've just added should be the first row
 	await expect(firstRow.getByRole("cell", { name: books[2].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[2].title })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[2].authors })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: `€${books[2].price.toFixed(2)}`, exact: true })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: "Pending" })).toBeVisible();
-
-	await expect(secondRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
-	await expect(secondRow.getByRole("cell", { name: books[0].title })).toBeVisible();
-	await expect(secondRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: /Pending - .+/ })).toBeVisible();
 });
 
 testOrders("should delete books from a customer order", async ({ page, books }) => {

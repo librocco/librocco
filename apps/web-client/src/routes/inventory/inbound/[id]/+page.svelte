@@ -44,7 +44,7 @@
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import {
@@ -258,7 +258,7 @@
 
 					<div class="w-fit">
 						{#if updatedAt}
-							<span class="primary badge-outline badge badge-md">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
+							<span class="primary badge-outline badge badge-md">{t.stats.last_updated()}: {$dateFormatters.dateTime(updatedAt)}</span>
 						{/if}
 					</div>
 				</div>

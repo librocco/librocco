@@ -8,6 +8,7 @@
 	import { appHash } from "$lib/paths";
 
 	import LL from "@librocco/shared/i18n-svelte";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 
@@ -84,7 +85,7 @@
 					<td>{supplier_name}</td>
 					<td>
 						<span class="badge-primary badge-outline badge">
-							<time dateTime={placed.toISOString()}>{placed.toLocaleString()}</time>
+							<time dateTime={placed.toISOString()}>{$dateFormatters.dateTime(placed)}</time>
 						</span>
 					</td>
 					<td class="whitespace-nowrap text-right">

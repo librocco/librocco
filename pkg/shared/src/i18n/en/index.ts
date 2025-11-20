@@ -273,6 +273,9 @@ const customer_orders_page = {
 		placed: "Placed",
 		pending: "Pending"
 	},
+	status_badges: {
+		with_date: "{status} - {date:Date|dateShort}"
+	},
 	dialogs: {
 		new_customer: {
 			title: "Create new order"

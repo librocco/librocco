@@ -55,7 +55,7 @@
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import CustomItemForm from "$lib/forms/CustomItemForm.svelte";
@@ -505,7 +505,7 @@
 					<div class="w-fit">
 						{#if updatedAt}
 							<span class="badge-primary badge-outline badge badge-md">
-								{tOutbound.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}
+								{tOutbound.stats.last_updated()}: {$dateFormatters.dateTime(updatedAt)}
 							</span>
 						{/if}
 					</div>
