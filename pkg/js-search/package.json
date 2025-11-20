@@ -40,6 +40,7 @@
 	},
 	"scripts": {
 		"build": "vite build",
+		"dev": "vite build --watch",
 		"lint": "eslint .",
 		"lint:strict": "eslint . --max-warnings=0",
 		"typecheck": "tsc --noEmit",
