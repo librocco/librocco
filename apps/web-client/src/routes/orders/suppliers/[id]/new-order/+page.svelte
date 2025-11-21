@@ -36,7 +36,7 @@
 	$: db = data?.dbCtx?.db;
 	$: ({ orderLines, plugins, supplier } = data);
 
-	$: order_format = supplier.orderFormat;
+	$: order_format = supplier?.orderFormat;
 
 	// Supplier meta data is returned per row. We just need one copy of it
 	$: [orderLine] = orderLines;
@@ -87,9 +87,9 @@
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		await createSupplierOrder(db, id, supplier_id, selection);
 
-		const generatedLines = generateLinesForDownload(supplier.customerId, supplier?.orderFormat, selection);
+		const generatedLines = generateLinesForDownload(supplier?.customerId, supplier?.orderFormat, selection);
 
-		downloadAsTextFile(generatedLines, `${id}-${supplier.name}-${supplier.orderFormat}`);
+		downloadAsTextFile(generatedLines, `${id}-${supplier?.name || "general"}-${supplier?.orderFormat || "standard"}`);
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
 		await goto(appHash("supplier_orders", "?filter=unordered"));
@@ -135,9 +135,9 @@
 								</span>
 								<button
 									class="badge-primary badge-lg badge gap-x-2 hover:badge-outline"
-									on:click={() => goto(appHash("suppliers", supplier_id))}
+									on:click={() => goto(appHash("suppliers", supplier_id === null ? "null" : supplier_id))}
 								>
-									aaaaa{t.stats.go_to_supplier()}
+									{t.stats.go_to_supplier()}
 									<SquareArrowUpRight size={12} />
 								</button>
 							</div>

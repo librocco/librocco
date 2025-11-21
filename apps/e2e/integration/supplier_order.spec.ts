@@ -643,3 +643,41 @@ testOrders(
 		await expect(page.getByTestId("tooltip-container")).toContainText(tNewOrder.labels.no_format_tooltip());
 	}
 );
+
+testOrders("should allow placing order for General supplier", async ({ page, books: [book1, book2], t }) => {
+	const { supplier_orders_page: tSupplierOrders, supplier_orders_component: tSupplierOrdersComponent } = t;
+	const dbHandle = await getDbHandle(page);
+
+	// Setup: Books in customer orders, no publisher associations
+	// This will create unordered lines for the General supplier
+	await dbHandle.evaluate(addBooksToCustomer, {
+		customerId: 1,
+		bookIsbns: [book1.isbn, book2.isbn]
+	});
+
+	// Navigate to unordered orders
+	await page.goto(appHash("supplier_orders"));
+	await page.getByRole("button", { name: tSupplierOrders.tabs.unordered() }).click();
+
+	// Verify General supplier appears in the table
+	const table = page.getByRole("table");
+	await expect(table.getByRole("cell", { name: "General" })).toBeVisible();
+
+	// Click "Place Order" for General supplier
+	await table
+		.getByRole("row")
+		.filter({ hasText: "General" })
+		.getByRole("button", { name: tSupplierOrdersComponent.unordered_table.place_order() })
+		.click();
+
+	// Verify new-order page loads
+	await expect(page).toHaveURL(new RegExp("/orders/suppliers/null/new-order"));
+
+	// Verify books are shown
+	const isbnRegex = new RegExp(`(${[book1.isbn, book2.isbn].join("|")})`);
+	const possibleOrderRow = table.getByRole("row").filter({ hasText: isbnRegex });
+	await expect(possibleOrderRow).toHaveCount(2);
+
+	// Verify supplier name is shown
+	await expect(page.getByText("General")).toBeVisible();
+});

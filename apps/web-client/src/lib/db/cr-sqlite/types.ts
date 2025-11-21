@@ -86,9 +86,10 @@ export type CustomerOrderLineHistory = {
 
 /**
  * A supplier table
+ * Note: id can be null for the "General" pseudo-supplier
  */
 export type Supplier = {
-	id?: number;
+	id?: number | null;
 	name?: string;
 	email?: string;
 	address?: string;
