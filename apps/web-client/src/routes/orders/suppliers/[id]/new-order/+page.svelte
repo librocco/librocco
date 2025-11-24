@@ -128,19 +128,20 @@
 					<div class="flex flex-col gap-y-2 border-b bg-base-100 px-4 py-2.5 max-md:sticky max-md:top-0">
 						<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
 							<h2 class="text-2xl font-medium">{supplier_name}</h2>
-
-							<div class="mt-2 flex flex-row items-center justify-between">
-								<span class="badge-outline badge-lg badge badge-md mr-2 gap-x-2">
-									#{supplier_id}
-								</span>
-								<button
-									class="badge-primary badge-lg badge gap-x-2 hover:badge-outline"
-									on:click={() => goto(appHash("suppliers", supplier_id === null ? "null" : supplier_id))}
-								>
-									{t.stats.go_to_supplier()}
-									<SquareArrowUpRight size={12} />
-								</button>
-							</div>
+							{#if supplier_id !== null}
+								<div class="mt-2 flex flex-row items-center justify-between">
+									<span class="badge-outline badge-lg badge badge-md mr-2 gap-x-2">
+										#{supplier_id}
+									</span>
+									<button
+										class="badge-primary badge-lg badge gap-x-2 hover:badge-outline"
+										on:click={() => goto(appHash("suppliers", supplier_id))}
+									>
+										{t.stats.go_to_supplier()}
+										<SquareArrowUpRight size={12} />
+									</button>
+								</div>
+							{/if}
 						</div>
 					</div>
 
