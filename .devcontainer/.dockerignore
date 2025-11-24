@@ -1,0 +1,85 @@
+# Dockerignore for Librocco devcontainer build
+# Excludes files not needed during image build to reduce context size and speed up builds
+
+# Git directories and files (except submodules which we handle separately)
+.git/
+.gitignore
+.gitattributes
+.gitmodules
+
+# Node modules (we'll install fresh during build)
+node_modules/
+**/node_modules/
+
+# Build outputs
+dist/
+**/dist/
+build/
+**/build/
+.svelte-kit/
+**/.svelte-kit/
+
+# Rush temporary directories (we'll create fresh during build)
+common/temp/
+
+# Python environment and build artifacts
+python-apps/launcher/dist/
+python-apps/launcher/.venv/
+python-apps/launcher/uv.lock
+**/__pycache__/
+**/*.pyc
+*.egg-info/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test coverage and results
+coverage/
+.nyc_output/
+*.lcov
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Documentation and markdown files (not needed for dependency install)
+*.md
+docs/
+
+# CI/CD files
+.github/
+
+# Development container itself
+.devcontainer/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Large submodules (we need the structure but not the full content during build)
+# Note: We DO need 3rd-party/artefacts/ so don't exclude it
+3rd-party/js/.git/
+3rd-party/typed-sql/.git/
+
+# Keep these files (negation patterns)
+# These are critical for Rush to work
+!rush.json
+!.npmrc
+!common/config/
+!**/package.json
+!common/config/rush/pnpm-lock.yaml
+!3rd-party/artefacts/
+!3rd-party/artefacts_version.txt
