@@ -36,7 +36,7 @@
 	$: db = data?.dbCtx?.db;
 	$: ({ orderLines, plugins, supplier } = data);
 
-	$: order_format = supplier.orderFormat;
+	$: order_format = supplier?.orderFormat;
 
 	// Supplier meta data is returned per row. We just need one copy of it
 	$: [orderLine] = orderLines;
@@ -87,9 +87,9 @@
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		await createSupplierOrder(db, id, supplier_id, selection);
 
-		const generatedLines = generateLinesForDownload(supplier.customerId, supplier?.orderFormat, selection);
+		const generatedLines = generateLinesForDownload(supplier?.customerId, supplier?.orderFormat, selection);
 
-		downloadAsTextFile(generatedLines, `${id}-${supplier.name}-${supplier.orderFormat}`);
+		downloadAsTextFile(generatedLines, `${id}-${supplier?.name || "general"}-${supplier?.orderFormat || "standard"}`);
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
 		await goto(appHash("supplier_orders", "?filter=unordered"));
@@ -128,19 +128,20 @@
 					<div class="flex flex-col gap-y-2 border-b bg-base-100 px-4 py-2.5 max-md:sticky max-md:top-0">
 						<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
 							<h2 class="text-2xl font-medium">{supplier_name}</h2>
-
-							<div class="mt-2 flex flex-row items-center justify-between">
-								<span class="badge-outline badge-lg badge badge-md mr-2 gap-x-2">
-									#{supplier_id}
-								</span>
-								<button
-									class="badge-primary badge-lg badge gap-x-2 hover:badge-outline"
-									on:click={() => goto(appHash("suppliers", supplier_id))}
-								>
-									aaaaa{t.stats.go_to_supplier()}
-									<SquareArrowUpRight size={12} />
-								</button>
-							</div>
+							{#if supplier_id !== null}
+								<div class="mt-2 flex flex-row items-center justify-between">
+									<span class="badge-outline badge-lg badge badge-md mr-2 gap-x-2">
+										#{supplier_id}
+									</span>
+									<button
+										class="badge-primary badge-lg badge gap-x-2 hover:badge-outline"
+										on:click={() => goto(appHash("suppliers", supplier_id))}
+									>
+										{t.stats.go_to_supplier()}
+										<SquareArrowUpRight size={12} />
+									</button>
+								</div>
+							{/if}
 						</div>
 					</div>
 

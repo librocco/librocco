@@ -6,13 +6,15 @@ import { getRandomDb } from "./lib";
 
 import {
 	DEFAULT_SUPPLIER_NAME,
+	GENERAL_SUPPLIER_ID,
 	upsertSupplier,
 	associatePublisher,
 	getPlacedSupplierOrders,
 	getPossibleSupplierOrderLines,
 	getPossibleSupplierOrders,
 	createSupplierOrder,
-	getPlacedSupplierOrderLines
+	getPlacedSupplierOrderLines,
+	getSupplierDetails
 } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, getCustomerOrderLineHistory, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
@@ -363,6 +365,39 @@ describe("New supplier orders:", () => {
 	});
 });
 
+describe("Supplier details", () => {
+	describe("getSupplierDetails should", () => {
+		it("return mock supplier for General supplier (null id)", async () => {
+			const supplier = await getSupplierDetails(db, GENERAL_SUPPLIER_ID);
+
+			expect(supplier).toBeDefined();
+			expect(supplier?.id).toBe(null);
+			expect(supplier?.name).toBe(DEFAULT_SUPPLIER_NAME);
+			expect(supplier?.email).toBeUndefined();
+			expect(supplier?.address).toBeUndefined();
+			expect(supplier?.customerId).toBeUndefined();
+			expect(supplier?.orderFormat).toBeUndefined();
+			expect(supplier?.numPublishers).toBe(0);
+		});
+
+		it("return real supplier details for valid supplier id", async () => {
+			const supplier = await getSupplierDetails(db, supplier1.id);
+
+			expect(supplier).toBeDefined();
+			expect(supplier?.id).toBe(supplier1.id);
+			expect(supplier?.name).toBe(supplier1.name);
+			expect(supplier?.customerId).toBe(supplier1.customerId);
+			expect(supplier?.orderFormat).toBe(supplier1.orderFormat);
+		});
+
+		it("return undefined for non-existent supplier id", async () => {
+			const supplier = await getSupplierDetails(db, 9999);
+
+			expect(supplier).toBeUndefined();
+		});
+	});
+});
+
 describe("Placing supplier orders", () => {
 	describe("createSupplierOrder should", () => {
 		it("create a supplier order from multiple customer orders", async () => {
@@ -549,6 +584,36 @@ describe("Placing supplier orders", () => {
 			await db.exec("UPDATE customer_order_lines SET placed = NULL"); // NOTE: this is the only line so it works without elaborate WHERE clause
 			await getCustomerOrderLineHistory(db, customer1.id).then(([{ placed }]) => (lastUpdate = placed.getTime()));
 			expect(Date.now() - lastUpdate).toBeLessThan(400);
+		});
+
+		it("create supplier order for General supplier (null supplier_id)", async () => {
+			// Do not associate publishers with suppliers
+
+			// Add books to customer orders
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
+
+			// Create order for General supplier
+			await createSupplierOrder(db, 1, null, [
+				{ isbn: book1.isbn, quantity: 1, supplier_id: null },
+				{ isbn: book2.isbn, quantity: 1, supplier_id: null }
+			]);
+
+			// Verify the order was created correctly
+			const placedOrders = await getPlacedSupplierOrders(db);
+			expect(placedOrders.length).toBe(1);
+			expect(placedOrders[0]).toEqual(
+				expect.objectContaining({
+					supplier_id: null,
+					supplier_name: DEFAULT_SUPPLIER_NAME,
+					total_book_number: 2,
+					total_book_price: book1.price + book2.price
+				})
+			);
+
+			// Verify the customer order lines were marked as placed
+			const remainingPossibleLines = await getPossibleSupplierOrderLines(db, null);
+			expect(remainingPossibleLines.length).toBe(0);
 		});
 	});
 
