@@ -47,7 +47,6 @@ const config = {
 	},
 	optimizeDeps: {
 		esbuildOptions: {
-			// Define global variable for node modules required for PouchDB
 			define: {
 				global: "globalThis"
 			}

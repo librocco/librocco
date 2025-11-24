@@ -1,11 +1,4 @@
-import {
-	PUBLIC_DB_NAME,
-	PUBLIC_IS_E2E,
-	PUBLIC_IS_DEBUG,
-	PUBLIC_LOG_LEVEL,
-	PUBLIC_IS_DEMO,
-	PUBLIC_DEMO_DB_URL
-} from "$env/static/public";
+import { PUBLIC_IS_E2E, PUBLIC_IS_DEBUG, PUBLIC_LOG_LEVEL, PUBLIC_IS_DEMO, PUBLIC_DEMO_DB_URL } from "$env/static/public";
 import type { Locales } from "@librocco/shared";
 
 export const LOCAL_STORAGE_SETTINGS = "librocco:settings";
