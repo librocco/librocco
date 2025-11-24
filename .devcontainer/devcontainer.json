@@ -40,7 +40,8 @@
 	// One-time setup on first container creation
 	// rush update: ~3-5min (installs all dependencies)
 	// Subsequent container opens reuse installed deps (instant!)
-	"postCreateCommand": "rush update --purge",
+	// Fix volume permissions in CI before running rush
+	"postCreateCommand": "sudo chown -Rf node:node common/temp ; rush update",
 	// VS Code customizations
 	"customizations": {
 		"vscode": {
