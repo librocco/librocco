@@ -90,7 +90,7 @@ Suite of E2E tests (Paywright), stored in `apps` as it doesn't provide any expor
 
 #### Pkg: DB
 
-This package contains the spec and implementations of the db interface (interfacing with Pouch/Couch DB instance(s)). [see more](./pkg/db/README.md)
+This package contains the spec and implementations of the db interface (interfacing with cr-sqlite). [see more](./pkg/db/README.md)
 
 #### Pkg: Scaffold
 
