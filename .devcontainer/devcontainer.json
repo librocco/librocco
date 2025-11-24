@@ -4,7 +4,6 @@
 		"dockerfile": "Dockerfile",
 		"context": ".."
 	},
-
 	// Features to enhance the development experience
 	"features": {
 		"ghcr.io/devcontainers/features/common-utils:2": {
@@ -14,13 +13,15 @@
 			"upgradePackages": false
 		}
 	},
-
 	// Forward ports for local development
 	// 5173: Vite dev server (web-client)
 	// 3000: Sync server
 	// 6006: Storybook
-	"forwardPorts": [5173, 3000, 6006],
-
+	"forwardPorts": [
+		5173,
+		3000,
+		6006
+	],
 	// Port attributes for better development experience
 	"portsAttributes": {
 		"5173": {
@@ -36,12 +37,10 @@
 			"onAutoForward": "silent"
 		}
 	},
-
 	// One-time setup on first container creation
 	// rush update: ~3-5min (installs all dependencies)
 	// Subsequent container opens reuse installed deps (instant!)
-	"postCreateCommand": "rush update",
-
+	"postCreateCommand": "rush update --purge",
 	// VS Code customizations
 	"customizations": {
 		"vscode": {
@@ -52,18 +51,15 @@
 				"svelte.svelte-vscode",
 				"github.vscode-github-actions"
 			],
-
 			// Settings optimized for this monorepo
 			"settings": {
 				// Auto-format on save with Prettier
 				"editor.formatOnSave": true,
 				"editor.defaultFormatter": "esbenp.prettier-vscode",
-
 				// Auto-fix ESLint issues on save
 				"editor.codeActionsOnSave": {
 					"source.fixAll.eslint": "explicit"
 				},
-
 				// Hide noise from file explorer
 				"files.exclude": {
 					"**/.git": true,
@@ -72,7 +68,6 @@
 					"**/dist": true,
 					"**/.svelte-kit": true
 				},
-
 				// Search settings (exclude build artifacts)
 				"search.exclude": {
 					"**/node_modules": true,
@@ -80,22 +75,18 @@
 					"**/.svelte-kit": true,
 					"**/common/temp": true
 				},
-
 				// Svelte-specific settings
 				"[svelte]": {
 					"editor.defaultFormatter": "svelte.svelte-vscode"
 				},
-
 				// TypeScript settings
 				"typescript.tsdk": "node_modules/typescript/lib",
 				"typescript.enablePromptUseWorkspaceTsdk": true
 			}
 		}
 	},
-
 	// Run as non-root user
 	"remoteUser": "node",
-
 	// Mount configuration for isolation and performance
 	"mounts": [
 		// Isolate common/temp from host - this is where Rush stores build state

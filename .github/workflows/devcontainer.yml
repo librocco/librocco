@@ -1,0 +1,31 @@
+name: Devcontainer Build
+"on":
+  pull_request:
+    paths:
+    - .devcontainer/**
+  push:
+    branches:
+    - main
+    paths:
+    - .devcontainer/**
+  workflow_dispatch: null
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
+    - name: Build and Run Dev Container Task
+      uses: devcontainers/ci@v0.3
+      with:
+        imageName: ghcr.io/${{ github.repository }}/devcontainer
+        cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
+        push: filter
+        runCmd: echo "Devcontainer started successfully"
+        runArgs: --user=root
