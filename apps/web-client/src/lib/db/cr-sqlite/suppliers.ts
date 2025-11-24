@@ -64,16 +64,16 @@ async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
  * such need to be handled by the consumer.
  *
  * @param db - The database instance to query
- * @param id - supplier id
+ * @param id - supplier id (can be null for General supplier)
  */
-async function _getSupplierDetails(db: TXAsync, id: number): Promise<SupplierExtended | undefined> {
-	const conditions = [];
-	const params = [];
-
-	if (id) {
-		conditions.push("supplier.id = ?");
-		params.push(id);
+async function _getSupplierDetails(db: TXAsync, id: number | null): Promise<SupplierExtended | undefined> {
+	// Return mock for General supplier
+	if (!id) {
+		return createGeneralSupplierMock();
 	}
+
+	const conditions = ["supplier.id = ?"];
+	const params = [id];
 
 	const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 	const query = `
@@ -89,7 +89,6 @@ async function _getSupplierDetails(db: TXAsync, id: number): Promise<SupplierExt
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
 		${whereClause}
 		GROUP BY supplier.id
-		ORDER BY supplier.id ASC
 	`;
 
 	const [res] = await db.execO<SupplierExtended>(query, params);
@@ -187,6 +186,30 @@ async function _removePublisherFromSupplier(db: TXAsync, supplierId: number, pub
  * A default group for books whose publishers are not associated with a supplier
  */
 export const DEFAULT_SUPPLIER_NAME = "General";
+
+/**
+ * The "General" supplier is a pseudo-supplier (id = null) that aggregates
+ * books whose publishers are not associated with any real supplier.
+ */
+export const GENERAL_SUPPLIER_ID = null;
+
+/**
+ * Creates a mock supplier object for the General supplier.
+ * Used in UI contexts where supplier details are expected.
+ *
+ * @returns A SupplierExtended object representing the General supplier
+ */
+export function createGeneralSupplierMock(): SupplierExtended {
+	return {
+		id: GENERAL_SUPPLIER_ID,
+		name: DEFAULT_SUPPLIER_NAME,
+		email: undefined,
+		address: undefined,
+		customerId: undefined,
+		orderFormat: undefined,
+		numPublishers: 0
+	};
+}
 
 /**
  * Retrieves summaries of all supplies that have possible orders. This is based on unplaced customer order lines.

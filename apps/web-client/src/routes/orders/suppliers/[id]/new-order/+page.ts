@@ -20,9 +20,12 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		return { orderLines: [] as PossibleSupplierOrderLine[] };
 	}
 
-	const orderLines = await getPossibleSupplierOrderLines(dbCtx.db, parseInt(params.id));
+	// Handle "null" string parameter for General supplier
+	const supplierId = params.id === "null" ? null : parseInt(params.id);
 
-	const supplier = await getSupplierDetails(dbCtx.db, parseInt(params.id));
+	const orderLines = await getPossibleSupplierOrderLines(dbCtx.db, supplierId);
+
+	const supplier = await getSupplierDetails(dbCtx.db, supplierId);
 
 	// TODO: when we update the routing, this will move to something like `/suppliers/[id]/new-order`
 	// so if there are no possible order lines, we should redirect to `/suppliers/[id]`
