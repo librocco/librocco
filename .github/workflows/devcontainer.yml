@@ -28,4 +28,3 @@ jobs:
         cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
         push: filter
         runCmd: echo "Devcontainer started successfully"
-        runArgs: --user=root
