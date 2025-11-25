@@ -367,7 +367,6 @@ async function _getPlacedSupplierOrders(
  * - line quantity
  * - book details
  * - supplier details
- * - supplier order details, including total book number and price
  *
  * @param db
  * @param supplier_order_id - supplier order to retrieve lines for
@@ -401,10 +400,8 @@ async function _getPlacedSupplierOrderLines(db: TXAsync, supplier_order_ids: num
 				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE s.name
 			END as supplier_name,
-            so.created,
+            so.created
 
-            SUM(sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_number,
-            SUM(COALESCE(book.price, 0) * sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_price
 		FROM supplier_order_line AS sol
 		LEFT JOIN book ON sol.isbn = book.isbn
         LEFT JOIN supplier_order so ON so.id = sol.supplier_order_id
