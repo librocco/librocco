@@ -276,6 +276,6 @@ jobs:
           PUBLIC_IS_DEMO: "true"
           PUBLIC_DEMO_DB_URL: "https://librocco.codemyriad.io/demo_db.sqlite3"
       -  #@ install_and_configure_rclone()
-      -  #@ upload_to_r2("apps/web-client/build/", "demo/")
+      -  #@ upload_to_r2("apps/web-client/build/", "demo/", bucket_name="librocco-demo")
       - name: Output link to deployed demo app
         run: echo You can view the demo app on https://libroc.co/demo | tee -a $GITHUB_STEP_SUMMARY

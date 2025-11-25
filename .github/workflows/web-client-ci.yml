@@ -688,6 +688,6 @@ jobs:
         CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_SECRET_ACCESS_KEY }}
         CLOUDFLARE_BUCKET_URL: ${{ secrets.CLOUDFLARE_BUCKET_URL }}
     - name: 'Upload to R2: apps/web-client/build/ -> demo/'
-      run: rclone copy apps/web-client/build/ r2:librocco-ci/demo/
+      run: rclone copy apps/web-client/build/ r2:librocco-demo/demo/
     - name: Output link to deployed demo app
       run: echo You can view the demo app on https://libroc.co/demo | tee -a $GITHUB_STEP_SUMMARY
