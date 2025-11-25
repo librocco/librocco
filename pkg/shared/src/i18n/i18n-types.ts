@@ -48,6 +48,10 @@ type RootTranslation = {
 		 * S​u​p​p​l​i​e​r​s​ ​o​r​d​e​r​s
 		 */
 		supplier_orders: string
+		/**
+		 * C​u​s​t​o​m​e​r​s
+		 */
+		customers: string
 	}
 	page_headings: {
 		/**
@@ -84,6 +88,28 @@ type RootTranslation = {
 		placeholder: string
 	}
 	history_page: {
+		/**
+		 * H​i​s​t​o​r​y
+		 */
+		title: string
+		tabs: {
+			/**
+			 * B​y​ ​D​a​t​e
+			 */
+			by_date: string
+			/**
+			 * B​y​ ​I​S​B​N
+			 */
+			by_isbn: string
+			/**
+			 * N​o​t​e​s​ ​b​y​ ​d​a​t​e
+			 */
+			notes_by_date: string
+			/**
+			 * b​y​ ​W​a​r​e​h​o​u​s​e
+			 */
+			by_warehouse: string
+		}
 		date_tab: {
 			stats: {
 				/**
@@ -124,6 +150,16 @@ type RootTranslation = {
 				 * C​o​m​m​i​t​t​e​d
 				 */
 				committed: string
+			}
+			placeholder_box: {
+				/**
+				 * N​o​ ​B​o​o​k​s​ ​o​n​ ​t​h​a​t​ ​d​a​t​e
+				 */
+				title: string
+				/**
+				 * T​r​y​ ​s​e​l​e​c​t​i​n​g​ ​a​ ​d​i​f​f​e​r​e​n​t​ ​d​a​t​e​.
+				 */
+				description: string
 			}
 		}
 		isbn_tab: {
@@ -1316,6 +1352,10 @@ type RootTranslation = {
 			 * S​e​a​r​c​h​ ​f​o​u​n​d​ ​n​o​ ​r​e​s​u​l​t​s
 			 */
 			search_found_no_results: string
+			/**
+			 * U​n​k​n​o​w​n​ ​T​i​t​l​e
+			 */
+			unknown_title: string
 		}
 		/**
 		 * L​o​a​d​i​n​g
@@ -2873,6 +2913,10 @@ export type TranslationFunctions = {
 		 * Suppliers orders
 		 */
 		supplier_orders: () => LocalizedString
+		/**
+		 * Customers
+		 */
+		customers: () => LocalizedString
 	}
 	page_headings: {
 		/**
@@ -2909,6 +2953,28 @@ export type TranslationFunctions = {
 		placeholder: () => LocalizedString
 	}
 	history_page: {
+		/**
+		 * History
+		 */
+		title: () => LocalizedString
+		tabs: {
+			/**
+			 * By Date
+			 */
+			by_date: () => LocalizedString
+			/**
+			 * By ISBN
+			 */
+			by_isbn: () => LocalizedString
+			/**
+			 * Notes by date
+			 */
+			notes_by_date: () => LocalizedString
+			/**
+			 * by Warehouse
+			 */
+			by_warehouse: () => LocalizedString
+		}
 		date_tab: {
 			stats: {
 				/**
@@ -2949,6 +3015,16 @@ export type TranslationFunctions = {
 				 * Committed
 				 */
 				committed: () => LocalizedString
+			}
+			placeholder_box: {
+				/**
+				 * No Books on that date
+				 */
+				title: () => LocalizedString
+				/**
+				 * Try selecting a different date.
+				 */
+				description: () => LocalizedString
 			}
 		}
 		isbn_tab: {
@@ -4118,6 +4194,10 @@ export type TranslationFunctions = {
 			 * Search found no results
 			 */
 			search_found_no_results: () => LocalizedString
+			/**
+			 * Unknown Title
+			 */
+			unknown_title: () => LocalizedString
 		}
 		/**
 		 * Loading

@@ -7,7 +7,8 @@
     "purchase": "Purchase",
     "settings": "Settings",
     "history": "History",
-    "supplier_orders": "Suppliers orders"
+    "supplier_orders": "Suppliers orders",
+    "customers": "Customers"
   },
   "page_headings": {
     "outbound": "Sales",
@@ -23,6 +24,13 @@
     "placeholder": "Search stock by ISBN"
   },
   "history_page": {
+    "title": "History",
+    "tabs": {
+      "by_date": "By Date",
+      "by_isbn": "By ISBN",
+      "notes_by_date": "Notes By Date",
+      "by_warehouse": "By Warehouse"
+    },
     "date_tab": {
       "stats": {
         "title": "Stats",
@@ -36,6 +44,10 @@
       "transactions": {
         "title": "Transactions",
         "committed": "Committed"
+      },
+      "placeholder_box": {
+        "title": "No Books on that date",
+        "description": "Try selecting a different date."
       }
     },
     "isbn_tab": {
@@ -469,7 +481,8 @@
     },
     "placeholders": {
       "no_results": "No results",
-      "search_found_no_results": "Search found no results"
+      "search_found_no_results": "Search found no results",
+      "unknown_title": "Unknown Title"
     },
     "loading": "Loading"
   },
@@ -966,8 +979,7 @@
         "cancel_button": "Cancel"
       },
       "validation": {
-        "display_id_not_unique": "This customer ID is already taken",
-        "display_id_in_use": "This ID is already in use by customer \"{fullname}\" with {bookCount} ordered book{{s}}"
+        "display_id_not_unique": "This ID is already in use by customer \"{fullname}\" with {bookCount} ordered book{{s}}"
       },
       "aria": {
         "form": "Edit customer order name, email or deposit"
