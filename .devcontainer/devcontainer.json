@@ -83,10 +83,7 @@
 				// Svelte-specific settings
 				"[svelte]": {
 					"editor.defaultFormatter": "svelte.svelte-vscode"
-				},
-				// TypeScript settings
-				"typescript.tsdk": "node_modules/typescript/lib",
-				"typescript.enablePromptUseWorkspaceTsdk": true
+				}
 			}
 		}
 	},
