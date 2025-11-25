@@ -34,8 +34,8 @@ The plugin can be registered with the db interface like so:
 // Initialise the librocco db interface instance
 import { newInventoryDatabaseInterface } from "@librocco/db";
 
-// Pouch instance needs to be created (beyond the scope of this doc)
-const db = newInventoryDatabaseInterface(pouch);
+// Database instance needs to be created (beyond the scope of this doc)
+const db = newInventoryDatabaseInterface(dbInstance);
 
 // The db is initialised using the fallback interface for the book data plugin (it will respond with false, not found, etc)
 //
