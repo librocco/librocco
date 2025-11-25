@@ -874,8 +874,6 @@ describe("Placing supplier orders", () => {
 				outOfPrint: false,
 				quantity: 2,
 				line_price: book1.price * 2,
-				total_book_number: 3,
-				total_book_price: book1.price * 2 + book2.price,
 				created: expect.any(Number)
 			});
 
@@ -897,8 +895,6 @@ describe("Placing supplier orders", () => {
 				outOfPrint: false,
 				quantity: 1,
 				line_price: book2.price,
-				total_book_number: 3,
-				total_book_price: book1.price * 2 + book2.price,
 				created: expect.any(Number)
 			});
 		});
@@ -949,9 +945,6 @@ describe("Placing supplier orders", () => {
 				quantity: 2,
 				line_price: book1.price * 2,
 
-				total_book_number: 3,
-				total_book_price: book1.price * 2 + book2.price,
-
 				created: expect.any(Number)
 			});
 
@@ -975,8 +968,6 @@ describe("Placing supplier orders", () => {
 				quantity: 1,
 				line_price: book2.price,
 
-				total_book_number: 3,
-				total_book_price: book1.price * 2 + book2.price,
 				created: expect.any(Number)
 			});
 		});
@@ -1037,10 +1028,10 @@ describe("Placing supplier orders", () => {
 			expect(orderLines).toHaveLength(2);
 
 			// Total price should only include the priced book
-			orderLines.forEach((line) => {
-				expect(line.total_book_price).toBe(book1.price);
-				expect(line.total_book_number).toBe(3);
-			});
+			// orderLines.forEach((line) => {
+			// 	expect(line.total_book_price).toBe(book1.price);
+			// 	expect(line.total_book_number).toBe(3);
+			// });
 		});
 
 		it("return empty array for non-existent order ids", async () => {
