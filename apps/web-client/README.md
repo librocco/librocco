@@ -18,16 +18,13 @@ This app is bootstrapped using `svelte-kit` (`svelte` being our UI framework of 
 
 We're using svelte kit adapter `static`: at build time, only the core html skeleton is prerendered, while the functionality is initialised only when the app is opened in the browser.
 
-We're using PouchDB (on top of browser's IndexedDB), as a local db instance and replicating to the remote db. For this to be initialised, we need to be in the browser, hence our prerendering logic described above.
+We're using cr-sqlite as a local db instance with CRDT-based syncing. For this to be initialised, we need to be in the browser, hence our prerendering logic described above.
 
 **Loading the app:**
 
-When the app is opened, the top level load function checks if in browser environment and performs [db.init](../../pkg/db/README.md#212-initialising-the-interface). `db.init` replicates the data from the remote db:
+When the app is opened, the top level load function checks if in browser environment and performs [db.init](../../pkg/db/README.md#212-initialising-the-interface). `db.init` initializes the local database and synchronizes with the remote server.
 
-- this might take awhile the first time the app is opened (as the entire remote db needs to be replicated into the local one)
-- each subsequent run will merely pull the changes (to get the local db up to speed)
-
-After the local db is created, and populated with the contents from the remote db, the bidirectional sync is started.
+After the local db is initialized, sync operations are managed through cr-sqlite's CRDT capabilities.
 
 At this point the top level load function resolves and the rest of the load functions load their data and populate the UI.
 
