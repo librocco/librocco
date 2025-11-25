@@ -28,8 +28,8 @@
     "tabs": {
       "by_date": "Per Data",
       "by_isbn": "Per ISBN",
-      "notes_by_date": "Note per data",
-      "by_warehouse": "per Magazzino"
+      "notes_by_date": "Note Per Data",
+      "by_warehouse": "Per Magazzino"
     },
     "date_tab": {
       "stats": {
