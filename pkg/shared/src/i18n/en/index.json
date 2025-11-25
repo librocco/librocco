@@ -28,8 +28,8 @@
     "tabs": {
       "by_date": "By Date",
       "by_isbn": "By ISBN",
-      "notes_by_date": "Notes by date",
-      "by_warehouse": "by Warehouse"
+      "notes_by_date": "Notes By Date",
+      "by_warehouse": "By Warehouse"
     },
     "date_tab": {
       "stats": {

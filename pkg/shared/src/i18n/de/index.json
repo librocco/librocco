@@ -28,8 +28,8 @@
     "tabs": {
       "by_date": "Nach Datum",
       "by_isbn": "Nach ISBN",
-      "notes_by_date": "Notizen nach Datum",
-      "by_warehouse": "nach Lager"
+      "notes_by_date": "Notizen Nach Datum",
+      "by_warehouse": "Nach Lager"
     },
     "date_tab": {
       "stats": {
