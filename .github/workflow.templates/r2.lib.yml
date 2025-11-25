@@ -24,7 +24,7 @@ env:
   CLOUDFLARE_BUCKET_URL: ${{ secrets.CLOUDFLARE_BUCKET_URL }}
 #@ end
 
-#@ def upload_to_r2(source, destination):
+#@ def upload_to_r2(source, destination, bucket_name="librocco-ci"):
 name: #@ "Upload to R2: {} -> {}".format(source, destination)
-run: #@ "rclone copy {} r2:librocco-ci/{}".format(source, destination)
+run: #@ "rclone copy {} r2:{}/{}".format(source, bucket_name, destination)
 #@ end
