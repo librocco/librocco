@@ -416,8 +416,6 @@ export type SupplierJoinData = {
 export type PlacedSupplierOrderLine = {
 	supplier_order_id: number;
 	created: number;
-	total_book_number: number;
-	total_book_price: number;
 } & PossibleSupplierOrderLine;
 
 export type PossibleSupplierOrder = {

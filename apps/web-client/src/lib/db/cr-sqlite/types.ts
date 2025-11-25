@@ -147,8 +147,6 @@ export type PossibleSupplierOrderLine = {
 export type DBPlacedSupplierOrderLine = {
 	supplier_order_id: number;
 	created: number;
-	total_book_number: number;
-	total_book_price: number;
 	quantity: number;
 	line_price: number;
 	orderFormat: Format;
@@ -159,8 +157,6 @@ export type DBPlacedSupplierOrderLine = {
 export type PlacedSupplierOrderLine = {
 	supplier_order_id: number;
 	created: number;
-	total_book_number: number;
-	total_book_price: number;
 	quantity: number;
 	line_price: number;
 	orderFormat: Format;

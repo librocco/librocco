@@ -21,9 +21,7 @@ describe("processOrderDelivery should", () => {
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				supplier_id: 1,
-				total_book_number: 1,
 				supplier_order_id: 1,
-				total_book_price: 10,
 				created: Date.now(),
 				orderFormat: orderFormats.PBM,
 				customerId: 2
@@ -58,9 +56,7 @@ describe("processOrderDelivery should", () => {
 				quantity: 1,
 				supplier_name: "Supplier 1",
 				supplier_id: 1,
-				total_book_number: 1,
 				supplier_order_id: 1,
-				total_book_price: 10,
 				created: Date.now(),
 				orderFormat: orderFormats.PBM,
 				customerId: 2
@@ -73,9 +69,7 @@ describe("processOrderDelivery should", () => {
 				quantity: 1,
 				supplier_name: "Supplier 2",
 				supplier_id: 1,
-				total_book_number: 1,
 				supplier_order_id: 2,
-				total_book_price: 10,
 				created: Date.now(),
 				orderFormat: orderFormats.PBM,
 				customerId: 2
@@ -121,9 +115,7 @@ describe("processOrderDelivery should", () => {
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				supplier_id: 1,
-				total_book_number: 1,
 				supplier_order_id: 1,
-				total_book_price: 10,
 				created: Date.now(),
 				orderFormat: orderFormats.PBM,
 				customerId: 2
@@ -170,9 +162,7 @@ describe("processOrderDelivery should", () => {
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				supplier_id: 1,
-				total_book_number: 1,
 				supplier_order_id: 1,
-				total_book_price: 10,
 				created: Date.now(),
 				orderFormat: orderFormats.PBM,
 				customerId: 2
@@ -206,9 +196,7 @@ describe("processOrderDelivery should", () => {
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				supplier_id: 1,
-				total_book_number: 1,
 				supplier_order_id: 1,
-				total_book_price: 10,
 				created: Date.now(),
 				orderFormat: orderFormats.PBM,
 				customerId: 2
@@ -251,8 +239,6 @@ describe("processOrderDelivery should", () => {
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				supplier_id: 1,
-				total_book_number: 1,
-				total_book_price: 10,
 				supplier_order_id: 1,
 				created: Date.now(),
 				orderFormat: orderFormats.PBM,

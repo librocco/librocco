@@ -35,17 +35,18 @@
 	// #endregion reactivity
 	$: goto = racefreeGoto(disposer);
 
-	$: ({ orderLines, id, supplier_id, reconciliation_order_id, plugins } = data);
+	$: ({
+		orderLines,
+		id: supplier_order_id,
+		supplier_name,
+		supplier_id,
+		reconciliation_order_id,
+		plugins,
+		total_book_number = 0,
+		total_book_price = 0,
+		created = 0
+	} = data);
 	$: db = data?.dbCtx?.db;
-
-	// Supplier order meta data is returned per row. We just need one copy of it
-	$: ({ supplier_order_id, supplier_name, total_book_number, total_book_price, created } = orderLines?.[0] ?? {
-		supplier_order_id: 0,
-		supplier_name: "",
-		total_book_number: 0,
-		total_book_price: 0,
-		created: 0
-	});
 
 	$: createdDate = new Date(created);
 	$: reconciled = reconciliation_order_id !== null && reconciliation_order_id !== undefined;
@@ -67,7 +68,7 @@
 		// get latest/biggest id and increment by 1
 		const reconOrderId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 
-		await createReconciliationOrder(db, reconOrderId, [id]);
+		await createReconciliationOrder(db, reconOrderId, [supplier_order_id]);
 		goto(appHash("reconcile", reconOrderId));
 	}
 
@@ -131,7 +132,7 @@
 								<ListTodo aria-hidden focusable="false" size={20} />
 							</button>
 						{/if}
-						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleDownloadOrder(id)}>
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleDownloadOrder(supplier_order_id)}>
 							{t.labels.download_order()}
 							<HardDriveDownload aria-hidden focusable="false" size={20} />
 						</button>
