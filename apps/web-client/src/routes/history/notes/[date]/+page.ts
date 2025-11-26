@@ -12,7 +12,7 @@ import { timed } from "$lib/utils/timer";
 const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>[0]) => {
 	depends("history:notes");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
 	// Validate the date - if not valid, redirect to default
 	if (!date || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) {
@@ -23,9 +23,12 @@ const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>
 	const dateValue = fromDate(new Date(date), getLocalTimeZone());
 
 	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
+	if (!dbCtxOrPromise) {
 		return { date, dateValue, notes: [] as PastNoteItem[] };
 	}
+
+	// Await the dbCtx promise if it's a promise
+	const dbCtx = await dbCtxOrPromise;
 
 	const notes = await getPastNotes(dbCtx.db, date);
 	return { date, dateValue, notes };

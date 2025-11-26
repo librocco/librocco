@@ -14,18 +14,21 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 
 	depends("note:books");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
 	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
+	if (!dbCtxOrPromise) {
 		return {
-			dbCtx,
+			dbCtx: null,
 			id,
 			displayName: "N/A",
 			entries: [] as NoteEntriesItem[],
 			customItems: [] as NoteCustomItem[]
 		};
 	}
+
+	// Await the dbCtx promise if it's a promise
+	const dbCtx = await dbCtxOrPromise;
 
 	const note = await getNoteById(dbCtx.db, id);
 	if (!note) {

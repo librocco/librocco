@@ -22,7 +22,7 @@
 	import { printBookLabel } from "$lib/printer";
 
 	// TODO: check books table/row
-	import { PlaceholderBox, PopoverWrapper, BooksTable, BooksTableRow } from "$lib/components";
+	import { PlaceholderBox, PopoverWrapper, BooksTable, BooksTableRow, AsyncData, SkeletonTable } from "$lib/components";
 	// TODO: check book form
 	import { BookForm, bookSchema, ScannerForm, scannerSchema, type BookFormSchema } from "$lib/forms";
 	import { Page } from "$lib/controllers";
@@ -37,14 +37,22 @@
 
 	export let data: PageData;
 
-	$: ({ publisherList, plugins } = data);
-	$: db = data?.dbCtx?.db;
+	$: ({ publisherList: publisherListP, plugins, dbCtx: dbCtxP } = data);
+	$: combined = Promise.all([dbCtxP, publisherListP]);
+
+	let dbCtx: import("$lib/db/cr-sqlite").DbCtx | null = null;
+	let db: import("$lib/db/cr-sqlite/types").DBAsync | undefined;
+	// db is updated via side-effect in AsyncData
+
+	let publisherList: string[] = [];
 
 	// #region reactivity
 	let disposer: () => void;
-	onMount(() => {
-		disposer = data.dbCtx?.rx?.onRange(["book"], () => invalidate("book:data"));
-	});
+	onMount(() => {});
+	$: if (dbCtx) {
+		disposer?.();
+		disposer = dbCtx.rx.onRange(["book"], () => invalidate("book:data"));
+	}
 	onDestroy(() => {
 		// Unsubscribe on unmount
 		disposer?.();
@@ -109,125 +117,132 @@
 </script>
 
 <Page title={$LL.books_page.title()} view="stock" {db} {plugins}>
-	<div slot="main" class="flex h-full w-full flex-col gap-y-6">
-		<div class="p-4">
-			<ScannerForm
-				bind:input={searchField}
-				placeholder={$LL.search.placeholder()}
-				data={defaults(zod(scannerSchema))}
-				options={{
-					SPA: true,
-					dataType: "json",
-					validators: zod(scannerSchema),
-					validationMethod: "submit-only",
-					resetForm: false,
-					onUpdated: async ({ form }) => {
-						const { isbn } = form?.data as BookData;
-						search.set(isbn);
-					}
-				}}
-			/>
-		</div>
+	<svelte:fragment slot="main">
+		<AsyncData data={combined} let:resolved>
+			{@const [dbCtx, publisherList] = resolved}
+			{((db = dbCtx.db), "")}
+			<SkeletonTable slot="loading" columns={6} rows={10} hasActions />
+			<div class="flex h-full w-full flex-col gap-y-6">
+				<div class="p-4">
+					<ScannerForm
+						bind:input={searchField}
+						placeholder={$LL.search.placeholder()}
+						data={defaults(zod(scannerSchema))}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: zod(scannerSchema),
+							validationMethod: "submit-only",
+							resetForm: false,
+							onUpdated: async ({ form }) => {
+								const { isbn } = form?.data as BookData;
+								search.set(isbn);
+							}
+						}}
+					/>
+				</div>
 
-		{#if !$search.length && !entries?.length}
-			<div class="flex grow justify-center">
-				<div class="mx-auto max-w-xl translate-y-1/4">
-					<PlaceholderBox
-						title={$LL.books_page.placeholder.empty_database.title()}
-						description={$LL.books_page.placeholder.empty_database.description()}
-					>
-						<Search slot="icon" />
-					</PlaceholderBox>
-				</div>
-			</div>
-		{:else if !entries?.length}
-			<!-- Using await :then trick we're displaying the loading state for 1s, after which we show no-results message -->
-			<!-- The waiting state is here so as to not display the no results to quickly (in case of initial search, being slightly slower) -->
-			{#await currentQuery}
-				<div class="flex grow justify-center">
-					<div class="mx-auto translate-y-1/4">
-						<span class="loading loading-spinner loading-lg text-primary"></span>
+				{#if !$search.length && !entries?.length}
+					<div class="flex grow justify-center">
+						<div class="mx-auto max-w-xl translate-y-1/4">
+							<PlaceholderBox
+								title={$LL.books_page.placeholder.empty_database.title()}
+								description={$LL.books_page.placeholder.empty_database.description()}
+							>
+								<Search slot="icon" />
+							</PlaceholderBox>
+						</div>
 					</div>
-				</div>
-			{:then}
-				<div class="flex grow justify-center">
-					<div class="mx-auto max-w-xl translate-y-1/4">
-						<PlaceholderBox
-							title={$LL.books_page.placeholder.no_results.title()}
-							description={$LL.books_page.placeholder.no_results.description()}
-						>
-							<Search slot="icon" />
-						</PlaceholderBox>
-					</div>
-				</div>
-			{/await}
-		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
-				<div>
-					<BooksTable {table} {orderBy} {orderAsc}>
-						<svelte:fragment slot="row" let:row let:rowIx>
-							<tr use:table.tableRow={{ position: rowIx }}>
-								<BooksTableRow {row} {rowIx}>
-									<div slot="row-actions">
-										<PopoverWrapper
-											options={{
-												forceVisible: true,
-												positioning: {
-													placement: "left"
-												}
-											}}
-											let:trigger
-										>
-											<button
-												data-testid={testId("popover-control")}
-												{...trigger}
-												use:trigger.action
-												class="btn-neutral btn-outline btn-sm btn px-0.5"
-											>
-												<span class="sr-only">{$LL.books_page.labels.edit_row()} {rowIx}</span>
-												<span class="aria-hidden">
-													<MoreVertical />
-												</span>
-											</button>
-
-											<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
-												<button
-													use:melt={$trigger}
-													on:m-click={() => {
-														const { __kind, warehouseId, warehouseName, warehouseDiscount, ...bookData } = row;
-														bookFormData = bookData;
+				{:else if !entries?.length}
+					<!-- Using await :then trick we're displaying the loading state for 1s, after which we show no-results message -->
+					<!-- The waiting state is here so as to not display the no results to quickly (in case of initial search, being slightly slower) -->
+					{#await currentQuery}
+						<SkeletonTable columns={6} rows={10} hasActions />
+					{:then}
+						<div class="flex grow justify-center">
+							<div class="mx-auto max-w-xl translate-y-1/4">
+								<PlaceholderBox
+									title={$LL.books_page.placeholder.no_results.title()}
+									description={$LL.books_page.placeholder.no_results.description()}
+								>
+									<Search slot="icon" />
+								</PlaceholderBox>
+							</div>
+						</div>
+					{/await}
+				{:else}
+					<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+						<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+						<div>
+							<BooksTable {table} {orderBy} {orderAsc}>
+								<svelte:fragment slot="row" let:row let:rowIx>
+									<tr use:table.tableRow={{ position: rowIx }}>
+										<BooksTableRow {row} {rowIx}>
+											<div slot="row-actions">
+												<PopoverWrapper
+													options={{
+														forceVisible: true,
+														positioning: {
+															placement: "left"
+														}
 													}}
-													class="btn-secondary btn-sm btn"
+													let:trigger
 												>
-													<span class="sr-only">{$LL.books_page.labels.edit_row()} {rowIx}</span>
-													<span class="aria-hidden">
-														<FileEdit />
-													</span>
-												</button>
+													<button
+														data-testid={testId("popover-control")}
+														{...trigger}
+														use:trigger.action
+														class="btn-neutral btn-outline btn-sm btn px-0.5"
+													>
+														<span class="sr-only">{$LL.books_page.labels.edit_row()} {rowIx}</span>
+														<span class="aria-hidden">
+															<MoreVertical />
+														</span>
+													</button>
 
-												<button class="btn-secondary btn-sm btn" data-testid={testId("print-book-label")} on:click={handlePrintLabel(row)}>
-													<span class="sr-only">{$LL.books_page.labels.print_book_label()} {rowIx}</span>
-													<span class="aria-hidden">
-														<Printer />
-													</span>
-												</button>
+													<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
+														<button
+															use:melt={$trigger}
+															on:m-click={() => {
+																const { __kind, warehouseId, warehouseName, warehouseDiscount, ...bookData } = row;
+																bookFormData = bookData;
+															}}
+															class="btn-secondary btn-sm btn"
+														>
+															<span class="sr-only">{$LL.books_page.labels.edit_row()} {rowIx}</span>
+															<span class="aria-hidden">
+																<FileEdit />
+															</span>
+														</button>
+
+														<button
+															class="btn-secondary btn-sm btn"
+															data-testid={testId("print-book-label")}
+															on:click={handlePrintLabel(row)}
+														>
+															<span class="sr-only">{$LL.books_page.labels.print_book_label()} {rowIx}</span>
+															<span class="aria-hidden">
+																<Printer />
+															</span>
+														</button>
+													</div>
+												</PopoverWrapper>
 											</div>
-										</PopoverWrapper>
-									</div>
-								</BooksTableRow>
-							</tr>
-						</svelte:fragment>
-					</BooksTable>
-				</div>
+										</BooksTableRow>
+									</tr>
+								</svelte:fragment>
+							</BooksTable>
+						</div>
 
-				<!-- Trigger for the infinite scroll intersection observer -->
-				{#if $table.rows?.length === maxResults && entries.length > maxResults}
-					<div use:scroll.trigger></div>
+						<!-- Trigger for the infinite scroll intersection observer -->
+						{#if $table.rows?.length === maxResults && entries.length > maxResults}
+							<div use:scroll.trigger></div>
+						{/if}
+					</div>
 				{/if}
 			</div>
-		{/if}
-	</div>
+		</AsyncData>
+	</svelte:fragment>
 </Page>
 
 {#if $open}

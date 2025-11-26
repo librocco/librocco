@@ -4,6 +4,7 @@ import type { PageLoad } from "./$types";
 import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 
 import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails } from "$lib/db/cr-sqlite/suppliers";
+import { resolveDbCtx } from "$lib/utils/loading";
 
 import { appPath } from "$lib/paths";
 import { getPublisherList } from "$lib/db/cr-sqlite/books";
@@ -14,53 +15,59 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("supplier:data");
 	depends("supplier:orders");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
-		return {
-			supplier: null,
-			assignedPublishers: [] as string[],
-			publishersAssignedToOtherSuppliers: [] as string[],
-			publishersUnassignedToSuppliers: [] as string[],
-			orders: [] as PlacedSupplierOrder[]
-		};
-	}
+	const dbCtxPromise = resolveDbCtx(dbCtxOrPromise);
 
 	const id = Number(params.id);
 
-	const supplier = await getSupplierDetails(dbCtx.db, id);
-	if (!supplier) {
-		console.warn(`supplier with id '${params.id}' not found. redirecting to supplier list page...`);
-		throw redirect(307, appPath("suppliers"));
-	}
+	const supplierPromise = dbCtxPromise.then(async (ctx) => {
+		if (!ctx) return null;
+		const supplier = await getSupplierDetails(ctx.db, id);
+		if (!supplier) {
+			console.warn(`supplier with id '${params.id}' not found. redirecting to supplier list page...`);
+			throw redirect(307, appPath("suppliers"));
+		}
+		return supplier;
+	});
 
-	const [assignedPublishers, allPublishers, allAssignedPublishers] = await Promise.all([
-		getPublishersFor(dbCtx.db, id),
-		getPublisherList(dbCtx.db),
-		getPublishersFor(dbCtx.db)
-	]);
+	const publishersDataPromise = dbCtxPromise.then(async (ctx) => {
+		if (!ctx)
+			return {
+				assignedPublishers: [] as string[],
+				publishersAssignedToOtherSuppliers: [] as string[],
+				publishersUnassignedToSuppliers: [] as string[]
+			};
 
-	// NOTE: the list of unassigned publishers will contain all publishers not assigned to the supplier
-	// TODO: check if this is the desired behavior, or if we should only list publishers that are not assigned to any supplier
-	const publishersAssignedToOtherSuppliers = allAssignedPublishers.filter((p) => !assignedPublishers.includes(p));
+		const [assignedPublishers, allPublishers, allAssignedPublishers] = await Promise.all([
+			getPublishersFor(ctx.db, id),
+			getPublisherList(ctx.db),
+			getPublishersFor(ctx.db)
+		]);
 
-	const publishersUnassignedToSuppliers = allPublishers.filter((p) => !allAssignedPublishers.includes(p));
+		const publishersAssignedToOtherSuppliers = allAssignedPublishers.filter((p) => !assignedPublishers.includes(p));
+		const publishersUnassignedToSuppliers = allPublishers.filter((p) => !allAssignedPublishers.includes(p));
 
-	const unreconciledOrders = (await getPlacedSupplierOrders(dbCtx.db, { supplierId: Number(params.id), reconciled: false })).map(
-		(order) => ({ ...order, reconciled: false })
-	);
-	const reconciledOrders = (await getPlacedSupplierOrders(dbCtx.db, { supplierId: Number(params.id), reconciled: true })).map((order) => ({
-		...order,
-		reconciled: true
-	}));
+		return { assignedPublishers, publishersAssignedToOtherSuppliers, publishersUnassignedToSuppliers };
+	});
+
+	const ordersPromise = dbCtxPromise.then(async (ctx) => {
+		if (!ctx) return [] as PlacedSupplierOrder[];
+		const unreconciledOrders = (await getPlacedSupplierOrders(ctx.db, { supplierId: Number(params.id), reconciled: false })).map(
+			(order) => ({ ...order, reconciled: false })
+		);
+		const reconciledOrders = (await getPlacedSupplierOrders(ctx.db, { supplierId: Number(params.id), reconciled: true })).map((order) => ({
+			...order,
+			reconciled: true
+		}));
+		return [...unreconciledOrders, ...reconciledOrders];
+	});
 
 	return {
-		supplier,
-		assignedPublishers,
-		publishersAssignedToOtherSuppliers,
-		publishersUnassignedToSuppliers,
-		orders: [...unreconciledOrders, ...reconciledOrders]
+		dbCtx: dbCtxPromise,
+		supplier: supplierPromise,
+		publishersData: publishersDataPromise,
+		orders: ordersPromise
 	};
 };
 

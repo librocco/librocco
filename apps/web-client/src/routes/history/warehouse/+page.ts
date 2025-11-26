@@ -1,4 +1,5 @@
 import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
+import { resolveDbCtx } from "$lib/utils/loading";
 
 import type { PageLoad } from "./$types";
 import type { Warehouse } from "$lib/db/cr-sqlite/types";
@@ -14,15 +15,19 @@ const _load = async ({ parent, depends }: Parameters<PageLoad>[0]) => {
 	// DB for other (cheaper) queries necessary for the page load.
 	stockCache.disableRefresh();
 
-	const { dbCtx } = await parent();
-	if (!dbCtx) return { dbCtx, warehouses: [] as Warehouse[] };
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
-	const warehouses = await getAllWarehouses(dbCtx.db, { skipTotals: true });
+	const dbCtxPromise = resolveDbCtx(dbCtxOrPromise);
 
-	// Re-enable the stock cache refreshing to execute in the background
-	stockCache.enableRefresh(dbCtx.db);
+	const warehousesPromise = dbCtxPromise.then((ctx) => {
+		if (!ctx) return [];
+		const warehouses = getAllWarehouses(ctx.db, { skipTotals: true });
+		// Re-enable the stock cache refreshing to execute in the background
+		stockCache.enableRefresh(ctx.db);
+		return warehouses;
+	});
 
-	return { dbCtx, warehouses };
+	return { dbCtx: dbCtxPromise, warehouses: warehousesPromise };
 };
 
 export const load: PageLoad = timed(_load);

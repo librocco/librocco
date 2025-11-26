@@ -1,5 +1,6 @@
 import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
+import { resolveDbCtx } from "$lib/utils/loading";
 
 import { getWarehouseById } from "$lib/db/cr-sqlite/warehouse";
 import { stockByWarehouse } from "$lib/db/cr-sqlite/stock_cache";
@@ -21,49 +22,56 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("warehouse:data");
 	depends("warehouse:books");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
-	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
-		return {
-			dbCtx,
-			id,
-			displayName: "N/A",
-			discount: 0,
-			publisherList: [] as string[],
-			entries: new Promise<GetStockResponseItem[]>(() => {})
-		};
-	}
+	const dbCtxPromise = resolveDbCtx(dbCtxOrPromise);
 
-	// Disable the stock cache refreshing to prevent the expensive stock query from blocking the
-	// DB for other (cheaper) queries necessary for the page load.
-	stockCache.disableRefresh();
+	const warehouseDataPromise = dbCtxPromise.then(async (ctx) => {
+		if (!ctx) {
+			return {
+				id,
+				displayName: "N/A",
+				discount: 0,
+				publisherList: [] as string[]
+			};
+		}
 
-	const warehouse = await getWarehouseById(dbCtx.db, id);
-	if (!warehouse) {
-		redirect(307, appPath("inventory"));
-	}
+		// Disable the stock cache refreshing to prevent the expensive stock query from blocking the
+		// DB for other (cheaper) queries necessary for the page load.
+		stockCache.disableRefresh();
 
-	const publisherList = await getPublisherList(dbCtx.db);
+		const warehouse = await getWarehouseById(ctx.db, id);
+		if (!warehouse) {
+			redirect(307, appPath("inventory"));
+		}
 
-	// Re-enable the stock cache refreshing to execute in the background
-	stockCache.enableRefresh(dbCtx.db);
+		const publisherList = await getPublisherList(ctx.db);
 
-	const entries = get(stockByWarehouse)
+		// Re-enable the stock cache refreshing to execute in the background
+		stockCache.enableRefresh(ctx.db);
+
+		return { ...warehouse, publisherList };
+	});
+
+	const entriesPromise = get(stockByWarehouse)
 		.then((s) => [...(s.get(id) || [])])
 		.then(async (entries) => {
 			// Return early if stock empty
 			if (!entries.length) return [];
 
+			// We need dbCtx to fetch book data
+			const ctx = await dbCtxPromise;
+			if (!ctx) return [];
+
 			const isbns = map(entries, ({ isbn }) => isbn);
-			const bookData = await getMultipleBookData(dbCtx.db, ...isbns);
+			const bookData = await getMultipleBookData(ctx.db, ...isbns);
 			const iter = wrapIter(entries)
 				.zip(bookData)
 				.map(([stock, bookData]) => ({ ...stock, ...bookData }));
 			return [...iter];
 		});
 
-	return { dbCtx, ...warehouse, publisherList, entries };
+	return { dbCtx: dbCtxPromise, warehouseData: warehouseDataPromise, entries: entriesPromise };
 };
 
 export const load: PageLoad = timed(_load);

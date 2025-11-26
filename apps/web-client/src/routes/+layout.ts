@@ -8,6 +8,8 @@ import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
 
 import { dbid } from "$lib/db";
 import type { LayoutLoad } from "./$types";
+import type { AsyncData } from "$lib/types/async-data";
+import type { DbCtx } from "$lib/db/cr-sqlite";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
@@ -82,17 +84,17 @@ export const load: LayoutLoad = async ({ url }) => {
 
 				// In demo mode we use the hardcoded VFS
 				const vfs = getDemoVFSFromLocalStorage(DEMO_VFS);
-				const dbCtx = await getInitializedDB(get(dbid), vfs);
+				const dbCtxPromise: AsyncData<DbCtx> = getInitializedDB(get(dbid), vfs);
 
-				return { dbCtx, plugins, error: null };
+				return { dbCtx: dbCtxPromise, plugins, error: null };
 			}
 
 			// We're allowing for storing of (whitelisted) vfs name in local storage for selection.
 			// This will usually only happen in tests/benchmarks and the fallback will
 			// be used in production
 			const vfs = getVFSFromLocalStorage(DEFAULT_VFS);
-			const dbCtx = await getInitializedDB(get(dbid), vfs);
-			return { dbCtx, plugins, error: null };
+			const dbCtxPromise: AsyncData<DbCtx> = getInitializedDB(get(dbid), vfs);
+			return { dbCtx: dbCtxPromise, plugins, error: null };
 		} catch (err) {
 			if (err instanceof ErrDemoDBNotInitialised) {
 				return { dbCtx: null, plugins, error: err as Error };

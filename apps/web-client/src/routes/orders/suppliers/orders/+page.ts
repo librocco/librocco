@@ -1,5 +1,6 @@
 import { getAllReconciliationOrders } from "$lib/db/cr-sqlite/order-reconciliation";
 import { getPlacedSupplierOrders, getPossibleSupplierOrders } from "$lib/db/cr-sqlite/suppliers";
+import { resolveDbCtx } from "$lib/utils/loading";
 
 import type { PlacedSupplierOrder, PossibleSupplierOrder, ReconciliationOrder } from "$lib/db/cr-sqlite/types";
 import type { PageLoad } from "./$types";
@@ -12,26 +13,22 @@ const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
 	depends("customers:order_lines");
 	depends("reconciliation:orders");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
-		return {
-			possibleOrders: [] as PossibleSupplierOrder[],
-			placedOrders: [] as PlacedSupplierOrder[],
-			reconcilingOrders: [] as ReconciliationOrder[],
-			completedOrders: [] as PlacedSupplierOrder[]
-		};
-	}
+	const dbCtxPromise = resolveDbCtx(dbCtxOrPromise);
 
-	const { db } = dbCtx;
+	const possibleOrdersPromise = dbCtxPromise.then((ctx) => (ctx ? getPossibleSupplierOrders(ctx.db) : []));
+	const placedOrdersPromise = dbCtxPromise.then((ctx) => (ctx ? getPlacedSupplierOrders(ctx.db, { reconciled: false }) : []));
+	const reconcilingOrdersPromise = dbCtxPromise.then((ctx) => (ctx ? getAllReconciliationOrders(ctx.db, { finalized: false }) : []));
+	const completedOrdersPromise = dbCtxPromise.then((ctx) => (ctx ? getPlacedSupplierOrders(ctx.db, { finalized: true }) : []));
 
-	const possibleOrders = await getPossibleSupplierOrders(dbCtx.db);
-	const placedOrders = await getPlacedSupplierOrders(dbCtx.db, { reconciled: false });
-	const reconcilingOrders = await getAllReconciliationOrders(db, { finalized: false });
-	const completedOrders = await getPlacedSupplierOrders(db, { finalized: true });
-
-	return { possibleOrders, placedOrders, reconcilingOrders, completedOrders };
+	return {
+		dbCtx: dbCtxPromise,
+		possibleOrders: possibleOrdersPromise,
+		placedOrders: placedOrdersPromise,
+		reconcilingOrders: reconcilingOrdersPromise,
+		completedOrders: completedOrdersPromise
+	};
 };
 
 export const load: PageLoad = timed(_load);

@@ -18,7 +18,7 @@
 
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 
-	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
+	import { DropdownWrapper, PlaceholderBox, AsyncData, SkeletonList } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
 
@@ -39,8 +39,12 @@
 
 	export let data: PageData;
 
-	$: ({ warehouses, plugins } = data);
-	$: db = data.dbCtx?.db;
+	$: ({ warehouses: warehousesP, plugins, dbCtx: dbCtxP } = data);
+	$: combined = Promise.all([dbCtxP, warehousesP]);
+
+	let dbCtx: import("$lib/db/cr-sqlite").DbCtx | null = null;
+	let db: import("$lib/db/cr-sqlite/types").DBAsync | undefined;
+	// db is updated via side-effect in AsyncData
 
 	$: tWarehouse = $LL.warehouse_list_page;
 	$: tInventory = $LL.inventory_page.warehouses_tab;
@@ -50,11 +54,11 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when warehouse data changes
-		disposer = data.dbCtx?.rx?.onRange(["warehouse", "note", "book_transaction"], () => invalidate("warehouse:list"));
+		disposer = dbCtx?.rx?.onRange(["warehouse", "note", "book_transaction"], () => invalidate("warehouse:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
-		disposer?.();
+		if (typeof disposer === "function") disposer();
 	});
 	$: goto = racefreeGoto(disposer);
 
@@ -75,7 +79,7 @@
 		await upsertWarehouse(db, { id });
 
 		// Unsubscribe from db changes to prevent invalidate and page load race
-		disposer?.();
+		if (typeof disposer === "function") disposer();
 		await goto(appPath("warehouses", id));
 	};
 
@@ -103,19 +107,14 @@
 
 	let warehouseToEdit: WarehouseFormSchema | null = null;
 	let warehouseToDelete: { id: number; displayName: string } = null;
-
-	let initialized = false;
-	$: initialized = Boolean(db);
 </script>
 
-<InventoryManagementPage {handleCreateWarehouse} {db} {plugins}>
-	{#if !initialized}
-		<div class="flex grow justify-center">
-			<div class="mx-auto translate-y-1/2">
-				<span class="loading loading-spinner loading-lg text-primary"></span>
-			</div>
-		</div>
-	{:else}
+<AsyncData data={combined} let:resolved={resolvedData}>
+	{@const [resolvedDbCtx, warehouses] = resolvedData}
+	{((dbCtx = resolvedDbCtx), "")}
+	<InventoryManagementPage {handleCreateWarehouse} {db} {plugins}>
+		<SkeletonList slot="loading" items={5} />
+
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
@@ -221,8 +220,8 @@
 				{/each}
 			{/if}
 		</ul>
-	{/if}
-</InventoryManagementPage>
+	</InventoryManagementPage>
+</AsyncData>
 
 <PageCenterDialog
 	dialog={warehouseEditDialog}

@@ -1,1 +1,1 @@
-export { getDB, initializeDB, getInitializedDB } from "./db";
+export { getDB, initializeDB, getInitializedDB, type DbCtx, type AsyncDbCtx } from "./db";

@@ -53,6 +53,7 @@ function sendMessage(msg: OutboundMessage) {
 }
 
 function handleStart(payload: MsgStart["payload"]) {
+	console.log("[sync-worker] handleStart called");
 	// Get WASM build artefacts for appropriate VFS + WASM build
 	const wasmBuildArtefacts = getWasmBuildArtefacts(payload.vfs);
 	const { wasmUrl, getModule } = wasmBuildArtefacts;

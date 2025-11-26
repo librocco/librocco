@@ -68,13 +68,26 @@
 		stockCache.disableRefresh();
 	});
 
+	let resolvedDbCtx: import("$lib/db/cr-sqlite").DbCtx | null = null;
+	const resolvedDbCtxStore = writable<import("$lib/db/cr-sqlite").DbCtx | null>(null);
+
+	$: if (dbCtx && typeof (dbCtx as Promise<any>).then === "function") {
+		(dbCtx as Promise<any>).then((res) => {
+			resolvedDbCtx = res;
+			resolvedDbCtxStore.set(res);
+		});
+	} else {
+		resolvedDbCtx = dbCtx as import("$lib/db/cr-sqlite").DbCtx | null;
+		resolvedDbCtxStore.set(resolvedDbCtx);
+	}
+
 	$: {
 		// Register (and update on each change) the db and some db handlers to the window object.
 		// This is used for e2e tests (easier setup through direct access to the db).
 		// Additionally, we're doing this in debug mode - in case we want to interact with the DB directly (using dev console)
-		if (browser && dbCtx) {
+		if (browser && resolvedDbCtx) {
 			window["db_ready"] = true;
-			window["_db"] = dbCtx.db;
+			window["_db"] = resolvedDbCtx.db;
 			window["_getRemoteDB"] = getRemoteDB;
 			window.dispatchEvent(new Event("db_ready"));
 
@@ -93,7 +106,7 @@
 		}
 
 		// This shouldn't affect much, but is here for the purpose of exhaustive handling
-		if (browser && !dbCtx) {
+		if (browser && !resolvedDbCtx) {
 			window["db_ready"] = false;
 			window["_db"] = undefined;
 		}
@@ -114,12 +127,13 @@
 
 	let disposer: () => void;
 
-	onMount(() => {
+	$: if (resolvedDbCtx) {
 		// Control the invalidation of the stock cache in central spot
 		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
 		// between the last cached value and the current one and invalidates the cache if needed
-		disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
-	});
+		disposer?.();
+		disposer = resolvedDbCtx.rx.onRange(["book_transaction"], () => stockCache.maybeInvalidate(resolvedDbCtx!.db));
+	}
 
 	// Sync
 	const { progress: syncProgress } = syncProgressStore;
@@ -139,20 +153,30 @@
 		//
 		// Init worker and sync interface
 		const wkr = new WorkerInterface(new SyncWorker());
-		// NOTE: It's ok if dbCtx (and, by extension the vfs) is not defined -- this is handled elsewhere
-		// calls to wkr.start(vfs) without vfs provided are noop
-		const vfs = dbCtx?.vfs;
 
-		wkr.start(vfs);
-		sync.init(wkr);
+		let started = false;
+		// We need to wait for the DB to be initialized before starting the sync worker
+		// We use a reactive statement to watch for resolvedDbCtx
+		const unsubscribe = resolvedDbCtxStore.subscribe((ctx) => {
+			if (ctx && !started) {
+				started = true;
+				console.log("Starting sync worker in 1s...");
+				setTimeout(() => {
+					console.log("Starting sync worker now...");
+					wkr.start(ctx.vfs);
+					sync.init(wkr);
 
-		// Start the sync is it should be active.
-		if ($syncActive) {
-			sync.sync($syncConfig, { invalidateAll });
-		}
+					// Start the sync is it should be active.
+					if (get(syncActive)) {
+						sync.sync(get(syncConfig), { invalidateAll });
+					}
 
-		// Start the sync progress store (listen to sync events)
-		syncProgressStore.start(wkr);
+					// Start the sync progress store (listen to sync events)
+					syncProgressStore.start(wkr);
+					console.log("Sync worker started.");
+				}, 1000);
+			}
+		});
 
 		// Prevent user from navigating away if sync is in progress (this would result in an invalid DB state)
 		const preventUnloadIfSyncing = (e: BeforeUnloadEvent) => {
@@ -162,6 +186,11 @@
 			}
 		};
 		window.addEventListener("beforeunload", preventUnloadIfSyncing);
+
+		return () => {
+			unsubscribe();
+			window.removeEventListener("beforeunload", preventUnloadIfSyncing);
+		};
 	});
 
 	onDestroy(() => {

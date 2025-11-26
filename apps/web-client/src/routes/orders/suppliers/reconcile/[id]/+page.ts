@@ -9,16 +9,19 @@ import { timed } from "$lib/utils/timer";
 const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("reconciliationOrder:data");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
 	// We're not in browser, no need for further processing
-	if (!dbCtx) {
+	if (!dbCtxOrPromise) {
 		return {
 			reconciliationOrder: {} as ReconciliationOrder,
 			placedOrderLines: [] as PlacedSupplierOrderLine[],
 			reconciliationOrderLines: [] as ReconciliationOrderLine[]
 		};
 	}
+
+	// Await the dbCtx promise if it's a promise
+	const dbCtx = await dbCtxOrPromise;
 
 	const reconciliationOrder = await getReconciliationOrder(dbCtx.db, parseInt(params.id));
 	const reconciliationOrderLines = await getReconciliationOrderLines(dbCtx.db, parseInt(params.id));

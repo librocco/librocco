@@ -16,7 +16,16 @@
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";
 
-	import { PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable, PopoverWrapper, StockBookRow } from "$lib/components";
+	import {
+		PlaceholderBox,
+		Breadcrumbs,
+		createBreadcrumbs,
+		StockTable,
+		PopoverWrapper,
+		StockBookRow,
+		AsyncData,
+		SkeletonTable
+	} from "$lib/components";
 	import { Page } from "$lib/controllers";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
@@ -41,11 +50,23 @@
 
 	export let data: PageData;
 
-	$: ({ plugins, displayName, publisherList, id } = data);
-	$: db = data.dbCtx?.db;
+	import { page } from "$app/stores";
+	$: id = parseInt($page.params.id);
+
+	$: ({ plugins, dbCtx: dbCtxP, warehouseData: warehouseDataP, entries: entriesP } = data);
+
+	$: combined = Promise.all([dbCtxP, warehouseDataP]);
+
+	let db: import("$lib/db/cr-sqlite/types").DBAsync | undefined;
+	let dbCtx: import("$lib/db/cr-sqlite").DbCtx | null = null;
+	$: db = dbCtx?.db;
+
+	let warehouseData: any = null;
+	$: displayName = warehouseData?.displayName || "Loading...";
+	$: publisherList = warehouseData?.publisherList || [];
 
 	let entries: GetStockResponseItem[] = [];
-	$: data.entries.then((e) => (entries = e));
+	$: if (entriesP) entriesP.then((e) => (entries = e));
 
 	$: tColumnHeaders = $LL.warehouse_page.table;
 	$: tLabels = $LL.warehouse_page.labels;
@@ -57,14 +78,19 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when warehouse data changes
-		const disposer1 = data.dbCtx?.rx?.onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
-		// Reload when some stock changes (note being committed)
-		const disposer2 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("warehouse:books"));
-		// Reload when stock cache invalidates
+	});
+	$: if (dbCtx) {
+		disposer?.();
+		const disposer1 = dbCtx.rx.onPoint("warehouse", BigInt(id), () => invalidate("warehouse:data"));
+		const disposer2 = dbCtx.rx.onRange(["book"], () => invalidate("warehouse:books"));
 		const disposer3 = stockCache.onInvalidated(() => invalidate("warehouse:books"));
 
-		disposer = () => (disposer1(), disposer2(), disposer3());
-	});
+		disposer = () => {
+			if (typeof disposer1 === "function") disposer1();
+			if (typeof disposer2 === "function") disposer2();
+			if (typeof disposer3 === "function") disposer3();
+		};
+	}
 	onDestroy(() => {
 		// Unsubscribe on unmount
 		disposer?.();
@@ -167,107 +193,113 @@
 	// #endregion printing
 </script>
 
-<Page title={displayName} view="warehouse" {db} {plugins}>
-	<div slot="main" class="h-full w-full flex-col gap-y-4 divide-y overflow-auto">
-		<div class="p-4">
-			<Breadcrumbs class="" links={breadcrumbs} />
-			<div class="flex justify-between">
-				{#if $csvEntries?.length}
-					<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
-						<span class="aria-hidden"> {tLabels.export_to_csv()} </span>
-					</button>
-				{/if}
-			</div>
-		</div>
+<AsyncData data={combined} let:resolved>
+	{@const [resolvedDbCtx, resolvedWarehouseData] = resolved}
+	<!-- Bind resolved data to script variables -->
+	{((dbCtx = resolvedDbCtx), (warehouseData = resolvedWarehouseData), "")}
 
-		{#await data.entries}
-			<div class="flex grow justify-center">
-				<div class="mx-auto translate-y-1/2">
-					<span class="loading loading-spinner loading-lg text-primary"></span>
+	<Page title={displayName} view="warehouse" {db} {plugins}>
+		<div slot="main" class="h-full w-full flex-col gap-y-4 divide-y overflow-auto">
+			<div class="p-4">
+				<Breadcrumbs class="" links={breadcrumbs} />
+				<div class="flex justify-between">
+					{#if $csvEntries?.length}
+						<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
+							<span class="aria-hidden"> {tLabels.export_to_csv()} </span>
+						</button>
+					{/if}
 				</div>
 			</div>
-		{:then}
-			{#if !entries?.length}
-				<div class="flex grow justify-center">
-					<div class="mx-auto max-w-xl translate-y-1/2">
-						<!-- Start entity list placeholder -->
-						<PlaceholderBox title={tPlaceholder.title()} description={tPlaceholder.description()}>
-							<FilePlus slot="icon" />
-							<button slot="actions" on:click={handleCreateInboundNote} class="btn-primary btn w-full">
-								{tLabels.new_note()}
-							</button>
-						</PlaceholderBox>
-						<!-- End entity list placeholder -->
+
+			{#await entriesP}
+				<SkeletonTable columns={6} rows={10} hasActions />
+			{:then}
+				{#if !entries?.length}
+					<div class="flex grow justify-center">
+						<div class="mx-auto max-w-xl translate-y-1/2">
+							<!-- Start entity list placeholder -->
+							<PlaceholderBox title={tPlaceholder.title()} description={tPlaceholder.description()}>
+								<FilePlus slot="icon" />
+								<button slot="actions" on:click={handleCreateInboundNote} class="btn-primary btn w-full">
+									{tLabels.new_note()}
+								</button>
+							</PlaceholderBox>
+							<!-- End entity list placeholder -->
+						</div>
 					</div>
-				</div>
-			{:else}
-				<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-					<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
-					<div>
-						<StockTable {table}>
-							<tr slot="row" let:row let:rowIx>
-								<StockBookRow {row} {rowIx}>
-									<div slot="row-actions">
-										<PopoverWrapper
-											options={{
-												forceVisible: true,
-												positioning: {
-													placement: "left"
-												}
-											}}
-											let:trigger
-										>
-											<button
-												data-testid={testId("popover-control")}
-												{...trigger}
-												use:trigger.action
-												class="btn-neutral btn-outline btn-sm btn px-0.5"
+				{:else}
+					<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+						<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+						<div>
+							<StockTable {table}>
+								<tr slot="row" let:row let:rowIx>
+									<StockBookRow {row} {rowIx}>
+										<div slot="row-actions">
+											<PopoverWrapper
+												options={{
+													forceVisible: true,
+													positioning: {
+														placement: "left"
+													}
+												}}
+												let:trigger
 											>
-												<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
-												<span class="aria-hidden">
-													<MoreVertical />
-												</span>
-											</button>
-
-											<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 												<button
-													use:melt={$trigger}
-													data-testid={testId("edit-row")}
-													on:m-click={() => {
-														const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
-														bookFormData = bookData;
-													}}
-													class="btn-secondary btn-sm btn"
+													data-testid={testId("popover-control")}
+													{...trigger}
+													use:trigger.action
+													class="btn-neutral btn-outline btn-sm btn px-0.5"
 												>
 													<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
 													<span class="aria-hidden">
-														<FileEdit />
+														<MoreVertical />
 													</span>
 												</button>
 
-												<button class="btn-secondary btn-sm btn" data-testid={testId("print-book-label")} on:click={handlePrintLabel(row)}>
-													<span class="sr-only">{tLabels.print_book_label()} {rowIx}</span>
-													<span class="aria-hidden">
-														<Printer />
-													</span>
-												</button>
-											</div>
-										</PopoverWrapper>
-									</div>
-								</StockBookRow>
-							</tr>
-						</StockTable>
+												<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
+													<button
+														use:melt={$trigger}
+														data-testid={testId("edit-row")}
+														on:m-click={() => {
+															const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
+															bookFormData = bookData;
+														}}
+														class="btn-secondary btn-sm btn"
+													>
+														<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
+														<span class="aria-hidden">
+															<FileEdit />
+														</span>
+													</button>
+
+													<button
+														class="btn-secondary btn-sm btn"
+														data-testid={testId("print-book-label")}
+														on:click={handlePrintLabel(row)}
+													>
+														<span class="sr-only">{tLabels.print_book_label()} {rowIx}</span>
+														<span class="aria-hidden">
+															<Printer />
+														</span>
+													</button>
+												</div>
+											</PopoverWrapper>
+										</div>
+									</StockBookRow>
+								</tr>
+							</StockTable>
+						</div>
+
+						<!-- Trigger for the infinite scroll intersection observer -->
+						{#if entries?.length > maxResults}
+							<div use:scroll.trigger></div>
+						{/if}
 					</div>
-
-					<!-- Trigger for the infinite scroll intersection observer -->
-					{#if entries?.length > maxResults}
-						<div use:scroll.trigger></div>
-					{/if}
-				</div>
-			{/if}
-		{/await}
-	</div>
-</Page>
+				{/if}
+			{/await}
+		</div>
+	</Page>
+</AsyncData>
 
 {#if $open}
 	<div use:melt={$portalled}>

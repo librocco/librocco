@@ -24,6 +24,7 @@
 	import ReconcilingTable from "$lib/components/supplier-orders/ReconcilingTable.svelte";
 	import CompletedTable from "$lib/components/supplier-orders/CompletedTable.svelte";
 	import PlaceholderBox from "$lib/components/Placeholders/PlaceholderBox.svelte";
+	import { AsyncData, SkeletonTable } from "$lib/components";
 
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import {
@@ -46,21 +47,41 @@
 		if ($page.url.hash.split("?filter=").length <= 1) {
 			goto(`${$page.url.hash}?filter=unordered`);
 		}
-		const disposer1 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("books:data"));
-		const disposer2 = data.dbCtx?.rx?.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
-		const disposer3 = data.dbCtx?.rx?.onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
-		const disposer4 = data.dbCtx?.rx?.onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
+	});
+	$: if (dbCtx) {
+		disposer?.();
+		const disposer1 = dbCtx.rx.onRange(["book"], () => invalidate("books:data"));
+		const disposer2 = dbCtx.rx.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
+		const disposer3 = dbCtx.rx.onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
+		const disposer4 = dbCtx.rx.onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
 
 		disposer = () => (disposer1(), disposer2(), disposer3(), disposer4());
-	});
+	}
 	onDestroy(() => {
 		// Unsubscribe on unmount
 		disposer();
 	});
 	$: goto = racefreeGoto(disposer);
 
-	$: ({ plugins, placedOrders, possibleOrders, reconcilingOrders, completedOrders } = data);
-	$: db = data?.dbCtx?.db;
+	$: ({
+		plugins,
+		placedOrders: placedOrdersP,
+		possibleOrders: possibleOrdersP,
+		reconcilingOrders: reconcilingOrdersP,
+		completedOrders: completedOrdersP,
+		dbCtx: dbCtxP
+	} = data);
+
+	$: combined = Promise.all([dbCtxP, placedOrdersP, possibleOrdersP, reconcilingOrdersP, completedOrdersP]);
+
+	let dbCtx: import("$lib/db/cr-sqlite").DbCtx | null = null;
+	let db: import("$lib/db/cr-sqlite/types").DBAsync | undefined;
+	// db is updated via side-effect in AsyncData
+
+	let placedOrders: import("$lib/db/cr-sqlite/types").PlacedSupplierOrder[] = [];
+	let possibleOrders: import("$lib/db/cr-sqlite/types").PossibleSupplierOrder[] = [];
+	let reconcilingOrders: import("$lib/db/cr-sqlite/types").ReconciliationOrder[] = [];
+	let completedOrders: import("$lib/db/cr-sqlite/types").PlacedSupplierOrder[] = [];
 
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
@@ -73,15 +94,11 @@
 
 	// Generate display ID and get existing IDs when opening the dialog
 	const handleOpenNewOrderDialog = async () => {
-		const { db } = data.dbCtx;
+		const { db } = dbCtx;
 		nextDisplayId = String(await getCustomerDisplayIdSeq(db));
 		existingCustomers = await getCustomerDisplayIdInfo(db);
 		newOrderDialogOpen.set(true);
 	};
-
-	$: hasPlacedOrders = placedOrders?.length;
-	$: hasReconcilingOrders = reconcilingOrders?.length;
-	$: hasCompletedOrders = completedOrders?.length;
 
 	type OrderStatus = "unordered" | "ordered" | "reconciling" | "completed";
 
@@ -136,80 +153,87 @@
 </script>
 
 <Page title={t.title.supplier_orders()} view="orders/suppliers/orders" {db} {plugins}>
-	<div slot="main" class="flex h-full flex-col gap-y-2 divide-y">
-		<div class="flex flex-row justify-between gap-x-2 overflow-x-auto p-4">
-			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
-				<button
-					class="btn-sm btn {orderStatusFilter === 'unordered' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => setFilter("unordered")}
-					aria-pressed={orderStatusFilter === "unordered"}
-				>
-					{t.tabs.unordered()}
-				</button>
+	<svelte:fragment slot="main">
+		<AsyncData data={combined} let:resolved>
+			{@const [resolvedDbCtx, placedOrders, possibleOrders, reconcilingOrders, completedOrders] = resolved}
+			{((dbCtx = resolvedDbCtx), (db = dbCtx.db), "")}
+			<SkeletonTable slot="loading" columns={6} rows={10} hasActions />
+			<div class="flex h-full flex-col gap-y-2 divide-y">
+				<div class="flex flex-row justify-between gap-x-2 overflow-x-auto p-4">
+					<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
+						<button
+							class="btn-sm btn {orderStatusFilter === 'unordered' ? 'btn-primary' : 'btn-outline'}"
+							on:click={() => setFilter("unordered")}
+							aria-pressed={orderStatusFilter === "unordered"}
+						>
+							{t.tabs.unordered()}
+						</button>
 
-				<button
-					class="btn-sm btn {orderStatusFilter === 'ordered' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => setFilter("ordered")}
-					aria-pressed={orderStatusFilter === "ordered"}
-					disabled={!hasPlacedOrders}
-					data-testid="ordered-list"
-				>
-					{t.tabs.ordered()}
-				</button>
+						<button
+							class="btn-sm btn {orderStatusFilter === 'ordered' ? 'btn-primary' : 'btn-outline'}"
+							on:click={() => setFilter("ordered")}
+							aria-pressed={orderStatusFilter === "ordered"}
+							disabled={!placedOrders?.length}
+							data-testid="ordered-list"
+						>
+							{t.tabs.ordered()}
+						</button>
 
-				<button
-					class="btn-sm btn {orderStatusFilter === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => setFilter("reconciling")}
-					aria-pressed={orderStatusFilter === "reconciling"}
-					disabled={!hasReconcilingOrders}
-					data-testid="reconciling-list"
-				>
-					{t.tabs.reconciling()}
-				</button>
-				<div class="w-fit">
-					<button
-						class="btn-sm btn self-end {orderStatusFilter === 'completed' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("completed")}
-						aria-pressed={orderStatusFilter === "completed"}
-						disabled={!hasCompletedOrders}
-						data-testid="completed-list"
-					>
-						{t.tabs.completed()}
+						<button
+							class="btn-sm btn {orderStatusFilter === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
+							on:click={() => setFilter("reconciling")}
+							aria-pressed={orderStatusFilter === "reconciling"}
+							disabled={!reconcilingOrders?.length}
+							data-testid="reconciling-list"
+						>
+							{t.tabs.reconciling()}
+						</button>
+						<div class="w-fit">
+							<button
+								class="btn-sm btn self-end {orderStatusFilter === 'completed' ? 'btn-primary' : 'btn-outline'}"
+								on:click={() => setFilter("completed")}
+								aria-pressed={orderStatusFilter === "completed"}
+								disabled={!completedOrders?.length}
+								data-testid="completed-list"
+							>
+								{t.tabs.completed()}
+							</button>
+						</div>
+					</div>
+
+					<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(appHash("suppliers"))}>
+						{t.labels.suppliers()}
+						<Settings size={20} />
 					</button>
 				</div>
+
+				<div class="h-full w-full p-4">
+					{#if orderStatusFilter === "unordered"}
+						{#if possibleOrders.length === 0 && placedOrders.length === 0}
+							<div class="mx-auto w-fit max-w-xl translate-y-1/2">
+								<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()}>
+									<PackageOpen slot="icon" />
+
+									<button slot="actions" class="btn-primary btn gap-2" on:click={handleOpenNewOrderDialog}>
+										<Plus size={20} />
+										<p>{t.placeholder.button()}</p>
+									</button>
+								</PlaceholderBox>
+							</div>
+						{:else}
+							<UnorderedTable orders={possibleOrders} />
+						{/if}
+					{:else if orderStatusFilter === "ordered"}
+						<OrderedTable orders={placedOrders} on:reconcile={handleReconcile} on:download={handleDownload} />
+					{:else if orderStatusFilter === "reconciling"}
+						<ReconcilingTable orders={reconcilingOrders} />
+					{:else}
+						<CompletedTable orders={completedOrders} />
+					{/if}
+				</div>
 			</div>
-
-			<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(appHash("suppliers"))}>
-				{t.labels.suppliers()}
-				<Settings size={20} />
-			</button>
-		</div>
-
-		<div class="h-full w-full p-4">
-			{#if orderStatusFilter === "unordered"}
-				{#if possibleOrders.length === 0 && placedOrders.length === 0}
-					<div class="mx-auto w-fit max-w-xl translate-y-1/2">
-						<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()}>
-							<PackageOpen slot="icon" />
-
-							<button slot="actions" class="btn-primary btn gap-2" on:click={handleOpenNewOrderDialog}>
-								<Plus size={20} />
-								<p>{t.placeholder.button()}</p>
-							</button>
-						</PlaceholderBox>
-					</div>
-				{:else}
-					<UnorderedTable orders={possibleOrders} />
-				{/if}
-			{:else if orderStatusFilter === "ordered"}
-				<OrderedTable orders={placedOrders} on:reconcile={handleReconcile} on:download={handleDownload} />
-			{:else if orderStatusFilter === "reconciling"}
-				<ReconcilingTable orders={reconcilingOrders} />
-			{:else}
-				<CompletedTable orders={completedOrders} />
-			{/if}
-		</div>
-	</div>
+		</AsyncData>
+	</svelte:fragment>
 </Page>
 
 <PageCenterDialog dialog={newOrderDialog} title="" description="">
@@ -222,7 +246,7 @@
 			validators: zod(createCustomerOrderSchema($LL, existingCustomers)),
 			onSubmit: async ({ validators }) => {
 				// Get the latest customer data to ensure we're validating against current state
-				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+				const latestCustomerIds = await getCustomerDisplayIdInfo(dbCtx.db);
 
 				// Create a new schema instance with the latest data and error message generator
 				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds);

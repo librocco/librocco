@@ -13,12 +13,15 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("suppliers:data");
 	depends("customers:order_lines");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
 	// We're not in browser, no need for further processing
-	if (!dbCtx) {
+	if (!dbCtxOrPromise) {
 		return { orderLines: [] as PossibleSupplierOrderLine[] };
 	}
+
+	// Await the dbCtx promise if it's a promise
+	const dbCtx = await dbCtxOrPromise;
 
 	// Handle "null" string parameter for General supplier
 	const supplierId = params.id === "null" ? null : parseInt(params.id);
@@ -33,7 +36,7 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		redirect(303, appHash("suppliers"));
 	}
 
-	return { orderLines, supplier };
+	return { dbCtx, orderLines, supplier };
 };
 
 export const load: PageLoad = timed(_load);

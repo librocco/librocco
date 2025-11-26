@@ -7,9 +7,15 @@ import { timed } from "$lib/utils/timer";
 const _load = async ({ parent, depends }: Parameters<PageLoad>[0]) => {
 	depends("inbound:list");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
-	const notes = dbCtx?.db ? await getActiveInboundNotes(dbCtx?.db) : [];
+	if (!dbCtxOrPromise) {
+		return { dbCtx: null, notes: [] };
+	}
+
+	const dbCtx = await dbCtxOrPromise;
+
+	const notes = await getActiveInboundNotes(dbCtx.db);
 
 	return { dbCtx, notes };
 };

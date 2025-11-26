@@ -17,6 +17,7 @@
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import PlaceholderBox from "$lib/components/Placeholders/PlaceholderBox.svelte";
+	import { AsyncData, SkeletonTable } from "$lib/components";
 	import { Page } from "$lib/controllers";
 	import { createIntersectionObserver } from "$lib/actions";
 
@@ -35,8 +36,11 @@
 	onMount(() => {
 		// Reload when note
 		// Reload when entries (book/custom item) change
-		disposer = data.dbCtx?.rx?.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:list"));
 	});
+	$: if (dbCtx) {
+		disposer?.();
+		disposer = dbCtx.rx.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:list"));
+	}
 	onDestroy(() => {
 		// Unsubscribe on unmount
 		disposer?.();
@@ -44,8 +48,14 @@
 
 	$: goto = racefreeGoto(disposer);
 
-	$: ({ plugins, suppliers } = data);
-	$: db = data?.dbCtx?.db;
+	$: ({ plugins, suppliers: suppliersP, dbCtx: dbCtxP } = data);
+	$: combined = Promise.all([dbCtxP, suppliersP]);
+
+	let dbCtx: import("$lib/db/cr-sqlite").DbCtx | null = null;
+	let db: import("$lib/db/cr-sqlite/types").DBAsync | undefined;
+	// db is updated via side-effect in AsyncData
+
+	let suppliers: import("$lib/db/cr-sqlite/types").SupplierExtended[] = [];
 
 	const seeMore = () => {
 		maxResults += 10;
@@ -54,7 +64,7 @@
 	let maxResults = 10;
 
 	// #region table
-	const suppliersStore = writable(suppliers);
+	const suppliersStore = writable<import("$lib/db/cr-sqlite/types").SupplierExtended[]>([]);
 	$: suppliersStore.set(suppliers.slice(0, maxResults));
 	// #endregion table
 
@@ -79,68 +89,75 @@
 </script>
 
 <Page title={t.title()} view="orders/suppliers" {db} {plugins}>
-	<div slot="main" class="flex h-full flex-col gap-y-2 divide-y">
-		<div class="flex w-full flex-row justify-end gap-x-2 p-4">
-			<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
-				{t.labels.new_supplier()}
-				<Plus size={20} />
-			</button>
-		</div>
-		<div class="h-full p-4">
-			{#if !suppliers.length}
-				<div class="mx-auto w-fit max-w-xl translate-y-1/2">
-					<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()}>
-						<Truck slot="icon" />
-
-						<button slot="actions" class="btn-primary btn gap-2" on:click={() => dialogOpen.set(true)}>
-							<Plus size={20} />
-							{t.labels.new_supplier()}
-						</button>
-					</PlaceholderBox>
+	<svelte:fragment slot="main">
+		<AsyncData data={combined} let:resolved>
+			{@const [dbCtx, suppliers] = resolved}
+			{((db = dbCtx.db), "")}
+			<SkeletonTable slot="loading" columns={6} rows={10} hasActions />
+			<div class="flex h-full flex-col gap-y-2 divide-y">
+				<div class="flex w-full flex-row justify-end gap-x-2 p-4">
+					<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
+						{t.labels.new_supplier()}
+						<Plus size={20} />
+					</button>
 				</div>
-			{:else}
-				<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-auto" style="scrollbar-width: thin">
-					<table class="table-sm table" id="supplier-orders">
-						<thead>
-							<tr>
-								<th scope="col">{t.columns.name()}</th>
-								<th scope="col">{t.columns.email()}</th>
-								<th scope="col">{t.columns.address()}</th>
-								<th scope="col">{t.columns.assigned_publishers()}</th>
-								<th scope="col">{t.columns.order_format()}</th>
-								<th scope="col" class="sr-only">
-									{t.columns.actions()}
-								</th>
-							</tr>
-						</thead>
+				<div class="h-full p-4">
+					{#if !suppliers.length}
+						<div class="mx-auto w-fit max-w-xl translate-y-1/2">
+							<PlaceholderBox title={t.placeholder.title()} description={t.placeholder.description()}>
+								<Truck slot="icon" />
 
-						<tbody>
-							{#each $suppliersStore as row (row.id)}
-								{@const { id, name, email, address, numPublishers, orderFormat } = row}
-								<tr class="hover focus-within:bg-base-200 hover:cursor-pointer" on:click={() => goto(appPath("suppliers", id))}>
-									<th scope="row" data-property="supplier">
-										{name}
-									</th>
+								<button slot="actions" class="btn-primary btn gap-2" on:click={() => dialogOpen.set(true)}>
+									<Plus size={20} />
+									{t.labels.new_supplier()}
+								</button>
+							</PlaceholderBox>
+						</div>
+					{:else}
+						<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-auto" style="scrollbar-width: thin">
+							<table class="table-sm table" id="supplier-orders">
+								<thead>
+									<tr>
+										<th scope="col">{t.columns.name()}</th>
+										<th scope="col">{t.columns.email()}</th>
+										<th scope="col">{t.columns.address()}</th>
+										<th scope="col">{t.columns.assigned_publishers()}</th>
+										<th scope="col">{t.columns.order_format()}</th>
+										<th scope="col" class="sr-only">
+											{t.columns.actions()}
+										</th>
+									</tr>
+								</thead>
 
-									<td data-property="email">{email}</td>
+								<tbody>
+									{#each $suppliersStore as row (row.id)}
+										{@const { id, name, email, address, numPublishers, orderFormat } = row}
+										<tr class="hover focus-within:bg-base-200 hover:cursor-pointer" on:click={() => goto(appPath("suppliers", id))}>
+											<th scope="row" data-property="supplier">
+												{name}
+											</th>
 
-									<td data-property="address">{address}</td>
+											<td data-property="email">{email}</td>
 
-									<td data-property="assigned-publishers">{numPublishers}</td>
+											<td data-property="address">{address}</td>
 
-									<td data-property="order-format">{orderFormat}</td>
+											<td data-property="assigned-publishers">{numPublishers}</td>
 
-									<td class="text-right">
-										<a href={appPath("suppliers", id)} class="btn-outline btn-sm btn">{t.labels.edit()}</a>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
+											<td data-property="order-format">{orderFormat}</td>
+
+											<td class="text-right">
+												<a href={appPath("suppliers", id)} class="btn-outline btn-sm btn">{t.labels.edit()}</a>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
 				</div>
-			{/if}
-		</div>
-	</div>
+			</div>
+		</AsyncData>
+	</svelte:fragment>
 </Page>
 
 <PageCenterDialog {dialog} title="" description="">

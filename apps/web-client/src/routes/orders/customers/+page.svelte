@@ -17,6 +17,7 @@
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import CustomerSearchForm from "$lib/forms/CustomerSearchForm.svelte";
 	import PlaceholderBox from "$lib/components/Placeholders/PlaceholderBox.svelte";
+	import { AsyncData, SkeletonTable } from "$lib/components";
 	import { createCustomerOrderSchema, customerSearchSchema } from "$lib/forms";
 
 	import { invalidate } from "$app/navigation";
@@ -39,14 +40,20 @@
 
 	export let data: PageData;
 
-	$: ({ customerOrders, plugins } = data);
-	$: db = data.dbCtx?.db;
+	$: ({ customerOrders: customerOrdersP, plugins, dbCtx: dbCtxP } = data);
+	$: combined = Promise.all([dbCtxP, customerOrdersP]);
+
+	let dbCtx: import("$lib/db/cr-sqlite").DbCtx | null = null;
+	let db: import("$lib/db/cr-sqlite/types").DBAsync | undefined;
+	// db is updated via side-effect in AsyncData
+
+	let customerOrders: CustomerOrderListItem[] = [];
 
 	let searchField: HTMLInputElement;
 	const search = writable("");
 
 	$: t = $LL.customer_orders_page;
-	const tableStore = writable<CustomerOrderListItem[]>(customerOrders);
+	const tableStore = writable<CustomerOrderListItem[]>([]);
 
 	const seeMore = () => {
 		maxResults += 10;
@@ -66,8 +73,12 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload all customer order/customer order line data dependants when the data changes
-		disposer = data.dbCtx?.rx?.onRange(["customer", "customer_order_lines"], () => invalidate("customer:list"));
 	});
+
+	$: if (dbCtx) {
+		disposer?.();
+		disposer = dbCtx.rx.onRange(["customer", "customer_order_lines"], () => invalidate("customer:list"));
+	}
 	onDestroy(() => {
 		// Unsubscribe on unmount
 		disposer();
@@ -93,7 +104,7 @@
 
 	// Generate display ID and get existing IDs when opening the dialog
 	const handleOpenNewOrderDialog = async () => {
-		const { db } = data.dbCtx;
+		const { db } = dbCtx;
 		nextDisplayId = await getCustomerDisplayIdSeq(db).then(String);
 		existingCustomers = await getCustomerDisplayIdInfo(db);
 		newOrderDialogOpen.set(true);
@@ -104,7 +115,7 @@
 		// get latest/biggest id and increment by 1
 
 		// NOTE: dbCtx should always be defined on client
-		const { db } = data.dbCtx;
+		const { db } = dbCtx;
 
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 
@@ -117,91 +128,98 @@
 </script>
 
 <Page title={t.title()} view="orders/customers" {db} {plugins}>
-	<div slot="main" class="flex h-full flex-col gap-y-2 divide-y">
-		<div class="flex flex-row gap-x-2 p-4">
-			<CustomerSearchForm
-				bind:input={searchField}
-				placeholder={t.placeholder.search()}
-				data={defaults(zod(customerSearchSchema))}
-				options={{
-					SPA: true,
-					dataType: "json",
-					invalidateAll: false,
-					resetForm: false,
-					validators: zod(customerSearchSchema),
-					validationMethod: "oninput",
-					onChange: async (event) => {
-						const [fullNamePath] = event.paths;
-						const fullName = event.get(fullNamePath);
+	<svelte:fragment slot="main">
+		<AsyncData data={combined} let:resolved>
+			{@const [dbCtx, customerOrders] = resolved}
+			{((db = dbCtx.db), "")}
+			<SkeletonTable slot="loading" columns={5} rows={10} hasActions />
+			<div class="flex h-full flex-col gap-y-2 divide-y">
+				<div class="flex flex-row gap-x-2 p-4">
+					<CustomerSearchForm
+						bind:input={searchField}
+						placeholder={t.placeholder.search()}
+						data={defaults(zod(customerSearchSchema))}
+						options={{
+							SPA: true,
+							dataType: "json",
+							invalidateAll: false,
+							resetForm: false,
+							validators: zod(customerSearchSchema),
+							validationMethod: "oninput",
+							onChange: async (event) => {
+								const [fullNamePath] = event.paths;
+								const fullName = event.get(fullNamePath);
 
-						search.set(fullName); // reactively update the store on input change
-					}
-				}}
-			/>
-			<button class="btn-primary btn gap-2" on:click={handleOpenNewOrderDialog}>
-				<Plus size={20} />
-				{t.labels.new_order()}
-			</button>
-		</div>
-		<div class="h-full p-4">
-			{#if !customerOrders.length}
-				<div class="mx-auto w-fit max-w-xl translate-y-1/2">
-					<PlaceholderBox title={t.placeholder.no_orders.title()} description={t.placeholder.no_orders.description()}>
-						<User slot="icon" />
-
-						<button slot="actions" class="btn-primary btn gap-2" on:click={handleOpenNewOrderDialog}>
-							<Plus size={20} />
-							{t.labels.new_order()}
-						</button>
-					</PlaceholderBox>
+								search.set(fullName); // reactively update the store on input change
+							}
+						}}
+					/>
+					<button class="btn-primary btn gap-2" on:click={handleOpenNewOrderDialog}>
+						<Plus size={20} />
+						{t.labels.new_order()}
+					</button>
 				</div>
-			{:else}
-				<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-					<table class="table-sm table">
-						<thead>
-							<tr>
-								<th scope="col">{t.table_columns.order_id()}</th>
-								<th scope="col">{t.table_columns.name()}</th>
-								<th scope="col">{t.table_columns.email()}</th>
-								<th scope="col">{t.table_columns.updated()}</th>
-								<th scope="col" class="sr-only">{t.table_columns.actions()}</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each $tableStore as { id, fullname, email, updatedAt, displayId }}
-								<tr class="hover focus-within:bg-base-200 hover:cursor-pointer" on:click={() => goto(appPath("customers", id))}>
-									<th>
-										<span class="font-medium">#{displayId}</span>
-									</th>
-									<td>
-										{fullname}
-									</td>
-									<td>
-										{email === "N/A" ? "-" : email}
-									</td>
-									<td>
-										<span class="badge-primary badge-outline badge gap-x-2">
-											<ClockArrowUp size={16} />
-											<time dateTime={new Date(updatedAt).toISOString()}>
-												{$dateFormatters.dateTime(updatedAt)}
-											</time>
-										</span>
-									</td>
-									<td>
-										<a href={appPath("customers", id)} class="btn-outline btn-sm btn">{t.labels.edit()}</a>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-					<!-- Trigger for the infinite scroll intersection observer -->
-					{#if $tableStore?.length === maxResults && filteredOrders.length > maxResults}
-						<div use:scroll.trigger></div>
+				<div class="h-full p-4">
+					{#if !customerOrders.length}
+						<div class="mx-auto w-fit max-w-xl translate-y-1/2">
+							<PlaceholderBox title={t.placeholder.no_orders.title()} description={t.placeholder.no_orders.description()}>
+								<User slot="icon" />
+
+								<button slot="actions" class="btn-primary btn gap-2" on:click={handleOpenNewOrderDialog}>
+									<Plus size={20} />
+									{t.labels.new_order()}
+								</button>
+							</PlaceholderBox>
+						</div>
+					{:else}
+						<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+							<table class="table-sm table">
+								<thead>
+									<tr>
+										<th scope="col">{t.table_columns.order_id()}</th>
+										<th scope="col">{t.table_columns.name()}</th>
+										<th scope="col">{t.table_columns.email()}</th>
+										<th scope="col">{t.table_columns.updated()}</th>
+										<th scope="col" class="sr-only">{t.table_columns.actions()}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each $tableStore as { id, fullname, email, updatedAt, displayId }}
+										<tr class="hover focus-within:bg-base-200 hover:cursor-pointer" on:click={() => goto(appPath("customers", id))}>
+											<th>
+												<span class="font-medium">#{displayId}</span>
+											</th>
+											<td>
+												{fullname}
+											</td>
+											<td>
+												{email === "N/A" ? "-" : email}
+											</td>
+											<td>
+												<span class="badge-primary badge-outline badge gap-x-2">
+													<ClockArrowUp size={16} />
+													<time dateTime={new Date(updatedAt).toISOString()}>
+														{$dateFormatters.dateTime(updatedAt)}
+													</time>
+												</span>
+											</td>
+											<td>
+												<a href={appPath("customers", id)} class="btn-outline btn-sm btn">{t.labels.edit()}</a>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+							<!-- Trigger for the infinite scroll intersection observer -->
+							{#if $tableStore?.length === maxResults && filteredOrders.length > maxResults}
+								<div use:scroll.trigger></div>
+							{/if}
+						</div>
 					{/if}
 				</div>
-			{/if}
-		</div>
-	</div>
+			</div>
+		</AsyncData>
+	</svelte:fragment>
 </Page>
 
 <PageCenterDialog dialog={newOrderDialog} title="" description="">
@@ -214,7 +232,7 @@
 			validators: zod(createCustomerOrderSchema($LL, existingCustomers)),
 			onSubmit: async ({ validators }) => {
 				// Get the latest customer data to ensure we're validating against current state
-				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+				const latestCustomerIds = await getCustomerDisplayIdInfo(dbCtx.db);
 
 				// Create a new schema instance with the latest data and error message generator
 				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds);

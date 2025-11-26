@@ -24,7 +24,7 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
-	import { PopoverWrapper, Dialog } from "$lib/components";
+	import { PopoverWrapper, Dialog, AsyncData, SkeletonTable } from "$lib/components";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { ScannerForm, DaisyUIBookForm, bookSchema, scannerSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
@@ -49,8 +49,17 @@
 
 	export let data: PageData;
 
-	$: ({ customer, customerOrderLines, publisherList, plugins } = data);
-	$: db = data.dbCtx?.db;
+	$: ({ customer: customerP, customerOrderLines: customerOrderLinesP, publisherList: publisherListP, plugins, dbCtx: dbCtxP } = data);
+	$: combined = Promise.all([dbCtxP, customerP, customerOrderLinesP, publisherListP]);
+
+	let dbCtx: import("$lib/db/cr-sqlite").DbCtx | null = null;
+	let db: import("$lib/db/cr-sqlite/types").DBAsync | undefined;
+	// db is updated via side-effect in AsyncData
+
+	let customer: import("$lib/db/cr-sqlite/types").Customer | null = null;
+	let customerOrderLines: import("$lib/db/cr-sqlite/types").CustomerOrderLine[] = [];
+	let publisherList: string[] = [];
+
 	$: phone1 = customer?.phone?.split(",").length > 0 ? customer?.phone?.split(",")[0] : "";
 	$: phone2 = customer?.phone?.split(",").length > 1 ? customer?.phone?.split(",")[1] : "";
 
@@ -61,11 +70,16 @@
 
 	onMount(() => {
 		// Reload add customer data dependants when the data changes
-		const disposer1 = data.dbCtx?.rx?.onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
-		// Reload all customer order line/book data dependants when the data changes
-		const disposer2 = data.dbCtx?.rx?.onRange(["customer_order_lines", "book"], () => invalidate("customer:books"));
-		disposer = () => (disposer1(), disposer2());
 	});
+	$: if (dbCtx) {
+		disposer?.();
+		const disposer1 = dbCtx.rx.onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
+		const disposer2 = dbCtx.rx.onRange(["customer_order_lines", "book"], () => invalidate("customer:books"));
+		disposer = () => {
+			if (typeof disposer1 === "function") disposer1();
+			if (typeof disposer2 === "function") disposer2();
+		};
+	}
 
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -174,285 +188,290 @@
 </script>
 
 <Page title={$LL.customer_orders_page.title()} view="orders/customers/id" {db} {plugins}>
-	<div slot="main" class="flex h-full flex-col gap-y-4 max-md:overflow-y-auto md:flex-row md:divide-x">
-		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
-			<div class="card md:h-full">
-				{#if customer}
-					<div class="card-body gap-y-2 p-0">
-						<div class="flex flex-col gap-y-2 border-b px-4 py-2.5 max-md:sticky max-md:top-0">
-							<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
-								<h2 class="text-2xl font-medium">{customer.fullname}</h2>
+	<svelte:fragment slot="main">
+		<AsyncData data={combined} let:resolved>
+			{@const [resolvedDbCtx, customer, customerOrderLines, publisherList] = resolved}
+			{((dbCtx = resolvedDbCtx), (db = dbCtx.db), "")}
+			<SkeletonTable slot="loading" columns={6} rows={10} hasActions />
+			<div class="flex h-full flex-col gap-y-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+				<div class="min-w-fit md:basis-96 md:overflow-y-auto">
+					<div class="card md:h-full">
+						{#if customer}
+							<div class="card-body gap-y-2 p-0">
+								<div class="flex flex-col gap-y-2 border-b px-4 py-2.5 max-md:sticky max-md:top-0">
+									<div class="flex flex-row items-center justify-between gap-y-4 pb-2 md:flex-col md:items-start">
+										<h2 class="text-2xl font-medium">{customer.fullname}</h2>
 
-								<span class="badge-accent badge-outline badge badge-md gap-x-2">
-									<span class="sr-only">{$LL.customer_orders_page.customer_details.last_updated()}</span>
-									<ClockArrowUp size={16} aria-hidden />
-									<time dateTime={data?.customer?.updatedAt ? new Date(data.customer.updatedAt).toISOString() : ""}>
-										{$dateFormatters.dateTime(data?.customer?.updatedAt)}
-									</time>
-								</span>
-							</div>
-						</div>
-						<dl class="hidden border-b p-4 md:flex md:flex-col">
-							<div class="flex w-full flex-col gap-y-4">
-								{#if data?.customer}
-									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-										<div class="max-w-96 flex flex-col gap-y-4">
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_id()}</span>
-													<IdCard aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{customer?.displayId || ""}</dd>
-											</div>
-
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_email()}</span>
-													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{data?.customer?.email || ""}</dd>
-											</div>
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_phone()}</span>
-													<Phone aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">
-													{data?.customer?.phone?.split(",").length > 1
-														? data?.customer?.phone?.split(",")[0]
-														: data?.customer?.phone || ""}
-												</dd>
-											</div>
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">{$LL.customer_orders_page.customer_details.secondary_phone()}</span>
-													<Phone aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{data?.customer?.phone?.split(",")[1] || ""}</dd>
-											</div>
-										</div>
-										<div class="flex gap-x-3">
-											<dt>
-												<span class="sr-only">{$LL.customer_orders_page.customer_details.deposit()}</span>
-												<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
-											</dt>
-											<dd>{$LL.customer_orders_page.customer_details.deposit_amount({ amount: data?.customer?.deposit || 0 })}</dd>
-										</div>
+										<span class="badge-accent badge-outline badge badge-md gap-x-2">
+											<span class="sr-only">{$LL.customer_orders_page.customer_details.last_updated()}</span>
+											<ClockArrowUp size={16} aria-hidden />
+											<time dateTime={customer?.updatedAt ? new Date(customer.updatedAt).toISOString() : ""}>
+												{$dateFormatters.dateTime(customer?.updatedAt)}
+											</time>
+										</span>
 									</div>
-								{/if}
-							</div>
-						</dl>
-						<div class="card-actions w-full flex-col p-4 md:mb-20">
-							<button
-								class="btn-secondary btn-outline btn-sm btn w-full"
-								type="button"
-								aria-label={$LL.forms.customer_order_meta.aria.form()}
-								on:click={handleOpenCustomerMetaDialog}
-								disabled={!data?.customer}
-							>
-								{$LL.customer_orders_page.labels.edit_customer()}
-								<PencilLine aria-hidden size={16} />
-							</button>
-							<button class="btn-secondary btn-outline btn-sm btn w-full" type="button" disabled>
-								{$LL.customer_orders_page.labels.print_receipt()}
-								<Printer aria-hidden size={20} />
-							</button>
-						</div>
-					</div>
-				{/if}
-			</div>
-		</div>
+								</div>
+								<dl class="hidden border-b p-4 md:flex md:flex-col">
+									<div class="flex w-full flex-col gap-y-4">
+										{#if data?.customer}
+											<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
+												<div class="max-w-96 flex flex-col gap-y-4">
+													<div class="flex gap-x-3">
+														<dt>
+															<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_id()}</span>
+															<IdCard aria-hidden="true" class="h-6 w-5 text-gray-400" />
+														</dt>
+														<dd class="truncate">{customer?.displayId || ""}</dd>
+													</div>
 
-		<div class="flex h-full w-full flex-col gap-y-6 px-4 md:overflow-y-auto">
-			<div class="sticky top-0 flex w-full max-w-full flex-col gap-y-3">
-				<div class="flex items-center justify-between pb-2 pt-4">
-					<h3 class="text-xl font-medium">{$LL.customer_orders_page.customer_details.books_heading()}</h3>
-
-					<div class="badge-primary badge-lg badge gap-x-2">
-						<span>{$LL.customer_orders_page.customer_details.total()}</span>
-						<span class="font-bold">€{totalAmount.toFixed(2)}</span>
-					</div>
-				</div>
-
-				<ScannerForm
-					data={defaults(zod(scannerSchema))}
-					options={{
-						SPA: true,
-						dataType: "json",
-						validators: zod(scannerSchema),
-						validationMethod: "submit-only",
-						resetForm: true,
-						onUpdated: async ({ form }) => {
-							const { isbn } = form?.data;
-
-							await handleAddLine(isbn);
-						}
-					}}
-				/>
-			</div>
-
-			<div class="h-full overflow-x-auto">
-				<div class="h-full">
-					<table class="table">
-						<thead>
-							<tr>
-								<th>{$LL.customer_orders_page.table_columns.isbn()}</th>
-								<th>{$LL.customer_orders_page.table_columns.title()}</th>
-								<th>{$LL.customer_orders_page.table_columns.authors()}</th>
-								<th>{$LL.customer_orders_page.table_columns.price()}</th>
-								<th>{$LL.customer_orders_page.table_columns.publisher()}</th>
-								<th>{$LL.customer_orders_page.table_columns.status()}</th>
-								<th>{$LL.table_components.inventory_tables.outbound_table.row_actions()}</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, collected, status, received, placed, created }}
-								<tr>
-									<th>{isbn}</th>
-									<td>{title}</td>
-									<td>{authors}</td>
-									<td>€{price.toFixed(2)}</td>
-									<td>{publisher}</td>
-									<td>
-										{#if status === OrderLineStatus.Collected}
-											{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.collected(),
-												date: collected
-											})}
-											<div
-												class="badge-outline badge orderline-collected gap-x-1 whitespace-nowrap text-xs font-semibold"
-												aria-label={badgeLabel}
-												title={collected.toISOString()}
-											>
-												{badgeLabel}
-											</div>
-										{:else if status === OrderLineStatus.Received}
-											{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.delivered(),
-												date: received
-											})}
-											<div
-												class="badge-outline badge orderline-received gap-x-1 whitespace-nowrap text-xs font-semibold"
-												aria-label={badgeLabel}
-												title={received.toISOString()}
-											>
-												{badgeLabel}
-											</div>
-										{:else if status === OrderLineStatus.Placed}
-											{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.placed(),
-												date: placed
-											})}
-											<div
-												class="badge-outline badge orderline-placed gap-x-1 whitespace-nowrap text-xs font-semibold"
-												aria-label={badgeLabel}
-												title={placed.toISOString()}
-											>
-												{badgeLabel}
-											</div>
-										{:else}
-											{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
-												status: $LL.customer_orders_page.status.pending(),
-												date: created
-											})}
-											<div
-												class="badge-outline badge orderline-pending gap-x-1 whitespace-nowrap text-xs font-semibold"
-												aria-label={badgeLabel}
-												title={created.toISOString()}
-											>
-												{badgeLabel}
+													<div class="flex gap-x-3">
+														<dt>
+															<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_email()}</span>
+															<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+														</dt>
+														<dd class="truncate">{customer?.email || ""}</dd>
+													</div>
+													<div class="flex gap-x-3">
+														<dt>
+															<span class="sr-only">{$LL.customer_orders_page.customer_details.customer_phone()}</span>
+															<Phone aria-hidden="true" class="h-6 w-5 text-gray-400" />
+														</dt>
+														<dd class="truncate">
+															{customer?.phone?.split(",").length > 1 ? customer?.phone?.split(",")[0] : customer?.phone || ""}
+														</dd>
+													</div>
+													<div class="flex gap-x-3">
+														<dt>
+															<span class="sr-only">{$LL.customer_orders_page.customer_details.secondary_phone()}</span>
+															<Phone aria-hidden="true" class="h-6 w-5 text-gray-400" />
+														</dt>
+														<dd class="truncate">{customer?.phone?.split(",")[1] || ""}</dd>
+													</div>
+												</div>
+												<div class="flex gap-x-3">
+													<dt>
+														<span class="sr-only">{$LL.customer_orders_page.customer_details.deposit()}</span>
+														<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
+													</dt>
+													<dd>{$LL.customer_orders_page.customer_details.deposit_amount({ amount: customer?.deposit || 0 })}</dd>
+												</div>
 											</div>
 										{/if}
-									</td>
+									</div>
+								</dl>
+								<div class="card-actions w-full flex-col p-4 md:mb-20">
+									<button
+										class="btn-secondary btn-outline btn-sm btn w-full"
+										type="button"
+										aria-label={$LL.forms.customer_order_meta.aria.form()}
+										on:click={handleOpenCustomerMetaDialog}
+										disabled={!customer}
+									>
+										{$LL.customer_orders_page.labels.edit_customer()}
+										<PencilLine aria-hidden size={16} />
+									</button>
+									<button class="btn-secondary btn-outline btn-sm btn w-full" type="button" disabled>
+										{$LL.customer_orders_page.labels.print_receipt()}
+										<Printer aria-hidden size={20} />
+									</button>
+								</div>
+							</div>
+						{/if}
+					</div>
+				</div>
 
-									<td>
-										<PopoverWrapper
-											options={{
-												forceVisible: true,
-												positioning: {
-													placement: "left"
-												}
-											}}
-											let:trigger
-										>
-											<button
-												data-testid={testId("popover-control")}
-												{...trigger}
-												use:trigger.action
-												class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-											>
-												<span class="sr-only">{$LL.customer_orders_page.labels.edit_line()}</span>
-												<span class="aria-hidden">
-													<MoreVertical />
-												</span>
-											</button>
-											<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
-												<button
-													use:melt={$dialogTrigger}
-													class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-													data-testid={testId("edit-row")}
-													on:m-click={() => {
-														bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
-														dialogContent = {
-															onConfirm: () => {},
-															title: $LL.common.edit_book_dialog.title(),
-															description: $LL.common.edit_book_dialog.description(),
-															type: "edit-row"
-														};
-													}}
-													on:m-keydown={() => {
-														bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
+				<div class="flex h-full w-full flex-col gap-y-6 px-4 md:overflow-y-auto">
+					<div class="sticky top-0 flex w-full max-w-full flex-col gap-y-3">
+						<div class="flex items-center justify-between pb-2 pt-4">
+							<h3 class="text-xl font-medium">{$LL.customer_orders_page.customer_details.books_heading()}</h3>
 
-														dialogContent = {
-															onConfirm: () => {},
-															title: $LL.common.edit_book_dialog.title(),
-															description: $LL.common.edit_book_dialog.description(),
-															type: "edit-row"
-														};
+							<div class="badge-primary badge-lg badge gap-x-2">
+								<span>{$LL.customer_orders_page.customer_details.total()}</span>
+								<span class="font-bold">€{totalAmount.toFixed(2)}</span>
+							</div>
+						</div>
+
+						<ScannerForm
+							data={defaults(zod(scannerSchema))}
+							options={{
+								SPA: true,
+								dataType: "json",
+								validators: zod(scannerSchema),
+								validationMethod: "submit-only",
+								resetForm: true,
+								onUpdated: async ({ form }) => {
+									const { isbn } = form?.data;
+
+									await handleAddLine(isbn);
+								}
+							}}
+						/>
+					</div>
+
+					<div class="h-full overflow-x-auto">
+						<div class="h-full">
+							<table class="table">
+								<thead>
+									<tr>
+										<th>{$LL.customer_orders_page.table_columns.isbn()}</th>
+										<th>{$LL.customer_orders_page.table_columns.title()}</th>
+										<th>{$LL.customer_orders_page.table_columns.authors()}</th>
+										<th>{$LL.customer_orders_page.table_columns.price()}</th>
+										<th>{$LL.customer_orders_page.table_columns.publisher()}</th>
+										<th>{$LL.customer_orders_page.table_columns.status()}</th>
+										<th>{$LL.table_components.inventory_tables.outbound_table.row_actions()}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, collected, status, received, placed, created }}
+										<tr>
+											<th>{isbn}</th>
+											<td>{title}</td>
+											<td>{authors}</td>
+											<td>€{price.toFixed(2)}</td>
+											<td>{publisher}</td>
+											<td>
+												{#if status === OrderLineStatus.Collected}
+													{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+														status: $LL.customer_orders_page.status.collected(),
+														date: collected
+													})}
+													<div
+														class="badge-outline badge orderline-collected gap-x-1 whitespace-nowrap text-xs font-semibold"
+														aria-label={badgeLabel}
+														title={collected.toISOString()}
+													>
+														{badgeLabel}
+													</div>
+												{:else if status === OrderLineStatus.Received}
+													{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+														status: $LL.customer_orders_page.status.delivered(),
+														date: received
+													})}
+													<div
+														class="badge-outline badge orderline-received gap-x-1 whitespace-nowrap text-xs font-semibold"
+														aria-label={badgeLabel}
+														title={received.toISOString()}
+													>
+														{badgeLabel}
+													</div>
+												{:else if status === OrderLineStatus.Placed}
+													{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+														status: $LL.customer_orders_page.status.placed(),
+														date: placed
+													})}
+													<div
+														class="badge-outline badge orderline-placed gap-x-1 whitespace-nowrap text-xs font-semibold"
+														aria-label={badgeLabel}
+														title={placed.toISOString()}
+													>
+														{badgeLabel}
+													</div>
+												{:else}
+													{@const badgeLabel = $LL.customer_orders_page.status_badges.with_date({
+														status: $LL.customer_orders_page.status.pending(),
+														date: created
+													})}
+													<div
+														class="badge-outline badge orderline-pending gap-x-1 whitespace-nowrap text-xs font-semibold"
+														aria-label={badgeLabel}
+														title={created.toISOString()}
+													>
+														{badgeLabel}
+													</div>
+												{/if}
+											</td>
+
+											<td>
+												<PopoverWrapper
+													options={{
+														forceVisible: true,
+														positioning: {
+															placement: "left"
+														}
 													}}
+													let:trigger
 												>
-													<span class="sr-only">{$LL.customer_orders_page.labels.edit_row()}</span>
-													<span class="aria-hidden">
-														<FileEdit />
-													</span>
-												</button>
-
-												{#if status === OrderLineStatus.Received}
 													<button
-														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-														data-testid={testId("collect-row")}
-														on:click={() => handleCollect(id)}
+														data-testid={testId("popover-control")}
+														{...trigger}
+														use:trigger.action
+														class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 													>
-														<span class="sr-only">{$LL.customer_orders_page.labels.collect()}</span>
+														<span class="sr-only">{$LL.customer_orders_page.labels.edit_line()}</span>
 														<span class="aria-hidden">
-															<BookUp />
+															<MoreVertical />
 														</span>
 													</button>
-												{/if}
+													<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+														<button
+															use:melt={$dialogTrigger}
+															class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+															data-testid={testId("edit-row")}
+															on:m-click={() => {
+																bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
+																dialogContent = {
+																	onConfirm: () => {},
+																	title: $LL.common.edit_book_dialog.title(),
+																	description: $LL.common.edit_book_dialog.description(),
+																	type: "edit-row"
+																};
+															}}
+															on:m-keydown={() => {
+																bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
 
-												{#if status === OrderLineStatus.Pending}
-													<button
-														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-														data-testid={testId("delete-row")}
-														on:click={() => handleDeleteLine(id)}
-													>
-														<span class="sr-only">{$LL.customer_orders_page.labels.delete_row()}</span>
-														<span class="aria-hidden">
-															<Trash2 />
-														</span>
-													</button>
-												{/if}
-											</div>
-										</PopoverWrapper>
-									</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
+																dialogContent = {
+																	onConfirm: () => {},
+																	title: $LL.common.edit_book_dialog.title(),
+																	description: $LL.common.edit_book_dialog.description(),
+																	type: "edit-row"
+																};
+															}}
+														>
+															<span class="sr-only">{$LL.customer_orders_page.labels.edit_row()}</span>
+															<span class="aria-hidden">
+																<FileEdit />
+															</span>
+														</button>
+
+														{#if status === OrderLineStatus.Received}
+															<button
+																class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+																data-testid={testId("collect-row")}
+																on:click={() => handleCollect(id)}
+															>
+																<span class="sr-only">{$LL.customer_orders_page.labels.collect()}</span>
+																<span class="aria-hidden">
+																	<BookUp />
+																</span>
+															</button>
+														{/if}
+
+														{#if status === OrderLineStatus.Pending}
+															<button
+																class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+																data-testid={testId("delete-row")}
+																on:click={() => handleDeleteLine(id)}
+															>
+																<span class="sr-only">{$LL.customer_orders_page.labels.delete_row()}</span>
+																<span class="aria-hidden">
+																	<Trash2 />
+																</span>
+															</button>
+														{/if}
+													</div>
+												</PopoverWrapper>
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					</div>
 				</div>
 			</div>
-		</div>
-	</div>
+		</AsyncData>
+	</svelte:fragment>
 </Page>
 
 <div use:melt={$portalled}>
@@ -537,7 +556,7 @@
 			validators: zod(createCustomerOrderSchema($LL, existingCustomers, customer?.displayId)),
 			onSubmit: async ({ validators }) => {
 				// Get the latest customer data to ensure we're validating against current state
-				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+				const latestCustomerIds = await getCustomerDisplayIdInfo(dbCtx.db);
 
 				// Create a new schema instance with the latest data and error message generator
 				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds, customer?.displayId);

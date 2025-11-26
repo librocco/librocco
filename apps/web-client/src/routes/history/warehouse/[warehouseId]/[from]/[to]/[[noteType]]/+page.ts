@@ -13,12 +13,15 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	const warehouseId = Number(params.warehouseId);
 	const noteType = ["inbound", "outbound"].includes(params.noteType) ? (params.noteType as NoteType) : undefined;
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
 	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
+	if (!dbCtxOrPromise) {
 		return { displayName: "N/A", transactions: [], noteType: "" };
 	}
+
+	// Await the dbCtx promise if it's a promise
+	const dbCtx = await dbCtxOrPromise;
 
 	const startDate = new Date(from);
 	const endDate = new Date(to);

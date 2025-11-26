@@ -19,12 +19,12 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("note:books");
 	depends("warehouse:list");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
 	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
+	if (!dbCtxOrPromise) {
 		return {
-			dbCtx,
+			dbCtx: null,
 			id,
 			displayName: "N/A",
 			warehouses: [] as Warehouse[],
@@ -43,6 +43,9 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 			>
 		};
 	}
+
+	// Await the dbCtx promise if it's a promise
+	const dbCtx = await dbCtxOrPromise;
 
 	const note = await getNoteById(dbCtx.db, id);
 	// If note not found, we shouldn't be here
@@ -67,11 +70,11 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	/**
 	Map {
   "978-3-16-148410-0" => Map {
-    111 => { displayName: "Warehouse111", quantity: 10 },
-    222 => { displayName: "Warehouse222", quantity: 5 }
+	111 => { displayName: "Warehouse111", quantity: 10 },
+	222 => { displayName: "Warehouse222", quantity: 5 }
   },
   "978-1-40-289462-6" => Map {
-    111 => { displayName: "Warehouse111", quantity: 8 }
+	111 => { displayName: "Warehouse111", quantity: 8 }
   }
 }
 	 */

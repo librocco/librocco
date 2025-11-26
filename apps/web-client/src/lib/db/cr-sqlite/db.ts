@@ -11,7 +11,10 @@ import { getMainThreadDB, getWorkerDB } from "./core";
 import { DEFAULT_VFS } from "./core/constants";
 import { ErrDBCorrupted, ErrDBSchemaMismatch } from "./errors";
 
+import type { AsyncData } from "$lib/types/async-data";
+export type { AsyncData };
 export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
+export type AsyncDbCtx = AsyncData<DbCtx>;
 
 // DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
 // chahe the DB as soon as the first time 'getInitializedDB' is called, so that all subsequent calls
@@ -61,15 +64,22 @@ export async function initializeDB(db: TXAsync) {
  */
 const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
 	// Integrity check
-	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
+	console.time("integrity_check");
+	const [[res]] = await db.execA<[string]>("PRAGMA quick_check");
+	console.timeEnd("integrity_check");
 	if (res !== "ok") {
 		throw new ErrDBCorrupted(res);
 	}
 
 	// Check if DB initialized
+	console.time("get_schema_info");
 	const schemaRes = await getSchemaNameAndVersion(db);
+	console.timeEnd("get_schema_info");
+
 	if (!schemaRes) {
+		console.time("initialize_db");
 		await initializeDB(db);
+		console.timeEnd("initialize_db");
 		return db;
 	}
 

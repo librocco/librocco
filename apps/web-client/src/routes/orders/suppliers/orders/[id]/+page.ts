@@ -11,12 +11,15 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	// Reactive on reconciled state -- calculated from existing reconciliation orders
 	depends("reconciliation:orders");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
 	// We're not in browser, no need for further processing
-	if (!dbCtx) {
+	if (!dbCtxOrPromise) {
 		return { orderLines: [] as PlacedSupplierOrderLine[] };
 	}
+
+	// Await the dbCtx promise if it's a promise
+	const dbCtx = await dbCtxOrPromise;
 
 	const id = parseInt(params.id);
 

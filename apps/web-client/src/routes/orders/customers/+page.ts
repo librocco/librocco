@@ -2,22 +2,23 @@ import type { PageLoad } from "./$types";
 import type { CustomerOrderListItem } from "$lib/db/cr-sqlite/types";
 
 import { getCustomerOrderList } from "$lib/db/cr-sqlite/customers";
+import { resolveDbCtx } from "$lib/utils/loading";
 
 import { timed } from "$lib/utils/timer";
 
 const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
 	depends("customer:list");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
-		return { customerOrders: [] as CustomerOrderListItem[] };
-	}
+	const dbCtxPromise = resolveDbCtx(dbCtxOrPromise);
 
-	const customerOrders = await getCustomerOrderList(dbCtx.db);
+	const customerOrdersPromise = dbCtxPromise.then((ctx) => {
+		if (!ctx) return [];
+		return getCustomerOrderList(ctx.db);
+	});
 
-	return { customerOrders };
+	return { dbCtx: dbCtxPromise, customerOrders: customerOrdersPromise };
 };
 
 export const load: PageLoad = timed(_load);

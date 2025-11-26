@@ -1,6 +1,7 @@
 import type { PageLoad } from "./$types";
 
 import { getAllSuppliers } from "$lib/db/cr-sqlite/suppliers";
+import { resolveDbCtx } from "$lib/utils/loading";
 
 import type { SupplierExtended } from "$lib/db/cr-sqlite/types";
 
@@ -9,16 +10,16 @@ import { timed } from "$lib/utils/timer";
 const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
 	depends("suppliers:list");
 
-	const { dbCtx } = await parent();
+	const { dbCtx: dbCtxOrPromise } = await parent();
 
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
-		return { suppliers: [] as SupplierExtended[] };
-	}
+	const dbCtxPromise = resolveDbCtx(dbCtxOrPromise);
 
-	const suppliers = await getAllSuppliers(dbCtx.db);
+	const suppliersPromise = dbCtxPromise.then((ctx) => {
+		if (!ctx) return [];
+		return getAllSuppliers(ctx.db);
+	});
 
-	return { suppliers };
+	return { dbCtx: dbCtxPromise, suppliers: suppliersPromise };
 };
 
 export const load: PageLoad = timed(_load);
