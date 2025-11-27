@@ -684,8 +684,8 @@ jobs:
         no_check_bucket = true
         EOF
       env:
-        CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_ACCESS_KEY_ID }}
-        CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_SECRET_ACCESS_KEY }}
+        CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_DEMO_ACCESS_KEY_ID }}
+        CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_DEMO_SECRET_ACCESS_KEY }}
         CLOUDFLARE_BUCKET_URL: ${{ secrets.CLOUDFLARE_BUCKET_URL }}
     - name: 'Upload to R2: apps/web-client/build/ -> demo/'
       run: rclone copy apps/web-client/build/ r2:librocco-demo/demo/
