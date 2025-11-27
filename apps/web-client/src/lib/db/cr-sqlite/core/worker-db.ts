@@ -5,13 +5,13 @@ import type { DBAsync, OnUpdateCallback, StmtAsync, TMutex, TXCallback, _TXAsync
 import DBWorker from "./worker-db.worker?worker";
 import type { MsgInit } from "./worker-db.worker";
 
-export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync> {
+export async function getWorkerDB(dbname: string, vfs: string): Promise<{ db: DBAsync; worker: Worker }> {
 	const wkr = await initWorker(dbname, vfs);
 
 	const ifc = Comlink.wrap<DBAsync>(wkr);
 	const [__mutex, siteid, filename, tablesUsedStmt] = await Promise.all([ifc.__mutex, ifc.siteid, ifc.filename, ifc.tablesUsedStmt]);
 
-	return new WorkerDB(ifc, __mutex, siteid, filename, tablesUsedStmt);
+	return { db: new WorkerDB(ifc, __mutex, siteid, filename, tablesUsedStmt), worker: wkr };
 }
 
 function initWorker(dbname: string, vfs: string) {
@@ -53,7 +53,7 @@ class WorkerDB implements DBAsync {
 		readonly siteid: string,
 		readonly filename: string,
 		readonly tablesUsedStmt: StmtAsync
-	) {}
+	) { }
 
 	prepare(sql: string) {
 		return this.remote.prepare(sql);

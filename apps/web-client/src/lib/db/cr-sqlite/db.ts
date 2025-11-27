@@ -13,7 +13,7 @@ import { ErrDBCorrupted, ErrDBSchemaMismatch } from "./errors";
 
 import type { AsyncData } from "$lib/types/async-data";
 export type { AsyncData };
-export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
+export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist; worker?: Worker };
 export type AsyncDbCtx = AsyncData<DbCtx>;
 
 // DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
@@ -36,11 +36,11 @@ export async function getSchemaNameAndVersion(db: TXAsync): Promise<[string, big
 	return [name, BigInt(version)];
 }
 
-export async function getDB(dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<DBAsync> {
+export async function getDB(dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<{ db: DBAsync; worker?: Worker }> {
 	const mainThreadVFS = new Set<VFSWhitelist>(["asyncify-idb-batch-atomic", "asyncify-opfs-any-context"]);
 	if (mainThreadVFS.has(vfs)) {
 		console.log(`using main thread db with vfs: ${vfs}`);
-		return getMainThreadDB(dbname, vfs);
+		return { db: await getMainThreadDB(dbname, vfs) };
 	}
 	console.log(`using worker db with vfs: ${vfs}`);
 	return getWorkerDB(dbname, vfs);
@@ -106,8 +106,11 @@ export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAU
 		// Register the request (promise) immediately, to prevent multiple init requests
 		// at the same time
 		const initialiser = getDB(dbname, vfs)
-			.then(checkAndInitializeDB)
-			.then((db) => ({ db, rx: rxtbl(db), vfs }));
+			.then(async ({ db, worker }) => {
+				await checkAndInitializeDB(db);
+				return { db, worker };
+			})
+			.then(({ db, worker }) => ({ db, rx: rxtbl(db), vfs, worker }));
 		dbCache.set(dbname, initialiser);
 
 		return await initialiser;

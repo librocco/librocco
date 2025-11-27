@@ -152,7 +152,7 @@
 		// Start the sync worker
 		//
 		// Init worker and sync interface
-		const wkr = new WorkerInterface(new SyncWorker());
+		// const wkr = new WorkerInterface(new SyncWorker());
 
 		let started = false;
 		// We need to wait for the DB to be initialized before starting the sync worker
@@ -160,21 +160,21 @@
 		const unsubscribe = resolvedDbCtxStore.subscribe((ctx) => {
 			if (ctx && !started) {
 				started = true;
-				console.log("Starting sync worker in 1s...");
-				setTimeout(() => {
-					console.log("Starting sync worker now...");
-					wkr.start(ctx.vfs);
-					sync.init(wkr);
+				
+				// Use the existing worker if available (for OPFS), otherwise fallback to creating a new SyncWorker (e.g. for IDB)
+				const workerInstance = ctx.worker || new SyncWorker();
+				const wkr = new WorkerInterface(workerInstance);
 
-					// Start the sync is it should be active.
-					if (get(syncActive)) {
-						sync.sync(get(syncConfig), { invalidateAll });
-					}
+				wkr.start(ctx.vfs);
+				sync.init(wkr);
 
-					// Start the sync progress store (listen to sync events)
-					syncProgressStore.start(wkr);
-					console.log("Sync worker started.");
-				}, 1000);
+				// Start the sync is it should be active.
+				if (get(syncActive)) {
+					sync.sync(get(syncConfig), { invalidateAll });
+				}
+
+				// Start the sync progress store (listen to sync events)
+				syncProgressStore.start(wkr);
 			}
 		});
 

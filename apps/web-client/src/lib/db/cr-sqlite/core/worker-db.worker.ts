@@ -1,20 +1,24 @@
-/**
- * NOTE: This is a dedicated worker used to house the DB instance. We're using it to instantiate the DB
- * with a VFS that has to be run within the worker context (and, normally, wrap the worker in Comlink for easier interaction).
- * see: ./worker-db.ts
- *
- * When starting the worker, the name of the worker is expected to be of the format: "<dbname>---<vfs>"
- */
-
 import * as Comlink from "comlink";
+import { type Config, defaultConfig } from "@vlcn.io/ws-client";
+import { start as startSync } from "@vlcn.io/ws-client/worker.js";
 
 import type { DBAsync, _TXAsync, OnUpdateCallback, TXCallback, VFSWhitelist } from "./types";
-
 import { getCrsqliteDB } from "./init";
+
+import { SyncTransportController, SyncEventEmitter } from "../../../workers/sync-transport-control";
+import type { SyncConfig } from "../../../workers/sync-transport-control";
+import type { MsgStart, MsgChangesReceived, MsgChangesProcessed, MsgProgress, MsgReady } from "../../../workers/types";
 
 export type MsgInitOk = { _type: "wkr-init"; status: "ok" };
 export type MsgWkrError = { _type: "wkr-init"; status: "error"; error: string; stack?: string };
 export type MsgInit = MsgInitOk | MsgWkrError;
+
+type InboundMessage = MsgStart;
+type OutboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady;
+
+const MAX_SYNC_CHUNK_SIZE = 1024;
+
+let dbInstance: DBAsync | null = null;
 
 async function start() {
 	try {
@@ -25,6 +29,7 @@ async function start() {
 		}
 
 		const _db = await getCrsqliteDB(dbname, vfs);
+		dbInstance = _db;
 		console.log(`[worker] db initialised!`);
 
 		const db = wrapDB(_db);
@@ -40,8 +45,54 @@ async function start() {
 }
 start();
 
+// Sync Logic
+self.addEventListener("message", (e) => {
+	const msg = e.data as InboundMessage;
+	if (msg._type === "start") {
+		handleStartSync(msg.payload);
+	}
+});
+
+function sendMessage(msg: OutboundMessage) {
+	self.postMessage(msg);
+}
+
+function handleStartSync(payload: MsgStart["payload"]) {
+	console.log("[worker] starting sync...");
+
+	const dbProvider: Config["dbProvider"] = async (dbname: string) => {
+		// Return the already initialized DB instance
+		if (!dbInstance) {
+			throw new Error("DB not initialized yet");
+		}
+		return dbInstance;
+	};
+
+	const config: Config = {
+		dbProvider,
+		transportProvider: wrapTransportProvider(defaultConfig.transportProvider, createProgressEmitter(), {
+			maxChunkSize: MAX_SYNC_CHUNK_SIZE
+		})
+	};
+
+	startSync(config);
+	self.postMessage({ _type: "ready" }); // Notify that sync is ready
+}
+
+function createProgressEmitter() {
+	const progressEmitter = new SyncEventEmitter();
+	progressEmitter.onChangesReceived((payload) => sendMessage({ _type: "changesReceived", payload }));
+	progressEmitter.onChangesProcessed((payload) => sendMessage({ _type: "changesProcessed", payload }));
+	progressEmitter.onProgress((payload) => sendMessage({ _type: "progress", payload }));
+	return progressEmitter;
+}
+
+function wrapTransportProvider(provider: Config["transportProvider"], emitter: SyncEventEmitter, config: SyncConfig): Config["transportProvider"] {
+	return (...params: Parameters<Config["transportProvider"]>) => new SyncTransportController(provider(...params), emitter, config);
+}
+
 class WrappedDB implements DBAsync {
-	constructor(readonly internal: DBAsync) {}
+	constructor(readonly internal: DBAsync) { }
 
 	get __mutex() {
 		return this.internal.__mutex;
