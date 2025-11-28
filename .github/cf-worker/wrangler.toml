@@ -3,13 +3,24 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 account_id = "4ca1b102baca2e7067daf57e186e20c4"
 
-# R2 bucket binding
+# R2 bucket binding for CI previews (test.libroc.co)
 [[r2_buckets]]
 binding = "R2_BUCKET"
 bucket_name = "librocco-ci"
 remote = true
 
-# Routes - bind to test.libroc.co using zone route
+# R2 bucket binding for demo/website (libroc.co)
+[[r2_buckets]]
+binding = "R2_BUCKET_DEMO"
+bucket_name = "librocco-demo"
+remote = true
+
+# Routes - bind to test.libroc.co for CI previews
 [[routes]]
 pattern = "test.libroc.co/*"
+zone_name = "libroc.co"
+
+# Routes - bind to libroc.co for demo/website
+[[routes]]
+pattern = "libroc.co/*"
 zone_name = "libroc.co"
