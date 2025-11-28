@@ -32,10 +32,30 @@ function isMethodAllowed(method) {
 }
 
 /**
+ * Get the appropriate R2 bucket based on hostname
+ */
+function getBucket(hostname, env) {
+  if (hostname === 'libroc.co') {
+    return env.R2_BUCKET_DEMO;
+  }
+  return env.R2_BUCKET;  // test.libroc.co -> librocco-ci
+}
+
+/**
+ * Get the root redirect path based on hostname
+ */
+function getRootRedirect(hostname) {
+  if (hostname === 'libroc.co') {
+    return '/demo/';
+  }
+  return '/main/';  // test.libroc.co -> CI previews
+}
+
+/**
  * Fetch object from R2 bucket
  */
-async function fetchFromR2(key, env) {
-  return await env.R2_BUCKET.get(key);
+async function fetchFromR2(key, bucket) {
+  return await bucket.get(key);
 }
 
 /**
@@ -76,22 +96,23 @@ export default {
     if (!isMethodAllowed(request.method)) return new Response('Method not allowed', { status: 405 });
 
     const url = new URL(request.url);
+    const bucket = getBucket(url.hostname, env);
     let key = url.pathname.slice(1);
-    if (!key) return createRedirectResponse(url, '/main/');
+    if (!key) return createRedirectResponse(url, getRootRedirect(url.hostname));
 
     // Try direct fetch
-    let object = await fetchFromR2(key, env);
+    let object = await fetchFromR2(key, bucket);
     let actualKey = key;
 
     // Try directory index: /foo/ -> /foo/index.html
     if (!object && key.endsWith('/')) {
-      object = await fetchFromR2(key + 'index.html', env);
+      object = await fetchFromR2(key + 'index.html', bucket);
       if (object) actualKey = key + 'index.html';
     }
 
     // Try directory redirect: /foo -> /foo/
     if (!object && !key.endsWith('/')) {
-      const dirCheck = await fetchFromR2(key + '/index.html', env);
+      const dirCheck = await fetchFromR2(key + '/index.html', bucket);
       if (dirCheck) {
         return createRedirectResponse(url, '/' + key + '/');
       }
