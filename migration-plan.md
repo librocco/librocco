@@ -206,6 +206,9 @@ export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
 ```
 
+> **Alternative: `PRAGMA user_version`**
+> Industry standard uses an explicit integer version rather than content hashing. Pros: No false positives from comment changes. Cons: Requires discipline to increment. Our hash approach with silent automigration effectively handles false positives anyway.
+
 **Initialization flow**: Clean separation of concerns:
 1. `getDB()` → opens database (worker or main thread)
 2. `checkAndInitializeDB()` → validates integrity, checks schema, initializes if empty
@@ -294,6 +297,11 @@ From `migrations.ts`:
 ```
 
 The JS migration code opens an in-memory DB for comparison, which can fail if the schema is invalid. And it doesn't run in a transaction. If power is lost mid-migration... half-migrated database.
+
+**Note on SQLite DDL & Transactions:**
+Unlike MySQL/Oracle, SQLite supports transactional DDL—you CAN roll back `ALTER TABLE`, `CREATE TABLE`, etc. The production `db.automigrateTo()` (calling cr-sqlite's Rust `crsql_automigrate`) wraps everything in a transaction internally. The JS debug version uses a SAVEPOINT only for table modifications, leaving schema apply and version tracking outside—hence the "debug-only" warning.
+
+**Performance consideration:** In OPFSCoopSyncVFS, each statement outside an explicit transaction acquires/releases the file lock. The production migration path batches operations correctly.
 
 ### 6. Initial Sync vs Migration Race
 
@@ -455,6 +463,19 @@ UPDATE customer SET email_new = email;
 **Pros**: Rolling upgrades without breakage
 **Cons**: Schema bloat, requires discipline
 
+### 8. Safe Schema Change Guidelines (Append-Only Evolution)
+
+In a distributed local-first system, destructive schema changes are dangerous. If Device A drops a column and syncs with Device B (still on old schema), Device B may send data for the dropped column.
+
+**Rules:**
+1. **Never drop columns** — mark as deprecated in application logic
+2. **Never rename columns** — add new column, migrate data, deprecate old
+3. **Add nullable columns with defaults** — old clients can sync without knowing about new columns
+4. **Add tables freely** — safe operation
+5. **Remove tables only after all clients updated** — coordinate via app versioning
+
+This "append-only" approach allows rolling upgrades without sync breakage.
+
 ---
 
 ## Questions for Discussion
@@ -477,10 +498,11 @@ UPDATE customer SET email_new = email;
    - Main thread DB + worker sync: Simplest, but blocks UI
 
 4. **What about multi-tab scenarios?**
-   - SharedWorker for single DB instance
+   - ~~SharedWorker for single DB instance~~ *(Not viable: `FileSystemSyncAccessHandle` unavailable in SharedWorkers—only Dedicated Workers)*
+   - **Pattern A (Shared File, Distinct Workers):** Each tab spawns Dedicated Worker, OPFSCoopSyncVFS handles locking
+   - **Pattern B (Leader Election):** Tabs compete for `app_sync_leader` lock; leader manages WebSocket, others write locally
    - BroadcastChannel for coordination
    - Lock API to prevent concurrent migrations
-   - Accept that tabs may race and handle it
 
 5. **Server's role in version management?**
    - Dumb pipe (current)
@@ -692,6 +714,42 @@ async function safeAutoMigrate(db: DBAsync): Promise<void> {
   });
 }
 ```
+
+**Leader Election for Sync** (prevents duplicate WebSocket connections across tabs):
+
+```typescript
+// Only one tab should maintain the WebSocket connection
+async function tryBecomeLeader(onPromoted: () => void) {
+  navigator.locks.request('app_sync_leader', { ifAvailable: true }, async (lock) => {
+    if (lock) {
+      onPromoted(); // We are the leader, start WebSocket
+      // Hold lock until tab closes (never resolve)
+      return new Promise(() => {});
+    }
+    // Not leader - another tab handles sync
+    // This tab still writes to OPFS; leader picks up changes
+  });
+}
+```
+
+This pattern ensures:
+- All tabs can read/write to the DB (OPFSCoopSyncVFS handles file locking)
+- Only one tab maintains the WebSocket connection (saves bandwidth/server resources)
+- If leader tab closes, lock releases and another tab takes over seamlessly
+
+### Startup Sequence Checklist
+
+Validate implementation against this order:
+
+| Phase | Action | Constraint |
+|-------|--------|------------|
+| 1 | Set COOP/COEP headers | Server-side; required for SharedArrayBuffer |
+| 2 | Load WASM module | Async; wait for instantiation |
+| 3 | Register VFS | `OPFSCoopSyncVFS.create()` before opening DB |
+| 4 | Open database | Pass correct VFS name to `sqlite3_open_v2` |
+| 5 | Load cr-sqlite extension | Must load on *every* new connection |
+| 6 | Run migrations | Check `PRAGMA user_version` or schema hash |
+| 7 | Connect WebSocket | Only after DB ready and migrated |
 
 ### What This Achieves
 
