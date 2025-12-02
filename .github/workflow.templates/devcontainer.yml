@@ -29,4 +29,7 @@ jobs:
           imageName: ghcr.io/${{ github.repository }}/devcontainer
           cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
           push: filter
-          runCmd: echo "Devcontainer started successfully"
+          runCmd: |
+            rush build --to @librocco/web-client && \
+            rush typecheck && \
+            echo "Build and typecheck passed!"

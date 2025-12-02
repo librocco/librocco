@@ -41,11 +41,11 @@
 			"onAutoForward": "silent"
 		}
 	},
-	// One-time setup on first container creation
-	// rush update: ~3-5min (installs all dependencies)
-	// Subsequent container opens reuse installed deps (instant!)
-	// Fix volume permissions in CI before running rush
-	"postCreateCommand": "sudo chown -Rf node:node common/temp ; rush update",
+	// Initialize workspace from pre-built cache (fast!)
+	// - First run: copies deps from image cache (~15-30s)
+	// - Subsequent runs: skips if already initialized (instant)
+	// - Detects lockfile changes and runs rush update if needed
+	"postCreateCommand": "bash .devcontainer/init-workspace.sh ${containerWorkspaceFolder}",
 	// VS Code customizations
 	"customizations": {
 		"vscode": {

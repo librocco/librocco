@@ -69,10 +69,10 @@ tmp/
 temp/
 *.tmp
 
-# Large submodules (we need the structure but not the full content during build)
-# Note: We DO need 3rd-party/artefacts/ so don't exclude it
-3rd-party/js/.git/
-3rd-party/typed-sql/.git/
+# Large submodule content not needed for Rush/npm builds
+# We only need package.json files from submodules, not their build artifacts
+3rd-party/js/
+3rd-party/typed-sql/
 
 # Keep these files (negation patterns)
 # These are critical for Rush to work
