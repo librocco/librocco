@@ -7,6 +7,12 @@ MARKER="$WORKSPACE/common/temp/.devcontainer-initialized"
 LOCKFILE_CACHE="/prebuilt-cache/pnpm-lock.yaml"
 LOCKFILE_LOCAL="$WORKSPACE/common/config/rush/pnpm-lock.yaml"
 
+# Ensure the volume is writable by the current user
+if [ ! -w "${WORKSPACE_FOLDER}/common/temp" ]; then
+    echo "Fixing volume permissions..."
+    sudo chown -R $(whoami) "${WORKSPACE_FOLDER}/common/temp"
+fi
+
 if [ ! -f "$MARKER" ]; then
     echo "⏳ First run: initializing dependencies from pre-built cache..."
 
