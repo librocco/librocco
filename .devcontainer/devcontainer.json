@@ -1,5 +1,7 @@
 {
 	"name": "Librocco Dev",
+	// Try to pull pre-built image from GHCR; fall back to local build if unavailable
+	"image": "ghcr.io/librocco/librocco/devcontainer:latest",
 	"build": {
 		"dockerfile": "Dockerfile",
 		"context": ".."

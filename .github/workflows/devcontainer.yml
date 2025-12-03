@@ -1,13 +1,12 @@
 name: Devcontainer Build
 "on":
-  pull_request:
-    paths:
-    - .devcontainer/**
   push:
     branches:
     - main
+    - '**'
     paths:
     - .devcontainer/**
+    - common/config/rush/pnpm-lock.yaml
   workflow_dispatch: null
 permissions:
   contents: read
@@ -15,6 +14,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[build-devcontainer]')
     steps:
     - name: Checkout repository and submodules
       uses: actions/checkout@v4

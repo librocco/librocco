@@ -1,54 +1,103 @@
 # Librocco Devcontainer
 
-Fast, reproducible development environment for the Librocco monorepo.
+## Quick Start
 
-## What's Included
+### Prerequisites
+- [Docker](https://www.docker.com/products/docker-desktop/)
 
-- **Node 20.19.2** (matches CI)
-- **Rush 5.102.0** (monorepo manager)
-- **git-lfs** (for LFS files)
-- **VS Code extensions**: Svelte, ESLint, Prettier, GitHub Actions
+### IDEs with Dev Container support (VS Code, Zed, etc.)
 
-## Files
+Just open the repo and use the "Reopen in Container" command.
 
-- **`Dockerfile`** - Lightweight container image (~3GB). No prebundled dependencies - they're installed on first container creation for reliability.
-- **`devcontainer.json`** - VS Code configuration, extensions, and lifecycle hooks
-- **`.dockerignore`** - Optimizes Docker build context
+### Any other editor
 
-## First Time Setup
-
-1. Open repo in VS Code
-2. Command Palette → "Dev Containers: Reopen in Container"
-3. Wait ~5-7 minutes (image build + `rush update`)
-4. Ready to code!
-
-## Subsequent Opens
-
-Container reuses installed dependencies → **instant startup** ⚡
-
-## Common Commands
+Use the devcontainer CLI:
 
 ```bash
-rush build          # Build all projects
-rush typecheck      # Type check all projects
-cd apps/web-client
-rushx start         # Start Vite dev server (port 5173)
-cd apps/sync-server
-rushx start         # Start sync server (port 3000)
+npm install -g @devcontainers/cli
+
+# Start the container
+devcontainer up --workspace-folder .
+
+# Get a shell
+devcontainer exec --workspace-folder . bash
+
+# Or run commands directly
+devcontainer exec --workspace-folder . rush build
 ```
 
-## Build State Isolation
+Edit files with your editor on the host, run build commands in the container.
 
-The `common/temp/` directory (where Rush stores build state and pnpm cache) is mounted as an isolated Docker volume, **not** from your host filesystem.
+### What Happens
+- **First time (~2-3 min)**: Downloads pre-built image from GHCR (~3GB), copies cached dependencies
+- **Subsequent opens**: Instant startup (dependencies already in place)
+- **Different branch with different deps**: Automatically detected and reconciled via `rush update`
 
-**Why?**
-- ✅ **No host state interference**: Works regardless of what's on your local machine
-- ✅ **No path mismatches**: Eliminates "pnpm store path changed" errors
-- ✅ **Persists across rebuilds**: Subsequent container opens are instant
-- ✅ **True isolation**: Container is self-contained, as it should be
+### Common Commands
+```bash
+rush build              # Build all projects
+rush typecheck          # Type check all projects
+cd apps/web-client && rushx start    # Start web client (port 5173)
+cd apps/sync-server && rushx start   # Start sync server (port 3000)
+```
 
-**Trade-off:**
-- Can't inspect `common/temp/` from host (this is intentional!)
-- Source code and config files (like `common/config/rush/pnpm-lock.yaml`) remain on host as expected
+### Ports
+| Port | Service |
+|------|---------|
+| 5173 | Web Client (Vite) |
+| 3000 | Sync Server |
+| 6006 | Storybook |
 
-This design ensures the devcontainer works for **everyone**, regardless of local development setup or existing build state.
+---
+
+## Image Maintenance
+
+This section is for contributors working on the devcontainer image itself.
+
+### How It Works
+
+1. **Image source**: Pre-built from `main` branch, hosted at `ghcr.io/librocco/librocco/devcontainer:latest`
+2. **Developers pull, never build**: `devcontainer.json` uses `image:` not `build:`
+3. **Branch compatibility**: The `init-workspace.sh` script detects lockfile changes and runs `rush update` if your branch has different dependencies
+
+### CI Workflow
+
+The workflow (`.github/workflows/devcontainer.yml`) rebuilds the image when:
+- Push to `main` touches `.devcontainer/**` OR `common/config/rush/pnpm-lock.yaml`
+- Any branch with `[build-devcontainer]` in the commit message (for testing before merge)
+- Manual trigger via workflow dispatch
+
+We keep a single `latest` tag to minimize GHCR storage quota.
+
+### Testing Changes Locally
+
+Before merging devcontainer changes, build the image the same way CI does:
+
+```bash
+# Build with devcontainer CLI (includes features from devcontainer.json)
+devcontainer build --workspace-folder . --image-name ghcr.io/librocco/librocco/devcontainer:latest
+
+# Test it
+devcontainer up --workspace-folder .
+devcontainer exec --workspace-folder . bash
+```
+
+This builds locally and tags as `ghcr.io/librocco/librocco/devcontainer:latest`, so `devcontainer up` uses your local image instead of trying to pull from GHCR.
+
+Note: Plain `docker build` only builds the Dockerfile. The `devcontainer build` command also layers in the "features" (git-lfs, zsh) specified in `devcontainer.json`.
+
+### Manual Rebuild
+
+Go to Actions → "Devcontainer Build" → "Run workflow" on `main`.
+
+### Dockerfile Architecture
+
+Multi-stage build:
+1. **Builder stage**: Installs Rush, runs `rush update --purge`, caches deps in `/prebuilt-cache/`
+2. **Final stage**: Minimal image with Rush + git-lfs, copies only the cached deps
+
+Key files:
+- `Dockerfile` - Multi-stage build
+- `init-workspace.sh` - First-run initialization (copies cache, detects lockfile changes)
+- `devcontainer.json` - Config for IDEs and devcontainer CLI
+- `../.dockerignore` - Excludes unnecessary files from build context
