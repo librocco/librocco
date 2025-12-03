@@ -36,6 +36,7 @@
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
+	import { updateSyncConnectivityMonitor } from "$lib/stores";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
@@ -145,6 +146,7 @@
 
 		wkr.start(vfs);
 		sync.init(wkr);
+		updateSyncConnectivityMonitor(wkr);
 
 		// Start the sync is it should be active.
 		if ($syncActive) {

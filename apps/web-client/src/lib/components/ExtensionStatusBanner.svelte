@@ -1,14 +1,16 @@
 <script lang="ts">
-	import type { PluginsInterface } from "$lib/plugins";
 	import { invalidateAll } from "$app/navigation";
-	import { createDBConnectivityStore, createExtensionAvailabilityStore } from "$lib/stores";
-	import { updateTranslationOverrides, translationOverridesStore, TRANSLATION_OVERRIDES_ENABLED } from "$lib/i18n-overrides";
+
 	import LL from "@librocco/shared/i18n-svelte";
+
+	import type { PluginsInterface } from "$lib/plugins";
+	import { createExtensionAvailabilityStore, syncConnectivityMonitor } from "$lib/stores";
+	import { updateTranslationOverrides, translationOverridesStore, TRANSLATION_OVERRIDES_ENABLED } from "$lib/i18n-overrides";
 
 	export let plugins: PluginsInterface;
 
+	const { connected: syncConnected } = syncConnectivityMonitor;
 	$: extensionAvailable = createExtensionAvailabilityStore(plugins);
-	$: dbConnectivity = createDBConnectivityStore();
 
 	async function updateTranslationsButtonClicked() {
 		await updateTranslationOverrides({ notOlderThanSecs: 0 });
@@ -29,7 +31,7 @@
 		<p class="leading-none">{$LL.misc_components.extension_banner.book_data_extension()}</p>
 	</div>
 	<div class="badge-content badge-outline badge badge-md gap-x-2">
-		<div class="block h-3 w-3 rounded-full align-baseline {$dbConnectivity ? 'bg-success' : 'bg-error'}"></div>
+		<div class="block h-3 w-3 rounded-full align-baseline {$syncConnected ? 'bg-success' : 'bg-error'}"></div>
 		<p class="leading-none">{$LL.misc_components.extension_banner.remote_db()}</p>
 	</div>
 </div>

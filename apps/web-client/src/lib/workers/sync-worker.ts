@@ -4,9 +4,17 @@ import { start } from "@vlcn.io/ws-client/worker.js";
 // Interface to WASM sqlite
 import { createDbProvider } from "@vlcn.io/ws-browserdb";
 
-import type { MsgStart, MsgChangesReceived, MsgChangesProcessed, MsgProgress, MsgReady } from "./types";
+import type {
+	MsgStart,
+	MsgChangesReceived,
+	MsgChangesProcessed,
+	MsgProgress,
+	MsgReady,
+	MsgConnectionOpen,
+	MsgConnectionClose
+} from "./types";
 
-import { SyncTransportController, SyncEventEmitter } from "./sync-transport-control";
+import { SyncTransportController, ConnectionEventEmitter, SyncEventEmitter } from "./sync-transport-control";
 import type { SyncConfig } from "./sync-transport-control";
 
 import { createVFSFactory } from "$lib/db/cr-sqlite/core";
@@ -14,7 +22,7 @@ import { createWasmInitializer } from "@vlcn.io/crsqlite-wasm";
 import { getWasmBuildArtefacts } from "$lib/db/cr-sqlite/core/init";
 
 type InboundMessage = MsgStart;
-type OutboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady;
+type OutboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady | MsgConnectionOpen | MsgConnectionClose;
 
 const MAX_SYNC_CHUNK_SIZE = 1024;
 
@@ -83,13 +91,14 @@ function handleStart(payload: MsgStart["payload"]) {
 
 	const config: Config = {
 		dbProvider,
-		transportProvider: wrapTransportProvider(defaultConfig.transportProvider, createProgressEmitter(), {
+		transportProvider: wrapTransportProvider(defaultConfig.transportProvider, createProgressEmitter(), createConnectionEventEmitter(), {
 			maxChunkSize: MAX_SYNC_CHUNK_SIZE
 		})
 	};
 
 	// Start the sync process
 	start(config);
+
 	self.postMessage("ready");
 }
 
@@ -113,6 +122,22 @@ function createProgressEmitter() {
 	return progressEmitter;
 }
 
+function createConnectionEventEmitter() {
+	// Emitter object
+	// - emits sync events to the main thread
+	// - used to monitor the sync state/progress
+	const connectionEventEmitter = new ConnectionEventEmitter();
+
+	connectionEventEmitter.onConnOpen(() => {
+		sendMessage({ _type: "connection.open", payload: null });
+	});
+	connectionEventEmitter.onConnClose(() => {
+		sendMessage({ _type: "connection.close", payload: null });
+	});
+
+	return connectionEventEmitter;
+}
+
 type TransportProvider = Config["transportProvider"];
 
 /**
@@ -123,6 +148,12 @@ type TransportProvider = Config["transportProvider"];
  * @param config
  * @returns A wrapped transport provider
  */
-function wrapTransportProvider(provider: TransportProvider, emitter: SyncEventEmitter, config: SyncConfig): TransportProvider {
-	return (...params: Parameters<TransportProvider>) => new SyncTransportController(provider(...params), emitter, config);
+function wrapTransportProvider(
+	provider: TransportProvider,
+	progressEmitter: SyncEventEmitter,
+	connectionEmitter: ConnectionEventEmitter,
+	config: SyncConfig
+): TransportProvider {
+	return (...params: Parameters<TransportProvider>) =>
+		new SyncTransportController(provider(...params), progressEmitter, connectionEmitter, config);
 }
