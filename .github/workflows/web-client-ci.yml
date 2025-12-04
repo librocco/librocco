@@ -240,12 +240,8 @@ jobs:
         fi
     - name: Build the app
       run: cd apps/web-client && rushx build:e2e
-    - name: Restructure build for /preview base path
-      run: |
-        cd apps/web-client
-        mkdir preview
-        mv build/* preview/
-        mv preview build/
+      env:
+        BASE_PATH: /preview
     - name: Download playwright browsers
       run: cd apps/e2e && npx playwright install
     - name: Install uv (Python package manager)
@@ -282,7 +278,8 @@ jobs:
         name: e2e-blob-report-${{ matrix.shardIndex }}
         path: apps/e2e/blob-report
         retention-days: 2
-    - uses: actions/upload-artifact@v4
+    - name: Upload launcher logs
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: launcher-logs-${{ matrix.shardIndex }}

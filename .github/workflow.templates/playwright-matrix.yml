@@ -6,6 +6,11 @@
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
 #@ load("build-crsqlite.lib.yml", "build_crsqlite")
+#@ load("launcher.lib.yml", "install_uv")
+#@ load("launcher.lib.yml", "clean_test_dbs")
+#@ load("launcher.lib.yml", "start_launcher")
+#@ load("launcher.lib.yml", "wait_for_services")
+#@ load("launcher.lib.yml", "stop_launcher")
 
 name: PlaywrightMatrix
 
@@ -42,10 +47,17 @@ jobs:
       -  #@ rush_build()
       - name: Build the app
         run: cd apps/web-client && rushx build:e2e
+        env:
+          BASE_PATH: /preview
       - name: Download playwright browsers
         run: cd apps/e2e && npx playwright install
+      -  #@ install_uv()
+      -  #@ clean_test_dbs()
+      -  #@ start_launcher()
+      -  #@ wait_for_services()
       - name: Run Playwright tests
         run: cd apps/e2e && rushx test:ci
+      -  #@ stop_launcher()
       - uses: actions/upload-artifact@v4
         if: always()
         with:

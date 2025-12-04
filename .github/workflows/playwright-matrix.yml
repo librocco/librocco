@@ -127,10 +127,36 @@ jobs:
         fi
     - name: Build the app
       run: cd apps/web-client && rushx build:e2e
+      env:
+        BASE_PATH: /preview
     - name: Download playwright browsers
       run: cd apps/e2e && npx playwright install
+    - name: Install uv (Python package manager)
+      uses: astral-sh/setup-uv@v7
+      with:
+        enable-cache: true
+        working-directory: python-apps/launcher
+    - name: Clean stale test DBs (fix schema mismatch)
+      run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
+    - name: Start headless launcher in background
+      run: |
+        mkdir -p ~/.local/share/librocco-launcher/logs
+        uv run --directory python-apps/launcher python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
+        echo $! > /tmp/launcher.pid
+        echo "Started launcher (PID: $(cat /tmp/launcher.pid))"
+    - name: Wait for services to be ready
+      run: |
+        echo "Waiting for sync server..."
+        timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
+        echo "Waiting for Caddy/web app..."
+        timeout 30 bash -c 'until curl -f -k https://localhost:8080/preview/ 2>/dev/null; do sleep 1; done'
+        echo "All services ready!"
     - name: Run Playwright tests
       run: cd apps/e2e && rushx test:ci
+    - name: Stop services
+      if: always()
+      run: |
+        if [ -f /tmp/launcher.pid ]; then kill $(cat /tmp/launcher.pid) || true; fi
     - uses: actions/upload-artifact@v4
       if: always()
       with:

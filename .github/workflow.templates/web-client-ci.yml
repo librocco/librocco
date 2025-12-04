@@ -9,6 +9,12 @@
 #@ load("build-crsqlite.lib.yml", "build_crsqlite")
 #@ load("r2.lib.yml", "install_and_configure_rclone")
 #@ load("r2.lib.yml", "upload_to_r2")
+#@ load("launcher.lib.yml", "install_uv")
+#@ load("launcher.lib.yml", "clean_test_dbs")
+#@ load("launcher.lib.yml", "start_launcher")
+#@ load("launcher.lib.yml", "wait_for_services")
+#@ load("launcher.lib.yml", "stop_launcher")
+#@ load("launcher.lib.yml", "upload_launcher_logs")
 
 name: Web App CI
 
@@ -52,42 +58,19 @@ jobs:
       -  #@ rush_build()
       - name: Build the app
         run: cd apps/web-client && rushx build:e2e
-      - name: Restructure build for /preview base path
-        run: |
-          cd apps/web-client
-          mkdir preview
-          mv build/* preview/
-          mv preview build/
+        env:
+          BASE_PATH: /preview
       - name: Download playwright browsers
         run: cd apps/e2e && npx playwright install
-      - name: Install uv (Python package manager)
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          working-directory: python-apps/launcher
-      - name: Clean stale test DBs (fix schema mismatch)
-        run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
-      - name: Start headless launcher in background
-        run: |
-          mkdir -p ~/.local/share/librocco-launcher/logs
-          uv run --directory python-apps/launcher python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
-          echo $! > /tmp/launcher.pid
-          echo "Started launcher (PID: $(cat /tmp/launcher.pid))"
-      - name: Wait for services to be ready
-        run: |
-          echo "Waiting for sync server..."
-          timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
-          echo "Waiting for Caddy/web app..."
-          timeout 30 bash -c 'until curl -f -k https://localhost:8080/preview/ 2>/dev/null; do sleep 1; done'
-          echo "All services ready!"
+      -  #@ install_uv()
+      -  #@ clean_test_dbs()
+      -  #@ start_launcher()
+      -  #@ wait_for_services()
       - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: cd apps/e2e && rushx test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
           SHARD_INDEX: "${{ matrix.shardIndex }}"
-      - name: Stop services
-        if: always()
-        run: |
-          if [ -f /tmp/launcher.pid ]; then kill $(cat /tmp/launcher.pid) || true; fi
+      -  #@ stop_launcher()
       #! upload each shard's blob so we can merge later
       - uses: actions/upload-artifact@v4
         if: always()
@@ -95,12 +78,7 @@ jobs:
           name: e2e-blob-report-${{ matrix.shardIndex }}
           path: apps/e2e/blob-report
           retention-days: 2
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: launcher-logs-${{ matrix.shardIndex }}
-          path: ~/.local/share/librocco-launcher/logs/
-          retention-days: 2
+      -  #@ upload_launcher_logs("-${{ matrix.shardIndex }}")
 
   lint-and-typecheck:
     runs-on: ubuntu-latest

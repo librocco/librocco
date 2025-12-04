@@ -1,0 +1,48 @@
+#@ def install_uv():
+name: Install uv (Python package manager)
+uses: astral-sh/setup-uv@v7
+with:
+  enable-cache: true
+  working-directory: python-apps/launcher
+#@ end
+---
+#@ def clean_test_dbs():
+name: Clean stale test DBs (fix schema mismatch)
+run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
+#@ end
+---
+#@ def start_launcher():
+name: Start headless launcher in background
+run: |
+  mkdir -p ~/.local/share/librocco-launcher/logs
+  uv run --directory python-apps/launcher python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
+  echo $! > /tmp/launcher.pid
+  echo "Started launcher (PID: $(cat /tmp/launcher.pid))"
+#@ end
+---
+#@ def wait_for_services():
+name: Wait for services to be ready
+run: |
+  echo "Waiting for sync server..."
+  timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
+  echo "Waiting for Caddy/web app..."
+  timeout 30 bash -c 'until curl -f -k https://localhost:8080/preview/ 2>/dev/null; do sleep 1; done'
+  echo "All services ready!"
+#@ end
+---
+#@ def stop_launcher():
+name: Stop services
+if: always()
+run: |
+  if [ -f /tmp/launcher.pid ]; then kill $(cat /tmp/launcher.pid) || true; fi
+#@ end
+---
+#@ def upload_launcher_logs(suffix=""):
+name: Upload launcher logs
+uses: actions/upload-artifact@v4
+if: always()
+with:
+  name: #@ "launcher-logs" + suffix
+  path: ~/.local/share/librocco-launcher/logs/
+  retention-days: 2
+#@ end
