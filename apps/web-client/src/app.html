@@ -49,16 +49,18 @@
 				}
 			}
 
-			h1 {
+			#app-splash h1 {
 				font-size: 1.1rem;
 				font-weight: 600;
 				margin: 0;
+				line-height: 1.2;
 			}
-			h2 {
+			#app-splash h2 {
 				font-size: 0.9rem;
 				font-weight: 400;
 				opacity: 0.6;
 				margin: 0.25rem 0 0;
+				line-height: 1.2;
 			}
 
 			@media (prefers-color-scheme: dark) {
@@ -72,7 +74,9 @@
 			}
 			#app-splash.bye {
 				animation: bye 0.2s ease-in forwards;
+				will-change: transform, opacity;
 			}
+
 			@keyframes bye {
 				to {
 					opacity: 0;
@@ -89,8 +93,10 @@
 					transform="translate(-250, 0)"
 				/>
 			</svg>
-			<h1>Librocco is loading. Hang tight!</h1>
-			<h2>Or hang loose – your choice.</h2>
+			<div>
+				<h1>Librocco is loading. Hang tight!</h1>
+				<h2>Or hang loose – your choice.</h2>
+			</div>
 		</div>
 		<div style="height: 100%">%sveltekit.body%</div>
 	</body>
