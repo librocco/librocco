@@ -281,6 +281,9 @@ export const testBase = test.extend<BaseTestFixture>({
 			// https://github.com/sveltejs/kit/pull/6484
 			// * this is set in the onMount hook of the root +layout.svelte to indicate when hydration has completed
 			await page.waitForSelector('body[hydrated="true"]', { timeout: 10000 });
+			// * We also need to wait for the #app-splash element to be detached which indicates the initial load (db initialised) has completed
+			// * This is defined in the app.html file and detached in the onMount hook of the root +layout.svelte
+			await page.waitForSelector("#app-splash", { state: "detached", timeout: 10000 });
 
 			return res;
 		};

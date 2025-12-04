@@ -183,7 +183,7 @@ testOrders("customer page: update: doesn't submit the form without any changes m
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.waitFor();
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
@@ -213,7 +213,7 @@ testOrders("customer page: update: submits the form with all fields changed", as
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -246,7 +246,7 @@ testOrders("customer page: update: submits the form with only name updated", asy
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -279,7 +279,7 @@ testOrders("customer page: update: submits the form with only displayId updated"
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -312,7 +312,7 @@ testOrders("customer page: update: submits the form with only email updated", as
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -345,7 +345,7 @@ testOrders("customer page: update: submits the form with only deposit updated", 
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -374,7 +374,7 @@ testOrders("customer page: update: doesn't allow for blank name field update", a
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -399,7 +399,7 @@ testOrders("customer page: update: doesn't allow for blank displayId field updat
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -428,7 +428,7 @@ testOrders("customer page: update: doesn't allow for submission with invalid ema
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -461,7 +461,7 @@ testOrders("customer page: update: allows updates to customer an email (previous
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -494,7 +494,7 @@ testOrders("customer page: update: allows for blank email string", async ({ page
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click(); // First as there might be 2 (in case of no customer orders)
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
@@ -524,7 +524,7 @@ testOrders("customer page: update: verifies the display id: required + unique", 
 	const dialog = page.getByRole("dialog");
 
 	// Test 1: Try to update without display id (should fail)
-	await page.getByRole("button", { name: tCustomers.labels.edit_customer() }).first().click();
+	await page.getByRole("button", { name: tCustomers.labels.edit() }).first().click();
 	await dialog.getByText(tCustomers.dialogs.edit_customer.title()).waitFor();
 
 	await dialog.getByLabel(tForms.customer_order_meta.labels.display_id(), { exact: true }).clear();
