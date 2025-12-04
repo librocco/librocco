@@ -116,7 +116,10 @@
 
 	onMount(() => {
 		const splash = document.getElementById("app-splash");
-		if (splash) splash.remove();
+		if (splash) {
+			splash.classList.add("bye");
+			splash.addEventListener("animationend", () => splash.remove());
+		}
 	});
 
 	onMount(() => {

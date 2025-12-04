@@ -24,6 +24,7 @@
 				text-align: center;
 				font-family: system-ui, sans-serif;
 				background: #fafafa;
+				z-index: 10000;
 			}
 
 			#app-splash svg {
@@ -67,6 +68,15 @@
 				}
 				#app-splash path {
 					stroke: #eee;
+				}
+			}
+			#app-splash.bye {
+				animation: bye 0.2s ease-in forwards;
+			}
+			@keyframes bye {
+				to {
+					opacity: 0;
+					transform: translateY(100%);
 				}
 			}
 		</style>
