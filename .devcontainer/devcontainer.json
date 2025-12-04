@@ -1,11 +1,8 @@
 {
 	"name": "Librocco Dev",
-	// Try to pull pre-built image from GHCR; fall back to local build if unavailable
+	// Use pre-built image from GHCR (built by CI)
+	// To rebuild locally: docker build -f .devcontainer/Dockerfile -t ghcr.io/librocco/librocco/devcontainer:latest .
 	"image": "ghcr.io/librocco/librocco/devcontainer:latest",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"context": ".."
-	},
 	// Features to enhance the development experience
 	"features": {
 		"ghcr.io/devcontainers/features/git-lfs:1": {

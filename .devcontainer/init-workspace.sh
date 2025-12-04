@@ -8,9 +8,9 @@ LOCKFILE_CACHE="/prebuilt-cache/pnpm-lock.yaml"
 LOCKFILE_LOCAL="$WORKSPACE/common/config/rush/pnpm-lock.yaml"
 
 # Ensure the volume is writable by the current user
-if [ ! -w "${WORKSPACE_FOLDER}/common/temp" ]; then
+if [ ! -w "${WORKSPACE}/common/temp" ]; then
     echo "Fixing volume permissions..."
-    sudo chown -R $(whoami) "${WORKSPACE_FOLDER}/common/temp"
+    sudo chown -R $(whoami) "${WORKSPACE}/common/temp"
 fi
 
 if [ ! -f "$MARKER" ]; then
@@ -21,6 +21,8 @@ if [ ! -f "$MARKER" ]; then
 
     # Copy pre-built common/temp to workspace volume
     if [ -d "/prebuilt-cache/temp" ]; then
+        # Clear any existing state to avoid pnpm-store path mismatches
+        rm -rf "$WORKSPACE/common/temp"/*
         cp -a /prebuilt-cache/temp/. "$WORKSPACE/common/temp/"
         echo "✅ Dependencies copied from cache"
     else
