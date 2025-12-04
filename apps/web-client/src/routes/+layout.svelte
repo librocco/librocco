@@ -115,6 +115,11 @@
 	let disposer: () => void;
 
 	onMount(() => {
+		const splash = document.getElementById("app-splash");
+		if (splash) splash.remove();
+	});
+
+	onMount(() => {
 		// Control the invalidation of the stock cache in central spot
 		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
 		// between the last cached value and the current one and invalidates the cache if needed
