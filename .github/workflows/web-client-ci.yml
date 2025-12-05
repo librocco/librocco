@@ -663,7 +663,7 @@ jobs:
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
         PUBLIC_IS_DEMO: "true"
-        PUBLIC_DEMO_DB_URL: https://librocco.codemyriad.io/demo_db.sqlite3
+        PUBLIC_DEMO_DB_URL: https://libroc.co/demo/demo_db.sqlite3
     - name: Install and configure rclone for R2
       run: |
         wget -q https://downloads.rclone.org/v1.71.1/rclone-v1.71.1-linux-amd64.zip
