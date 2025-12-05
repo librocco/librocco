@@ -274,8 +274,8 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
           PUBLIC_IS_DEMO: "true"
-          PUBLIC_DEMO_DB_URL: "https://librocco.codemyriad.io/demo_db.sqlite3"
-      -  #@ install_and_configure_rclone()
+          PUBLIC_DEMO_DB_URL: "https://libroc.co/demo/demo_db.sqlite3"
+      -  #@ install_and_configure_rclone(key_id_var='CLOUDFLARE_DEMO_ACCESS_KEY_ID', secret_access_key_var='CLOUDFLARE_DEMO_SECRET_ACCESS_KEY')
       -  #@ upload_to_r2("apps/web-client/build/", "demo/", bucket_name="librocco-demo")
       - name: Output link to deployed demo app
         run: echo You can view the demo app on https://libroc.co/demo | tee -a $GITHUB_STEP_SUMMARY
