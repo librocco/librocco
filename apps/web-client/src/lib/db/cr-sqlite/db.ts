@@ -9,7 +9,8 @@ import type { DBAsync, TXAsync, Change, VFSWhitelist } from "./types";
 import { idbPromise, idbTxn } from "../indexeddb";
 import { getMainThreadDB, getWorkerDB } from "./core";
 import { DEFAULT_VFS } from "./core/constants";
-import { ErrDBCorrupted, ErrDBSchemaMismatch } from "./errors";
+import { ErrDBCorrupted } from "./errors";
+import { initStore } from "../init-store";
 
 export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
 
@@ -56,11 +57,12 @@ export async function initializeDB(db: TXAsync) {
 
 /**
  * An intermediate function that checks for different (potentially bad) DB states:
- * - throws error(s) if need be
- * - initialises the DB if not initialised
+ * - throws ErrDBCorrupted if integrity check fails (requires nuke)
+ * - initializes the DB if not initialized
+ * - auto-migrates if schema version mismatch (no user interaction needed)
  */
 const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
-	// Integrity check
+	// Integrity check - if this fails, DB needs to be nuked
 	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
 	if (res !== "ok") {
 		throw new ErrDBCorrupted(res);
@@ -69,14 +71,27 @@ const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
 	// Check if DB initialized
 	const schemaRes = await getSchemaNameAndVersion(db);
 	if (!schemaRes) {
+		// Fresh DB - initialize it
 		await initializeDB(db);
 		return db;
 	}
 
-	// Check schema name/version
+	// Check schema name/version - auto-migrate if mismatch
 	const [name, version] = schemaRes;
 	if (name !== schemaName || version !== schemaVersion) {
-		throw new ErrDBSchemaMismatch({ wantName: schemaName, wantVersion: schemaVersion, gotName: name, gotVersion: version });
+		console.log(`Schema mismatch detected. Current: ${name}@${version}, Expected: ${schemaName}@${schemaVersion}`);
+		console.log("Auto-migrating database...");
+
+		initStore.setPhase("migrating");
+
+		try {
+			const result = await db.automigrateTo(schemaName, schemaContent);
+			console.log(`Auto-migration completed: ${result}`);
+		} catch (migrationError) {
+			console.error("Auto-migration failed:", migrationError);
+			// Migration failure is treated as a corrupted DB state - needs nuke
+			throw new ErrDBCorrupted(`Migration failed: ${migrationError instanceof Error ? migrationError.message : String(migrationError)}`);
+		}
 	}
 
 	return db;
@@ -92,12 +107,18 @@ export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAU
 		return await cached;
 	}
 
+	initStore.setPhase("loading");
+
 	try {
 		// Register the request (promise) immediately, to prevent multiple init requests
 		// at the same time
 		const initialiser = getDB(dbname, vfs)
 			.then(checkAndInitializeDB)
-			.then((db) => ({ db, rx: rxtbl(db), vfs }));
+			.then((db) => {
+				const ctx = { db, rx: rxtbl(db), vfs };
+				initStore.setPhase("ready");
+				return ctx;
+			});
 		dbCache.set(dbname, initialiser);
 
 		return await initialiser;
@@ -105,6 +126,10 @@ export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAU
 		// If the request fails, however, (invalid DB state)
 		// remove the cached promise so that we rerun the reqiuest on error fix + invalidateAll
 		dbCache.delete(dbname);
+
+		// Update init store with error
+		initStore.setPhase("error", err);
+
 		throw err;
 	}
 };
