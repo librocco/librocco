@@ -21,7 +21,7 @@ import { DEFAULT_LOCALE, DEFAULT_VFS, DEMO_DB_NAME, IS_DEMO, IS_E2E } from "$lib
 import { appPath } from "$lib/paths";
 import { newPluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
-import { ErrDBCorrupted, ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
+import { ErrDBCorrupted, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 import { validateVFS, vfsSupportsOPFS, type VFSWhitelist } from "$lib/db/cr-sqlite/core/vfs";
 
 import { updateTranslationOverrides } from "$lib/i18n-overrides";
@@ -94,18 +94,22 @@ export const load: LayoutLoad = async ({ url }) => {
 			const dbCtx = await getInitializedDB(get(dbid), vfs);
 			return { dbCtx, plugins, error: null };
 		} catch (err) {
+			// Demo DB not initialized - needs user action to fetch
 			if (err instanceof ErrDemoDBNotInitialised) {
 				return { dbCtx: null, plugins, error: err as Error };
 			}
 
 			console.error("Error initializing DB", err);
-			// If know error, return it (it will ba handled in the shown dialog)
-			if (err instanceof ErrDBCorrupted || err instanceof ErrDBSchemaMismatch) {
+
+			// DB corrupted or migration failed - needs nuke
+			// The error is already tracked in initStore, splash will show nuke button
+			if (err instanceof ErrDBCorrupted) {
 				return { dbCtx: null, plugins, error: err as Error };
 			}
 
-			// We don't know how to handle this err - throw
-			throw err;
+			// Unknown error - also treated as needing nuke
+			// The error is already tracked in initStore
+			return { dbCtx: null, plugins, error: err as Error };
 		}
 	}
 
