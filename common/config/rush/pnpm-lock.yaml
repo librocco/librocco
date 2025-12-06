@@ -503,7 +503,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(@types/node@16.18.126)
+        version: 6.0.15(tsx@4.20.3)
 
   ../../plugins/open-library-api:
     devDependencies:
@@ -533,7 +533,7 @@ importers:
         version: 5.9.2
       vite:
         specifier: ~6.0.11
-        version: 6.0.15(@types/node@16.18.126)
+        version: 6.0.15(tsx@4.20.3)
 
 packages:
 
@@ -9340,14 +9340,14 @@ packages:
     dev: true
 
   file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz:
-    resolution: {integrity: sha512-XpMU5ajsesA2BSlOU7aVbGCmrtqHkU4hsTAFS9n29hhiWoESwj8ESPc/bGseyiw7GQ3sQd+mKd+g/yDcdzs2lQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz}
+    resolution: {integrity: sha512-B/p23XwmK5t+pxm9Fz/Byn7yHXxTjTra35fBe0YTUPdEW2NM+YpVoH/BXHgbLPWdkGdxOBJhZvfkRN2qxMOOFw==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz}
     name: '@vlcn.io/crsqlite'
     version: 0.16.1
     requiresBuild: true
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz:
-    resolution: {integrity: sha512-6d2/3fo1MlKPnl+dD+8PX3wU4dEkYuRdTb3mMVVqGWJPTIfjm//jJEDYS8zt00xiTRLUbYpdYB+BAyGKh8QJGg==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
+    resolution: {integrity: sha512-cRfviFwl0r5RGCw6GyuFVukcqaqaqZCwt4imllZtxebaK5zMG0QGBamd3S4OqIovvRUwojnYfEs3rWkapw0lSA==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
     name: '@vlcn.io/crsqlite-wasm'
     version: 0.16.0
     dependencies:
@@ -9356,7 +9356,7 @@ packages:
       async-mutex: 0.4.1
 
   file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz:
-    resolution: {integrity: sha512-cm6Uf9aHxnqDSjkQYuPmHcA+a9I5GTWWJC0HH3E/eeWDsxGGcOSbJuqJK9zI+pRczly9Y34ezZyPXRoJC4jqzQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz}
+    resolution: {integrity: sha512-9FnHnVMsuDBixhFDWsr5RZrOlvjzkVC/ykCyhQY2KMS9fcJfuWzRG7M79wJ6U9ICf3I5J6ZwOl3zOBklm0GUAQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz}
     name: '@vlcn.io/rx-tbl'
     version: 0.15.0
     dependencies:
@@ -9364,12 +9364,12 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz:
-    resolution: {integrity: sha512-re/M9nmhTSayt7f+S6mcMm2HT0xEMxQ+RTwlZzQ9fV14Fq2WQIkflPLSnBA9B+vt/hmTIZEZSSfcDz2tIm3u7A==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
+    resolution: {integrity: sha512-WcqmN+wN7BTfrXgARLdnLHaYWjE2Lceo+BkSFkR4vaYmQZib0G8zYzVHHkHsZk2cscgdxHtMiDqHR6wwvQ5rpA==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
     name: '@vlcn.io/wa-sqlite'
     version: 0.22.0
 
   file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz:
-    resolution: {integrity: sha512-UMjWOOVdGORu+xVRlehS5QzQY/qeb41pjYVu64fJDIA/Alb+JyHaN7XHZoJSHRmUf9Yj0N95720ql5PkFxH9iA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
+    resolution: {integrity: sha512-aO96CJRduJKXG1LueOJhnySuYtvDHC/7OnHA0KFtjnAGHtSLEfFp8OcpdZ29/S24lAsf0/rgukXFpu2mFdU8rA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
     name: '@vlcn.io/ws-browserdb'
     version: 0.2.0
     dependencies:
@@ -9382,7 +9382,7 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz:
-    resolution: {integrity: sha512-8WGdw8fK77Kv7tykbWSw6HejHNUP5fEMKFDaaMRNpiGWNA6Fcy5IbsqFwJIjYX2OdJG8c7+A0MYnymlnJob3MA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz}
+    resolution: {integrity: sha512-moo1vyFMwRcCYJUez0zH/TEKiZKEkobNiKEA8P8ZVEOyFwe65nYaFEvApGyZnFCnt2koXn1oIzIi4WRqrEoJ3w==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz}
     name: '@vlcn.io/ws-client'
     version: 0.2.0
     dependencies:
@@ -9391,7 +9391,7 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz:
-    resolution: {integrity: sha512-L0QHho2nCRHEgYTtaFdLSmQquq9DI5f5fuElTGi6gIDLTunNENa68tKZOLdLAQ/BUbo4Os5wnTcX2Dr2FV6z7w==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz}
+    resolution: {integrity: sha512-rykrKjnXYXtIPigkB45hETBe8NgSVev/0ruNda9JD8zv67dgu5xMOWnUrCHbWFM+cWqdSJalfyY7UrFvX946JA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz}
     name: '@vlcn.io/ws-common'
     version: 0.2.0
     dependencies:
@@ -9399,7 +9399,7 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz:
-    resolution: {integrity: sha512-Cl9rRZJhLk5XOWMqhiBe+19P6tMo3r2NnMSevNhLre3OLhDrtX/1jv4VURB51LuxIbk2f7x466ChlfPXECGsTg==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
+    resolution: {integrity: sha512-w/GPWIrXKZqbQN/VZYU44JY1Olo1VemtzGpV5CVdTQRqSHE4CJHHfmgX5d3UJadfXkUl+CqPKB/6T3yE3xKOoA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
     name: '@vlcn.io/ws-server'
     version: 0.2.2
     dependencies:
@@ -9418,7 +9418,7 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz:
-    resolution: {integrity: sha512-drPpMn+DWfAFGMNpgPWLC79g5QCt8gclkEGl7kFWXExwuCAFNnPBI1Kipinhns3Jdt5LaqJ2DRF+i449DSkZEw==, tarball: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz}
+    resolution: {integrity: sha512-rdJShMovT3ymtOFcdFZOR0PZZliClXjSZPEFge3QMDdPkN2ZuXYOtGCsuSLMkK/7M/U8uAmZtb8akTPCEjesIg==, tarball: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz}
     name: '@vlcn.io/xplat-api'
     version: 0.15.0
     dependencies:
