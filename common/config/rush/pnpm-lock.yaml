@@ -314,6 +314,9 @@ importers:
       zod:
         specifier: ~3.24.1
         version: 3.24.4
+      zod-to-json-schema:
+        specifier: 3.24.6
+        version: 3.24.6(zod@3.24.4)
 
   ../../pkg/scaffold:
     dependencies:
@@ -8364,7 +8367,7 @@ packages:
       valibot: 1.0.0-beta.11(typescript@5.9.3)
       yup: 1.7.1
       zod: 3.24.4
-      zod-to-json-schema: 3.25.0(zod@3.24.4)
+      zod-to-json-schema: 3.24.6(zod@3.24.4)
     transitivePeerDependencies:
       - '@types/json-schema'
       - typescript
@@ -9534,15 +9537,13 @@ packages:
   /zimmerframe@1.1.4:
     resolution: {integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==}
 
-  /zod-to-json-schema@3.25.0(zod@3.24.4):
-    resolution: {integrity: sha512-HvWtU2UG41LALjajJrML6uQejQhNJx+JBO9IflpSja4R03iNWfKXrj6W2h7ljuLyc1nKS+9yDyL/9tD1U/yBnQ==}
-    requiresBuild: true
+  /zod-to-json-schema@3.24.6(zod@3.24.4):
+    resolution: {integrity: sha512-h/z3PKvcTcTetyjl1fkj79MHNEjm+HpD6NXheWjzOekY7kV+lwDYnHw+ivHkijnCSMz1yJaWBD9vu/Fcmk+vEg==}
     peerDependencies:
-      zod: ^3.25 || ^4
+      zod: ^3.24.1
     dependencies:
       zod: 3.24.4
     dev: true
-    optional: true
 
   /zod@3.24.4:
     resolution: {integrity: sha512-OdqJE9UDRPwWsrHjLN2F8bPxvwJBK22EHLWtanu0LSYr5YqzsaaW3RMgmjwr8Rypg5k+meEJdSPXJZXE/yqOMg==}
