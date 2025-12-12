@@ -6,6 +6,7 @@ import { DEMO_DB_NAME, IS_DEMO } from "$lib/constants";
 
 import type { SyncConfig } from "./sync";
 export * from "./sync";
+export * from "./init-store";
 
 // NOTE: we're purposefully casting the demo dbid to writable:
 // - for type simplicity - for most intents and purposes we'll have the selection available (production)

@@ -40,6 +40,11 @@
 				animation: draw 2s ease-in-out infinite alternate;
 			}
 
+			#app-splash.error path {
+				stroke: #dc2626;
+				stroke-dashoffset: 0;
+			}
+
 			@keyframes draw {
 				from {
 					stroke-dashoffset: 3800;
@@ -63,6 +68,36 @@
 				line-height: 1.2;
 			}
 
+			#app-splash.error h1 {
+				color: #dc2626;
+			}
+
+			#app-splash .error-details {
+				font-size: 0.75rem;
+				opacity: 0.5;
+				margin-top: 0.5rem;
+				max-width: 300px;
+				word-break: break-word;
+			}
+			#app-splash .action-btn {
+				margin-top: 1.5rem;
+				padding: 0.75rem 1.5rem;
+				background: #1a1a1a;
+				opacity: 40;
+				color: white;
+				outline: 1px solid #eee;
+				border-radius: 0.5rem;
+				font-size: 0.9rem;
+				font-weight: 500;
+				cursor: pointer;
+				transition: background 0.15s;
+			}
+
+			#app-splash .action-btn:hover {
+				outline: 2px solid #eee;
+				font-weight: 600;
+			}
+
 			@media (prefers-color-scheme: dark) {
 				#app-splash {
 					background: #1a1a1a;
@@ -70,6 +105,12 @@
 				}
 				#app-splash path {
 					stroke: #eee;
+				}
+				#app-splash.error path {
+					stroke: #f87171;
+				}
+				#app-splash.error h1 {
+					color: #f87171;
 				}
 			}
 			#app-splash.bye {
@@ -94,10 +135,99 @@
 				/>
 			</svg>
 			<div>
-				<h1>Librocco is loading. Hang tight!</h1>
-				<h2>Or hang loose – your choice.</h2>
+				<h1 id="splash-title">Librocco is loading. Hang tight!</h1>
+				<h2 id="splash-subtitle">Or hang loose – your choice.</h2>
+				<p id="splash-error" class="error-details" style="display: none"></p>
+				<button id="splash-action" class="action-btn" style="display: none">Reset Database</button>
 			</div>
 		</div>
+		<script>
+			// Static message map for each initialization phase
+			const splashMessages = {
+				// The idle state is typed above in the HTML as it should be visible immediately on load
+				idle: { title: "", subtitle: "" },
+				loading: { title: "Initialising the database", subtitle: "Waking the workers and heating the coffee..." },
+				migrating: {
+					title: "Migrating the database",
+					subtitle: "Updating to the latest version..."
+				},
+				error: {
+					title: "Migration Error",
+					subtitle:
+						"There was a problem updating the database. Click Reset Database below to continue. Your data will be re-synced from the server."
+				}
+			};
+
+			// Callback for init-store to notify phase changes
+			window.__dbInitUpdate = function (phase, error) {
+				const splash = document.getElementById("app-splash");
+				const title = document.getElementById("splash-title");
+				const subtitle = document.getElementById("splash-subtitle");
+				const errorEl = document.getElementById("splash-error");
+				const actionBtn = document.getElementById("splash-action");
+
+				const msg = splashMessages[phase] || splashMessages.idle;
+				title.textContent = msg.title;
+				subtitle.textContent = msg.subtitle;
+
+				if (phase === "error") {
+					splash.classList.add("error");
+					if (error && error.message) {
+						errorEl.textContent = error.message;
+						errorEl.style.display = "block";
+					}
+					actionBtn.style.display = "inline-block";
+				} else if (phase === "ready") {
+					splash.classList.add("bye");
+					splash.addEventListener("animationend", function () {
+						splash.remove();
+					});
+				} else {
+					splash.classList.remove("error");
+					errorEl.style.display = "none";
+					actionBtn.style.display = "none";
+				}
+			};
+
+			// OPFS nuke function - deletes the database files and reloads
+			async function nukeDatabase() {
+				const nukeBtn = document.getElementById("splash-action");
+				nukeBtn.disabled = true;
+				nukeBtn.textContent = "Resetting...";
+
+				try {
+					// Get database name from localStorage (default: "dev")
+					const dbname = localStorage.getItem("librocco-current-db") || "dev";
+
+					// Get OPFS root directory
+					const root = await navigator.storage.getDirectory();
+
+					// Helper to safely remove a file if it exists
+					async function removeIfExists(name) {
+						try {
+							await root.removeEntry(name);
+						} catch (e) {
+							// File doesn't exist or can't be removed - that's ok
+						}
+					}
+
+					// Remove the database files
+					await removeIfExists(dbname);
+					await removeIfExists(dbname + "-wal");
+					await removeIfExists(dbname + "-journal");
+
+					// Reload the page to reinitialize
+					window.location.reload();
+				} catch (e) {
+					console.error("Failed to nuke database:", e);
+					nukeBtn.textContent = "Reset Failed";
+					nukeBtn.disabled = false;
+				}
+			}
+
+			// Wire up button handlers
+			document.getElementById("splash-action").onclick = nukeDatabase;
+		</script>
 		<div style="height: 100%">%sveltekit.body%</div>
 	</body>
 </html>
