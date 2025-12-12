@@ -236,7 +236,10 @@ export type IWarehouseName = {
 };
 
 export interface InventoryWarehouseNameField
-	extends AssertedLocator<string | IWarehouseName>, Asserter<string | IWarehouseName>, Setter<string>, Locator {
+	extends AssertedLocator<string | IWarehouseName>,
+		Asserter<string | IWarehouseName>,
+		Setter<string>,
+		Locator {
 	assertOptions(options: string[], opts?: WaitForOpts): Promise<void>;
 }
 
