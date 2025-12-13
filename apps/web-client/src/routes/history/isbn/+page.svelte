@@ -5,7 +5,8 @@
 	import { entityListView, testId, type BookData } from "@librocco/shared";
 	import LL from "@librocco/shared/i18n-svelte";
 
-	import { app, getDb } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb } from "$lib/app/db";
 
 	import type { PageData } from "./$types";
 

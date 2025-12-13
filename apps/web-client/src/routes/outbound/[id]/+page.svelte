@@ -81,7 +81,8 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 
-	import { app, getDb, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
 

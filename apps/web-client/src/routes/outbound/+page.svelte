@@ -26,7 +26,8 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
-	import { app, getDb, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
 

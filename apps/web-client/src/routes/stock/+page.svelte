@@ -32,7 +32,8 @@
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
-	import { app, getDb, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
 

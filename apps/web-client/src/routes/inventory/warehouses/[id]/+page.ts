@@ -16,7 +16,8 @@ import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 import { map, wrapIter } from "@librocco/shared";
 
-import { app, getDb } from "$lib/app";
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
 
 const _load = async ({ params, depends }: Parameters<PageLoad>[0]) => {
 	const id = Number(params.id);

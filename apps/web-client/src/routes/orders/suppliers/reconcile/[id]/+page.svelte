@@ -40,7 +40,8 @@
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { appPath } from "$lib/paths";
 
-	import { app, getDb, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
 
 	// implement order reactivity/sync
 	export let data: PageData;

@@ -25,7 +25,8 @@
 	import { debugData as dd } from "$lib/__testData__/debugData";
 	import { LL } from "@librocco/shared/i18n-svelte";
 
-	import { app, getDb } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb } from "$lib/app/db";
 
 	export let data: LayoutData;
 

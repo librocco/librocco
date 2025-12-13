@@ -8,7 +8,8 @@
 
 	import { invalidate } from "$app/navigation";
 
-	import { app, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDbRx } from "$lib/app/db";
 
 	import Library from "$lucide/library";
 	import ArrowLeft from "$lucide/arrow-left";

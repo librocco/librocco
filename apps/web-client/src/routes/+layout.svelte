@@ -14,7 +14,8 @@
 	import { afterNavigate, invalidateAll } from "$app/navigation";
 	import { beforeNavigate } from "$app/navigation";
 
-	import { app, getDb, getDbRx, getVfs } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb, getDbRx, getVfs } from "$lib/app/db";
 
 	import type { LayoutData } from "./$types";
 

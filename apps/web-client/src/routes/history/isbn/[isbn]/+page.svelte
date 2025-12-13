@@ -9,7 +9,8 @@
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/stores";
 
-	import { app, getDb, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
 
 	import Search from "$lucide/search";
 	import Library from "$lucide/library";

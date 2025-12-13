@@ -11,7 +11,8 @@ import { getPastNotes } from "$lib/db/cr-sqlite/history";
 
 import { timed } from "$lib/utils/timer";
 
-import { app, getDb } from "$lib/app";
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
 
 const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>[0]) => {
 	depends("history:notes");

@@ -6,7 +6,8 @@ import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { timed } from "$lib/utils/timer";
 
-import { app, getDb } from "$lib/app";
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
 
 const _load: PageLoad = async ({ depends }) => {
 	depends("book:data");

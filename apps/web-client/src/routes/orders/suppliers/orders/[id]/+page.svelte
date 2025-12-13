@@ -17,7 +17,8 @@
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
 
-	import { app, getDb, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
 

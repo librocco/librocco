@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { WebClientView } from "@librocco/shared";
 
-	import { type App, getDb } from "$lib/app/index";
+	import type { App } from "$lib/app";
+	import { getDb } from "$lib/app/db";
 
 	import type { PluginsInterface } from "$lib/plugins";
 	import { appPath } from "$lib/paths";

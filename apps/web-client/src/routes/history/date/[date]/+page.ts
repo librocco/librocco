@@ -2,7 +2,8 @@ import { browser } from "$app/environment";
 import { redirect } from "@sveltejs/kit";
 import { fromDate, getLocalTimeZone } from "@internationalized/date";
 
-import { app, getDb } from "$lib/app";
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
 
 import type { PageLoad } from "./$types";
 import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";

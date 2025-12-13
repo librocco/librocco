@@ -8,7 +8,8 @@ import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 
 import { timed } from "$lib/utils/timer";
 
-import { app, getDb } from "$lib/app";
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
 
 const _load = async ({ depends }: Parameters<PageLoad>[0]) => {
 	depends("warehouse:list");

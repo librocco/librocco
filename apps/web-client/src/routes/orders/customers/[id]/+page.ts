@@ -1,6 +1,7 @@
 import { browser } from "$app/environment";
 
-import { app, getDb } from "$lib/app";
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
 
 import type { PageLoad } from "./$types";
 

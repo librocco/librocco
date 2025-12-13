@@ -19,7 +19,8 @@
 	import { appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
 
-	import { app, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
 

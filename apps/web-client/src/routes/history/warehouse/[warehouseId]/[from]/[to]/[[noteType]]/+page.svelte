@@ -25,7 +25,8 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import type { LocalizedString } from "typesafe-i18n";
 
-	import { app, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
 

@@ -17,7 +17,8 @@
 	import { testId } from "@librocco/shared";
 	import { SquareArrowUpRight } from "$lucide";
 
-	import { app, getDb, getDbRx } from "$lib/app";
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
 

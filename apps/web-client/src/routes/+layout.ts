@@ -15,7 +15,8 @@ import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
-import { app, initDb } from "$lib/app";
+import { app } from "$lib/app";
+import { initDb } from "$lib/app/db";
 
 import { dbid } from "$lib/db";
 
