@@ -10,7 +10,6 @@ import { idbPromise, idbTxn } from "../indexeddb";
 import { getMainThreadDB, getWorkerDB } from "./core";
 import { DEFAULT_VFS } from "./core/constants";
 import { ErrDBCorrupted } from "./errors";
-import { initStore } from "../init-store";
 
 export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
 
@@ -82,8 +81,6 @@ const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
 		console.log(`Schema mismatch detected. Current: ${name}@${version}, Expected: ${schemaName}@${schemaVersion}`);
 		console.log("Auto-migrating database...");
 
-		initStore.setPhase("migrating");
-
 		try {
 			const result = await db.automigrateTo(schemaName, schemaContent);
 			console.log(`Auto-migration completed: ${result}`);
@@ -107,8 +104,6 @@ export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAU
 		return await cached;
 	}
 
-	initStore.setPhase("loading");
-
 	try {
 		// Register the request (promise) immediately, to prevent multiple init requests
 		// at the same time
@@ -116,7 +111,6 @@ export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAU
 			.then(checkAndInitializeDB)
 			.then((db) => {
 				const ctx = { db, rx: rxtbl(db), vfs };
-				initStore.setPhase("ready");
 				return ctx;
 			});
 		dbCache.set(dbname, initialiser);
@@ -128,7 +122,6 @@ export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAU
 		dbCache.delete(dbname);
 
 		// Update init store with error
-		initStore.setPhase("error", err);
 
 		throw err;
 	}

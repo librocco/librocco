@@ -15,7 +15,7 @@
 	import { beforeNavigate } from "$app/navigation";
 
 	import { app } from "$lib/app";
-	import { getDb, getDbRx, getVfs } from "$lib/app/db";
+	import { AppDbState, getDb, getDbRx, getVfs } from "$lib/app/db";
 
 	import type { LayoutData } from "./$types";
 
@@ -26,7 +26,7 @@
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
-	import { sync, syncConfig, syncActive, syncProgressStore, initStore } from "$lib/db";
+	import { sync, syncConfig, syncActive, syncProgressStore } from "$lib/db";
 	import { clearDb, dbCache } from "$lib/db/cr-sqlite/db";
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
@@ -52,6 +52,18 @@
 	export let data: LayoutData;
 
 	$: error = data.error;
+
+	const dbState = app.db.state;
+
+	// TODO: revisit this and agree on convergence:
+	// - should we revert back to string states?
+	// - should we move the full app-splash control to the app (why direct HTML insert)?
+	// - leave this as is (pretty dirty)?
+	const signalDbInitState = (state: AppDbState, error?: Error) => {
+		const phase = ["idle", "error", "loading", "migrating", "ready"][state];
+		window["__dbInitUpdate"]?.(phase, error || null);
+	};
+	$: signalDbInitState($dbState, error);
 
 	beforeNavigate(({ to }) => {
 		if (IS_DEBUG || IS_E2E) {
@@ -130,8 +142,8 @@
 
 		let preventUnloadHandler: ((e: BeforeUnloadEvent) => void) | null = null;
 
-		const initUnsubscribe = initStore.subscribe((state) => {
-			if (state.phase !== "ready") return;
+		const initUnsubscribe = app.ready.subscribe((ready) => {
+			if (!ready) return;
 
 			// DB is ready, start sync worker
 			const wkr = new WorkerInterface(new SyncWorker());

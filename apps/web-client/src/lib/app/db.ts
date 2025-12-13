@@ -81,19 +81,19 @@ export class AppDb implements DbCtx {
 			return { ok: false, error: new ErrDBIDMismatch(this.#dbid, dbid) };
 		}
 
-		switch (state) {
-			case AppDbState.Error:
-				this.#error = param2 as Error;
-				return { ok: true };
-			case AppDbState.Ready:
-				const { db, rx, vfs } = param2 as DbCtx;
-				this.#db = db;
-				this.#rx = rx;
-				this.#vfs = vfs;
-				return { ok: true };
-			default:
-				return { ok: true };
+		if (state === AppDbState.Error) {
+			this.#error = param2 as Error;
 		}
+
+		if (state === AppDbState.Ready) {
+			const { db, rx, vfs } = param2 as DbCtx;
+			this.#db = db;
+			this.#rx = rx;
+			this.#vfs = vfs;
+		}
+
+		this.#state.set(state);
+		return { ok: true };
 	}
 }
 

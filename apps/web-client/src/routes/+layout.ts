@@ -16,7 +16,7 @@ import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
 import { app } from "$lib/app";
-import { initDb } from "$lib/app/db";
+import { initializeDb } from "$lib/app/db";
 
 import { dbid } from "$lib/db";
 
@@ -73,9 +73,6 @@ export const load: LayoutLoad = async ({ url }) => {
 			plugins.get("book-fetcher").register(createGoogleBooksApiPlugin());
 		}
 
-		// Init the db
-		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
-
 		try {
 			// DEMO section
 			if (IS_DEMO) {
@@ -86,9 +83,7 @@ export const load: LayoutLoad = async ({ url }) => {
 
 				// In demo mode we use the hardcoded VFS
 				const vfs = getDemoVFSFromLocalStorage(DEMO_VFS);
-				const dbCtx = await getInitializedDB(get(dbid), vfs);
-
-				await initDb(app, dbCtx);
+				await initializeDb(app, get(dbid), vfs);
 
 				return { plugins, error: null };
 			}
@@ -97,8 +92,7 @@ export const load: LayoutLoad = async ({ url }) => {
 			// This will usually only happen in tests/benchmarks and the fallback will
 			// be used in production
 			const vfs = getVFSFromLocalStorage(DEFAULT_VFS);
-			const dbCtx = await getInitializedDB(get(dbid), vfs);
-			initDb(app, dbCtx);
+			await initializeDb(app, get(dbid), vfs);
 
 			return { plugins, error: null };
 		} catch (err) {
