@@ -11,7 +11,8 @@ import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 
-const _load = async ({ depends }: Parameters<PageLoad>[0]) => {
+const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	depends("warehouse:list");
 	depends("warehouse:books");
 

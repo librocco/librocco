@@ -12,7 +12,8 @@ import { appHash } from "$lib/paths";
 import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 
-const _load = async ({ params, depends }: Parameters<PageLoad>[0]) => {
+const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	depends("books:data");
 	depends("suppliers:data");
 	depends("customers:order_lines");

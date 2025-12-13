@@ -13,6 +13,7 @@ import { getBookData } from "$lib/db/cr-sqlite/books";
 import { timed } from "$lib/utils/timer";
 
 const _load = async ({ params: { isbn }, parent, depends }: Parameters<PageLoad>[0]) => {
+	await parent();
 	depends("history:transactions");
 
 	if (!browser) {

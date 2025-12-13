@@ -13,7 +13,8 @@ import { getPastTransactions } from "$lib/db/cr-sqlite/history";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ params: { date }, depends }: Parameters<PageLoad>[0]) => {
+const _load = async ({ params: { date }, depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	depends("history:transactions");
 
 	// Validate the date - if not valid, redirect to default

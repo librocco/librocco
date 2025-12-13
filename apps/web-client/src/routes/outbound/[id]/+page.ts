@@ -16,7 +16,8 @@ import { timed } from "$lib/utils/timer";
 import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 
-const _load = async ({ params, depends }: Parameters<PageLoad>[0]) => {
+const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	const id = Number(params.id);
 
 	depends("note:data");

@@ -9,7 +9,8 @@ import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { timed } from "$lib/utils/timer";
 
-const _load: PageLoad = async ({ depends }) => {
+const _load: PageLoad = async ({ depends, parent }) => {
+	await parent();
 	depends("book:data");
 
 	if (!browser) {

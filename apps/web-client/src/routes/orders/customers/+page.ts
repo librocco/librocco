@@ -9,7 +9,8 @@ import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 import { browser } from "$app/environment";
 
-const _load = async ({ depends }: Parameters<PageLoad>[0]) => {
+const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	depends("customer:list");
 
 	if (!browser) {
