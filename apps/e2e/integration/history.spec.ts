@@ -4,8 +4,16 @@ import type { BookData } from "@librocco/shared";
 
 import { appHash } from "@/constants";
 import { testBase as test } from "@/helpers/fixtures";
-import { getDashboard, getDbHandle } from "@/helpers";
-import { upsertWarehouse, createInboundNote, createOutboundNote, addVolumesToNote, commitNote, upsertBook } from "../helpers/cr-sqlite";
+import { getDashboard } from "@/helpers/dashboard";
+import {
+	getDbHandle,
+	upsertWarehouse,
+	createInboundNote,
+	createOutboundNote,
+	addVolumesToNote,
+	commitNote,
+	upsertBook
+} from "../helpers/cr-sqlite";
 import { getDateStub } from "@/helpers/dateStub";
 
 const books: BookData[] = [

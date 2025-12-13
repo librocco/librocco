@@ -1,8 +1,8 @@
 import { baseURL } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
-import { getDashboard, getDbHandle } from "@/helpers";
-import { addVolumesToNote, commitNote, createInboundNote, upsertWarehouse } from "@/helpers/cr-sqlite";
+import { getDashboard } from "@/helpers/dashboard";
+import { getDbHandle, addVolumesToNote, commitNote, createInboundNote, upsertWarehouse } from "@/helpers/cr-sqlite";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
