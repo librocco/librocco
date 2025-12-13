@@ -6,25 +6,26 @@
 	import { onMount } from "svelte";
 	import { get, writable } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
-
-	import { Subscription } from "rxjs";
-	import Menu from "$lucide/menu";
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { Subscription } from "rxjs";
+
+	import Menu from "$lucide/menu";
 
 	import { afterNavigate, invalidateAll } from "$app/navigation";
-	import { browser } from "$app/environment";
 	import { beforeNavigate } from "$app/navigation";
+
+	import { app, getDb, getDbRx, getVfs } from "$lib/app";
 
 	import type { LayoutData } from "./$types";
 
-	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
+	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
-	import { sync, syncConfig, syncActive, dbid, syncProgressStore, initStore } from "$lib/db";
+	import { sync, syncConfig, syncActive, syncProgressStore, initStore } from "$lib/db";
 	import { clearDb, dbCache } from "$lib/db/cr-sqlite/db";
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
@@ -49,7 +50,6 @@
 
 	export let data: LayoutData;
 
-	$: dbCtx = data.dbCtx;
 	$: error = data.error;
 
 	beforeNavigate(({ to }) => {
@@ -67,47 +67,45 @@
 		stockCache.disableRefresh();
 	});
 
-	$: {
-		// Register (and update on each change) the db and some db handlers to the window object.
-		// This is used for e2e tests (easier setup through direct access to the db).
-		// Additionally, we're doing this in debug mode - in case we want to interact with the DB directly (using dev console)
-		if (browser && dbCtx) {
-			window["db_ready"] = true;
-			window["_db"] = dbCtx.db;
-			window["_getRemoteDB"] = getRemoteDB;
-			window.dispatchEvent(new Event("db_ready"));
+	// Attach window helpers, these are used for:
+	// - manual interactions with the app (through console)
+	// - as bridged DB interactions from Playwright environment
+	//   (Playwright uses window to retrieve the App, DB, and appropriate DB handlers - ensuring DRY and single-source of truth)
+	onMount(() => {
+		window["_app"] = app;
+		window["_getDb"] = getDb;
+		window["_getRemoteDB"] = getRemoteDB; // TODO: revisit this
 
-			window["books"] = books;
-			window["customers"] = customers;
-			window["note"] = note;
-			window["reconciliation"] = reconciliation;
-			window["suppliers"] = suppliers;
-			window["warehouse"] = warehouse;
+		window["books"] = books;
+		window["customers"] = customers;
+		window["note"] = note;
+		window["reconciliation"] = reconciliation;
+		window["suppliers"] = suppliers;
+		window["warehouse"] = warehouse;
 
-			window["sync"] = sync;
+		window["sync"] = sync;
+		window["migrations"] = migrations;
+		window["deleteDBFromOPFS"] = (dbname: string) => deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
+	});
 
-			window["migrations"] = migrations;
-
-			window["deleteDBFromOPFS"] = (dbname: string) => deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
-		}
-
-		// This shouldn't affect much, but is here for the purpose of exhaustive handling
-		if (browser && !dbCtx) {
-			window["db_ready"] = false;
-			window["_db"] = undefined;
-		}
-	}
+	// Signal (to Playwright) that the DB is initialised
+	onMount(async () => {
+		await getDb(app);
+		window["db_ready"] = true;
+		window.dispatchEvent(new Event("db_ready"));
+	});
 
 	let availabilitySubscription: Subscription;
 
 	// Update sync on each change to settings
 	//
-	// NOTE: This is safe even on server side as it will be a noop until
-	// the worker is initialized
-	$: if ($syncActive) {
+	// NOTE: This is safe with respect to initialisation as it runs only if DB ready
+	const dbReady = app.db.ready;
+	$: if ($dbReady && $syncActive) {
 		// Subsequent activations use regular sync
 		sync.sync($syncConfig, { invalidateAll });
-	} else {
+	}
+	$: if ($dbReady && !$syncActive) {
 		sync.stop();
 	}
 
@@ -124,7 +122,7 @@
 		// Control the invalidation of the stock cache
 		// On every 'book_transaction' change, we run 'maybeInvalidate', which checks for relevant changes
 		// between the last cached value and the current one and invalidates the cache if needed
-		const disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
+		const disposer = getDbRx(app).onRange(["book_transaction"], async () => stockCache.maybeInvalidate(await getDb(app)));
 
 		// 3. Sync setup (not supported in demo mode)
 		// Only start sync when DB is ready
@@ -136,7 +134,7 @@
 
 			// DB is ready, start sync worker
 			const wkr = new WorkerInterface(new SyncWorker());
-			const vfs = dbCtx?.vfs;
+			const vfs = getVfs(app);
 
 			wkr.start(vfs);
 			sync.init(wkr);

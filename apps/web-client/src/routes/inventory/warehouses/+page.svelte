@@ -37,10 +37,11 @@
 
 	import type { PageData } from "./$types";
 
+	import { app, getDb, getDbRx } from "$lib/app";
+
 	export let data: PageData;
 
 	$: ({ warehouses, plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	$: tWarehouse = $LL.warehouse_list_page;
 	$: tInventory = $LL.inventory_page.warehouses_tab;
@@ -50,7 +51,7 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when warehouse data changes
-		disposer = data.dbCtx?.rx?.onRange(["warehouse", "note", "book_transaction"], () => invalidate("warehouse:list"));
+		disposer = getDbRx(app).onRange(["warehouse", "note", "book_transaction"], () => invalidate("warehouse:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -61,6 +62,7 @@
 	$: ({ warehouseTotals } = stockCache);
 
 	const handleDeleteWarehouse = (id: number) => async () => {
+		const db = await getDb(app);
 		await deleteWarehouse(db, id);
 		deleteDialogOpen.set(false);
 		invalidateStockCache();
@@ -71,6 +73,7 @@
 	 * _(and navigate to the newly created warehouse page)_.
 	 */
 	const handleCreateWarehouse = async () => {
+		const db = await getDb(app);
 		const id = await getWarehouseIdSeq(db);
 		await upsertWarehouse(db, { id });
 
@@ -84,6 +87,7 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateInboundNote = (warehouseId: number) => async () => {
+		const db = await getDb(app);
 		const id = await getNoteIdSeq(db);
 		await createInboundNote(db, warehouseId, id);
 		await goto(appPath("inbound", id));
@@ -104,11 +108,12 @@
 	let warehouseToEdit: WarehouseFormSchema | null = null;
 	let warehouseToDelete: { id: number; displayName: string } = null;
 
-	let initialized = false;
-	$: initialized = Boolean(db);
+	// TODO: revisit this
+	const appReady = app.ready;
+	$: initialized = $appReady;
 </script>
 
-<InventoryManagementPage {handleCreateWarehouse} {db} {plugins}>
+<InventoryManagementPage {handleCreateWarehouse} {app} {plugins}>
 	{#if !initialized}
 		<div class="flex grow justify-center">
 			<div class="mx-auto translate-y-1/2">
@@ -237,6 +242,7 @@
 			validators: zod(warehouseSchema),
 			validationMethod: "submit-only",
 			onUpdated: async ({ form }) => {
+				const db = await getDb(app);
 				const { id, name: displayName, discount } = form?.data;
 				await upsertWarehouse(db, { id, displayName, discount });
 				editDialogOpen.set(false);

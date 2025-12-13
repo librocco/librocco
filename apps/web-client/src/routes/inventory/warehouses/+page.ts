@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
 
 import type { PageLoad } from "./$types";
@@ -7,7 +8,9 @@ import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ parent, depends }: Parameters<PageLoad>[0]) => {
+import { app, getDb } from "$lib/app";
+
+const _load = async ({ depends }: Parameters<PageLoad>[0]) => {
 	depends("warehouse:list");
 	depends("warehouse:books");
 
@@ -15,15 +18,18 @@ const _load = async ({ parent, depends }: Parameters<PageLoad>[0]) => {
 	// DB for other (cheaper) queries necessary for the page load.
 	stockCache.disableRefresh();
 
-	const { dbCtx } = await parent();
-	if (!dbCtx) return { dbCtx, warehouses: [] as Warehouse[] };
+	if (!browser) {
+		return { warehouses: [] as Warehouse[] };
+	}
 
-	const warehouses = await getAllWarehouses(dbCtx.db, { skipTotals: true });
+	const db = await getDb(app);
+
+	const warehouses = await getAllWarehouses(db, { skipTotals: true });
 
 	// Re-enable the stock cache refreshing to execute in the background
-	stockCache.enableRefresh(dbCtx.db);
+	stockCache.enableRefresh(db);
 
-	return { dbCtx, warehouses };
+	return { warehouses };
 };
 
 export const load: PageLoad = timed(_load);

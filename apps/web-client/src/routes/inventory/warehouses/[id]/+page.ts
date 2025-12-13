@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
 
@@ -15,18 +16,16 @@ import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 import { map, wrapIter } from "@librocco/shared";
 
-const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
+import { app, getDb } from "$lib/app";
+
+const _load = async ({ params, depends }: Parameters<PageLoad>[0]) => {
 	const id = Number(params.id);
 
 	depends("warehouse:data");
 	depends("warehouse:books");
 
-	const { dbCtx } = await parent();
-
-	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
+	if (!browser) {
 		return {
-			dbCtx,
 			id,
 			displayName: "N/A",
 			discount: 0,
@@ -35,19 +34,21 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		};
 	}
 
+	const db = await getDb(app);
+
 	// Disable the stock cache refreshing to prevent the expensive stock query from blocking the
 	// DB for other (cheaper) queries necessary for the page load.
 	stockCache.disableRefresh();
 
-	const warehouse = await getWarehouseById(dbCtx.db, id);
+	const warehouse = await getWarehouseById(db, id);
 	if (!warehouse) {
 		redirect(307, appPath("inventory"));
 	}
 
-	const publisherList = await getPublisherList(dbCtx.db);
+	const publisherList = await getPublisherList(db);
 
 	// Re-enable the stock cache refreshing to execute in the background
-	stockCache.enableRefresh(dbCtx.db);
+	stockCache.enableRefresh(db);
 
 	const entries = get(stockByWarehouse)
 		.then((s) => [...(s.get(id) || [])])
@@ -56,14 +57,14 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 			if (!entries.length) return [];
 
 			const isbns = map(entries, ({ isbn }) => isbn);
-			const bookData = await getMultipleBookData(dbCtx.db, ...isbns);
+			const bookData = await getMultipleBookData(db, ...isbns);
 			const iter = wrapIter(entries)
 				.zip(bookData)
 				.map(([stock, bookData]) => ({ ...stock, ...bookData }));
 			return [...iter];
 		});
 
-	return { dbCtx, ...warehouse, publisherList, entries };
+	return { ...warehouse, publisherList, entries };
 };
 
 export const load: PageLoad = timed(_load);

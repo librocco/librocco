@@ -32,15 +32,16 @@
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
+	import { app, getDb, getDbRx } from "$lib/app";
+
 	export let data: PageData;
 
 	$: ({ publisherList, plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		disposer = data.dbCtx?.rx?.onRange(["book"], () => invalidate("book:data"));
+		disposer = getDbRx(app).onRange(["book"], () => invalidate("book:data"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -68,7 +69,15 @@
 	// - further below, we're checking that +1 entry exists, if so, we let the intersection observer know it can requery when reached (infinite scroll)
 	//
 	// TODO: 'db' should always be defined, as we want this to run ONLY in browser context, but, as of yet, I wasn't able to get this to work
-	$: currentQuery = Promise.resolve(db && $search.length > 2 ? getStock(db, { searchString: $search }) : ([] as GetStockResponseItem[]));
+	$: currentQuery = Promise.resolve(
+		(async () => {
+			if ($search.length > 2) {
+				const db = await getDb(app);
+				return getStock(db, { searchString: $search });
+			}
+			return [] as GetStockResponseItem[];
+		})()
+	);
 	$: currentQuery.then((e) => (entries = e));
 
 	const tableOptions = writable({ data: entries.slice(0, maxResults) });
@@ -98,7 +107,7 @@
 	$: ({ search: tSearch, stock_page: tStockPage, common: tCommon } = $LL);
 </script>
 
-<Page title={tSearch.title()} view="stock" {db} {plugins}>
+<Page title={tSearch.title()} view="stock" {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col gap-y-6">
 		<div class="p-4">
 			<ScannerForm
@@ -275,6 +284,8 @@
 							 * It is still safe to assume that the required properties of BookData are there, as the relative form controls are required
 							 */
 							const data = form?.data as BookData;
+
+							const db = await getDb(app);
 
 							try {
 								await upsertBook(db, data);

@@ -17,14 +17,16 @@
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
 
+	import { app, getDb, getDbRx } from "$lib/app";
+
 	export let data: PageData;
 
 	// #region reactivity
 	let disposer: () => void;
 
 	onMount(() => {
-		const disposer1 = data.dbCtx?.rx?.onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
-		const disposer2 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("book:data"));
+		const disposer1 = getDbRx(app).onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
+		const disposer2 = getDbRx(app).onRange(["book"], () => invalidate("book:data"));
 		disposer = () => (disposer1(), disposer2());
 	});
 
@@ -46,7 +48,6 @@
 		total_book_price = 0,
 		created = 0
 	} = data);
-	$: db = data?.dbCtx?.db;
 
 	$: createdDate = new Date(created);
 	$: reconciled = reconciliation_order_id !== null && reconciliation_order_id !== undefined;
@@ -64,6 +65,8 @@
 	}
 
 	async function handleReconcileSelf() {
+		const db = await getDb(app);
+
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 		const reconOrderId = Math.floor(Math.random() * 1000000); // Temporary ID generation
@@ -77,7 +80,7 @@
 	}
 </script>
 
-<Page title={$LL.order_page.title()} view="orders/suppliers/orders/id" {db} {plugins}>
+<Page title={$LL.order_page.title()} view="orders/suppliers/orders/id" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card md:h-full">

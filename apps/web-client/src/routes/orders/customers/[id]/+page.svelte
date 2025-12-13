@@ -47,10 +47,11 @@
 
 	import type { PageData } from "./$types";
 
+	import { app, getDb, getDbRx } from "$lib/app";
+
 	export let data: PageData;
 
 	$: ({ customer, customerOrderLines, publisherList, plugins } = data);
-	$: db = data.dbCtx?.db;
 	$: phone1 = customer?.phone?.split(",").length > 0 ? customer?.phone?.split(",")[0] : "";
 	$: phone2 = customer?.phone?.split(",").length > 1 ? customer?.phone?.split(",")[1] : "";
 
@@ -61,9 +62,9 @@
 
 	onMount(() => {
 		// Reload add customer data dependants when the data changes
-		const disposer1 = data.dbCtx?.rx?.onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
+		const disposer1 = getDbRx(app).onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
 		// Reload all customer order line/book data dependants when the data changes
-		const disposer2 = data.dbCtx?.rx?.onRange(["customer_order_lines", "book"], () => invalidate("customer:books"));
+		const disposer2 = getDbRx(app).onRange(["customer_order_lines", "book"], () => invalidate("customer:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 
@@ -88,11 +89,13 @@
 
 	// Get existing display IDs when opening the edit dialog
 	const handleOpenCustomerMetaDialog = async () => {
+		const db = await getDb(app);
 		existingCustomers = await getCustomerDisplayIdInfo(db);
 		customerMetaDialogOpen.set(true);
 	};
 
 	const handleUpdateCustomer = async (_data: Partial<Customer>) => {
+		const db = await getDb(app);
 		const data = { ...stripNulls(customer), ..._data };
 		await upsertCustomer(db, data);
 	};
@@ -100,6 +103,7 @@
 	// #endregion dialog
 
 	const handleAddLine = async (isbn: string) => {
+		const db = await getDb(app);
 		await addBooksToCustomer(db, customerId, [isbn]);
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
@@ -132,9 +136,11 @@
 	};
 
 	const handleDeleteLine = async (lineId: number) => {
+		const db = await getDb(app);
 		await removeBooksFromCustomer(db, customerId, [lineId]);
 	};
 	const handleCollect = async (id: number) => {
+		const db = await getDb(app);
 		await markCustomerOrderLinesAsCollected(db, [id]);
 	};
 
@@ -142,6 +148,8 @@
 	let bookFormData = null;
 
 	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
+		const db = await getDb(app);
+
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -173,7 +181,7 @@
 	let dialogContent: DialogContent & { type: "delete" | "edit-row" };
 </script>
 
-<Page title={$LL.customer_orders_page.title()} view="orders/customers/id" {db} {plugins}>
+<Page title={$LL.customer_orders_page.title()} view="orders/customers/id" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card md:h-full">
@@ -536,8 +544,10 @@
 			SPA: true,
 			validators: zod(createCustomerOrderSchema($LL, existingCustomers, customer?.displayId)),
 			onSubmit: async ({ validators }) => {
+				const db = await getDb(app);
+
 				// Get the latest customer data to ensure we're validating against current state
-				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+				const latestCustomerIds = await getCustomerDisplayIdInfo(db);
 
 				// Create a new schema instance with the latest data and error message generator
 				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds, customer?.displayId);

@@ -5,17 +5,19 @@ import { getCustomerOrderList } from "$lib/db/cr-sqlite/customers";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
+import { app, getDb } from "$lib/app";
+import { browser } from "$app/environment";
+
+const _load = async ({ depends }: Parameters<PageLoad>[0]) => {
 	depends("customer:list");
 
-	const { dbCtx } = await parent();
-
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
+	if (!browser) {
 		return { customerOrders: [] as CustomerOrderListItem[] };
 	}
 
-	const customerOrders = await getCustomerOrderList(dbCtx.db);
+	const db = await getDb(app);
+
+	const customerOrders = await getCustomerOrderList(db);
 
 	return { customerOrders };
 };

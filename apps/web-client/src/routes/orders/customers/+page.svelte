@@ -37,10 +37,11 @@
 
 	import { matchesName } from "$lib/utils/misc";
 
+	import { app, getDb, getDbRx } from "$lib/app";
+
 	export let data: PageData;
 
 	$: ({ customerOrders, plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	let searchField: HTMLInputElement;
 	const search = writable("");
@@ -66,7 +67,7 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload all customer order/customer order line data dependants when the data changes
-		disposer = data.dbCtx?.rx?.onRange(["customer", "customer_order_lines"], () => invalidate("customer:list"));
+		disposer = getDbRx(app).onRange(["customer", "customer_order_lines"], () => invalidate("customer:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -93,19 +94,17 @@
 
 	// Generate display ID and get existing IDs when opening the dialog
 	const handleOpenNewOrderDialog = async () => {
-		const { db } = data.dbCtx;
+		const db = await getDb(app);
 		nextDisplayId = await getCustomerDisplayIdSeq(db).then(String);
 		existingCustomers = await getCustomerDisplayIdInfo(db);
 		newOrderDialogOpen.set(true);
 	};
 
 	const createCustomer = async (customer: Omit<Customer, "id">) => {
+		const db = await getDb(app);
+
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
-
-		// NOTE: dbCtx should always be defined on client
-		const { db } = data.dbCtx;
-
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 
 		await upsertCustomer(db, { ...customer, id });
@@ -116,7 +115,7 @@
 	};
 </script>
 
-<Page title={t.title()} view="orders/customers" {db} {plugins}>
+<Page title={t.title()} view="orders/customers" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-2 divide-y">
 		<div class="flex flex-row gap-x-2 p-4">
 			<CustomerSearchForm
@@ -213,8 +212,10 @@
 			SPA: true,
 			validators: zod(createCustomerOrderSchema($LL, existingCustomers)),
 			onSubmit: async ({ validators }) => {
+				const db = await getDb(app);
+
 				// Get the latest customer data to ensure we're validating against current state
-				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+				const latestCustomerIds = await getCustomerDisplayIdInfo(db);
 
 				// Create a new schema instance with the latest data and error message generator
 				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds);

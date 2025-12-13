@@ -1,3 +1,5 @@
+import { browser } from "$app/environment";
+
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
@@ -10,14 +12,15 @@ import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
+import { app, getDb } from "$lib/app";
+
+const _load = async ({ params, depends }: Parameters<PageLoad>[0]) => {
 	depends("supplier:data");
 	depends("supplier:orders");
 
-	const { dbCtx } = await parent();
+	const id = Number(params.id);
 
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
+	if (!browser) {
 		return {
 			supplier: null,
 			assignedPublishers: [] as string[],
@@ -27,18 +30,18 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		};
 	}
 
-	const id = Number(params.id);
+	const db = await getDb(app);
 
-	const supplier = await getSupplierDetails(dbCtx.db, id);
+	const supplier = await getSupplierDetails(db, id);
 	if (!supplier) {
 		console.warn(`supplier with id '${params.id}' not found. redirecting to supplier list page...`);
 		throw redirect(307, appPath("suppliers"));
 	}
 
 	const [assignedPublishers, allPublishers, allAssignedPublishers] = await Promise.all([
-		getPublishersFor(dbCtx.db, id),
-		getPublisherList(dbCtx.db),
-		getPublishersFor(dbCtx.db)
+		getPublishersFor(db, id),
+		getPublisherList(db),
+		getPublishersFor(db)
 	]);
 
 	// NOTE: the list of unassigned publishers will contain all publishers not assigned to the supplier
@@ -47,10 +50,11 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 
 	const publishersUnassignedToSuppliers = allPublishers.filter((p) => !allAssignedPublishers.includes(p));
 
-	const unreconciledOrders = (await getPlacedSupplierOrders(dbCtx.db, { supplierId: Number(params.id), reconciled: false })).map(
-		(order) => ({ ...order, reconciled: false })
-	);
-	const reconciledOrders = (await getPlacedSupplierOrders(dbCtx.db, { supplierId: Number(params.id), reconciled: true })).map((order) => ({
+	const unreconciledOrders = (await getPlacedSupplierOrders(db, { supplierId: Number(params.id), reconciled: false })).map((order) => ({
+		...order,
+		reconciled: false
+	}));
+	const reconciledOrders = (await getPlacedSupplierOrders(db, { supplierId: Number(params.id), reconciled: true })).map((order) => ({
 		...order,
 		reconciled: true
 	}));

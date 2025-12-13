@@ -26,16 +26,17 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
+	import { app, getDb, getDbRx } from "$lib/app";
+
 	export let data: PageData;
 
 	$: ({ notes, plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
 		// Note (names/list) and book_transaction (note's totalBooks) all affect the list
-		disposer = data.dbCtx?.rx?.onRange(["note", "book_transaction"], () => invalidate("outbound:list"));
+		disposer = getDbRx(app).onRange(["note", "book_transaction"], () => invalidate("outbound:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -44,7 +45,7 @@
 	$: goto = racefreeGoto(disposer);
 
 	let initialized = false;
-	$: initialized = Boolean(db);
+	$: initialized = Boolean(getDb(app));
 
 	const resetDialogState = () => {
 		open.set(false);
@@ -52,6 +53,7 @@
 	};
 
 	const handleDeleteNote = async (id: number) => {
+		const db = await getDb(app);
 		await deleteNote(db, id);
 	};
 
@@ -60,6 +62,7 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateNote = async () => {
+		const db = await getDb(app);
 		const id = await getNoteIdSeq(db);
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));
@@ -76,7 +79,7 @@
 	$: tPages = $LL.page_headings;
 </script>
 
-<Page title={tPages.outbound()} view="outbound" {db} {plugins}>
+<Page title={tPages.outbound()} view="outbound" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-4 divide-y">
 		<div class="flex w-full items-center">
 			<div class="flex w-full items-center justify-end p-4">

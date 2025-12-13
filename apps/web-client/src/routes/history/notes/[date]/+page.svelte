@@ -19,10 +19,11 @@
 	import { appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
 
+	import { app, getDbRx } from "$lib/app";
+
 	export let data: PageData;
 
 	$: ({ notes, plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	$: t = $LL.history_page.notes_tab;
 
@@ -30,7 +31,7 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when note/warehouse changes (warehouse name/discount, note committed status)
-		disposer = data.dbCtx?.rx?.onRange(["note", "warehouse"], () => invalidate("history:notes"));
+		disposer = getDbRx(app).onRange(["note", "warehouse"], () => invalidate("history:notes"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -61,7 +62,7 @@
 	// #endregion date picker
 </script>
 
-<HistoryPage view="history/notes" {db} {plugins}>
+<HistoryPage view="history/notes" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div class="flex w-full justify-between">
 			<div class="flex w-full flex-col items-center gap-3">

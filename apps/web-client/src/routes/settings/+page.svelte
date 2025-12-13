@@ -21,23 +21,25 @@
 
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { dbid, syncConfig, syncActive, syncProgressStore } from "$lib/db";
+	import { dbid, syncConfig, syncActive } from "$lib/db";
 	import { clearDb, dbCache, getInitializedDB } from "$lib/db/cr-sqlite/db";
 	import { opfsVFSList, vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 	import { retry } from "$lib/utils/misc";
-	import { checkOPFSFileExists, deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
+	import { checkOPFSFileExists, deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
+
+	import { app } from "$lib/app";
 
 	export let data: PageData;
 
 	$: ({ plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	// #region files list
 	let files: string[] = [];
 	// Each time a dbCtx changes, update the file list - this might indicate a DB created / deleted
+	// TODO: this isn't working, revisit the DB list reactivity
 	$: if (data.dbCtx) getFiles().then((_files) => (files = _files));
 
 	const getFiles = async () => {
@@ -235,7 +237,7 @@
 	$: ({ settings_page: tSettings, common: tCommon } = $LL);
 </script>
 
-<Page title={tSettings.headings.settings()} view="settings" {db} {plugins}>
+<Page title={tSettings.headings.settings()} view="settings" {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		<div class="p-4">
 			<h4>{tSettings.stats.version()} {VERSION}</h4>

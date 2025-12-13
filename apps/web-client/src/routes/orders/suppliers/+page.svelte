@@ -28,6 +28,8 @@
 	import type { PageData } from "./$types";
 	import { orderFormats } from "$lib/enums/orders";
 
+	import { app, getDb, getDbRx } from "$lib/app";
+
 	export let data: PageData;
 
 	// #region reactivity
@@ -35,7 +37,7 @@
 	onMount(() => {
 		// Reload when note
 		// Reload when entries (book/custom item) change
-		disposer = data.dbCtx?.rx?.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:list"));
+		disposer = getDbRx(app).onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -45,7 +47,6 @@
 	$: goto = racefreeGoto(disposer);
 
 	$: ({ plugins, suppliers } = data);
-	$: db = data?.dbCtx?.db;
 
 	const seeMore = () => {
 		maxResults += 10;
@@ -66,6 +67,8 @@
 	} = dialog;
 
 	const createSupplier = async (supplier: Omit<Supplier, "id">) => {
+		const db = await getDb(app);
+
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
@@ -78,7 +81,7 @@
 	};
 </script>
 
-<Page title={t.title()} view="orders/suppliers" {db} {plugins}>
+<Page title={t.title()} view="orders/suppliers" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-2 divide-y">
 		<div class="flex w-full flex-row justify-end gap-x-2 p-4">
 			<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>

@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
@@ -9,20 +10,21 @@ import { appPath } from "$lib/paths";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
+import { app, getDb } from "$lib/app";
+
+const _load = async ({ params, depends }: Parameters<PageLoad>[0]) => {
 	const id = Number(params.id);
 
 	depends("note:data");
 	depends("note:books");
 
-	const { dbCtx } = await parent();
-
-	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
-		return { dbCtx, id, displayName: "N/A", entries: [], publisherList: [] as string[] };
+	if (!browser) {
+		return { id, displayName: "N/A", entries: [], publisherList: [] as string[] };
 	}
 
-	const note = await getNoteById(dbCtx.db, id);
+	const db = await getDb(app);
+
+	const note = await getNoteById(db, id);
 
 	// If note not found, we shouldn't be here
 	// If note committed, we shouldn't be here either (it can be viewed in the note archive)
@@ -31,10 +33,10 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		redirect(307, appPath("inbound"));
 	}
 
-	const entries = await getNoteEntries(dbCtx.db, id);
-	const publisherList = await getPublisherList(dbCtx.db);
+	const entries = await getNoteEntries(db, id);
+	const publisherList = await getPublisherList(db);
 
-	return { dbCtx, ...note, entries, publisherList };
+	return { ...note, entries, publisherList };
 };
 
 export const load: PageLoad = timed(_load);

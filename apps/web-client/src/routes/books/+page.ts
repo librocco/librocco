@@ -1,22 +1,25 @@
+import { browser } from "$app/environment";
+
+import { app, getDb } from "$lib/app";
+
 import type { PageLoad } from "./$types";
 
 import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { timed } from "$lib/utils/timer";
 
-const _load: PageLoad = async ({ parent, depends }) => {
+const _load: PageLoad = async ({ depends }) => {
 	depends("book:data");
 
-	const { dbCtx } = await parent();
-
-	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
-		return { dbCtx, publisherList: [] as string[] };
+	if (!browser) {
+		return { publisherList: [] as string[] };
 	}
 
-	const publisherList = await getPublisherList(dbCtx.db);
+	const db = await getDb(app);
 
-	return { dbCtx, publisherList };
+	const publisherList = await getPublisherList(db);
+
+	return { publisherList };
 };
 
 export const load = timed(_load as any) as PageLoad;

@@ -1,3 +1,7 @@
+import { browser } from "$app/environment";
+
+import { app, getDb } from "$lib/app";
+
 import type { PageLoad } from "./$types";
 
 import type { Customer, CustomerOrderLine } from "$lib/db/cr-sqlite/types";
@@ -7,21 +11,20 @@ import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
+const _load = async ({ params, depends }: Parameters<PageLoad>[0]) => {
 	depends("customer:data");
 	depends("customer:books");
 
-	const { dbCtx } = await parent();
-
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
+	if (!browser) {
 		return { customer: null, possibleOrders: [] as CustomerOrderLine[] };
 	}
 
+	const db = await getDb(app);
+
 	// TODO: Retirect to customers page perhaps
-	const customer = (await getCustomerDetails(dbCtx.db, Number(params.id))) || ({} as Customer);
-	const customerOrderLines = await getCustomerOrderLines(dbCtx.db, Number(params.id));
-	const publisherList = await getPublisherList(dbCtx.db);
+	const customer = (await getCustomerDetails(db, Number(params.id))) || ({} as Customer);
+	const customerOrderLines = await getCustomerOrderLines(db, Number(params.id));
+	const publisherList = await getPublisherList(db);
 
 	return { customer, customerOrderLines, publisherList };
 };

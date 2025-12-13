@@ -39,10 +39,11 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
+	import { app, getDb, getDbRx } from "$lib/app";
+
 	export let data: PageData;
 
 	$: ({ plugins, displayName, publisherList, id } = data);
-	$: db = data.dbCtx?.db;
 
 	let entries: GetStockResponseItem[] = [];
 	$: data.entries.then((e) => (entries = e));
@@ -57,9 +58,9 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when warehouse data changes
-		const disposer1 = data.dbCtx?.rx?.onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
+		const disposer1 = getDbRx(app).onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
 		// Reload when some stock changes (note being committed)
-		const disposer2 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("warehouse:books"));
+		const disposer2 = getDbRx(app).onRange(["book"], () => invalidate("warehouse:books"));
 		// Reload when stock cache invalidates
 		const disposer3 = stockCache.onInvalidated(() => invalidate("warehouse:books"));
 
@@ -102,6 +103,7 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateInboundNote = async () => {
+		const db = await getDb(app);
 		const noteId = await getNoteIdSeq(db);
 		await createInboundNote(db, id, noteId); // Id here is warehouseId ^^^
 		await goto(appPath("inbound", noteId));
@@ -112,6 +114,8 @@
 	let bookFormData = null;
 
 	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
+		const db = await getDb(app);
+
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -167,7 +171,7 @@
 	// #endregion printing
 </script>
 
-<Page title={displayName} view="warehouse" {db} {plugins}>
+<Page title={displayName} view="warehouse" {app} {plugins}>
 	<div slot="main" class="h-full w-full flex-col gap-y-4 divide-y overflow-auto">
 		<div class="p-4">
 			<Breadcrumbs class="" links={breadcrumbs} />

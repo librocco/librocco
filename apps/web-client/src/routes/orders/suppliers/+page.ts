@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import type { PageLoad } from "./$types";
 
 import { getAllSuppliers } from "$lib/db/cr-sqlite/suppliers";
@@ -6,17 +7,18 @@ import type { SupplierExtended } from "$lib/db/cr-sqlite/types";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
+import { app, getDb } from "$lib/app";
+
+const _load = async ({ depends }: Parameters<PageLoad>[0]) => {
 	depends("suppliers:list");
 
-	const { dbCtx } = await parent();
-
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
+	if (!browser) {
 		return { suppliers: [] as SupplierExtended[] };
 	}
 
-	const suppliers = await getAllSuppliers(dbCtx.db);
+	const db = await getDb(app);
+
+	const suppliers = await getAllSuppliers(db);
 
 	return { suppliers };
 };
