@@ -1,6 +1,6 @@
 import { defineConfig, devices, PlaywrightTestConfig, ReporterDescription } from "@playwright/test";
 
-import { IS_CI, VFS_TEST, SHARD_INDEX, baseURL } from "./constants";
+import { IS_CI, VFS_TEST, SHARD_INDEX, baseURL, FULLY_PARALLEL } from "./constants";
 
 const reporter: ReporterDescription[] = [["list"]];
 // Produce a merge‑able blob report when running in CI
@@ -55,7 +55,7 @@ const locales = ["en"];
 const baseConfig: PlaywrightTestConfig = {
 	testDir: "./integration",
 	/* Run tests in files in parallel */
-	fullyParallel: false,
+	fullyParallel: FULLY_PARALLEL,
 	/* Fail the build on CI if you accidentally left test.only in the source code. */
 	forbidOnly: IS_CI,
 	/* Retry for local test run (normally, the tests ran using the UI will not be flaky, but headless tests might take a toll on the CPU, resulting in flaky tests) */
