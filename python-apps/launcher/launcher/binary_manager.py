@@ -11,6 +11,7 @@ import zipfile
 import tempfile
 import subprocess
 import stat
+import time
 from pathlib import Path
 from typing import Optional, Tuple
 import requests
@@ -232,24 +233,53 @@ class BinaryManager:
         """
         url, ext, filename = self.get_download_info()
 
-        # Download to temporary file
+        # Download to temporary file with retry logic
+        max_retries = 3
+        retry_delay = 2  # seconds
+
         with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=False) as tmp_file:
             tmp_path = Path(tmp_file.name)
 
-            print(f"Downloading {self.binary_type} from {url}...")
-            response = requests.get(url, stream=True, timeout=30)
-            response.raise_for_status()
+            for attempt in range(1, max_retries + 1):
+                try:
+                    print(f"Downloading {self.binary_type} from {url}...")
+                    if attempt > 1:
+                        print(f"Retry attempt {attempt}/{max_retries}...")
 
-            total_size = int(response.headers.get("content-length", 0))
-            downloaded = 0
+                    response = requests.get(url, stream=True, timeout=30)
+                    response.raise_for_status()
 
-            for chunk in response.iter_content(chunk_size=8192):
-                tmp_file.write(chunk)
-                downloaded += len(chunk)
-                if progress_callback:
-                    progress_callback(downloaded, total_size)
+                    total_size = int(response.headers.get("content-length", 0))
+                    downloaded = 0
 
-            tmp_file.flush()
+                    for chunk in response.iter_content(chunk_size=8192):
+                        tmp_file.write(chunk)
+                        downloaded += len(chunk)
+                        if progress_callback:
+                            progress_callback(downloaded, total_size)
+
+                    tmp_file.flush()
+                    break  # Success - exit retry loop
+
+                except (requests.exceptions.RequestException, OSError) as e:
+                    logger.error(f"Failed to download {self.binary_type}: {e}")
+                    print(f"Failed to download {self.binary_type}: {e}")
+
+                    if attempt < max_retries:
+                        # Exponential backoff: 2s, 4s, 8s, etc.
+                        wait_time = retry_delay * (2 ** (attempt - 1))
+                        print(f"Retrying in {wait_time} seconds...")
+                        time.sleep(wait_time)
+
+                        # Reset file position for retry
+                        tmp_file.seek(0)
+                        tmp_file.truncate()
+                    else:
+                        # All retries exhausted
+                        raise RuntimeError(
+                            f"Failed to download {self.binary_type} after {max_retries} attempts. "
+                            f"Last error: {e}"
+                        )
 
         # Verify checksum before extraction
         if not self._verify_checksum(tmp_path, filename):
