@@ -88,7 +88,7 @@ def main():
         "private": True,
         "dependencies": {
             "@vlcn.io/ws-server": "0.2.2",
-            "@vlcn.io/crsqlite": "0.16.1",
+            "@vlcn.io/crsqlite": "0.16.3",
             "@vlcn.io/logger-provider": "0.2.0",
             "@vlcn.io/ws-common": "0.2.0",
             "better-sqlite3": "~11.4.0",
