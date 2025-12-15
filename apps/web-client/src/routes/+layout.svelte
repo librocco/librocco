@@ -3,7 +3,7 @@
 	import "$lib/main.css";
 	import "./global.css";
 
-	import { onDestroy, onMount } from "svelte";
+	import { onMount } from "svelte";
 	import { get, writable } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
 
@@ -17,16 +17,16 @@
 
 	import type { LayoutData } from "./$types";
 
-	import { DEFAULT_VFS, DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
+	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 	import WorkerInterface from "$lib/workers/WorkerInterface";
 
-	import { sync, syncConfig, syncActive, dbid, syncProgressStore } from "$lib/db";
-	import { clearDb, getDB, schemaName, schemaContent, dbCache, isEmptyDB } from "$lib/db/cr-sqlite/db";
-	import { ErrDBSchemaMismatch, ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
+	import { sync, syncConfig, syncActive, dbid, syncProgressStore, initStore } from "$lib/db";
+	import { clearDb, dbCache } from "$lib/db/cr-sqlite/db";
+	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -46,7 +46,6 @@
 	import { progressBar } from "$lib/actions";
 
 	import { appPath } from "$lib/paths";
-	import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
 
 	export let data: LayoutData;
 
@@ -112,66 +111,67 @@
 		sync.stop();
 	}
 
-	let disposer: () => void;
-
-	onMount(() => {
-		// Control the invalidation of the stock cache in central spot
-		// On every 'book_transaction' change, we run 'maybeInvalidate', which, in turn checks for relevant changes
-		// between the last cached value and the current one and invalidates the cache if needed
-		disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
-	});
-
 	// Sync
 	const { progress: syncProgress } = syncProgressStore;
 
 	onMount(() => {
-		// We currently don't support the sync in demo mode
-		if (IS_DEMO) return;
-
-		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
+		// This helps us in e2e to know when the page is interactive
 		document.body.setAttribute("hydrated", "true");
 
 		if (IS_E2E || IS_DEBUG) {
 			window["timeLogger"] = timeLogger;
 		}
+		// Control the invalidation of the stock cache
+		// On every 'book_transaction' change, we run 'maybeInvalidate', which checks for relevant changes
+		// between the last cached value and the current one and invalidates the cache if needed
+		const disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
 
-		// Start the sync worker
-		//
-		// Init worker and sync interface
-		const wkr = new WorkerInterface(new SyncWorker());
-		// NOTE: It's ok if dbCtx (and, by extension the vfs) is not defined -- this is handled elsewhere
-		// calls to wkr.start(vfs) without vfs provided are noop
-		const vfs = dbCtx?.vfs;
+		// 3. Sync setup (not supported in demo mode)
+		// Only start sync when DB is ready
 
-		wkr.start(vfs);
-		sync.init(wkr);
+		let preventUnloadHandler: ((e: BeforeUnloadEvent) => void) | null = null;
 
-		// Start the sync is it should be active.
-		if ($syncActive) {
-			sync.sync($syncConfig, { invalidateAll });
-		}
+		const initUnsubscribe = initStore.subscribe((state) => {
+			if (state.phase !== "ready") return;
 
-		// Start the sync progress store (listen to sync events)
-		syncProgressStore.start(wkr);
+			// DB is ready, start sync worker
+			const wkr = new WorkerInterface(new SyncWorker());
+			const vfs = dbCtx?.vfs;
 
-		// Prevent user from navigating away if sync is in progress (this would result in an invalid DB state)
-		const preventUnloadIfSyncing = (e: BeforeUnloadEvent) => {
-			if (get(syncProgress).active) {
-				e.preventDefault();
-				e.returnValue = "";
+			wkr.start(vfs);
+			sync.init(wkr);
+
+			// Start the sync if it should be active
+			if ($syncActive) {
+				sync.sync($syncConfig, { invalidateAll });
 			}
+
+			// Start the sync progress store (listen to sync events)
+			syncProgressStore.start(wkr);
+
+			// Prevent user from navigating away if sync is in progress
+			preventUnloadHandler = (e: BeforeUnloadEvent) => {
+				if (get(syncProgress).active) {
+					e.preventDefault();
+					e.returnValue = "";
+				}
+			};
+			window.addEventListener("beforeunload", preventUnloadHandler);
+		});
+
+		// Cleanup function
+		return () => {
+			// Stop the sync (if active)
+			sync.stop();
+			syncProgressStore.stop();
+
+			availabilitySubscription?.unsubscribe();
+			initUnsubscribe?.();
+			disposer?.();
+
+			// Run all cleanup functions
+			window.removeEventListener("beforeunload", preventUnloadHandler);
 		};
-		window.addEventListener("beforeunload", preventUnloadIfSyncing);
-	});
-
-	onDestroy(() => {
-		// Stop the sync (if active)
-		sync.stop(); // Safe and idempotent
-		syncProgressStore.stop(); // Safe and idempotent
-
-		availabilitySubscription?.unsubscribe();
-
-		disposer?.();
 	});
 
 	const {
@@ -256,21 +256,6 @@
 
 		// Reload the window - to avoid a huge number of issues related to
 		// having to account for DB not being available, but becoming available within the same lifetime
-		window.location.reload();
-	};
-
-	const automigrateDB = async () => {
-		// We need to retrieve the DB directly, as the broken DB won't be passed down from the load function
-		const vfs = (window.localStorage.getItem("vfs") as VFSWhitelist) || DEFAULT_VFS;
-		const db = await getDB($dbid, vfs);
-
-		console.log("automigrating db to latest versin....");
-		await db.automigrateTo(schemaName, schemaContent);
-		console.log("automigration done");
-
-		// Reload the window - to avoid a huge number of issues related to
-		// having to account for DB not being available, but becoming available within the same lifetime
-		// NOTE: commented out so we can observe the errors before navigating away, TODO: uncomment when stable
 		window.location.reload();
 	};
 
@@ -392,7 +377,8 @@
 	</div>
 {/if}
 
-{#if $errorDialogOpen}
+{#if $errorDialogOpen && error instanceof ErrDemoDBNotInitialised}
+	<!-- Demo DB initialization dialog - only shown in demo mode when DB needs to be fetched -->
 	<div use:melt={$errorDialogPortalled}>
 		<div use:melt={$errorDialogOverlay} class="fixed inset-0 z-[100] bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 
@@ -402,69 +388,28 @@
 			use:melt={$errorDialogContent}
 		>
 			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
-				{#if error instanceof ErrDemoDBNotInitialised}
-					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
-						{tLayout.error_dialog.demo_db_not_initialised.title()}
-					</h2>
+				<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
+					{tLayout.error_dialog.demo_db_not_initialised.title()}
+				</h2>
 
-					<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
-						<span class="mb-2 block">
-							{tLayout.error_dialog.demo_db_not_initialised.call_to_action()}
-						</span>
-						<span class="mb-2 block">
-							{tLayout.error_dialog.demo_db_not_initialised.description()}
-						</span>
-					</p>
+				<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
+					<span class="mb-2 block">
+						{tLayout.error_dialog.demo_db_not_initialised.call_to_action()}
+					</span>
+					<span class="mb-2 block">
+						{tLayout.error_dialog.demo_db_not_initialised.description()}
+					</span>
+				</p>
 
-					<div class="mb-8 h-3 w-full overflow-hidden rounded">
-						<div use:progressBar={demoFetchProgress} class="h-full bg-cyan-300"></div>
-					</div>
+				<div class="mb-8 h-3 w-full overflow-hidden rounded">
+					<div use:progressBar={demoFetchProgress} class="h-full bg-cyan-300"></div>
+				</div>
 
-					<div class="w-full text-end">
-						<button on:click={handleFetchDemoDB} type="button" class="btn-secondary btn">
-							{tLayout.error_dialog.demo_db_not_initialised.button()}
-						</button>
-					</div>
-				{:else if error instanceof ErrDBSchemaMismatch}
-					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
-						{tLayout.error_dialog.schema_mismatch.title()}
-					</h2>
-
-					<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
-						<span class="mb-2 block">
-							{tLayout.error_dialog.schema_mismatch.description()}
-						</span>
-						<span class="ml-4 block">
-							{tLayout.error_dialog.schema_mismatch.latest_version({ wantVersion: (error as ErrDBSchemaMismatch).wantVersion })}
-						</span>
-						<span class="ml-4 block">
-							{tLayout.error_dialog.schema_mismatch.your_version({ gotVersion: (error as ErrDBSchemaMismatch).gotVersion })}
-						</span>
-					</p>
-
-					<div class="w-full text-end">
-						<button on:click={automigrateDB} type="button" class="btn-secondary btn">
-							{tLayout.error_dialog.schema_mismatch.button()}
-						</button>
-					</div>
-				{:else}
-					<h2 use:melt={$errorDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
-						{tLayout.error_dialog.corrupted.title()}
-					</h2>
-
-					<p class="mb-2 text-sm leading-6 text-gray-600" use:melt={$errorDialogDescription}>
-						<span class="mb-2 block">{tLayout.error_dialog.corrupted.description()}</span>
-						<span class="mb-4 block">
-							{tLayout.error_dialog.corrupted.note()}
-						</span>
-					</p>
-
-					<div class="w-full text-end">
-						<button on:click={nukeDB} type="button" class="btn-secondary btn">
-							{tLayout.error_dialog.corrupted.button()}
-						</button>
-					</div>
-				{/if}
+				<div class="w-full text-end">
+					<button on:click={handleFetchDemoDB} type="button" class="btn-secondary btn">
+						{tLayout.error_dialog.demo_db_not_initialised.button()}
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
