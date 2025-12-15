@@ -5,7 +5,7 @@ run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
 ---
 #@ def rush_install():
 name: Install packages
-run: rush update
+run: rush install
 #@ end
 ---
 #@ def rush_build():

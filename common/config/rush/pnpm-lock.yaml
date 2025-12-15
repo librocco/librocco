@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@vlcn.io/crsqlite': file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz
+  '@vlcn.io/crsqlite': file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
   '@vlcn.io/crsqlite-wasm': file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
   '@vlcn.io/rx-tbl': file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz
   '@vlcn.io/wa-sqlite': file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz
@@ -104,8 +104,8 @@ importers:
         specifier: ~9.34.0
         version: 9.34.0(@sveltejs/kit@2.49.2)(svelte@5.37.3)(vite@6.0.15)
       '@vlcn.io/crsqlite':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz
+        specifier: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
+        version: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
       '@vlcn.io/crsqlite-wasm':
         specifier: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
         version: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
@@ -8824,15 +8824,15 @@ packages:
     resolution: {integrity: sha512-ficnZKUW0mlNivqeJkosTEkGbJ6NKCtSaOHGx5aXbtfeWMdRyzXLbAIn19my4C/KB7WPY/p9vlGPt+qpOp6c4Q==}
     dev: true
 
-  file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz:
-    resolution: {integrity: sha512-XpMU5ajsesA2BSlOU7aVbGCmrtqHkU4hsTAFS9n29hhiWoESwj8ESPc/bGseyiw7GQ3sQd+mKd+g/yDcdzs2lQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz}
+  file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz:
+    resolution: {integrity: sha512-r6WsCArS47aiCVmVWg8m0hQ92FnXKJh46kRcukwZKUKvYNyTiEMkCK+/GzzaeEM3bIcpPKsi5/EWWEjrKSMQhQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz}
     name: '@vlcn.io/crsqlite'
-    version: 0.16.1
+    version: 0.16.3
     requiresBuild: true
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz:
-    resolution: {integrity: sha512-6d2/3fo1MlKPnl+dD+8PX3wU4dEkYuRdTb3mMVVqGWJPTIfjm//jJEDYS8zt00xiTRLUbYpdYB+BAyGKh8QJGg==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
+    resolution: {integrity: sha512-qvGNRLNBw8ixy5+DhbHrMe82/cgreC9hjI0nj2T5AfxC3tId74MUk3g7fvBzzR5p4synap919By8wBLlVNsSDw==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
     name: '@vlcn.io/crsqlite-wasm'
     version: 0.16.0
     dependencies:
@@ -8849,12 +8849,12 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz:
-    resolution: {integrity: sha512-re/M9nmhTSayt7f+S6mcMm2HT0xEMxQ+RTwlZzQ9fV14Fq2WQIkflPLSnBA9B+vt/hmTIZEZSSfcDz2tIm3u7A==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
+    resolution: {integrity: sha512-ft7son5S0rmiLaPjadNcE4cdy7gUMzWS2egWiyWjj/58KS9l85NGzZKZ5evFrYNmXTorzRaMvlKGshwHnkOZxA==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
     name: '@vlcn.io/wa-sqlite'
     version: 0.22.0
 
   file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz:
-    resolution: {integrity: sha512-UMjWOOVdGORu+xVRlehS5QzQY/qeb41pjYVu64fJDIA/Alb+JyHaN7XHZoJSHRmUf9Yj0N95720ql5PkFxH9iA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
+    resolution: {integrity: sha512-Roe/OOFxRX4UigXOgsvngEzLGSc2fxhpXJeZlCz5K76tuWEa6pRb2Ky040IrfRgmrtB9ECFcQhhJ5zOzHP7taA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
     name: '@vlcn.io/ws-browserdb'
     version: 0.2.0
     dependencies:
@@ -8884,12 +8884,12 @@ packages:
     dev: false
 
   file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz:
-    resolution: {integrity: sha512-Cl9rRZJhLk5XOWMqhiBe+19P6tMo3r2NnMSevNhLre3OLhDrtX/1jv4VURB51LuxIbk2f7x466ChlfPXECGsTg==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
+    resolution: {integrity: sha512-QE6ht7bVTMxwctXazORJ+jJaAYOnYHsTXA2jPQoC9NQuHmRKmzj1xqO7ymwYofXY8AZgEdNic6Tq2ilx8VHoow==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
     name: '@vlcn.io/ws-server'
     version: 0.2.2
     dependencies:
       '@types/better-sqlite3': 7.6.13
-      '@vlcn.io/crsqlite': file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz
+      '@vlcn.io/crsqlite': file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
       '@vlcn.io/logger-provider': 0.2.0
       '@vlcn.io/ws-common': file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz
       better-sqlite3: 9.6.0
