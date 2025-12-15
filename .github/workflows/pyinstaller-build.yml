@@ -48,7 +48,7 @@ jobs:
       shell: pwsh
       run: |
         # Extract the tarball
-        $tarball = "3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz"
+        $tarball = "3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz"
         $tempDir = "temp-crsqlite-inject"
 
         New-Item -ItemType Directory -Force -Path $tempDir
