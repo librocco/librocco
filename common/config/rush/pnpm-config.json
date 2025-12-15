@@ -145,7 +145,7 @@
    * PNPM documentation: https://pnpm.io/package_json#pnpmoverrides
    */
   "globalOverrides": {
-    "@vlcn.io/crsqlite": "file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.1.tgz",
+    "@vlcn.io/crsqlite": "file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz",
     "@vlcn.io/crsqlite-wasm": "file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz",
     "@vlcn.io/rx-tbl": "file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz",
     "@vlcn.io/wa-sqlite": "file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz",
