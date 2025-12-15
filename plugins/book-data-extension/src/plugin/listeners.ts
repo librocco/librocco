@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import { Result } from "../types";
 
 import { addEventListener, removeEventListener } from "./window-helpers";
 
-type MessageData<T = {}> = { message: string } & T;
+type MessageData<T = object> = { message: string } & T;
 
 /**
  * A helper function used to create the response listener - listening to a message from the extension. The timeout

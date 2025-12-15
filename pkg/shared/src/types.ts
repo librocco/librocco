@@ -1,7 +1,6 @@
 // #region misc
 export type VolumeStockKind = "book" | "custom";
 
-/* eslint-disable @typescript-eslint/ban-types */
 /**
  * A union of entries found in note and warehouse's `entries` (`"custom"` variant should only be found in outbond notes).
  * The union can be descriminated over the `__kind` property.

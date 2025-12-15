@@ -1,10 +1,9 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
 import { Observable } from "rxjs";
 
 import type { BookData } from "@librocco/shared";
 
 // #region plugins
-export type LibroccoPlugin<T extends {}> = {
+export type LibroccoPlugin<T extends object> = {
 	/**
 	 * Registers a new implementation of the plugin. It's idempotent in case of the same implementation being registered multiple times (will register only once).
 	 */

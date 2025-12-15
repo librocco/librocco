@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import type { BookData } from "./types";
 import { BehaviorSubject, Observable, from } from "rxjs";
 
 // #region types
-export type LibroccoPlugin<T extends {}> = {
+export type LibroccoPlugin<T extends object> = {
 	/**
 	 * Registers a new implementation of the plugin. It's idempotent in case of the same implementation being registered multiple times (will register only once).
 	 */
