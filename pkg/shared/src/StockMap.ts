@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import { filter, map } from "./generators";
 import { VolumeStock } from "./types";
 import { asc, composeCompare } from "./utils";
