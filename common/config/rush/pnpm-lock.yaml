@@ -312,8 +312,8 @@ importers:
         specifier: ~6.5.4
         version: 6.5.4
       zod:
-        specifier: 3.25.0
-        version: 3.25.0
+        specifier: 3.25.76
+        version: 3.25.76
 
   ../../pkg/scaffold:
     dependencies:
@@ -7800,8 +7800,8 @@ packages:
       superstruct: 2.0.2
       valibot: 1.0.0-beta.11(typescript@5.9.3)
       yup: 1.7.1
-      zod: 3.25.0
-      zod-to-json-schema: 3.25.0(zod@3.25.0)
+      zod: 3.25.76
+      zod-to-json-schema: 3.25.0(zod@3.25.76)
     transitivePeerDependencies:
       - '@types/json-schema'
       - typescript
@@ -8810,18 +8810,18 @@ packages:
   /zimmerframe@1.1.4:
     resolution: {integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==}
 
-  /zod-to-json-schema@3.25.0(zod@3.25.0):
+  /zod-to-json-schema@3.25.0(zod@3.25.76):
     resolution: {integrity: sha512-HvWtU2UG41LALjajJrML6uQejQhNJx+JBO9IflpSja4R03iNWfKXrj6W2h7ljuLyc1nKS+9yDyL/9tD1U/yBnQ==}
     requiresBuild: true
     peerDependencies:
       zod: ^3.25 || ^4
     dependencies:
-      zod: 3.25.0
+      zod: 3.25.76
     dev: true
     optional: true
 
-  /zod@3.25.0:
-    resolution: {integrity: sha512-ficnZKUW0mlNivqeJkosTEkGbJ6NKCtSaOHGx5aXbtfeWMdRyzXLbAIn19my4C/KB7WPY/p9vlGPt+qpOp6c4Q==}
+  /zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
     dev: true
 
   file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz:

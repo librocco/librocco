@@ -87,7 +87,7 @@
 		"vite": "~6.0.11",
 		"vitest": "3.0.9",
 		"workbox-window": "~6.5.4",
-		"zod": "3.25.0",
+		"zod": "3.25.76",
 		"@internationalized/date": "~3.7.0",
 		"storybook": "~8.5.2",
 		"@storybook/sveltekit": "~8.5.2",
