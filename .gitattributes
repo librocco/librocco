@@ -15,3 +15,4 @@ pkg/shared/src/i18n/i18n-*.ts    -diff merge=ours linguist-generated
 #
 *.json                       linguist-language=JSON-with-Comments
 assets/*.png filter=lfs diff=lfs merge=lfs -text
+*.tgz filter=lfs diff=lfs merge=lfs -text

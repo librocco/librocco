@@ -104,7 +104,7 @@ jobs:
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
-      run: rush update
+      run: rush install
     - name: Build packages
       run: |
         set +e
@@ -161,7 +161,7 @@ jobs:
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
-      run: rush update
+      run: rush install
     - name: Build packages
       run: |
         set +e
@@ -225,7 +225,7 @@ jobs:
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
-      run: rush update
+      run: rush install
     - name: Build packages
       run: |
         set +e
@@ -327,7 +327,7 @@ jobs:
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
-      run: rush update
+      run: rush install
     - name: Build packages
       run: |
         set +e
@@ -384,7 +384,7 @@ jobs:
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
-      run: rush update
+      run: rush install
     - name: Build packages
       run: |
         set +e
@@ -434,7 +434,7 @@ jobs:
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
-      run: rush update
+      run: rush install
     - name: Build packages
       run: |
         set +e
@@ -486,7 +486,7 @@ jobs:
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
-      run: rush update
+      run: rush install
     - name: Build packages
       run: |
         set +e
@@ -640,7 +640,7 @@ jobs:
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
-      run: rush update
+      run: rush install
     - name: Build packages
       run: |
         set +e

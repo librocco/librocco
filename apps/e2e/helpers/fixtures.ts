@@ -494,5 +494,5 @@ export const testOrders = testBase.extend<OrderTestFixture>({
  *
  */
 export const depends = (x: any) => {
-	x; // This does nothing
+	void x; // This does nothing
 };
