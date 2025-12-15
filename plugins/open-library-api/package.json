@@ -25,12 +25,12 @@
 	},
 	"devDependencies": {
 		"@librocco/shared": "workspace:*",
-		"@typescript-eslint/eslint-plugin": "^7.17.1",
-		"@typescript-eslint/parser": "^7.17.1",
+		"@typescript-eslint/eslint-plugin": "^8.22.0",
+		"@typescript-eslint/parser": "^8.22.0",
 		"eslint": "^8.13.0",
 		"eslint-config-prettier": "^8.6.0",
 		"rxjs": "^7.8.1",
-		"prettier": "^3.3.3",
+		"prettier": "3.4.2",
 		"typescript": "^5.7.3",
 		"vite": "~6.0.11"
 	},
