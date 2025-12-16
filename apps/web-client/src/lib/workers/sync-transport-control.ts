@@ -35,6 +35,28 @@ export class SyncEventEmitter {
 	notifyProgress = this._notify(this.progressListeners);
 }
 
+export class ConnectionEventEmitter {
+	connOpenListeners = new Set<Listener>();
+	connCloseListeners = new Set<Listener>();
+
+	private _notify = (listeners: Set<Listener>) => () => {
+		for (const listener of listeners) {
+			listener();
+		}
+	};
+
+	private _listen = (listeners: Set<Listener>) => (cb: Listener) => {
+		listeners.add(cb);
+		return () => listeners.delete(cb);
+	};
+
+	onConnOpen = this._listen(this.connOpenListeners);
+	onConnClose = this._listen(this.connCloseListeners);
+
+	notifyConnOpen = this._notify(this.connOpenListeners);
+	notifyConnClose = this._notify(this.connCloseListeners);
+}
+
 export type SyncConfig = {
 	maxChunkSize: number;
 };
@@ -106,8 +128,11 @@ class ChangesProcessor {
 
 export class SyncTransportController implements Transport {
 	#transport: Transport;
-	#progressEmitter: SyncEventEmitter;
 	#changesProcessor: ChangesProcessor;
+
+	#progressEmitter: SyncEventEmitter;
+	#connectionEmitter: ConnectionEventEmitter;
+	#isConnected = false;
 
 	announcePresence: Transport["announcePresence"];
 	sendChanges: Transport["sendChanges"];
@@ -117,9 +142,10 @@ export class SyncTransportController implements Transport {
 	onStartStreaming: Transport["onStartStreaming"] = null;
 	onResetStream: Transport["onResetStream"] = null;
 
-	constructor(transport: Transport, progressEmitter: SyncEventEmitter, config: SyncConfig) {
+	constructor(transport: Transport, progressEmitter: SyncEventEmitter, connectionEmitter: ConnectionEventEmitter, config: SyncConfig) {
 		this.#transport = transport;
 		this.#progressEmitter = progressEmitter;
+		this.#connectionEmitter = connectionEmitter;
 
 		// Propagate the immutable transport methods
 		this.announcePresence = this.#transport.announcePresence.bind(this.#transport);
@@ -133,10 +159,25 @@ export class SyncTransportController implements Transport {
 		this.#transport.onStartStreaming = this._onStartStreaming.bind(this);
 		this.#transport.onResetStream = this._onResetStream.bind(this);
 
+		// Wire up connection event handlers
+		this.#transport.onConnOpen = () => {
+			this.#isConnected = true;
+			this.#connectionEmitter.notifyConnOpen();
+		};
+
+		this.#transport.onConnClose = () => {
+			this.#isConnected = false;
+			this.#connectionEmitter.notifyConnClose();
+		};
+
 		// Setup the changes processor
 		this.#changesProcessor = new ChangesProcessor(config);
 		this.#changesProcessor.onChunk = this._onChunk.bind(this);
 		this.#changesProcessor.onDone = this._onDone.bind(this);
+	}
+
+	get isConnected() {
+		return this.#isConnected;
 	}
 
 	private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
