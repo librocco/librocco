@@ -2,16 +2,17 @@
 	import Book from "$lucide/book";
 	import Calendar from "$lucide/calendar";
 
+	import { LL } from "@librocco/shared/i18n-svelte";
+	import type { HistoryView } from "@librocco/shared";
+
 	import { browser } from "$app/environment";
 	import { page } from "$app/stores";
 
+	import type { App } from "$lib/app";
+
 	import { Page } from "$lib/controllers";
 	import { appHash } from "$lib/paths";
-	import { LL } from "@librocco/shared/i18n-svelte";
 
-	import type { HistoryView } from "@librocco/shared";
-
-	import type { DBAsync } from "$lib/db/cr-sqlite/types";
 	import type { PluginsInterface } from "$lib/plugins";
 
 	$: t = $LL.history_page;
@@ -44,11 +45,11 @@
 	];
 
 	export let view: HistoryView;
-	export let db: DBAsync;
+	export let app: App;
 	export let plugins: PluginsInterface;
 </script>
 
-<Page title={t.title()} {view} {db} {plugins}>
+<Page title={t.title()} {view} {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col">
 		<div id="history-tabs" class="tabs tabs-bordered w-full py-4">
 			{#each tabs as { label, icon, href }}

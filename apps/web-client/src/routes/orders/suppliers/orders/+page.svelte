@@ -39,6 +39,9 @@
 
 	import { page } from "$app/stores";
 
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
+
 	export let data: PageData;
 
 	let disposer: () => void;
@@ -46,10 +49,10 @@
 		if ($page.url.hash.split("?filter=").length <= 1) {
 			goto(`${$page.url.hash}?filter=unordered`);
 		}
-		const disposer1 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("books:data"));
-		const disposer2 = data.dbCtx?.rx?.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
-		const disposer3 = data.dbCtx?.rx?.onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
-		const disposer4 = data.dbCtx?.rx?.onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
+		const disposer1 = getDbRx(app).onRange(["book"], () => invalidate("books:data"));
+		const disposer2 = getDbRx(app).onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
+		const disposer3 = getDbRx(app).onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
+		const disposer4 = getDbRx(app).onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
 
 		disposer = () => (disposer1(), disposer2(), disposer3(), disposer4());
 	});
@@ -60,7 +63,6 @@
 	$: goto = racefreeGoto(disposer);
 
 	$: ({ plugins, placedOrders, possibleOrders, reconcilingOrders, completedOrders } = data);
-	$: db = data?.dbCtx?.db;
 
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
@@ -73,7 +75,7 @@
 
 	// Generate display ID and get existing IDs when opening the dialog
 	const handleOpenNewOrderDialog = async () => {
-		const { db } = data.dbCtx;
+		const db = await getDb(app);
 		nextDisplayId = String(await getCustomerDisplayIdSeq(db));
 		existingCustomers = await getCustomerDisplayIdInfo(db);
 		newOrderDialogOpen.set(true);
@@ -106,12 +108,16 @@
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 
+		const db = await getDb(app);
+
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		await createReconciliationOrder(db, id, event.detail.supplierOrderIds);
 		goto(appHash("reconcile", id));
 	}
 
 	async function handleDownload(event: CustomEvent<{ supplierOrderId: number }>) {
+		const db = await getDb(app);
+
 		const lines = await getPlacedSupplierOrderLines(db, [event.detail.supplierOrderId]);
 
 		const generatedLines = generateLinesForDownload(lines[0]?.customerId, lines[0]?.orderFormat, lines);
@@ -122,6 +128,8 @@
 	const createCustomer = async (customer: Omit<Customer, "id">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
+
+		const db = await getDb(app);
 
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 
@@ -135,7 +143,7 @@
 	$: t = $LL.supplier_orders_page;
 </script>
 
-<Page title={t.title.supplier_orders()} view="orders/suppliers/orders" {db} {plugins}>
+<Page title={t.title.supplier_orders()} view="orders/suppliers/orders" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-2 divide-y">
 		<div class="flex flex-row justify-between gap-x-2 overflow-x-auto p-4">
 			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
@@ -221,8 +229,10 @@
 			SPA: true,
 			validators: zod(createCustomerOrderSchema($LL, existingCustomers)),
 			onSubmit: async ({ validators }) => {
+				const db = await getDb(app);
+
 				// Get the latest customer data to ensure we're validating against current state
-				const latestCustomerIds = await getCustomerDisplayIdInfo(data.dbCtx.db);
+				const latestCustomerIds = await getCustomerDisplayIdInfo(db);
 
 				// Create a new schema instance with the latest data and error message generator
 				const updatedSchema = createCustomerOrderSchema($LL, latestCustomerIds);

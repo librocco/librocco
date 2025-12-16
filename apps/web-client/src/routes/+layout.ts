@@ -5,16 +5,20 @@ import { detectLocale, navigatorDetector, localStorageDetector } from "typesafe-
 import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
 import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
-
-import { dbid } from "$lib/db";
-import type { LayoutLoad } from "./$types";
-import { browser } from "$app/environment";
-import { base } from "$app/paths";
-
 import { loadLocaleAsync } from "@librocco/shared/i18n-util.async";
 import { setLocale } from "@librocco/shared/i18n-svelte";
 import { loadedLocales } from "@librocco/shared/i18n-util";
 import { locales } from "@librocco/shared/i18n-util";
+
+import type { LayoutLoad } from "./$types";
+
+import { browser } from "$app/environment";
+import { base } from "$app/paths";
+
+import { app } from "$lib/app";
+import { initializeDb } from "$lib/app/db";
+
+import { dbid } from "$lib/db";
 
 import { DEFAULT_LOCALE, DEFAULT_VFS, DEMO_DB_NAME, IS_DEMO, IS_E2E } from "$lib/constants";
 
@@ -69,9 +73,6 @@ export const load: LayoutLoad = async ({ url }) => {
 			plugins.get("book-fetcher").register(createGoogleBooksApiPlugin());
 		}
 
-		// Init the db
-		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
-
 		try {
 			// DEMO section
 			if (IS_DEMO) {
@@ -82,21 +83,22 @@ export const load: LayoutLoad = async ({ url }) => {
 
 				// In demo mode we use the hardcoded VFS
 				const vfs = getDemoVFSFromLocalStorage(DEMO_VFS);
-				const dbCtx = await getInitializedDB(get(dbid), vfs);
+				await initializeDb(app, get(dbid), vfs);
 
-				return { dbCtx, plugins, error: null };
+				return { plugins, error: null };
 			}
 
 			// We're allowing for storing of (whitelisted) vfs name in local storage for selection.
 			// This will usually only happen in tests/benchmarks and the fallback will
 			// be used in production
 			const vfs = getVFSFromLocalStorage(DEFAULT_VFS);
-			const dbCtx = await getInitializedDB(get(dbid), vfs);
-			return { dbCtx, plugins, error: null };
+			await initializeDb(app, get(dbid), vfs);
+
+			return { plugins, error: null };
 		} catch (err) {
 			// Demo DB not initialized - needs user action to fetch
 			if (err instanceof ErrDemoDBNotInitialised) {
-				return { dbCtx: null, plugins, error: err as Error };
+				return { plugins, error: err as Error };
 			}
 
 			console.error("Error initializing DB", err);
@@ -104,16 +106,16 @@ export const load: LayoutLoad = async ({ url }) => {
 			// DB corrupted or migration failed - needs nuke
 			// The error is already tracked in initStore, splash will show nuke button
 			if (err instanceof ErrDBCorrupted) {
-				return { dbCtx: null, plugins, error: err as Error };
+				return { plugins, error: err as Error };
 			}
 
 			// Unknown error - also treated as needing nuke
 			// The error is already tracked in initStore
-			return { dbCtx: null, plugins, error: err as Error };
+			return { plugins, error: err as Error };
 		}
 	}
 
-	return { dbCtx: null, plugins, error: null };
+	return { plugins, error: null };
 };
 
 async function loadTranslationsOverrides() {

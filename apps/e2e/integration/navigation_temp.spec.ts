@@ -3,7 +3,7 @@ import { expect } from "@playwright/test";
 import { baseURL } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
-import { getDashboard } from "@/helpers";
+import { getDashboard } from "@/helpers/dashboard";
 
 test("should navigate using the side nav", async ({ page }) => {
 	// Load the app

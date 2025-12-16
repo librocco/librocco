@@ -3,6 +3,10 @@
 	import Search from "$lucide/search";
 
 	import { entityListView, testId, type BookData } from "@librocco/shared";
+	import LL from "@librocco/shared/i18n-svelte";
+
+	import { app } from "$lib/app";
+	import { getDb } from "$lib/app/db";
 
 	import type { PageData } from "./$types";
 
@@ -15,12 +19,10 @@
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
-	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
 	$: ({ plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	const createMetaString = ({ authors, year, publisher }: Pick<BookData, "authors" | "year" | "publisher">) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
@@ -29,13 +31,18 @@
 	const search = writable("");
 
 	let entries: BookData[] = [];
-	$: if ($search.length > 2) {
-		searchBooks(db, { searchString: $search }).then((res) => {
+
+	const performSearch = async (searchString: string) => {
+		if (searchString.length > 2) {
+			const db = await getDb(app);
+			const res = await searchBooks(db, { searchString });
 			entries = res;
-		});
-	} else {
-		entries = [];
-	}
+		} else {
+			entries = [];
+		}
+	};
+
+	$: performSearch($search);
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
@@ -45,7 +52,7 @@
 	// #endregion search
 </script>
 
-<HistoryPage view="history/isbn" {db} {plugins}>
+<HistoryPage view="history/isbn" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div class="flex w-full p-4">
 			<label class="input-bordered input flex flex-1 items-center gap-2">

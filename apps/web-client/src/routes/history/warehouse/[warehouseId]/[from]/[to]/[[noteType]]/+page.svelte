@@ -25,17 +25,19 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import type { LocalizedString } from "typesafe-i18n";
 
+	import { app } from "$lib/app";
+	import { getDbRx } from "$lib/app/db";
+
 	export let data: PageData;
 
 	$: ({ plugins, displayName, transactions, noteType: filter } = data);
-	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when book data changes, or when a note "changes" (we're interested in committed change)
 		// We don't subscribe to book_transaction as we're only interested in committed txns - and this is triggered by note change
-		disposer = data.dbCtx?.rx?.onRange(["book", "note"], () => invalidate("history:transactions"));
+		disposer = getDbRx(app).onRange(["book", "note"], () => invalidate("history:transactions"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -128,7 +130,7 @@
 	// #endregion csv
 </script>
 
-<HistoryPage view="history/date" {db} {plugins}>
+<HistoryPage view="history/date" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div id="container" class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
 			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-base-content">

@@ -3,7 +3,7 @@ import { expect } from "@playwright/test";
 import { appHash } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
-import { getDashboard } from "@/helpers";
+import { getDashboard } from "@/helpers/dashboard";
 import { selector, testIdSelector } from "@/helpers/utils";
 import { DashboardNode } from "@/helpers/types";
 

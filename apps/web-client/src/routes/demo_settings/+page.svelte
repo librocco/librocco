@@ -7,6 +7,9 @@
 
 	import type { PageData } from "./$types";
 
+	import { app } from "$lib/app";
+	import { getVfs } from "$lib/app/db";
+
 	import { DEMO_DB_NAME, DEMO_DB_URL, VERSION } from "$lib/constants";
 
 	import { Page } from "$lib/controllers";
@@ -23,11 +26,11 @@
 	export let data: PageData;
 
 	$: ({ plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	onMount(() => {
-		if (!vfsSupportsOPFS(data.dbCtx?.vfs)) {
-			throw new Error(`Usage not supported: ${data.dbCtx?.vfs} doesn't support FS transparency`);
+		const vfs = getVfs(app);
+		if (!vfsSupportsOPFS(vfs)) {
+			throw new Error(`Usage not supported: ${vfs} doesn't support FS transparency`);
 		}
 	});
 
@@ -53,7 +56,7 @@
 	};
 </script>
 
-<Page title={tSettings.headings.settings()} view="settings" {db} {plugins}>
+<Page title={tSettings.headings.settings()} view="settings" {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		<div class="p-4">
 			<h4>{tSettings.stats.version()} {VERSION}</h4>

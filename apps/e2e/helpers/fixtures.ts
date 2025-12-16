@@ -10,6 +10,7 @@ import { baseURL } from "@/constants";
 import { Customer, Supplier } from "./types";
 
 import {
+	getDbHandle,
 	addBooksToCustomer,
 	upsertReconciliationOrderLines,
 	associatePublisher,
@@ -22,7 +23,6 @@ import {
 	Warehouse,
 	upsertWarehouse
 } from "./cr-sqlite";
-import { getDbHandle } from "./db";
 
 const books = [
 	{ isbn: "1234", authors: "author1", title: "title1", publisher: "pub1", price: 10 },

@@ -1,8 +1,8 @@
 import { baseURL } from "../constants";
 
 import { testBase as test } from "@/helpers/fixtures";
-import { getDashboard, getDbHandle } from "@/helpers";
-import { upsertWarehouse, createInboundNote, createOutboundNote, addVolumesToNote, commitNote } from "@/helpers/cr-sqlite";
+import { getDashboard } from "@/helpers/dashboard";
+import { getDbHandle, upsertWarehouse, createInboundNote, createOutboundNote, addVolumesToNote, commitNote } from "@/helpers/cr-sqlite";
 
 import { book1 } from "./data";
 

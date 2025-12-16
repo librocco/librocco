@@ -25,9 +25,10 @@
 	import { debugData as dd } from "$lib/__testData__/debugData";
 	import { LL } from "@librocco/shared/i18n-svelte";
 
-	export let data: LayoutData;
+	import { app } from "$lib/app";
+	import { getDb } from "$lib/app/db";
 
-	$: db = data?.dbCtx?.db;
+	export let data: LayoutData;
 
 	let book;
 	let supplier;
@@ -82,6 +83,8 @@
 	async function upsert100Books() {
 		isLoading = true;
 		errorMessage = null;
+
+		const db = await getDb(app);
 
 		try {
 			// Create an array of 100 book objects with deterministic values
@@ -162,6 +165,8 @@
 		errorMessage = null;
 		console.log("Populating database");
 
+		const db = await getDb(app);
+
 		try {
 			// Books
 			for (const book of dd.books) {
@@ -233,6 +238,9 @@
 
 	const resetDatabase = async function resetDatabase() {
 		errorMessage = null;
+
+		const db = await getDb(app);
+
 		const tables = [
 			"book",
 			"supplier",
@@ -260,6 +268,8 @@
 
 		isLoading = true;
 
+		const db = await getDb(app);
+
 		book = await db.exec("SELECT COUNT(*) from book;");
 		supplier = await db.exec("SELECT COUNT(*) from supplier;");
 		supplier_publisher = await db.exec("SELECT COUNT(*) from supplier_publisher;");
@@ -275,6 +285,8 @@
 	async function executeQuery() {
 		isLoading = true;
 		errorMessage = null;
+
+		const db = await getDb(app);
 
 		try {
 			queryResult = await db.execO(query);

@@ -4,7 +4,8 @@ import type { LayoutLoad } from "./$types";
 
 import { appPath } from "$lib/paths";
 
-export const load: LayoutLoad = ({ route }) => {
+export const load: LayoutLoad = async ({ route, parent }) => {
+	await parent();
 	switch (route.id) {
 		// Use daily summary - today as default view, for both unspecified route and daily summary (witout date specified)
 		case "/history":

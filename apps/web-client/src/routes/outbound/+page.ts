@@ -1,17 +1,27 @@
+import { browser } from "$app/environment";
+
 import { getActiveOutboundNotes } from "$lib/db/cr-sqlite/note";
 
 import type { PageLoad } from "./$types";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ parent, depends }: Parameters<PageLoad>[0]) => {
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
+
+const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	depends("outbound:list");
 
-	const { dbCtx } = await parent();
+	if (!browser) {
+		return { notes: [] };
+	}
 
-	const notes = dbCtx?.db ? await getActiveOutboundNotes(dbCtx?.db) : [];
+	const db = await getDb(app);
 
-	return { dbCtx, notes };
+	const notes = await getActiveOutboundNotes(db);
+
+	return { notes };
 };
 
 export const load: PageLoad = timed(_load);

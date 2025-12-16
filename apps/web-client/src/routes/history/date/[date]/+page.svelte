@@ -1,12 +1,19 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
+	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
+
+	import { entityListView, testId } from "@librocco/shared";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
+	import { LL } from "@librocco/shared/i18n-svelte";
+
+	import { invalidate } from "$app/navigation";
+
+	import { app } from "$lib/app";
+	import { getDbRx } from "$lib/app/db";
+
 	import Library from "$lucide/library";
 	import ArrowLeft from "$lucide/arrow-left";
 	import ArrowRight from "$lucide/arrow-right";
-	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
-	import { invalidate } from "$app/navigation";
-
-	import { entityListView, testId } from "@librocco/shared";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
@@ -17,13 +24,10 @@
 	import { HistoryPage } from "$lib/controllers";
 
 	import { appPath } from "$lib/paths";
-	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
-	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
 	$: ({ stats, bookList, dateValue, plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	$: t = $LL.history_page.date_tab;
 	$: tCommon = $LL.common;
@@ -33,7 +37,7 @@
 	onMount(() => {
 		// Reload when book data changes, or when a note "changes" (we're interested in committed change)
 		// We don't subscribe to book_transaction as we're only interested in committed txns - and this is triggered by note change
-		disposer = data.dbCtx?.rx?.onRange(["book", "note"], () => invalidate("history:transactions"));
+		disposer = getDbRx(app).onRange(["book", "note"], () => invalidate("history:transactions"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -67,7 +71,7 @@
 	// #endregion date picker
 </script>
 
-<HistoryPage view="history/date" {db} {plugins}>
+<HistoryPage view="history/date" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div id="calendar-container" class="flex w-full justify-between">
 			<div class="flex w-full flex-col items-center gap-3">

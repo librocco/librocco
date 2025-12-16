@@ -2,7 +2,17 @@
 	import { onDestroy, onMount, tick } from "svelte";
 	import { writable } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
+
+	import type { BookData } from "@librocco/shared";
+	import { testId } from "@librocco/shared";
+	import { LL } from "@librocco/shared/i18n-svelte";
+
 	import { invalidate } from "$app/navigation";
+
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
+
+	import type { PageData } from "./$types";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
@@ -11,13 +21,6 @@
 	import FileEdit from "$lucide/file-edit";
 	import Printer from "$lucide/printer";
 	import MoreVertical from "$lucide/more-vertical";
-
-	import type { BookData } from "@librocco/shared";
-	import { testId } from "@librocco/shared";
-
-	import type { PageData } from "./$types";
-
-	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import { printBookLabel } from "$lib/printer";
 
@@ -31,19 +34,16 @@
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { mergeBookData } from "$lib/utils/misc";
 	import { searchBooks, upsertBook } from "$lib/db/cr-sqlite/books";
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import { appPath } from "$lib/paths";
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	export let data: PageData;
 
 	$: ({ publisherList, plugins } = data);
-	$: db = data?.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		disposer = data.dbCtx?.rx?.onRange(["book"], () => invalidate("book:data"));
+		disposer = getDbRx(app).onRange(["book"], () => invalidate("book:data"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -71,15 +71,15 @@
 	// We're using in intersection observer to create an infinite scroll effect
 	const scroll = createIntersectionObserver(seeMore);
 
+	// TODO: check this is still true, i.e. we're still using intersection observer
+	//
 	// Each time we update the search string, or max results, requery the entries
 	// We're using a sinple hack here:
 	// - we're querying for maxResults + 1
 	// - this is a cheap way to check if there are more results than requested
 	// - further below, we're checking that +1 entry exists, if so, we let the intersection observer know it can requery when reached (infinite scroll)
-	//
-	// TODO: 'db' should always be defined, as we want this to run ONLY in browser context, but, as of yet, I wasn't able to get this to work
-	$: currentQuery = Promise.resolve(
-		db ? searchBooks(db, { searchString: $search, orderBy: $orderBy, order: $orderAsc ? "asc" : "desc" }) : ([] as Required<BookData>[])
+	$: currentQuery = getDb(app).then((db) =>
+		searchBooks(db, { searchString: $search, orderBy: $orderBy, order: $orderAsc ? "asc" : "desc" })
 	);
 	$: currentQuery.then((e) => (entries = e));
 
@@ -101,14 +101,14 @@
 	};
 
 	const {
-		elements: { trigger, overlay, content, title, description, close, portalled },
+		elements: { trigger, overlay, content, title, description, portalled },
 		states: { open }
 	} = createDialog({
 		forceVisible: true
 	});
 </script>
 
-<Page title={$LL.books_page.title()} view="stock" {db} {plugins}>
+<Page title={$LL.books_page.title()} view="stock" {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col gap-y-6">
 		<div class="p-4">
 			<ScannerForm
@@ -273,6 +273,7 @@
 							const data = form?.data as BookData;
 
 							try {
+								const db = await getDb(app);
 								await upsertBook(db, data);
 								bookFormData = null;
 								open.set(false);

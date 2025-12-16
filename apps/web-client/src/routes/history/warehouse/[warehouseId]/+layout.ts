@@ -5,7 +5,8 @@ import type { LayoutLoad } from "./$types";
 
 import { appPath } from "$lib/paths";
 
-export const load: LayoutLoad = async ({ params }) => {
+export const load: LayoutLoad = async ({ params, parent }) => {
+	await parent();
 	const { warehouseId, from: _from, to: _to } = params;
 	console.log("warehoseId:", warehouseId);
 	console.log("from:", _from);

@@ -4,8 +4,8 @@ import { appHash } from "@/constants";
 import { assertionTimeout } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
-import { getDashboard, getDbHandle } from "@/helpers";
-import { addVolumesToNote, createInboundNote, updateNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
+import { getDashboard } from "@/helpers/dashboard";
+import { getDbHandle, addVolumesToNote, createInboundNote, updateNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
 import { book1 } from "@/integration/data";
 
 test.beforeEach(async ({ page }) => {

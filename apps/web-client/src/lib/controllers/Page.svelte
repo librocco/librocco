@@ -1,4 +1,9 @@
 <script lang="ts">
+	import type { WebClientView } from "@librocco/shared";
+
+	import type { App } from "$lib/app";
+	import { getDb } from "$lib/app/db";
+
 	import type { PluginsInterface } from "$lib/plugins";
 	import { appPath } from "$lib/paths";
 	import { goto } from "$lib/utils/navigation";
@@ -7,10 +12,7 @@
 
 	import { PageLayout, ExtensionStatusBanner } from "$lib/components";
 
-	import type { WebClientView } from "@librocco/shared";
-	import type { DBAsync } from "$lib/db/cr-sqlite/types";
-
-	export let db: DBAsync;
+	export let app: App;
 	export let plugins: PluginsInterface;
 
 	export let view: WebClientView;
@@ -21,6 +23,7 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateOutboundNote = async () => {
+		const db = await getDb(app);
 		const id = await getNoteIdSeq(db);
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));

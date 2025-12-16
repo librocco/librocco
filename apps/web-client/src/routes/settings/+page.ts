@@ -11,7 +11,8 @@ import { syncConfig } from "$lib/db";
 
 import { timed } from "$lib/utils/timer";
 
-const _load: PageLoad = async () => {
+const _load: PageLoad = async ({ parent }) => {
+	await parent();
 	const deviceSettingsData = get(deviceSettingsStore);
 	const deviceSettingsForm = await superValidate(deviceSettingsData, zod(deviceSettingsSchema));
 

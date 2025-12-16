@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
@@ -12,19 +13,19 @@ import { appPath } from "$lib/paths";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
+
+const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	const id = Number(params.id);
 
 	depends("note:data");
 	depends("note:books");
 	depends("warehouse:list");
 
-	const { dbCtx } = await parent();
-
-	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
+	if (!browser) {
 		return {
-			dbCtx,
 			id,
 			displayName: "N/A",
 			warehouses: [] as Warehouse[],
@@ -44,7 +45,9 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		};
 	}
 
-	const note = await getNoteById(dbCtx.db, id);
+	const db = await getDb(app);
+
+	const note = await getNoteById(db, id);
 	// If note not found, we shouldn't be here
 	// If note committed, we shouldn't be here either (it can be viewed in the note archive)
 	// This also triggers redirect to inbound (reactively) upon committing of the note
@@ -52,14 +55,15 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		redirect(307, appPath("outbound"));
 	}
 
-	const warehouses = await getAllWarehouses(dbCtx.db, { skipTotals: true });
-	const customItems = await getNoteCustomItems(dbCtx.db, id);
-	const _entries = await getNoteEntries(dbCtx.db, id);
-	const publisherList = await getPublisherList(dbCtx.db);
+	const warehouses = await getAllWarehouses(db, { skipTotals: true });
+	const customItems = await getNoteCustomItems(db, id);
+	const _entries = await getNoteEntries(db, id);
+
+	const publisherList = await getPublisherList(db);
 
 	// If there are no entries, we don't need to go through (potentially expensive) stock query
 	if (!_entries.length) {
-		return { dbCtx, ...note, warehouses, entries: [] as NoteEntriesItem[], customItems, publisherList };
+		return { ...note, warehouses, entries: [] as NoteEntriesItem[], customItems, publisherList };
 	}
 
 	// Get availability by ISBN
@@ -80,7 +84,7 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	// NOTE: we're skipping this part as it's completely unnecessary if there are no entries,
 	// but expecially because getStock below will treat empty 'isbns' as all isbns, leading to extremely expensive
 	// query in case of fully populated database
-	const stock = await getStock(dbCtx.db, { isbns });
+	const stock = await getStock(db, { isbns });
 	for (const { isbn, warehouseId, warehouseName, quantity } of stock) {
 		const warehouseExists = warehouses.find((wh) => wh.id === warehouseId);
 
@@ -122,7 +126,7 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		}
 	}
 
-	return { dbCtx, ...note, warehouses, entries, customItems, publisherList, isbnAvailability };
+	return { ...note, warehouses, entries, customItems, publisherList, isbnAvailability };
 };
 
 export const load: PageLoad = timed(_load);

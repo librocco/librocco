@@ -1,19 +1,21 @@
 <script lang="ts">
-	import { Page } from "$lib/controllers";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import { base } from "$app/paths";
 	import { page } from "$app/stores";
-	import { LL } from "@librocco/shared/i18n-svelte";
+
+	import { app } from "$lib/app";
+
+	import { Page } from "$lib/controllers";
 
 	$: ({ status, data } = $page);
 
 	$: ({ plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	$: ({ error_page: tErrorPage, common: tCommon } = $LL);
 </script>
 
-<Page title={tErrorPage.title()} view="error" {db} {plugins}>
+<Page title={tErrorPage.title()} view="error" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col justify-center">
 		<div class="card-bordered card mx-auto flex -translate-y-1/2 flex-col items-center gap-y-4 border-base-content p-2 sm:max-w-lg">
 			<div class="card-body flex flex-col gap-y-4 text-left">

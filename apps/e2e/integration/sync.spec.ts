@@ -3,9 +3,8 @@ import { expect } from "@playwright/test";
 import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
 import { testOrders } from "@/helpers/fixtures";
-import { getDbHandle } from "@/helpers";
 
-import { getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
+import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same

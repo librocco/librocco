@@ -81,18 +81,20 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
+
 	export let data: PageData;
 
 	$: ({ id: noteId, displayName, defaultWarehouse, warehouses, updatedAt, plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when note
-		const disposer1 = data.dbCtx?.rx?.onPoint("note", BigInt(data.id), () => invalidate("note:data"));
+		const disposer1 = getDbRx(app).onPoint("note", BigInt(data.id), () => invalidate("note:data"));
 		// Reload when entries (book/custom item) change
-		const disposer2 = data.dbCtx?.rx?.onRange(["book", "book_transaction", "custom_item", "warehouse"], () => invalidate("note:books"));
+		const disposer2 = getDbRx(app).onRange(["book", "book_transaction", "custom_item", "warehouse"], () => invalidate("note:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(() => {
@@ -102,7 +104,8 @@
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
-	$: loading = !db;
+	const appReady = app.ready; // TODO: revisit this
+	$: loading = !$appReady;
 
 	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
 
@@ -152,6 +155,8 @@
 	const handleCommitSelfDryRun = async () => {
 		popoverOpen.set(false);
 
+		const db = await getDb(app);
+
 		const noWarehouseTxns = await getNoWarehouseEntries(db, noteId);
 		if (noWarehouseTxns.length) {
 			popoverOpen.set(true);
@@ -170,6 +175,8 @@
 	};
 
 	const handleReconcileAndCommitSelf = (invalidTransactions?: OutOfStockTransaction[]) => async (closeDialog: () => void) => {
+		const db = await getDb(app);
+
 		// TODO: this should probably be wrapped in a txn, but doing so resulted in app freezing at this point
 		const id = await getNoteIdSeq(db);
 		if (invalidTransactions) {
@@ -185,6 +192,7 @@
 	};
 
 	const handleDeleteSelf = async (closeDialog: () => void) => {
+		const db = await getDb(app);
 		await deleteNote(db, noteId);
 		closeDialog();
 	};
@@ -192,6 +200,8 @@
 
 	// #region transaction-actions
 	const shouldAssignTransaction = async (isbn: string, quantity: number) => {
+		const db = await getDb(app);
+
 		const stock = await getStock(db, { isbns: [isbn] });
 
 		const warehouseOptions = stock
@@ -214,6 +224,8 @@
 	};
 
 	const handleAddTransaction = async (isbn: string, quantity = 1, warehouseId?: number) => {
+		const db = await getDb(app);
+
 		if (!warehouseId) {
 			await addVolumesToNote(db, noteId, { isbn, quantity });
 			return;
@@ -250,6 +262,8 @@
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: VolumeStock) => {
+		const db = await getDb(app);
+
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -272,6 +286,8 @@
 
 	const updateRowWarehouse = async (data: InventoryTableData<"book">, nextWarehouseId: number) => {
 		popoverOpen.set(false);
+
+		const db = await getDb(app);
 
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
 
@@ -306,6 +322,8 @@
 	};
 
 	const deleteRow = (rowIx: number) => async () => {
+		const db = await getDb(app);
+
 		const row = entries[rowIx];
 
 		if (isBookRow(row)) {
@@ -366,6 +384,8 @@
 		 */
 		const data = form?.data as BookData;
 
+		const db = await getDb(app);
+
 		try {
 			await upsertBook(db, data);
 			bookFormData = null;
@@ -389,6 +409,8 @@
 		 */
 		const data = form?.data as NoteCustomItem;
 
+		const db = await getDb(app);
+
 		try {
 			const newId = () => Math.trunc(Math.random() * 100_000);
 			await upsertNoteCustomItem(db, noteId, { ...data, id: data.id ?? newId() });
@@ -404,6 +426,7 @@
 
 	// #region printing
 	$: handlePrintReceipt = async () => {
+		const db = await getDb(app);
 		await printReceipt($deviceSettingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
 	$: handlePrintLabel = (book: Omit<BookData, "updatedAt">) => async () => {
@@ -480,6 +503,7 @@
 	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
 
 	const handleUpdateNoteWarehouse = async (warehouseId: number) => {
+		const db = await getDb(app);
 		await updateNote(db, noteId, { defaultWarehouse: warehouseId });
 	};
 
@@ -487,7 +511,7 @@
 	$: tCommon = $LL.common;
 </script>
 
-<Page title={displayName} view="outbound-note" {db} {plugins}>
+<Page title={displayName} view="outbound-note" {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		<div id="header" class="flex flex-col gap-y-4 px-6 py-4">
 			<Breadcrumbs links={breadcrumbs} />
@@ -499,7 +523,7 @@
 						textClassName="text-2xl font-bold leading-7 text-base-content"
 						placeholder="Note"
 						value={displayName}
-						on:change={(e) => updateNote(db, noteId, { displayName: e.detail })}
+						on:change={async (e) => updateNote(await getDb(app), noteId, { displayName: e.detail })}
 					/>
 
 					<div class="w-fit">
