@@ -1,0 +1,223 @@
+import { get, writable, type Writable, type Readable } from "svelte/store";
+import { Mutex } from "async-mutex";
+
+import type { ProgressState } from "$lib/types";
+
+import SyncWorker from "$lib/workers/sync-worker.ts?worker";
+import WorkerInterface from "$lib/workers/WorkerInterface";
+
+import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
+import { deleteDBFromOPFS, fetchAndStoreDBFile, wrapFileHandle } from "$lib/db/cr-sqlite/core/utils";
+
+import type { App } from "./index";
+import { ErrInvalidSyncURL } from "./errors";
+import { waitForStore } from "./utils";
+import { getDb, getVfs } from "./db";
+import { isEmptyDB } from "$lib/db/cr-sqlite/db";
+import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
+
+// ---------------------------------- Structs ---------------------------------- //
+export enum AppSyncState {
+	Destroyed, // TODO: implement destroyed behaviour
+	Null,
+	Initializing,
+	Idle,
+	InitialSync,
+	Syncing
+}
+
+interface IAppSyncCore {
+	destroy(): void;
+}
+
+interface IAppSyncExclusive extends IAppSyncCore {
+	worker: WorkerInterface;
+
+	state: Writable<AppSyncState>;
+
+	syncProgressStore: Writable<ProgressState>;
+	initialSyncProgressStore: Writable<ProgressState>;
+
+	active: boolean;
+	start(dbid: string, url: string): void;
+	stop(dbid: string): void;
+}
+
+export interface IAppSync {
+	state: Readable<AppSyncState>;
+
+	syncProgressStore: Readable<ProgressState>;
+	initialSyncProgressStore: Readable<ProgressState>;
+
+	runExclusive<T>(cb: (x: IAppSyncExclusive) => T | Promise<T>): Promise<T>;
+}
+
+class AppSyncCore implements IAppSyncExclusive {
+	worker: WorkerInterface;
+
+	state = writable<AppSyncState>();
+	active = false;
+
+	syncProgressStore = writable<ProgressState>();
+	#syncProgressDisposer: () => void;
+
+	initialSyncProgressStore = writable<ProgressState>();
+
+	constructor(worker = new WorkerInterface(new SyncWorker())) {
+		this.worker = worker;
+		this.#syncProgressDisposer = this.worker.onProgress(($progress) => this.syncProgressStore.set($progress));
+	}
+
+	start(dbid: string, url: string) {
+		if (this.active) return;
+
+		this.active = true;
+		this.worker.startSync(dbid, { url, room: dbid });
+	}
+
+	stop(dbid: string) {
+		if (!this.active) return;
+
+		this.active = false;
+		this.worker.stopSync(dbid);
+	}
+
+	destroy() {
+		this.#syncProgressDisposer?.();
+	}
+}
+
+export class AppSync implements IAppSync {
+	#mutex = new Mutex();
+
+	// NOTE: In most use cases, an empty constructor call is file,
+	// we're allowing for dependency injection here mostly for testing purposes
+	constructor(private readonly core = new AppSyncCore()) {}
+
+	get state() {
+		return this.core.state as Readable<AppSyncState>;
+	}
+
+	get syncProgressStore() {
+		return this.core.syncProgressStore as Readable<ProgressState>;
+	}
+
+	get initialSyncProgressStore() {
+		return this.core.initialSyncProgressStore as Readable<ProgressState>;
+	}
+
+	destroy() {
+		this.runExclusive(() => {
+			this.core.destroy();
+		});
+	}
+
+	/**
+	 * A wrapper used to run the callback with exclusive access. It accepts a
+	 * callback and passes an internal sync object.
+	 *
+	 * NOTE: This works even if sync not initialised
+	 */
+	runExclusive<T>(cb: (sync: IAppSyncExclusive) => T | Promise<T>): Promise<T> {
+		return this.#mutex.runExclusive(() => cb(this.core));
+	}
+}
+
+// ---------------------------------- Functions ---------------------------------- //
+export async function initializeSync(app: App, vfs: VFSWhitelist) {
+	return app.sync.runExclusive(async (sync) => {
+		// noop if already initialised
+		if (get(sync.state) >= AppSyncState.Initializing) return;
+
+		// Initialise the worker
+		sync.state.set(AppSyncState.Initializing);
+		sync.worker.start(vfs);
+
+		// Wait for the worker to be initialised
+		await sync.worker.initPromise;
+		sync.state.set(AppSyncState.Idle);
+	});
+}
+
+export async function startSync(app: App, dbid: string, url: string) {
+	// ---------------------------------- 0. Checks ---------------------------------- //
+	//
+	// TODO: perhaps implement a more robust URL validation
+	if (!url) {
+		throw new ErrInvalidSyncURL(url);
+	}
+
+	// Ensure DB is initialised -- none of this makes sense otherwise
+	const db = await getDb(app);
+
+	// Ensure sync is ready
+	await waitForStore(app.sync.state, ($s) => $s >= AppSyncState.Initializing);
+
+	// TODO: this should also be run exclusively with respect to the DB
+	app.sync.runExclusive(async (sync) => {
+		// If sync is active:
+		// - no need to start (idempotency)
+		// - it's safe to assume the initial sync was already attempted
+		if (sync.active) return;
+
+		// ---------------------------------- 1. Initial Sync ---------------------------------- //
+		const isEmpty = await isEmptyDB(db);
+		const opfsSupported = vfsSupportsOPFS(getVfs(app));
+
+		if (isEmpty && opfsSupported) {
+			sync.state.set(AppSyncState.InitialSync);
+			try {
+				await _performInitialSync(dbid, url, sync.initialSyncProgressStore);
+			} catch {
+				// Probably console log here
+			} finally {
+				sync.state.set(AppSyncState.Idle);
+			}
+		}
+
+		// ---------------------------------- 2. Live Sync ---------------------------------- //
+		sync.start(dbid, url);
+	});
+}
+
+/**
+ *
+ */
+export async function _performInitialSync(dbid: string, remoteUrl: string, progressStore: Writable<ProgressState>) {
+	// Download the remote DB into OPFS
+	//
+	// Fetch the file to temp location
+	const dbFname = dbid;
+	const tempFname = dbFname + "-temp";
+
+	try {
+		await fetchAndStoreDBFile(remoteUrl, tempFname, progressStore);
+	} catch (err) {
+		// NOTE: fetchAndStoreDBFile performs the cleanup, just log the error and abort
+		const msg = [
+			"Error fetching and storing remote DB file for sync optimisation:",
+			(err as Error).message,
+			"The sync will still be attempted without initial optimisation"
+		].join("\n");
+		console.error(msg);
+		return;
+	}
+
+	try {
+		await deleteDBFromOPFS(dbFname);
+
+		// Replace existing DB file with the downloaded one
+		const rootDir = await window.navigator.storage.getDirectory();
+		const tempFileHandle = await rootDir.getFileHandle(tempFname);
+		await wrapFileHandle(rootDir, tempFileHandle).move(dbFname);
+	} catch (err) {
+		// Log the error out -- this shouldn't happen and is unexpected,
+		// so we want the full error without
+		console.error(err);
+		return;
+	}
+}
+
+export function stopSync(app: App, dbid: string) {
+	app.sync.runExclusive((sync) => sync.stop(dbid));
+}

@@ -49,3 +49,13 @@ export class ErrDBCorrupted extends Error {
 		this.name = "ErrDBCorrupted";
 	}
 }
+
+/**
+ * Thrown when trying to retrieve the app sync interface (e.g. `await getAppSync(app)`) before the sync was registered to the app
+ */
+export class ErrInvalidSyncURL extends Error {
+	constructor(url: string) {
+		super(`Invalid sync URL: "${url}"`);
+		this.name = "ErrInvalidSyncURL";
+	}
+}

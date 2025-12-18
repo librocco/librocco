@@ -202,45 +202,26 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 	await db.close();
 }
 
-type Params = {
-	dbname: string;
-	syncActiveStore: Writable<boolean>;
-	dbCache: Map<string, Promise<DbCtx>>;
-};
 /**
- * A util used to delete the DB from OPFS:
- * - stops the sync (if active) - to ensure connections are closed on that front
- * - if DB cached (it was already used in this session), does db.close() (releasing the connection)
- * - deletes the DB from cache
- * - deletes the DB file (and its -wal and -journal) from OPFS, retrying a few times if needed (e.g. conn not closed immediately)
+ * A util used to delete the DB from OPFS, it deletes the DB file (and its -wal and -journal) from OPFS,
+ * retrying a few times if needed (e.g. conn not closed immediately)
+ *
+ * WARNING: This assumes the DB file is not locked and no entity holds reference to the file. Use with care. Prefer `deleteDBFromOPFS`
+ * exported from `"$lib/app/db"`
  */
-export async function deleteDBFromOPFS({ dbname, syncActiveStore, dbCache }: Params) {
-	// Close relevant connections
-	//
-	// Stop the sync -- this is useful if overwriting the current DB, but doesn't hurt otherwise
-	syncActiveStore.set(false);
-	//
-	// Close the DB if cached (current or used in the session)
-	const cached = dbCache.get(dbname);
-	if (cached) {
-		const { db } = await cached;
-		await db.close();
-		dbCache.delete(dbname);
-	}
-
+export async function deleteDBFromOPFS(dbid: string) {
 	const dir = await window.navigator.storage.getDirectory();
 
-	// If overwriting an existing file, remove it (and its corresponding wal and journal) first
-	// if the files don't exist - noop
 	const removeArtefact = async (name: string) => {
 		if (!(await checkOPFSFileExists(name))) return;
 		await dir.removeEntry(name);
 	};
 
 	// NOTE: running with retries to make sure the file locks were released
-	await retry(() => removeArtefact(dbname), 100, 5);
-	await retry(() => removeArtefact(`${dbname}-wal`), 100, 5);
-	await retry(() => removeArtefact(`${dbname}-journal`), 100, 5);
+	// NOTE: deleting -wal and -journal as well (if exist, if not -- noop)
+	await retry(() => removeArtefact(dbid), 100, 5);
+	await retry(() => removeArtefact(`${dbid}-wal`), 100, 5);
+	await retry(() => removeArtefact(`${dbid}-journal`), 100, 5);
 }
 
 export async function checkOPFSFileExists(fname: string) {

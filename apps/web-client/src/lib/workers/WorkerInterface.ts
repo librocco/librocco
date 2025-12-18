@@ -13,6 +13,12 @@ export default class WorkerInterface extends WI {
 	#emitter: SyncEventEmitter;
 	#vfs: VFSWhitelist | null = null;
 
+	#initPromiseResolver: () => void;
+	#initPromise: Promise<void>;
+	get initPromise() {
+		return this.#initPromise;
+	}
+
 	constructor(worker: Worker) {
 		super(worker);
 		this.#worker = worker;
@@ -20,6 +26,10 @@ export default class WorkerInterface extends WI {
 		this.#emitter = new SyncEventEmitter();
 
 		this.#worker.addEventListener("message", this._handleMessage.bind(this));
+
+		this.#initPromise = new Promise((resolve) => {
+			this.#initPromiseResolver = resolve;
+		});
 	}
 
 	private _sendMessage(msg: OutbounrMessage) {
@@ -41,7 +51,7 @@ export default class WorkerInterface extends WI {
 				this.#emitter.notifyProgress(msg.payload);
 				break;
 			case "ready":
-				console.log("worker initialized");
+				this.#initPromiseResolver();
 				break;
 			default:
 				break;
