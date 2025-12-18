@@ -3,15 +3,15 @@
 	import "$lib/main.css";
 	import "./global.css";
 
-	import { onMount } from "svelte";
-	import { get, writable } from "svelte/store";
+	import { onMount, onDestroy } from "svelte";
+	import { get, writable, derived } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Subscription } from "rxjs";
 
 	import Menu from "$lucide/menu";
 
-	import { afterNavigate, invalidateAll } from "$app/navigation";
+	import { afterNavigate } from "$app/navigation";
 	import { beforeNavigate } from "$app/navigation";
 
 	import { app } from "$lib/app";
@@ -19,15 +19,12 @@
 
 	import type { LayoutData } from "./$types";
 
-	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_E2E } from "$lib/constants";
+	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
 
-	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
-	import WorkerInterface from "$lib/workers/WorkerInterface";
-
-	import { sync, syncConfig, syncActive, syncProgressStore } from "$lib/db";
-	import { clearDb, dbCache } from "$lib/db/cr-sqlite/db";
+	import { syncConfig, syncActive } from "$lib/db";
+	import { clearDb } from "$lib/db/cr-sqlite/db";
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
@@ -48,6 +45,7 @@
 	import { progressBar } from "$lib/actions";
 
 	import { appPath } from "$lib/paths";
+	import { initializeSync, startSync, stopSync } from "$lib/app/sync";
 
 	export let data: LayoutData;
 
@@ -96,9 +94,8 @@
 		window["suppliers"] = suppliers;
 		window["warehouse"] = warehouse;
 
-		window["sync"] = sync;
 		window["migrations"] = migrations;
-		window["deleteDBFromOPFS"] = (dbname: string) => deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
+		window["deleteDBFromOPFS"] = (dbname: string) => deleteDBFromOPFS(dbname);
 	});
 
 	// Signal (to Playwright) that the DB is initialised
@@ -113,76 +110,61 @@
 	// Update sync on each change to settings
 	//
 	// NOTE: This is safe with respect to initialisation as it runs only if DB ready
-	const dbReady = app.db.ready;
-	$: if ($dbReady && $syncActive) {
-		// Subsequent activations use regular sync
-		sync.sync($syncConfig, { invalidateAll });
+	// const dbReady = app.db.ready;
+	$: if ($syncActive) {
+		startSync(app, $syncConfig.dbid, $syncConfig.url);
 	}
-	$: if ($dbReady && !$syncActive) {
-		sync.stop();
+	$: if (!$syncActive) {
+		stopSync(app);
 	}
 
 	// Sync
-	const { progress: syncProgress } = syncProgressStore;
+	// NOTE: using a merged store for initial / ongoing sync -- we may or may not want to split these two
+	const syncProgress = derived([app.sync.initialSyncProgressStore, app.sync.syncProgressStore], ([a, b]) => (a.active ? a : b));
 
-	onMount(() => {
+	// TODO: wrap these to ensure both are initialised only once -- removing the need for
+	// onDestroy calls (as this is the root layout)
+	const preventUnloadHandler = (e: BeforeUnloadEvent) => {
+		if (get(syncProgress).active) {
+			e.preventDefault();
+			e.returnValue = "";
+		}
+	};
+	let disposer: () => void;
+
+	onMount(async () => {
 		// This helps us in e2e to know when the page is interactive
 		document.body.setAttribute("hydrated", "true");
 
 		if (IS_E2E || IS_DEBUG) {
 			window["timeLogger"] = timeLogger;
 		}
+
 		// Control the invalidation of the stock cache
 		// On every 'book_transaction' change, we run 'maybeInvalidate', which checks for relevant changes
 		// between the last cached value and the current one and invalidates the cache if needed
-		const disposer = getDbRx(app).onRange(["book_transaction"], async () => stockCache.maybeInvalidate(await getDb(app)));
+		disposer = getDbRx(app).onRange(["book_transaction"], async () => stockCache.maybeInvalidate(await getDb(app)));
 
 		// 3. Sync setup (not supported in demo mode)
-		// Only start sync when DB is ready
+		if (IS_DEMO) {
+			return;
+		}
 
-		let preventUnloadHandler: ((e: BeforeUnloadEvent) => void) | null = null;
+		// NOTE: The DB should be loaded at this point, so this should be safe
+		const vfs = getVfs(app);
 
-		const initUnsubscribe = app.ready.subscribe((ready) => {
-			if (!ready) return;
+		await initializeSync(app, vfs);
+		if ($syncActive) await startSync(app, $syncConfig.dbid, $syncConfig.url);
 
-			// DB is ready, start sync worker
-			const wkr = new WorkerInterface(new SyncWorker());
-			const vfs = getVfs(app);
+		// Prevent user from navigating away if sync is in progress
+		window.addEventListener("beforeunload", preventUnloadHandler);
+	});
 
-			wkr.start(vfs);
-			sync.init(wkr);
-
-			// Start the sync if it should be active
-			if ($syncActive) {
-				sync.sync($syncConfig, { invalidateAll });
-			}
-
-			// Start the sync progress store (listen to sync events)
-			syncProgressStore.start(wkr);
-
-			// Prevent user from navigating away if sync is in progress
-			preventUnloadHandler = (e: BeforeUnloadEvent) => {
-				if (get(syncProgress).active) {
-					e.preventDefault();
-					e.returnValue = "";
-				}
-			};
-			window.addEventListener("beforeunload", preventUnloadHandler);
-		});
-
-		// Cleanup function
-		return () => {
-			// Stop the sync (if active)
-			sync.stop();
-			syncProgressStore.stop();
-
-			availabilitySubscription?.unsubscribe();
-			initUnsubscribe?.();
-			disposer?.();
-
-			// Run all cleanup functions
-			window.removeEventListener("beforeunload", preventUnloadHandler);
-		};
+	onDestroy(() => {
+		// Run all cleanup functions
+		availabilitySubscription?.unsubscribe();
+		disposer?.();
+		window.removeEventListener("beforeunload", preventUnloadHandler);
 	});
 
 	const {
@@ -259,7 +241,7 @@
 
 	const nukeDB = async () => {
 		// Stop the ongoing sync
-		sync.stop();
+		stopSync(app);
 		syncActive.set(false);
 
 		// Clear all the data in CR-SQLite IndexedDB
@@ -283,7 +265,7 @@
 
 		// Remove the existing DB (if any)
 		if (await checkOPFSFileExists(DEMO_DB_NAME)) {
-			await deleteDBFromOPFS({ dbname: DEMO_DB_NAME, dbCache, syncActiveStore: syncActive });
+			await deleteDBFromOPFS(DEMO_DB_NAME);
 		}
 
 		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);

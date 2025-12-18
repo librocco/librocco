@@ -28,7 +28,7 @@
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 	import { retry } from "$lib/utils/misc";
-	import { checkOPFSFileExists, deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
+	import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
 
 	import { app } from "$lib/app";
 
@@ -85,7 +85,8 @@
 		if (sqliteFiles.length !== 1) return;
 		const [file] = sqliteFiles;
 
-		await deleteDBFromOPFS({ dbname: file.name, dbCache, syncActiveStore: syncActive });
+		// TODO: handle a case when we're overwriting the current DB
+		await deleteDBFromOPFS(file.name);
 
 		// Import the file
 		const dir = await window.navigator.storage.getDirectory();
@@ -188,12 +189,13 @@
 
 	let dialogContent: (DialogContent & { type: "create" | "delete" }) | null = null;
 
+	// TODO: probably move this to app handlers
 	const nukeAndResyncOPFS = async () => {
 		const dbname = get(dbid);
 
-		if (await checkOPFSFileExists(dbname)) {
-			await deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
-		}
+		// Delete if exists
+		// TODO: handle the closing and cleanup here when excl. access is implemented
+		await deleteDBFromOPFS(dbname);
 
 		// Reinstate the sync
 		// - in case of DB file fetched, we should be in-sync
@@ -202,6 +204,7 @@
 		syncActive.set(true);
 	};
 
+	// TODO: probably move this to app handlers
 	const nukeAndResyncIDB = async () => {
 		// Stop the ongoing sync
 		syncActive.set(false);

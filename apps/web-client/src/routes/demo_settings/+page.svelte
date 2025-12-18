@@ -14,10 +14,8 @@
 
 	import { Page } from "$lib/controllers";
 
-	import { syncActive } from "$lib/db";
 	import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
-	import { dbCache } from "$lib/db/cr-sqlite/db";
-	import { checkOPFSFileExists, deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
+	import { deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
 
 	import { progressBar } from "$lib/actions";
 
@@ -44,9 +42,8 @@
 		}
 
 		// Remove the existing DB (if any)
-		if (await checkOPFSFileExists(DEMO_DB_NAME)) {
-			await deleteDBFromOPFS({ dbname: DEMO_DB_NAME, dbCache, syncActiveStore: syncActive }); // await removeOPFS
-		}
+		// TODO: handle the closing and cleanup here when excl. access is implemented
+		await deleteDBFromOPFS(DEMO_DB_NAME); // await removeOPFS
 
 		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);
 

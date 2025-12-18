@@ -3,9 +3,7 @@ import { persisted } from "svelte-local-storage-store";
 import { browser } from "$app/environment";
 
 import { DEMO_DB_NAME, IS_DEMO } from "$lib/constants";
-
-import type { SyncConfig } from "./sync";
-export * from "./sync";
+import type { VFSWhitelist } from "./cr-sqlite/core";
 
 // NOTE: we're purposefully casting the demo dbid to writable:
 // - for type simplicity - for most intents and purposes we'll have the selection available (production)
@@ -15,6 +13,13 @@ export const dbid = IS_DEMO ? (readable(DEMO_DB_NAME) as Writable<string>) : per
 const url = persisted("librocco-sync-url", browser ? `${window.location.protocol}//${window.location.host}/sync` : "");
 
 export const syncActive = persisted("librocco-sync-active", false);
+
+// TEMP: move this to app config
+type SyncConfig = {
+	dbid?: string;
+	url?: string;
+	vfs?: VFSWhitelist;
+};
 
 /**
  * Creates a writable settings "store".

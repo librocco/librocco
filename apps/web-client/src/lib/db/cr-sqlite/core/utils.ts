@@ -206,6 +206,8 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
  * A util used to delete the DB from OPFS, it deletes the DB file (and its -wal and -journal) from OPFS,
  * retrying a few times if needed (e.g. conn not closed immediately)
  *
+ * NOTE: This is safe if the file doesn't exist (will simply exit early)
+ *
  * WARNING: This assumes the DB file is not locked and no entity holds reference to the file. Use with care. Prefer `deleteDBFromOPFS`
  * exported from `"$lib/app/db"`
  */

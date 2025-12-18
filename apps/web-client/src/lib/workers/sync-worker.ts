@@ -90,7 +90,9 @@ function handleStart(payload: MsgStart["payload"]) {
 
 	// Start the sync process
 	start(config);
-	self.postMessage("ready");
+
+	// IMPORTANT: without this message the sync won't ever initialise on client side
+	sendMessage({ _type: "ready", payload: null });
 }
 
 function createProgressEmitter() {

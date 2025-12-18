@@ -40,7 +40,7 @@ interface IAppSyncExclusive extends IAppSyncCore {
 
 	active: boolean;
 	start(dbid: string, url: string): void;
-	stop(dbid: string): void;
+	stop(): void;
 }
 
 export interface IAppSync {
@@ -52,37 +52,54 @@ export interface IAppSync {
 	runExclusive<T>(cb: (x: IAppSyncExclusive) => T | Promise<T>): Promise<T>;
 }
 
+export type SyncActiveConfig = {
+	dbid: string;
+	url: string;
+};
+
 class AppSyncCore implements IAppSyncExclusive {
 	worker: WorkerInterface;
 
 	state = writable<AppSyncState>();
-	active = false;
 
-	syncProgressStore = writable<ProgressState>();
+	#activeConfig: SyncActiveConfig | null = null;
+	// If no dbid set - this worker is currently not active
+	get active() {
+		return Boolean(this.#activeConfig);
+	}
+
+	syncProgressStore = writable<ProgressState>({ active: false, nTotal: 0, nProcessed: 0 });
 	#syncProgressDisposer: () => void;
 
-	initialSyncProgressStore = writable<ProgressState>();
+	initialSyncProgressStore = writable<ProgressState>({ active: false, nTotal: 0, nProcessed: 0 });
 
 	constructor(worker = new WorkerInterface(new SyncWorker())) {
 		this.worker = worker;
 		this.#syncProgressDisposer = this.worker.onProgress(($progress) => this.syncProgressStore.set($progress));
 	}
 
+	// TODO: listen to DB invalidations and reset the sync (if active) when DB invalidated
 	start(dbid: string, url: string) {
-		if (this.active) return;
+		const cfg = this.#activeConfig;
 
-		this.active = true;
+		// NOOP -- nothing to do here
+		if (cfg.dbid == dbid && cfg.url == url) return;
+
+		// Stop sync if active with different setup (noop otherwise)
+		this.stop();
+
 		this.worker.startSync(dbid, { url, room: dbid });
+		this.#activeConfig = { dbid, url };
 	}
 
-	stop(dbid: string) {
+	stop() {
 		if (!this.active) return;
-
-		this.active = false;
-		this.worker.stopSync(dbid);
+		this.worker.stopSync(this.#activeConfig.dbid);
+		this.#activeConfig = null;
 	}
 
 	destroy() {
+		this.stop();
 		this.#syncProgressDisposer?.();
 	}
 }
@@ -151,7 +168,7 @@ export async function startSync(app: App, dbid: string, url: string) {
 	const db = await getDb(app);
 
 	// Ensure sync is ready
-	await waitForStore(app.sync.state, ($s) => $s >= AppSyncState.Initializing);
+	await waitForStore(app.sync.state, ($s) => $s > AppSyncState.Initializing);
 
 	// TODO: this should also be run exclusively with respect to the DB
 	app.sync.runExclusive(async (sync) => {
@@ -218,6 +235,6 @@ export async function _performInitialSync(dbid: string, remoteUrl: string, progr
 	}
 }
 
-export function stopSync(app: App, dbid: string) {
-	app.sync.runExclusive((sync) => sync.stop(dbid));
+export async function stopSync(app: App) {
+	app.sync.runExclusive((sync) => sync.stop());
 }
