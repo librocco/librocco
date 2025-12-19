@@ -1,5 +1,5 @@
 import { get, derived, writable, type Readable } from "svelte/store";
-import rxtbl, { TblRx } from "@vlcn.io/rx-tbl";
+import tblrx from "@vlcn.io/rx-tbl";
 
 import { getDB as getDBCore, getSchemaNameAndVersion, schemaContent, schemaName, schemaVersion, type DbCtx } from "$lib/db/cr-sqlite/db";
 import type { DBAsync, VFSWhitelist } from "$lib/db/cr-sqlite/core/types";
@@ -7,6 +7,7 @@ import type { DBAsync, VFSWhitelist } from "$lib/db/cr-sqlite/core/types";
 import type { App } from "./index";
 import { waitForStore } from "./utils";
 import { ErrDbNotInit, ErrDBIDMismatch, ErrDBCorrupted, ErrDbNotSet } from "./errors";
+import { AppDbRx, type IAppDbRx } from "./rx";
 
 // ---------------------------------- Structs ---------------------------------- //
 /**
@@ -29,7 +30,22 @@ export enum AppDbState {
 
 type SetStateReturn = { ok: true } | { ok: false; error: Error };
 
-export class AppDb implements DbCtx {
+export interface IAppDb {
+	state: Readable<AppDbState>;
+	error: Error | null;
+	dbid: string | null;
+	ready: Readable<boolean>;
+	db: DBAsync | null;
+	vfs: VFSWhitelist;
+
+	rx: IAppDbRx;
+
+	setState(dbid: string, state: Exclude<AppDbState, AppDbState.Error | AppDbState.Ready>): SetStateReturn;
+	setState(dbid: string, state: AppDbState.Error, error: Error): SetStateReturn;
+	setState(dbid: string, state: AppDbState.Ready, dbCtx: DbCtx): SetStateReturn;
+}
+
+export class AppDb implements IAppDb {
 	// -------------- STATE -------------- //
 	#state = writable(AppDbState.Null);
 	get state() {
@@ -64,8 +80,7 @@ export class AppDb implements DbCtx {
 		return this.#vfs;
 	}
 
-	// TODO: implement rx so that the subscription persists even if DB changes
-	#rx: TblRx | null = null;
+	#rx: IAppDbRx = new AppDbRx();
 	get rx() {
 		return this.#rx;
 	}
@@ -86,9 +101,9 @@ export class AppDb implements DbCtx {
 		}
 
 		if (state === AppDbState.Ready) {
-			const { db, rx, vfs } = param2 as DbCtx;
+			const { db, vfs } = param2 as DbCtx;
 			this.#db = db;
-			this.#rx = rx;
+			this.#rx.invalidate(db); // "invalidate" the Rx object to set the newly initialised DB
 			this.#vfs = vfs;
 		}
 
@@ -132,7 +147,7 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
 		// happening in production anyway
-		app.db.setState(dbid, AppDbState.Ready, { db, rx: rxtbl(db), vfs });
+		app.db.setState(dbid, AppDbState.Ready, { db, rx: tblrx(db), vfs });
 
 		return;
 	}
@@ -145,7 +160,7 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
 		// happening in production anyway
-		app.db.setState(dbid, AppDbState.Ready, { db, rx: rxtbl(db), vfs });
+		app.db.setState(dbid, AppDbState.Ready, { db, rx: tblrx(db), vfs });
 		return;
 	}
 
@@ -162,11 +177,11 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
 		// happening in production anyway
-		app.db.setState(dbid, AppDbState.Ready, { db, rx: rxtbl(db), vfs });
+		app.db.setState(dbid, AppDbState.Ready, { db, rx: tblrx(db), vfs });
 	} catch (migrationError) {
 		// Migration failure is treated as a corrupted DB state - needs nuke
 		console.error("Auto-migration failed:", migrationError);
-		app.db.setState(dbid, AppDbState.Ready, { db, rx: rxtbl(db), vfs });
+		app.db.setState(dbid, AppDbState.Ready, { db, rx: tblrx(db), vfs });
 		throw new ErrDBCorrupted(`Migration failed: ${migrationError instanceof Error ? migrationError.message : String(migrationError)}`);
 	}
 };
