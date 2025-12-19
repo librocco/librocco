@@ -1,11 +1,8 @@
 import { persisted } from "svelte-local-storage-store";
-import { BehaviorSubject, catchError, from, map, of, share } from "rxjs";
+import { of } from "rxjs";
 import { defaults } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 
-import { browser } from "$app/environment";
-
-import { checkUrlConnection } from "$lib/db";
 import type { PluginsInterface } from "$lib/plugins";
 
 import { readableFromStream } from "$lib/utils/streams";
@@ -21,18 +18,8 @@ const { data: defaultSettings } = defaults(zod(deviceSettingsSchema));
 export const deviceSettingsStore = persisted<typeof defaultSettings>(LOCAL_STORAGE_SETTINGS, defaultSettings);
 
 const createDBConnectivityStream = () => {
-	const shareSuject = new BehaviorSubject(true);
-	// TODO: This is commented out -- replace with update to conform to current stack
-	// const { dbUrl: url } = get(deviceSettingsStore);
-	const url = "";
-
-	return browser && url
-		? from(checkUrlConnection(url)).pipe(
-				map((response: Response) => response.ok),
-				catchError(() => of(false)),
-				share({ connector: () => shareSuject, resetOnComplete: false, resetOnError: false, resetOnRefCountZero: false })
-			)
-		: of(false);
+	// TODO: this is updated in a different PR, remove when merged
+	return of(false);
 };
 
 /**

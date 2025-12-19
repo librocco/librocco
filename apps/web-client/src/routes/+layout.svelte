@@ -23,7 +23,6 @@
 
 	import { Sidebar } from "$lib/components";
 
-	import { syncConfig, syncActive } from "$lib/db";
 	import { clearDb } from "$lib/db/cr-sqlite/db";
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
@@ -107,12 +106,19 @@
 
 	let availabilitySubscription: Subscription;
 
+	// Config stores
+	const dbid = app.config.dbid;
+	const syncUrl = app.config.syncUrl;
+	const syncActive = app.config.syncActive;
+
 	// Update sync on each change to settings
 	//
 	// NOTE: This is safe with respect to initialisation as it runs only if DB ready
 	// const dbReady = app.db.ready;
+	//
+	// TODO: wrap this is a connector function
 	$: if ($syncActive) {
-		startSync(app, $syncConfig.dbid, $syncConfig.url);
+		startSync(app, $dbid, $syncUrl);
 	}
 	$: if (!$syncActive) {
 		stopSync(app);
@@ -154,7 +160,7 @@
 		const vfs = getVfs(app);
 
 		await initializeSync(app, vfs);
-		if ($syncActive) await startSync(app, $syncConfig.dbid, $syncConfig.url);
+		if ($syncActive) await startSync(app, $dbid, $syncUrl);
 
 		// Prevent user from navigating away if sync is in progress
 		window.addEventListener("beforeunload", preventUnloadHandler);

@@ -4,19 +4,22 @@ import { get } from "svelte/store";
 
 import type { PageLoad } from "./$types";
 
+import { app } from "$lib/app";
+
 import { deviceSettingsStore } from "$lib/stores/app";
 import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
-
-import { syncConfig } from "$lib/db";
 
 import { timed } from "$lib/utils/timer";
 
 const _load: PageLoad = async ({ parent }) => {
 	await parent();
+
 	const deviceSettingsData = get(deviceSettingsStore);
 	const deviceSettingsForm = await superValidate(deviceSettingsData, zod(deviceSettingsSchema));
 
-	const syncSettingsData = get(syncConfig);
+	const dbid = get(app.config.dbid);
+	const syncUrl = get(app.config.syncUrl);
+	const syncSettingsData = { dbid, syncUrl };
 	const syncSettingsForm = await superValidate(syncSettingsData, zod(syncSettingsSchema));
 
 	return { deviceSettingsForm, syncSettingsForm };

@@ -18,8 +18,6 @@ import { base } from "$app/paths";
 import { app } from "$lib/app";
 import { initializeDb } from "$lib/app/db";
 
-import { dbid } from "$lib/db";
-
 import { DEFAULT_LOCALE, DEFAULT_VFS, DEMO_DB_NAME, IS_DEMO, IS_E2E } from "$lib/constants";
 
 import { appPath } from "$lib/paths";
@@ -83,7 +81,7 @@ export const load: LayoutLoad = async ({ url }) => {
 
 				// In demo mode we use the hardcoded VFS
 				const vfs = getDemoVFSFromLocalStorage(DEMO_VFS);
-				await initializeDb(app, get(dbid), vfs);
+				await initializeDb(app, get(app.config.dbid), vfs);
 
 				return { plugins, error: null };
 			}
@@ -92,7 +90,7 @@ export const load: LayoutLoad = async ({ url }) => {
 			// This will usually only happen in tests/benchmarks and the fallback will
 			// be used in production
 			const vfs = getVFSFromLocalStorage(DEFAULT_VFS);
-			await initializeDb(app, get(dbid), vfs);
+			await initializeDb(app, get(app.config.dbid), vfs);
 
 			return { plugins, error: null };
 		} catch (err) {

@@ -21,7 +21,6 @@
 
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { dbid, syncConfig, syncActive } from "$lib/db";
 	import { clearDb, dbCache, getInitializedDB } from "$lib/db/cr-sqlite/db";
 	import { opfsVFSList, vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 
@@ -35,6 +34,11 @@
 	export let data: PageData;
 
 	$: ({ plugins } = data);
+
+	// Config stores
+	const dbid = app.config.dbid;
+	const syncUrl = app.config.syncUrl;
+	const syncActive = app.config.syncActive;
 
 	// #region files list
 	let files: string[] = [];
@@ -265,8 +269,9 @@
 							validationMethod: "submit-only",
 							onUpdated: ({ form: { data, valid } }) => {
 								if (valid) {
-									syncConfig.set(data);
-									// Invalidating all in order to refresh the form data (done within the load function)
+									dbid.set(data.dbid);
+									syncUrl.set(data.url);
+									// TODO: rely on startSync to invalidate all
 									invalidateAll();
 								}
 							}

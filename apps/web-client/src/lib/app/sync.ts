@@ -83,7 +83,7 @@ class AppSyncCore implements IAppSyncExclusive {
 		const cfg = this.#activeConfig;
 
 		// NOOP -- nothing to do here
-		if (cfg.dbid == dbid && cfg.url == url) return;
+		if (cfg && cfg.dbid == dbid && cfg.url == url) return;
 
 		// Stop sync if active with different setup (noop otherwise)
 		this.stop();
