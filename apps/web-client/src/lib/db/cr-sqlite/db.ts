@@ -6,7 +6,6 @@ export { schemaContent };
 
 import type { DBAsync, TXAsync, Change, VFSWhitelist } from "./types";
 
-import { idbPromise, idbTxn } from "../indexeddb";
 import { getMainThreadDB, getWorkerDB } from "./core";
 import { DEFAULT_VFS } from "./core/constants";
 import { ErrDBCorrupted } from "./errors";
@@ -169,28 +168,3 @@ export const isEmptyDB = async (db: TXAsync): Promise<boolean> => {
 	const version = await getDBVersion(db);
 	return version === BigInt(0);
 };
-
-/**
- * Clears the current cr-sqlite DB (in IndexedDB)
- *
- * NOTE: It doesn't actually delete the database itself, but rather clears all the data (leaving the empty DB)
- * as the former produced some problems flakiness.
- *
- * NOTE: Currently it clears all data for the DB - this deletes all DBs created using the current cr-sqlite stack
- * (e.g. we could have multiple DBs "dev", "foo", "bar-122", etc. created by cr-sqlite and all stored in "idb-batch-atomic" - this will delete them all)
- * TODO: Implement a more fine-grained approach - delete only the chunks associated with a particular DB name, e.g. "dev"
- */
-export async function clearDb() {
-	const dbName = "idb-batch-atomic";
-
-	const db = await idbPromise(indexedDB.open(dbName));
-	await idbTxn(db.transaction(db.objectStoreNames, "readwrite"), async (txn) => {
-		for (const storeName of db.objectStoreNames) {
-			await idbPromise(txn.objectStore(storeName).clear());
-		}
-	});
-	db.close();
-
-	// TODO: This is a bit inconsistent -- maybe clear only the "dev" db
-	delete dbCache["dev"];
-}

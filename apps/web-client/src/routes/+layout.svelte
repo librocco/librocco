@@ -23,7 +23,6 @@
 
 	import { Sidebar } from "$lib/components";
 
-	import { clearDb } from "$lib/db/cr-sqlite/db";
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
 	import * as books from "$lib/db/cr-sqlite/books";
@@ -244,19 +243,6 @@
 	});
 
 	$: $errorDialogOpen = Boolean(error);
-
-	const nukeDB = async () => {
-		// Stop the ongoing sync
-		stopSync(app);
-		syncActive.set(false);
-
-		// Clear all the data in CR-SQLite IndexedDB
-		await clearDb();
-
-		// Reload the window - to avoid a huge number of issues related to
-		// having to account for DB not being available, but becoming available within the same lifetime
-		window.location.reload();
-	};
 
 	$: ({ layout: tLayout, common: tCommon } = $LL);
 

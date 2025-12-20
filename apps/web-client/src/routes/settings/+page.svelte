@@ -21,7 +21,7 @@
 
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { clearDb, dbCache, getInitializedDB } from "$lib/db/cr-sqlite/db";
+	import { dbCache, getInitializedDB } from "$lib/db/cr-sqlite/db";
 	import { opfsVFSList, vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
@@ -29,7 +29,8 @@
 	import { retry } from "$lib/utils/misc";
 	import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
 
-	import { app } from "$lib/app";
+	import { app, nukeAndResyncDb } from "$lib/app";
+	import { getVfs } from "$lib/app/db";
 
 	export let data: PageData;
 
@@ -183,6 +184,8 @@
 		deleteDatabase = null;
 	};
 
+	const handleNukeAndResync = () => nukeAndResyncDb(app, get(dbid), getVfs(app));
+
 	// #region dialog
 	const dialog = createDialog({ forceVisible: true });
 	const {
@@ -192,54 +195,6 @@
 	let deleteDatabase = { name: "" };
 
 	let dialogContent: (DialogContent & { type: "create" | "delete" }) | null = null;
-
-	// TODO: probably move this to app handlers
-	const nukeAndResyncOPFS = async () => {
-		const dbname = get(dbid);
-
-		// Delete if exists
-		// TODO: handle the closing and cleanup here when excl. access is implemented
-		await deleteDBFromOPFS(dbname);
-
-		// Reinstate the sync
-		// - in case of DB file fetched, we should be in-sync
-		// - in case of error fetching DB file, this will trigger a full sync
-		await invalidateAll();
-		syncActive.set(true);
-	};
-
-	// TODO: probably move this to app handlers
-	const nukeAndResyncIDB = async () => {
-		// Stop the ongoing sync
-		syncActive.set(false);
-
-		// Clear all the data in CR-SQLite IndexedDB
-		await clearDb();
-
-		// Invalidate all - reinitialise the DB
-		await invalidateAll();
-
-		// Reset the sync
-		syncActive.set(true);
-	};
-
-	const nukeAndResyncDB = async () => {
-		const dbCtx = data.dbCtx;
-		if (!dbCtx) {
-			throw new Error("Cannot nuke and resync: no db context: this indicates an error in app core logic");
-		}
-		const { vfs } = dbCtx;
-
-		if (vfsSupportsOPFS(data.dbCtx?.vfs)) {
-			console.log("OPFS supported VFS detected:", vfs);
-			console.log("Fetching DB file to optimise sync process");
-			await nukeAndResyncOPFS();
-		} else {
-			console.log("No-OPFS VFS detected:", vfs);
-			console.log("Using regular sync methods withut optimisations");
-			await nukeAndResyncIDB();
-		}
-	};
 
 	$: ({ settings_page: tSettings, common: tCommon } = $LL);
 </script>
@@ -388,7 +343,7 @@
 					</div>
 
 					<div class="flex justify-end gap-x-2 px-4 py-6">
-						<button on:click={nukeAndResyncDB} type="button" class="btn-secondary btn">{tSettings.actions.nuke_and_resync()}</button>
+						<button on:click={handleNukeAndResync} type="button" class="btn-secondary btn">{tSettings.actions.nuke_and_resync()}</button>
 						{#if vfsSupportsOPFS(data.dbCtx?.vfs)}
 							<button on:click={toggleImport} type="button" class="btn-secondary btn">
 								{importOn ? tCommon.actions.cancel() : tCommon.actions.import()}

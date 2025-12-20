@@ -1,86 +1,12 @@
 import { type Writable, writable } from "svelte/store";
 
 import type { DBAsync } from "$lib/db/cr-sqlite/types";
-import { getDB, type DbCtx, getSchemaNameAndVersion, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
+import { getDB, getSchemaNameAndVersion, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
 import type { ProgressState } from "$lib/types";
 
 import { retry } from "$lib/utils/misc";
 
-function uuidV4Bytes() {
-	const b = new Uint8Array(16);
-	crypto.getRandomValues(b);
-
-	// version = 4
-	b[6] = (b[6] & 0x0f) | 0x40;
-	// variant = RFC 4122
-	b[8] = (b[8] & 0x3f) | 0x80;
-
-	return b;
-}
-
-/**
- * Re-identifies a DB node: updates the siteid, as well as `crsql_site_id`, `crsql_tracked_peers`, `*__crsql_clock` tables.
- *
- * This is done when we retrieve an exact copy of a DB from another node (with ids and respective crsql links) and we want to have it reidentified:
- * - generating a new siteid for the node
- * - updating tracked peers to only include the origin node and attributing all tracked changes to it (as if we synced from it)
- */
-export async function reidentifyDbNode(db: DBAsync) {
-	await db.tx(async (txDb) => {
-		// Delete existing tracked peers (if any), those are unfamiliar to a new node
-		await txDb.exec("DELETE FROM crsql_tracked_peers");
-		// Delete existin peers' site ids (if any), keeping only the origin
-		// (origin being the site id of the node we copied this from, found in the table with ordinal = 0)
-		await txDb.exec("DELETE FROM crsql_site_id WHERE ordinal != 0");
-
-		// Bump the origin ordinal to 1 (this is our only peer now)
-		await txDb.exec("UPDATE crsql_site_id SET ordinal = 1 WHERE ordinal = 0");
-		// Generate a new id for the node (ordinal = 0)
-		const siteid = uuidV4Bytes();
-		await txDb.exec("INSERT INTO crsql_site_id (site_id, ordinal) VALUES (?, ?)", [siteid, 0]);
-
-		// Store origin as a tracked peer (this is required to avoid re-syncing everything -- pulling changes since the beginning of time)
-		const [[origin_site_id]] = await txDb.execA<[Uint8Array]>("SELECT site_id FROM crsql_site_id WHERE ordinal = 1");
-		const [[db_version]] = await txDb.execA<[number]>("SELECT MAX(db_version) FROM crsql_changes");
-		// Value inferred from usage (inspecting sync worker and ws-server impl)
-		await txDb.exec("INSERT INTO crsql_tracked_peers (site_id, event, version, seq, tag) VALUES (?, 0, ?, 0, 0)", [
-			origin_site_id,
-			db_version
-		]);
-
-		// Attribute all tracked changes to origin node
-		const crsql_clock_tables = await txDb.execA<[string]>("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%crsql_clock'");
-		for (const [tbl] of crsql_clock_tables) {
-			await txDb.exec(`UPDATE ${tbl} SET site_id = 1`);
-		}
-	});
-}
-
-/**
- * Validates a fetched database file to ensure it's a valid SQLite database with the correct schema.
- *
- * @param dbname The name of the database file in OPFS to validate.
- * @returns The opened database handle if validation succeeds.
- * @throws Error if validation fails (closes the DB before throwing).
- */
-async function validateFetchedDB(db: DBAsync): Promise<void> {
-	// Quick integrity check (faster than full integrity_check)
-	const [[res]] = await db.execA<[string]>("PRAGMA quick_check");
-	if (res !== "ok") {
-		throw new Error(`Database integrity check failed: ${res}`);
-	}
-
-	// Check schema exists and matches
-	const schemaRes = await getSchemaNameAndVersion(db);
-	if (!schemaRes) {
-		throw new Error("Database has no schema (not initialized)");
-	}
-
-	const [name, version] = schemaRes;
-	if (name !== schemaName || version !== schemaVersion) {
-		throw new Error(`Schema mismatch: expected ${schemaName}@${schemaVersion}, got ${name}@${version}`);
-	}
-}
+// ---------------------------------- OPFS ---------------------------------- //
 
 /**
  * Fetches the DB file (.sqlite3) from the provided URL and stores it in OPFS under the given target name.
@@ -247,28 +173,6 @@ type FileSystemFileHandleExt = FileSystemFileHandle & {
 	move(destDir: FileSystemDirectoryHandle, dest?: string): Promise<void>;
 };
 
-async function moveImpl(
-	srcDir: FileSystemDirectoryHandle,
-	srcHandle: FileSystemFileHandle,
-	destDir: FileSystemDirectoryHandle,
-	destName: string
-): Promise<void> {
-	// Fallback impl:
-	// 1. create dest
-	// 2. copy from src to dest
-	// 3. delete src
-	const srcFile = await srcHandle.getFile();
-	const srcBuf = await srcFile.arrayBuffer();
-
-	const destHandle = await destDir.getFileHandle(destName);
-	const destWritable = await destHandle.createWritable();
-
-	await destWritable.write(srcBuf);
-	await destWritable.close();
-
-	await srcDir.removeEntry(srcHandle.name);
-}
-
 /**
  * Wraps file handle
  */
@@ -298,4 +202,163 @@ export function wrapFileHandle(dirHandle: FileSystemDirectoryHandle, fileHandle:
 	}
 
 	return Object.assign(fileHandle, { move });
+}
+
+async function moveImpl(
+	srcDir: FileSystemDirectoryHandle,
+	srcHandle: FileSystemFileHandle,
+	destDir: FileSystemDirectoryHandle,
+	destName: string
+): Promise<void> {
+	// Fallback impl:
+	// 1. create dest
+	// 2. copy from src to dest
+	// 3. delete src
+	const srcFile = await srcHandle.getFile();
+	const srcBuf = await srcFile.arrayBuffer();
+
+	const destHandle = await destDir.getFileHandle(destName);
+	const destWritable = await destHandle.createWritable();
+
+	await destWritable.write(srcBuf);
+	await destWritable.close();
+
+	await srcDir.removeEntry(srcHandle.name);
+}
+
+// ---------------------------------- IndexedDB ---------------------------------- //
+
+/**
+ * Clears IndexedDB data for 'idb-batch-atomic' VFS
+ *
+ * IMPORTANT_NOTE: Currently this clears all data for the DB - this deletes all DBs created using the current cr-sqlite stack
+ * (e.g. we could have multiple DBs "dev", "foo", "bar-122", etc. created by cr-sqlite and all stored in "idb-batch-atomic" - this will delete them all)
+ * TODO: Implement a more fine-grained approach - delete only the chunks associated with a particular DB name, e.g. "dev"
+ */
+export async function clearIDBBatchAtomic() {
+	const dbName = "idb-batch-atomic";
+
+	const db = await idbPromise(indexedDB.open(dbName));
+	await idbTxn(db.transaction(db.objectStoreNames, "readwrite"), async (txn) => {
+		for (const storeName of db.objectStoreNames) {
+			await idbPromise(txn.objectStore(storeName).clear());
+		}
+	});
+	db.close();
+}
+
+/**
+ * An util used to promisify IDBRequest
+ */
+function idbPromise<T extends IDBRequest>(req: T): Promise<T["result"]> {
+	return new Promise<T["result"]>((resolve, reject) => {
+		req.onsuccess = () => {
+			resolve(req.result);
+		};
+		req.onerror = () => {
+			reject(req.error);
+		};
+	});
+}
+
+/**
+ * A wrapper arount IDBTransaction:
+ * - accepts a transaction
+ * - runs the (async) setup - equeueing of operations within the transction
+ * - commits the transaction
+ * - resolves or rejects the promise based on the transaction result
+ */
+function idbTxn(transaction: IDBTransaction, setup: (txn: IDBTransaction) => Promise<void>) {
+	return new Promise<void>((resolve, reject) => {
+		transaction.oncomplete = () => {
+			console.log("txn completed");
+			resolve();
+		};
+		transaction.onerror = () => {
+			console.error("txn error:", transaction.error);
+			reject(transaction.error);
+		};
+		setup(transaction)
+			.then(() => transaction.commit())
+			.then(resolve)
+			.catch(reject);
+	});
+}
+
+// ---------------------------------- Misc ---------------------------------- //
+
+/**
+ * Validates a fetched database file to ensure it's a valid SQLite database with the correct schema.
+ *
+ * @param dbname The name of the database file in OPFS to validate.
+ * @returns The opened database handle if validation succeeds.
+ * @throws Error if validation fails (closes the DB before throwing).
+ */
+async function validateFetchedDB(db: DBAsync): Promise<void> {
+	// Quick integrity check (faster than full integrity_check)
+	const [[res]] = await db.execA<[string]>("PRAGMA quick_check");
+	if (res !== "ok") {
+		throw new Error(`Database integrity check failed: ${res}`);
+	}
+
+	// Check schema exists and matches
+	const schemaRes = await getSchemaNameAndVersion(db);
+	if (!schemaRes) {
+		throw new Error("Database has no schema (not initialized)");
+	}
+
+	const [name, version] = schemaRes;
+	if (name !== schemaName || version !== schemaVersion) {
+		throw new Error(`Schema mismatch: expected ${schemaName}@${schemaVersion}, got ${name}@${version}`);
+	}
+}
+
+/**
+ * Re-identifies a DB node: updates the siteid, as well as `crsql_site_id`, `crsql_tracked_peers`, `*__crsql_clock` tables.
+ *
+ * This is done when we retrieve an exact copy of a DB from another node (with ids and respective crsql links) and we want to have it reidentified:
+ * - generating a new siteid for the node
+ * - updating tracked peers to only include the origin node and attributing all tracked changes to it (as if we synced from it)
+ */
+export async function reidentifyDbNode(db: DBAsync) {
+	await db.tx(async (txDb) => {
+		// Delete existing tracked peers (if any), those are unfamiliar to a new node
+		await txDb.exec("DELETE FROM crsql_tracked_peers");
+		// Delete existin peers' site ids (if any), keeping only the origin
+		// (origin being the site id of the node we copied this from, found in the table with ordinal = 0)
+		await txDb.exec("DELETE FROM crsql_site_id WHERE ordinal != 0");
+
+		// Bump the origin ordinal to 1 (this is our only peer now)
+		await txDb.exec("UPDATE crsql_site_id SET ordinal = 1 WHERE ordinal = 0");
+		// Generate a new id for the node (ordinal = 0)
+		const siteid = uuidV4Bytes();
+		await txDb.exec("INSERT INTO crsql_site_id (site_id, ordinal) VALUES (?, ?)", [siteid, 0]);
+
+		// Store origin as a tracked peer (this is required to avoid re-syncing everything -- pulling changes since the beginning of time)
+		const [[origin_site_id]] = await txDb.execA<[Uint8Array]>("SELECT site_id FROM crsql_site_id WHERE ordinal = 1");
+		const [[db_version]] = await txDb.execA<[number]>("SELECT MAX(db_version) FROM crsql_changes");
+		// Value inferred from usage (inspecting sync worker and ws-server impl)
+		await txDb.exec("INSERT INTO crsql_tracked_peers (site_id, event, version, seq, tag) VALUES (?, 0, ?, 0, 0)", [
+			origin_site_id,
+			db_version
+		]);
+
+		// Attribute all tracked changes to origin node
+		const crsql_clock_tables = await txDb.execA<[string]>("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE '%crsql_clock'");
+		for (const [tbl] of crsql_clock_tables) {
+			await txDb.exec(`UPDATE ${tbl} SET site_id = 1`);
+		}
+	});
+}
+
+function uuidV4Bytes() {
+	const b = new Uint8Array(16);
+	crypto.getRandomValues(b);
+
+	// version = 4
+	b[6] = (b[6] & 0x0f) | 0x40;
+	// variant = RFC 4122
+	b[8] = (b[8] & 0x3f) | 0x80;
+
+	return b;
 }
