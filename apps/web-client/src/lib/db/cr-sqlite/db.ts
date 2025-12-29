@@ -12,11 +12,6 @@ import { ErrDBCorrupted } from "./errors";
 
 export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
 
-// DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
-// chahe the DB as soon as the first time 'getInitializedDB' is called, so that all subsequent calls
-// await the same promise (which may or may not be resolved by then).
-export const dbCache = new Map<string, Promise<DbCtx>>();
-
 export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
 
@@ -94,15 +89,6 @@ const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
 };
 
 export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<DbCtx> => {
-	// NOTE: DB Cache holds promises to prevent multiple initialisation attemtps:
-	// - if initialization needed - cache the request (promise) immediately
-	// - if cache exists, return the promise (which may or may not be resolved yet)
-
-	const cached = dbCache.get(dbname);
-	if (cached) {
-		return await cached;
-	}
-
 	try {
 		// Register the request (promise) immediately, to prevent multiple init requests
 		// at the same time
@@ -112,14 +98,9 @@ export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAU
 				const ctx = { db, rx: rxtbl(db), vfs };
 				return ctx;
 			});
-		dbCache.set(dbname, initialiser);
 
 		return await initialiser;
 	} catch (err) {
-		// If the request fails, however, (invalid DB state)
-		// remove the cached promise so that we rerun the reqiuest on error fix + invalidateAll
-		dbCache.delete(dbname);
-
 		// Update init store with error
 
 		throw err;

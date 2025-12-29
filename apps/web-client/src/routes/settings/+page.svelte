@@ -15,13 +15,12 @@
 	import type { PageData } from "./$types";
 	import { type DialogContent } from "$lib/types";
 
-	import { VERSION } from "$lib/constants";
+	import { DEFAULT_DB_NAME, VERSION } from "$lib/constants";
 
 	import { Page } from "$lib/controllers";
 
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { dbCache, getInitializedDB } from "$lib/db/cr-sqlite/db";
 	import { opfsVFSList, vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
@@ -29,7 +28,7 @@
 	import { retry } from "$lib/utils/misc";
 	import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
 
-	import { app, nukeAndResyncDb } from "$lib/app";
+	import { app, deleteCurrentDb, nukeAndResyncDb, selectDb } from "$lib/app";
 	import { getVfs } from "$lib/app/db";
 
 	export let data: PageData;
@@ -140,48 +139,31 @@
 
 	const handleCreateDatabase = async (_name: string) => {
 		const name = addSQLite3Suffix(_name);
-
-		// Initialize a new database (we don't need it, we just need it to be initialised and cached)
-		// If this isn't done, and a sync worker is active a race condition might happen where the worker
-		// (sync controller communicating with the worker to be precise) reacts to change in persisted dbid
-		// before the root load function has had the chance to initialise the DB (apply the schema and all)
-		await getInitializedDB(name);
-
-		await handleSelect(name)();
+		// Select will create a DB if not exists
+		await selectDb(app, name, getVfs(app));
 		open.set(false);
 		files = await getFiles();
 	};
 
 	const handleDeleteDatabase = (name: string) => async () => {
-		// If DB exists in cache (either current or used in this session), close it and clear
-		const cachedDbCtx = dbCache.get(name);
-		if (cachedDbCtx) {
-			const { db } = await cachedDbCtx;
-			await db.close();
-			dbCache.delete(name);
+		const vfs = getVfs(app);
+
+		try {
+			// Case: deleting the current DB
+			if (name === get(dbid)) {
+				// When deleting the current DB, we're selecting the first one from the list (as the next active one).
+				// If the list is empty (only currently active DB exists): create a new DB with the default name (after deletion).
+				const nextDbid = files.find((fname) => fname !== name) || DEFAULT_DB_NAME;
+				await deleteCurrentDb(app, { dbid: nextDbid, vfs });
+			} else {
+				// Case: deleting non-active DB - easy path: no connections/references - delete the DB file
+				await deleteDBFromOPFS(name);
+			}
+		} finally {
+			// Local state cleanup
+			open.set(false);
+			deleteDatabase = null;
 		}
-
-		// Stop the sync if deleting the current DB
-		// Reasoning:
-		//   - if deleting the current DB we need the worker to release the internal DB connection
-		//   - when deleting the current DB we select the next one in the list (or recreate a default one if none exists),
-		//     in which case the sync continuing is a non-trivial choice which we defer to the user to do manually
-		if (name === get(dbid)) {
-			syncActive.set(false);
-		}
-
-		const dir = await window.navigator.storage.getDirectory();
-		await retry(() => dir.removeEntry(name), 100, 5);
-
-		files = await getFiles();
-
-		// If we've just deleted the current database, select the first one in the list
-		if (!files.includes(addSQLite3Suffix(get(dbid)))) {
-			await handleSelect(files[0] || "dev.sqlite3")(); // If this was the last file, create a new (default) db(files[0] || "dev")(); // If this was the last file, create a new (default) db
-		}
-
-		open.set(false);
-		deleteDatabase = null;
 	};
 
 	const handleNukeAndResync = () => nukeAndResyncDb(app, get(dbid), getVfs(app));

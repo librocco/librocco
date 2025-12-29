@@ -118,9 +118,6 @@ export async function fetchAndStoreDBFile(url: string, target: string, progressS
 		throw err;
 	} finally {
 		// Cleanup
-		//
-		// NOTE: no need to clear the cache -- the DB was opened using 'getDB'
-		// which doesn't cache (unlike 'getInitializedDB')
 		progressStore.set({ active: false, nProcessed: 0, nTotal: 0 });
 	}
 
