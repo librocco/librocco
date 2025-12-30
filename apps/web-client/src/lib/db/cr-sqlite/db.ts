@@ -1,5 +1,4 @@
 import { cryb64 } from "@vlcn.io/ws-common";
-import rxtbl from "@vlcn.io/rx-tbl";
 
 import schemaContent from "$lib/schemas/init?raw";
 export { schemaContent };
@@ -9,8 +8,6 @@ import type { DBAsync, TXAsync, Change, VFSWhitelist } from "./types";
 import { getMainThreadDB, getWorkerDB } from "./core";
 import { DEFAULT_VFS } from "./core/constants";
 import { ErrDBCorrupted } from "./errors";
-
-export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
 
 export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
@@ -86,25 +83,6 @@ const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
 	}
 
 	return db;
-};
-
-export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<DbCtx> => {
-	try {
-		// Register the request (promise) immediately, to prevent multiple init requests
-		// at the same time
-		const initialiser = getDB(dbname, vfs)
-			.then(checkAndInitializeDB)
-			.then((db) => {
-				const ctx = { db, rx: rxtbl(db), vfs };
-				return ctx;
-			});
-
-		return await initialiser;
-	} catch (err) {
-		// Update init store with error
-
-		throw err;
-	}
 };
 
 export const getChanges = (db: TXAsync, since: bigint | null = BigInt(0)): Promise<Change[]> => {

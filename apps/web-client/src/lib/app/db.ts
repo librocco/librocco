@@ -1,7 +1,7 @@
 import { get, derived, writable, type Readable } from "svelte/store";
 import tblrx from "@vlcn.io/rx-tbl";
 
-import { getDB as getDBCore, getSchemaNameAndVersion, schemaContent, schemaName, schemaVersion, type DbCtx } from "$lib/db/cr-sqlite/db";
+import { getDB as getDBCore, getSchemaNameAndVersion, schemaContent, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
 import type { DBAsync, VFSWhitelist } from "$lib/db/cr-sqlite/core/types";
 
 import type { App } from "./index";
@@ -27,6 +27,8 @@ export enum AppDbState {
 	Migrating,
 	Ready
 }
+
+type DbCtx = { db: DBAsync; vfs: VFSWhitelist };
 
 type SetStateReturn = { ok: true } | { ok: false; error: Error };
 
@@ -147,7 +149,7 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
 		// happening in production anyway
-		app.db.setState(dbid, AppDbState.Ready, { db, rx: tblrx(db), vfs });
+		app.db.setState(dbid, AppDbState.Ready, { db, vfs });
 
 		return;
 	}
@@ -160,7 +162,7 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
 		// happening in production anyway
-		app.db.setState(dbid, AppDbState.Ready, { db, rx: tblrx(db), vfs });
+		app.db.setState(dbid, AppDbState.Ready, { db, vfs });
 		return;
 	}
 
@@ -177,11 +179,11 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
 		// happening in production anyway
-		app.db.setState(dbid, AppDbState.Ready, { db, rx: tblrx(db), vfs });
+		app.db.setState(dbid, AppDbState.Ready, { db, vfs });
 	} catch (migrationError) {
 		// Migration failure is treated as a corrupted DB state - needs nuke
 		console.error("Auto-migration failed:", migrationError);
-		app.db.setState(dbid, AppDbState.Ready, { db, rx: tblrx(db), vfs });
+		app.db.setState(dbid, AppDbState.Ready, { db, vfs });
 		throw new ErrDBCorrupted(`Migration failed: ${migrationError instanceof Error ? migrationError.message : String(migrationError)}`);
 	}
 };
