@@ -7,7 +7,6 @@ import type { DBAsync, TXAsync, Change, VFSWhitelist } from "./types";
 
 import { getMainThreadDB, getWorkerDB } from "./core";
 import { DEFAULT_VFS } from "./core/constants";
-import { ErrDBCorrupted } from "./errors";
 
 export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
@@ -44,46 +43,6 @@ export async function initializeDB(db: TXAsync) {
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
 }
-
-/**
- * An intermediate function that checks for different (potentially bad) DB states:
- * - throws ErrDBCorrupted if integrity check fails (requires nuke)
- * - initializes the DB if not initialized
- * - auto-migrates if schema version mismatch (no user interaction needed)
- */
-const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
-	// Integrity check - if this fails, DB needs to be nuked
-	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
-	if (res !== "ok") {
-		throw new ErrDBCorrupted(res);
-	}
-
-	// Check if DB initialized
-	const schemaRes = await getSchemaNameAndVersion(db);
-	if (!schemaRes) {
-		// Fresh DB - initialize it
-		await initializeDB(db);
-		return db;
-	}
-
-	// Check schema name/version - auto-migrate if mismatch
-	const [name, version] = schemaRes;
-	if (name !== schemaName || version !== schemaVersion) {
-		console.log(`Schema mismatch detected. Current: ${name}@${version}, Expected: ${schemaName}@${schemaVersion}`);
-		console.log("Auto-migrating database...");
-
-		try {
-			const result = await db.automigrateTo(schemaName, schemaContent);
-			console.log(`Auto-migration completed: ${result}`);
-		} catch (migrationError) {
-			console.error("Auto-migration failed:", migrationError);
-			// Migration failure is treated as a corrupted DB state - needs nuke
-			throw new ErrDBCorrupted(`Migration failed: ${migrationError instanceof Error ? migrationError.message : String(migrationError)}`);
-		}
-	}
-
-	return db;
-};
 
 export const getChanges = (db: TXAsync, since: bigint | null = BigInt(0)): Promise<Change[]> => {
 	const query = `SELECT

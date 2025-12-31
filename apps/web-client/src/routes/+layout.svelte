@@ -24,21 +24,13 @@
 	import { Sidebar } from "$lib/components";
 
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
-	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
-	import * as books from "$lib/db/cr-sqlite/books";
-	import * as customers from "$lib/db/cr-sqlite/customers";
-	import * as note from "$lib/db/cr-sqlite/note";
-	import * as reconciliation from "$lib/db/cr-sqlite/order-reconciliation";
-	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
-	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
 	import { LL } from "@librocco/shared/i18n-svelte";
-	import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
-	import { deleteDBFromOPFS, checkOPFSFileExists, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
+	import { deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
 
 	import { progressBar } from "$lib/actions";
 
@@ -47,9 +39,12 @@
 
 	export let data: LayoutData;
 
-	$: error = data.error;
-
 	const dbState = app.db.state;
+
+	// Very TEMP, replace this with cleaner error handling
+	let error = null;
+	const errorStore = derived([dbState], ([s$]) => (s$ === AppDbState.Error ? app.db.error : null));
+	$: error = $errorStore;
 
 	// TODO: revisit this and agree on convergence:
 	// - should we revert back to string states?
@@ -59,7 +54,7 @@
 		const phase = ["idle", "error", "loading", "migrating", "ready"][state];
 		window["__dbInitUpdate"]?.(phase, error || null);
 	};
-	$: signalDbInitState($dbState, error);
+	$: signalDbInitState($dbState, app.db.error);
 
 	beforeNavigate(({ to }) => {
 		if (IS_DEBUG || IS_E2E) {
@@ -74,26 +69,6 @@
 		// NOTE: the cache will still be invalidated in the mean while, there will just be no requerying,
 		// effectively turning the cache back to lazy mode
 		stockCache.disableRefresh();
-	});
-
-	// Attach window helpers, these are used for:
-	// - manual interactions with the app (through console)
-	// - as bridged DB interactions from Playwright environment
-	//   (Playwright uses window to retrieve the App, DB, and appropriate DB handlers - ensuring DRY and single-source of truth)
-	onMount(() => {
-		window["_app"] = app;
-		window["_getDb"] = getDb;
-		window["_getRemoteDB"] = getRemoteDB; // TODO: revisit this
-
-		window["books"] = books;
-		window["customers"] = customers;
-		window["note"] = note;
-		window["reconciliation"] = reconciliation;
-		window["suppliers"] = suppliers;
-		window["warehouse"] = warehouse;
-
-		window["migrations"] = migrations;
-		window["deleteDBFromOPFS"] = (dbname: string) => deleteDBFromOPFS(dbname);
 	});
 
 	// Signal (to Playwright) that the DB is initialised
@@ -141,27 +116,13 @@
 		// This helps us in e2e to know when the page is interactive
 		document.body.setAttribute("hydrated", "true");
 
-		if (IS_E2E || IS_DEBUG) {
-			window["timeLogger"] = timeLogger;
-		}
-
 		// Control the invalidation of the stock cache
 		// On every 'book_transaction' change, we run 'maybeInvalidate', which checks for relevant changes
 		// between the last cached value and the current one and invalidates the cache if needed
 		disposer = getDbRx(app).onRange(["book_transaction"], async () => stockCache.maybeInvalidate(await getDb(app)));
 
-		// 3. Sync setup (not supported in demo mode)
-		if (IS_DEMO) {
-			return;
-		}
-
-		// NOTE: The DB should be loaded at this point, so this should be safe
-		const vfs = getVfs(app);
-
-		await initializeSync(app, vfs);
-		if ($syncActive) await startSync(app, $dbid, $syncUrl);
-
 		// Prevent user from navigating away if sync is in progress
+		// NOTE: this is a noop if sync not active (e.g. in demo mode)
 		window.addEventListener("beforeunload", preventUnloadHandler);
 	});
 
@@ -242,7 +203,7 @@
 		forceVisible: true
 	});
 
-	$: $errorDialogOpen = Boolean(error);
+	$: $errorDialogOpen = Boolean($dbState === AppDbState.Error);
 
 	$: ({ layout: tLayout, common: tCommon } = $LL);
 
@@ -255,10 +216,8 @@
 			throw new Error("DEMO_DB_URL is not set");
 		}
 
-		// Remove the existing DB (if any)
-		if (await checkOPFSFileExists(DEMO_DB_NAME)) {
-			await deleteDBFromOPFS(DEMO_DB_NAME);
-		}
+		// NOTE: noop if not exists
+		await deleteDBFromOPFS(DEMO_DB_NAME);
 
 		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);
 

@@ -10,6 +10,15 @@ import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
 import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 
 export class App {
+	// TODO: maybe implement App state -- currently we're relying on both:
+	// - db state - as app state
+	// - db error - as app error
+	// Both are good enough considering the current flow, but would be good to
+	// make the state global.
+	get state() {
+		return this.db.state;
+	}
+
 	db = new AppDb();
 	sync = new AppSync();
 	config = IS_DEMO ? AppConfig.demo() : AppConfig.persisted();

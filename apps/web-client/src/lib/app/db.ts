@@ -1,5 +1,4 @@
 import { get, derived, writable, type Readable } from "svelte/store";
-import tblrx from "@vlcn.io/rx-tbl";
 
 import { getDB as getDBCore, getSchemaNameAndVersion, schemaContent, schemaName, schemaVersion } from "$lib/db/cr-sqlite/db";
 import type { DBAsync, VFSWhitelist } from "$lib/db/cr-sqlite/core/types";
@@ -8,6 +7,9 @@ import type { App } from "./index";
 import { waitForStore } from "./utils";
 import { ErrDbNotInit, ErrDBIDMismatch, ErrDBCorrupted, ErrDbNotSet } from "./errors";
 import { AppDbRx, type IAppDbRx } from "./rx";
+import { checkOPFSFileExists } from "$lib/db/cr-sqlite/core/utils";
+import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
+import { DEMO_DB_NAME } from "$lib/constants";
 
 // ---------------------------------- Structs ---------------------------------- //
 /**
@@ -130,8 +132,6 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
 	if (res !== "ok") {
 		const err = new ErrDBCorrupted(res);
-		// TODO: handle an edge case where DB corrupted, but we've already switched to another DB.
-		// This is currently not implemented, but I imagine (give the app flows) this will virtually never happen.
 		app.db.setState(dbid, AppDbState.Error, err);
 		throw err;
 	}
@@ -183,10 +183,69 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	} catch (migrationError) {
 		// Migration failure is treated as a corrupted DB state - needs nuke
 		console.error("Auto-migration failed:", migrationError);
-		app.db.setState(dbid, AppDbState.Ready, { db, vfs });
-		throw new ErrDBCorrupted(`Migration failed: ${migrationError instanceof Error ? migrationError.message : String(migrationError)}`);
+		// Set the migration error internally (into DB)
+		const err = new ErrDBCorrupted("Automigration failed: DB corrupted (see app.db.error for more info)");
+		app.db.setState(dbid, AppDbState.Error, migrationError);
+		// Throw general error (ErrDbCorrupted) for the caller
+		throw err;
 	}
 };
+
+export async function initializeDemoDb(app: App, vfs: VFSWhitelist) {
+	const dbid = DEMO_DB_NAME;
+
+	app.db.dbid = dbid;
+	app.db.setState(dbid, AppDbState.Loading);
+
+	// Whenever we encounter the error with the DB, we throw ErrDemoDBNotInitialised,
+	// signalling the DB should be refetched, hence the helper.
+	//
+	// TODO: handle this a bit nicer
+	const throwDemoDBError = () => {};
+
+	// Check if the file exists: if not it needs to be fetched -- outside this function
+	if (!(await checkOPFSFileExists(DEMO_DB_NAME))) {
+		const err = new ErrDemoDBNotInitialised();
+		app.db.setState(DEMO_DB_NAME, AppDbState.Error, err);
+		throw err;
+	}
+
+	// Initialising
+	const db = await getDBCore(dbid, vfs);
+
+	// Integrity check - if this fails, DB needs to be nuked
+	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
+	if (res !== "ok") {
+		throwDemoDBError();
+	}
+
+	// Check if DB initialized (internally)
+	const schemaRes = await getSchemaNameAndVersion(db);
+	if (!schemaRes) {
+		throwDemoDBError();
+	}
+
+	// Check schema name/version - auto-migrate if mismatch
+	const [name, version] = schemaRes;
+	if (name === schemaName && version === schemaVersion) {
+		// All God - We're done here!
+		app.db.setState(dbid, AppDbState.Ready, { db, vfs });
+		return;
+	}
+
+	// Schema name / version mismatch -- automigrate
+	app.db.setState(dbid, AppDbState.Migrating);
+
+	try {
+		const result = await db.automigrateTo(schemaName, schemaContent);
+		console.log(`Auto-migration completed: ${result}`);
+		app.db.setState(dbid, AppDbState.Ready, { db, vfs });
+	} catch (migrationError) {
+		// Migration failure is treated as a corrupted DB state - needs nuke
+		console.error("Auto-migration failed:", migrationError);
+		throwDemoDBError();
+	}
+}
 
 /**
  * Retrieve the DB in an async manner - this waits for DB initialisation, thus
