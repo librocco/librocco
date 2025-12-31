@@ -15,6 +15,7 @@ import { waitForStore } from "./utils";
 import { getDb, getVfs } from "./db";
 import { isEmptyDB } from "$lib/db/cr-sqlite/db";
 import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
+import { browser } from "$app/environment";
 
 // ---------------------------------- Structs ---------------------------------- //
 export enum AppSyncState {
@@ -73,9 +74,13 @@ class AppSyncCore implements IAppSyncExclusive {
 
 	initialSyncProgressStore = writable<ProgressState>({ active: false, nTotal: 0, nProcessed: 0 });
 
-	constructor(worker = new WorkerInterface(new SyncWorker())) {
-		this.worker = worker;
-		this.#syncProgressDisposer = this.worker.onProgress(($progress) => this.syncProgressStore.set($progress));
+	constructor(worker?: WorkerInterface) {
+		// Worker is only accessible from browser
+		// TODO: This is a quick fix -- handle this in a nicer way
+		if (browser) {
+			this.worker = worker || new WorkerInterface(new SyncWorker());
+			this.#syncProgressDisposer = this.worker.onProgress(($progress) => this.syncProgressStore.set($progress));
+		}
 	}
 
 	// TODO: listen to DB invalidations and reset the sync (if active) when DB invalidated
