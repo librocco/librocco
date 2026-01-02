@@ -34,7 +34,7 @@ jobs:
         lfs: true
     - uses: actions/setup-node@v4
       with:
-        node-version: "20"
+        node-version: "22"
     - name: Download Windows crsqlite.dll (workaround)
       if: runner.os == 'Windows'
       continue-on-error: true

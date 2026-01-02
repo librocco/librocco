@@ -33,7 +33,7 @@ jobs:
       -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
       -  #@ load_artefacts()
       -  #@ load_cached_artefacts()
       -  #@ cache_node()

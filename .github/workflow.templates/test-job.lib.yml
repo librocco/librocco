@@ -27,7 +27,7 @@ steps:
   -  #@ checkout()
   - uses: actions/setup-node@v4
     with:
-      node-version: "20"
+      node-version: "22"
   - name: Compute desired compiled artifact version
     run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
   -  #@ load_artefacts()
