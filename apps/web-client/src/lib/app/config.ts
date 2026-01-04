@@ -120,7 +120,7 @@ export class AppConfig implements IAppConfig {
 		instance.#dbid = persisted(LOCAL_STORAGE_KEY_DBID, DEFAULT_DB_NAME);
 		const defaultSyncUrl = browser ? `${window.location.protocol}//${window.location.host}/sync` : "";
 		instance.#syncUrl = persisted(LOCAL_STORAGE_KEY_SYNC_URL, defaultSyncUrl);
-		instance.#syncActive = persisted(LOCAL_STORAGE_KEY_SYNC_ACTIVE, false);
+		instance.#syncActive = persisted(LOCAL_STORAGE_KEY_SYNC_ACTIVE, true);
 
 		return instance;
 	}

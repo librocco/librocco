@@ -264,6 +264,10 @@ export const testBase = test.extend<BaseTestFixture>({
 			// NOTE: the surrounding double quotes need to be part of the string as the svelte-persisted reads (and stores) the
 			// values as JSON objects (so a string including the quotes is a valid JSON value)
 			window.localStorage.setItem("librocco-current-db", `"sync-test-db-${Math.floor(Math.random() * 1000000)}"`);
+			// Sync in on by default, we're turning it off for the majority of tests so as to not cause conflicts (sync-server errors),
+			// and this interfere with testing of the app -- a small subset of sync functionality is alreayd testsd in dedicated tests
+			// TODO: extend test runs (perhaps environments) to include the app connected to sync server (ensuring connection itself won't interfere with desired functionality)
+			window.localStorage.setItem("librocco-sync-active", "false");
 		});
 		await page.reload();
 		await getDbHandle(page);
