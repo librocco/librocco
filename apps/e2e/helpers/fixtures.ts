@@ -125,6 +125,7 @@ const supplierOrders: FixtureSupplierOrder[] = [
 ];
 
 type BaseTestFixture = {
+	_dbName: string;
 	t: TranslationFunctions;
 	locale: Locales;
 };
@@ -253,23 +254,31 @@ type OrderTestFixture = {
 };
 
 export const testBase = test.extend<BaseTestFixture>({
+	// Generate a unique DB name once per test
+	_dbName: async ({}, use) => {
+		await use(`sync-test-db-${Math.floor(Math.random() * 1000000)}`);
+	},
+
+	// Override context to inject localStorage before any page is created
+	// NOTE: this is crucial to avoid (1) loading the page then (2) setting the local storage entry "interactively" (3) reload,
+	// as was the previous implementation -- this lets us avoid full DB load + initialisation (on init) -- which might be interfering with test runs
+	context: async ({ context, _dbName }, use) => {
+		await context.addInitScript((dbName) => {
+			// NOTE: the surrounding double quotes need to be part of the string as svelte-persisted
+			// reads (and stores) values as JSON objects (so a string including the quotes is valid JSON)
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+		}, _dbName);
+
+		await use(context);
+	},
+
 	page: async ({ page }, use) => {
 		// Make sure the DB schema is initialised before running any tests
 		// This is here to prevent partial initialisation (and subsequent conflicts when reinitialising the, partially initialised, schema)
 		await page.goto(baseURL);
-		await getDbHandle(page);
+		await getDbHandle(page); // Make sure the DB is loaded before any interaction
 
-		// Make sure each run gets its own DB - to avoid conflicts on the sync server
-		await page.evaluate(() => {
-			// NOTE: the surrounding double quotes need to be part of the string as the svelte-persisted reads (and stores) the
-			// values as JSON objects (so a string including the quotes is a valid JSON value)
-			window.localStorage.setItem("librocco-current-db", `"sync-test-db-${Math.floor(Math.random() * 1000000)}"`);
-		});
-		await page.reload();
-		await getDbHandle(page);
-
-		const goto = page.goto;
-
+		const goto = page.goto.bind(page);
 		page.goto = async function (url, opts) {
 			// Wait for 100ms, for ongoing IndexedDB transactions to finish
 			// This is as dirty as it gets, but is a quick fix to ensure that ongoing txns (such as fixture setups)
