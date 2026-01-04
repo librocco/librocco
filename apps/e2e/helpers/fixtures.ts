@@ -253,57 +253,62 @@ type OrderTestFixture = {
 	locale: Locales;
 };
 
-export const testBase = test.extend<BaseTestFixture>({
+export const testBase = test.extend<BaseTestFixture & { _dbName: string }>({
 	// Generate a unique DB name once per test
 	_dbName: async ({}, use) => {
 		await use(`sync-test-db-${Math.floor(Math.random() * 1000000)}`);
 	},
 
-	// Override context to inject localStorage before any page is created
-	// NOTE: this is crucial to avoid (1) loading the page then (2) setting the local storage entry "interactively" (3) reload,
-	// as was the previous implementation -- this lets us avoid full DB load + initialisation (on init) -- which might be interfering with test runs
-	context: async ({ context, _dbName }, use) => {
-		await context.addInitScript((dbName) => {
-			// NOTE: the surrounding double quotes need to be part of the string as svelte-persisted
-			// reads (and stores) values as JSON objects (so a string including the quotes is valid JSON)
-			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
-		}, _dbName);
+	// Override context with storageState preset
+	context: async ({ browser, _dbName }, use) => {
+		const context = await browser.newContext({
+			storageState: {
+				cookies: [],
+				origins: [
+					{
+						origin: baseURL.replace(/\/$/, ""), // Remove trailing slash if present
+						localStorage: [
+							{
+								name: "librocco-current-db",
+								// JSON-encoded string value
+								value: `"${_dbName}"`
+							}
+						]
+					}
+				]
+			}
+		});
 
 		await use(context);
+		await context.close();
 	},
 
-	page: async ({ page }, use) => {
+	// Create page from our custom context
+	page: async ({ context }, use) => {
+		const page = await context.newPage();
+
 		// Make sure the DB schema is initialised before running any tests
-		// This is here to prevent partial initialisation (and subsequent conflicts when reinitialising the, partially initialised, schema)
 		await page.goto(baseURL);
-		await getDbHandle(page); // Make sure the DB is loaded before any interaction
+		await getDbHandle(page);
 
 		const goto = page.goto.bind(page);
 		page.goto = async function (url, opts) {
-			// Wait for 100ms, for ongoing IndexedDB transactions to finish
-			// This is as dirty as it gets, but is a quick fix to ensure that ongoing txns (such as fixture setups)
-			// don't get interrupted on navigation - causing flaky-as-hell tests
+			// Wait for 100ms for ongoing IndexedDB transactions to finish
 			await new Promise((res) => setTimeout(res, 100));
-
-			const res = await goto.call(page, url, opts);
-
-			// https://github.com/sveltejs/kit/pull/6484
-			// * this is set in the onMount hook of the root +layout.svelte to indicate when hydration has completed
+			const res = await goto(url, opts);
+			// Wait for hydration
 			await page.waitForSelector('body[hydrated="true"]', { timeout: 10000 });
-			// * We also need to wait for the #app-splash element to be detached which indicates the initial load (db initialised) has completed
-			// * This is defined in the app.html file and detached in the onMount hook of the root +layout.svelte
+			// Wait for initial load to complete
 			await page.waitForSelector("#app-splash", { state: "detached", timeout: 10000 });
-
 			return res;
 		};
 
 		await use(page);
 	},
+
 	t: ({ locale }, use) => {
 		loadLocale(locale);
-
 		const t = i18nObject(locale);
-
 		use(t);
 	}
 });
