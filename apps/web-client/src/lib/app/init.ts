@@ -6,7 +6,7 @@ import { setLocale } from "@librocco/shared/i18n-svelte";
 import { locales } from "@librocco/shared/i18n-util";
 import { loadedLocales } from "@librocco/shared/i18n-util";
 
-import { DEFAULT_LOCALE, DEFAULT_VFS, DEMO_DB_NAME, IS_DEBUG, IS_E2E } from "$lib/constants";
+import { DEFAULT_LOCALE, DEFAULT_VFS, IS_DEBUG, IS_E2E } from "$lib/constants";
 import { DEMO_VFS } from "$lib/db/cr-sqlite/core/constants";
 
 import { type App } from ".";
@@ -14,8 +14,7 @@ import { AppDbState, getDb, initializeDb, initializeDemoDb } from "./db";
 import { initializeSync, startSync } from "./sync";
 
 import { updateTranslationOverrides } from "$lib/i18n-overrides";
-import { checkOPFSFileExists, deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
-import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
+import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
 import { validateVFS, vfsSupportsOPFS, type VFSWhitelist } from "$lib/db/cr-sqlite/core/vfs";
 import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
 

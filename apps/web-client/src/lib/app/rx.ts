@@ -44,7 +44,7 @@ class RxListenerManager {
 	private _unsubscribeSafe(id: string) {
 		try {
 			this.#listeners.get(id)?.unsubscribe();
-		} catch (e) {
+		} catch {
 			// Swallow for now -- I can't see different case than underlaying
 			// rx object being out of scope -- noop anyway
 		}
