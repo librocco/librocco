@@ -32,7 +32,7 @@ import { timeLogger } from "$lib/utils/timer";
 
 export async function initApp(app: App) {
 	if (get(app.state) >= AppDbState.Loading) {
-		// TODO: maybe notify of skipped init (console.warn)
+		console.log("init app ran while the app was either initialising, or already initialised skipping...");
 		return;
 	}
 
@@ -70,7 +70,7 @@ async function initAppImpl(app: App) {
 
 export async function initDemoApp(app: App) {
 	if (get(app.state) >= AppDbState.Loading) {
-		// TODO: maybe notify of skipped init (console.warn)
+		console.log("init app ran while the app was either initialising, or already initialised skipping...");
 		return;
 	}
 
