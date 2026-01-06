@@ -26,6 +26,7 @@
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
+	import { updateSyncConnectivityMonitor } from "$lib/stores";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 

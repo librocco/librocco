@@ -1,16 +1,27 @@
 import { WorkerInterface as WI } from "@vlcn.io/ws-client";
 
 import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
-import type { MsgChangesProcessed, MsgChangesReceived, MsgProgress, MsgReady, MsgStart } from "./types";
+import type {
+	MsgChangesProcessed,
+	MsgChangesReceived,
+	MsgConnectionClose,
+	MsgConnectionOpen,
+	MsgProgress,
+	MsgReady,
+	MsgStart
+} from "./types";
 
-import { SyncEventEmitter } from "./sync-transport-control";
+import { SyncEventEmitter, ConnectionEventEmitter } from "./sync-transport-control";
 
 type OutbounrMessage = MsgStart;
-type InboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady;
+type InboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady | MsgConnectionOpen | MsgConnectionClose;
 
 export default class WorkerInterface extends WI {
 	#worker: Worker;
-	#emitter: SyncEventEmitter;
+
+	#syncEmitter: SyncEventEmitter;
+	#connEmitter: ConnectionEventEmitter;
+
 	#vfs: VFSWhitelist | null = null;
 
 	#initPromiseResolver: () => void;
@@ -19,11 +30,17 @@ export default class WorkerInterface extends WI {
 		return this.#initPromise;
 	}
 
+	#isConnected = false;
+
 	constructor(worker: Worker) {
 		super(worker);
 		this.#worker = worker;
 
-		this.#emitter = new SyncEventEmitter();
+		this.#syncEmitter = new SyncEventEmitter();
+
+		this.#connEmitter = new ConnectionEventEmitter();
+		this.#connEmitter.onConnOpen(() => (this.#isConnected = true));
+		this.#connEmitter.onConnClose(() => (this.#isConnected = false));
 
 		this.#worker.addEventListener("message", this._handleMessage.bind(this));
 
@@ -42,16 +59,22 @@ export default class WorkerInterface extends WI {
 
 		switch (msg._type) {
 			case "changesReceived":
-				this.#emitter.notifyChangesReceived(msg.payload);
+				this.#syncEmitter.notifyChangesReceived(msg.payload);
 				break;
 			case "changesProcessed":
-				this.#emitter.notifyChangesProcessed(msg.payload);
+				this.#syncEmitter.notifyChangesProcessed(msg.payload);
 				break;
 			case "progress":
-				this.#emitter.notifyProgress(msg.payload);
+				this.#syncEmitter.notifyProgress(msg.payload);
 				break;
 			case "ready":
 				this.#initPromiseResolver();
+				break;
+			case "connection.open":
+				this.#connEmitter.notifyConnOpen();
+				break;
+			case "connection.close":
+				this.#connEmitter.notifyConnClose();
 				break;
 			default:
 				break;
@@ -77,12 +100,22 @@ export default class WorkerInterface extends WI {
 	}
 
 	onChangesReceived(cb: (msg: { timestamp: number }) => void) {
-		return this.#emitter.onChangesReceived(cb);
+		return this.#syncEmitter.onChangesReceived(cb);
 	}
 	onChangesProcessed(cb: (msg: { timestamp: number }) => void) {
-		return this.#emitter.onChangesProcessed(cb);
+		return this.#syncEmitter.onChangesProcessed(cb);
 	}
 	onProgress(cb: (msg: { active: boolean; nProcessed: number; nTotal: number }) => void) {
-		return this.#emitter.onProgress(cb);
+		return this.#syncEmitter.onProgress(cb);
+	}
+
+	onConnOpen(cb: () => void) {
+		return this.#connEmitter.onConnOpen(cb);
+	}
+	onConnClose(cb: () => void) {
+		return this.#connEmitter.onConnClose(cb);
+	}
+	get isConnected() {
+		return this.#isConnected;
 	}
 }

@@ -16,6 +16,7 @@ import { getDb, getVfs } from "./db";
 import { isEmptyDB } from "$lib/db/cr-sqlite/db";
 import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 import { browser } from "$app/environment";
+import { updateSyncConnectivityMonitor } from "$lib/stores";
 
 // ---------------------------------- Structs ---------------------------------- //
 export enum AppSyncState {
@@ -154,6 +155,7 @@ export async function initializeSync(app: App, vfs: VFSWhitelist) {
 		// Initialise the worker
 		sync.state.set(AppSyncState.Initializing);
 		sync.worker.start(vfs);
+		updateSyncConnectivityMonitor(sync.worker);
 
 		// Wait for the worker to be initialised
 		await sync.worker.initPromise;
