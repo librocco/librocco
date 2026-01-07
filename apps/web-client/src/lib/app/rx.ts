@@ -98,21 +98,21 @@ export class AppDbRx implements IAppDbRx {
 	#rxListeners = new RxListenerManager();
 
 	onPoint(table: string, rowid: bigint, cb: (updates: UpdateType[]) => void): () => void {
-		const id = Math.floor(Math.random() * 100_000).toString();
+		const id = Math.floor(Math.random() * 1_000_000_000).toString();
 		const unsubscribe = this.#internal?.onPoint(table, rowid, cb) || (() => {});
 		this.#rxListeners.set(id, { _kind: "point", table, rowid, cb, unsubscribe });
 		return () => this.#rxListeners.unsubscribe(id);
 	}
 
 	onRange(tables: string[], cb: (updates: UpdateType[]) => void): () => void {
-		const id = Math.floor(Math.random() * 100_000).toString();
+		const id = Math.floor(Math.random() * 1_000_000_000).toString();
 		const unsubscribe = this.#internal?.onRange(tables, cb) || (() => {});
 		this.#rxListeners.set(id, { _kind: "range", tables, cb, unsubscribe });
 		return () => this.#rxListeners.unsubscribe(id);
 	}
 
 	onAny(cb: (updates: UpdateType[], src: Src) => void): () => void {
-		const id = Math.floor(Math.random() * 100_000).toString();
+		const id = Math.floor(Math.random() * 1_000_000_000).toString();
 		const unsubscribe = this.#internal?.onAny(cb) || (() => {});
 		this.#rxListeners.set(id, { _kind: "any", cb, unsubscribe });
 		return () => this.#rxListeners.unsubscribe(id);
