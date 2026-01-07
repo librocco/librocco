@@ -34,7 +34,7 @@ export async function nukeAndResyncDb(app: App, dbid: string, vfs: VFSWhitelist)
 	// Stop sync (effectively closing the sync-worker -> DB connection)
 	await stopSync(app);
 	// Close the current connection
-	await app.db.db.close();
+	await app.db.db?.close();
 
 	// Delete the DB file (this should be safe now -- no open connections)
 	if (vfsSupportsOPFS(vfs)) {
@@ -61,7 +61,7 @@ export async function selectDb(app: App, dbid: string, vfs: VFSWhitelist) {
 	// Stop sync (effectively closing the sync-worker -> DB connection)
 	await stopSync(app);
 	// Close the current connection
-	await app.db.db.close();
+	await app.db.db?.close();
 
 	// Reinitialise the (clean) DB with provided DBID
 	// NOTE: this sets the DB state to "ready" -- thus unlocking the DB for high-level usage
@@ -82,7 +82,7 @@ export async function deleteCurrentDb(app: App, next: { dbid: string; vfs: VFSWh
 	// Stop sync (effectively closing the sync-worker -> DB connection)
 	await stopSync(app);
 	// Close the current connection
-	await app.db.db.close();
+	await app.db.db?.close();
 
 	// Delete the DB file (this should be safe now -- no open connections)
 	if (vfsSupportsOPFS(vfs)) {
