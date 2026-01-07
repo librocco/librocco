@@ -182,7 +182,7 @@
 
 		if ($syncProgress.active && !showSyncDialogTimeout) {
 			showSyncDialogTimeout = setTimeout(() => {
-				showSyncDialogTimeout.set(true);
+				syncDialogOpen.set(true);
 				_clearTimeout();
 			}, syncShowDebounce);
 		} else {
