@@ -7,6 +7,7 @@
 	import Trash from "$lucide/trash";
 	import { filter, scan } from "rxjs";
 	import { onDestroy, onMount } from "svelte";
+	import { writable } from "svelte/store";
 
 	import { createDialog } from "@melt-ui/svelte";
 
@@ -127,10 +128,16 @@
 
 	$: t = $LL.reconcile_page;
 
+	/**
+	 * Some books might not have been delivered, but the supplier still keeps track of the non-delivered ones.
+	 * We use this to mark those lines so as to prevent over-ordering in the future,
+	 * see: https://github.com/librocco/librocco/issues/936
+	 */
+	const linesBookedWithSupplier = writable(new Map<string, number>());
+
 	async function handleCommit() {
-		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
-		await finalizeReconciliationOrder(db, parseInt($page.params.id));
+		await finalizeReconciliationOrder(db, parseInt($page.params.id), $linesBookedWithSupplier);
 		await goto(appPath("supplier_orders"));
 	}
 
@@ -316,7 +323,7 @@
 						</div>
 					{/if}
 				{:else if currentStep > 1}
-					<ComparisonTable reconciledBooks={processedOrderDelivery} />
+					<ComparisonTable {linesBookedWithSupplier} reconciledBooks={processedOrderDelivery} />
 				{/if}
 
 				<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">

@@ -448,14 +448,18 @@ async function _getPlacedSupplierOrderLines(db: TXAsync, supplier_order_ids: num
  * @param id - supplier Order Id
  * @param supplierId - The id of the supplier to create the order for
  * @param orderLines - The order lines to create supplier orders from
+ * @param tx - optional tx wrapper - we're using this to distinguish between calls from within a transaction and outside of one:
+ *   - if `tx` is provided, the function is called as as standalone and the db interaction will be wrapped in a transaction
+ *   - if not provided, the caller is already a transaction itelf, so no need for further wrapping in a transaction (we also avoid potential deadlocks this way)
  * @returns Promise<void>
  * @todo Rewrite this function to accommodate for removing quantity in customerOrderLine
  */
-async function _createSupplierOrder(
-	db: DBAsync,
+async function _createSupplierOrderBase(
+	db: DBAsync | TXAsync,
 	id: number,
 	supplierId: number | null,
-	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
+	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[],
+	tx: (cb: (txDb: TXAsync) => Promise<void>) => Promise<void> = async (cb) => cb(db)
 ) {
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
 
@@ -476,7 +480,7 @@ async function _createSupplierOrder(
 		throw new Error(msg);
 	}
 
-	await db.tx(async (db) => {
+	await tx(async (db) => {
 		const timestamp = Date.now();
 
 		// Create a supplier order
@@ -515,6 +519,24 @@ async function _createSupplierOrder(
 	});
 }
 
+async function _createSupplierOrder(
+	db: DBAsync,
+	id: number,
+	supplierId: number | null,
+	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
+) {
+	return _createSupplierOrderBase(db, id, supplierId, orderLines, db.tx.bind(db));
+}
+
+async function _createSupplierOrderTxSafe(
+	db: TXAsync,
+	id: number,
+	supplierId: number | null,
+	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
+) {
+	return _createSupplierOrderBase(db, id, supplierId, orderLines);
+}
+
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 export const getAllSuppliers = timed(_getAllSuppliers);
 export const getSupplierDetails = timed(_getSupplierDetails);
@@ -526,4 +548,7 @@ export const getPossibleSupplierOrders = timed(_getPossibleSupplierOrders);
 export const getPossibleSupplierOrderLines = timed(_getPossibleSupplierOrderLines);
 export const getPlacedSupplierOrders = timed(_getPlacedSupplierOrders);
 export const getPlacedSupplierOrderLines = timed(_getPlacedSupplierOrderLines);
+/** NOTE: If calling this from within a transaction, use `createSupplierOrderTxSafe` */
 export const createSupplierOrder = timed(_createSupplierOrder);
+/** NOTE: This should be wrapped in a transaction, if that's not the case, it's best to use the original `createSupplierOrder` */
+export const createSupplierOrderTxSafe = timed(_createSupplierOrderTxSafe);
