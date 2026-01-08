@@ -11,7 +11,7 @@ import { DEMO_VFS } from "$lib/db/cr-sqlite/core/constants";
 
 import { type App } from ".";
 import { AppDbState, getDb, initializeDb, initializeDemoDb } from "./db";
-import { initializeSync, startSync } from "./sync";
+import { _performInitialSync, initializeSync, startSync } from "./sync";
 
 import { updateTranslationOverrides } from "$lib/i18n-overrides";
 import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
@@ -170,6 +170,7 @@ function attachWindowHelpers(app: App) {
 
 	if (IS_E2E || IS_DEBUG) {
 		window["timeLogger"] = timeLogger;
+		window["_performInitialSync"] = _performInitialSync;
 	}
 }
 
