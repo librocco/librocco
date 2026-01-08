@@ -85,7 +85,12 @@ test("initial sync optimization should replace local db from remote snapshot", a
 	await page.evaluate(
 		async ({ dbid, fileUrl }) => {
 			const w = window as any;
-			await w._app.sync.runExclusive((sync: any) => w._performInitialSync(dbid, fileUrl, sync.initialSyncProgressStore));
+			await w._app.sync.runExclusive((sync: any) =>
+				w._performInitialSync(dbid, fileUrl, sync.initialSyncProgressStore, async () => {
+					const db = await w._getDb(w._app);
+					await db.close();
+				})
+			);
 		},
 		{ dbid, fileUrl }
 	);

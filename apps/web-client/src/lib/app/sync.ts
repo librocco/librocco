@@ -190,12 +190,24 @@ export async function startSync(app: App, dbid: string, url: string) {
 
 		if (isEmpty && opfsSupported) {
 			sync.state.set(AppSyncState.InitialSync);
+			let shouldReload = false;
 			try {
-				await _performInitialSync(dbid, url, sync.initialSyncProgressStore);
+				const fileUrl = getRemoteDbFileUrl(url, dbid);
+				await _performInitialSync(dbid, fileUrl, sync.initialSyncProgressStore, async () => {
+					// Close the DB before replacing the OPFS file; reload after swap to reopen safely.
+					shouldReload = true;
+					await db.close();
+				});
 			} catch {
 				// Probably console log here
 			} finally {
 				sync.state.set(AppSyncState.Idle);
+			}
+
+			if (shouldReload && browser) {
+				// Re-initialize the app against the swapped-in DB file.
+				window.location.reload();
+				return;
 			}
 		}
 
@@ -207,7 +219,12 @@ export async function startSync(app: App, dbid: string, url: string) {
 /**
  *
  */
-export async function _performInitialSync(dbid: string, remoteUrl: string, progressStore: Writable<ProgressState>) {
+export async function _performInitialSync(
+	dbid: string,
+	remoteUrl: string,
+	progressStore: Writable<ProgressState>,
+	beforeReplace?: () => Promise<void>
+): Promise<boolean> {
 	// Download the remote DB into OPFS
 	//
 	// Fetch the file to temp location
@@ -224,7 +241,25 @@ export async function _performInitialSync(dbid: string, remoteUrl: string, progr
 			"The sync will still be attempted without initial optimisation"
 		].join("\n");
 		console.error(msg);
-		return;
+		return false;
+	}
+
+	const cleanupTempFile = async () => {
+		try {
+			await deleteDBFromOPFS(tempFname);
+		} catch (err) {
+			console.error(err);
+		}
+	};
+
+	if (beforeReplace) {
+		try {
+			await beforeReplace();
+		} catch (err) {
+			console.error(err);
+			await cleanupTempFile();
+			return false;
+		}
 	}
 
 	try {
@@ -238,8 +273,22 @@ export async function _performInitialSync(dbid: string, remoteUrl: string, progr
 		// Log the error out -- this shouldn't happen and is unexpected,
 		// so we want the full error without
 		console.error(err);
-		return;
+		await cleanupTempFile();
+		return false;
 	}
+
+	return true;
+}
+
+function getRemoteDbFileUrl(syncUrl: string, dbid: string) {
+	// Convert ws(s) to http(s) and point to the snapshot file endpoint.
+	const url = new URL(syncUrl);
+	if (url.protocol === "ws:") url.protocol = "http:";
+	if (url.protocol === "wss:") url.protocol = "https:";
+	url.pathname = `/${dbid}/file`;
+	url.search = "";
+	url.hash = "";
+	return url.toString();
 }
 
 export async function stopSync(app: App) {
