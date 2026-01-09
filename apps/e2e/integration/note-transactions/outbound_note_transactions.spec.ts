@@ -3,8 +3,9 @@ import { expect } from "@playwright/test";
 import { baseURL } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
-import { getDashboard, getDbHandle } from "@/helpers";
+import { getDashboard } from "@/helpers/dashboard";
 import {
+	getDbHandle,
 	addVolumesToNote,
 	commitNote,
 	createInboundNote,

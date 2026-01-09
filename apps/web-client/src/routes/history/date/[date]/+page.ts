@@ -1,5 +1,9 @@
+import { browser } from "$app/environment";
 import { redirect } from "@sveltejs/kit";
 import { fromDate, getLocalTimeZone } from "@internationalized/date";
+
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
 
 import type { PageLoad } from "./$types";
 import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
@@ -9,10 +13,9 @@ import { getPastTransactions } from "$lib/db/cr-sqlite/history";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>[0]) => {
+const _load = async ({ params: { date }, depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	depends("history:transactions");
-
-	const { dbCtx } = await parent();
 
 	// Validate the date - if not valid, redirect to default
 	if (!date || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) {
@@ -31,14 +34,15 @@ const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>
 		totalInboundDiscountedPrice: 0
 	};
 
-	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
+	if (!browser) {
 		return { date, dateValue, bookList: [] as PastTransactionItem[], stats };
 	}
 
+	const db = await getDb(app);
+
 	const startDate = new Date(date);
 	const endDate = startDate;
-	const bookList: PastTransactionItem[] = await getPastTransactions(dbCtx.db, { startDate, endDate });
+	const bookList: PastTransactionItem[] = await getPastTransactions(db, { startDate, endDate });
 
 	for (const { noteType, discount = 0, price, quantity } of bookList) {
 		if (noteType === "inbound") {

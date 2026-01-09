@@ -43,6 +43,7 @@ function alias_vlcn_dev() {
 
 export default defineConfig({
 	plugins: [svelte({ hot: !process.env.VITEST })],
+	publicDir: "static",
 
 	resolve: {
 		alias: {

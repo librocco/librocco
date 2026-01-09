@@ -1,3 +1,5 @@
+import { browser } from "$app/environment";
+
 import { redirect } from "@sveltejs/kit";
 import { fromDate, getLocalTimeZone } from "@internationalized/date";
 
@@ -9,10 +11,12 @@ import { getPastNotes } from "$lib/db/cr-sqlite/history";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>[0]) => {
-	depends("history:notes");
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
 
-	const { dbCtx } = await parent();
+const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>[0]) => {
+	await parent();
+	depends("history:notes");
 
 	// Validate the date - if not valid, redirect to default
 	if (!date || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) {
@@ -22,12 +26,13 @@ const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>
 	// Prepare the date for usage with date picker
 	const dateValue = fromDate(new Date(date), getLocalTimeZone());
 
-	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
+	if (!browser) {
 		return { date, dateValue, notes: [] as PastNoteItem[] };
 	}
 
-	const notes = await getPastNotes(dbCtx.db, date);
+	const db = await getDb(app);
+
+	const notes = await getPastNotes(db, date);
 	return { date, dateValue, notes };
 };
 

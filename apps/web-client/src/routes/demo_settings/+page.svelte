@@ -7,14 +7,15 @@
 
 	import type { PageData } from "./$types";
 
+	import { app } from "$lib/app";
+	import { getVfs } from "$lib/app/db";
+
 	import { DEMO_DB_NAME, DEMO_DB_URL, VERSION } from "$lib/constants";
 
 	import { Page } from "$lib/controllers";
 
-	import { syncActive } from "$lib/db";
 	import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
-	import { dbCache } from "$lib/db/cr-sqlite/db";
-	import { checkOPFSFileExists, deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
+	import { deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
 
 	import { progressBar } from "$lib/actions";
 
@@ -23,11 +24,11 @@
 	export let data: PageData;
 
 	$: ({ plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	onMount(() => {
-		if (!vfsSupportsOPFS(data.dbCtx?.vfs)) {
-			throw new Error(`Usage not supported: ${data.dbCtx?.vfs} doesn't support FS transparency`);
+		const vfs = getVfs(app);
+		if (!vfsSupportsOPFS(vfs)) {
+			throw new Error(`Usage not supported: ${vfs} doesn't support FS transparency`);
 		}
 	});
 
@@ -41,9 +42,8 @@
 		}
 
 		// Remove the existing DB (if any)
-		if (await checkOPFSFileExists(DEMO_DB_NAME)) {
-			await deleteDBFromOPFS({ dbname: DEMO_DB_NAME, dbCache, syncActiveStore: syncActive }); // await removeOPFS
-		}
+		// TODO: handle the closing and cleanup here when excl. access is implemented
+		await deleteDBFromOPFS(DEMO_DB_NAME); // await removeOPFS
 
 		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);
 
@@ -53,7 +53,7 @@
 	};
 </script>
 
-<Page title={tSettings.headings.settings()} view="settings" {db} {plugins}>
+<Page title={tSettings.headings.settings()} view="settings" {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		<div class="p-4">
 			<h4>{tSettings.stats.version()} {VERSION}</h4>

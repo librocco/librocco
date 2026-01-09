@@ -1,4 +1,5 @@
 import { persisted } from "svelte-local-storage-store";
+import { of } from "rxjs";
 import { defaults } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { type Writable, type Readable, writable } from "svelte/store";
@@ -18,6 +19,18 @@ export const autoPrintLabels = Object.assign(autoPrintLabelsInner, { toggle: tog
 
 const { data: defaultSettings } = defaults(zod(deviceSettingsSchema));
 export const deviceSettingsStore = persisted<typeof defaultSettings>(LOCAL_STORAGE_SETTINGS, defaultSettings);
+
+const createDBConnectivityStream = () => {
+	// TODO: this is updated in a different PR, remove when merged
+	return of(false);
+};
+
+/**
+ * Creates a store from the stream of the db connectivity.
+ */
+export const createDBConnectivityStore = () => {
+	return readableFromStream({}, createDBConnectivityStream(), false);
+};
 
 /**
  * Creates a store from the availability stream of the book data extension plugin.

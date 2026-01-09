@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import { redirect } from "@sveltejs/kit";
 
 import { getPossibleSupplierOrderLines, getSupplierDetails } from "$lib/db/cr-sqlite/suppliers";
@@ -8,24 +9,27 @@ import type { PageLoad } from "./$types";
 import { timed } from "$lib/utils/timer";
 import { appHash } from "$lib/paths";
 
-const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
+
+const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	depends("books:data");
 	depends("suppliers:data");
 	depends("customers:order_lines");
 
-	const { dbCtx } = await parent();
-
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
+	if (!browser) {
 		return { orderLines: [] as PossibleSupplierOrderLine[] };
 	}
+
+	const db = await getDb(app);
 
 	// Handle "null" string parameter for General supplier
 	const supplierId = params.id === "null" ? null : parseInt(params.id);
 
-	const orderLines = await getPossibleSupplierOrderLines(dbCtx.db, supplierId);
+	const orderLines = await getPossibleSupplierOrderLines(db, supplierId);
 
-	const supplier = await getSupplierDetails(dbCtx.db, supplierId);
+	const supplier = await getSupplierDetails(db, supplierId);
 
 	// TODO: when we update the routing, this will move to something like `/suppliers/[id]/new-order`
 	// so if there are no possible order lines, we should redirect to `/suppliers/[id]`

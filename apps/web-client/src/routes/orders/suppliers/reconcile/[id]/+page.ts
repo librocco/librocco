@@ -1,3 +1,5 @@
+import { browser } from "$app/environment";
+
 import type { PageLoad } from "./$types";
 import type { PlacedSupplierOrderLine, ReconciliationOrder, ReconciliationOrderLine } from "$lib/db/cr-sqlite/types";
 
@@ -6,13 +8,14 @@ import { getReconciliationOrder, getReconciliationOrderLines } from "$lib/db/cr-
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
+
+const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	depends("reconciliationOrder:data");
 
-	const { dbCtx } = await parent();
-
-	// We're not in browser, no need for further processing
-	if (!dbCtx) {
+	if (!browser) {
 		return {
 			reconciliationOrder: {} as ReconciliationOrder,
 			placedOrderLines: [] as PlacedSupplierOrderLine[],
@@ -20,10 +23,12 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		};
 	}
 
-	const reconciliationOrder = await getReconciliationOrder(dbCtx.db, parseInt(params.id));
-	const reconciliationOrderLines = await getReconciliationOrderLines(dbCtx.db, parseInt(params.id));
+	const db = await getDb(app);
 
-	const placedOrderLines = await getPlacedSupplierOrderLines(dbCtx.db, reconciliationOrder.supplierOrderIds);
+	const reconciliationOrder = await getReconciliationOrder(db, parseInt(params.id));
+	const reconciliationOrderLines = await getReconciliationOrderLines(db, parseInt(params.id));
+
+	const placedOrderLines = await getPlacedSupplierOrderLines(db, reconciliationOrder.supplierOrderIds);
 
 	return { reconciliationOrder, placedOrderLines, reconciliationOrderLines };
 };

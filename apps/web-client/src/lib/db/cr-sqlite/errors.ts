@@ -31,13 +31,6 @@ export class OutOfStockError extends Error {
 	}
 }
 
-export class ErrDBCorrupted extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "ErrDBCorrupted";
-	}
-}
-
 type ErrDBSchemaMismatchPayload = { wantName: string; wantVersion: bigint; gotName: string; gotVersion: bigint };
 export class ErrDBSchemaMismatch extends Error {
 	wantName: string;

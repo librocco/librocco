@@ -127,6 +127,9 @@ importers:
       '@vlcn.io/xplat-api':
         specifier: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
         version: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
+      async-mutex:
+        specifier: ~0.5.0
+        version: 0.5.0
       comlink:
         specifier: ~4.4.2
         version: 4.4.2
@@ -3756,6 +3759,12 @@ packages:
     resolution: {integrity: sha512-WfoBo4E/TbCX1G95XTjbWTE3X2XLG0m1Xbv2cwOtuPdyH9CZvnaA5nCt1ucjaKEgW2A5IF71hxrRhr83Je5xjA==}
     dependencies:
       tslib: 2.8.1
+
+  /async-mutex@0.5.0:
+    resolution: {integrity: sha512-1A94B18jkJ3DYq284ohPxoXbfTA5HsQ7/Mf4DEhcyLx3Bz27Rh59iScbB6EPiP+B+joue6YCxcMXSbFC1tZKwA==}
+    dependencies:
+      tslib: 2.8.1
+    dev: false
 
   /async@3.2.6:
     resolution: {integrity: sha512-htCUDlxyyCLMgaM3xXg0C0LW2xqfuQ6p05pCEIsXuyQ+a1koYKTuBMzRNwmybfLgvJDMd0r1LTn4+E0Ti6C2AA==}

@@ -1,23 +1,12 @@
 import { cryb64 } from "@vlcn.io/ws-common";
-import rxtbl from "@vlcn.io/rx-tbl";
 
 import schemaContent from "$lib/schemas/init?raw";
 export { schemaContent };
 
 import type { DBAsync, TXAsync, Change, VFSWhitelist } from "./types";
 
-import { idbPromise, idbTxn } from "../indexeddb";
 import { getMainThreadDB, getWorkerDB } from "./core";
 import { DEFAULT_VFS } from "./core/constants";
-import { ErrDBCorrupted } from "./errors";
-import { initStore } from "../init-store";
-
-export type DbCtx = { db: DBAsync; rx: ReturnType<typeof rxtbl>; vfs: VFSWhitelist };
-
-// DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
-// chahe the DB as soon as the first time 'getInitializedDB' is called, so that all subsequent calls
-// await the same promise (which may or may not be resolved by then).
-export const dbCache = new Map<string, Promise<DbCtx>>();
 
 export const schemaName = "init";
 export const schemaVersion = cryb64(schemaContent);
@@ -54,85 +43,6 @@ export async function initializeDB(db: TXAsync) {
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
 }
-
-/**
- * An intermediate function that checks for different (potentially bad) DB states:
- * - throws ErrDBCorrupted if integrity check fails (requires nuke)
- * - initializes the DB if not initialized
- * - auto-migrates if schema version mismatch (no user interaction needed)
- */
-const checkAndInitializeDB = async (db: DBAsync): Promise<DBAsync> => {
-	// Integrity check - if this fails, DB needs to be nuked
-	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
-	if (res !== "ok") {
-		throw new ErrDBCorrupted(res);
-	}
-
-	// Check if DB initialized
-	const schemaRes = await getSchemaNameAndVersion(db);
-	if (!schemaRes) {
-		// Fresh DB - initialize it
-		await initializeDB(db);
-		return db;
-	}
-
-	// Check schema name/version - auto-migrate if mismatch
-	const [name, version] = schemaRes;
-	if (name !== schemaName || version !== schemaVersion) {
-		console.log(`Schema mismatch detected. Current: ${name}@${version}, Expected: ${schemaName}@${schemaVersion}`);
-		console.log("Auto-migrating database...");
-
-		initStore.setPhase("migrating");
-
-		try {
-			const result = await db.automigrateTo(schemaName, schemaContent);
-			console.log(`Auto-migration completed: ${result}`);
-		} catch (migrationError) {
-			console.error("Auto-migration failed:", migrationError);
-			// Migration failure is treated as a corrupted DB state - needs nuke
-			throw new ErrDBCorrupted(`Migration failed: ${migrationError instanceof Error ? migrationError.message : String(migrationError)}`);
-		}
-	}
-
-	return db;
-};
-
-export const getInitializedDB = async (dbname: string, vfs: VFSWhitelist = DEFAULT_VFS): Promise<DbCtx> => {
-	// NOTE: DB Cache holds promises to prevent multiple initialisation attemtps:
-	// - if initialization needed - cache the request (promise) immediately
-	// - if cache exists, return the promise (which may or may not be resolved yet)
-
-	const cached = dbCache.get(dbname);
-	if (cached) {
-		return await cached;
-	}
-
-	initStore.setPhase("loading");
-
-	try {
-		// Register the request (promise) immediately, to prevent multiple init requests
-		// at the same time
-		const initialiser = getDB(dbname, vfs)
-			.then(checkAndInitializeDB)
-			.then((db) => {
-				const ctx = { db, rx: rxtbl(db), vfs };
-				initStore.setPhase("ready");
-				return ctx;
-			});
-		dbCache.set(dbname, initialiser);
-
-		return await initialiser;
-	} catch (err) {
-		// If the request fails, however, (invalid DB state)
-		// remove the cached promise so that we rerun the reqiuest on error fix + invalidateAll
-		dbCache.delete(dbname);
-
-		// Update init store with error
-		initStore.setPhase("error", err);
-
-		throw err;
-	}
-};
 
 export const getChanges = (db: TXAsync, since: bigint | null = BigInt(0)): Promise<Change[]> => {
 	const query = `SELECT
@@ -176,28 +86,3 @@ export const isEmptyDB = async (db: TXAsync): Promise<boolean> => {
 	const version = await getDBVersion(db);
 	return version === BigInt(0);
 };
-
-/**
- * Clears the current cr-sqlite DB (in IndexedDB)
- *
- * NOTE: It doesn't actually delete the database itself, but rather clears all the data (leaving the empty DB)
- * as the former produced some problems flakiness.
- *
- * NOTE: Currently it clears all data for the DB - this deletes all DBs created using the current cr-sqlite stack
- * (e.g. we could have multiple DBs "dev", "foo", "bar-122", etc. created by cr-sqlite and all stored in "idb-batch-atomic" - this will delete them all)
- * TODO: Implement a more fine-grained approach - delete only the chunks associated with a particular DB name, e.g. "dev"
- */
-export async function clearDb() {
-	const dbName = "idb-batch-atomic";
-
-	const db = await idbPromise(indexedDB.open(dbName));
-	await idbTxn(db.transaction(db.objectStoreNames, "readwrite"), async (txn) => {
-		for (const storeName of db.objectStoreNames) {
-			await idbPromise(txn.objectStore(storeName).clear());
-		}
-	});
-	db.close();
-
-	// TODO: This is a bit inconsistent -- maybe clear only the "dev" db
-	delete dbCache["dev"];
-}

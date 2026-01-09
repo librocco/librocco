@@ -24,6 +24,12 @@ export default class WorkerInterface extends WI {
 
 	#vfs: VFSWhitelist | null = null;
 
+	#initPromiseResolver: () => void;
+	#initPromise: Promise<void>;
+	get initPromise() {
+		return this.#initPromise;
+	}
+
 	#isConnected = false;
 
 	constructor(worker: Worker) {
@@ -37,6 +43,10 @@ export default class WorkerInterface extends WI {
 		this.#connEmitter.onConnClose(() => (this.#isConnected = false));
 
 		this.#worker.addEventListener("message", this._handleMessage.bind(this));
+
+		this.#initPromise = new Promise((resolve) => {
+			this.#initPromiseResolver = resolve;
+		});
 	}
 
 	private _sendMessage(msg: OutbounrMessage) {
@@ -58,7 +68,7 @@ export default class WorkerInterface extends WI {
 				this.#syncEmitter.notifyProgress(msg.payload);
 				break;
 			case "ready":
-				console.log("worker initialized");
+				this.#initPromiseResolver();
 				break;
 			case "connection.open":
 				this.#connEmitter.notifyConnOpen();

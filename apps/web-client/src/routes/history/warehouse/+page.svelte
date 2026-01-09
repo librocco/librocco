@@ -16,13 +16,16 @@
 	import { appPath } from "$lib/paths";
 	import { PlaceholderDots } from "$lib/components";
 
+	import { app } from "$lib/app";
+	import { getDbRx } from "$lib/app/db";
+
 	export let data: PageData;
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when warehouse data changes
-		disposer = data.dbCtx?.rx?.onRange(["warehouse"], () => invalidate("warehouse:list"));
+		disposer = getDbRx(app).onRange(["warehouse"], () => invalidate("warehouse:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -30,7 +33,6 @@
 	});
 
 	$: ({ warehouses, plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	$: ({ warehouseTotals } = stockCache);
 
@@ -40,7 +42,7 @@
 	$: initialised = Boolean(data);
 </script>
 
-<HistoryPage view="history/warehouse" {db} {plugins}>
+<HistoryPage view="history/warehouse" {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		{#if !initialised}
 			<div class="flex grow justify-center">

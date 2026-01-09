@@ -2,9 +2,8 @@ import { expect } from "@playwright/test";
 
 import { appHash } from "@/constants";
 
-import { associatePublisher, removePublisherFromSupplier, upsertBook } from "@/helpers/cr-sqlite";
+import { getDbHandle, associatePublisher, removePublisherFromSupplier, upsertBook } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
-import { getDbHandle } from "@/helpers";
 
 testOrders.describe("The supplier list view", () => {
 	testOrders("should show empty state when no suppliers exist", async ({ page, t }) => {

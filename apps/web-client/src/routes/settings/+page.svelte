@@ -15,29 +15,35 @@
 	import type { PageData } from "./$types";
 	import { type DialogContent } from "$lib/types";
 
-	import { VERSION } from "$lib/constants";
+	import { DEFAULT_DB_NAME, VERSION } from "$lib/constants";
 
 	import { Page } from "$lib/controllers";
 
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { dbid, syncConfig, syncActive, syncProgressStore } from "$lib/db";
-	import { clearDb, dbCache, getInitializedDB } from "$lib/db/cr-sqlite/db";
 	import { opfsVFSList, vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 	import { retry } from "$lib/utils/misc";
-	import { checkOPFSFileExists, deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
+	import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
+
+	import { app, deleteCurrentDb, nukeAndResyncDb, selectDb } from "$lib/app";
+	import { getVfs } from "$lib/app/db";
 
 	export let data: PageData;
 
 	$: ({ plugins } = data);
-	$: db = data.dbCtx?.db;
+
+	// Config stores
+	const dbid = app.config.dbid;
+	const syncUrl = app.config.syncUrl;
+	const syncActive = app.config.syncActive;
 
 	// #region files list
 	let files: string[] = [];
 	// Each time a dbCtx changes, update the file list - this might indicate a DB created / deleted
+	// TODO: this isn't working, revisit the DB list reactivity
 	$: if (data.dbCtx) getFiles().then((_files) => (files = _files));
 
 	const getFiles = async () => {
@@ -83,7 +89,8 @@
 		if (sqliteFiles.length !== 1) return;
 		const [file] = sqliteFiles;
 
-		await deleteDBFromOPFS({ dbname: file.name, dbCache, syncActiveStore: syncActive });
+		// TODO: handle a case when we're overwriting the current DB
+		await deleteDBFromOPFS(file.name);
 
 		// Import the file
 		const dir = await window.navigator.storage.getDirectory();
@@ -132,49 +139,34 @@
 
 	const handleCreateDatabase = async (_name: string) => {
 		const name = addSQLite3Suffix(_name);
-
-		// Initialize a new database (we don't need it, we just need it to be initialised and cached)
-		// If this isn't done, and a sync worker is active a race condition might happen where the worker
-		// (sync controller communicating with the worker to be precise) reacts to change in persisted dbid
-		// before the root load function has had the chance to initialise the DB (apply the schema and all)
-		await getInitializedDB(name);
-
-		await handleSelect(name)();
+		// Select will create a DB if not exists
+		await selectDb(app, name, getVfs(app));
 		open.set(false);
 		files = await getFiles();
 	};
 
 	const handleDeleteDatabase = (name: string) => async () => {
-		// If DB exists in cache (either current or used in this session), close it and clear
-		const cachedDbCtx = dbCache.get(name);
-		if (cachedDbCtx) {
-			const { db } = await cachedDbCtx;
-			await db.close();
-			dbCache.delete(name);
+		const vfs = getVfs(app);
+
+		try {
+			// Case: deleting the current DB
+			if (name === get(dbid)) {
+				// When deleting the current DB, we're selecting the first one from the list (as the next active one).
+				// If the list is empty (only currently active DB exists): create a new DB with the default name (after deletion).
+				const nextDbid = files.find((fname) => fname !== name) || DEFAULT_DB_NAME;
+				await deleteCurrentDb(app, { dbid: nextDbid, vfs });
+			} else {
+				// Case: deleting non-active DB - easy path: no connections/references - delete the DB file
+				await deleteDBFromOPFS(name);
+			}
+		} finally {
+			// Local state cleanup
+			open.set(false);
+			deleteDatabase = null;
 		}
-
-		// Stop the sync if deleting the current DB
-		// Reasoning:
-		//   - if deleting the current DB we need the worker to release the internal DB connection
-		//   - when deleting the current DB we select the next one in the list (or recreate a default one if none exists),
-		//     in which case the sync continuing is a non-trivial choice which we defer to the user to do manually
-		if (name === get(dbid)) {
-			syncActive.set(false);
-		}
-
-		const dir = await window.navigator.storage.getDirectory();
-		await retry(() => dir.removeEntry(name), 100, 5);
-
-		files = await getFiles();
-
-		// If we've just deleted the current database, select the first one in the list
-		if (!files.includes(addSQLite3Suffix(get(dbid)))) {
-			await handleSelect(files[0] || "dev.sqlite3")(); // If this was the last file, create a new (default) db(files[0] || "dev")(); // If this was the last file, create a new (default) db
-		}
-
-		open.set(false);
-		deleteDatabase = null;
 	};
+
+	const handleNukeAndResync = () => nukeAndResyncDb(app, get(dbid), getVfs(app));
 
 	// #region dialog
 	const dialog = createDialog({ forceVisible: true });
@@ -186,56 +178,10 @@
 
 	let dialogContent: (DialogContent & { type: "create" | "delete" }) | null = null;
 
-	const nukeAndResyncOPFS = async () => {
-		const dbname = get(dbid);
-
-		if (await checkOPFSFileExists(dbname)) {
-			await deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
-		}
-
-		// Reinstate the sync
-		// - in case of DB file fetched, we should be in-sync
-		// - in case of error fetching DB file, this will trigger a full sync
-		await invalidateAll();
-		syncActive.set(true);
-	};
-
-	const nukeAndResyncIDB = async () => {
-		// Stop the ongoing sync
-		syncActive.set(false);
-
-		// Clear all the data in CR-SQLite IndexedDB
-		await clearDb();
-
-		// Invalidate all - reinitialise the DB
-		await invalidateAll();
-
-		// Reset the sync
-		syncActive.set(true);
-	};
-
-	const nukeAndResyncDB = async () => {
-		const dbCtx = data.dbCtx;
-		if (!dbCtx) {
-			throw new Error("Cannot nuke and resync: no db context: this indicates an error in app core logic");
-		}
-		const { vfs } = dbCtx;
-
-		if (vfsSupportsOPFS(data.dbCtx?.vfs)) {
-			console.log("OPFS supported VFS detected:", vfs);
-			console.log("Fetching DB file to optimise sync process");
-			await nukeAndResyncOPFS();
-		} else {
-			console.log("No-OPFS VFS detected:", vfs);
-			console.log("Using regular sync methods withut optimisations");
-			await nukeAndResyncIDB();
-		}
-	};
-
 	$: ({ settings_page: tSettings, common: tCommon } = $LL);
 </script>
 
-<Page title={tSettings.headings.settings()} view="settings" {db} {plugins}>
+<Page title={tSettings.headings.settings()} view="settings" {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		<div class="p-4">
 			<h4>{tSettings.stats.version()} {VERSION}</h4>
@@ -260,8 +206,9 @@
 							validationMethod: "submit-only",
 							onUpdated: ({ form: { data, valid } }) => {
 								if (valid) {
-									syncConfig.set(data);
-									// Invalidating all in order to refresh the form data (done within the load function)
+									dbid.set(data.dbid);
+									syncUrl.set(data.url);
+									// TODO: rely on startSync to invalidate all
 									invalidateAll();
 								}
 							}
@@ -378,7 +325,7 @@
 					</div>
 
 					<div class="flex justify-end gap-x-2 px-4 py-6">
-						<button on:click={nukeAndResyncDB} type="button" class="btn-secondary btn">{tSettings.actions.nuke_and_resync()}</button>
+						<button on:click={handleNukeAndResync} type="button" class="btn-secondary btn">{tSettings.actions.nuke_and_resync()}</button>
 						{#if vfsSupportsOPFS(data.dbCtx?.vfs)}
 							<button on:click={toggleImport} type="button" class="btn-secondary btn">
 								{importOn ? tCommon.actions.cancel() : tCommon.actions.import()}
