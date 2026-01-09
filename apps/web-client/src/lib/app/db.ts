@@ -118,8 +118,8 @@ export class AppDb implements IAppDb {
 
 // ---------------------------------- Functions ---------------------------------- //
 export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): Promise<DbCtx> => {
-	// The DB (this DB -- same dbid) is already initialised (or being initialised), skip
-	if (dbid === app.db.dbid) return;
+	// The DB (this DB -- same dbid) is already initialised, skip
+	if (dbid === app.db.dbid && get(app.db.state) === AppDbState.Ready) return;
 
 	// DBID is different than the current one, reinitialise the DB
 	app.db.dbid = dbid;
