@@ -16,13 +16,17 @@
 	import { TooltipWrapper } from "$lib/components";
 	import { testId } from "@librocco/shared";
 	import { SquareArrowUpRight } from "$lucide";
+
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
+
 	export let data: PageData;
 
 	let disposer: () => void;
 	onMount(() => {
-		const disposer1 = data.dbCtx?.rx?.onRange(["book"], () => invalidate("books:data"));
-		const disposer2 = data.dbCtx?.rx?.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
-		const disposer3 = data.dbCtx?.rx?.onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
+		const disposer1 = getDbRx(app).onRange(["book"], () => invalidate("books:data"));
+		const disposer2 = getDbRx(app).onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
+		const disposer3 = getDbRx(app).onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
 
 		disposer = () => (disposer1(), disposer2(), disposer3());
 	});
@@ -33,7 +37,6 @@
 
 	$: goto = racefreeGoto(disposer);
 
-	$: db = data?.dbCtx?.db;
 	$: ({ orderLines, plugins, supplier } = data);
 
 	$: order_format = supplier?.orderFormat;
@@ -73,6 +76,8 @@
 	$: t = $LL.new_order_page;
 
 	async function handlePlaceOrder() {
+		const db = await getDb(app);
+
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 
@@ -120,7 +125,7 @@
 	}
 </script>
 
-<Page title={t.title()} view="orders/suppliers/id/new-order" {db} {plugins}>
+<Page title={t.title()} view="orders/suppliers/id/new-order" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card md:h-full">

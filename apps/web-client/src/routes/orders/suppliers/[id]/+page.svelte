@@ -33,6 +33,9 @@
 	import { downloadAsTextFile, generateLinesForDownload } from "$lib/utils/misc";
 	import { orderFormats } from "$lib/enums/orders";
 
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
+
 	export let data: PageData;
 
 	// #region reactivity
@@ -40,9 +43,9 @@
 
 	onMount(() => {
 		// Reload add supplier data dependants when the data changes
-		const disposer1 = data.dbCtx?.rx?.onPoint("supplier", BigInt($page.params.id), () => invalidate("supplier:data"));
+		const disposer1 = getDbRx(app).onPoint("supplier", BigInt($page.params.id), () => invalidate("supplier:data"));
 		// Changes to supplier orders, supplier publishers
-		const disposer2 = data.dbCtx?.rx?.onRange(["supplier_publisher", "supplier_order"], () => invalidate("supplier:orders"));
+		const disposer2 = getDbRx(app).onRange(["supplier_publisher", "supplier_order"], () => invalidate("supplier:orders"));
 		disposer = () => (disposer1(), disposer2());
 	});
 
@@ -53,7 +56,6 @@
 	// #endregion reactivity
 	$: goto = racefreeGoto(disposer);
 
-	$: db = data.dbCtx?.db;
 	$: ({ plugins, supplier, assignedPublishers, publishersAssignedToOtherSuppliers, publishersUnassignedToSuppliers } = data);
 
 	$: t = $LL.order_list_page;
@@ -73,6 +75,7 @@
 	// #endregion dialog
 
 	const handleUpdateSupplier = async (_data: Partial<Supplier>) => {
+		const db = await getDb(app);
 		const data = { ...stripNulls(supplier), ..._data };
 		await upsertSupplier(db, data);
 		dialogOpen.set(false);
@@ -82,19 +85,24 @@
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 
+		const db = await getDb(app);
+
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		await createReconciliationOrder(db, id, event.detail.supplierOrderIds);
 		goto(appPath("reconcile", id));
 	}
 
 	const handleAssignPublisher = (publisher: string) => async () => {
+		const db = await getDb(app);
 		await associatePublisher(db, supplier.id, publisher);
 	};
 
 	const handleUnassignPublisher = (publisher: string) => async () => {
+		const db = await getDb(app);
 		await removePublisherFromSupplier(db, supplier.id, publisher);
 	};
 	async function handleDownload(event: CustomEvent<{ supplierOrderId: number }>) {
+		const db = await getDb(app);
 		const lines = await getPlacedSupplierOrderLines(db, [event.detail.supplierOrderId]);
 
 		const generatedLines = generateLinesForDownload(lines[0]?.customerId, lines[0]?.orderFormat, lines);
@@ -103,7 +111,7 @@
 	}
 </script>
 
-<Page title={t.details.supplier_page()} view="orders/suppliers/id" {db} {plugins}>
+<Page title={t.details.supplier_page()} view="orders/suppliers/id" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 			<div class="min-w-fit md:basis-96 md:overflow-y-auto">

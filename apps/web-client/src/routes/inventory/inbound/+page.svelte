@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
+	import { get } from "svelte/store";
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
@@ -26,6 +27,9 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
+
 	export let data: PageData;
 	interface DialogContent {
 		onConfirm: (closeDialog: () => void) => void;
@@ -34,7 +38,6 @@
 	}
 
 	$: ({ notes, plugins } = data);
-	$: db = data.dbCtx?.db;
 
 	$: t = $LL.inventory_page.purchase_tab;
 	$: tPurchase = $LL.purchase_note;
@@ -44,7 +47,7 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Warehouse (names), note (names/list) and book_transaction (note's totalBooks) all affect the list
-		disposer = data.dbCtx?.rx?.onRange(["warehouse", "note", "book_transaction"], () => invalidate("inbound:list"));
+		disposer = getDbRx(app).onRange(["warehouse", "note", "book_transaction"], () => invalidate("inbound:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -52,10 +55,12 @@
 	});
 	$: goto = racefreeGoto(disposer);
 
-	let initialized = false;
-	$: initialized = Boolean(db);
+	const appReady = app.ready;
+	let initialized = get(app.ready);
+	$: initialized = $appReady;
 
 	const handleCreateWarehouse = async () => {
+		const db = await getDb(app);
 		const id = await getWarehouseIdSeq(db);
 		await upsertWarehouse(db, { id });
 		await goto(appPath("warehouses", id));
@@ -71,11 +76,12 @@
 		noteToDelete = null;
 	};
 	const handleDeleteNote = async (id: number) => {
+		const db = await getDb(app);
 		await deleteNote(db, id);
 	};
 </script>
 
-<InventoryManagementPage {handleCreateWarehouse} {db} {plugins}>
+<InventoryManagementPage {handleCreateWarehouse} {app} {plugins}>
 	{#if !initialized}
 		<div class="flex grow justify-center">
 			<div class="mx-auto translate-y-1/2">

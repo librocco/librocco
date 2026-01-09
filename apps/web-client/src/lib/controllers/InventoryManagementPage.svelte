@@ -3,14 +3,15 @@
 	import Plus from "$lucide/plus";
 	import CopyPlus from "$lucide/copy-plus";
 
+	import LL from "@librocco/shared/i18n-svelte";
+
 	import { page } from "$app/stores";
 
-	import LL from "@librocco/shared/i18n-svelte";
+	import type { App } from "$lib/app";
 
 	import { Page } from "$lib/controllers";
 	import { appHash } from "$lib/paths";
 
-	import type { DBAsync } from "$lib/db/cr-sqlite/types";
 	import type { PluginsInterface } from "$lib/plugins";
 
 	$: ({ page_headings: tPage } = $LL);
@@ -30,13 +31,13 @@
 
 	$: activeTab = tabs.find(({ href }) => $page.url.hash.startsWith(href));
 
-	export let db: DBAsync;
+	export let app: App;
 	export let plugins: PluginsInterface;
 
 	export let handleCreateWarehouse = () => Promise.resolve();
 </script>
 
-<Page title={activeTab.label} view="inventory" {db} {plugins}>
+<Page title={activeTab.label} view="inventory" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-4">
 		<div class="flex w-full items-center justify-end p-4">
 			<button on:click={handleCreateWarehouse} class="btn-primary btn-sm btn">

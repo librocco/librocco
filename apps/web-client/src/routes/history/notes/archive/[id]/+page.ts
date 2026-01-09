@@ -1,3 +1,5 @@
+import { browser } from "$app/environment";
+
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
@@ -9,17 +11,17 @@ import { appPath } from "$lib/paths";
 
 import { timed } from "$lib/utils/timer";
 
-const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
+import { app } from "$lib/app";
+import { getDb } from "$lib/app/db";
+
+const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
+	await parent();
 	const id = Number(params.id);
 
 	depends("note:books");
 
-	const { dbCtx } = await parent();
-
-	// We're not in the browser, no need for further loading
-	if (!dbCtx) {
+	if (!browser) {
 		return {
-			dbCtx,
 			id,
 			displayName: "N/A",
 			entries: [] as NoteEntriesItem[],
@@ -27,16 +29,18 @@ const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 		};
 	}
 
-	const note = await getNoteById(dbCtx.db, id);
+	const db = await getDb(app);
+
+	const note = await getNoteById(db, id);
 	if (!note) {
 		redirect(307, appPath("outbound"));
 	}
 
-	const entries = await getNoteEntries(dbCtx.db, id);
+	const entries = await getNoteEntries(db, id);
 
-	const customItems = await getNoteCustomItems(dbCtx.db, id);
+	const customItems = await getNoteCustomItems(db, id);
 
-	return { dbCtx, ...note, entries, customItems };
+	return { ...note, entries, customItems };
 };
 
 export const load: PageLoad = timed(_load);

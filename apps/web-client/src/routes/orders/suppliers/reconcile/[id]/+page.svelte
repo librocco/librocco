@@ -40,13 +40,16 @@
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { appPath } from "$lib/paths";
 
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
+
 	// implement order reactivity/sync
 	export let data: PageData;
 
 	let disposer: () => void;
 	onMount(() => {
-		const disposer1 = data.dbCtx?.rx?.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
-		const disposer2 = data.dbCtx?.rx?.onRange(["reconciliation_order", "reconciliation_order_lines"], () =>
+		const disposer1 = getDbRx(app).onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
+		const disposer2 = getDbRx(app).onRange(["reconciliation_order", "reconciliation_order_lines"], () =>
 			invalidate("reconciliationOrder:data")
 		);
 		disposer = () => (disposer1(), disposer2());
@@ -57,10 +60,10 @@
 	});
 	$: goto = racefreeGoto(disposer);
 
-	$: db = data?.dbCtx?.db;
 	$: ({ reconciliationOrderLines: books = [], plugins } = data);
 
 	async function handleIsbnSubmit(isbn: string) {
+		const db = await getDb(app);
 		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
@@ -102,9 +105,12 @@
 	$: totalUnmatched = processedOrderDelivery.unmatchedBooks.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
 	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
 
-	const handleScanIsbn = (isbn: string) => upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
+	const handleScanIsbn = async (isbn: string) =>
+		upsertReconciliationOrderLines(await getDb(app), parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 
 	const handleEditQuantity = async (isbn: string, quantity: number) => {
+		const db = await getDb(app);
+
 		if (quantity === 0) {
 			await deleteOrderLineFromReconciliationOrder(db, parseInt($page.params.id), isbn);
 			return;
@@ -130,6 +136,8 @@
 	async function handleCommit() {
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
+
+		const db = await getDb(app);
 		await finalizeReconciliationOrder(db, parseInt($page.params.id));
 		await goto(appPath("supplier_orders"));
 	}
@@ -141,13 +149,14 @@
 	async function handleDelete() {
 		deleteDialogOpen.set(false);
 
+		const db = await getDb(app);
 		await deleteReconciliationOrder(db, parseInt($page.params.id));
 
 		await goto(appPath("supplier_orders", "?filter=ordered"));
 	}
 </script>
 
-<Page title={t.title.reconcile_deliveries()} view="orders/suppliers/reconcile/id" {db} {plugins}>
+<Page title={t.title.reconcile_deliveries()} view="orders/suppliers/reconcile/id" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card">

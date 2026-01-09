@@ -50,7 +50,7 @@ export function getDbHandle(page: Page) {
 			}
 		});
 
-		return w["_db"] as DB;
+		return (await w["_getDb"](w["_app"])) as DB;
 	});
 }
 

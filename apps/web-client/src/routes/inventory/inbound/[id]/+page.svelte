@@ -60,10 +60,12 @@
 	import type { NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
+
 	export let data: PageData;
 
 	$: ({ plugins, id: noteId, warehouseId, warehouseName, displayName, updatedAt, publisherList } = data);
-	$: db = data.dbCtx?.db;
 
 	$: t = $LL.inventory_page.purchase_tab;
 	$: tInbound = $LL.purchase_note;
@@ -73,9 +75,9 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload when note
-		const disposer1 = data.dbCtx?.rx?.onPoint("note", BigInt(data.id), () => invalidate("note:data"));
+		const disposer1 = getDbRx(app).onPoint("note", BigInt(data.id), () => invalidate("note:data"));
 		// Reload when entries change
-		const disposer2 = data.dbCtx?.rx?.onRange(["book", "book_transaction"], () => invalidate("note:books"));
+		const disposer2 = getDbRx(app).onRange(["book", "book_transaction"], () => invalidate("note:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(() => {
@@ -85,17 +87,21 @@
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
-	$: loading = !db;
+	// TODO: revisit this
+	const appReady = app.ready;
+	$: loading = !$appReady;
 
 	$: entries = data.entries as NoteEntriesItem[];
 	$: totalBookCount = entries.reduce((acc, { quantity }) => acc + quantity, 0);
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
+		const db = await getDb(app);
 		await commitNote(db, noteId);
 		closeDialog();
 	};
 
 	const handleDeleteSelf = async (closeDialog: () => void) => {
+		const db = await getDb(app);
 		await deleteNote(db, noteId);
 		closeDialog();
 	};
@@ -125,6 +131,8 @@
 
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
+		const db = await getDb(app);
+
 		await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId });
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
@@ -157,6 +165,8 @@
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData<"book">) => {
+		const db = await getDb(app);
+
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -171,6 +181,7 @@
 	};
 
 	const deleteRow = async (isbn: string, warehouseId: number) => {
+		const db = await getDb(app);
 		await removeNoteTxn(db, noteId, { isbn, warehouseId });
 	};
 	// #region transaction-actions
@@ -179,6 +190,8 @@
 	let bookFormData = null;
 
 	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
+		const db = await getDb(app);
+
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -203,6 +216,7 @@
 
 	// #region printing
 	$: handlePrintReceipt = async () => {
+		const db = await getDb(app);
 		await printReceipt($deviceSettingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
 	$: handlePrintLabel = async (book: BookData) => {
@@ -241,7 +255,7 @@
 	let dialogContent: DialogContent & { type: "commit" | "delete" };
 </script>
 
-<Page title={displayName} view="inbound-note" {db} {plugins}>
+<Page title={displayName} view="inbound-note" {app} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		<div id="inbound-header" class="flex flex-col gap-y-4 px-6 py-4">
 			<Breadcrumbs links={breadcrumbs} />
@@ -253,7 +267,7 @@
 						textClassName="text-2xl font-bold leading-7 text-base-content"
 						placeholder="Note"
 						value={displayName}
-						on:change={(e) => updateNote(db, noteId, { displayName: e.detail })}
+						on:change={async (e) => updateNote(await getDb(app), noteId, { displayName: e.detail })}
 					/>
 
 					<div class="w-fit">
@@ -367,6 +381,8 @@
 						validationMethod: "submit-only",
 						resetForm: true,
 						onUpdated: async ({ form }) => {
+							const db = await getDb(app);
+
 							const { isbn } = form?.data;
 							await handleAddTransaction(isbn);
 

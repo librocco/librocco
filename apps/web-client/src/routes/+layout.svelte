@@ -3,17 +3,19 @@
 	import "$lib/main.css";
 	import "./global.css";
 
-	import { onMount } from "svelte";
-	import { get, writable } from "svelte/store";
+	import { onMount, onDestroy } from "svelte";
+	import { get, writable, derived } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
-
-	import { Subscription } from "rxjs";
-	import Menu from "$lucide/menu";
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { Subscription } from "rxjs";
 
-	import { afterNavigate, invalidateAll } from "$app/navigation";
-	import { browser } from "$app/environment";
+	import Menu from "$lucide/menu";
+
+	import { afterNavigate } from "$app/navigation";
 	import { beforeNavigate } from "$app/navigation";
+
+	import { app } from "$lib/app";
+	import { AppDbState, getDb, getDbRx, getVfs } from "$lib/app/db";
 
 	import type { LayoutData } from "./$types";
 
@@ -21,36 +23,39 @@
 
 	import { Sidebar } from "$lib/components";
 
-	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
-	import WorkerInterface from "$lib/workers/WorkerInterface";
-
-	import { sync, syncConfig, syncActive, dbid, syncProgressStore, initStore } from "$lib/db";
-	import { clearDb, dbCache } from "$lib/db/cr-sqlite/db";
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
-	import * as migrations from "$lib/db/cr-sqlite/debug/migrations";
-	import * as books from "$lib/db/cr-sqlite/books";
-	import * as customers from "$lib/db/cr-sqlite/customers";
-	import * as note from "$lib/db/cr-sqlite/note";
-	import * as reconciliation from "$lib/db/cr-sqlite/order-reconciliation";
-	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
-	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
+	import { updateSyncConnectivityMonitor } from "$lib/stores";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
 	import { LL } from "@librocco/shared/i18n-svelte";
-	import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
-	import { deleteDBFromOPFS, checkOPFSFileExists, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
+	import { deleteDBFromOPFS, fetchAndStoreDBFile } from "$lib/db/cr-sqlite/core/utils";
 
 	import { progressBar } from "$lib/actions";
 
 	import { appPath } from "$lib/paths";
+	import { initializeSync, startSync, stopSync } from "$lib/app/sync";
 
 	export let data: LayoutData;
 
-	$: dbCtx = data.dbCtx;
-	$: error = data.error;
+	const dbState = app.db.state;
+
+	// Very TEMP, replace this with cleaner error handling
+	let error = null;
+	const errorStore = derived([dbState], ([s$]) => (s$ === AppDbState.Error ? app.db.error : null));
+	$: error = $errorStore;
+
+	// TODO: revisit this and agree on convergence:
+	// - should we revert back to string states?
+	// - should we move the full app-splash control to the app (why direct HTML insert)?
+	// - leave this as is (pretty dirty)?
+	const signalDbInitState = (state: AppDbState, error?: Error) => {
+		const phase = ["idle", "error", "loading", "migrating", "ready"][state];
+		window["__dbInitUpdate"]?.(phase, error || null);
+	};
+	$: signalDbInitState($dbState, app.db.error);
 
 	beforeNavigate(({ to }) => {
 		if (IS_DEBUG || IS_E2E) {
@@ -67,111 +72,66 @@
 		stockCache.disableRefresh();
 	});
 
-	$: {
-		// Register (and update on each change) the db and some db handlers to the window object.
-		// This is used for e2e tests (easier setup through direct access to the db).
-		// Additionally, we're doing this in debug mode - in case we want to interact with the DB directly (using dev console)
-		if (browser && dbCtx) {
-			window["db_ready"] = true;
-			window["_db"] = dbCtx.db;
-			window["_getRemoteDB"] = getRemoteDB;
-			window.dispatchEvent(new Event("db_ready"));
-
-			window["books"] = books;
-			window["customers"] = customers;
-			window["note"] = note;
-			window["reconciliation"] = reconciliation;
-			window["suppliers"] = suppliers;
-			window["warehouse"] = warehouse;
-
-			window["sync"] = sync;
-
-			window["migrations"] = migrations;
-
-			window["deleteDBFromOPFS"] = (dbname: string) => deleteDBFromOPFS({ dbname, dbCache, syncActiveStore: syncActive });
-		}
-
-		// This shouldn't affect much, but is here for the purpose of exhaustive handling
-		if (browser && !dbCtx) {
-			window["db_ready"] = false;
-			window["_db"] = undefined;
-		}
-	}
+	// Signal (to Playwright) that the DB is initialised
+	onMount(async () => {
+		await getDb(app);
+		window["db_ready"] = true;
+		window.dispatchEvent(new Event("db_ready"));
+	});
 
 	let availabilitySubscription: Subscription;
 
+	// Config stores
+	const dbid = app.config.dbid;
+	const syncUrl = app.config.syncUrl;
+	const syncActive = app.config.syncActive;
+
 	// Update sync on each change to settings
 	//
-	// NOTE: This is safe even on server side as it will be a noop until
-	// the worker is initialized
+	// NOTE: This is safe with respect to initialisation as it runs only if DB ready
+	// const dbReady = app.db.ready;
+	//
+	// TODO: wrap this is a connector function
 	$: if ($syncActive) {
-		// Subsequent activations use regular sync
-		sync.sync($syncConfig, { invalidateAll });
-	} else {
-		sync.stop();
+		startSync(app, $dbid, $syncUrl);
+	}
+	$: if (!$syncActive) {
+		stopSync(app);
 	}
 
 	// Sync
-	const { progress: syncProgress } = syncProgressStore;
+	// NOTE: using a merged store for initial / ongoing sync -- we may or may not want to split these two
+	const syncProgress = derived([app.sync.initialSyncProgressStore, app.sync.syncProgressStore], ([a, b]) => (a.active ? a : b));
 
-	onMount(() => {
+	// TODO: wrap these to ensure both are initialised only once -- removing the need for
+	// onDestroy calls (as this is the root layout)
+	const preventUnloadHandler = (e: BeforeUnloadEvent) => {
+		if (get(syncProgress).active) {
+			e.preventDefault();
+			e.returnValue = "";
+		}
+	};
+	let disposer: () => void;
+
+	onMount(async () => {
 		// This helps us in e2e to know when the page is interactive
 		document.body.setAttribute("hydrated", "true");
 
-		if (IS_E2E || IS_DEBUG) {
-			window["timeLogger"] = timeLogger;
-		}
 		// Control the invalidation of the stock cache
 		// On every 'book_transaction' change, we run 'maybeInvalidate', which checks for relevant changes
 		// between the last cached value and the current one and invalidates the cache if needed
-		const disposer = dbCtx?.rx?.onRange(["book_transaction"], () => stockCache.maybeInvalidate(dbCtx.db));
+		disposer = getDbRx(app).onRange(["book_transaction"], async () => stockCache.maybeInvalidate(await getDb(app)));
 
-		// 3. Sync setup (not supported in demo mode)
-		// Only start sync when DB is ready
+		// Prevent user from navigating away if sync is in progress
+		// NOTE: this is a noop if sync not active (e.g. in demo mode)
+		window.addEventListener("beforeunload", preventUnloadHandler);
+	});
 
-		let preventUnloadHandler: ((e: BeforeUnloadEvent) => void) | null = null;
-
-		const initUnsubscribe = initStore.subscribe((state) => {
-			if (state.phase !== "ready") return;
-
-			// DB is ready, start sync worker
-			const wkr = new WorkerInterface(new SyncWorker());
-			const vfs = dbCtx?.vfs;
-
-			wkr.start(vfs);
-			sync.init(wkr);
-
-			// Start the sync if it should be active
-			if ($syncActive) {
-				sync.sync($syncConfig, { invalidateAll });
-			}
-
-			// Start the sync progress store (listen to sync events)
-			syncProgressStore.start(wkr);
-
-			// Prevent user from navigating away if sync is in progress
-			preventUnloadHandler = (e: BeforeUnloadEvent) => {
-				if (get(syncProgress).active) {
-					e.preventDefault();
-					e.returnValue = "";
-				}
-			};
-			window.addEventListener("beforeunload", preventUnloadHandler);
-		});
-
-		// Cleanup function
-		return () => {
-			// Stop the sync (if active)
-			sync.stop();
-			syncProgressStore.stop();
-
-			availabilitySubscription?.unsubscribe();
-			initUnsubscribe?.();
-			disposer?.();
-
-			// Run all cleanup functions
-			window.removeEventListener("beforeunload", preventUnloadHandler);
-		};
+	onDestroy(() => {
+		// Run all cleanup functions
+		availabilitySubscription?.unsubscribe();
+		disposer?.();
+		window.removeEventListener("beforeunload", preventUnloadHandler);
 	});
 
 	const {
@@ -222,7 +182,7 @@
 
 		if ($syncProgress.active && !showSyncDialogTimeout) {
 			showSyncDialogTimeout = setTimeout(() => {
-				showSyncDialogTimeout.set(true);
+				syncDialogOpen.set(true);
 				_clearTimeout();
 			}, syncShowDebounce);
 		} else {
@@ -244,20 +204,7 @@
 		forceVisible: true
 	});
 
-	$: $errorDialogOpen = Boolean(error);
-
-	const nukeDB = async () => {
-		// Stop the ongoing sync
-		sync.stop();
-		syncActive.set(false);
-
-		// Clear all the data in CR-SQLite IndexedDB
-		await clearDb();
-
-		// Reload the window - to avoid a huge number of issues related to
-		// having to account for DB not being available, but becoming available within the same lifetime
-		window.location.reload();
-	};
+	$: $errorDialogOpen = Boolean($dbState === AppDbState.Error);
 
 	$: ({ layout: tLayout, common: tCommon } = $LL);
 
@@ -270,10 +217,8 @@
 			throw new Error("DEMO_DB_URL is not set");
 		}
 
-		// Remove the existing DB (if any)
-		if (await checkOPFSFileExists(DEMO_DB_NAME)) {
-			await deleteDBFromOPFS({ dbname: DEMO_DB_NAME, dbCache, syncActiveStore: syncActive });
-		}
+		// NOTE: noop if not exists
+		await deleteDBFromOPFS(DEMO_DB_NAME);
 
 		await fetchAndStoreDBFile(DEMO_DB_URL, DEMO_DB_NAME, demoFetchProgress);
 

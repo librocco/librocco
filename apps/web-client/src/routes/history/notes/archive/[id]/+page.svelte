@@ -16,16 +16,16 @@
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
-	import { appPath } from "$lib/paths";
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
-	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
+
+	import { app } from "$lib/app";
+	import { getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
 
 	$: ({ plugins, displayName, updatedAt } = data);
-	$: db = data.dbCtx?.db;
 
 	$: t = $LL.history_page.notes_tab.archive;
 	$: tCommon = $LL.common;
@@ -35,7 +35,7 @@
 	onMount(() => {
 		// Here we only care about updates to warehouses (displayName)
 		// as the rest of the data is immutable at this point (archived)
-		disposer = data.dbCtx?.rx?.onRange(["warehouse"], () => invalidate("note:books"));
+		disposer = getDbRx(app).onRange(["warehouse"], () => invalidate("note:books"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -92,7 +92,7 @@
 	// #endregion csv
 </script>
 
-<HistoryPage view="history/notes" {db} {plugins}>
+<HistoryPage view="history/notes" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div class="flex w-full items-center justify-between">
 			<div class="flex max-w-md flex-col">

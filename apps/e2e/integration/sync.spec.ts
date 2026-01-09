@@ -2,10 +2,9 @@ import { expect } from "@playwright/test";
 
 import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
-import { testOrders } from "@/helpers/fixtures";
-import { getDbHandle } from "@/helpers";
+import { testBase as test, testOrders } from "@/helpers/fixtures";
 
-import { getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
+import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
@@ -71,4 +70,36 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 	expect(remoteCustomers[0].fullname).toEqual("Customer 4 - updated remotely");
 	expect(remoteCustomers[1].id).toEqual(5);
 	expect(remoteCustomers[1].fullname).toEqual("Customer 5 - updated locally");
+});
+
+test("initial sync optimization should replace local db from remote snapshot", async ({ page }) => {
+	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+
+	await remoteDbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Remote Customer", email: "remote@example.com" });
+	const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
+	expect(remoteCustomers.some((customer) => customer.id === 1)).toBe(true);
+
+	const dbid = await page.evaluate(() => JSON.parse(window.localStorage.getItem("librocco-current-db") || '""'));
+	const fileUrl = `${remoteDbURL}${dbid}/file`;
+
+	await page.evaluate(
+		async ({ dbid, fileUrl }) => {
+			const w = window as any;
+			await w._app.sync.runExclusive((sync: any) =>
+				w._performInitialSync(dbid, fileUrl, sync.initialSyncProgressStore, async () => {
+					const db = await w._getDb(w._app);
+					await db.close();
+				})
+			);
+		},
+		{ dbid, fileUrl }
+	);
+
+	await page.reload();
+	await page.waitForSelector('body[hydrated="true"]', { timeout: 10000 });
+	await page.waitForSelector("#app-splash", { state: "detached", timeout: 10000 });
+
+	const refreshedDbHandle = await getDbHandle(page);
+	const localCustomers = await refreshedDbHandle.evaluate(getCustomerOrderList);
+	expect(localCustomers.some((customer) => customer.id === 1)).toBe(true);
 });

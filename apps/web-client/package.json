@@ -43,7 +43,8 @@
 		"svelte-local-storage-store": "~0.6.4",
 		"typesafe-i18n": "~5.26.2",
 		"@sentry/sveltekit": "~9.34.0",
-		"comlink": "~4.4.2"
+		"comlink": "~4.4.2",
+		"async-mutex": "~0.5.0"
 	},
 	"devDependencies": {
 		"@librocco/book-data-extension": "workspace:*",

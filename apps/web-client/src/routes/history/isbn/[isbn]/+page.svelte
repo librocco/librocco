@@ -1,15 +1,21 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
 	import { writable } from "svelte/store";
-	import Search from "$lucide/search";
-	import Library from "$lucide/library";
-	import ArrowLeft from "$lucide/arrow-left";
-	import ArrowRight from "$lucide/arrow-right";
+
+	import { entityListView, testId, type BookData } from "@librocco/shared";
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/stores";
 
-	import { entityListView, testId, type BookData } from "@librocco/shared";
+	import { app } from "$lib/app";
+	import { getDb, getDbRx } from "$lib/app/db";
+
+	import Search from "$lucide/search";
+	import Library from "$lucide/library";
+	import ArrowLeft from "$lucide/arrow-left";
+	import ArrowRight from "$lucide/arrow-right";
 
 	import type { PageData } from "./$types";
 
@@ -18,17 +24,14 @@
 
 	import { createSearchDropdown } from "./actions";
 
-	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
-	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
 	$: ({ plugins, bookData, transactions, stock } = data);
-	$: db = data.dbCtx?.db;
 
 	$: isbn = $page.params.isbn;
 
@@ -43,7 +46,7 @@
 		// We don't subscribe to book_transaction as we're only interested in committed txns - and this is triggered by note change
 		//
 		// TODO: subscribe to only the book data for the particular ISBN
-		disposer = data.dbCtx?.rx?.onRange(["warehouse", "book", "note"], () => invalidate("history:transactions"));
+		disposer = getDbRx(app).onRange(["warehouse", "book", "note"], () => invalidate("history:transactions"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -58,13 +61,17 @@
 	const search = writable("");
 
 	let entries: BookData[] = [];
-	$: if ($search.length > 2) {
-		searchBooks(db, { searchString: $search }).then((res) => {
+
+	const performSearch = async (searchString: string) => {
+		if (searchString.length > 2) {
+			const db = await getDb(app);
+			const res = await searchBooks(db, { searchString });
 			entries = res;
-		});
-	} else {
-		entries = [];
-	}
+		} else {
+			entries = [];
+		}
+	};
+	$: performSearch($search);
 
 	const handlePrint = () => {
 		window.print();
@@ -76,7 +83,7 @@
 	// #endregion search
 </script>
 
-<HistoryPage view="history/isbn" {db} {plugins}>
+<HistoryPage view="history/isbn" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div id="search-container" class="flex w-full p-4">
 			<div class="flex w-full">

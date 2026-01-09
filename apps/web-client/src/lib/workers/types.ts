@@ -31,3 +31,13 @@ export type MsgReady = {
 	_type: "ready";
 	payload: null;
 };
+
+export type MsgConnectionOpen = {
+	_type: "connection.open";
+	payload: null;
+};
+
+export type MsgConnectionClose = {
+	_type: "connection.close";
+	payload: null;
+};

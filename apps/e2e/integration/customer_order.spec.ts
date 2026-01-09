@@ -3,8 +3,7 @@ import { expect } from "@playwright/test";
 import { appHash } from "@/constants";
 
 import { testBase as test, testOrders } from "@/helpers/fixtures";
-import { getDbHandle } from "@/helpers";
-import { addBooksToCustomer } from "@/helpers/cr-sqlite";
+import { getDbHandle, addBooksToCustomer } from "@/helpers/cr-sqlite";
 
 test("should show empty state when no customer orders exist", async ({ page, t }) => {
 	const { customer_orders_page: tCustomers } = t;

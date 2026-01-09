@@ -1,7 +1,7 @@
 import { baseURL } from "../constants";
 
 import { testBase as test } from "@/helpers/fixtures";
-import { getDashboard } from "@/helpers";
+import { getDashboard } from "@/helpers/dashboard";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
