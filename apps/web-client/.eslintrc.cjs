@@ -8,7 +8,7 @@ const tsPaths = [path.join(__dirname, "./tsconfig.json")];
 module.exports = useTSConfig(
 	{
 		...scaffoldConfig,
-		ignorePatterns: [...scaffoldConfig.ignorePatterns, "playwright.config.ts"],
+		ignorePatterns: [...scaffoldConfig.ignorePatterns, "playwright.config.ts", "static/**"],
 		rules: {
 			...scaffoldConfig.rules,
 			"no-restricted-imports": [
