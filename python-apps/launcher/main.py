@@ -4,6 +4,8 @@ Librocco Launcher - GUI entry point with system tray.
 """
 import sys
 import logging
+import argparse
+import shlex
 from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QSystemTrayIcon, QMessageBox
 
@@ -16,6 +18,7 @@ from launcher.startup import (
     auto_start_daemons,
     setup_ca_certificate,
 )
+from launcher.daemon_manager import EmbeddedSupervisor
 from launcher.tray_app import TrayApp
 from launcher.error_handler import ErrorHandler
 from launcher.i18n import _
@@ -38,15 +41,75 @@ def show_error_dialog(title: str, message: str) -> None:
     sys.exit(1)
 
 
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    """Parse CLI arguments for the launcher."""
+    parser = argparse.ArgumentParser(description="Librocco Launcher (GUI mode)")
+    parser.add_argument(
+        "--print-commands",
+        action="store_true",
+        help="Print manual Caddy and sync server commands, then exit.",
+    )
+    return parser.parse_args(argv)
+
+
+def format_manual_command(
+    cmd: str, args: list[str], env: dict[str, str], working_dir: str
+) -> str:
+    """Format a shell command with env vars and working directory."""
+    command_parts = [shlex.quote(cmd)] + [shlex.quote(arg) for arg in args]
+    command_text = " ".join(command_parts)
+    if env:
+        env_text = " ".join(
+            f"{key}={shlex.quote(value)}" for key, value in sorted(env.items())
+        )
+        command_text = f"{env_text} {command_text}"
+    if working_dir:
+        command_text = f"cd {shlex.quote(working_dir)} && {command_text}"
+    return command_text
+
+
 def main():
     """Main entry point for GUI launcher."""
     global logger
 
-    # Initialize i18n
-    initialize_i18n()
+    args = parse_args(sys.argv[1:])
 
     # Determine app directory (sibling of main.py)
     app_dir = Path(__file__).parent / "app"
+
+    if args.print_commands:
+        try:
+            config = initialize_config(app_dir)
+        except (OSError, PermissionError, ValueError, FileNotFoundError) as e:
+            print(f"ERROR: Failed to initialize configuration: {e}", file=sys.stderr)
+            return 1
+
+        supervisor = EmbeddedSupervisor(
+            caddy_binary=config.caddy_binary_path,
+            caddyfile=config.caddyfile_path,
+            caddy_data_dir=config.caddy_data_dir,
+            logs_dir=config.logs_dir,
+            node_binary=config.node_binary_path,
+            syncserver_script=config.syncserver_script_path,
+            syncserver_dir=config.syncserver_dir_path,
+            db_dir=config.db_dir,
+            gui_mode=False,
+        )
+        command_specs = supervisor.get_manual_command_specs()
+        for daemon_name in ("caddy", "syncserver"):
+            spec = command_specs[daemon_name]
+            print(
+                format_manual_command(
+                    spec["cmd"],
+                    spec["args"],
+                    spec["env"],
+                    spec["working_dir"],
+                )
+            )
+        return 0
+
+    # Initialize i18n
+    initialize_i18n()
 
     # Initialize configuration
     try:
