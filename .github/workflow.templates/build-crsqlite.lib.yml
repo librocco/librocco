@@ -45,8 +45,6 @@ steps:
     with:
       name: built-vlcn-artefacts
       path: 3rd-party/artefacts/
-  - name: Mark cached version
-    run: cp 3rd-party/artefacts_version.txt 3rd-party/artefacts/version-cached.txt
   - name: Commit updated assets
     if: github.ref == 'refs/heads/compile-assets'
     run: bash scripts/commit-artefacts.sh

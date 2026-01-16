@@ -7,6 +7,8 @@ SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 TRD_PARTY="$SCRIPT_DIR/../3rd-party"
 VLCN_ROOT="$TRD_PARTY/js"
 ARTEFACTS_DIR="$TRD_PARTY/artefacts"
+VERSION_FILE="$TRD_PARTY/artefacts_version.txt"
+CACHE_FILE="$ARTEFACTS_DIR/version-cached.txt"
 
 cd $SCRIPT_DIR/..
 
@@ -54,6 +56,15 @@ process_package "$VLCN_ROOT/packages/rx-tbl"
 process_package "$VLCN_ROOT/packages/xplat-api"
 process_package "$VLCN_ROOT/deps/cr-sqlite/core"
 process_package "$VLCN_ROOT/deps/wa-sqlite"
+echo '::endgroup::'
+
+echo '::group::Update artefacts version'
+if [[ -n "${CI:-}" ]]; then
+    echo "CI detected; reusing precomputed artefacts_version.txt for cache marker."
+else
+    "$SCRIPT_DIR/compute_artefacts_version.sh" >/dev/null
+fi
+cp "$VERSION_FILE" "$CACHE_FILE"
 echo '::endgroup::'
 
 echo "All packages built and copied to $ARTEFACTS_DIR"
