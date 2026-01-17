@@ -1,9 +1,5 @@
-import { Asserter, DashboardNode, FieldConstructor } from "./types";
+import type { Asserter, DashboardNode, FieldConstructor, SearchFieldInterface, SearchCompletionsInterface, SearchCompletionInterface, SearchCompletionValues } from "./types";
 import { selector, stringFieldConstructor, testIdSelector } from "./utils";
-
-export interface SearchFieldInterface extends DashboardNode {
-	completions(): SearchCompletionsInterface;
-}
 
 export function getSearchField(parent: DashboardNode): SearchFieldInterface {
 	const container = parent.locator(selector(testIdSelector("search-input")));
@@ -11,11 +7,6 @@ export function getSearchField(parent: DashboardNode): SearchFieldInterface {
 	const completions = () => getSearchCompletions(getSearchField(parent));
 
 	return Object.assign(container, { completions, dashboard: parent.dashboard });
-}
-
-interface SearchCompletionsInterface extends DashboardNode {
-	n(ix: number): SearchCompletionInterface;
-	assert(values: Partial<SearchCompletionValues>[]): Promise<void>;
 }
 
 function getSearchCompletions(parent: DashboardNode): SearchCompletionsInterface {
@@ -33,18 +24,6 @@ function getSearchCompletions(parent: DashboardNode): SearchCompletionsInterface
 	};
 
 	return Object.assign(container, { assert, n });
-}
-
-interface SearchCompletionValues {
-	isbn: string;
-	title: string;
-	authors: string;
-	year: string;
-	publisher: string;
-}
-
-interface SearchCompletionInterface extends DashboardNode {
-	assert(values: Partial<SearchCompletionValues>): Promise<void>;
 }
 
 function getCompletion(parent: DashboardNode, ix: number): SearchCompletionInterface {
