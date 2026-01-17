@@ -17,7 +17,7 @@ const config =
 					lib: {
 						name: "@librocco/shared",
 						entry: path.join(__dirname, "src", "index.ts"),
-						fileName: (fmt) => (fmt === "es" ? "index.es.js" : "index.js"),
+						fileName: (fmt) => (fmt === "es" ? "index.js" : "index.cjs"),
 						formats: ["es", "cjs"]
 					},
 					rollupOptions: {
