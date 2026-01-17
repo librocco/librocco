@@ -60,7 +60,7 @@ importers:
         specifier: ~0.6.8
         version: 0.6.14(prettier-plugin-svelte@3.4.1(prettier@3.4.2)(svelte@5.46.4))(prettier@3.4.2)
       typescript:
-        specifier: ^5.7.3
+        specifier: ~5.9.3
         version: 5.9.3
 
   ../../apps/sync-server:
@@ -97,7 +97,7 @@ importers:
         specifier: ~4.19.1
         version: 4.19.4
       typescript:
-        specifier: ^5.7.3
+        specifier: ~5.9.3
         version: 5.9.3
 
   ../../apps/web-client:
@@ -305,7 +305,7 @@ importers:
         specifier: ~4.19.1
         version: 4.19.4
       typescript:
-        specifier: ^5.7.3
+        specifier: ~5.9.3
         version: 5.9.3
       vite:
         specifier: ~6.0.11
@@ -338,7 +338,7 @@ importers:
         specifier: ~3.2.4
         version: 3.2.7
       typescript:
-        specifier: ^5.7.3
+        specifier: ~5.9.3
         version: 5.9.3
 
   ../../pkg/shared:
@@ -380,7 +380,7 @@ importers:
         specifier: ~5.26.2
         version: 5.26.2(typescript@5.9.3)
       typescript:
-        specifier: ^5.7.3
+        specifier: ~5.9.3
         version: 5.9.3
       vite:
         specifier: ~6.0.11
@@ -437,7 +437,7 @@ importers:
         specifier: ^2.3.1
         version: 2.8.1
       typescript:
-        specifier: ^5.7.3
+        specifier: ~5.9.3
         version: 5.9.3
       vite:
         specifier: ~6.0.11
@@ -470,7 +470,7 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       typescript:
-        specifier: ^5.7.3
+        specifier: ~5.9.3
         version: 5.9.3
       vite:
         specifier: ~6.0.11
@@ -500,7 +500,7 @@ importers:
         specifier: ^7.8.1
         version: 7.8.2
       typescript:
-        specifier: ^5.7.3
+        specifier: ~5.9.3
         version: 5.9.3
       vite:
         specifier: ~6.0.11
