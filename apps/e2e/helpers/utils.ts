@@ -1,8 +1,10 @@
-import { Locator, Page, expect } from "@playwright/test";
+import type { Locator, Page } from "@playwright/test";
+import { expect } from "@playwright/test";
 
 import { assertionTimeout } from "@/constants";
-import { EntityListView, TestId, WebClientView } from "@librocco/shared";
-import { FieldConstructor, WaitForOpts } from "./types";
+import { enumerate } from "@librocco/shared";
+import type { EntityListView, TestId, WebClientView } from "@librocco/shared";
+import type { FieldConstructor, WaitForOpts } from "./types";
 
 export async function compareEntries(container: Locator, labels: string[], selector: string, opts?: { timeout?: number }) {
 	for (let i = 0; i <= labels.length; i++) {

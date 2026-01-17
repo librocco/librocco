@@ -1,6 +1,6 @@
 import type { Locator } from "@playwright/test";
 
-import { TestId } from "@librocco/shared";
+import type { TestId } from "@librocco/shared";
 
 import type {
 	BookFormValues,

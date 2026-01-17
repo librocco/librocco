@@ -1,4 +1,4 @@
-import { DashboardNode, ScanFieldInterface } from "./types";
+import type { DashboardNode, ScanFieldInterface } from "./types";
 
 import { selector, testIdSelector } from "./utils";
 

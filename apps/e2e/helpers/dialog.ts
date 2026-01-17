@@ -1,4 +1,4 @@
-import { DashboardNode, DialogInterface } from "./types";
+import type { DashboardNode, DialogInterface } from "./types";
 
 export function getDialog(parent: DashboardNode): DialogInterface {
 	const dashboard = parent.dashboard;

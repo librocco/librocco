@@ -4,16 +4,26 @@
 		"rootDir": ".",
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["./*"]
+			"@/*": [
+				"./*"
+			]
 		},
-
 		"strictNullChecks": false,
 		"noEmit": true,
 		"target": "ESNext",
 		"module": "ESNext",
-		"lib": ["ESNext", "DOM", "DOM.Iterable"],
-		"ignoreDeprecations": "5.0"
+		"lib": [
+			"ESNext",
+			"DOM",
+			"DOM.Iterable"
+		],
+		"ignoreDeprecations": "5.0",
+		"verbatimModuleSyntax": true
 	},
-	"exclude": ["node_modules"],
-	"include": ["./**/*.ts"]
+	"exclude": [
+		"node_modules"
+	],
+	"include": [
+		"./**/*.ts"
+	]
 }

@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { DashboardNode, HistoryStatsInterface, HistoryStatsValues, StatsField, StockReportInterface, WaitForOpts } from "./types";
+import type { DashboardNode, HistoryStatsInterface, HistoryStatsValues, StatsField, StockReportInterface, WaitForOpts } from "./types";
 
 import { assertionTimeout } from "@/constants";
 import { selector, testIdSelector } from "./utils";

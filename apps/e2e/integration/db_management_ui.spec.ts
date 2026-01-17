@@ -5,7 +5,7 @@ import { appHash } from "@/constants";
 import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard } from "@/helpers/dashboard";
 import { selector, testIdSelector } from "@/helpers/utils";
-import { DashboardNode } from "@/helpers/types";
+import type { DashboardNode } from "@/helpers/types";
 
 test.beforeEach(async ({ page }) => {
 	await page.goto(appHash("settings"));

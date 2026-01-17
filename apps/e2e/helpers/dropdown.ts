@@ -1,4 +1,4 @@
-import { DashboardNode } from "./types";
+import type { DashboardNode } from "./types";
 import { selector, testIdSelector } from "./utils";
 
 type DropdownInterface = DashboardNode<{

@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
 
-import { DashboardNode, WaitForOpts, UpdatedAtInterface } from "./types";
+import type { DashboardNode, WaitForOpts, UpdatedAtInterface } from "./types";
 
 import { assertionTimeout } from "@/constants";
 
