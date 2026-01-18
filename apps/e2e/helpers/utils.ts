@@ -2,7 +2,6 @@ import type { Locator, Page } from "@playwright/test";
 import { expect } from "@playwright/test";
 
 import { assertionTimeout } from "@/constants";
-import { enumerate } from "@librocco/shared";
 import type { EntityListView, TestId, WebClientView } from "@librocco/shared";
 import type { FieldConstructor, WaitForOpts } from "./types";
 

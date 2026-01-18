@@ -1,4 +1,12 @@
-import type { Asserter, DashboardNode, FieldConstructor, SearchFieldInterface, SearchCompletionsInterface, SearchCompletionInterface, SearchCompletionValues } from "./types";
+import type {
+	Asserter,
+	DashboardNode,
+	FieldConstructor,
+	SearchFieldInterface,
+	SearchCompletionsInterface,
+	SearchCompletionInterface,
+	SearchCompletionValues
+} from "./types";
 import { selector, stringFieldConstructor, testIdSelector } from "./utils";
 
 export function getSearchField(parent: DashboardNode): SearchFieldInterface {
