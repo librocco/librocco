@@ -10,7 +10,7 @@ import tempfile
 import threading
 import time
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, Optional, Any
 from circus import get_arbiter
 from circus.client import CircusClient
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot as Slot
@@ -379,6 +379,39 @@ class EmbeddedSupervisor(QObject):
             "max_retry": 5,
             "graceful_timeout": 10,
             "max_retry_in": 60,
+        }
+
+    def _extract_env_overrides(
+        self, base_env: Dict[str, str], updated_env: Dict[str, str]
+    ) -> Dict[str, str]:
+        """Return only the env vars that differ from base_env."""
+        return {
+            key: value for key, value in updated_env.items() if base_env.get(key) != value
+        }
+
+    def get_manual_command_specs(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Build command specifications for manually starting daemons.
+
+        Returns a dict keyed by daemon name with cmd/args/env/working_dir.
+        """
+        base_env = os.environ.copy()
+        caddy_watcher = self._create_caddy_watcher()
+        syncserver_watcher = self._create_syncserver_watcher()
+
+        return {
+            "caddy": {
+                "cmd": caddy_watcher["cmd"],
+                "args": caddy_watcher["args"],
+                "working_dir": caddy_watcher["working_dir"],
+                "env": self._extract_env_overrides(base_env, caddy_watcher["env"]),
+            },
+            "syncserver": {
+                "cmd": syncserver_watcher["cmd"],
+                "args": syncserver_watcher["args"],
+                "working_dir": syncserver_watcher["working_dir"],
+                "env": self._extract_env_overrides(base_env, syncserver_watcher["env"]),
+            },
         }
 
     def start(self) -> None:

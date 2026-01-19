@@ -41,6 +41,12 @@ These scripts download platform-specific binaries into `python-apps/launcher/bun
 uv run python main.py
 ```
 
+Print manual commands for starting Caddy and the sync server:
+
+```bash
+uv run python main.py --print-commands
+```
+
 Or activate the virtual environment first:
 
 ```bash

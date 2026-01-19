@@ -157,13 +157,18 @@ https://:{CADDY_PORT} {{
         on_demand
     }}
 
-    # Proxy sync WebSocket requests to the sync server
+    # Proxy sync WebSocket + HTTPS requests to the sync server
     handle /sync* {{
         reverse_proxy localhost:3000
     }}
 
     # Proxy database RPC endpoints to the sync server (for testing/dev)
     handle /*.db/* {{
+        reverse_proxy localhost:3000
+    }}
+
+    # Proxy current DB download to the sync server
+    handle /librocco_current.sqlite3/file {{
         reverse_proxy localhost:3000
     }}
 
