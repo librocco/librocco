@@ -661,7 +661,7 @@ jobs:
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
         PUBLIC_IS_DEMO: "true"
-        PUBLIC_DEMO_DB_URL: https://librocco.codemyriad.io/demo_db.sqlite3
+        PUBLIC_DEMO_DB_URL: https://libroc.co/demo/demo_db.sqlite3
     - name: Install and configure rclone for R2
       run: |
         wget -q https://downloads.rclone.org/v1.71.1/rclone-v1.71.1-linux-amd64.zip
@@ -682,8 +682,8 @@ jobs:
         no_check_bucket = true
         EOF
       env:
-        CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_ACCESS_KEY_ID }}
-        CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_SECRET_ACCESS_KEY }}
+        CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_DEMO_ACCESS_KEY_ID }}
+        CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_DEMO_SECRET_ACCESS_KEY }}
         CLOUDFLARE_BUCKET_URL: ${{ secrets.CLOUDFLARE_BUCKET_URL }}
     - name: 'Upload to R2: apps/web-client/build/ -> demo/'
       run: rclone copy apps/web-client/build/ r2:librocco-demo/demo/
