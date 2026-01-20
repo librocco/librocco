@@ -70,7 +70,7 @@
    * The default value is false to avoid legacy compatibility issues.
    * It is strongly recommended to set `strictPeerDependencies=true`.
    */
-  "strictPeerDependencies": false,
+  "strictPeerDependencies": true,
   /**
    * Environment variables that will be provided to PNPM.
    */
@@ -175,7 +175,9 @@
       "@typescript-eslint/parser": "*",
       "eslint": "*",
       "@types/node": "*"
-    }
+    },
+    // Ignore all missing peers; optional extras still get resolved explicitly when needed.
+    "ignoreMissing": ["*"]
   },
   /**
    * The `globalPackageExtension` setting provides a way to patch arbitrary package.json fields
@@ -191,19 +193,34 @@
    * PNPM documentation: https://pnpm.io/package_json#pnpmpackageextensions
    */
   "globalPackageExtensions": {
-    // "fork-ts-checker-webpack-plugin": {
-    //   "dependencies": {
-    //     "@babel/core": "1"
-    //   },
-    //   "peerDependencies": {
-    //     "eslint": ">= 6"
-    //   },
-    //   "peerDependenciesMeta": {
-    //     "eslint": {
-    //       "optional": true
-    //     }
-    //   }
-    // }
+    "svelte-htm": {
+      "peerDependencies": {
+        "svelte": ">=3 <6"
+      },
+      "peerDependenciesMeta": {
+        "svelte": {
+          "optional": true
+        }
+      }
+    },
+    "@storybook/addon-svelte-csf": {
+      "peerDependencies": {
+        "@sveltejs/vite-plugin-svelte": "*",
+        "svelte": "*",
+        "vite": "*"
+      },
+      "peerDependenciesMeta": {
+        "@sveltejs/vite-plugin-svelte": {
+          "optional": true
+        },
+        "svelte": {
+          "optional": true
+        },
+        "vite": {
+          "optional": true
+        }
+      }
+    }
   },
   /**
    * The `globalNeverBuiltDependencies` setting suppresses the `preinstall`, `install`, and `postinstall`
