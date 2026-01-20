@@ -1,4 +1,4 @@
-import { WebClientView } from "@librocco/shared";
+import type { WebClientView } from "@librocco/shared";
 
 import type { DashboardNode, MainNavInterface, WaitForOpts } from "./types";
 

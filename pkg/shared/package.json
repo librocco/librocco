@@ -6,11 +6,11 @@
 		".": {
 			"import": {
 				"types": "./dist/index.d.ts",
-				"default": "./dist/index.es.js"
+				"default": "./dist/index.js"
 			},
 			"require": {
 				"types": "./dist/index.d.ts",
-				"default": "./dist/index.js"
+				"default": "./dist/index.cjs"
 			}
 		},
 		"./db-schemas/*": {
@@ -69,7 +69,7 @@
 		"rxjs": "^7.8.1",
 		"tsx": "~4.19.1",
 		"typesafe-i18n": "~5.26.2",
-		"typescript": "^5.7.3",
+		"typescript": "~5.9.3",
 		"vite": "~6.0.11",
 		"vitest": "3.0.9",
 		"concurrently": "^9.1.0"

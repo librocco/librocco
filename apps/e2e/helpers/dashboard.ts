@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import { WebClientView } from "@librocco/shared";
+import type { WebClientView } from "@librocco/shared";
 
 import type { DashboardInterface } from "./types";
 

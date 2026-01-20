@@ -1,6 +1,6 @@
-import { EntityListView } from "@librocco/shared";
+import type { EntityListView } from "@librocco/shared";
 
-import { DashboardNode, EntityListInterface, EntityListItem, EntityListMatcher, WaitForOpts, WarehouseItemDropdown } from "./types";
+import type { DashboardNode, EntityListInterface, EntityListItem, EntityListMatcher, WaitForOpts, WarehouseItemDropdown } from "./types";
 
 import { assertionTimeout } from "@/constants";
 

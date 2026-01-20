@@ -1,14 +1,17 @@
 import { DB } from "@vlcn.io/crsqlite-wasm";
-import test, { JSHandle } from "@playwright/test";
+import { test } from "@playwright/test";
+import type { JSHandle } from "@playwright/test";
 
-import { BookData, wrapIter, TranslationFunctions, Locales } from "@librocco/shared";
+import { wrapIter } from "@librocco/shared";
+import type { BookData, TranslationFunctions, Locales } from "@librocco/shared";
 import { loadLocale } from "@librocco/shared/i18n-util.sync";
 import { i18nObject } from "@librocco/shared/i18n-util";
 
 import { baseURL } from "@/constants";
 
-import { Customer, Supplier } from "./types";
+import type { Customer, Supplier } from "./types";
 
+import type { Warehouse } from "./cr-sqlite";
 import {
 	getDbHandle,
 	addBooksToCustomer,
@@ -20,7 +23,6 @@ import {
 	upsertBook,
 	upsertCustomer,
 	upsertSupplier,
-	Warehouse,
 	upsertWarehouse
 } from "./cr-sqlite";
 

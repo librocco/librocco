@@ -1,7 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 
 import type { NoteState, NoteTempState, EntityListView, WebClientView, TestId, BookData } from "@librocco/shared";
-import { SearchFieldInterface } from "./searchField";
 
 /** A util type used to "pick" a subset of the given (union type) */
 export type Subset<T, S extends T> = S;
@@ -313,6 +312,29 @@ export interface HistoryStatsInterface extends DashboardNode {
 export interface StockReportInterface extends DashboardNode {
 	assert(values: [warehouseId: string, quantity: number][]): Promise<void>;
 }
+
+// #region search interfaces
+export interface SearchFieldInterface extends DashboardNode {
+	completions(): SearchCompletionsInterface;
+}
+
+export interface SearchCompletionsInterface extends DashboardNode {
+	n(ix: number): SearchCompletionInterface;
+	assert(values: Partial<SearchCompletionValues>[]): Promise<void>;
+}
+
+export interface SearchCompletionInterface extends DashboardNode {
+	assert(values: Partial<SearchCompletionValues>): Promise<void>;
+}
+
+export interface SearchCompletionValues {
+	isbn: string;
+	title: string;
+	authors: string;
+	year: string;
+	publisher: string;
+}
+
 // #region history
 
 // #region asserters

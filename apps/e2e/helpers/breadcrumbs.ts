@@ -1,4 +1,4 @@
-import { BreadcrumbsInterface, DashboardNode, WaitForOpts } from "./types";
+import type { BreadcrumbsInterface, DashboardNode, WaitForOpts } from "./types";
 import { compareEntries } from "./utils";
 
 export function getBreadcrumbs(_parent: DashboardNode): BreadcrumbsInterface {

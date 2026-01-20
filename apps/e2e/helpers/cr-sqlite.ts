@@ -1,10 +1,10 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
 
-import { Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
-import { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
+import type { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
 
-import { BookData } from "@librocco/shared";
+import type { BookData } from "@librocco/shared";
 
 // Extend the window object with the db
 declare global {

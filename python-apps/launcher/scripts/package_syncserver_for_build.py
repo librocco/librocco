@@ -20,6 +20,7 @@ import sys
 import shutil
 import subprocess
 import json
+import os
 from pathlib import Path
 
 # Project paths
@@ -79,6 +80,27 @@ def main():
     # Step 3: Install production dependencies with npm
     print("[3/4] Installing production dependencies with npm...")
 
+    artefacts_dir = launcher_dir.parent.parent / "3rd-party" / "artefacts"
+    custom_packages = {
+        "@vlcn.io/crsqlite": "vlcn.io-crsqlite-0.16.3.tgz",
+        "@vlcn.io/ws-server": "vlcn.io-ws-server-0.2.2.tgz",
+        "@vlcn.io/ws-common": "vlcn.io-ws-common-0.2.0.tgz",
+        "@vlcn.io/ws-client": "vlcn.io-ws-client-0.2.0.tgz",
+        "@vlcn.io/ws-browserdb": "vlcn.io-ws-browserdb-0.2.0.tgz",
+        "@vlcn.io/rx-tbl": "vlcn.io-rx-tbl-0.15.0.tgz",
+        "@vlcn.io/wa-sqlite": "vlcn.io-wa-sqlite-0.22.0.tgz",
+        "@vlcn.io/crsqlite-wasm": "vlcn.io-crsqlite-wasm-0.16.0.tgz",
+        "@vlcn.io/xplat-api": "vlcn.io-xplat-api-0.15.0.tgz",
+    }
+
+    resolved_custom = {}
+    for pkg, filename in custom_packages.items():
+        tgz_path = artefacts_dir / filename
+        if not tgz_path.exists():
+            print(f"✗ Custom package tarball not found: {tgz_path}", file=sys.stderr)
+            return 1
+        resolved_custom[pkg] = f"file:{os.path.relpath(tgz_path, bundled_dir)}"
+
     # Create a minimal package.json for bundling
     # Only runtime dependencies, no devDependencies
     package_json = {
@@ -87,11 +109,14 @@ def main():
         "type": "module",
         "private": True,
         "dependencies": {
-            "@vlcn.io/ws-server": "0.2.2",
-            "@vlcn.io/crsqlite": "0.16.3",
+            "@vlcn.io/ws-server": resolved_custom["@vlcn.io/ws-server"],
+            "@vlcn.io/crsqlite": resolved_custom["@vlcn.io/crsqlite"],
             "@vlcn.io/logger-provider": "0.2.0",
-            "@vlcn.io/ws-common": "0.2.0",
+            "@vlcn.io/ws-common": resolved_custom["@vlcn.io/ws-common"],
             "better-sqlite3": "~11.4.0",
+        },
+        "overrides": {
+            **resolved_custom,
         },
     }
 

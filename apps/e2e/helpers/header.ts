@@ -1,4 +1,4 @@
-import { ContentHeaderInterface, DashboardNode, WaitForOpts } from "./types";
+import type { ContentHeaderInterface, DashboardNode, WaitForOpts } from "./types";
 
 import { assertionTimeout } from "../constants";
 

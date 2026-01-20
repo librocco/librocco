@@ -1,6 +1,6 @@
 import { fromDate, getLocalTimeZone } from "@internationalized/date";
 
-import { TestId } from "@librocco/shared";
+import type { TestId } from "@librocco/shared";
 
 import type { CalendarPicker, DashboardNode } from "./types";
 

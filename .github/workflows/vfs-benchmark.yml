@@ -23,7 +23,7 @@ jobs:
     - uses: actions/setup-node@v4
       if: steps.ts.outputs.rebuild == 'yes'
       with:
-        node-version: "20"
+        node-version: "22"
     - name: Install Rust Toolchain
       if: steps.ts.outputs.rebuild == 'yes'
       uses: actions-rs/toolchain@v1
@@ -84,7 +84,7 @@ jobs:
         lfs: true
     - uses: actions/setup-node@v4
       with:
-        node-version: "20"
+        node-version: "22"
     - name: Compute desired compiled artifact version
       run: ./scripts/compute_artefacts_version.sh
     - uses: actions/download-artifact@v4
@@ -156,7 +156,7 @@ jobs:
         lfs: true
     - uses: actions/setup-node@v4
       with:
-        node-version: "20"
+        node-version: "22"
     - name: Download JSON reports
       uses: actions/download-artifact@v4
       with:
@@ -178,7 +178,7 @@ jobs:
         lfs: true
     - uses: actions/setup-node@v4
       with:
-        node-version: "20"
+        node-version: "22"
     - name: Download blob reports
       uses: actions/download-artifact@v4
       with:

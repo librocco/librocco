@@ -19,7 +19,7 @@ jobs:
       -  #@ checkout()
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()

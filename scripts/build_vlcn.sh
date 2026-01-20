@@ -28,7 +28,7 @@ make
 echo '::endgroup::'
 
 echo '::group::Install dependencies to pack up the WASM'
-npx --yes 'pnpm@<9' install --frozen-lockfile
+npx --yes 'pnpm@~9.15.0' install --frozen-lockfile
 echo '::endgroup::'
 
 
@@ -39,8 +39,8 @@ process_package() {
     # Use a subshell to avoid changing the script's working directory
     (
         cd "$package_path"
-        npx --yes 'pnpm@<9' install --frozen-lockfile
-        npx --yes 'pnpm@<9' pack
+        npx --yes 'pnpm@~9.15.0' install --frozen-lockfile
+        npx --yes 'pnpm@~9.15.0' pack
         cp *.tgz "$ARTEFACTS_DIR"
         rm *.tgz # Let's make sure we don't make `git` feel dirty!
     )

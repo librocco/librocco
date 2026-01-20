@@ -17,7 +17,7 @@ steps:
   - uses: actions/setup-node@v4
     if: steps.ts.outputs.rebuild == 'yes'
     with:
-      node-version: "20"
+      node-version: "22"
   - name: Install Rust Toolchain
     if: steps.ts.outputs.rebuild == 'yes'
     #! I was getting this:
