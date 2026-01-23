@@ -208,16 +208,18 @@
 			</div>
 			<div class="mb-20 flex h-full w-full flex-col gap-y-6">
 				<!-- Tab Navigation -->
-				<div class="border-b border-gray-200">
-					<nav class="-mb-px flex gap-x-8 px-4">
+				<div class="px-4">
+					<nav class="flex" style="gap: 8px;">
 						<button
-							class="border-b-2 py-2 text-sm font-medium transition-colors {$activeTab === 'orders' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+							class="rounded font-normal transition-colors {$activeTab === 'orders' ? 'border border-gray-900 bg-gray-900 text-white' : 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'}"
+							style="padding: 8px 16px; font-size: 14px; font-weight: 400; border-radius: 4px;"
 							on:click={() => activeTab.set("orders")}
 						>
 							Orders
 						</button>
 						<button
-							class="border-b-2 py-2 text-sm font-medium transition-colors {$activeTab === 'publishers' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}"
+							class="rounded font-normal transition-colors {$activeTab === 'publishers' ? 'border border-gray-900 bg-gray-900 text-white' : 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'}"
+							style="padding: 8px 16px; font-size: 14px; font-weight: 400; border-radius: 4px;"
 							on:click={() => activeTab.set("publishers")}
 						>
 							Assigned Publishers
@@ -237,39 +239,49 @@
 					<!-- Assigned Publishers Tab -->
 					{#if $activeTab === "publishers"}
 						<div class="flex h-full w-full flex-col pb-20 md:pb-0">
-							<div class="sticky top-0 z-20 bg-white p-4">
-								<div class="flex items-center gap-2">
-									<input
-										type="text"
-										placeholder="Search publishers..."
-										bind:value={searchQuery}
-										class="input w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-									/>
+							<div class="sticky top-0 z-20 bg-white" style="padding: 24px 20px 12px 20px;">
+								<div class="relative flex items-center gap-2">
+									<div class="relative w-full">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+										</svg>
+										<input
+											type="text"
+											placeholder="Search publishers..."
+											bind:value={searchQuery}
+											class="h-9 w-full rounded border border-gray-300 bg-white py-1 pl-9 pr-3 text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+											style="font-size: 14px; height: 36px; padding-left: 36px; padding-right: 12px;"
+										/>
+									</div>
 									{#if searchQuery}
 										<button on:click={() => (searchQuery = "")} class="btn-xs btn-circle btn" aria-label="Clear search">✕</button>
 									{/if}
 								</div>
 							</div>
 
-							<div class="flex min-h-0 flex-1 overflow-hidden">
+							<div class="flex min-h-0 flex-1 overflow-hidden" style="padding: 0px 20px 20px 20px;">
 								<div class="flex min-w-0 flex-1 flex-col border-r border-gray-200">
-									<div class="sticky top-0 z-10 border-b border-gray-100 bg-white px-4 py-3">
-										<div class="flex items-center gap-2">
-											<h3 class="text-base font-semibold text-gray-900">Assigned Publishers</h3>
-											<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{filteredAssigned.length}</span>
+									<div class="sticky top-0 z-10 border-b border-gray-100 bg-white" style="padding: 8px 12px;">
+										<div class="flex items-center" style="gap: 8px;">
+											<h3 class="font-normal text-gray-900" style="font-size: 14px; font-weight: 400;">Assigned Publishers</h3>
+											<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600" style="font-size: 10px;">{filteredAssigned.length}</span>
 										</div>
 									</div>
 									<div class="min-h-0 flex-1 overflow-y-auto">
 										{#each filteredAssigned as publisher}
-											<div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 hover:bg-gray-50">
-												<span class="truncate text-sm font-medium text-gray-900">{publisher}</span>
-												<button on:click={handleUnassignPublisher(publisher)} class="btn-ghost btn-outline btn-xs btn whitespace-nowrap rounded-md border border-red-300 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50">
-													{t.labels.remove_publisher()}
+											<div class="flex items-center justify-between border-b border-gray-100 hover:bg-gray-50" style="padding: 6px 12px;">
+												<span class="truncate font-normal text-gray-900" style="font-size: 13px; font-weight: 400;">{publisher}</span>
+												<button 
+													on:click={handleUnassignPublisher(publisher)} 
+													class="whitespace-nowrap rounded border-0 bg-transparent font-medium text-gray-500 hover:bg-gray-100"
+													style="padding: 0px 4px; font-size: 11px; height: 20px; color: rgba(24, 24, 27, 0.6);"
+												>
+													Remove
 												</button>
 											</div>
 										{/each}
 										{#if filteredAssigned.length === 0}
-											<div class="px-4 py-8 text-center text-sm text-gray-500">
+											<div class="py-8 text-center text-sm text-gray-500" style="padding-left: 12px; padding-right: 12px;">
 												{searchQuery ? "No matching assigned publishers" : "No assigned publishers"}
 											</div>
 										{/if}
@@ -277,24 +289,25 @@
 								</div>
 
 								<div class="flex min-w-0 flex-1 flex-col">
-									<div class="sticky top-0 z-10 border-b border-gray-100 bg-white px-4 py-3">
-										<div class="flex items-center gap-2">
-											<h3 class="text-base font-semibold text-gray-900">Available Publishers</h3>
-											<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">{filteredAvailable.length}</span>
+									<div class="sticky top-0 z-10 border-b border-gray-100 bg-white" style="padding: 8px 12px;">
+										<div class="flex items-center" style="gap: 8px;">
+											<h3 class="font-normal text-gray-900" style="font-size: 14px; font-weight: 400;">Available Publishers</h3>
+											<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600" style="font-size: 10px;">{filteredAvailable.length}</span>
 										</div>
 									</div>
 									<div class="min-h-0 flex-1 overflow-y-auto">
 										{#each filteredAvailable as pub}
-											<div class="flex items-center justify-between border-b border-gray-100 px-4 py-3 hover:bg-gray-50">
-												<span class="flex items-center gap-2 truncate text-sm font-medium text-gray-900">
+											<div class="flex items-center justify-between border-b border-gray-100 hover:bg-gray-50" style="padding: 6px 12px;">
+												<span class="flex items-center truncate font-normal text-gray-900" style="font-size: 13px; font-weight: 400; gap: 8px;">
 													{pub.name}
 													{#if pub.supplierName}
 														<span
-															class="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 max-w-[120px] truncate"
+															class="inline-flex max-w-[100px] items-center truncate rounded px-1.5 font-medium"
+															style="font-size: 10px; padding: 0px 6px; background-color: rgb(254, 243, 199); color: rgb(146, 64, 14);"
 															title={`Currently assigned to ${pub.supplierName}`}
-															>
-																{pub.supplierName}
-															</span>
+														>
+															{pub.supplierName}
+														</span>
 													{/if}
 												</span>
 												<button
@@ -304,14 +317,15 @@
 																confirmationDialogOpen.set(true);
 															}
 														: handleAssignPublisher(pub.name)}
-													class="btn-primary btn-xs btn whitespace-nowrap rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+													class="whitespace-nowrap rounded border border-gray-900 bg-white font-medium text-gray-900 hover:bg-gray-50"
+													style="padding: 0px 4px; font-size: 11px; height: 20px;"
 												>
-													{pub.supplierName ? t.labels.reassign_publisher() : t.labels.add_to_supplier()}
+													{pub.supplierName ? "Re-assign" : "Add"}
 												</button>
 											</div>
 										{/each}
 										{#if filteredAvailable.length === 0}
-											<div class="px-4 py-8 text-center text-sm text-gray-500">
+											<div class="py-8 text-center text-sm text-gray-500" style="padding-left: 12px; padding-right: 12px;">
 												{searchQuery ? "No matching available publishers" : "No available publishers"}
 											</div>
 										{/if}
