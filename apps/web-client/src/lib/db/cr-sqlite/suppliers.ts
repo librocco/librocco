@@ -156,6 +156,25 @@ async function _getPublishersFor(db: TXAsync, supplierId?: number): Promise<stri
 }
 
 /**
+ * Retrieves all publishers with their associated supplier information.
+ * Used for the split UI showing which publishers belong to which suppliers.
+ *
+ * @param db - The database instance to query
+ * @returns Promise resolving to array of {publisher, supplier_name}
+ */
+async function _getPublishersWithSuppliers(db: TXAsync): Promise<{ publisher: string; supplier_name: string }[]> {
+	const query = `
+		SELECT
+			sp.publisher,
+			s.name as supplier_name
+		FROM supplier_publisher sp
+		LEFT JOIN supplier s ON sp.supplier_id = s.id
+		ORDER BY sp.publisher ASC
+	`;
+	return await db.execO<{ publisher: string; supplier_name: string }>(query);
+}
+
+/**
  * Associates a publisher with a supplier, updating any existing association.
  * If the publisher was associated with a different supplier, that association is replaced.
  *
@@ -520,6 +539,7 @@ export const getAllSuppliers = timed(_getAllSuppliers);
 export const getSupplierDetails = timed(_getSupplierDetails);
 export const upsertSupplier = timed(_upsertSupplier);
 export const getPublishersFor = timed(_getPublishersFor);
+export const getPublishersWithSuppliers = timed(_getPublishersWithSuppliers);
 export const associatePublisher = timed(_associatePublisher);
 export const removePublisherFromSupplier = timed(_removePublisherFromSupplier);
 export const getPossibleSupplierOrders = timed(_getPossibleSupplierOrders);
