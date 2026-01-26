@@ -4,7 +4,14 @@ import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
 import { testBase as test, testOrders } from "@/helpers/fixtures";
 
-import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer, externalExec, waitForTableInFile } from "@/helpers/cr-sqlite";
+import {
+	getDbHandle,
+	getCustomerOrderList,
+	getRemoteDbHandle,
+	upsertCustomer,
+	externalExec,
+	waitForTableInFile
+} from "@/helpers/cr-sqlite";
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
