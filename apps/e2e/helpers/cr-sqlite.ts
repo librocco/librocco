@@ -1,6 +1,7 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
 import Database from "better-sqlite3";
 import path from "path";
+import url from "url";
 import { extensionPath } from "@vlcn.io/crsqlite";
 
 import type { Page } from "@playwright/test";
@@ -9,8 +10,9 @@ import type { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
 
 import type { BookData } from "@librocco/shared";
 
-/** Path to the sync server's database folder. Set via SYNC_SERVER_DB_FOLDER env var. */
-const SYNC_SERVER_DB_FOLDER = process.env.SYNC_SERVER_DB_FOLDER || "./apps/sync-server/test-dbs";
+/** Path to the sync server's database folder. Defaults to apps/sync-server/test-dbs from repo root. */
+const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+const SYNC_SERVER_DB_FOLDER = process.env.SYNC_SERVER_DB_FOLDER || path.resolve(__dirname, "../../sync-server/test-dbs");
 
 // Extend the window object with the db
 declare global {
