@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
+	import { writable } from "svelte/store";
 	import { Download, PencilLine, Plus, Mail } from "$lucide";
 	import UserCircle from "$lucide/user-circle";
 	import { createDialog } from "@melt-ui/svelte";
@@ -38,6 +39,8 @@
 
 	export let data: PageData;
 
+	let searchQuery = "";
+
 	// #region reactivity
 	let disposer: () => void;
 
@@ -54,9 +57,19 @@
 		disposer?.();
 	});
 	// #endregion reactivity
+	type Tab = "orders" | "publishers";
+	const activeTab = writable<Tab>("orders");
 	$: goto = racefreeGoto(disposer);
 
-	$: ({ plugins, supplier, assignedPublishers, publishersAssignedToOtherSuppliers, publishersUnassignedToSuppliers } = data);
+	$: ({ plugins, supplier, assignedPublishers, availablePublishers } = data);
+
+	$: filteredAssigned = searchQuery
+		? assignedPublishers.filter((p) => p.toLowerCase().includes(searchQuery.toLowerCase()))
+		: assignedPublishers;
+
+	$: filteredAvailable = searchQuery
+		? availablePublishers.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+		: availablePublishers;
 
 	$: t = $LL.order_list_page;
 
@@ -193,183 +206,134 @@
 					</div>
 				</div>
 			</div>
-			<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
-				<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
-					<div class="w-full">
-						<h2 class="text-lg">{$LL.new_order_page.stats.selected_books()}</h2>
-						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-							<table class="!my-0 flex-col items-stretch overflow-y-auto">
-								<thead class="sticky left-0 right-0 top-0 bg-white shadow">
-									<tr>
-										<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each assignedPublishers as publisher}
-										<tr class="hover flex w-full justify-between focus-within:bg-base-200">
-											<td class="px-2">{publisher}</td>
-											<td class="px-2 text-end"
-												><button
-													on:click={handleUnassignPublisher(publisher)}
-													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">{t.labels.remove_publisher()}</button
-												></td
-											>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
+			<div class="mb-20 flex h-full w-full flex-col gap-y-6">
+				<!-- Tab Navigation -->
+				<div class="px-4">
+					<nav class="flex" style="gap: 8px;">
+						<button
+							class="rounded font-normal transition-colors {$activeTab === 'orders' ? 'border border-gray-900 bg-gray-900 text-white' : 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'}"
+							style="padding: 8px 16px; font-size: 14px; font-weight: 400; border-radius: 4px;"
+							on:click={() => activeTab.set("orders")}
+						>
+							Orders
+						</button>
+						<button
+							class="rounded font-normal transition-colors {$activeTab === 'publishers' ? 'border border-gray-900 bg-gray-900 text-white' : 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'}"
+							style="padding: 8px 16px; font-size: 14px; font-weight: 400; border-radius: 4px;"
+							on:click={() => activeTab.set("publishers")}
+						>
+							Assigned Publishers
+						</button>
+					</nav>
+				</div>
+
+				<!-- Orders Tab -->
+				{#if $activeTab === "orders"}
+					<div class="mb-20 h-full overflow-x-auto">
+						<div class="h-full">
+							<OrderedTable orders={data.orders} on:reconcile={handleReconcile} on:download={handleDownload} />
 						</div>
 					</div>
+				{/if}
 
-					<div class="w-full">
-						<h2 class="text-lg">{t.table.unassigned_publishers()}</h2>
-						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-							<table class="!my-0 flex-col items-stretch overflow-y-auto">
-								<thead class="sticky left-0 right-0 top-0 bg-white shadow">
-									<tr>
-										<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each publishersUnassignedToSuppliers as publisher}
-										<tr class="hover focus-within:bg-base-200">
-											<td class="px-2">{publisher}</td>
-											<td class="px-2 text-end"
-												><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-													>{t.labels.add_to_supplier()}</button
-												></td
-											>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
+					<!-- Assigned Publishers Tab -->
+					{#if $activeTab === "publishers"}
+						<div class="flex h-full w-full flex-col pb-20 md:pb-0">
+							<div class="sticky top-0 z-20 bg-white" style="padding: 24px 20px 12px 20px;">
+								<div class="relative flex items-center gap-2">
+									<div class="relative w-full">
+										<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+										</svg>
+										<input
+											type="text"
+											placeholder="Search publishers..."
+											bind:value={searchQuery}
+											class="h-9 w-full rounded border border-gray-300 bg-white py-1 pl-9 pr-3 text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+											style="font-size: 14px; height: 36px; padding-left: 36px; padding-right: 12px;"
+										/>
+									</div>
+									{#if searchQuery}
+										<button on:click={() => (searchQuery = "")} class="btn-xs btn-circle btn" aria-label="Clear search">✕</button>
+									{/if}
+								</div>
+							</div>
+
+							<div class="flex min-h-0 flex-1 overflow-hidden" style="padding: 0px 20px 20px 20px;">
+								<div class="flex min-w-0 flex-1 flex-col border-r border-gray-200">
+									<div class="sticky top-0 z-10 border-b border-gray-100 bg-white" style="padding: 8px 12px;">
+										<div class="flex items-center" style="gap: 8px;">
+											<h3 class="font-normal text-gray-900" style="font-size: 14px; font-weight: 400;">Assigned Publishers</h3>
+											<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600" style="font-size: 10px;">{filteredAssigned.length}</span>
+										</div>
+									</div>
+									<div class="min-h-0 flex-1 overflow-y-auto">
+										{#each filteredAssigned as publisher}
+											<div class="flex items-center justify-between border-b border-gray-100 hover:bg-gray-50" style="padding: 6px 12px;">
+												<span class="truncate font-normal text-gray-900" style="font-size: 13px; font-weight: 400;">{publisher}</span>
+												<button 
+													on:click={handleUnassignPublisher(publisher)} 
+													class="whitespace-nowrap rounded border-0 bg-transparent font-medium text-gray-500 hover:bg-gray-100"
+													style="padding: 0px 4px; font-size: 11px; height: 20px; color: rgba(24, 24, 27, 0.6);"
+												>
+													Remove
+												</button>
+											</div>
+										{/each}
+										{#if filteredAssigned.length === 0}
+											<div class="py-8 text-center text-sm text-gray-500" style="padding-left: 12px; padding-right: 12px;">
+												{searchQuery ? "No matching assigned publishers" : "No assigned publishers"}
+											</div>
+										{/if}
+									</div>
+								</div>
+
+								<div class="flex min-w-0 flex-1 flex-col">
+									<div class="sticky top-0 z-10 border-b border-gray-100 bg-white" style="padding: 8px 12px;">
+										<div class="flex items-center" style="gap: 8px;">
+											<h3 class="font-normal text-gray-900" style="font-size: 14px; font-weight: 400;">Available Publishers</h3>
+											<span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600" style="font-size: 10px;">{filteredAvailable.length}</span>
+										</div>
+									</div>
+									<div class="min-h-0 flex-1 overflow-y-auto">
+										{#each filteredAvailable as pub}
+											<div class="flex items-center justify-between border-b border-gray-100 hover:bg-gray-50" style="padding: 6px 12px;">
+												<span class="flex items-center truncate font-normal text-gray-900" style="font-size: 13px; font-weight: 400; gap: 8px;">
+													{pub.name}
+													{#if pub.supplierName}
+														<span
+															class="inline-flex max-w-[100px] items-center truncate rounded px-1.5 font-medium"
+															style="font-size: 10px; padding: 0px 6px; background-color: rgb(254, 243, 199); color: rgb(146, 64, 14);"
+															title={`Currently assigned to ${pub.supplierName}`}
+														>
+															{pub.supplierName}
+														</span>
+													{/if}
+												</span>
+												<button
+													on:click={pub.supplierName
+														? () => {
+																confirmationPublisher = pub.name;
+																confirmationDialogOpen.set(true);
+															}
+														: handleAssignPublisher(pub.name)}
+													class="whitespace-nowrap rounded border border-gray-900 bg-white font-medium text-gray-900 hover:bg-gray-50"
+													style="padding: 0px 4px; font-size: 11px; height: 20px;"
+												>
+													{pub.supplierName ? "Re-assign" : "Add"}
+												</button>
+											</div>
+										{/each}
+										{#if filteredAvailable.length === 0}
+											<div class="py-8 text-center text-sm text-gray-500" style="padding-left: 12px; padding-right: 12px;">
+												{searchQuery ? "No matching available publishers" : "No available publishers"}
+											</div>
+										{/if}
+									</div>
+								</div>
+							</div>
 						</div>
-					</div>
-
-					<div class="w-full">
-						<h2 class="text-lg">{t.table.other_supplier_publishers()}</h2>
-						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-							<table class="!my-0 flex-col items-stretch overflow-hidden">
-								<thead>
-									<tr>
-										<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each publishersAssignedToOtherSuppliers as publisher}
-										<tr class="hover focus-within:bg-base-200">
-											<td class="px-2">{publisher}</td>
-											<td class="px-2 text-end"
-												><button
-													on:click={() => {
-														confirmationPublisher = publisher;
-														confirmationDialogOpen.set(true);
-													}}
-													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">{t.labels.reassign_publisher()}</button
-												></td
-											>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-
-				<div class="h-full overflow-x-auto">
-					<div class="h-full">
-						<OrderedTable orders={data.orders} on:reconcile={handleReconcile} on:download={handleDownload} />
-					</div>
-				</div>
-			</div>
-		</div>
-
-		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
-			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
-				<div class="w-full">
-					<h2 class="text-lg">{$LL.new_order_page.stats.selected_books()}</h2>
-					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-						<table class="!my-0 flex-col items-stretch overflow-y-auto">
-							<thead class="sticky left-0 right-0 top-0 bg-white shadow">
-								<tr>
-									<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each assignedPublishers as publisher}
-									<tr class="hover flex w-full justify-between focus-within:bg-base-200">
-										<td class="px-2">{publisher}</td>
-										<td class="px-2 text-end"
-											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>{t.labels.remove_publisher()}</button
-											></td
-										>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				</div>
-
-				<div class="w-full">
-					<h2 class="text-lg">{t.table.unassigned_publishers()}</h2>
-					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-						<table class="!my-0 flex-col items-stretch overflow-y-auto">
-							<thead class="sticky left-0 right-0 top-0 bg-white shadow">
-								<tr>
-									<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each publishersUnassignedToSuppliers as publisher}
-									<tr class="hover focus-within:bg-base-200">
-										<td class="px-2">{publisher}</td>
-										<td class="px-2 text-end"
-											><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>{t.labels.add_to_supplier()}</button
-											></td
-										>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				</div>
-
-				<div class="w-full">
-					<h2 class="text-lg">{t.table.other_supplier_publishers()}</h2>
-					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-						<table class="!my-0 flex-col items-stretch overflow-hidden">
-							<thead>
-								<tr>
-									<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each publishersAssignedToOtherSuppliers as publisher}
-									<tr class="hover focus-within:bg-base-200">
-										<td class="px-2">{publisher}</td>
-										<td class="px-2 text-end"
-											><button
-												on:click={() => {
-													confirmationPublisher = publisher;
-													confirmationDialogOpen.set(true);
-												}}
-												class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">{t.labels.reassign_publisher()}</button
-											></td
-										>
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-
-			<div class="h-full overflow-x-auto">
-				<div class="h-full">
-					<OrderedTable orders={data.orders} on:reconcile={handleReconcile} on:download={handleDownload} />
-				</div>
+					{/if}
 			</div>
 		</div>
 	</div>
