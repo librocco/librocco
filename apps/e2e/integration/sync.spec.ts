@@ -26,8 +26,15 @@ testOrders("should update UI when remote-only changes arrive via sync", async ({
 	const baseRowCount = customers.length + 1;
 	await expect(table.getByRole("row")).toHaveCount(baseRowCount);
 
-	// Wait for sync to stabilize - ensure we're not catching the initial sync
-	await page.waitForTimeout(1000);
+	// Wait for sync to complete by verifying the customers have been synced to the remote database.
+	// This ensures the schema exists on the remote before we try to write externally.
+	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	await expect
+		.poll(async () => {
+			const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
+			return remoteCustomers.length;
+		})
+		.toBe(customers.length);
 
 	// External database write — simulates an external process (like sqlite3 CLI) modifying the database.
 	// This uses a completely separate database connection that bypasses the sync server's internal cache,
