@@ -4,43 +4,64 @@ import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
 import { testBase as test, testOrders } from "@/helpers/fixtures";
 
-import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
+import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer, externalExec } from "@/helpers/cr-sqlite";
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
-testOrders("should update UI when remote-only changes arrive via sync", async ({ page, customers }) => {
-	// Set up sync
+test("should update UI when remote-only changes arrive via sync", async ({ page }) => {
+	// Use a database name with .sqlite3 extension to test the FSNotify bug.
+	// The bug: fileEventNameToDbId used path.parse().name which strips the extension,
+	// causing a mismatch between how listeners register (with extension) and how
+	// file events are converted to dbids (without extension).
+	const dbName = `sync-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
 	await page.evaluate(
-		([syncUrl]) => {
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
 			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
 			window.localStorage.setItem("librocco-sync-active", "true");
 		},
-		[syncUrl]
+		[syncUrl, dbName]
 	);
 	await page.reload();
 	await page.goto(baseURL);
+
+	// Create an initial customer so we can verify sync is working
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Initial Customer", email: "initial@test.com" });
+
 	await page.goto(appHash("customers"));
 
 	// Wait for initial load
 	const table = page.getByRole("table");
-	const baseRowCount = customers.length + 1;
-	await expect(table.getByRole("row")).toHaveCount(baseRowCount);
+	await expect(table.getByRole("row")).toHaveCount(2); // 1 customer + header
 
-	// Wait for sync to stabilize - ensure we're not catching the initial sync
-	await page.waitForTimeout(1000);
-
-	// Remote-only change — no local writes
+	// Wait for sync to complete by verifying the customer has been synced to the remote database.
+	// This ensures the schema exists on the remote before we try to write externally.
 	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
-	await remoteDbHandle.evaluate(upsertCustomer, {
-		id: 99,
-		displayId: "99",
-		fullname: "Remote Only Customer",
-		email: "remote@test.com"
-	});
+	await expect
+		.poll(async () => {
+			const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
+			return remoteCustomers.length;
+		})
+		.toBe(1);
+
+	// External database write — simulates an external process (like sqlite3 CLI) modifying the database.
+	// This uses a completely separate database connection that bypasses the sync server's internal cache,
+	// triggering FSNotify file watching. The bug being tested: fileEventNameToDbId was stripping the
+	// .sqlite3 extension, causing a mismatch between how listeners register (with extension) and how
+	// file events are converted to dbids (without extension).
+	const now = Date.now();
+	await externalExec(
+		page,
+		`INSERT OR REPLACE INTO customer (id, display_id, fullname, email, updated_at)
+		 VALUES (?, ?, ?, ?, ?)`,
+		[99, "99", "External Process Customer", "external@test.com", now]
+	);
 
 	// This must appear without any local interaction
 	// Use a short timeout - the UI should update promptly after sync, not after 30s of polling
-	await table.getByRole("row").filter({ hasText: "Remote Only Customer" }).waitFor({ timeout: 500 });
+	// With the bug (extension stripped), this will timeout because FSNotify won't find listeners
+	await table.getByRole("row").filter({ hasText: "External Process Customer" }).waitFor({ timeout: 500 });
 });
 
 testOrders("should sync client <-> sync server", async ({ page, customers }) => {

@@ -1,10 +1,18 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
+import Database from "better-sqlite3";
+import path from "path";
+import url from "url";
+import { extensionPath } from "@vlcn.io/crsqlite";
 
 import type { Page } from "@playwright/test";
 
 import type { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
 
 import type { BookData } from "@librocco/shared";
+
+/** Path to the sync server's database folder. Defaults to apps/sync-server/test-dbs from repo root. */
+const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
+const SYNC_SERVER_DB_FOLDER = process.env.SYNC_SERVER_DB_FOLDER || path.resolve(__dirname, "../../sync-server/test-dbs");
 
 // Extend the window object with the db
 declare global {
@@ -76,6 +84,44 @@ export async function getRemoteDbHandle(page: Page, url: string) {
 		},
 		[url]
 	);
+}
+
+/**
+ * Executes SQL on the sync server's database using a completely separate connection.
+ * This simulates an external process (like sqlite3 CLI) writing to the database,
+ * which triggers FSNotify file watching. Use this to test that external database
+ * changes propagate to connected clients.
+ *
+ * Uses SYNC_SERVER_DB_FOLDER env var (defaults to ./apps/sync-server/test-dbs).
+ *
+ * @param page - Playwright page (used to get the database name)
+ * @param sql - SQL statement to execute
+ * @param bind - Bind parameters for the SQL statement
+ * @throws Error if database folder doesn't exist or database name can't be determined
+ */
+export async function externalExec(page: Page, sql: string, bind: any[] = []): Promise<void> {
+	// Get the database name from the page
+	const dbname = await page.evaluate(() => {
+		const w = window as any;
+		return w._db?.filename || JSON.parse(window.localStorage.getItem("librocco-current-db") || '""');
+	});
+
+	if (!dbname) {
+		throw new Error("Could not determine database name for external-exec");
+	}
+
+	const dbPath = path.resolve(SYNC_SERVER_DB_FOLDER, dbname);
+
+	// Open a completely separate connection with cr-sqlite extension loaded
+	// This bypasses the sync server's internal cache and triggers FSNotify
+	const db = new Database(dbPath);
+	try {
+		db.loadExtension(extensionPath);
+		const stmt = db.prepare(sql);
+		stmt.run(...bind);
+	} finally {
+		db.close();
+	}
 }
 
 /**
