@@ -84,31 +84,41 @@ export async function getRemoteDbHandle(page: Page, url: string) {
  * which triggers FSNotify file watching. Use this to test that external database
  * changes propagate to connected clients.
  *
- * @param page - Playwright page (used to get the database name)
+ * @param page - Playwright page (used to get the database name and make the request)
  * @param url - Base URL of the sync server (e.g., "http://127.0.0.1:3000")
  * @param sql - SQL statement to execute
  * @param bind - Bind parameters for the SQL statement
  */
 export async function externalExec(page: Page, url: string, sql: string, bind: any[] = []): Promise<void> {
-	const dbname = await page.evaluate(() => {
-		const w = window as any;
-		return w._db?.filename || JSON.parse(window.localStorage.getItem("librocco-current-db") || '""');
-	});
+	// Execute the fetch from within the page context to leverage Playwright's ignoreHTTPSErrors setting
+	const result = await page.evaluate(
+		async ([url, sql, bind]) => {
+			const w = window as any;
+			const dbname = w._db?.filename || JSON.parse(window.localStorage.getItem("librocco-current-db") || '""');
 
-	if (!dbname) {
-		throw new Error("Could not determine database name for external-exec");
-	}
+			if (!dbname) {
+				return { error: "Could not determine database name for external-exec" };
+			}
 
-	const execUrl = new URL(`/${dbname}/external-exec`, url);
-	const response = await fetch(execUrl.toString(), {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ sql, bind })
-	});
+			const execUrl = new URL(`/${dbname}/external-exec`, url);
+			const response = await fetch(execUrl.toString(), {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ sql, bind })
+			});
 
-	if (!response.ok) {
-		const error = await response.json();
-		throw new Error(`external-exec failed: ${error.message || response.statusText}`);
+			if (!response.ok) {
+				const error = await response.json();
+				return { error: error.message || response.statusText };
+			}
+
+			return { success: true };
+		},
+		[url, sql, bind] as const
+	);
+
+	if ("error" in result && result.error) {
+		throw new Error(`external-exec failed: ${result.error}`);
 	}
 }
 
