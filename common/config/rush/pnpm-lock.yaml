@@ -34,6 +34,9 @@ importers:
       '@playwright/test':
         specifier: ~1.50.0
         version: 1.50.1
+      '@types/better-sqlite3':
+        specifier: ~7.6.11
+        version: 7.6.13
       '@types/node':
         specifier: ~20.4.1
         version: 20.4.10
@@ -43,9 +46,15 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.22.0
         version: 8.53.0(eslint@8.57.1)(typescript@5.9.3)
+      '@vlcn.io/crsqlite':
+        specifier: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
+        version: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
       '@vlcn.io/crsqlite-wasm':
         specifier: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
         version: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
+      better-sqlite3:
+        specifier: ~11.4.0
+        version: 11.4.0
       eslint:
         specifier: ^8.13.0
         version: 8.57.1
@@ -2149,7 +2158,7 @@ packages:
     version: 0.2.0
 
   '@vlcn.io/ws-server@file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz':
-    resolution: {integrity: sha512-n7+ZqiNqPXgXxwIGVJpgl5+T2XgxQJZ271SkKTPSN6tKWr5uFxQXH8+0i9Cl71RlcMFf/tEl/wCjkWpnsp+DIA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
+    resolution: {integrity: sha512-B/cHi4lIq6aIRg3Y6A8du1abT/7D4qeF1gXObqomnlliAQal6YpX4JDa7AmT/3fy1nyNDH42Y5KzfTDh5aLEyQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
     version: 0.2.2
 
   '@vlcn.io/xplat-api@file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz':

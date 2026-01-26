@@ -3,7 +3,6 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
-import Database from "better-sqlite3";
 
 import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
 import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack.js";
@@ -79,56 +78,6 @@ app.post("/:dbname/exec", async (req, res) => {
 			return res.status(400).json({ isSQLiteError: true, message: err.message, code: err.code });
 		}
 	});
-});
-
-/**
- * External exec endpoint - simulates an external process writing to the database.
- * Opens a completely separate database connection (bypassing ws-server's internal cache)
- * to trigger FSNotify file watching. This is used by e2e tests to verify that external
- * database changes propagate to connected clients.
- */
-app.post("/:dbname/external-exec", async (req, res) => {
-	if (!IS_DEV) {
-		return res.status(403).json({ message: "Not allowed in production mode" });
-	}
-
-	const dbname = req.params.dbname;
-	const dbPath = path.resolve(wsConfig.dbFolder!, dbname);
-
-	if (!fs.existsSync(dbPath)) {
-		return res.status(404).json({ message: `Database not found: ${dbPath}` });
-	}
-
-	let db: Database.Database | null = null;
-	try {
-		// Open a completely separate connection - this bypasses ws-server's cache
-		// and will trigger FSNotify when we write
-		db = new Database(dbPath);
-
-		const { sql, bind = [] } = req.body;
-		const stmt = db.prepare(sql);
-
-		if (stmt.reader) {
-			const rows = stmt.all(...bind);
-			db.close();
-			return res.json({ rows });
-		}
-
-		stmt.run(...bind);
-		db.close();
-		db = null;
-
-		return res.json({ rows: null, message: "External write completed" });
-	} catch (err: any) {
-		if (db) {
-			try {
-				db.close();
-			} catch {
-				// Ignore close errors
-			}
-		}
-		return res.status(400).json({ isSQLiteError: true, message: err.message, code: err.code });
-	}
 });
 
 app.get("/:dbname/file", async (req, res) => {

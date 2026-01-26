@@ -1,10 +1,16 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
+import Database from "better-sqlite3";
+import path from "path";
+import { extensionPath } from "@vlcn.io/crsqlite";
 
 import type { Page } from "@playwright/test";
 
 import type { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
 
 import type { BookData } from "@librocco/shared";
+
+/** Path to the sync server's database folder. Set via SYNC_SERVER_DB_FOLDER env var. */
+const SYNC_SERVER_DB_FOLDER = process.env.SYNC_SERVER_DB_FOLDER || "./apps/sync-server/test-dbs";
 
 // Extend the window object with the db
 declare global {
@@ -79,46 +85,40 @@ export async function getRemoteDbHandle(page: Page, url: string) {
 }
 
 /**
- * Executes SQL on the sync server using a completely separate database connection.
+ * Executes SQL on the sync server's database using a completely separate connection.
  * This simulates an external process (like sqlite3 CLI) writing to the database,
  * which triggers FSNotify file watching. Use this to test that external database
  * changes propagate to connected clients.
  *
- * @param page - Playwright page (used to get the database name and make the request)
- * @param url - Base URL of the sync server (e.g., "http://127.0.0.1:3000")
+ * Uses SYNC_SERVER_DB_FOLDER env var (defaults to ./apps/sync-server/test-dbs).
+ *
+ * @param page - Playwright page (used to get the database name)
  * @param sql - SQL statement to execute
  * @param bind - Bind parameters for the SQL statement
+ * @throws Error if database folder doesn't exist or database name can't be determined
  */
-export async function externalExec(page: Page, url: string, sql: string, bind: any[] = []): Promise<void> {
-	// Execute the fetch from within the page context to leverage Playwright's ignoreHTTPSErrors setting
-	const result = await page.evaluate(
-		async ([url, sql, bind]) => {
-			const w = window as any;
-			const dbname = w._db?.filename || JSON.parse(window.localStorage.getItem("librocco-current-db") || '""');
+export async function externalExec(page: Page, sql: string, bind: any[] = []): Promise<void> {
+	// Get the database name from the page
+	const dbname = await page.evaluate(() => {
+		const w = window as any;
+		return w._db?.filename || JSON.parse(window.localStorage.getItem("librocco-current-db") || '""');
+	});
 
-			if (!dbname) {
-				return { error: "Could not determine database name for external-exec" };
-			}
+	if (!dbname) {
+		throw new Error("Could not determine database name for external-exec");
+	}
 
-			const execUrl = new URL(`/${dbname}/external-exec`, url);
-			const response = await fetch(execUrl.toString(), {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ sql, bind })
-			});
+	const dbPath = path.resolve(SYNC_SERVER_DB_FOLDER, dbname);
 
-			if (!response.ok) {
-				const error = await response.json();
-				return { error: error.message || response.statusText };
-			}
-
-			return { success: true };
-		},
-		[url, sql, bind] as const
-	);
-
-	if ("error" in result && result.error) {
-		throw new Error(`external-exec failed: ${result.error}`);
+	// Open a completely separate connection with cr-sqlite extension loaded
+	// This bypasses the sync server's internal cache and triggers FSNotify
+	const db = new Database(dbPath);
+	try {
+		db.loadExtension(extensionPath);
+		const stmt = db.prepare(sql);
+		stmt.run(...bind);
+	} finally {
+		db.close();
 	}
 }
 
