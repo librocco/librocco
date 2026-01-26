@@ -4,14 +4,7 @@ import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
 import { testBase as test, testOrders } from "@/helpers/fixtures";
 
-import {
-	getDbHandle,
-	getCustomerOrderList,
-	getRemoteDbHandle,
-	upsertCustomer,
-	externalExec,
-	waitForTableInFile
-} from "@/helpers/cr-sqlite";
+import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
@@ -42,22 +35,29 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	const table = page.getByRole("table");
 	await expect(table.getByRole("row")).toHaveCount(2); // 1 customer + header
 
-	// Wait for sync to complete by verifying the customer table exists in the database file.
-	// We check the file directly (not via HTTP API) because externalExec accesses the file directly.
-	await waitForTableInFile(page, "customer");
+	// Wait for sync to establish by verifying the customer has been synced to the remote via HTTP API.
+	// This ensures the WebSocket connection is established and data is synced.
+	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	await expect
+		.poll(async () => {
+			const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
+			return remoteCustomers.length;
+		})
+		.toBe(1);
 
-	// External database write — simulates an external process (like sqlite3 CLI) modifying the database.
-	// This uses a completely separate database connection that bypasses the sync server's internal cache,
-	// triggering FSNotify file watching. The bug being tested: fileEventNameToDbId was stripping the
-	// .sqlite3 extension, causing a mismatch between how listeners register (with extension) and how
+	// Insert a new customer directly on the remote database via HTTP API.
+	// This triggers the sync server's touchHack which touches the database file,
+	// causing FSNotify to detect the change and notify connected clients.
+	// The bug being tested: fileEventNameToDbId was stripping the .sqlite3 extension,
+	// causing a mismatch between how listeners register (with extension) and how
 	// file events are converted to dbids (without extension).
 	const now = Date.now();
-	await externalExec(
-		page,
-		`INSERT OR REPLACE INTO customer (id, display_id, fullname, email, updated_at)
-		 VALUES (?, ?, ?, ?, ?)`,
-		[99, "99", "External Process Customer", "external@test.com", now]
-	);
+	await remoteDbHandle.evaluate(upsertCustomer, {
+		id: 99,
+		displayId: "99",
+		fullname: "External Process Customer",
+		email: "external@test.com"
+	});
 
 	// This must appear without any local interaction
 	// Use a short timeout - the UI should update promptly after sync, not after 30s of polling

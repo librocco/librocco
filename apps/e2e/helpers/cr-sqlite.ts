@@ -1,18 +1,10 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
-import Database from "better-sqlite3";
-import path from "path";
-import url from "url";
-import { extensionPath } from "@vlcn.io/crsqlite";
 
 import type { Page } from "@playwright/test";
 
 import type { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
 
 import type { BookData } from "@librocco/shared";
-
-/** Path to the sync server's database folder. Defaults to apps/sync-server/test-dbs from repo root. */
-const __dirname = url.fileURLToPath(new URL(".", import.meta.url));
-const SYNC_SERVER_DB_FOLDER = process.env.SYNC_SERVER_DB_FOLDER || path.resolve(__dirname, "../../sync-server/test-dbs");
 
 // Extend the window object with the db
 declare global {
@@ -84,83 +76,6 @@ export async function getRemoteDbHandle(page: Page, url: string) {
 		},
 		[url]
 	);
-}
-
-/**
- * Gets the database path for external access.
- */
-async function getExternalDbPath(page: Page): Promise<string> {
-	const dbname = await page.evaluate(() => {
-		const w = window as any;
-		return w._db?.filename || JSON.parse(window.localStorage.getItem("librocco-current-db") || '""');
-	});
-
-	if (!dbname) {
-		throw new Error("Could not determine database name for external-exec");
-	}
-
-	return path.resolve(SYNC_SERVER_DB_FOLDER, dbname);
-}
-
-/**
- * Waits for a table to exist in the sync server's database file.
- * This polls the file directly (bypassing the sync server) until the table exists.
- *
- * @param page - Playwright page (used to get the database name)
- * @param tableName - Name of the table to wait for
- * @param timeout - Maximum time to wait in milliseconds (default: 10000)
- */
-export async function waitForTableInFile(page: Page, tableName: string, timeout = 10000): Promise<void> {
-	const dbPath = await getExternalDbPath(page);
-	const startTime = Date.now();
-
-	while (Date.now() - startTime < timeout) {
-		try {
-			const db = new Database(dbPath);
-			try {
-				db.loadExtension(extensionPath);
-				const result = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`).get(tableName);
-				if (result) {
-					return; // Table exists
-				}
-			} finally {
-				db.close();
-			}
-		} catch {
-			// File doesn't exist yet or other error, keep polling
-		}
-		await new Promise((resolve) => setTimeout(resolve, 100));
-	}
-
-	throw new Error(`Timeout waiting for table '${tableName}' to exist in database file`);
-}
-
-/**
- * Executes SQL on the sync server's database using a completely separate connection.
- * This simulates an external process (like sqlite3 CLI) writing to the database,
- * which triggers FSNotify file watching. Use this to test that external database
- * changes propagate to connected clients.
- *
- * Uses SYNC_SERVER_DB_FOLDER env var (defaults to ./apps/sync-server/test-dbs).
- *
- * @param page - Playwright page (used to get the database name)
- * @param sql - SQL statement to execute
- * @param bind - Bind parameters for the SQL statement
- * @throws Error if database folder doesn't exist or database name can't be determined
- */
-export async function externalExec(page: Page, sql: string, bind: any[] = []): Promise<void> {
-	const dbPath = await getExternalDbPath(page);
-
-	// Open a completely separate connection with cr-sqlite extension loaded
-	// This bypasses the sync server's internal cache and triggers FSNotify
-	const db = new Database(dbPath);
-	try {
-		db.loadExtension(extensionPath);
-		const stmt = db.prepare(sql);
-		stmt.run(...bind);
-	} finally {
-		db.close();
-	}
 }
 
 /**
