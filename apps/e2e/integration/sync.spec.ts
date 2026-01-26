@@ -8,6 +8,41 @@ import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } 
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
+testOrders("should update UI when remote-only changes arrive via sync", async ({ page, customers }) => {
+	// Set up sync
+	await page.evaluate(
+		([syncUrl]) => {
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			window.localStorage.setItem("librocco-sync-active", "true");
+		},
+		[syncUrl]
+	);
+	await page.reload();
+	await page.goto(baseURL);
+	await page.goto(appHash("customers"));
+
+	// Wait for initial load
+	const table = page.getByRole("table");
+	const baseRowCount = customers.length + 1;
+	await expect(table.getByRole("row")).toHaveCount(baseRowCount);
+
+	// Wait for sync to stabilize - ensure we're not catching the initial sync
+	await page.waitForTimeout(1000);
+
+	// Remote-only change — no local writes
+	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	await remoteDbHandle.evaluate(upsertCustomer, {
+		id: 99,
+		displayId: "99",
+		fullname: "Remote Only Customer",
+		email: "remote@test.com"
+	});
+
+	// This must appear without any local interaction
+	// Use a short timeout - the UI should update promptly after sync, not after 30s of polling
+	await table.getByRole("row").filter({ hasText: "Remote Only Customer" }).waitFor({ timeout: 500 });
+});
+
 testOrders("should sync client <-> sync server", async ({ page, customers }) => {
 	// Start the sync
 	await page.evaluate(
