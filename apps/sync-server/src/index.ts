@@ -105,31 +105,6 @@ app.post("/:dbname/external-exec", async (req, res) => {
 		// and will trigger FSNotify when we write
 		db = new Database(dbPath);
 
-		// Load cr-sqlite extension if available
-		try {
-			db.loadExtension("crsqlite");
-		} catch {
-			// Extension might not be in PATH, try common locations
-			const extPaths = [
-				"/usr/local/lib/crsqlite",
-				"/usr/lib/crsqlite",
-				path.resolve(__dirname, "../../../3rd-party/artefacts/crsqlite")
-			];
-			let loaded = false;
-			for (const extPath of extPaths) {
-				try {
-					db.loadExtension(extPath);
-					loaded = true;
-					break;
-				} catch {
-					// Try next path
-				}
-			}
-			if (!loaded) {
-				console.log("Warning: Could not load cr-sqlite extension for external-exec");
-			}
-		}
-
 		const { sql, bind = [] } = req.body;
 		const stmt = db.prepare(sql);
 
