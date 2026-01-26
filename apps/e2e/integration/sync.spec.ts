@@ -4,7 +4,7 @@ import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
 import { testBase as test, testOrders } from "@/helpers/fixtures";
 
-import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer, externalExec } from "@/helpers/cr-sqlite";
+import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer, externalExec, waitForTableInFile } from "@/helpers/cr-sqlite";
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
@@ -35,15 +35,9 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	const table = page.getByRole("table");
 	await expect(table.getByRole("row")).toHaveCount(2); // 1 customer + header
 
-	// Wait for sync to complete by verifying the customer has been synced to the remote database.
-	// This ensures the schema exists on the remote before we try to write externally.
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
-	await expect
-		.poll(async () => {
-			const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
-			return remoteCustomers.length;
-		})
-		.toBe(1);
+	// Wait for sync to complete by verifying the customer table exists in the database file.
+	// We check the file directly (not via HTTP API) because externalExec accesses the file directly.
+	await waitForTableInFile(page, "customer");
 
 	// External database write — simulates an external process (like sqlite3 CLI) modifying the database.
 	// This uses a completely separate database connection that bypasses the sync server's internal cache,
