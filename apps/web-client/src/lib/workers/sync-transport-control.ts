@@ -77,7 +77,7 @@ class ChangesProcessor {
 	#running = false;
 
 	onChunk: ((task: ChunkTask) => Promise<void>) | null = null;
-	onDone: (() => void) | null = null;
+	onDone: ((hadChanges: boolean) => void) | null = null;
 
 	constructor(config: SyncConfig) {
 		this.#maxChunkSize = config.maxChunkSize;
@@ -97,10 +97,11 @@ class ChangesProcessor {
 		}
 
 		// Cleanup
+		const hadChanges = i > 0;
 		this.#queue = [];
 		this.#running = false;
 
-		this.onDone?.();
+		this.onDone?.(hadChanges);
 	};
 
 	enqueue({ _tag, sender, changes, since }: Changes) {
@@ -122,7 +123,7 @@ class ChangesProcessor {
 	stop() {
 		this.#active = false;
 		this.#queue = [];
-		this.onDone?.();
+		this.onDone?.(false);
 	}
 }
 
@@ -197,8 +198,11 @@ export class SyncTransportController implements Transport {
 		await this.onChangesReceived?.(chunk);
 	}
 
-	private _onDone() {
+	private _onDone(hadChanges: boolean) {
 		this.#progressEmitter.notifyProgress({ active: false, nProcessed: 0, nTotal: 0 });
+		if (hadChanges) {
+			this.#progressEmitter.notifyChangesReceived({ timestamp: Date.now() });
+		}
 	}
 
 	start(...params: Parameters<Transport["start"]>) {

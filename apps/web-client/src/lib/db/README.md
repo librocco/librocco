@@ -405,6 +405,43 @@ rx.onRange(["customers", "notes"], () => {...}) // Notify on any change to "cust
 rx.onPoint("customers", 1 , () => {...}) // Notify only on change to entry in "customers" table with rowid of 1
 ```
 
+#### Page Subscription Pattern (UI Reactivity)
+
+For pages to react to database changes (both local and from sync), they must subscribe using `onRange`. This is essential for the UI to update when:
+
+1. **Local changes** - Changes made directly in the browser trigger the underlying `TblRx` update hook
+2. **Sync changes** - Changes from the sync server trigger `app.db.rx.notifyAll()` which fires all registered listeners
+
+**Example pattern for Svelte pages:**
+
+```svelte
+<script lang="ts">
+  import { onMount } from "svelte";
+  import { invalidate } from "$app/navigation";
+  import { getDbRx } from "$lib/app/db";
+
+  // ... other imports and setup
+
+  onMount(() => {
+    // Subscribe to changes on relevant tables
+    // When changes occur (local or from sync), invalidate the page data
+    const disposer = getDbRx(app).onRange(["book", "book_transaction"], () => {
+      invalidate("note:books"); // This re-runs the page's load function
+    });
+
+    return disposer; // Cleanup on unmount
+  });
+</script>
+```
+
+**Important:** Every page that displays data from the database should:
+
+1. Subscribe to the relevant tables using `onRange` in `onMount`
+2. Call SvelteKit's `invalidate()` with the appropriate data key to trigger a re-query
+3. Return the disposer function to clean up on unmount
+
+Without this subscription, the page will not update when sync changes arrive from the server.
+
 ### Some enhancements - How we control the sync
 
 Using the default sync setup works out of the box. However, there were some issues with it:
