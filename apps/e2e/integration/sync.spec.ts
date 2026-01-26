@@ -51,7 +51,6 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	// The bug being tested: fileEventNameToDbId was stripping the .sqlite3 extension,
 	// causing a mismatch between how listeners register (with extension) and how
 	// file events are converted to dbids (without extension).
-	const now = Date.now();
 	await remoteDbHandle.evaluate(upsertCustomer, {
 		id: 99,
 		displayId: "99",
