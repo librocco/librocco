@@ -8,25 +8,34 @@ import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer, e
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
-testOrders("should update UI when remote-only changes arrive via sync", async ({ page, customers }) => {
-	// Set up sync
+test("should update UI when remote-only changes arrive via sync", async ({ page }) => {
+	// Use a database name with .sqlite3 extension to test the FSNotify bug.
+	// The bug: fileEventNameToDbId used path.parse().name which strips the extension,
+	// causing a mismatch between how listeners register (with extension) and how
+	// file events are converted to dbids (without extension).
+	const dbName = `sync-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
 	await page.evaluate(
-		([syncUrl]) => {
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
 			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
 			window.localStorage.setItem("librocco-sync-active", "true");
 		},
-		[syncUrl]
+		[syncUrl, dbName]
 	);
 	await page.reload();
 	await page.goto(baseURL);
+
+	// Create an initial customer so we can verify sync is working
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Initial Customer", email: "initial@test.com" });
+
 	await page.goto(appHash("customers"));
 
 	// Wait for initial load
 	const table = page.getByRole("table");
-	const baseRowCount = customers.length + 1;
-	await expect(table.getByRole("row")).toHaveCount(baseRowCount);
+	await expect(table.getByRole("row")).toHaveCount(2); // 1 customer + header
 
-	// Wait for sync to complete by verifying the customers have been synced to the remote database.
+	// Wait for sync to complete by verifying the customer has been synced to the remote database.
 	// This ensures the schema exists on the remote before we try to write externally.
 	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
 	await expect
@@ -34,7 +43,7 @@ testOrders("should update UI when remote-only changes arrive via sync", async ({
 			const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
 			return remoteCustomers.length;
 		})
-		.toBe(customers.length);
+		.toBe(1);
 
 	// External database write — simulates an external process (like sqlite3 CLI) modifying the database.
 	// This uses a completely separate database connection that bypasses the sync server's internal cache,
