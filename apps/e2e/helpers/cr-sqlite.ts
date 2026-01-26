@@ -79,6 +79,40 @@ export async function getRemoteDbHandle(page: Page, url: string) {
 }
 
 /**
+ * Executes SQL on the sync server using a completely separate database connection.
+ * This simulates an external process (like sqlite3 CLI) writing to the database,
+ * which triggers FSNotify file watching. Use this to test that external database
+ * changes propagate to connected clients.
+ *
+ * @param page - Playwright page (used to get the database name)
+ * @param url - Base URL of the sync server (e.g., "http://127.0.0.1:3000")
+ * @param sql - SQL statement to execute
+ * @param bind - Bind parameters for the SQL statement
+ */
+export async function externalExec(page: Page, url: string, sql: string, bind: any[] = []): Promise<void> {
+	const dbname = await page.evaluate(() => {
+		const w = window as any;
+		return w._db?.filename || JSON.parse(window.localStorage.getItem("librocco-current-db") || '""');
+	});
+
+	if (!dbname) {
+		throw new Error("Could not determine database name for external-exec");
+	}
+
+	const execUrl = new URL(`/${dbname}/external-exec`, url);
+	const response = await fetch(execUrl.toString(), {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ sql, bind })
+	});
+
+	if (!response.ok) {
+		const error = await response.json();
+		throw new Error(`external-exec failed: ${error.message || response.statusText}`);
+	}
+}
+
+/**
  * @see apps/web-client/src/lib/db/cr-sqlite/books.ts:upsertBook
  */
 export async function upsertBook(db: DB, book: BookData): Promise<void> {

@@ -4,7 +4,7 @@ import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
 import { testBase as test, testOrders } from "@/helpers/fixtures";
 
-import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
+import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer, externalExec } from "@/helpers/cr-sqlite";
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
@@ -29,18 +29,24 @@ testOrders("should update UI when remote-only changes arrive via sync", async ({
 	// Wait for sync to stabilize - ensure we're not catching the initial sync
 	await page.waitForTimeout(1000);
 
-	// Remote-only change — no local writes
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
-	await remoteDbHandle.evaluate(upsertCustomer, {
-		id: 99,
-		displayId: "99",
-		fullname: "Remote Only Customer",
-		email: "remote@test.com"
-	});
+	// External database write — simulates an external process (like sqlite3 CLI) modifying the database.
+	// This uses a completely separate database connection that bypasses the sync server's internal cache,
+	// triggering FSNotify file watching. The bug being tested: fileEventNameToDbId was stripping the
+	// .sqlite3 extension, causing a mismatch between how listeners register (with extension) and how
+	// file events are converted to dbids (without extension).
+	const now = Date.now();
+	await externalExec(
+		page,
+		remoteDbURL,
+		`INSERT OR REPLACE INTO customer (id, display_id, fullname, email, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?, ?)`,
+		[99, "99", "External Process Customer", "external@test.com", now, now]
+	);
 
 	// This must appear without any local interaction
 	// Use a short timeout - the UI should update promptly after sync, not after 30s of polling
-	await table.getByRole("row").filter({ hasText: "Remote Only Customer" }).waitFor({ timeout: 500 });
+	// With the bug (extension stripped), this will timeout because FSNotify won't find listeners
+	await table.getByRole("row").filter({ hasText: "External Process Customer" }).waitFor({ timeout: 500 });
 });
 
 testOrders("should sync client <-> sync server", async ({ page, customers }) => {
