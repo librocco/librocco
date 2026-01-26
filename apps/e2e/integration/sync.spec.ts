@@ -38,9 +38,9 @@ testOrders("should update UI when remote-only changes arrive via sync", async ({
 	await externalExec(
 		page,
 		remoteDbURL,
-		`INSERT OR REPLACE INTO customer (id, display_id, fullname, email, created_at, updated_at)
-		 VALUES (?, ?, ?, ?, ?, ?)`,
-		[99, "99", "External Process Customer", "external@test.com", now, now]
+		`INSERT OR REPLACE INTO customer (id, display_id, fullname, email, updated_at)
+		 VALUES (?, ?, ?, ?, ?)`,
+		[99, "99", "External Process Customer", "external@test.com", now]
 	);
 
 	// This must appear without any local interaction
