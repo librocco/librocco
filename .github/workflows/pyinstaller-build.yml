@@ -250,7 +250,7 @@ jobs:
       run: |
         echo "Waiting for Caddy to respond..."
         for i in {1..60}; do
-          if curl --silent --show-error --fail --insecure https://localhost:8080/; then
+          if curl --silent --show-error --fail --insecure https://localhost:8433/; then
             echo "Caddy is responding."
             exit 0
           fi
@@ -262,7 +262,7 @@ jobs:
     - name: Verify web client is accessible
       run: |
         echo "Checking if web client is being served..."
-        HTTP_CODE=$(curl --silent --output /dev/null --write-out "%{http_code}" --insecure https://localhost:8080/)
+        HTTP_CODE=$(curl --silent --output /dev/null --write-out "%{http_code}" --insecure https://localhost:8433/)
         if [ "$HTTP_CODE" -eq 200 ]; then
           echo "✓ Web client is accessible (HTTP $HTTP_CODE)"
         else

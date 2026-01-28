@@ -8,6 +8,63 @@ import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } 
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
+test("should update UI when remote-only changes arrive via sync", async ({ page }) => {
+	// Use a database name with .sqlite3 extension to test the FSNotify bug.
+	// The bug: fileEventNameToDbId used path.parse().name which strips the extension,
+	// causing a mismatch between how listeners register (with extension) and how
+	// file events are converted to dbids (without extension).
+	const dbName = `sync-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			window.localStorage.setItem("librocco-sync-active", "true");
+		},
+		[syncUrl, dbName]
+	);
+	await page.reload();
+	await page.goto(baseURL);
+
+	// Create an initial customer so we can verify sync is working
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Initial Customer", email: "initial@test.com" });
+
+	await page.goto(appHash("customers"));
+
+	// Wait for initial load
+	const table = page.getByRole("table");
+	await expect(table.getByRole("row")).toHaveCount(2); // 1 customer + header
+
+	// Wait for sync to establish by verifying the customer has been synced to the remote via HTTP API.
+	// This ensures the WebSocket connection is established and data is synced.
+	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	await expect
+		.poll(async () => {
+			const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
+			return remoteCustomers.length;
+		})
+		.toBe(1);
+
+	// Insert a new customer directly on the remote database via HTTP API.
+	// This triggers the sync server's touchHack which touches the database file,
+	// causing FSNotify to detect the change and notify connected clients.
+	// The bug being tested: fileEventNameToDbId was stripping the .sqlite3 extension,
+	// causing a mismatch between how listeners register (with extension) and how
+	// file events are converted to dbids (without extension).
+	await remoteDbHandle.evaluate(upsertCustomer, {
+		id: 99,
+		displayId: "99",
+		fullname: "External Process Customer",
+		email: "external@test.com"
+	});
+
+	// This must appear without any local interaction
+	// Use a short timeout - the UI should update promptly after sync, not after 30s of polling
+	// With the bug (extension stripped), this will timeout because FSNotify won't find listeners
+	// Increased to 1500ms to account for CI latency while still being strict enough to catch issues
+	await table.getByRole("row").filter({ hasText: "External Process Customer" }).waitFor({ timeout: 1500 });
+});
+
 testOrders("should sync client <-> sync server", async ({ page, customers }) => {
 	// Start the sync
 	await page.evaluate(

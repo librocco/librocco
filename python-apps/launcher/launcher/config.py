@@ -10,7 +10,7 @@ from platformdirs import user_data_dir, user_config_dir
 import platform
 
 # Server ports (hardcoded, not user-configurable)
-CADDY_PORT = 8080
+CADDY_PORT = 8433
 SYNC_SERVER_PORT = 3000
 
 

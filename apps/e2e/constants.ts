@@ -25,7 +25,7 @@ export function getPort(): Promise<number> {
 
 const port = await getPort();
 // In CI, use Caddy's HTTPS endpoint; locally use detected dev/preview server
-export const baseURL = IS_CI ? `https://localhost:8080/preview/` : `http://localhost:${port}/preview/`;
+export const baseURL = IS_CI ? `https://localhost:8433/preview/` : `http://localhost:${port}/preview/`;
 export const HASHES = {
 	debug: "#/debug/",
 	// Inventory mgmt
@@ -57,5 +57,5 @@ export const assertionTimeout = IS_CI ? 15000 : undefined;
 
 // In CI, use Caddy's HTTPS proxy to avoid mixed content issues (page loads via HTTPS)
 // Locally, connect directly to sync server on port 3000
-export const remoteDbURL = IS_CI ? "https://localhost:8080/" : "http://127.0.0.1:3000/";
-export const syncUrl = IS_CI ? "wss://localhost:8080/sync" : "ws://127.0.0.1:3000/sync";
+export const remoteDbURL = IS_CI ? "https://localhost:8433/" : "http://127.0.0.1:3000/";
+export const syncUrl = IS_CI ? "wss://localhost:8433/sync" : "ws://127.0.0.1:3000/sync";

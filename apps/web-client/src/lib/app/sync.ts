@@ -157,6 +157,16 @@ export async function initializeSync(app: App, vfs: VFSWhitelist) {
 		sync.worker.start(vfs);
 		updateSyncConnectivityMonitor(sync.worker);
 
+		// Subscribe to sync changes to notify UI subscribers (debounced to avoid UI thrashing)
+		let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+		sync.worker.onChangesReceived(() => {
+			if (debounceTimer) clearTimeout(debounceTimer);
+			debounceTimer = setTimeout(() => {
+				app.db.rx.notifyAll();
+				debounceTimer = null;
+			}, 100);
+		});
+
 		// Wait for the worker to be initialised
 		await sync.worker.initPromise;
 		sync.state.set(AppSyncState.Idle);

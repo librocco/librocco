@@ -9,6 +9,12 @@ export interface IAppDbRx {
 
 	onInvalidate(cb: () => void): () => void;
 	invalidate(db: DBAsync): void;
+
+	/**
+	 * Manually trigger all registered listeners (range, point, any).
+	 * Use this when external changes (e.g., from sync) need to notify subscribers.
+	 */
+	notifyAll(): void;
 }
 
 type RxListenerPoint = {
@@ -88,6 +94,24 @@ class RxListenerManager {
 			}
 		}
 	}
+
+	/**
+	 * Manually trigger all registered listener callbacks.
+	 * Used when external changes (e.g., from sync worker) need to notify subscribers.
+	 */
+	notifyAll() {
+		for (const listener of this.#listeners.values()) {
+			switch (listener._kind) {
+				case "point":
+				case "range":
+					listener.cb([]);
+					break;
+				case "any":
+					listener.cb([], "thisProcess");
+					break;
+			}
+		}
+	}
 }
 
 export class AppDbRx implements IAppDbRx {
@@ -140,5 +164,13 @@ export class AppDbRx implements IAppDbRx {
 		return () => {
 			this.#invalidateListeners.delete(cb);
 		};
+	}
+
+	/**
+	 * Manually trigger all registered listeners.
+	 * Use this when sync changes arrive from the worker to notify all subscribers.
+	 */
+	notifyAll(): void {
+		this.#rxListeners.notifyAll();
 	}
 }
