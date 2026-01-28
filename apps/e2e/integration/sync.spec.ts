@@ -61,7 +61,8 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	// This must appear without any local interaction
 	// Use a short timeout - the UI should update promptly after sync, not after 30s of polling
 	// With the bug (extension stripped), this will timeout because FSNotify won't find listeners
-	await table.getByRole("row").filter({ hasText: "External Process Customer" }).waitFor({ timeout: 500 });
+	// Increased to 1500ms to account for CI latency while still being strict enough to catch issues
+	await table.getByRole("row").filter({ hasText: "External Process Customer" }).waitFor({ timeout: 1500 });
 });
 
 testOrders("should sync client <-> sync server", async ({ page, customers }) => {

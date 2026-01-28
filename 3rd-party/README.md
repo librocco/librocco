@@ -4,7 +4,7 @@ This directory contains forked/modified third-party packages that are used by th
 
 ## Directory Structure
 
-```
+```text
 3rd-party/
 ├── artefacts/                    # Pre-built .tgz packages (committed to git)
 │   ├── vlcn.io-crsqlite-*.tgz
@@ -98,17 +98,17 @@ For changes that should persist:
 
 ### Troubleshooting
 
-**"workspace:* dependency not found" errors during rush update**
+### "workspace:* dependency not found" errors during rush update
 
 This happens when `npm pack` is run without first resolving workspace dependencies. The `build_vlcn.sh` script handles this by running `pnpm install` in the vlcn.io monorepo before packing.
 
-**Changes not picked up after editing source**
+### Changes not picked up after editing source
 
 1. Make sure you ran `pnpm build` in the package directory
 2. Make sure you regenerated the `.tgz` file
 3. Run `rush update --purge` to force reinstall
 
-**Hash mismatch errors in CI**
+### Hash mismatch errors in CI
 
 This indicates the `artefacts_version.txt` doesn't match `artefacts/version-cached.txt`. This can happen if:
 - Submodules were updated without rebuilding artefacts

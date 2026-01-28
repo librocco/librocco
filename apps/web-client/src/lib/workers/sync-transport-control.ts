@@ -123,7 +123,11 @@ class ChangesProcessor {
 	stop() {
 		this.#active = false;
 		this.#queue = [];
-		this.onDone?.(false);
+		// Only call onDone if no queue is currently running
+		// If a queue is running, it will call onDone when it finishes
+		if (!this.#running) {
+			this.onDone?.(false);
+		}
 	}
 }
 
