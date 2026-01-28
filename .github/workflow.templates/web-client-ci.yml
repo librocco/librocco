@@ -78,7 +78,7 @@ jobs:
           echo "Waiting for sync server..."
           timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
           echo "Waiting for Caddy/web app..."
-          timeout 30 bash -c 'until curl -f -k https://localhost:8080/preview/ 2>/dev/null; do sleep 1; done'
+          timeout 30 bash -c 'until curl -f -k https://localhost:8433/preview/ 2>/dev/null; do sleep 1; done'
           echo "All services ready!"
       - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
         run: cd apps/e2e && rushx test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
