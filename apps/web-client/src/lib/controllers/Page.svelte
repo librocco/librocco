@@ -41,6 +41,6 @@
 	<slot name="main" slot="main" />
 
 	<svelte:fragment slot="footer">
-		<ExtensionStatusBanner {plugins} />
+		<ExtensionStatusBanner />
 	</svelte:fragment>
 </PageLayout>
