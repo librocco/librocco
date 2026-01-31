@@ -4,6 +4,7 @@
 	import Play from "$lucide/play";
 	import BookPlus from "$lucide/book-plus";
 	import AlertTriangle from "$lucide/alert-triangle";
+	import Unplug from "$lucide/unplug";
 
 	import { onMount } from "svelte";
 
@@ -308,6 +309,35 @@
 		throw new Error($LL.debug_page.labels.runtime_error());
 	};
 
+	/**
+	 * Corrupts the local database's sync identity by changing its site_id.
+	 * This simulates the state where the local DB is incompatible with the server
+	 * (e.g., after a server database rebuild), triggering the sync stuck detection.
+	 */
+	const corruptSyncState = async () => {
+		isLoading = true;
+		errorMessage = null;
+
+		const db = await getDb(app);
+
+		try {
+			// Generate a new random site_id (16 bytes)
+			const newSiteId = new Uint8Array(16);
+			crypto.getRandomValues(newSiteId);
+
+			// Update the site_id in crsql_site_id table (ordinal 0 is "myself")
+			await db.exec("UPDATE crsql_site_id SET site_id = ? WHERE ordinal = 0", [newSiteId]);
+
+			console.log("Sync state corrupted - site_id changed to:", newSiteId);
+			alert("Sync state corrupted! Reload the page to trigger sync stuck detection.");
+		} catch (error) {
+			console.error("Error corrupting sync state:", error);
+			errorMessage = error;
+		} finally {
+			isLoading = false;
+		}
+	};
+
 	let error = false;
 </script>
 
@@ -326,6 +356,10 @@
 				<button class="btn-primary btn" on:click={throwError}>
 					<AlertTriangle size={20} />
 					{$LL.debug_page.actions.trigger_runtime_error()}
+				</button>
+				<button class="btn-warning btn" on:click={corruptSyncState}>
+					<Unplug size={20} />
+					{$LL.debug_page.actions.corrupt_sync_state()}
 				</button>
 			</div>
 		</div>
