@@ -812,7 +812,23 @@
         "description": "",
         "note": "",
         "button": ""
+      },
+      "sync_stuck": {
+        "title": "",
+        "description": "",
+        "call_to_action": "",
+        "button": "",
+        "diagnostics": {
+          "title": "",
+          "rapid_closes": "",
+          "timeout": "",
+          "hint": ""
+        }
       }
+    },
+    "runtime_error_toast": {
+      "title": "",
+      "description": ""
     }
   },
   "error_page": {
@@ -844,12 +860,18 @@
   },
   "debug_page": {
     "title": "",
+    "labels": {
+      "runtime_error": ""
+    },
     "actions": {
+      "trigger_load_error": "",
+      "trigger_runtime_error": "",
       "populate_database": "",
       "reset_database": "",
       "upsert_100_books": "",
       "run_query": "",
-      "executing": ""
+      "executing": "",
+      "corrupt_sync_state": ""
     },
     "query_interface": {
       "title": "",

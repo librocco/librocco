@@ -810,7 +810,23 @@
         "description": "L'unico modo per usare l'app sembra essere eliminarlo e ricominciare da capo.",
         "note": "Nota: Questo non risincronizzerà il database. Se vuoi sincronizzare il DB con quello remoto, fallo dalla pagina delle impostazioni (dopo la reinizializzazione)",
         "button": "Clicca per eliminare il DB"
+      },
+      "sync_stuck": {
+        "title": "",
+        "description": "",
+        "call_to_action": "",
+        "button": "",
+        "diagnostics": {
+          "title": "",
+          "rapid_closes": "",
+          "timeout": "",
+          "hint": ""
+        }
       }
+    },
+    "runtime_error_toast": {
+      "title": "",
+      "description": ""
     }
   },
   "error_page": {
@@ -842,12 +858,18 @@
   },
   "debug_page": {
     "title": "Debug",
+    "labels": {
+      "runtime_error": ""
+    },
     "actions": {
+      "trigger_load_error": "",
+      "trigger_runtime_error": "",
       "populate_database": "Popola Database",
       "reset_database": "Ripristina Database",
       "upsert_100_books": "Inserisci 100 Libri",
       "run_query": "Esegui Query",
-      "executing": "Esecuzione in corso..."
+      "executing": "Esecuzione in corso...",
+      "corrupt_sync_state": ""
     },
     "query_interface": {
       "title": "Interfaccia Query Database",

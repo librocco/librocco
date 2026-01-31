@@ -28,8 +28,8 @@
     "tabs": {
       "by_date": "By Date",
       "by_isbn": "By ISBN",
-      "notes_by_date": "Notes By Date",
-      "by_warehouse": "By Warehouse"
+      "notes_by_date": "Notes by date",
+      "by_warehouse": "by Warehouse"
     },
     "date_tab": {
       "stats": {
@@ -810,7 +810,23 @@
         "description": "The only way to use the app seems to be to delete it and start fresh.",
         "note": "Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page (after reinitialisation)",
         "button": "Click to delete the DB"
+      },
+      "sync_stuck": {
+        "title": "Sync connection issue",
+        "description": "The sync connection could not be established. This usually happens when the local database is incompatible with the server (e.g., after a server database rebuild).",
+        "call_to_action": "To fix this, you can clear your local database and re-sync from the server.",
+        "button": "Nuke and Resync",
+        "diagnostics": {
+          "title": "Detected pattern:",
+          "rapid_closes": "Connection closed rapidly {count} time{{s}} in a row.",
+          "timeout": "Connection did not stabilize within the timeout period.",
+          "hint": "This typically indicates that the server database was rebuilt with a new identity."
+        }
       }
+    },
+    "runtime_error_toast": {
+      "title": "An unexpected error occurred",
+      "description": "If it persists, try reloading the page."
     }
   },
   "error_page": {
@@ -842,12 +858,18 @@
   },
   "debug_page": {
     "title": "Debug",
+    "labels": {
+      "runtime_error": "Kaboom! Runtime error"
+    },
     "actions": {
+      "trigger_load_error": "Trigger Load Error",
+      "trigger_runtime_error": "Trigger Runtime Error",
       "populate_database": "Populate Database",
       "reset_database": "Reset Database",
       "upsert_100_books": "Upsert 100 Books",
       "run_query": "Run Query",
-      "executing": "Executing..."
+      "executing": "Executing...",
+      "corrupt_sync_state": "Corrupt Sync State"
     },
     "query_interface": {
       "title": "Database Query Interface",

@@ -222,6 +222,7 @@
 
 	// Show sync stuck dialog when sync is stuck and sync is supposed to be active
 	const syncStuck = syncConnectivityMonitor.stuck;
+	const syncDiagnostics = syncConnectivityMonitor.diagnostics;
 	$: $syncStuckDialogOpen = $syncStuck && $syncActive;
 
 	const handleNukeAndResync = async () => {
@@ -407,6 +408,19 @@
 						{tLayout.error_dialog.sync_stuck.call_to_action()}
 					</span>
 				</p>
+
+				<!-- Diagnostic details -->
+				{#if $syncDiagnostics.reason}
+					<div class="mb-4 rounded bg-base-200 p-3 text-xs font-mono">
+						<p class="mb-1 font-semibold text-gray-700">{tLayout.error_dialog.sync_stuck.diagnostics.title()}</p>
+						{#if $syncDiagnostics.reason === "rapid_closes"}
+							<p class="text-gray-600">{tLayout.error_dialog.sync_stuck.diagnostics.rapid_closes({ count: $syncDiagnostics.rapidCloseCount })}</p>
+						{:else if $syncDiagnostics.reason === "timeout"}
+							<p class="text-gray-600">{tLayout.error_dialog.sync_stuck.diagnostics.timeout()}</p>
+						{/if}
+						<p class="mt-1 text-gray-500">{tLayout.error_dialog.sync_stuck.diagnostics.hint()}</p>
+					</div>
+				{/if}
 
 				<div class="flex w-full justify-end gap-x-2">
 					<button on:click={() => syncStuckDialogOpen.set(false)} type="button" class="btn-ghost btn">

@@ -2324,6 +2324,25 @@ type RootTranslation = {
 				 * N​u​k​e​ ​a​n​d​ ​R​e​s​y​n​c
 				 */
 				button: string
+				diagnostics: {
+					/**
+					 * D​e​t​e​c​t​e​d​ ​p​a​t​t​e​r​n​:
+					 */
+					title: string
+					/**
+					 * C​o​n​n​e​c​t​i​o​n​ ​c​l​o​s​e​d​ ​r​a​p​i​d​l​y​ ​{​c​o​u​n​t​}​ ​t​i​m​e​{​{​s​}​}​ ​i​n​ ​a​ ​r​o​w​.
+					 * @param {string | number | boolean} count
+					 */
+					rapid_closes: RequiredParams<'count'>
+					/**
+					 * C​o​n​n​e​c​t​i​o​n​ ​d​i​d​ ​n​o​t​ ​s​t​a​b​i​l​i​z​e​ ​w​i​t​h​i​n​ ​t​h​e​ ​t​i​m​e​o​u​t​ ​p​e​r​i​o​d​.
+					 */
+					timeout: string
+					/**
+					 * T​h​i​s​ ​t​y​p​i​c​a​l​l​y​ ​i​n​d​i​c​a​t​e​s​ ​t​h​a​t​ ​t​h​e​ ​s​e​r​v​e​r​ ​d​a​t​a​b​a​s​e​ ​w​a​s​ ​r​e​b​u​i​l​t​ ​w​i​t​h​ ​a​ ​n​e​w​ ​i​d​e​n​t​i​t​y​.
+					 */
+					hint: string
+				}
 			}
 		}
 		runtime_error_toast: {
@@ -5177,6 +5196,24 @@ export type TranslationFunctions = {
 				 * Nuke and Resync
 				 */
 				button: () => LocalizedString
+				diagnostics: {
+					/**
+					 * Detected pattern:
+					 */
+					title: () => LocalizedString
+					/**
+					 * Connection closed rapidly {count} time{{s}} in a row.
+					 */
+					rapid_closes: (arg: { count: string | number | boolean }) => LocalizedString
+					/**
+					 * Connection did not stabilize within the timeout period.
+					 */
+					timeout: () => LocalizedString
+					/**
+					 * This typically indicates that the server database was rebuilt with a new identity.
+					 */
+					hint: () => LocalizedString
+				}
 			}
 		}
 		runtime_error_toast: {

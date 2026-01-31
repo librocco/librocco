@@ -905,7 +905,13 @@ const layout = {
 			description:
 				"The sync connection could not be established. This usually happens when the local database is incompatible with the server (e.g., after a server database rebuild).",
 			call_to_action: "To fix this, you can clear your local database and re-sync from the server.",
-			button: "Nuke and Resync"
+			button: "Nuke and Resync",
+			diagnostics: {
+				title: "Detected pattern:",
+				rapid_closes: "Connection closed rapidly {count} time{{s}} in a row.",
+				timeout: "Connection did not stabilize within the timeout period.",
+				hint: "This typically indicates that the server database was rebuilt with a new identity."
+			}
 		}
 	},
 	runtime_error_toast: {

@@ -161,10 +161,16 @@
 			// Callback for init-store to notify phase changes
 			window.__dbInitUpdate = function (phase, error) {
 				const splash = document.getElementById("app-splash");
+				// If splash has already been removed (after "ready" phase), nothing to update
+				if (!splash) return;
+
 				const title = document.getElementById("splash-title");
 				const subtitle = document.getElementById("splash-subtitle");
 				const errorEl = document.getElementById("splash-error");
 				const actionBtn = document.getElementById("splash-action");
+
+				// Guard against missing elements (shouldn't happen, but be safe)
+				if (!title || !subtitle) return;
 
 				const msg = splashMessages[phase] || splashMessages.idle;
 				title.textContent = msg.title;

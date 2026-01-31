@@ -41,14 +41,28 @@ export const createExtensionAvailabilityStore = (plugins: PluginsInterface) => {
 	return readableFromStream({}, plugins.get("book-fetcher").isAvailableStream, false);
 };
 
+export type SyncStuckDiagnostics = {
+	reason: "rapid_closes" | "timeout" | null;
+	rapidCloseCount: number;
+	lastOpenTime: number | null;
+	detectedAt: number | null;
+};
+
 type SyncConnectivityMonitor = {
 	connected: Writable<boolean>;
 	stuck: Writable<boolean>;
+	diagnostics: Writable<SyncStuckDiagnostics>;
 	unsubscribe: Writable<() => void>;
 };
 const _syncConnectivityMonitor: SyncConnectivityMonitor = {
 	connected: writable(false),
 	stuck: writable(false),
+	diagnostics: writable<SyncStuckDiagnostics>({
+		reason: null,
+		rapidCloseCount: 0,
+		lastOpenTime: null,
+		detectedAt: null
+	}),
 	unsubscribe: writable<() => void>(() => {})
 };
 
@@ -65,10 +79,26 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 	const resetStuckState = () => {
 		rapidCloseCount = 0;
 		_syncConnectivityMonitor.stuck.set(false);
+		_syncConnectivityMonitor.diagnostics.set({
+			reason: null,
+			rapidCloseCount: 0,
+			lastOpenTime: null,
+			detectedAt: null
+		});
 		if (stuckTimeout) {
 			clearTimeout(stuckTimeout);
 			stuckTimeout = null;
 		}
+	};
+
+	const markStuck = (reason: "rapid_closes" | "timeout") => {
+		_syncConnectivityMonitor.stuck.set(true);
+		_syncConnectivityMonitor.diagnostics.set({
+			reason,
+			rapidCloseCount,
+			lastOpenTime,
+			detectedAt: Date.now()
+		});
 	};
 
 	const unsubscribeOpen = worker?.onConnOpen(() => {
@@ -80,7 +110,7 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 		stuckTimeout = setTimeout(() => {
 			// If we're still not connected after threshold, mark as stuck
 			if (!worker?.isConnected) {
-				_syncConnectivityMonitor.stuck.set(true);
+				markStuck("timeout");
 			}
 		}, SYNC_STUCK_THRESHOLD_MS);
 	});
@@ -93,7 +123,7 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 			rapidCloseCount++;
 			// After 3 rapid closes, mark as stuck
 			if (rapidCloseCount >= 3) {
-				_syncConnectivityMonitor.stuck.set(true);
+				markStuck("rapid_closes");
 			}
 		}
 		lastOpenTime = null;
@@ -116,6 +146,12 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 /** Reset the sync stuck state (call after successful nuke and resync) */
 export function resetSyncStuckState() {
 	_syncConnectivityMonitor.stuck.set(false);
+	_syncConnectivityMonitor.diagnostics.set({
+		reason: null,
+		rapidCloseCount: 0,
+		lastOpenTime: null,
+		detectedAt: null
+	});
 }
 
 // NOTE: the public (exported connectivity monitor is read-only), all updates should be made
@@ -123,6 +159,7 @@ export function resetSyncStuckState() {
 type SyncConnectivityMonitorPublic = {
 	connected: Readable<boolean>;
 	stuck: Readable<boolean>;
+	diagnostics: Readable<SyncStuckDiagnostics>;
 	unsubscribe: Readable<() => void>;
 };
 /**
