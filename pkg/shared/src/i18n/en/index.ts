@@ -898,6 +898,13 @@ const layout = {
 			description: "The only way to use the app seems to be to delete it and start fresh.",
 			note: "Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page (after reinitialisation)",
 			button: "Click to delete the DB"
+		},
+		sync_stuck: {
+			title: "Sync connection issue",
+			description:
+				"The sync connection could not be established. This usually happens when the local database is incompatible with the server (e.g., after a server database rebuild).",
+			call_to_action: "To fix this, you can clear your local database and re-sync from the server.",
+			button: "Nuke and Resync"
 		}
 	},
 	runtime_error_toast: {

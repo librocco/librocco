@@ -2307,6 +2307,24 @@ type RootTranslation = {
 				 */
 				button: string
 			}
+			sync_stuck: {
+				/**
+				 * S​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​i​s​s​u​e
+				 */
+				title: string
+				/**
+				 * T​h​e​ ​s​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​c​o​u​l​d​ ​n​o​t​ ​b​e​ ​e​s​t​a​b​l​i​s​h​e​d​.​ ​T​h​i​s​ ​u​s​u​a​l​l​y​ ​h​a​p​p​e​n​s​ ​w​h​e​n​ ​t​h​e​ ​l​o​c​a​l​ ​d​a​t​a​b​a​s​e​ ​i​s​ ​i​n​c​o​m​p​a​t​i​b​l​e​ ​w​i​t​h​ ​t​h​e​ ​s​e​r​v​e​r​ ​(​e​.​g​.​,​ ​a​f​t​e​r​ ​a​ ​s​e​r​v​e​r​ ​d​a​t​a​b​a​s​e​ ​r​e​b​u​i​l​d​)​.
+				 */
+				description: string
+				/**
+				 * T​o​ ​f​i​x​ ​t​h​i​s​,​ ​y​o​u​ ​c​a​n​ ​c​l​e​a​r​ ​y​o​u​r​ ​l​o​c​a​l​ ​d​a​t​a​b​a​s​e​ ​a​n​d​ ​r​e​-​s​y​n​c​ ​f​r​o​m​ ​t​h​e​ ​s​e​r​v​e​r​.
+				 */
+				call_to_action: string
+				/**
+				 * N​u​k​e​ ​a​n​d​ ​R​e​s​y​n​c
+				 */
+				button: string
+			}
 		}
 		runtime_error_toast: {
 			/**
@@ -5135,6 +5153,24 @@ export type TranslationFunctions = {
 				note: () => LocalizedString
 				/**
 				 * Click to delete the DB
+				 */
+				button: () => LocalizedString
+			}
+			sync_stuck: {
+				/**
+				 * Sync connection issue
+				 */
+				title: () => LocalizedString
+				/**
+				 * The sync connection could not be established. This usually happens when the local database is incompatible with the server (e.g., after a server database rebuild).
+				 */
+				description: () => LocalizedString
+				/**
+				 * To fix this, you can clear your local database and re-sync from the server.
+				 */
+				call_to_action: () => LocalizedString
+				/**
+				 * Nuke and Resync
 				 */
 				button: () => LocalizedString
 			}

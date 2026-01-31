@@ -14,7 +14,7 @@
 	import { afterNavigate } from "$app/navigation";
 	import { beforeNavigate } from "$app/navigation";
 
-	import { app } from "$lib/app";
+	import { app, nukeAndResyncDb } from "$lib/app";
 	import { AppDbState, getDb, getDbRx, getVfs } from "$lib/app/db";
 
 	import type { LayoutData } from "./$types";
@@ -26,7 +26,7 @@
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
-	import { updateSyncConnectivityMonitor } from "$lib/stores";
+	import { syncConnectivityMonitor, updateSyncConnectivityMonitor, resetSyncStuckState } from "$lib/stores";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
@@ -206,6 +206,30 @@
 
 	$: $errorDialogOpen = Boolean($dbState === AppDbState.Error);
 
+	// Sync stuck dialog
+	const {
+		elements: {
+			overlay: syncStuckDialogOverlay,
+			content: syncStuckDialogContent,
+			portalled: syncStuckDialogPortalled,
+			title: syncStuckDialogTitle,
+			description: syncStuckDialogDescription
+		},
+		states: { open: syncStuckDialogOpen }
+	} = createDialog({
+		forceVisible: true
+	});
+
+	// Show sync stuck dialog when sync is stuck and sync is supposed to be active
+	const syncStuck = syncConnectivityMonitor.stuck;
+	$: $syncStuckDialogOpen = $syncStuck && $syncActive;
+
+	const handleNukeAndResync = async () => {
+		syncStuckDialogOpen.set(false);
+		resetSyncStuckState();
+		await nukeAndResyncDb(app, $dbid, getVfs(app));
+	};
+
 	$: ({ layout: tLayout, common: tCommon } = $LL);
 
 	// DEMO
@@ -353,6 +377,43 @@
 				<div class="w-full text-end">
 					<button on:click={handleFetchDemoDB} type="button" class="btn-secondary btn">
 						{tLayout.error_dialog.demo_db_not_initialised.button()}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if $syncStuckDialogOpen}
+	<!-- Sync stuck dialog - shown when sync connection repeatedly fails -->
+	<div use:melt={$syncStuckDialogPortalled}>
+		<div use:melt={$syncStuckDialogOverlay} class="fixed inset-0 z-[100] bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+
+		<div
+			class="fixed left-1/2 top-1/2 z-[200] max-h-screen w-full translate-x-[-50%] translate-y-[-50%] overflow-y-auto px-4 md:max-w-md md:px-0"
+			transition:fade={{ duration: 250 }}
+			use:melt={$syncStuckDialogContent}
+		>
+			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
+				<h2 use:melt={$syncStuckDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
+					{tLayout.error_dialog.sync_stuck.title()}
+				</h2>
+
+				<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$syncStuckDialogDescription}>
+					<span class="mb-2 block">
+						{tLayout.error_dialog.sync_stuck.description()}
+					</span>
+					<span class="mb-2 block">
+						{tLayout.error_dialog.sync_stuck.call_to_action()}
+					</span>
+				</p>
+
+				<div class="flex w-full justify-end gap-x-2">
+					<button on:click={() => syncStuckDialogOpen.set(false)} type="button" class="btn-ghost btn">
+						{tCommon.actions.cancel()}
+					</button>
+					<button on:click={handleNukeAndResync} type="button" class="btn-primary btn">
+						{tLayout.error_dialog.sync_stuck.button()}
 					</button>
 				</div>
 			</div>
