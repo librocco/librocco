@@ -11,7 +11,8 @@ import type {
 	MsgProgress,
 	MsgReady,
 	MsgConnectionOpen,
-	MsgConnectionClose
+	MsgConnectionClose,
+	MsgOutgoingChanges
 } from "./types";
 
 import { SyncTransportController, ConnectionEventEmitter, SyncEventEmitter } from "./sync-transport-control";
@@ -22,7 +23,14 @@ import { createWasmInitializer } from "@vlcn.io/crsqlite-wasm";
 import { getWasmBuildArtefacts } from "$lib/db/cr-sqlite/core/init";
 
 type InboundMessage = MsgStart;
-type OutboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady | MsgConnectionOpen | MsgConnectionClose;
+type OutboundMessage =
+	| MsgChangesReceived
+	| MsgChangesProcessed
+	| MsgProgress
+	| MsgReady
+	| MsgConnectionOpen
+	| MsgConnectionClose
+	| MsgOutgoingChanges;
 
 const MAX_SYNC_CHUNK_SIZE = 1024;
 
@@ -118,6 +126,9 @@ function createProgressEmitter() {
 	});
 	progressEmitter.onProgress((payload) => {
 		sendMessage({ _type: "progress", payload });
+	});
+	progressEmitter.onOutgoingChanges((payload) => {
+		sendMessage({ _type: "outgoingChanges", payload });
 	});
 
 	return progressEmitter;

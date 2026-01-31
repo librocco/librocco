@@ -38,25 +38,16 @@ From the user's perspective, the sync system should provide clear, reliable feed
 
 **File**: `apps/web-client/src/lib/components/ExtensionStatusBanner.svelte`
 
-The footer displays status badges at the bottom of pages:
+The footer now shows a single "Remote DB" badge (the Book Data Extension badge has been removed). The badge color reflects the sync state (yellow while connecting, green when connected, red when disconnected or stuck), and it appends a pending count when there are unsent local changes:
 
 ```svelte
-<div id="footer" class="sticky bottom-0 ...">
-  <!-- Book Data Extension Badge (SHOULD BE REMOVED - obsolete) -->
-  <div class="badge ...">
-    <div class="... {$extensionAvailable ? 'bg-success' : 'bg-error'}"></div>
-    <p>Book Data Extension</p>
-  </div>
-
-  <!-- Remote DB Badge -->
-  <div class="badge ...">
-    <div class="... {$syncConnected ? 'bg-success' : 'bg-error'}"></div>
-    <p>Remote DB</p>
-  </div>
+<div class="badge" data-status={$syncState.status}>
+  <div class={indicatorClass}></div>
+  <p>{`Remote DB${$syncState.pending ? ` (${$syncState.pending} pending)` : ''}`}</p>
 </div>
 ```
 
-**Current Behavior**: The "Remote DB" indicator shows green when `$syncConnected` is true, which is derived from `syncConnectivityMonitor.connected` in `lib/stores/app.ts`.
+**Current Behavior**: The indicator derives from `syncConnectivityMonitor` plus a pending-changes store that counts local `crsql_changes` rows newer than the last sent version (persisted per DB). Green means connected and no pending local changes.
 
 ### Connectivity Tracking
 
@@ -116,8 +107,8 @@ When sync is detected as "stuck" (rapid connection failures or timeout), a dialo
 
 ### Gap 2: No Tracking of Pending Local Changes
 
-**Current**: No mechanism exists to count or display unsynced local changes
-**Required**: Footer should show when local changes haven't reached the server
+**Current**: The footer shows pending counts based on local `crsql_changes` newer than the last sent db_version (persisted per DB). There is still no explicit server acknowledgment, so it assumes messages marked as "sent" were accepted.
+**Required**: Footer should show when local changes haven't reached the server, ideally based on server acknowledgment rather than send-attempts.
 
 **Why This Matters**:
 - Users might close the browser thinking their changes are saved
@@ -126,17 +117,8 @@ When sync is detected as "stuck" (rapid connection failures or timeout), a dialo
 
 ### Gap 3: Progress Numbers Are Meaningless
 
-**Current**: Progress shows chunk counts (e.g., "3/7")
-**Required**: Progress should indicate actual data volume or time remaining
-
-**Root Cause** (`lib/workers/sync-transport-control.ts`):
-
-```typescript
-// nTotal = number of chunks, NOT number of records
-const task = { chunk, nProcessed: this.#nProcessed, nTotal: this.#queue.length };
-```
-
-**Problem**: A sync of 7,000 records shows "3/7" (chunks), which is confusing. Users don't know if they're 43% done or if the operation will take seconds or minutes.
+**Current**: Progress now reports change counts (number of CR-SQL change entries) instead of chunk counts, but it still lacks a notion of record size or time remaining.
+**Required**: Progress should indicate actual data volume or time remaining; change counts are a step closer but not a full solution.
 
 ### Gap 4: No Validation of Sync Compatibility
 
@@ -147,13 +129,6 @@ const task = { chunk, nProcessed: this.#nProcessed, nTotal: this.#queue.length }
 1. Schema version match between client and server
 2. Database identity validation (site_id lineage)
 3. Successful initial data exchange confirmation
-
-### Gap 5: Book Data Extension Badge is Obsolete
-
-**Current**: Footer shows "Book Data Extension" status
-**Required**: Remove this obsolete indicator
-
----
 
 ## Implementation Recommendations
 
@@ -292,6 +267,12 @@ Define clear states for the sync indicator:
 | `stuck` | Red dot + warning | Connection failing repeatedly |
 | `incompatible` | Red dot + error | Server DB is incompatible |
 
+### Current Gaps After Recent Changes
+
+- Remote-only changes to `.sqlite3`-named DBs failed to surface locally in e2e (`integration/sync.spec.ts` first test still timing out at 8s), indicating FS notify or listener issues remain.
+- Progress events didn’t surface in e2e bulk sync (`__maxProgress` stayed 0), so record-count progress is implemented but not yet observable in browser tests.
+- Pending-count logic is based on “last sent” only; no server ACK yet.
+
 **Implementation**:
 
 ```typescript
@@ -400,20 +381,20 @@ await waitForSync();            // Wait for sync to settle
 
 ### Phase 1: Quick Wins (Low Effort, High Impact)
 
-1. **Remove "Book Data Extension" badge** -- it's obsolete and confusing
+1. **Remove "Book Data Extension" badge** -- done; only the Remote DB badge remains.
 2. **Improve stuck detection messaging** -- already done in recent commits
-3. **Add "connecting" state** -- yellow indicator while WebSocket handshake in progress
+3. **Add "connecting" state** -- yellow indicator while WebSocket handshake in progress (implemented via derived sync state)
 
 ### Phase 2: Pending Changes Tracking
 
-1. Implement `pendingChangesCount` store using crsql_changes query
-2. Update footer to show count when > 0
-3. Add E2E test for pending changes display
+1. Implement `pendingChangesCount` store using crsql_changes query (implemented; uses last sent db_version persisted per DB)
+2. Update footer to show count when > 0 (implemented)
+3. Add E2E test for pending changes display (added in `apps/e2e/integration/sync.spec.ts`)
 
 ### Phase 3: Progress Improvements
 
-1. Refactor `ChangesProcessor` to track record counts, not chunks
-2. Update progress dialog to show meaningful numbers
+1. Refactor `ChangesProcessor` to track change counts, not chunks (implemented)
+2. Update progress dialog to show meaningful numbers (uses change counts now)
 3. Consider adding estimated time remaining
 
 ### Phase 4: Sync Validation

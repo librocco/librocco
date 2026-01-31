@@ -22,6 +22,11 @@ export type MsgChangesProcessed = {
 	payload: { timestamp: number };
 };
 
+export type MsgOutgoingChanges = {
+	_type: "outgoingChanges";
+	payload: { maxDbVersion: number; changeCount: number };
+};
+
 export type MsgProgress = {
 	_type: "progress";
 	payload: ProgressState;

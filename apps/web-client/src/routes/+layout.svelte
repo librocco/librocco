@@ -27,6 +27,7 @@
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
 	import { syncConnectivityMonitor, updateSyncConnectivityMonitor, resetSyncStuckState } from "$lib/stores";
+	import { attachPendingMonitor, resetPendingTracker, setLastSentVersion } from "$lib/stores/sync-pending";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
@@ -80,6 +81,9 @@
 	});
 
 	let availabilitySubscription: Subscription;
+	let detachPendingMonitor: (() => void) | null = null;
+	let detachPendingInvalidate: (() => void) | null = null;
+	let detachOutgoingChanges: (() => void) | null = null;
 
 	// Config stores
 	const dbid = app.config.dbid;
@@ -125,6 +129,20 @@
 		// Prevent user from navigating away if sync is in progress
 		// NOTE: this is a noop if sync not active (e.g. in demo mode)
 		window.addEventListener("beforeunload", preventUnloadHandler);
+
+		const currentDb = await getDb(app);
+		detachPendingMonitor = await attachPendingMonitor(currentDb, getDbRx(app), get(dbid));
+		detachPendingInvalidate = getDbRx(app).onInvalidate(async () => {
+			detachPendingMonitor?.();
+			if (app.db.db && app.db.dbid) {
+				detachPendingMonitor = await attachPendingMonitor(app.db.db, getDbRx(app), app.db.dbid);
+			}
+		});
+		detachOutgoingChanges = await app.sync.runExclusive(async (sync) => {
+			return sync.worker.onOutgoingChanges((payload) => {
+				void setLastSentVersion(payload.maxDbVersion, get(dbid));
+			});
+		});
 	});
 
 	onDestroy(() => {
@@ -132,6 +150,10 @@
 		availabilitySubscription?.unsubscribe();
 		disposer?.();
 		window.removeEventListener("beforeunload", preventUnloadHandler);
+		detachPendingMonitor?.();
+		detachPendingInvalidate?.();
+		detachOutgoingChanges?.();
+		resetPendingTracker();
 	});
 
 	const {

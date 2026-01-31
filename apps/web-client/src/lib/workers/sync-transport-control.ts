@@ -10,6 +10,7 @@ export class SyncEventEmitter {
 	progressListeners = new Set<Listener<ProgressState>>();
 	changesReceivedListeners = new Set<Listener<{ timestamp: number }>>();
 	changesProcessedListeners = new Set<Listener<{ timestamp: number }>>();
+	outgoingChangesListeners = new Set<Listener<{ maxDbVersion: number; changeCount: number }>>();
 
 	private _notify =
 		<M>(listeners: Set<Listener<M>>) =>
@@ -29,10 +30,12 @@ export class SyncEventEmitter {
 	onChangesReceived = this._listen(this.changesReceivedListeners);
 	onChangesProcessed = this._listen(this.changesProcessedListeners);
 	onProgress = this._listen(this.progressListeners);
+	onOutgoingChanges = this._listen(this.outgoingChangesListeners);
 
 	notifyChangesReceived = this._notify(this.changesReceivedListeners);
 	notifyChangesProcessed = this._notify(this.changesProcessedListeners);
 	notifyProgress = this._notify(this.progressListeners);
+	notifyOutgoingChanges = this._notify(this.outgoingChangesListeners);
 }
 
 export class ConnectionEventEmitter {
@@ -71,7 +74,8 @@ class ChangesProcessor {
 	#maxChunkSize: number;
 
 	#queue: Changes[] = [];
-	#nProcessed = 0;
+	#processedRecords = 0;
+	#totalRecords = 0;
 
 	#active = true;
 	#running = false;
@@ -89,22 +93,25 @@ class ChangesProcessor {
 			const chunk = this.#queue[i];
 
 			// Process chunk
-			const task = { chunk, nProcessed: this.#nProcessed, nTotal: this.#queue.length };
+			const task = { chunk, nProcessed: this.#processedRecords, nTotal: this.#totalRecords };
 			await this.onChunk?.(task);
 
-			this.#nProcessed++;
+			this.#processedRecords += chunk.changes.length;
 			i++;
 		}
 
 		// Cleanup
 		const hadChanges = i > 0;
 		this.#queue = [];
+		this.#processedRecords = 0;
+		this.#totalRecords = 0;
 		this.#running = false;
 
 		this.onDone?.(hadChanges);
 	};
 
 	enqueue({ _tag, sender, changes, since }: Changes) {
+		this.#totalRecords += changes.length;
 		for (const chunk of chunks(changes, this.#maxChunkSize)) {
 			this.#queue.push({ _tag, sender, changes: chunk, since });
 		}
@@ -154,7 +161,7 @@ export class SyncTransportController implements Transport {
 
 		// Propagate the immutable transport methods
 		this.announcePresence = this.#transport.announcePresence.bind(this.#transport);
-		this.sendChanges = this.#transport.sendChanges.bind(this.#transport);
+		this.sendChanges = this._sendChanges.bind(this);
 		this.rejectChanges = this.#transport.rejectChanges.bind(this.#transport);
 		this.close = this.#transport.close.bind(this.#transport);
 
@@ -207,6 +214,18 @@ export class SyncTransportController implements Transport {
 		if (hadChanges) {
 			this.#progressEmitter.notifyChangesReceived({ timestamp: Date.now() });
 		}
+	}
+
+	private _sendChanges(msg: Parameters<Transport["sendChanges"]>[0]) {
+		const result = this.#transport.sendChanges(msg);
+		if (result === "sent") {
+			const maxDbVersion = msg.changes.reduce((max, change) => {
+				const dbVersion = Number(change[5]);
+				return dbVersion > max ? dbVersion : max;
+			}, 0);
+			this.#progressEmitter.notifyOutgoingChanges({ maxDbVersion, changeCount: msg.changes.length });
+		}
+		return result;
 	}
 
 	start(...params: Parameters<Transport["start"]>) {

@@ -6,6 +6,7 @@ import type {
 	MsgChangesReceived,
 	MsgConnectionClose,
 	MsgConnectionOpen,
+	MsgOutgoingChanges,
 	MsgProgress,
 	MsgReady,
 	MsgStart
@@ -14,7 +15,14 @@ import type {
 import { SyncEventEmitter, ConnectionEventEmitter } from "./sync-transport-control";
 
 type OutbounrMessage = MsgStart;
-type InboundMessage = MsgChangesReceived | MsgChangesProcessed | MsgProgress | MsgReady | MsgConnectionOpen | MsgConnectionClose;
+type InboundMessage =
+	| MsgChangesReceived
+	| MsgChangesProcessed
+	| MsgOutgoingChanges
+	| MsgProgress
+	| MsgReady
+	| MsgConnectionOpen
+	| MsgConnectionClose;
 
 export default class WorkerInterface extends WI {
 	#worker: Worker;
@@ -67,6 +75,9 @@ export default class WorkerInterface extends WI {
 			case "progress":
 				this.#syncEmitter.notifyProgress(msg.payload);
 				break;
+			case "outgoingChanges":
+				this.#syncEmitter.notifyOutgoingChanges(msg.payload);
+				break;
 			case "ready":
 				this.#initPromiseResolver();
 				break;
@@ -107,6 +118,9 @@ export default class WorkerInterface extends WI {
 	}
 	onProgress(cb: (msg: { active: boolean; nProcessed: number; nTotal: number }) => void) {
 		return this.#syncEmitter.onProgress(cb);
+	}
+	onOutgoingChanges(cb: (msg: { maxDbVersion: number; changeCount: number }) => void) {
+		return this.#syncEmitter.onOutgoingChanges(cb);
 	}
 
 	onConnOpen(cb: () => void) {
