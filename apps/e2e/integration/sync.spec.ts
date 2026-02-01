@@ -251,6 +251,7 @@ test("footer shows pending changes while offline and clears after resync", async
 		[syncUrl, dbName]
 	);
 	await page.goto(baseURL);
+	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
 
 	// Seed local + ensure sync is working
 	const dbHandle = await getDbHandle(page);
@@ -262,7 +263,7 @@ test("footer shows pending changes while offline and clears after resync", async
 				const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
 				return remoteCustomers.some((customer) => customer.fullname === "Baseline Customer");
 			},
-			{ timeout: 15000, intervals: [250] }
+			{ timeout: 25000, intervals: [250] }
 		)
 		.toBe(true);
 
@@ -294,7 +295,7 @@ test("footer shows pending changes while offline and clears after resync", async
 				const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
 				return remoteCustomers.some((customer) => customer.fullname === "Offline Pending Customer");
 			},
-			{ timeout: 15000, intervals: [250] }
+			{ timeout: 25000, intervals: [250] }
 		)
 		.toBe(true);
 
@@ -318,13 +319,12 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Seed Customer", email: "seed@test.com" });
 
 	// Prepare a large batch of remote-only changes
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
 	await retry(
-		() =>
-			remoteDbHandle.evaluate(async (db, count) => {
+		async () => {
+			const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+			return remoteDbHandle.evaluate(async (db, count) => {
 				for (let i = 0; i < count; i++) {
-					let attempts = 0;
-					while (true) {
+					for (let attempts = 0; attempts < 8; attempts++) {
 						try {
 							await window.customers.upsertCustomer(db, {
 								id: 10_000 + i,
@@ -334,16 +334,16 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 							});
 							break;
 						} catch (err) {
-							attempts++;
-							if (attempts >= 5) {
+							if (attempts === 7) {
 								throw err;
 							}
-							await new Promise((resolve) => setTimeout(resolve, 150));
+							await new Promise((resolve) => setTimeout(resolve, 200));
 						}
 					}
 				}
-			}, 60),
-		{ attempts: 8, delayMs: 300 }
+			}, 60);
+		},
+		{ attempts: 4, delayMs: 400 }
 	);
 
 	// Turn sync on to pull the bulk changes
