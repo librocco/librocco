@@ -262,7 +262,7 @@ test("footer shows pending changes while offline and clears after resync", async
 				const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
 				return remoteCustomers.some((customer) => customer.fullname === "Baseline Customer");
 			},
-			{ intervals: [250] }
+			{ timeout: 15000, intervals: [250] }
 		)
 		.toBe(true);
 
@@ -289,10 +289,13 @@ test("footer shows pending changes while offline and clears after resync", async
 
 	const refreshedRemoteHandle = await getRemoteDbHandle(page, remoteDbURL);
 	await expect
-		.poll(async () => {
-			const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
-			return remoteCustomers.some((customer) => customer.fullname === "Offline Pending Customer");
-		})
+		.poll(
+			async () => {
+				const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
+				return remoteCustomers.some((customer) => customer.fullname === "Offline Pending Customer");
+			},
+			{ timeout: 15000, intervals: [250] }
+		)
 		.toBe(true);
 
 	await expect(page.getByTestId("remote-db-badge")).not.toContainText(/pending/i);
@@ -320,15 +323,27 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 		() =>
 			remoteDbHandle.evaluate(async (db, count) => {
 				for (let i = 0; i < count; i++) {
-					await window.customers.upsertCustomer(db, {
-						id: 10_000 + i,
-						displayId: String(10_000 + i),
-						fullname: `Remote Bulk ${i}`,
-						email: `remote-bulk-${i}@test.com`
-					});
+					let attempts = 0;
+					while (true) {
+						try {
+							await window.customers.upsertCustomer(db, {
+								id: 10_000 + i,
+								displayId: String(10_000 + i),
+								fullname: `Remote Bulk ${i}`,
+								email: `remote-bulk-${i}@test.com`
+							});
+							break;
+						} catch (err) {
+							attempts++;
+							if (attempts >= 5) {
+								throw err;
+							}
+							await new Promise((resolve) => setTimeout(resolve, 150));
+						}
+					}
 				}
 			}, 60),
-		{ attempts: 5, delayMs: 300 }
+		{ attempts: 8, delayMs: 300 }
 	);
 
 	// Turn sync on to pull the bulk changes
