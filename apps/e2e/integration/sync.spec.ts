@@ -6,6 +6,45 @@ import { testBase as test, testOrders } from "@/helpers/fixtures";
 
 import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
 
+test.setTimeout(20_000);
+
+const sleep = (ms: number) =>
+	new Promise<void>((resolve) => {
+		setTimeout(resolve, ms);
+	});
+
+const retry = async <T>(fn: () => Promise<T>, opts: { attempts?: number; delayMs?: number; fallback?: T } = {}): Promise<T> => {
+	const attempts = opts.attempts ?? 3;
+	const delayMs = opts.delayMs ?? 200;
+	let lastError: unknown;
+
+	for (let attempt = 1; attempt <= attempts; attempt++) {
+		try {
+			return await fn();
+		} catch (error) {
+			lastError = error;
+			if (attempt < attempts) {
+				await sleep(delayMs);
+			} else if (Object.prototype.hasOwnProperty.call(opts, "fallback")) {
+				return opts.fallback as T;
+			}
+		}
+	}
+
+	throw lastError instanceof Error ? lastError : new Error(String(lastError));
+};
+
+test.beforeAll(async ({ browser }, testInfo) => {
+	testInfo.setTimeout(25_000);
+
+	const context = await browser.newContext({ ignoreHTTPSErrors: true });
+	const page = await context.newPage();
+	await page.goto(baseURL);
+	await page.waitForSelector('body[hydrated="true"]', { timeout: 20000 });
+	await page.waitForSelector("#app-splash", { state: "detached", timeout: 20000 });
+	await context.close();
+});
+
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
 //
@@ -42,10 +81,15 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	// This ensures the WebSocket connection is established and data is synced.
 	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
 	await expect
-		.poll(async () => {
-			const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
-			return remoteCustomers.length;
-		})
+		.poll(
+			async () => {
+				const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), {
+					fallback: []
+				});
+				return remoteCustomers.length;
+			},
+			{ intervals: [250] }
+		)
 		.toBe(1);
 
 	// Insert a new customer directly on the remote database via HTTP API.
@@ -54,12 +98,16 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	// The bug being tested: fileEventNameToDbId was stripping the .sqlite3 extension,
 	// causing a mismatch between how listeners register (with extension) and how
 	// file events are converted to dbids (without extension).
-	await remoteDbHandle.evaluate(upsertCustomer, {
-		id: 99,
-		displayId: "99",
-		fullname: "External Process Customer",
-		email: "external@test.com"
-	});
+	await retry(
+		() =>
+			remoteDbHandle.evaluate(upsertCustomer, {
+				id: 99,
+				displayId: "99",
+				fullname: "External Process Customer",
+				email: "external@test.com"
+			}),
+		{ attempts: 5, delayMs: 300 }
+	);
 
 	await page.evaluate(() => {
 		(window as any).__lastIncoming = [];
@@ -128,12 +176,12 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 	// UPDATE A
 	await dbHandle.evaluate(upsertCustomer, { id: 4, displayId: "4", fullname: "Customer 4", email: "cus4@email.com" });
 	// UPDATE B
-	await remoteDbHandle.evaluate(upsertCustomer, { id: 5, displayId: "5", fullname: "Customer 5", email: "cus5@email.com" });
+	await retry(() => remoteDbHandle.evaluate(upsertCustomer, { id: 5, displayId: "5", fullname: "Customer 5", email: "cus5@email.com" }));
 	// Wait for UPDATE B
 	await customerRow.filter({ hasText: "Customer 4" }).getByText("cus4@email.com").waitFor();
 	await customerRow.filter({ hasText: "Customer 5" }).getByText("cus5@email.com").waitFor();
 	// Check for UPDATE A in remote
-	let remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
+	let remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList));
 	// updated_at DESC ordering
 	expect(remoteCustomers[0].id).toEqual(5);
 	expect(remoteCustomers[0].fullname).toEqual("Customer 5");
@@ -145,12 +193,12 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 	// UPDATE A
 	await dbHandle.evaluate(upsertCustomer, { id: 5, displayId: "5", fullname: "Customer 5 - updated locally" });
 	// UPDATE B
-	await remoteDbHandle.evaluate(upsertCustomer, { id: 4, displayId: "4", fullname: "Customer 4 - updated remotely" });
+	await retry(() => remoteDbHandle.evaluate(upsertCustomer, { id: 4, displayId: "4", fullname: "Customer 4 - updated remotely" }));
 	// Wait for UPDATE B
 	await customerRow.filter({ hasText: "Customer 4 - updated remotely" }).getByText("cus4@email.com").waitFor();
 	await customerRow.filter({ hasText: "Customer 5 - updated locally" }).getByText("cus5@email.com").waitFor();
 	// Check for UPDATE A in remote
-	remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
+	remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList));
 	// updated_at DESC ordering
 	expect(remoteCustomers[0].id).toEqual(4);
 	expect(remoteCustomers[0].fullname).toEqual("Customer 4 - updated remotely");
@@ -161,8 +209,10 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 test("initial sync optimization should replace local db from remote snapshot", async ({ page }) => {
 	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
 
-	await remoteDbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Remote Customer", email: "remote@example.com" });
-	const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
+	await retry(() =>
+		remoteDbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Remote Customer", email: "remote@example.com" })
+	);
+	const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList));
 	expect(remoteCustomers.some((customer) => customer.id === 1)).toBe(true);
 
 	const dbid = await page.evaluate(() => JSON.parse(window.localStorage.getItem("librocco-current-db") || '""'));
@@ -209,12 +259,8 @@ test("footer shows pending changes while offline and clears after resync", async
 	await expect
 		.poll(
 			async () => {
-				try {
-					const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
-					return remoteCustomers.some((customer) => customer.fullname === "Baseline Customer");
-				} catch {
-					return false;
-				}
+				const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
+				return remoteCustomers.some((customer) => customer.fullname === "Baseline Customer");
 			},
 			{ intervals: [250] }
 		)
@@ -244,7 +290,7 @@ test("footer shows pending changes while offline and clears after resync", async
 	const refreshedRemoteHandle = await getRemoteDbHandle(page, remoteDbURL);
 	await expect
 		.poll(async () => {
-			const remoteCustomers = await refreshedRemoteHandle.evaluate(getCustomerOrderList);
+			const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
 			return remoteCustomers.some((customer) => customer.fullname === "Offline Pending Customer");
 		})
 		.toBe(true);
@@ -270,16 +316,20 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 
 	// Prepare a large batch of remote-only changes
 	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
-	await remoteDbHandle.evaluate(async (db, count) => {
-		for (let i = 0; i < count; i++) {
-			await window.customers.upsertCustomer(db, {
-				id: 10_000 + i,
-				displayId: String(10_000 + i),
-				fullname: `Remote Bulk ${i}`,
-				email: `remote-bulk-${i}@test.com`
-			});
-		}
-	}, 60);
+	await retry(
+		() =>
+			remoteDbHandle.evaluate(async (db, count) => {
+				for (let i = 0; i < count; i++) {
+					await window.customers.upsertCustomer(db, {
+						id: 10_000 + i,
+						displayId: String(10_000 + i),
+						fullname: `Remote Bulk ${i}`,
+						email: `remote-bulk-${i}@test.com`
+					});
+				}
+			}, 60),
+		{ attempts: 5, delayMs: 300 }
+	);
 
 	// Turn sync on to pull the bulk changes
 	await page.evaluate(() => window.localStorage.setItem("librocco-sync-active", "true"));

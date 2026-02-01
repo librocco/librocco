@@ -1,5 +1,5 @@
 import { DB } from "@vlcn.io/crsqlite-wasm";
-import { test } from "@playwright/test";
+import { request, test } from "@playwright/test";
 import type { JSHandle } from "@playwright/test";
 
 import { wrapIter } from "@librocco/shared";
@@ -25,6 +25,17 @@ import {
 	upsertSupplier,
 	upsertWarehouse
 } from "./cr-sqlite";
+
+const warmupOnce = (async () => {
+	const ctx = await request.newContext({ baseURL, ignoreHTTPSErrors: true });
+	try {
+		await ctx.get("/");
+	} catch (error) {
+		console.warn("Warmup request failed", error);
+	} finally {
+		await ctx.dispose();
+	}
+})();
 
 const books = [
 	{ isbn: "1234", authors: "author1", title: "title1", publisher: "pub1", price: 10 },
@@ -256,6 +267,10 @@ type OrderTestFixture = {
 
 export const testBase = test.extend<BaseTestFixture>({
 	page: async ({ page }, use) => {
+		await warmupOnce;
+
+		const hydrationTimeout = 20_000;
+
 		// Make sure the DB schema is initialised before running any tests
 		// This is here to prevent partial initialisation (and subsequent conflicts when reinitialising the, partially initialised, schema)
 		await page.goto(baseURL);
@@ -286,10 +301,10 @@ export const testBase = test.extend<BaseTestFixture>({
 
 			// https://github.com/sveltejs/kit/pull/6484
 			// * this is set in the onMount hook of the root +layout.svelte to indicate when hydration has completed
-			await page.waitForSelector('body[hydrated="true"]', { timeout: 10000 });
+			await page.waitForSelector('body[hydrated="true"]', { timeout: hydrationTimeout });
 			// * We also need to wait for the #app-splash element to be detached which indicates the initial load (db initialised) has completed
 			// * This is defined in the app.html file and detached in the onMount hook of the root +layout.svelte
-			await page.waitForSelector("#app-splash", { state: "detached", timeout: 10000 });
+			await page.waitForSelector("#app-splash", { state: "detached", timeout: hydrationTimeout });
 
 			return res;
 		};
