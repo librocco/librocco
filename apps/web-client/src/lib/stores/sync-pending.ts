@@ -31,7 +31,9 @@ const loadLastSentVersion = async (db: DBAsync, dbid: string) => {
 	}
 
 	try {
-		const [[maxLocalVersion]] = await db.execA<[number]>("SELECT COALESCE(MAX(db_version), 0) FROM crsql_changes WHERE site_id = crsql_site_id()");
+		const [[maxLocalVersion]] = await db.execA<[number]>(
+			"SELECT COALESCE(MAX(db_version), 0) FROM crsql_changes WHERE site_id = crsql_site_id()"
+		);
 		lastSentVersion = Number(maxLocalVersion ?? 0);
 		persistLastSentVersion();
 	} catch {

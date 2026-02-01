@@ -72,14 +72,17 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	});
 
 	await expect
-		.poll(async () => {
-			return page.evaluate(async () => {
-				const w = window as any;
-				const db = await w._getDb(w._app);
-				const localCustomers = await w.customers.getCustomerOrderList(db);
-				return localCustomers.some((customer: any) => customer.id === 99);
-			});
-		}, { timeout: 15000, interval: 250 })
+		.poll(
+			async () => {
+				return page.evaluate(async () => {
+					const w = window as any;
+					const db = await w._getDb(w._app);
+					const localCustomers = await w.customers.getCustomerOrderList(db);
+					return localCustomers.some((customer: any) => customer.id === 99);
+				});
+			},
+			{ timeout: 15000, interval: 250 }
+		)
 		.toBe(true);
 
 	// Capture progress artifacts for debugging (won't fail test but useful)
@@ -216,7 +219,12 @@ test("footer shows pending changes while offline and clears after resync", async
 	await page.goto(baseURL);
 
 	const offlineDbHandle = await getDbHandle(page);
-	await offlineDbHandle.evaluate(upsertCustomer, { id: 2, displayId: "2", fullname: "Offline Pending Customer", email: "pending@test.com" });
+	await offlineDbHandle.evaluate(upsertCustomer, {
+		id: 2,
+		displayId: "2",
+		fullname: "Offline Pending Customer",
+		email: "pending@test.com"
+	});
 
 	const badge = page.getByTestId("remote-db-badge");
 	await expect(badge).toContainText(/pending/i);

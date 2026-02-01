@@ -433,10 +433,12 @@
 
 				<!-- Diagnostic details -->
 				{#if $syncDiagnostics.reason}
-					<div class="mb-4 rounded bg-base-200 p-3 text-xs font-mono">
+					<div class="mb-4 rounded bg-base-200 p-3 font-mono text-xs">
 						<p class="mb-1 font-semibold text-gray-700">{tLayout.error_dialog.sync_stuck.diagnostics.title()}</p>
 						{#if $syncDiagnostics.reason === "rapid_closes"}
-							<p class="text-gray-600">{tLayout.error_dialog.sync_stuck.diagnostics.rapid_closes({ count: $syncDiagnostics.rapidCloseCount })}</p>
+							<p class="text-gray-600">
+								{tLayout.error_dialog.sync_stuck.diagnostics.rapid_closes({ count: $syncDiagnostics.rapidCloseCount })}
+							</p>
 						{:else if $syncDiagnostics.reason === "timeout"}
 							<p class="text-gray-600">{tLayout.error_dialog.sync_stuck.diagnostics.timeout()}</p>
 						{/if}
