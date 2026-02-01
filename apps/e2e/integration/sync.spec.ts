@@ -81,7 +81,7 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 					return localCustomers.some((customer: any) => customer.id === 99);
 				});
 			},
-			{ timeout: 15000, interval: 250 }
+			{ timeout: 15000, intervals: [250] }
 		)
 		.toBe(true);
 
@@ -207,10 +207,17 @@ test("footer shows pending changes while offline and clears after resync", async
 	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Baseline Customer", email: "baseline@test.com" });
 	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
 	await expect
-		.poll(async () => {
-			const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
-			return remoteCustomers.some((customer) => customer.fullname === "Baseline Customer");
-		})
+		.poll(
+			async () => {
+				try {
+					const remoteCustomers = await remoteDbHandle.evaluate(getCustomerOrderList);
+					return remoteCustomers.some((customer) => customer.fullname === "Baseline Customer");
+				} catch {
+					return false;
+				}
+			},
+			{ intervals: [250] }
+		)
 		.toBe(true);
 
 	// Go offline for sync and make a new change
@@ -295,6 +302,6 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 	});
 
 	await expect
-		.poll(async () => page.evaluate(() => (window as any).__maxProgress ?? 0), { timeout: 20000, interval: 250 })
+		.poll(async () => page.evaluate(() => (window as any).__maxProgress ?? 0), { timeout: 20000, intervals: [250] })
 		.toBeGreaterThan(50);
 });
