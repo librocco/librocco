@@ -119,12 +119,14 @@ function createProgressEmitter() {
 
 	// Propagate messages from the sync process to the main thread
 	progressEmitter.onChangesReceived((payload) => {
+		console.log("[sync-worker] changes received", payload);
 		sendMessage({ _type: "changesReceived", payload });
 	});
 	progressEmitter.onChangesProcessed((payload) => {
 		sendMessage({ _type: "changesProcessed", payload });
 	});
 	progressEmitter.onProgress((payload) => {
+		console.log("[sync-worker] progress", payload);
 		sendMessage({ _type: "progress", payload });
 	});
 	progressEmitter.onOutgoingChanges((payload) => {

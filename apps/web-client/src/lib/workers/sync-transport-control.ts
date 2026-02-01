@@ -81,7 +81,7 @@ class ChangesProcessor {
 	#running = false;
 
 	onChunk: ((task: ChunkTask) => Promise<void>) | null = null;
-	onDone: ((hadChanges: boolean) => void) | null = null;
+	onDone: ((hadChanges: boolean, totals: { nProcessed: number; nTotal: number }) => void) | null = null;
 
 	constructor(config: SyncConfig) {
 		this.#maxChunkSize = config.maxChunkSize;
@@ -102,12 +102,13 @@ class ChangesProcessor {
 
 		// Cleanup
 		const hadChanges = i > 0;
+		const totals = { nProcessed: this.#processedRecords, nTotal: this.#totalRecords };
 		this.#queue = [];
 		this.#processedRecords = 0;
 		this.#totalRecords = 0;
 		this.#running = false;
 
-		this.onDone?.(hadChanges);
+		this.onDone?.(hadChanges, totals);
 	};
 
 	enqueue({ _tag, sender, changes, since }: Changes) {
@@ -133,7 +134,7 @@ class ChangesProcessor {
 		// Only call onDone if no queue is currently running
 		// If a queue is running, it will call onDone when it finishes
 		if (!this.#running) {
-			this.onDone?.(false);
+			this.onDone?.(false, { nProcessed: 0, nTotal: 0 });
 		}
 	}
 }
@@ -193,6 +194,8 @@ export class SyncTransportController implements Transport {
 	}
 
 	private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
+		console.log("[sync-transport] incoming batch", { len: msg.changes.length, since: msg.since });
+		this.#progressEmitter.notifyProgress({ active: true, nProcessed: 0, nTotal: msg.changes.length });
 		this.#changesProcessor.enqueue(msg);
 	}
 
@@ -209,8 +212,8 @@ export class SyncTransportController implements Transport {
 		await this.onChangesReceived?.(chunk);
 	}
 
-	private _onDone(hadChanges: boolean) {
-		this.#progressEmitter.notifyProgress({ active: false, nProcessed: 0, nTotal: 0 });
+	private _onDone(hadChanges: boolean, totals: { nProcessed: number; nTotal: number }) {
+		this.#progressEmitter.notifyProgress({ active: false, nProcessed: totals.nProcessed, nTotal: totals.nTotal });
 		if (hadChanges) {
 			this.#progressEmitter.notifyChangesReceived({ timestamp: Date.now() });
 		}

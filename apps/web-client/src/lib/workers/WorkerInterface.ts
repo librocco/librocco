@@ -67,12 +67,14 @@ export default class WorkerInterface extends WI {
 
 		switch (msg._type) {
 			case "changesReceived":
+				console.log("[worker-ifc] changesReceived", msg.payload);
 				this.#syncEmitter.notifyChangesReceived(msg.payload);
 				break;
 			case "changesProcessed":
 				this.#syncEmitter.notifyChangesProcessed(msg.payload);
 				break;
 			case "progress":
+				console.log("[worker-ifc] progress", msg.payload);
 				this.#syncEmitter.notifyProgress(msg.payload);
 				break;
 			case "outgoingChanges":

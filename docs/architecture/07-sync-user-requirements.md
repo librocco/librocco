@@ -89,6 +89,16 @@ Shows during sync with a progress bar displaying `nProcessed/nTotal`:
 
 When sync is detected as "stuck" (rapid connection failures or timeout), a dialog appears offering "Nuke and Resync" -- which deletes the local OPFS database and triggers re-download from the server.
 
+### Sync Server File Watching (.sqlite3 fix)
+
+**Files**: `3rd-party/js/packages/ws-server/src/fs/util.ts`, `3rd-party/js/packages/ws-server/src/fs/FSNotify.ts`, `apps/sync-server/src/index.ts`
+
+The `@vlcn.io/ws-server` FSNotify code now preserves file extensions when normalizing events (it previously dropped `.sqlite3`, breaking watch registration). We also:
+- Turn on `notifyPolling` in dev
+- Run `touchHack` after HTTP `/exec` mutations to force a watch event on the DB file
+
+Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2e sync suite runs without skips.
+
 ---
 
 ## Gap Analysis
@@ -269,9 +279,9 @@ Define clear states for the sync indicator:
 
 ### Current Gaps After Recent Changes
 
-- Remote-only changes to `.sqlite3`-named DBs failed to surface locally in e2e (`integration/sync.spec.ts` first test still timing out at 8s), indicating FS notify or listener issues remain.
-- Progress events didn’t surface in e2e bulk sync (`__maxProgress` stayed 0), so record-count progress is implemented but not yet observable in browser tests.
+- Progress events now surface and reflect record counts (changes) even when subscribers attach after completion; still no size/ETA.
 - Pending-count logic is based on “last sent” only; no server ACK yet.
+- The `.sqlite3` FSNotify fix is local to our vendored `@vlcn.io/ws-server`; upstreaming or pinning the patched build is still required to avoid regression on dependency updates.
 
 **Implementation**:
 
@@ -393,9 +403,14 @@ await waitForSync();            // Wait for sync to settle
 
 ### Phase 3: Progress Improvements
 
-1. Refactor `ChangesProcessor` to track change counts, not chunks (implemented)
-2. Update progress dialog to show meaningful numbers (uses change counts now)
+1. Refactor `ChangesProcessor` to track change counts, not chunks (implemented; emits final totals even after completion)
+2. Update progress dialog to show meaningful numbers (uses change counts now; covered by bulk sync e2e)
 3. Consider adding estimated time remaining
+
+### Phase 3.5: File-Watcher Stability
+
+1. Preserve DB extensions in FSNotify (`@vlcn.io/ws-server`) and keep `touchHack` on HTTP writes (implemented locally; needs upstream/backport strategy)
+2. Keep `.sqlite3` regression tests active in `apps/e2e/integration/sync.spec.ts`
 
 ### Phase 4: Sync Validation
 

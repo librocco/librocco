@@ -9,10 +9,7 @@ import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
 //
-// SKIP: This test requires the FSNotify fix for .sqlite3 extension (fileEventNameToDbId).
-// The fix needs to be in @vlcn.io/ws-server package. See docs/architecture/07-sync-user-requirements.md
-// for details. Re-enable when the vlcn.io package is updated.
-test.skip("should update UI when remote-only changes arrive via sync", async ({ page }) => {
+test("should update UI when remote-only changes arrive via sync", async ({ page }) => {
 	// Use a database name with .sqlite3 extension to test the FSNotify bug.
 	// The bug: fileEventNameToDbId used path.parse().name which strips the extension,
 	// causing a mismatch between how listeners register (with extension) and how
@@ -64,6 +61,16 @@ test.skip("should update UI when remote-only changes arrive via sync", async ({ 
 		email: "external@test.com"
 	});
 
+	await page.evaluate(() => {
+		(window as any).__lastIncoming = [];
+		(window as any).__progressSeen = [];
+		const app = (window as any)._app;
+		(window as any).__progressUnsub?.();
+		(window as any).__progressUnsub = app?.sync?.syncProgressStore?.subscribe?.((v: any) => {
+			(window as any).__progressSeen.push(v);
+		});
+	});
+
 	await expect
 		.poll(async () => {
 			return page.evaluate(async () => {
@@ -74,6 +81,10 @@ test.skip("should update UI when remote-only changes arrive via sync", async ({ 
 			});
 		}, { timeout: 15000, interval: 250 })
 		.toBe(true);
+
+	// Capture progress artifacts for debugging (won't fail test but useful)
+	const seen = await page.evaluate(() => (window as any).__progressSeen?.length || 0);
+	expect(seen).toBeGreaterThan(0);
 
 	// This must appear without any local interaction
 	// With the bug (extension stripped), this will timeout because FSNotify won't find listeners
@@ -226,10 +237,7 @@ test("footer shows pending changes while offline and clears after resync", async
 	await expect(page.getByTestId("remote-db-badge")).not.toContainText(/pending/i);
 });
 
-// SKIP: This test requires the FSNotify fix for .sqlite3 extension (fileEventNameToDbId).
-// Changes made via HTTP API on the server need to be pushed to WebSocket clients via FSNotify.
-// Re-enable when @vlcn.io/ws-server is updated with the fix.
-test.skip("sync progress reports change counts instead of chunk counts", async ({ page }) => {
+test("sync progress reports change counts instead of chunk counts", async ({ page }) => {
 	const dbName = `progress-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
 	await page.evaluate(
 		([syncUrl, dbName]) => {
@@ -273,6 +281,8 @@ test.skip("sync progress reports change counts instead of chunk counts", async (
 			if (v.nTotal > (window as any).__maxProgress) {
 				(window as any).__maxProgress = v.nTotal;
 			}
+			(window as any).__lastIncoming = (window as any).__lastIncoming || [];
+			(window as any).__lastIncoming.push(v);
 		});
 	});
 

@@ -18,7 +18,8 @@ const server = http.createServer(app);
 const wsConfig = {
 	dbFolder: DB_FOLDER,
 	schemaFolder: SCHEMA_FOLDER,
-	pathPattern: /\/sync/
+	pathPattern: /\/sync/,
+	notifyPolling: true
 };
 
 // Create the DB folder if it doesn't exist
@@ -69,10 +70,12 @@ app.post("/:dbname/exec", async (req, res) => {
 
 			if (stmt.reader) {
 				const rows = stmt.all(bind);
+				touchHack(path.resolve(wsConfig.dbFolder!, req.params.dbname));
 				return res.json({ rows });
 			}
 
 			stmt.run(bind);
+			touchHack(path.resolve(wsConfig.dbFolder!, req.params.dbname));
 			return res.json({ rows: null });
 		} catch (err) {
 			return res.status(400).json({ isSQLiteError: true, message: err.message, code: err.code });
