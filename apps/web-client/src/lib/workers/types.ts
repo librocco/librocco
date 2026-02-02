@@ -29,7 +29,16 @@ export type MsgOutgoingChanges = {
 
 export type MsgSyncStatus = {
 	_type: "sync.status";
-	payload: { ok: boolean; siteId?: string; schemaName?: string; schemaVersion?: string; stage?: string; reason?: string; message?: string };
+	payload: {
+		ok: boolean;
+		siteId?: string;
+		schemaName?: string;
+		schemaVersion?: string;
+		stage?: string;
+		ackDbVersion?: number;
+		reason?: string;
+		message?: string;
+	};
 };
 
 export type MsgProgress = {

@@ -28,7 +28,7 @@
 	import { timeLogger } from "$lib/utils/timer";
 	import { syncConnectivityMonitor, updateSyncConnectivityMonitor, resetSyncStuckState } from "$lib/stores";
 	import { applyHandshakeStatus, resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
-	import { attachPendingMonitor, resetPendingTracker, setLastSentVersion } from "$lib/stores/sync-pending";
+	import { attachPendingMonitor, resetPendingTracker, setLastAckedVersion } from "$lib/stores/sync-pending";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
@@ -84,7 +84,6 @@
 	let availabilitySubscription: Subscription;
 	let detachPendingMonitor: (() => void) | null = null;
 	let detachPendingInvalidate: (() => void) | null = null;
-	let detachOutgoingChanges: (() => void) | null = null;
 	let detachSyncStatus: (() => void) | null = null;
 
 	// Config stores
@@ -140,14 +139,12 @@
 				detachPendingMonitor = await attachPendingMonitor(app.db.db, getDbRx(app), app.db.dbid);
 			}
 		});
-		detachOutgoingChanges = await app.sync.runExclusive(async (sync) => {
-			return sync.worker.onOutgoingChanges((payload) => {
-				void setLastSentVersion(payload.maxDbVersion, get(dbid));
-			});
-		});
 		detachSyncStatus = await app.sync.runExclusive(async (sync) => {
 			return sync.worker.onSyncStatus((payload) => {
 				applyHandshakeStatus(get(dbid), payload);
+				if (payload.ackDbVersion != null) {
+					void setLastAckedVersion(payload.ackDbVersion, get(dbid));
+				}
 			});
 		});
 	});
@@ -159,7 +156,6 @@
 		window.removeEventListener("beforeunload", preventUnloadHandler);
 		detachPendingMonitor?.();
 		detachPendingInvalidate?.();
-		detachOutgoingChanges?.();
 		detachSyncStatus?.();
 		resetPendingTracker();
 	});

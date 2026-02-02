@@ -12,6 +12,16 @@ export class SyncEventEmitter {
 	changesReceivedListeners = new Set<Listener<{ timestamp: number }>>();
 	changesProcessedListeners = new Set<Listener<{ timestamp: number }>>();
 	outgoingChangesListeners = new Set<Listener<{ maxDbVersion: number; changeCount: number }>>();
+	#lastSyncStatus: {
+		ok: boolean;
+		siteId?: string;
+		schemaName?: string;
+		schemaVersion?: string;
+		stage?: string;
+		ackDbVersion?: number;
+		reason?: string;
+		message?: string;
+	} | null = null;
 	syncStatusListeners = new Set<
 		Listener<{
 			ok: boolean;
@@ -19,6 +29,7 @@ export class SyncEventEmitter {
 			schemaName?: string;
 			schemaVersion?: string;
 			stage?: string;
+			ackDbVersion?: number;
 			reason?: string;
 			message?: string;
 		}>
@@ -36,6 +47,9 @@ export class SyncEventEmitter {
 		<M>(listeners: Set<Listener<M>>) =>
 		(cb: Listener<M>) => {
 			listeners.add(cb);
+			if (listeners === this.syncStatusListeners && this.#lastSyncStatus != null) {
+				cb(this.#lastSyncStatus as M);
+			}
 			return () => listeners.delete(cb);
 		};
 
@@ -50,6 +64,20 @@ export class SyncEventEmitter {
 	notifyProgress = this._notify(this.progressListeners);
 	notifyOutgoingChanges = this._notify(this.outgoingChangesListeners);
 	notifySyncStatus = this._notify(this.syncStatusListeners);
+
+	notifySyncStatusWithCache(msg: {
+		ok: boolean;
+		siteId?: string;
+		schemaName?: string;
+		schemaVersion?: string;
+		stage?: string;
+		ackDbVersion?: number;
+		reason?: string;
+		message?: string;
+	}) {
+		this.#lastSyncStatus = msg;
+		this.notifySyncStatus(msg);
+	}
 }
 
 export class ConnectionEventEmitter {
@@ -240,12 +268,20 @@ export class SyncTransportController implements Transport {
 
 	private _onSyncStatus(msg: SyncStatus) {
 		const siteIdHex = msg.siteId ? bytesToHex(msg.siteId) : undefined;
-		this.#progressEmitter.notifySyncStatus({
+		console.info("[sync] SyncStatus", {
+			ok: msg.ok,
+			stage: msg.stage,
+			ackDbVersion: msg.ackDbVersion?.toString(),
+			reason: msg.reason,
+			message: msg.message
+		});
+		this.#progressEmitter.notifySyncStatusWithCache({
 			ok: msg.ok,
 			siteId: siteIdHex,
 			schemaName: msg.schemaName,
 			schemaVersion: msg.schemaVersion?.toString(),
 			stage: msg.stage,
+			ackDbVersion: msg.ackDbVersion != null ? Number(msg.ackDbVersion) : undefined,
 			reason: msg.reason,
 			message: msg.message
 		});

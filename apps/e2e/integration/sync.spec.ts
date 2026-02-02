@@ -410,6 +410,12 @@ test("surfaces apply failures after a successful handshake", async ({ page }) =>
 
 	await page.getByText("Remote DB incompatible").waitFor({ timeout: 15000 });
 	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "incompatible");
+	await expect
+		.poll(async () => Number((await page.getAttribute('[data-testid="remote-db-badge"]', "data-pending")) || "0"), {
+			timeout: 5000,
+			intervals: [250]
+		})
+		.toBeGreaterThan(0);
 });
 
 test("sync progress reports change counts instead of chunk counts", async ({ page }) => {

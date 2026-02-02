@@ -333,11 +333,12 @@ export async function reidentifyDbNode(db: DBAsync) {
 
 		// Store origin as a tracked peer (this is required to avoid re-syncing everything -- pulling changes since the beginning of time)
 		const [[origin_site_id]] = await txDb.execA<[Uint8Array]>("SELECT site_id FROM crsql_site_id WHERE ordinal = 1");
-		const [[db_version]] = await txDb.execA<[number]>("SELECT MAX(db_version) FROM crsql_changes");
+		const [[db_version]] = await txDb.execA<[number | null]>("SELECT MAX(db_version) FROM crsql_changes");
+		const dbVersion = db_version ?? 0;
 		// Value inferred from usage (inspecting sync worker and ws-server impl)
 		await txDb.exec("INSERT INTO crsql_tracked_peers (site_id, event, version, seq, tag) VALUES (?, 0, ?, 0, 0)", [
 			origin_site_id,
-			db_version
+			dbVersion
 		]);
 
 		// Attribute all tracked changes to origin node

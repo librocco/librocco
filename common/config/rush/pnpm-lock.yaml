@@ -2118,42 +2118,42 @@ packages:
     resolution: {integrity: sha512-ilHM5fHhZ89MCp5aAaM9uhfl1c2JdxVxl3McqsdVyVNN6JffnEen8UMCdRTzOhGXNQGo5GNL9QugHrz727Wnng==}
 
   '@vlcn.io/crsqlite-wasm@file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz':
-    resolution: {integrity: sha512-71n812IABIhAvsFRivIc9wwlfXJEUy5W8RlAH+kYNLVmLPOXv5PQuouhVDIttEXC3oc8VbG2B0jbx39gDP8sLA==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
+    resolution: {integrity: sha512-RM0P6tV7+njveCQlmlYNkgVeRbPVm/n4Z8WbVkj4dbqhnR4D0pfgpWQGuHQc7JSetSZjnLr3SEOgvIuvRncWKw==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
     version: 0.16.0
 
   '@vlcn.io/crsqlite@file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz':
-    resolution: {integrity: sha512-3+fjubzMnecbVRO+rCJwY421PcYH17k91/O7bCG/9yQ/qAFmPctVYrcGWrtW6TD8pyV8BT0h2u25heB6meSbIg==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz}
+    resolution: {integrity: sha512-XyE3emGQBT8CoYdFXz80JA7qs//QIZykOTcEkBhoyfjEKZHFW3ij0XHLhphxlwr+y8QxSk+8UX7HDrIujBI3rg==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz}
     version: 0.16.3
 
   '@vlcn.io/logger-provider@0.2.0':
     resolution: {integrity: sha512-HLYSnXDo5gCLN22CEIX1eg78JTuw49l7F/KEDTbtoZXch6IJDQ1621z0m162q6T9oIOGTM400y/RUOXaKCRo8w==}
 
   '@vlcn.io/rx-tbl@file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz':
-    resolution: {integrity: sha512-epKqgAKVhI9hS4dPnWgwtbBmaoPlCJ830ditASKNx9egogwjp/fhxa64yfsajmD7XrixS3WHk2/ah19UAGN3dw==, tarball: file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz}
+    resolution: {integrity: sha512-bnnNnAKXq1LM7DDf6ENKrfDxL6j35lqcm8fBl79z6LROJyaBtCB+1divScTys6TD+AFlbdgUgx1e6/yYd2V88Q==, tarball: file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz}
     version: 0.15.0
 
   '@vlcn.io/wa-sqlite@file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz':
-    resolution: {integrity: sha512-yjEt9rA09VzBR3A68Lz+h/mniqMR/FJDUynbGjeJYH8svLyeKEdzPUKMU31WcQHPsKMXRnNRy87DrWl34qVV1A==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
+    resolution: {integrity: sha512-N1AV4AoJBYriF7EwGzqHtwWHoqxqFf74wMyvsO7sW//wnmOCrtk9Q8gRpCA3MsNtUGb2317vB6xFYVO0FMeS5g==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
     version: 0.22.0
 
   '@vlcn.io/ws-browserdb@file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz':
-    resolution: {integrity: sha512-a5AoHpktbiWqYVnjHxBsZz8VsGNOo5USGrFZaJGIh+dMlnWwu5ickbplkoIOSHv5IhlMevd9emosDN0wneaGQQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
+    resolution: {integrity: sha512-UzdbKBkA/gF+RUHw01LbJckyqhuytAd5LIWP+popIl0Pijk705Du3EXJ/HIKr87pG4fmLpyy+TZgBphrYdzBbg==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
     version: 0.2.0
 
   '@vlcn.io/ws-client@file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz':
-    resolution: {integrity: sha512-TPhSPpuuv20SZP/GmRZBYX1KSZmXZL+hmKaH4dRFge+sLUNUYHuJ6apx7+AX9gaiiZ+Qriw9rcbuR0jwbk5n7w==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz}
+    resolution: {integrity: sha512-ZNmThoIpQUw1dReJDoeoHHNvDfkCol2MhuH5XG35t49Sbo54qNn7y4cdKmhfsVcmHwOFdYe1EC52iTdsQ7Vbag==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz}
     version: 0.2.0
 
   '@vlcn.io/ws-common@file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz':
-    resolution: {integrity: sha512-zxP1P+6s9kKRl17msKbRdFnOsRiKsq6+nKmUaJynmF+cse/zpTPtJC5Obsnl3SYCszVV5AU0KQy2IFGj42bvmg==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz}
+    resolution: {integrity: sha512-yCxiXad6TY8hf/1JaOrkuY80bugVswdpp4I98gsFW1HwxQC0/dL8QCND1fOydepm1SanU8pI21WE6bI/oQS4Mg==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz}
     version: 0.2.0
 
   '@vlcn.io/ws-server@file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz':
-    resolution: {integrity: sha512-YJIcxV6WMnqyxG+3zaE2DUQ1NwpK0GwwFCelNq6WDg5rZwlnY22cGJJymHVSQP1PADWBMmqTie7EbwSxf2TPGw==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
+    resolution: {integrity: sha512-H3eg3ceOFKbFWdMLi/gPPO/fSsyJBMoO/uThDbEJYDhbIlO70bppbOCaLzexB0//O1etinCGDRLdm2iT01Z2MQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
     version: 0.2.2
 
   '@vlcn.io/xplat-api@file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz':
-    resolution: {integrity: sha512-IWi6aJrWnILtvWWdqYY++wmr9ywzwevpzUE0jKCHqYxeel/EPul3MQcdyCeNsN8NrxQbvk53l+Bu8eYTml+IPA==, tarball: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz}
+    resolution: {integrity: sha512-JwDmca4DXun43c0Zn0snlviiBYEpWsUGclWSg6x6M/SFZwuOs4cn7OYSbb5hddfB2Q3S3/WnRG/aNRqGWUtkCA==, tarball: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz}
     version: 0.15.0
 
   accepts@1.3.8:

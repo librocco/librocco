@@ -174,6 +174,7 @@ export function applyHandshakeStatus(
 		message?: string;
 	}
 ) {
+	console.info("[sync] applyHandshakeStatus", { dbid, status });
 	if (!status.ok) {
 		const message = status.message ?? "Sync handshake failed";
 		syncCompatibility.set({
@@ -185,6 +186,6 @@ export function applyHandshakeStatus(
 		return { ok: false as const };
 	}
 
-	const verified = status.stage === "steady" || status.stage == null;
+	const verified = status.stage === "steady" || status.stage === "apply_ack" || status.stage == null;
 	return applyRemoteInfo(dbid, { siteId: status.siteId, schemaVersion: status.schemaVersion, verified });
 }

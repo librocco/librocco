@@ -108,7 +108,8 @@ Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2
 
 - The sync server emits a WebSocket `SyncStatus` handshake carrying DB `site_id` (from the database, not a sidecar), `schema_name`, and `schema_version` before streaming starts. If the handshake is incompatible, the server closes the socket after sending the status.
 - The client keeps the sync indicator in "connecting" until a compatible handshake arrives; it stores the remote `site_id` per DB and marks the UI as incompatible when the remote identity changes or the schema version differs. HTTP `/:dbname/meta` is now best-effort only (no longer required to show incompatibility).
-- Compatibility resets when running "Nuke and Resync". E2E coverage includes a rebuilt-DB scenario even when the HTTP meta endpoint is blocked.
+- After the first inbound apply succeeds, the server now emits a `SyncStatus` steady ACK with `ackDbVersion`; every subsequent inbound apply sends `stage: "apply_ack"` with the highest applied `db_version`. Apply errors emit `reason: apply_failed` mid-stream.
+- The client treats steady/apply ACKs as verification, persists the last acknowledged `db_version` per DB, and uses it to clear pending counts only when the server confirms apply. Compatibility resets when running "Nuke and Resync". E2E coverage includes a rebuilt-DB scenario even when the HTTP meta endpoint is blocked.
 
 ---
 
@@ -116,14 +117,14 @@ Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2
 
 ### Gap 1: "Connected" Doesn't Mean "Syncable"
 
-**Mitigation now**: The server emits a WebSocket `SyncStatus` handshake (site_id, schema_version) before streaming, then sends a second `SyncStatus` (`stage: "steady"`) after the first inbound batch is processed. The client stays in "connecting" until the steady ACK arrives and marks the UI as incompatible if the server replies with `reason: apply_failed` after an apply error (even if `/meta` is blocked).
+**Mitigation now**: The server emits a WebSocket `SyncStatus` handshake (site_id, schema_version) before streaming, then sends a steady `SyncStatus` with `ackDbVersion` after the first inbound apply, and `stage: "apply_ack"` for every subsequent inbound apply. Any apply error (including later batches) sends `reason: apply_failed`. The client stays in "connecting" until the first steady ACK, and surfaces incompatibility on any `apply_failed` regardless of `/meta`.
 
-**Remaining risk**: The steady ACK only covers the first inbound apply. We still assume the stream remains healthy after that point and have no server ACK for later apply failures or schema drift mid-session.
+**Remaining risk**: We still assume the stream remains healthy between ACKs; there's no mid-stream schema drift detection beyond apply failures, and ACKs don't yet carry durability metadata (e.g., fsync or downstream replication state).
 
 ### Gap 2: No Tracking of Pending Local Changes
 
-**Current**: The footer shows pending counts based on local `crsql_changes` newer than the last sent db_version (persisted per DB). There is still no explicit server acknowledgment, so it assumes messages marked as "sent" were accepted.
-**Required**: Footer should show when local changes haven't reached the server, ideally based on server acknowledgment rather than send-attempts.
+**Current**: The footer now shows pending counts based on the last server-acknowledged `db_version` (`ackDbVersion` from `SyncStatus` steady/apply_ack). Pending only clears when the server confirms apply; apply failures keep pending > 0.
+**Required**: Consider persisting server ACK state on the server or adding a catch-up ACK when reconnecting so the client can reconcile if an ACK was lost mid-disconnect.
 
 **Why This Matters**:
 
@@ -138,15 +139,17 @@ Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2
 
 ### Gap 4: No Validation of Sync Compatibility
 
-**Status**: Mitigated. WebSocket `SyncStatus` now validates schema version and database identity before the connection is considered "connected", and emits a steady-state ACK after the first inbound apply (or an `apply_failed` error if that apply throws).
+**Status**: Mitigated. WebSocket `SyncStatus` now validates schema version and database identity before the connection is considered "connected", sends steady/apply ACKs with `ackDbVersion` for every inbound apply, and emits `apply_failed` for any apply error.
 
-**Next Step**: Extend validation past the first batch: surface `apply_failed` for later apply errors and add an explicit server ACK (with db_version) so the client can tell “connected but writes are being rejected mid-stream”.
+**Next Step**: Add schema drift detection beyond apply failures (e.g., periodic schema hash) and consider persisting/replaying the last ACK on reconnect so clients can reconcile even if the final ACK was lost.
 
 ## Implementation Recommendations
 
 ### Recommendation 1: Implement Pending Changes Counter (Option A)
 
 Use a periodic query of `crsql_changes` to count unsynced local changes.
+
+**Status**: Implemented. The client persists the last server-acknowledged `db_version` (`ackDbVersion` from `SyncStatus`) per DB and clears pending only when the server confirms apply. Next step would be to add a server-side ACK replay on reconnect to recover if the last ACK was lost.
 
 **Approach**:
 

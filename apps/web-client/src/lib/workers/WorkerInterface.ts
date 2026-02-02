@@ -92,7 +92,7 @@ export default class WorkerInterface extends WI {
 				this.#connEmitter.notifyConnClose();
 				break;
 			case "sync.status":
-				this.#syncEmitter.notifySyncStatus(msg.payload);
+				this.#syncEmitter.notifySyncStatusWithCache(msg.payload);
 				break;
 			default:
 				break;

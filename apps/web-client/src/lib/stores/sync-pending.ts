@@ -8,37 +8,31 @@ export const pendingChangesCount = writable(0);
 
 let currentDb: DBAsync | null = null;
 let currentDbid: string | null = null;
-let lastSentVersion = 0;
+let lastAckVersion = 0;
 let unsubscribeAny: (() => void) | null = null;
 let refreshPromise: Promise<void> | null = null;
 
-const getStorageKey = (dbid: string) => `librocco-sync-last-sent-${dbid}`;
+const getAckStorageKey = (dbid: string) => `librocco-sync-last-ack-${dbid}`;
+const getLegacyStorageKey = (dbid: string) => `librocco-sync-last-sent-${dbid}`;
 
-const persistLastSentVersion = () => {
+const persistLastAckVersion = () => {
 	if (!browser || !currentDbid) return;
-	localStorage.setItem(getStorageKey(currentDbid), JSON.stringify(lastSentVersion));
+	localStorage.setItem(getAckStorageKey(currentDbid), JSON.stringify(lastAckVersion));
 };
 
-const loadLastSentVersion = async (db: DBAsync, dbid: string) => {
+const loadLastAckVersion = async (dbid: string) => {
 	currentDbid = dbid;
 
 	if (browser) {
-		const stored = localStorage.getItem(getStorageKey(dbid));
-		if (stored) {
-			lastSentVersion = Number(JSON.parse(stored)) || 0;
+		const stored = localStorage.getItem(getAckStorageKey(dbid)) ?? localStorage.getItem(getLegacyStorageKey(dbid));
+		if (stored != null) {
+			lastAckVersion = Number(JSON.parse(stored)) || 0;
+			persistLastAckVersion();
 			return;
 		}
 	}
 
-	try {
-		const [[maxLocalVersion]] = await db.execA<[number]>(
-			"SELECT COALESCE(MAX(db_version), 0) FROM crsql_changes WHERE site_id = crsql_site_id()"
-		);
-		lastSentVersion = Number(maxLocalVersion ?? 0);
-		persistLastSentVersion();
-	} catch {
-		lastSentVersion = 0;
-	}
+	lastAckVersion = 0;
 };
 
 const refreshPendingCount = async () => {
@@ -50,7 +44,7 @@ const refreshPendingCount = async () => {
 		try {
 			const [result] = await currentDb.execO<{ count: number }>(
 				"SELECT COUNT(*) as count FROM crsql_changes WHERE site_id = crsql_site_id() AND db_version > ?",
-				[lastSentVersion]
+				[lastAckVersion]
 			);
 			pendingChangesCount.set(Number(result?.count ?? 0));
 		} catch {
@@ -65,7 +59,7 @@ const refreshPendingCount = async () => {
 
 export async function attachPendingMonitor(db: DBAsync, rx: IAppDbRx, dbid: string) {
 	currentDb = db;
-	await loadLastSentVersion(db, dbid);
+	await loadLastAckVersion(dbid);
 
 	unsubscribeAny?.();
 	unsubscribeAny = rx.onAny(() => {
@@ -83,12 +77,12 @@ export async function attachPendingMonitor(db: DBAsync, rx: IAppDbRx, dbid: stri
 	};
 }
 
-export async function setLastSentVersion(version: number, dbid?: string) {
+export async function setLastAckedVersion(version: number, dbid?: string) {
 	if (!currentDbid || (dbid && dbid !== currentDbid)) return;
 
-	if (version > lastSentVersion) {
-		lastSentVersion = version;
-		persistLastSentVersion();
+	if (version > lastAckVersion) {
+		lastAckVersion = version;
+		persistLastAckVersion();
 		await refreshPendingCount();
 	}
 }
@@ -98,7 +92,7 @@ export function resetPendingTracker() {
 	unsubscribeAny = null;
 	currentDb = null;
 	currentDbid = null;
-	lastSentVersion = 0;
+	lastAckVersion = 0;
 	refreshPromise = null;
 	pendingChangesCount.set(0);
 }
