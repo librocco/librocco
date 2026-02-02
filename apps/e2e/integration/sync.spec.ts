@@ -4,7 +4,7 @@ import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
 import { testBase as test, testOrders } from "@/helpers/fixtures";
 
-import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } from "@/helpers/cr-sqlite";
+import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, resetRemoteDb, upsertCustomer } from "@/helpers/cr-sqlite";
 
 test.setTimeout(20_000);
 
@@ -310,6 +310,64 @@ test("footer shows pending changes while offline and clears after resync", async
 		.toBe(true);
 
 	await expect(page.getByTestId("remote-db-badge")).not.toContainText(/pending/i);
+});
+
+test("shows incompatible state when remote DB is rebuilt and recovers after nuke and resync", async ({ page }) => {
+	const dbName = `compat-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			window.localStorage.setItem("librocco-sync-active", "true");
+		},
+		[syncUrl, dbName]
+	);
+	await page.goto(baseURL);
+	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
+
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Compat Baseline", email: "compat@test.com" });
+
+	await expect
+		.poll(
+			async () => {
+				const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+				const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
+				return remoteCustomers.some((customer) => customer.fullname === "Compat Baseline");
+			},
+			{ timeout: 20000, intervals: [250] }
+		)
+		.toBe(true);
+
+	await resetRemoteDb(page, remoteDbURL, dbName);
+
+	await page.reload();
+	await page.goto(baseURL);
+
+	await page.getByText("Remote DB incompatible").waitFor({ timeout: 10000 });
+
+	await page.getByRole("button", { name: /nuke/i }).click();
+
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
+			timeout: 20000,
+			intervals: [250]
+		})
+		.toBe("synced");
+
+	const refreshedDbHandle = await getDbHandle(page);
+	await refreshedDbHandle.evaluate(upsertCustomer, { id: 2, displayId: "2", fullname: "Post Resync Customer", email: "post@test.com" });
+
+	await expect
+		.poll(
+			async () => {
+				const refreshedRemoteHandle = await getRemoteDbHandle(page, remoteDbURL);
+				const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
+				return remoteCustomers.some((customer) => customer.fullname === "Post Resync Customer");
+			},
+			{ timeout: 20000, intervals: [250] }
+		)
+		.toBe(true);
 });
 
 test("sync progress reports change counts instead of chunk counts", async ({ page }) => {

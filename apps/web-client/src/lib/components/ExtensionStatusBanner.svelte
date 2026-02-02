@@ -14,10 +14,17 @@
 		invalidateAll();
 	}
 
-	$: remoteDbLabel =
-		$syncState.pending > 0
-			? `${$LL.misc_components.extension_banner.remote_db()} (${$syncState.pending} pending)`
-			: $LL.misc_components.extension_banner.remote_db();
+	$: remoteDbLabel = (() => {
+		if ($syncState.status === "incompatible") {
+			return `${$LL.misc_components.extension_banner.remote_db()} (incompatible)`;
+		}
+
+		if ($syncState.pending > 0) {
+			return `${$LL.misc_components.extension_banner.remote_db()} (${$syncState.pending} pending)`;
+		}
+
+		return $LL.misc_components.extension_banner.remote_db();
+	})();
 
 	$: indicatorClass = (() => {
 		switch ($syncState.status) {
@@ -26,6 +33,7 @@
 			case "synced":
 			case "syncing":
 				return "bg-success";
+			case "incompatible":
 			case "stuck":
 			case "disconnected":
 			default:

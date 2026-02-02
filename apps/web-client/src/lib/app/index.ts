@@ -8,6 +8,7 @@ import { IS_DEMO } from "$lib/constants";
 import { clearIDBBatchAtomic, deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
 import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
 import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
+import { resetSyncCompatibility } from "$lib/stores/sync-compatibility";
 
 export class App {
 	// TODO: maybe implement App state -- currently we're relying on both:
@@ -43,6 +44,8 @@ export async function nukeAndResyncDb(app: App, dbid: string, vfs: VFSWhitelist)
 		// NOTE: this removes all of the 'idb-batch-atomic' entries (potentially mutliple DBs)
 		await clearIDBBatchAtomic();
 	}
+
+	resetSyncCompatibility(dbid);
 
 	// Reinitialise the (clean) DB with provided DBID
 	// NOTE: this sets the DB state to "ready" -- thus unlocking the DB for high-level usage

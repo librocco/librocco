@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 
 import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
 import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack.js";
@@ -81,6 +82,73 @@ app.post("/:dbname/exec", async (req, res) => {
 			return res.status(400).json({ isSQLiteError: true, message: err.message, code: err.code });
 		}
 	});
+});
+
+app.get("/:dbname/meta", async (req, res) => {
+	const dbname = req.params.dbname;
+
+	try {
+		const dbPath = path.resolve(wsConfig.dbFolder!, dbname);
+		const metaPath = `${dbPath}.meta.json`;
+
+		let meta: { siteId: string; schemaName?: string; schemaVersion?: string } | null = null;
+
+		if (fs.existsSync(metaPath)) {
+			meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
+		}
+
+		// Ensure the DB exists on disk before returning metadata
+		await dbCache.use(dbname, schemaName, (idb: IDB) => {
+			// No-op; this ensures the DB is created and ready for subsequent sync
+			idb.getDB();
+			if (!meta) {
+				meta = {
+					siteId: crypto.randomBytes(16).toString("hex"),
+					schemaName: idb.schemaName,
+					schemaVersion: idb.schemaVersion?.toString()
+				};
+			}
+		});
+
+		if (!meta || !meta.siteId) {
+			return res.status(500).json({ message: `Metadata not available for DB ${dbname}` });
+		}
+
+		fs.writeFileSync(metaPath, JSON.stringify(meta), "utf-8");
+
+		return res.json(meta);
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Unknown error";
+		return res.status(500).json({ message: `Failed to read metadata for DB ${dbname}`, error: message });
+	}
+});
+
+app.post("/:dbname/reset", async (req, res) => {
+	if (!IS_DEV) {
+		return res.status(403).json({ message: "Not allowed in production mode" });
+	}
+
+	const dbname = req.params.dbname;
+	const dbPath = path.resolve(wsConfig.dbFolder!, dbname);
+
+	try {
+		// Remove DB and journaling files to force a fresh DB (new site_id) on next access
+		for (const suffix of ["", "-wal", "-shm"]) {
+			fs.rmSync(dbPath + suffix, { force: true });
+		}
+		fs.rmSync(dbPath + ".meta.json", { force: true });
+
+		// Re-initialize the DB so subsequent metadata calls succeed immediately
+		await dbCache.use(dbname, schemaName, (idb) => {
+			const db = idb.getDB();
+			db.prepare("SELECT 1").get();
+		});
+
+		return res.json({ ok: true });
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Unknown error";
+		return res.status(500).json({ message: `Failed to reset DB ${dbname}`, error: message });
+	}
 });
 
 app.get("/:dbname/file", async (req, res) => {

@@ -54,13 +54,14 @@ The footer now shows a single "Remote DB" badge (the Book Data Extension badge h
 **File**: `apps/web-client/src/lib/stores/app.ts`
 
 The `syncConnectivityMonitor` tracks:
+
 - `connected`: Boolean, set `true` on WebSocket open, `false` on close
 - `stuck`: Boolean, set `true` after 3 rapid connection failures or 10s timeout
 - `diagnostics`: Object with failure reason and counts
 
 ```typescript
 const unsubscribeOpen = worker?.onConnOpen(() => {
-  _syncConnectivityMonitor.connected.set(true);  // GREEN
+  _syncConnectivityMonitor.connected.set(true); // GREEN
   // ...
 });
 
@@ -94,11 +95,20 @@ When sync is detected as "stuck" (rapid connection failures or timeout), a dialo
 **Files**: `3rd-party/js/packages/ws-server/src/fs/util.ts`, `3rd-party/js/packages/ws-server/src/fs/FSNotify.ts`, `apps/sync-server/src/index.ts`, `python-apps/launcher/launcher/config.py`
 
 The `@vlcn.io/ws-server` FSNotify code now preserves file extensions when normalizing events (it previously dropped `.sqlite3`, breaking watch registration). We also:
+
 - Proxy all `*.sqlite3` and `*.sqlite` HTTP endpoints through Caddy in the headless launcher so `/exec` and `/file` routes reach the sync server instead of 404-ing in CI.
 - Turn on `notifyPolling` in dev
 - Run `touchHack` after HTTP `/exec` mutations to force a watch event on the DB file
 
 Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2e sync suite runs without skips.
+
+### Compatibility Handshake + UI
+
+**Files**: `apps/sync-server/src/index.ts`, `apps/web-client/src/lib/stores/sync-compatibility.ts`, `apps/web-client/src/lib/app/sync.ts`, `apps/web-client/src/routes/+layout.svelte`, `apps/web-client/src/lib/components/ExtensionStatusBanner.svelte`
+
+- The sync server exposes `/:dbname/meta` (site_id, schema_name, schema_version) and a dev-only `/:dbname/reset` endpoint (used by e2e to simulate remote rebuilds).
+- The client fetches remote meta before starting live sync, compares schema_version to the local one, and remembers the remote site_id per DB. If the remote site_id changes (server rebuild) or meta is unreachable/missing, the footer shows an "incompatible" state and the stuck dialog prompts "Nuke and Resync".
+- Compatibility resets when running "Nuke and Resync". An e2e test covers the rebuilt-DB flow.
 
 ---
 
@@ -106,15 +116,9 @@ Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2
 
 ### Gap 1: "Connected" Doesn't Mean "Syncable"
 
-**Current**: `connected` = WebSocket is open
-**Required**: `connected` = WebSocket is open AND data is successfully flowing
+**Mitigation now**: Before starting live sync we fetch `/:dbname/meta`, compare schema_version, and require the remote site_id to match the previously-seen site_id. On mismatch/unreachable/missing meta we surface an "incompatible" state and ask the user to "Nuke and Resync".
 
-**Problem**: The WebSocket can connect successfully even when:
-- The server database has a different schema version
-- The server database was rebuilt with a new site_id (our recent case)
-- Changes are being rejected silently
-
-**Evidence**: In our recent incident, the footer showed a green light even though no data could sync because the server's database had been rebuilt.
+**Remaining risk**: The check relies on the HTTP meta endpoint; it's not yet part of the WebSocket protocol/handshake, so we'd miss incompatibility if the HTTP call is blocked while the WebSocket connects. Move the check into the transport protocol to close this gap fully.
 
 ### Gap 2: No Tracking of Pending Local Changes
 
@@ -122,6 +126,7 @@ Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2
 **Required**: Footer should show when local changes haven't reached the server, ideally based on server acknowledgment rather than send-attempts.
 
 **Why This Matters**:
+
 - Users might close the browser thinking their changes are saved
 - Network interruptions could cause silent data loss
 - No way to know if "green light" means "all synced" or "connection open but queue full"
@@ -137,6 +142,7 @@ Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2
 **Required**: Connection opens + handshake validates compatibility → green light
 
 **Missing Checks**:
+
 1. Schema version match between client and server
 2. Database identity validation (site_id lineage)
 3. Successful initial data exchange confirmation
@@ -164,16 +170,14 @@ export async function updatePendingChangesCount(db: DB) {
   const localVersion = await getDBVersion(db);
   const serverAckVersion = await getLastAcknowledgedVersion(db);
 
-  const result = await db.execO<{ count: number }>(
-    `SELECT COUNT(*) as count FROM crsql_changes WHERE db_version > ?`,
-    [serverAckVersion]
-  );
+  const result = await db.execO<{ count: number }>(`SELECT COUNT(*) as count FROM crsql_changes WHERE db_version > ?`, [serverAckVersion]);
 
   pendingChangesCount.set(result[0]?.count ?? 0);
 }
 ```
 
 **Trade-offs**:
+
 - **Pro**: Uses existing cr-sqlite mechanisms
 - **Pro**: Works offline (shows accumulated pending changes)
 - **Con**: Requires periodic polling or triggered updates
@@ -186,6 +190,7 @@ export async function updatePendingChangesCount(db: DB) {
 **Fix Approach**:
 
 1. Track total records across all chunks:
+
    ```typescript
    enqueue({ changes, ... }: Changes) {
      this.#totalRecords += changes.length;  // Track actual record count
@@ -196,6 +201,7 @@ export async function updatePendingChangesCount(db: DB) {
    ```
 
 2. Track processed records:
+
    ```typescript
    private _processQueue = async () => {
      while (i < this.#queue.length) {
@@ -239,6 +245,7 @@ async validateSyncCompatibility(): Promise<{ compatible: boolean; reason?: strin
 **Note**: This requires changes to the sync server protocol. Consider whether `@vlcn.io/ws-server` supports custom handshake messages or if a separate HTTP endpoint is needed.
 
 **Alternative (Simpler)**: Detect incompatibility from sync failures:
+
 - If changes are repeatedly rejected → mark as incompatible
 - If connection closes immediately after sending changes → likely schema mismatch
 - This is essentially what the "stuck detection" does, but could be made more specific
@@ -246,6 +253,7 @@ async validateSyncCompatibility(): Promise<{ compatible: boolean; reason?: strin
 ### Recommendation 4: Define "Acknowledged" vs "Sent"
 
 Currently, there's no distinction between:
+
 - Changes written locally (in `crsql_changes`)
 - Changes sent over WebSocket
 - Changes acknowledged by the server
@@ -254,11 +262,13 @@ Currently, there's no distinction between:
 **For Pending Changes Tracking**:
 
 Option A (Simple): Consider "sent" as "acknowledged"
+
 - When the sync worker sends changes, assume they're delivered
 - Track: `db_version > last_sent_version`
 - Risk: Network failure after send means false "synced" state
 
 Option B (Reliable): Implement server acknowledgment
+
 - Server responds with "ACK" including the version it received
 - Track: `db_version > last_ack_version`
 - Requires protocol extension
@@ -269,14 +279,14 @@ Option B (Reliable): Implement server acknowledgment
 
 Define clear states for the sync indicator:
 
-| State | Visual | Meaning |
-|-------|--------|---------|
-| `disconnected` | Red dot | No connection to server |
-| `connecting` | Yellow/pulsing | Connection in progress |
-| `synced` | Green dot | Connected, 0 pending changes |
-| `syncing` | Green dot + count | Connected, N pending changes |
-| `stuck` | Red dot + warning | Connection failing repeatedly |
-| `incompatible` | Red dot + error | Server DB is incompatible |
+| State          | Visual            | Meaning                       |
+| -------------- | ----------------- | ----------------------------- |
+| `disconnected` | Red dot           | No connection to server       |
+| `connecting`   | Yellow/pulsing    | Connection in progress        |
+| `synced`       | Green dot         | Connected, 0 pending changes  |
+| `syncing`      | Green dot + count | Connected, N pending changes  |
+| `stuck`        | Red dot + warning | Connection failing repeatedly |
+| `incompatible` | Red dot + error   | Server DB is incompatible     |
 
 ### Current Gaps After Recent Changes
 
@@ -315,8 +325,9 @@ Testing sync behavior is challenging because it involves multiple async systems 
 ### Priority 1: Critical Path Tests (Prevent Data Loss)
 
 #### Test: Stuck Detection Triggers on Incompatible DB
+
 ```typescript
-test('shows stuck dialog when server DB is rebuilt', async () => {
+test("shows stuck dialog when server DB is rebuilt", async () => {
   // 1. Connect normally, sync some data
   // 2. Rebuild server DB (new site_id)
   // 3. Verify stuck dialog appears within 10s
@@ -325,8 +336,9 @@ test('shows stuck dialog when server DB is rebuilt', async () => {
 ```
 
 #### Test: Local Changes Survive Reconnection
+
 ```typescript
-test('local changes sync after reconnection', async () => {
+test("local changes sync after reconnection", async () => {
   // 1. Make local changes while connected
   // 2. Disconnect (kill sync server or network)
   // 3. Verify local data persists
@@ -338,8 +350,9 @@ test('local changes sync after reconnection', async () => {
 ### Priority 2: UI Indicator Accuracy
 
 #### Test: Footer Shows Correct Connection State
+
 ```typescript
-test('footer shows red when disconnected', async () => {
+test("footer shows red when disconnected", async () => {
   // 1. Start with sync disabled
   // 2. Verify footer shows red/disconnected
   // 3. Enable sync
@@ -350,8 +363,9 @@ test('footer shows red when disconnected', async () => {
 ```
 
 #### Test: Pending Changes Display (When Implemented)
+
 ```typescript
-test('footer shows pending changes count', async () => {
+test("footer shows pending changes count", async () => {
   // 1. Disconnect sync
   // 2. Make 5 local changes
   // 3. Verify footer shows "5 pending"
@@ -363,8 +377,9 @@ test('footer shows pending changes count', async () => {
 ### Priority 3: Progress Accuracy (When Fixed)
 
 #### Test: Sync Progress Shows Meaningful Numbers
+
 ```typescript
-test('progress shows record counts not chunk counts', async () => {
+test("progress shows record counts not chunk counts", async () => {
   // 1. Create 5000 records on server
   // 2. Connect fresh client
   // 3. Verify progress shows ~5000 total, not 5 chunks
@@ -375,15 +390,17 @@ test('progress shows record counts not chunk counts', async () => {
 ### Test Infrastructure Notes
 
 The existing `sync.spec.ts` provides a good foundation:
+
 - Uses a local sync server started in `globalSetup`
 - Can make direct HTTP calls to server's `/exec` endpoint for remote changes
 - Tests both client→server and server→client sync
 
 **Key Utilities Available**:
+
 ```typescript
 // From apps/e2e/tests/helpers/sync-server.ts
-await execOnRemote(dbid, sql);  // Execute SQL on server
-await waitForSync();            // Wait for sync to settle
+await execOnRemote(dbid, sql); // Execute SQL on server
+await waitForSync(); // Wait for sync to settle
 ```
 
 ---
@@ -415,42 +432,44 @@ await waitForSync();            // Wait for sync to settle
 
 ### Phase 4: Sync Validation
 
-1. Research `@vlcn.io/ws-server` protocol for handshake extension
-2. Implement compatibility check (schema version at minimum)
-3. Add `incompatible` state to footer
-4. Add E2E test for incompatibility detection
+1. ✅ HTTP meta handshake + `incompatible` state + e2e (rebuilt remote DB prompts nuke/resync)
+2. Research `@vlcn.io/ws-server` protocol for a first-class handshake (so compatibility detection works even if HTTP meta is blocked)
+3. Add E2E test for protocol-level incompatibility detection once implemented
 
 ---
 
 ## Key Files Reference
 
-| File | Role in Sync |
-|------|--------------|
-| `lib/stores/app.ts` | Connectivity monitor, stuck detection |
-| `lib/components/ExtensionStatusBanner.svelte` | Footer badges |
-| `lib/workers/sync-transport-control.ts` | Chunking, progress emission |
-| `lib/workers/WorkerInterface.ts` | Main thread ↔ Worker messaging |
-| `lib/app/sync.ts` | High-level sync API, initial sync |
-| `routes/+layout.svelte` | Sync dialog, stuck dialog |
-| `e2e/tests/sync.spec.ts` | Sync E2E tests |
+| File                                          | Role in Sync                          |
+| --------------------------------------------- | ------------------------------------- |
+| `lib/stores/app.ts`                           | Connectivity monitor, stuck detection |
+| `lib/components/ExtensionStatusBanner.svelte` | Footer badges                         |
+| `lib/workers/sync-transport-control.ts`       | Chunking, progress emission           |
+| `lib/workers/WorkerInterface.ts`              | Main thread ↔ Worker messaging       |
+| `lib/app/sync.ts`                             | High-level sync API, initial sync     |
+| `routes/+layout.svelte`                       | Sync dialog, stuck dialog             |
+| `e2e/tests/sync.spec.ts`                      | Sync E2E tests                        |
 
 ---
 
 ## Appendix: Database Queries for Sync State
 
 ### Get Local Database Version
+
 ```sql
 SELECT crsql_db_version();
 -- Returns: bigint (e.g., 12345)
 ```
 
 ### Get Peer's Known Version
+
 ```sql
 SELECT MAX(db_version) FROM crsql_changes WHERE site_id = ?;
 -- Returns: last version received from that peer
 ```
 
 ### Count Pending Local Changes
+
 ```sql
 SELECT COUNT(*) FROM crsql_changes
 WHERE site_id = crsql_site_id()
@@ -459,12 +478,14 @@ AND db_version > ?;
 ```
 
 ### Get Local Site ID
+
 ```sql
 SELECT site_id FROM crsql_site_id WHERE ordinal = 0;
 -- Returns: 16-byte blob (the local client's identity)
 ```
 
 ### Get All Known Peers
+
 ```sql
 SELECT DISTINCT quote(site_id) FROM crsql_changes;
 -- Returns: hex-encoded site IDs of all peers that have contributed changes

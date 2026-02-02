@@ -27,6 +27,7 @@
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
 	import { syncConnectivityMonitor, updateSyncConnectivityMonitor, resetSyncStuckState } from "$lib/stores";
+	import { resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
 	import { attachPendingMonitor, resetPendingTracker, setLastSentVersion } from "$lib/stores/sync-pending";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
@@ -245,11 +246,15 @@
 	// Show sync stuck dialog when sync is stuck and sync is supposed to be active
 	const syncStuck = syncConnectivityMonitor.stuck;
 	const syncDiagnostics = syncConnectivityMonitor.diagnostics;
-	$: $syncStuckDialogOpen = $syncStuck && $syncActive;
+	const syncCompatibilityState = syncCompatibility;
+	let isIncompatible = false;
+	$: isIncompatible = $syncCompatibilityState.status === "incompatible";
+	$: $syncStuckDialogOpen = ($syncStuck || isIncompatible) && $syncActive;
 
 	const handleNukeAndResync = async () => {
 		syncStuckDialogOpen.set(false);
 		resetSyncStuckState();
+		resetSyncCompatibility($dbid);
 		await nukeAndResyncDb(app, $dbid, getVfs(app));
 	};
 
@@ -427,11 +432,19 @@
 						{tLayout.error_dialog.sync_stuck.description()}
 					</span>
 					<span class="mb-2 block">
-						{tLayout.error_dialog.sync_stuck.call_to_action()}
+						{isIncompatible ? tLayout.error_dialog.sync_stuck.call_to_action() : tLayout.error_dialog.sync_stuck.call_to_action()}
 					</span>
 				</p>
 
 				<!-- Diagnostic details -->
+				{#if isIncompatible}
+					<div class="mb-4 rounded bg-base-200 p-3 font-mono text-xs">
+						<p class="mb-1 font-semibold text-gray-700">Remote DB incompatible</p>
+						<p class="text-gray-600">
+							{$syncCompatibilityState.message || "The remote database changed identity. Please resync."}
+						</p>
+					</div>
+				{/if}
 				{#if $syncDiagnostics.reason}
 					<div class="mb-4 rounded bg-base-200 p-3 font-mono text-xs">
 						<p class="mb-1 font-semibold text-gray-700">{tLayout.error_dialog.sync_stuck.diagnostics.title()}</p>

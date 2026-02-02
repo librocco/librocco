@@ -214,6 +214,14 @@ export async function associatePublisher(db: DB, params: { supplierId: number; p
 	await window.suppliers.associatePublisher(db, supplierId, publisher);
 }
 
+export async function resetRemoteDb(page: Page, baseUrl: string, dbName: string) {
+	const url = `${baseUrl}${dbName}/reset`;
+	const response = await page.request.post(url);
+	if (!response.ok()) {
+		throw new Error(`Failed to reset remote DB: ${response.status()} ${response.statusText()}`);
+	}
+}
+
 /**
  * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:createSupplierOrder
  */
