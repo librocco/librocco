@@ -91,9 +91,10 @@ When sync is detected as "stuck" (rapid connection failures or timeout), a dialo
 
 ### Sync Server File Watching (.sqlite3 fix)
 
-**Files**: `3rd-party/js/packages/ws-server/src/fs/util.ts`, `3rd-party/js/packages/ws-server/src/fs/FSNotify.ts`, `apps/sync-server/src/index.ts`
+**Files**: `3rd-party/js/packages/ws-server/src/fs/util.ts`, `3rd-party/js/packages/ws-server/src/fs/FSNotify.ts`, `apps/sync-server/src/index.ts`, `python-apps/launcher/launcher/config.py`
 
 The `@vlcn.io/ws-server` FSNotify code now preserves file extensions when normalizing events (it previously dropped `.sqlite3`, breaking watch registration). We also:
+- Proxy all `*.sqlite3` and `*.sqlite` HTTP endpoints through Caddy in the headless launcher so `/exec` and `/file` routes reach the sync server instead of 404-ing in CI.
 - Turn on `notifyPolling` in dev
 - Run `touchHack` after HTTP `/exec` mutations to force a watch event on the DB file
 

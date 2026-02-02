@@ -167,6 +167,14 @@ https://:{CADDY_PORT} {{
         reverse_proxy localhost:3000
     }}
 
+    # Proxy sqlite databases (our default extension)
+    handle /*.sqlite3/* {{
+        reverse_proxy localhost:3000
+    }}
+    handle /*.sqlite/* {{
+        reverse_proxy localhost:3000
+    }}
+
     # Proxy current DB download to the sync server
     handle /librocco_current.sqlite3/file {{
         reverse_proxy localhost:3000

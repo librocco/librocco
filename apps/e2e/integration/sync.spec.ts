@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
@@ -8,7 +8,7 @@ import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } 
 
 test.setTimeout(20_000);
 
-const getStableRemoteDbHandle = (page: any) => retry(() => getRemoteDbHandle(page, remoteDbURL), { attempts: 5, delayMs: 300 });
+const getStableRemoteDbHandle = (page: Page) => retry(() => getRemoteDbHandle(page, remoteDbURL), { attempts: 5, delayMs: 300 });
 
 const sleep = (ms: number) =>
 	new Promise<void>((resolve) => {
