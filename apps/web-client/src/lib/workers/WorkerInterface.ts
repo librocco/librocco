@@ -6,6 +6,7 @@ import type {
 	MsgChangesReceived,
 	MsgConnectionClose,
 	MsgConnectionOpen,
+	MsgSyncStatus,
 	MsgOutgoingChanges,
 	MsgProgress,
 	MsgReady,
@@ -22,7 +23,8 @@ type InboundMessage =
 	| MsgProgress
 	| MsgReady
 	| MsgConnectionOpen
-	| MsgConnectionClose;
+	| MsgConnectionClose
+	| MsgSyncStatus;
 
 export default class WorkerInterface extends WI {
 	#worker: Worker;
@@ -89,6 +91,9 @@ export default class WorkerInterface extends WI {
 			case "connection.close":
 				this.#connEmitter.notifyConnClose();
 				break;
+			case "sync.status":
+				this.#syncEmitter.notifySyncStatus(msg.payload);
+				break;
 			default:
 				break;
 		}
@@ -123,6 +128,9 @@ export default class WorkerInterface extends WI {
 	}
 	onOutgoingChanges(cb: (msg: { maxDbVersion: number; changeCount: number }) => void) {
 		return this.#syncEmitter.onOutgoingChanges(cb);
+	}
+	onSyncStatus(cb: (msg: MsgSyncStatus["payload"]) => void) {
+		return this.#syncEmitter.onSyncStatus(cb);
 	}
 
 	onConnOpen(cb: () => void) {

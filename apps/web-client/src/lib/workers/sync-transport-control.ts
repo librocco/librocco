@@ -1,5 +1,6 @@
 import { chunks } from "@librocco/shared";
 import type { Transport } from "@vlcn.io/ws-client";
+import { bytesToHex, type SyncStatus } from "@vlcn.io/ws-common";
 import type { Changes } from "@vlcn.io/ws-common";
 
 import type { ProgressState } from "$lib/types";
@@ -11,6 +12,17 @@ export class SyncEventEmitter {
 	changesReceivedListeners = new Set<Listener<{ timestamp: number }>>();
 	changesProcessedListeners = new Set<Listener<{ timestamp: number }>>();
 	outgoingChangesListeners = new Set<Listener<{ maxDbVersion: number; changeCount: number }>>();
+	syncStatusListeners = new Set<
+		Listener<{
+			ok: boolean;
+			siteId?: string;
+			schemaName?: string;
+			schemaVersion?: string;
+			stage?: string;
+			reason?: string;
+			message?: string;
+		}>
+	>();
 
 	private _notify =
 		<M>(listeners: Set<Listener<M>>) =>
@@ -31,11 +43,13 @@ export class SyncEventEmitter {
 	onChangesProcessed = this._listen(this.changesProcessedListeners);
 	onProgress = this._listen(this.progressListeners);
 	onOutgoingChanges = this._listen(this.outgoingChangesListeners);
+	onSyncStatus = this._listen(this.syncStatusListeners);
 
 	notifyChangesReceived = this._notify(this.changesReceivedListeners);
 	notifyChangesProcessed = this._notify(this.changesProcessedListeners);
 	notifyProgress = this._notify(this.progressListeners);
 	notifyOutgoingChanges = this._notify(this.outgoingChangesListeners);
+	notifySyncStatus = this._notify(this.syncStatusListeners);
 }
 
 export class ConnectionEventEmitter {
@@ -174,14 +188,15 @@ export class SyncTransportController implements Transport {
 
 		// Wire up connection event handlers
 		this.#transport.onConnOpen = () => {
-			this.#isConnected = true;
-			this.#connectionEmitter.notifyConnOpen();
+			this.#isConnected = false;
 		};
 
 		this.#transport.onConnClose = () => {
 			this.#isConnected = false;
 			this.#connectionEmitter.notifyConnClose();
 		};
+
+		this.#transport.onSyncStatus = this._onSyncStatus.bind(this);
 
 		// Setup the changes processor
 		this.#changesProcessor = new ChangesProcessor(config);
@@ -200,6 +215,10 @@ export class SyncTransportController implements Transport {
 	}
 
 	private _onStartStreaming(msg: Parameters<Transport["onStartStreaming"]>[0]) {
+		if (!this.#isConnected) {
+			this.#isConnected = true;
+			this.#connectionEmitter.notifyConnOpen();
+		}
 		this.onStartStreaming?.(msg);
 	}
 
@@ -216,6 +235,30 @@ export class SyncTransportController implements Transport {
 		this.#progressEmitter.notifyProgress({ active: false, nProcessed: totals.nProcessed, nTotal: totals.nTotal });
 		if (hadChanges) {
 			this.#progressEmitter.notifyChangesReceived({ timestamp: Date.now() });
+		}
+	}
+
+	private _onSyncStatus(msg: SyncStatus) {
+		const siteIdHex = msg.siteId ? bytesToHex(msg.siteId) : undefined;
+		this.#progressEmitter.notifySyncStatus({
+			ok: msg.ok,
+			siteId: siteIdHex,
+			schemaName: msg.schemaName,
+			schemaVersion: msg.schemaVersion?.toString(),
+			stage: msg.stage,
+			reason: msg.reason,
+			message: msg.message
+		});
+
+		if (msg.ok && !this.#isConnected) {
+			this.#isConnected = true;
+			this.#connectionEmitter.notifyConnOpen();
+		} else if (!msg.ok) {
+			const wasConnected = this.#isConnected;
+			this.#isConnected = false;
+			if (wasConnected) {
+				this.#connectionEmitter.notifyConnClose();
+			}
 		}
 	}
 

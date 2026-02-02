@@ -106,9 +106,9 @@ Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2
 
 **Files**: `apps/sync-server/src/index.ts`, `apps/web-client/src/lib/stores/sync-compatibility.ts`, `apps/web-client/src/lib/app/sync.ts`, `apps/web-client/src/routes/+layout.svelte`, `apps/web-client/src/lib/components/ExtensionStatusBanner.svelte`
 
-- The sync server exposes `/:dbname/meta` (site_id, schema_name, schema_version) and a dev-only `/:dbname/reset` endpoint (used by e2e to simulate remote rebuilds).
-- The client fetches remote meta before starting live sync, compares schema_version to the local one, and remembers the remote site_id per DB. If the remote site_id changes (server rebuild) or meta is unreachable/missing, the footer shows an "incompatible" state and the stuck dialog prompts "Nuke and Resync".
-- Compatibility resets when running "Nuke and Resync". An e2e test covers the rebuilt-DB flow.
+- The sync server emits a WebSocket `SyncStatus` handshake carrying DB `site_id` (from the database, not a sidecar), `schema_name`, and `schema_version` before streaming starts. If the handshake is incompatible, the server closes the socket after sending the status.
+- The client keeps the sync indicator in "connecting" until a compatible handshake arrives; it stores the remote `site_id` per DB and marks the UI as incompatible when the remote identity changes or the schema version differs. HTTP `/:dbname/meta` is now best-effort only (no longer required to show incompatibility).
+- Compatibility resets when running "Nuke and Resync". E2E coverage includes a rebuilt-DB scenario even when the HTTP meta endpoint is blocked.
 
 ---
 
@@ -116,9 +116,9 @@ Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2
 
 ### Gap 1: "Connected" Doesn't Mean "Syncable"
 
-**Mitigation now**: Before starting live sync we fetch `/:dbname/meta`, compare schema_version, and require the remote site_id to match the previously-seen site_id. On mismatch/unreachable/missing meta we surface an "incompatible" state and ask the user to "Nuke and Resync".
+**Mitigation now**: The server emits a WebSocket `SyncStatus` handshake (site_id, schema_version) before streaming, then sends a second `SyncStatus` (`stage: "steady"`) after the first inbound batch is processed. The client stays in "connecting" until the steady ACK arrives and marks the UI as incompatible if the server replies with `reason: apply_failed` after an apply error (even if `/meta` is blocked).
 
-**Remaining risk**: The check relies on the HTTP meta endpoint; it's not yet part of the WebSocket protocol/handshake, so we'd miss incompatibility if the HTTP call is blocked while the WebSocket connects. Move the check into the transport protocol to close this gap fully.
+**Remaining risk**: The steady ACK only covers the first inbound apply. We still assume the stream remains healthy after that point and have no server ACK for later apply failures or schema drift mid-session.
 
 ### Gap 2: No Tracking of Pending Local Changes
 
@@ -138,14 +138,9 @@ Remote-only changes now reach WebSocket clients for `.sqlite3` databases; the e2
 
 ### Gap 4: No Validation of Sync Compatibility
 
-**Current**: Connection opens → green light
-**Required**: Connection opens + handshake validates compatibility → green light
+**Status**: Mitigated. WebSocket `SyncStatus` now validates schema version and database identity before the connection is considered "connected", and emits a steady-state ACK after the first inbound apply (or an `apply_failed` error if that apply throws).
 
-**Missing Checks**:
-
-1. Schema version match between client and server
-2. Database identity validation (site_id lineage)
-3. Successful initial data exchange confirmation
+**Next Step**: Extend validation past the first batch: surface `apply_failed` for later apply errors and add an explicit server ACK (with db_version) so the client can tell “connected but writes are being rejected mid-stream”.
 
 ## Implementation Recommendations
 
@@ -347,6 +342,17 @@ test("local changes sync after reconnection", async () => {
 });
 ```
 
+#### Test: Apply Failure After Handshake Surfaces Incompatibility
+
+```typescript
+test("apply failure after handshake forces incompatible state", async () => {
+  // 1. Connect and wait for steady ACK
+  // 2. Install a trigger on the server that raises on INSERT INTO crsql_changes
+  // 3. Make a local change to force an outbound batch
+  // 4. Expect SyncStatus{ ok: false, reason: 'apply_failed' } and an incompatible UI state
+});
+```
+
 ### Priority 2: UI Indicator Accuracy
 
 #### Test: Footer Shows Correct Connection State
@@ -432,9 +438,10 @@ await waitForSync(); // Wait for sync to settle
 
 ### Phase 4: Sync Validation
 
-1. ✅ HTTP meta handshake + `incompatible` state + e2e (rebuilt remote DB prompts nuke/resync)
-2. Research `@vlcn.io/ws-server` protocol for a first-class handshake (so compatibility detection works even if HTTP meta is blocked)
-3. Add E2E test for protocol-level incompatibility detection once implemented
+1. ✅ WebSocket `SyncStatus` handshake (site_id + schema_version) gates "connected" state; HTTP `/meta` is now best-effort only
+2. ✅ E2E for rebuilt remote DB while `/meta` is blocked (shows incompatible, then recovers after nuke/resync)
+3. ✅ Steady-state ACK after the first inbound apply; emits `apply_failed` on errors and keeps the UI in "connecting" until the ACK arrives
+4. Next: propagate `apply_failed` for later batches and add an explicit server ACK (with db_version) so pending counts can rely on server acceptance
 
 ---
 

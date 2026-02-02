@@ -27,6 +27,11 @@ export type MsgOutgoingChanges = {
 	payload: { maxDbVersion: number; changeCount: number };
 };
 
+export type MsgSyncStatus = {
+	_type: "sync.status";
+	payload: { ok: boolean; siteId?: string; schemaName?: string; schemaVersion?: string; stage?: string; reason?: string; message?: string };
+};
+
 export type MsgProgress = {
 	_type: "progress";
 	payload: ProgressState;

@@ -322,6 +322,7 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 		},
 		[syncUrl, dbName]
 	);
+	await page.route("**/meta", (route) => route.abort());
 	await page.goto(baseURL);
 	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
 
@@ -368,6 +369,47 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 			{ timeout: 20000, intervals: [250] }
 		)
 		.toBe(true);
+});
+
+test("surfaces apply failures after a successful handshake", async ({ page }) => {
+	const dbName = `apply-fail-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			window.localStorage.setItem("librocco-sync-active", "true");
+		},
+		[syncUrl, dbName]
+	);
+
+	await page.goto(baseURL);
+	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
+	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "synced", { timeout: 20000 });
+
+	const triggerEndpoint = new URL(`${dbName}/exec`, remoteDbURL).toString();
+	const response = await page.request.post(triggerEndpoint, {
+		data: {
+			sql: `
+        CREATE TRIGGER IF NOT EXISTS crsql_block_inbound
+        BEFORE INSERT ON customer
+        BEGIN
+          SELECT RAISE(FAIL, 'apply blocked for test');
+        END;
+      `
+		}
+	});
+	expect(response.ok()).toBe(true);
+
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(upsertCustomer, {
+		id: 501,
+		displayId: "501",
+		fullname: "Inbound Failure",
+		email: "applyfail@test.com"
+	});
+
+	await page.getByText("Remote DB incompatible").waitFor({ timeout: 15000 });
+	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "incompatible");
 });
 
 test("sync progress reports change counts instead of chunk counts", async ({ page }) => {

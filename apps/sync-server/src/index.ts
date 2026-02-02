@@ -3,7 +3,6 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import fs from "fs";
-import crypto from "crypto";
 
 import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
 import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack.js";
@@ -93,21 +92,13 @@ app.get("/:dbname/meta", async (req, res) => {
 
 		let meta: { siteId: string; schemaName?: string; schemaVersion?: string } | null = null;
 
-		if (fs.existsSync(metaPath)) {
-			meta = JSON.parse(fs.readFileSync(metaPath, "utf-8"));
-		}
-
 		// Ensure the DB exists on disk before returning metadata
 		await dbCache.use(dbname, schemaName, (idb: IDB) => {
-			// No-op; this ensures the DB is created and ready for subsequent sync
-			idb.getDB();
-			if (!meta) {
-				meta = {
-					siteId: crypto.randomBytes(16).toString("hex"),
-					schemaName: idb.schemaName,
-					schemaVersion: idb.schemaVersion?.toString()
-				};
-			}
+			meta = {
+				siteId: Buffer.from(idb.siteId).toString("hex"),
+				schemaName: idb.schemaName,
+				schemaVersion: idb.schemaVersion?.toString()
+			};
 		});
 
 		if (!meta || !meta.siteId) {

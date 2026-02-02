@@ -23,6 +23,13 @@ export const createSyncState = (syncActive: Readable<boolean>) =>
 			}
 			if (stuck) return { status: "stuck", pending };
 			if (!connected) return { status: "connecting", pending };
+			if (
+				compatibility.status === "checking" ||
+				compatibility.status === "unknown" ||
+				(compatibility.status === "compatible" && !compatibility.verified)
+			) {
+				return { status: "connecting", pending };
+			}
 			if (pending > 0) return { status: "syncing", pending };
 
 			return { status: "synced", pending: 0 };

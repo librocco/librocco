@@ -12,6 +12,7 @@ import type {
 	MsgReady,
 	MsgConnectionOpen,
 	MsgConnectionClose,
+	MsgSyncStatus,
 	MsgOutgoingChanges
 } from "./types";
 
@@ -30,6 +31,7 @@ type OutboundMessage =
 	| MsgReady
 	| MsgConnectionOpen
 	| MsgConnectionClose
+	| MsgSyncStatus
 	| MsgOutgoingChanges;
 
 const MAX_SYNC_CHUNK_SIZE = 1024;
@@ -131,6 +133,9 @@ function createProgressEmitter() {
 	});
 	progressEmitter.onOutgoingChanges((payload) => {
 		sendMessage({ _type: "outgoingChanges", payload });
+	});
+	progressEmitter.onSyncStatus((payload) => {
+		sendMessage({ _type: "sync.status", payload });
 	});
 
 	return progressEmitter;

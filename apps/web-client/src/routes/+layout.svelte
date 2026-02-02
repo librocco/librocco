@@ -27,7 +27,7 @@
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
 	import { syncConnectivityMonitor, updateSyncConnectivityMonitor, resetSyncStuckState } from "$lib/stores";
-	import { resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
+	import { applyHandshakeStatus, resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
 	import { attachPendingMonitor, resetPendingTracker, setLastSentVersion } from "$lib/stores/sync-pending";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
@@ -85,6 +85,7 @@
 	let detachPendingMonitor: (() => void) | null = null;
 	let detachPendingInvalidate: (() => void) | null = null;
 	let detachOutgoingChanges: (() => void) | null = null;
+	let detachSyncStatus: (() => void) | null = null;
 
 	// Config stores
 	const dbid = app.config.dbid;
@@ -144,6 +145,11 @@
 				void setLastSentVersion(payload.maxDbVersion, get(dbid));
 			});
 		});
+		detachSyncStatus = await app.sync.runExclusive(async (sync) => {
+			return sync.worker.onSyncStatus((payload) => {
+				applyHandshakeStatus(get(dbid), payload);
+			});
+		});
 	});
 
 	onDestroy(() => {
@@ -154,6 +160,7 @@
 		detachPendingMonitor?.();
 		detachPendingInvalidate?.();
 		detachOutgoingChanges?.();
+		detachSyncStatus?.();
 		resetPendingTracker();
 	});
 
