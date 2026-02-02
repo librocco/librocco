@@ -448,7 +448,11 @@
 					<div class="mb-4 rounded bg-base-200 p-3 font-mono text-xs">
 						<p class="mb-1 font-semibold text-gray-700">Remote DB incompatible</p>
 						<p class="text-gray-600">
-							{$syncCompatibilityState.message || "The remote database changed identity. Please resync."}
+							{#if $syncCompatibilityState.status === "incompatible"}
+								{$syncCompatibilityState.message || "The remote database changed identity. Please resync."}
+							{:else}
+								Remote database not compatible.
+							{/if}
 						</p>
 					</div>
 				{/if}
