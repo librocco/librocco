@@ -1,0 +1,97 @@
+{
+	"name": "Librocco Dev",
+	// Use pre-built image from GHCR (built by CI)
+	// To rebuild locally: docker build -f .devcontainer/Dockerfile -t ghcr.io/librocco/librocco/devcontainer:latest .
+	"image": "ghcr.io/librocco/librocco/devcontainer:latest",
+	// Features to enhance the development experience
+	"features": {
+		"ghcr.io/devcontainers/features/git-lfs:1": {
+			"autoPull": true,
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": true,
+			"configureZshAsDefaultShell": true,
+			"installOhMyZsh": true,
+			"upgradePackages": false
+		}
+	},
+	// Forward ports for local development
+	// 5173: Vite dev server (web-client)
+	// 3000: Sync server
+	// 6006: Storybook
+	"forwardPorts": [
+		5173,
+		3000,
+		6006
+	],
+	// Port attributes for better development experience
+	"portsAttributes": {
+		"5173": {
+			"label": "Web Client (Vite)",
+			"onAutoForward": "notify"
+		},
+		"3000": {
+			"label": "Sync Server",
+			"onAutoForward": "notify"
+		},
+		"6006": {
+			"label": "Storybook",
+			"onAutoForward": "silent"
+		}
+	},
+	// Initialize workspace from pre-built cache (fast!)
+	// - First run: copies deps from image cache (~15-30s)
+	// - Subsequent runs: skips if already initialized (instant)
+	// - Detects lockfile changes and runs rush update if needed
+	"postCreateCommand": "bash .devcontainer/init-workspace.sh ${containerWorkspaceFolder}",
+	// VS Code customizations
+	"customizations": {
+		"vscode": {
+			// Extensions for Svelte, linting, and workflow management
+			"extensions": [
+				"dbaeumer.vscode-eslint",
+				"esbenp.prettier-vscode",
+				"svelte.svelte-vscode",
+				"github.vscode-github-actions"
+			],
+			// Settings optimized for this monorepo
+			"settings": {
+				// Auto-format on save with Prettier
+				"editor.formatOnSave": true,
+				"editor.defaultFormatter": "esbenp.prettier-vscode",
+				// Auto-fix ESLint issues on save
+				"editor.codeActionsOnSave": {
+					"source.fixAll.eslint": "explicit"
+				},
+				// Hide noise from file explorer
+				"files.exclude": {
+					"**/.git": true,
+					"**/.DS_Store": true,
+					"**/node_modules": true,
+					"**/dist": true,
+					"**/.svelte-kit": true
+				},
+				// Search settings (exclude build artifacts)
+				"search.exclude": {
+					"**/node_modules": true,
+					"**/dist": true,
+					"**/.svelte-kit": true,
+					"**/common/temp": true
+				},
+				// Svelte-specific settings
+				"[svelte]": {
+					"editor.defaultFormatter": "svelte.svelte-vscode"
+				}
+			}
+		}
+	},
+	// Run as non-root user
+	"remoteUser": "node",
+	// Mount configuration for isolation and performance
+	"mounts": [
+		// Isolate common/temp from host - this is where Rush stores build state
+		// Benefits: no host state interference, persists across rebuilds, no path mismatches
+		"source=librocco-common-temp,target=${containerWorkspaceFolder}/common/temp,type=volume"
+	]
+}
