@@ -37,13 +37,14 @@ const retry = async <T>(fn: () => Promise<T>, opts: { attempts?: number; delayMs
 };
 
 test.beforeAll(async ({ browser }, testInfo) => {
-	testInfo.setTimeout(25_000);
+	testInfo.setTimeout(35_000);
 
 	const context = await browser.newContext({ ignoreHTTPSErrors: true });
 	const page = await context.newPage();
-	await page.goto(baseURL);
-	await page.waitForSelector('body[hydrated="true"]', { timeout: 20000 });
-	await page.waitForSelector("#app-splash", { state: "detached", timeout: 20000 });
+	// Warm up the app once so later navigations skip initial SvelteKit/Vite cold start.
+	await page.goto(baseURL, { waitUntil: "networkidle" });
+	await page.waitForSelector('body[hydrated="true"]', { timeout: 30000 });
+	await page.waitForSelector("#app-splash", { state: "detached", timeout: 30000 });
 	await context.close();
 });
 
