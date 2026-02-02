@@ -8,6 +8,8 @@ import { getDbHandle, getCustomerOrderList, getRemoteDbHandle, upsertCustomer } 
 
 test.setTimeout(20_000);
 
+const getStableRemoteDbHandle = (page: any) => retry(() => getRemoteDbHandle(page, remoteDbURL), { attempts: 5, delayMs: 300 });
+
 const sleep = (ms: number) =>
 	new Promise<void>((resolve) => {
 		setTimeout(resolve, ms);
@@ -256,12 +258,16 @@ test("footer shows pending changes while offline and clears after resync", async
 	// Seed local + ensure sync is working
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Baseline Customer", email: "baseline@test.com" });
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
 	await expect
 		.poll(
 			async () => {
-				const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
-				return remoteCustomers.some((customer) => customer.fullname === "Baseline Customer");
+				const remoteDbHandle = await getStableRemoteDbHandle(page);
+				try {
+					const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
+					return remoteCustomers.some((customer) => customer.fullname === "Baseline Customer");
+				} catch {
+					return false;
+				}
 			},
 			{ timeout: 25000, intervals: [250] }
 		)
@@ -288,12 +294,16 @@ test("footer shows pending changes while offline and clears after resync", async
 	await page.reload();
 	await page.goto(baseURL);
 
-	const refreshedRemoteHandle = await getRemoteDbHandle(page, remoteDbURL);
 	await expect
 		.poll(
 			async () => {
-				const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
-				return remoteCustomers.some((customer) => customer.fullname === "Offline Pending Customer");
+				const refreshedRemoteHandle = await getStableRemoteDbHandle(page);
+				try {
+					const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
+					return remoteCustomers.some((customer) => customer.fullname === "Offline Pending Customer");
+				} catch {
+					return false;
+				}
 			},
 			{ timeout: 25000, intervals: [250] }
 		)
@@ -321,7 +331,7 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 	// Prepare a large batch of remote-only changes
 	await retry(
 		async () => {
-			const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+			const remoteDbHandle = await getStableRemoteDbHandle(page);
 			return remoteDbHandle.evaluate(async (db, count) => {
 				for (let i = 0; i < count; i++) {
 					for (let attempts = 0; attempts < 8; attempts++) {
@@ -343,7 +353,7 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 				}
 			}, 60);
 		},
-		{ attempts: 4, delayMs: 400 }
+		{ attempts: 6, delayMs: 500 }
 	);
 
 	// Turn sync on to pull the bulk changes
