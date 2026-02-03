@@ -1,4 +1,4 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, request, type Page } from "@playwright/test";
 
 import { appHash, baseURL, remoteDbURL, syncUrl } from "@/constants";
 
@@ -39,6 +39,8 @@ const retry = async <T>(fn: () => Promise<T>, opts: { attempts?: number; delayMs
 test.beforeAll(async ({ browser }, testInfo) => {
 	testInfo.setTimeout(35_000);
 
+	await waitForServer();
+
 	const context = await browser.newContext({ ignoreHTTPSErrors: true });
 	const page = await context.newPage();
 	// Warm up the app once so later navigations skip initial SvelteKit/Vite cold start.
@@ -47,6 +49,25 @@ test.beforeAll(async ({ browser }, testInfo) => {
 	await page.waitForSelector("#app-splash", { state: "detached", timeout: 30000 });
 	await context.close();
 });
+
+async function waitForServer(timeoutMs = 45_000) {
+	const deadline = Date.now() + timeoutMs;
+	while (Date.now() < deadline) {
+		const ctx = await request.newContext({ ignoreHTTPSErrors: true });
+		try {
+			const resp = await ctx.get(baseURL);
+			if (resp.ok()) {
+				return;
+			}
+		} catch {
+			// ignore and retry
+		} finally {
+			await ctx.dispose();
+		}
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+	}
+	throw new Error(`Server at ${baseURL} not reachable after ${timeoutMs}ms`);
+}
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
