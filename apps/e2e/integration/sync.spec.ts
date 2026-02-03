@@ -43,11 +43,17 @@ test.beforeAll(async ({ browser }, testInfo) => {
 
 	const context = await browser.newContext({ ignoreHTTPSErrors: true });
 	const page = await context.newPage();
-	// Warm up the app once so later navigations skip initial SvelteKit/Vite cold start.
-	await page.goto(baseURL, { waitUntil: "networkidle" });
-	await page.waitForSelector('body[hydrated="true"]', { timeout: 30000 });
-	await page.waitForSelector("#app-splash", { state: "detached", timeout: 30000 });
-	await context.close();
+	try {
+		// Warm up the app once so later navigations skip initial SvelteKit/Vite cold start.
+		await page.goto(baseURL, { waitUntil: "networkidle" });
+		await page.waitForSelector('body[hydrated="true"]', { timeout: 30000 });
+		await page.waitForSelector("#app-splash", { state: "detached", timeout: 30000 });
+	} catch (error) {
+		// Best-effort warmup: if the splash never detaches we still proceed with the real tests.
+		console.warn("Warmup page did not finish before timeout", error);
+	} finally {
+		await context.close();
+	}
 });
 
 async function waitForServer(timeoutMs = 45_000) {
