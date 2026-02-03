@@ -24,6 +24,7 @@
 		getPlacedSupplierOrderLines
 	} from "$lib/db/cr-sqlite/suppliers";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
+	import { SupplierPublisherTable } from "$lib/components-new/SupplierPublisherList";
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { appPath } from "$lib/paths";
@@ -195,84 +196,55 @@
 			</div>
 			<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
 				<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
+					<!-- Assigned Publishers -->
 					<div class="w-full">
-						<h2 class="text-lg">{$LL.new_order_page.stats.selected_books()}</h2>
-						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-							<table class="!my-0 flex-col items-stretch overflow-y-auto">
-								<thead class="sticky left-0 right-0 top-0 bg-white shadow">
-									<tr>
-										<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each assignedPublishers as publisher}
-										<tr class="hover flex w-full justify-between focus-within:bg-base-200">
-											<td class="px-2">{publisher}</td>
-											<td class="px-2 text-end"
-												><button
-													on:click={handleUnassignPublisher(publisher)}
-													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">{t.labels.remove_publisher()}</button
-												></td
-											>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
+						<div class="prose mb-2">
+							<h2 class="text-lg">{t.table.assigned_publishers()}</h2>
 						</div>
+
+						<SupplierPublisherTable publishers={assignedPublishers} on:action={({ detail }) => handleUnassignPublisher(detail.publisher)()}>
+							<svelte:fragment slot="header-label">{t.table.publisher_name()}</svelte:fragment>
+							<svelte:fragment slot="action-label" let:publisher>
+								{t.labels.remove_publisher()}
+							</svelte:fragment>
+						</SupplierPublisherTable>
 					</div>
 
+					<!-- Unassigned Publishers -->
 					<div class="w-full">
-						<h2 class="text-lg">{t.table.unassigned_publishers()}</h2>
-						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-							<table class="!my-0 flex-col items-stretch overflow-y-auto">
-								<thead class="sticky left-0 right-0 top-0 bg-white shadow">
-									<tr>
-										<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each publishersUnassignedToSuppliers as publisher}
-										<tr class="hover focus-within:bg-base-200">
-											<td class="px-2">{publisher}</td>
-											<td class="px-2 text-end"
-												><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-													>{t.labels.add_to_supplier()}</button
-												></td
-											>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
+						<div class="prose mb-2">
+							<h2 class="text-lg">{t.table.unassigned_publishers()}</h2>
 						</div>
+
+						<SupplierPublisherTable
+							publishers={publishersUnassignedToSuppliers}
+							on:action={({ detail }) => handleAssignPublisher(detail.publisher)()}
+						>
+							<svelte:fragment slot="header-label">{t.table.publisher_name()}</svelte:fragment>
+							<svelte:fragment slot="action-label" let:publisher>
+								{t.labels.add_to_supplier()}
+							</svelte:fragment>
+						</SupplierPublisherTable>
 					</div>
 
+					<!-- Other Suppliers -->
 					<div class="w-full">
-						<h2 class="text-lg">{t.table.other_supplier_publishers()}</h2>
-						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-							<table class="!my-0 flex-col items-stretch overflow-hidden">
-								<thead>
-									<tr>
-										<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-									</tr>
-								</thead>
-								<tbody>
-									{#each publishersAssignedToOtherSuppliers as publisher}
-										<tr class="hover focus-within:bg-base-200">
-											<td class="px-2">{publisher}</td>
-											<td class="px-2 text-end"
-												><button
-													on:click={() => {
-														confirmationPublisher = publisher;
-														confirmationDialogOpen.set(true);
-													}}
-													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">{t.labels.reassign_publisher()}</button
-												></td
-											>
-										</tr>
-									{/each}
-								</tbody>
-							</table>
+						<div class="prose mb-2">
+							<h2 class="text-lg">{t.table.other_supplier_publishers()}</h2>
 						</div>
+
+						<SupplierPublisherTable
+							publishers={publishersAssignedToOtherSuppliers}
+							on:action={({ detail }) => {
+								confirmationPublisher = detail.publisher;
+								confirmationDialogOpen.set(true);
+							}}
+						>
+							<svelte:fragment slot="header-label">{t.table.publisher_name()}</svelte:fragment>
+							<svelte:fragment slot="action-label" let:publisher>
+								{t.labels.reassign_publisher()}
+							</svelte:fragment>
+						</SupplierPublisherTable>
 					</div>
 				</div>
 
