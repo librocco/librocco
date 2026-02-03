@@ -7,22 +7,17 @@
 		"skipLibCheck": true,
 		"resolveJsonModule": true,
 		"sourceMap": true,
-
+		"verbatimModuleSyntax": true,
 		"outDir": "./dist",
-
 		"allowSyntheticDefaultImports": true,
 		"esModuleInterop": true,
-
 		"strict": true,
-
 		"allowJs": true,
-
 		"noImplicitReturns": true,
 		"noImplicitThis": true,
 		"noImplicitAny": true,
 		"strictNullChecks": true,
 		"strictFunctionTypes": true,
-
 		"isolatedModules": true
 	}
 }
