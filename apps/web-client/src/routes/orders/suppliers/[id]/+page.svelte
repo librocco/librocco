@@ -25,7 +25,7 @@
 		getPlacedSupplierOrderLines
 	} from "$lib/db/cr-sqlite/suppliers";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
-	import { SupplierPublisherTable } from "$lib/components-new/SupplierPublisherList";
+	import { SupplierPublisherTable, SupplierPublisherTableRow } from "$lib/components-new/SupplierPublisherList";
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { appPath } from "$lib/paths";
@@ -210,12 +210,11 @@
 			<div class="mb-20 flex h-full w-full flex-col gap-y-6">
 				<!-- Tab Navigation -->
 				<div class="px-4">
-					<nav class="flex" style="gap: 8px;">
+					<nav class="flex gap-2">
 						<button
 							class="rounded font-normal transition-colors {$activeTab === 'orders'
 								? 'border border-gray-900 bg-gray-900 text-white'
-								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'}"
-							style="padding: 8px 16px; font-size: 14px; font-weight: 400; border-radius: 4px;"
+								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'} px-4 py-2 text-[14px]"
 							on:click={() => activeTab.set("orders")}
 						>
 							Orders
@@ -223,8 +222,7 @@
 						<button
 							class="rounded font-normal transition-colors {$activeTab === 'publishers'
 								? 'border border-gray-900 bg-gray-900 text-white'
-								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'}"
-							style="padding: 8px 16px; font-size: 14px; font-weight: 400; border-radius: 4px;"
+								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'} px-4 py-2 text-[14px]"
 							on:click={() => activeTab.set("publishers")}
 						>
 							Assigned Publishers
@@ -244,7 +242,7 @@
 				<!-- Assigned Publishers Tab -->
 				{#if $activeTab === "publishers"}
 					<div class="flex h-full w-full flex-col pb-20 md:pb-0">
-						<div class="sticky top-0 z-20 bg-white" style="padding: 24px 20px 12px 20px;">
+						<div class="sticky top-0 z-20 bg-white px-5 py-3">
 							<div class="relative flex items-center gap-2">
 								<div class="relative w-full">
 									<svg
@@ -266,7 +264,6 @@
 										placeholder="Search publishers..."
 										bind:value={searchQuery}
 										class="h-9 w-full rounded border border-gray-300 bg-white py-1 pl-9 pr-3 text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-										style="font-size: 14px; height: 36px; padding-left: 36px; padding-right: 12px;"
 									/>
 								</div>
 								{#if searchQuery}
@@ -275,87 +272,81 @@
 							</div>
 						</div>
 
-						<div class="flex min-h-0 flex-1 overflow-hidden" style="padding: 0px 20px 20px 20px;">
+						<div class="flex min-h-0 flex-1 overflow-hidden px-5 pb-5">
 							<div class="flex min-w-0 flex-1 flex-col border-r border-gray-200">
-								<div class="sticky top-0 z-10 border-b border-gray-100 bg-white" style="padding: 8px 12px;">
-									<div class="flex items-center" style="gap: 8px;">
-										<h3 class="font-normal text-gray-900" style="font-size: 14px; font-weight: 400;">Assigned Publishers</h3>
-										<span
-											class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600"
-											style="font-size: 10px;">{filteredAssigned.length}</span
-										>
-									</div>
-								</div>
-								<div class="min-h-0 flex-1 overflow-y-auto">
+								<SupplierPublisherTable
+									showEmptyState={filteredAssigned.length === 0}
+									emptyStateMessage={searchQuery ? "No matching assigned publishers" : "No assigned publishers"}
+								>
+									<svelte:fragment slot="title">Assigned Publishers</svelte:fragment>
+
+									<span
+										slot="badge"
+										class="inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white"
+									>
+										{filteredAssigned.length}
+									</span>
+
 									{#each filteredAssigned as publisher}
-										<div class="flex items-center justify-between border-b border-gray-100 hover:bg-gray-50" style="padding: 6px 12px;">
-											<span class="truncate font-normal text-gray-900" style="font-size: 13px; font-weight: 400;">{publisher}</span>
+										<SupplierPublisherTableRow publisherName={publisher}>
 											<button
+												slot="action-button"
 												on:click={handleUnassignPublisher(publisher)}
-												class="whitespace-nowrap rounded border-0 bg-transparent font-medium text-gray-500 hover:bg-gray-100"
-												style="padding: 0px 4px; font-size: 11px; height: 20px; color: rgba(24, 24, 27, 0.6);"
+												class="h-5 whitespace-nowrap rounded border-0 bg-transparent px-1 text-[11px] font-medium text-gray-500 hover:bg-red-50 hover:!text-red-600"
 											>
 												Remove
 											</button>
-										</div>
+										</SupplierPublisherTableRow>
 									{/each}
-									{#if filteredAssigned.length === 0}
-										<div class="py-8 text-center text-sm text-gray-500" style="padding-left: 12px; padding-right: 12px;">
-											{searchQuery ? "No matching assigned publishers" : "No assigned publishers"}
-										</div>
-									{/if}
-								</div>
+								</SupplierPublisherTable>
 							</div>
 
-							<div class="flex min-w-0 flex-1 flex-col">
-								<div class="sticky top-0 z-10 border-b border-gray-100 bg-white" style="padding: 8px 12px;">
-									<div class="flex items-center" style="gap: 8px;">
-										<h3 class="font-normal text-gray-900" style="font-size: 14px; font-weight: 400;">Available Publishers</h3>
-										<span
-											class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600"
-											style="font-size: 10px;">{filteredAvailable.length}</span
-										>
-									</div>
-								</div>
-								<div class="min-h-0 flex-1 overflow-y-auto">
-									{#each filteredAvailable as pub}
-										<div class="flex items-center justify-between border-b border-gray-100 hover:bg-gray-50" style="padding: 6px 12px;">
+							<SupplierPublisherTable
+								showEmptyState={filteredAvailable.length === 0}
+								emptyStateMessage={searchQuery ? "No matching available publishers" : "No available publishers"}
+							>
+								<svelte:fragment slot="title">Available Publishers</svelte:fragment>
+								<span
+									slot="badge"
+									class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600"
+								>
+									{filteredAvailable.length}
+								</span>
+
+								{#each filteredAvailable as pub}
+									{#if pub.supplierName}
+										<SupplierPublisherTableRow publisherName={pub.name}>
 											<span
-												class="flex items-center truncate font-normal text-gray-900"
-												style="font-size: 13px; font-weight: 400; gap: 8px;"
+												slot="badge"
+												class="inline-flex max-w-[100px] truncate rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800"
+												title={`Currently assigned to ${pub.supplierName}`}
 											>
-												{pub.name}
-												{#if pub.supplierName}
-													<span
-														class="inline-flex max-w-[100px] items-center truncate rounded px-1.5 font-medium"
-														style="font-size: 10px; padding: 0px 6px; background-color: rgb(254, 243, 199); color: rgb(146, 64, 14);"
-														title={`Currently assigned to ${pub.supplierName}`}
-													>
-														{pub.supplierName}
-													</span>
-												{/if}
+												{pub.supplierName}
 											</span>
 											<button
-												on:click={pub.supplierName
-													? () => {
-															confirmationPublisher = pub.name;
-															confirmationDialogOpen.set(true);
-														}
-													: handleAssignPublisher(pub.name)}
-												class="whitespace-nowrap rounded border border-gray-900 bg-white font-medium text-gray-900 hover:bg-gray-50"
-												style="padding: 0px 4px; font-size: 11px; height: 20px;"
+												slot="action-button"
+												on:click={() => {
+													confirmationPublisher = pub.name;
+													confirmationDialogOpen.set(true);
+												}}
+												class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
 											>
-												{pub.supplierName ? "Re-assign" : "Add"}
+												Re-assign
 											</button>
-										</div>
-									{/each}
-									{#if filteredAvailable.length === 0}
-										<div class="py-8 text-center text-sm text-gray-500" style="padding-left: 12px; padding-right: 12px;">
-											{searchQuery ? "No matching available publishers" : "No available publishers"}
-										</div>
+										</SupplierPublisherTableRow>
+									{:else}
+										<SupplierPublisherTableRow publisherName={pub.name}>
+											<button
+												slot="action-button"
+												on:click={handleAssignPublisher(pub.name)}
+												class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
+											>
+												Add
+											</button>
+										</SupplierPublisherTableRow>
 									{/if}
-								</div>
-							</div>
+								{/each}
+							</SupplierPublisherTable>
 						</div>
 					</div>
 				{/if}
