@@ -61,10 +61,9 @@ testOrders.describe("Supplier publisher config", () => {
 
 		await page.getByRole("button", { name: "Assigned Publishers" }).click();
 
-		await page.getByText("Assigned Publishers").waitFor();
-
 		// Check for split column layout - both headings should be visible
-		await expect(page.getByText("Assigned Publishers")).toBeVisible();
+		// .nth(1) -- tab button is matched as .nth(0)
+		await expect(page.getByText("Assigned Publishers").nth(1)).toBeVisible();
 		await expect(page.getByText("Available Publishers")).toBeVisible();
 
 		// Check search bar is present
@@ -92,13 +91,13 @@ testOrders.describe("Supplier publisher config", () => {
 		// Test the UI buttons for adding/removing publishers
 
 		// First, remove Pub1 using the UI button
-		await page.getByText("pub1").locator("..").getByRole("button", { name: "Remove publisher" }).click();
+		await page.getByText("pub1").locator("..").getByRole("button", { name: "Remove" }).click();
 
 		// Wait for page to update and pub2 to be clickable
 		await page.waitForTimeout(500);
 
 		// Test reassigning a publisher from another supplier using UI
-		await page.getByText("pub2").locator("..").getByRole("button", { name: "Re-assign to supplier" }).click();
+		await page.getByText("pub2").locator("..").getByRole("button", { name: "Re-assign" }).click();
 
 		const dialog = page.getByRole("dialog");
 		await expect(dialog).toBeVisible();
