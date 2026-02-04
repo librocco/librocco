@@ -207,9 +207,10 @@
 					</div>
 				</div>
 			</div>
-			<div class="mb-20 flex h-full w-full flex-col gap-y-6">
+
+			<div class="mb-20 flex h-full w-full flex-col gap-y-2">
 				<!-- Tab Navigation -->
-				<div class="px-4">
+				<div class="z-20 bg-white px-5 pt-6 pb-6">
 					<nav class="flex gap-2">
 						<button
 							class="rounded font-normal transition-colors {$activeTab === 'orders'
@@ -241,8 +242,8 @@
 
 				<!-- Assigned Publishers Tab -->
 				{#if $activeTab === "publishers"}
-					<div class="flex h-full w-full flex-col pb-20 md:pb-0">
-						<div class="sticky top-0 z-20 bg-white px-5 py-3">
+					<div class="mb-4 flex h-full w-full flex-col pb-4">
+						<div class="sticky top-0 z-20 mb-4 bg-white px-5 pb-4">
 							<div class="relative flex items-center gap-2">
 								<div class="relative w-full">
 									<svg
@@ -263,7 +264,7 @@
 										type="text"
 										placeholder="Search publishers..."
 										bind:value={searchQuery}
-										class="h-9 w-full rounded border border-gray-300 bg-white py-1 pl-9 pr-3 text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+										class="h-9 w-full rounded border border-none border-gray-300 bg-white py-1 pl-9 pr-3 text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 									/>
 								</div>
 								{#if searchQuery}
@@ -273,80 +274,82 @@
 						</div>
 
 						<div class="flex min-h-0 flex-1 overflow-hidden px-5 pb-5">
-							<div class="flex min-w-0 flex-1 flex-col border-r border-gray-200">
-								<SupplierPublisherTable
-									showEmptyState={filteredAssigned.length === 0}
-									emptyStateMessage={searchQuery ? "No matching assigned publishers" : "No assigned publishers"}
-								>
-									<svelte:fragment slot="title">Assigned Publishers</svelte:fragment>
+							<div class="grid flex-1 grid-cols-2 gap-4 overflow-hidden">
+								<div class="flex min-w-0 flex-1 flex-col border-gray-200">
+									<SupplierPublisherTable
+										showEmptyState={filteredAssigned.length === 0}
+										emptyStateMessage={searchQuery ? "No matching assigned publishers" : "No assigned publishers"}
+									>
+										<svelte:fragment slot="title">Assigned Publishers</svelte:fragment>
 
+										<span
+											slot="badge"
+											class="inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white"
+										>
+											{filteredAssigned.length}
+										</span>
+
+										{#each filteredAssigned as publisher}
+											<SupplierPublisherTableRow publisherName={publisher}>
+												<button
+													slot="action-button"
+													on:click={handleUnassignPublisher(publisher)}
+													class="h-5 whitespace-nowrap rounded border-0 bg-transparent px-1 text-[11px] font-medium text-gray-500 hover:bg-red-50 hover:!text-red-600"
+												>
+													Remove
+												</button>
+											</SupplierPublisherTableRow>
+										{/each}
+									</SupplierPublisherTable>
+								</div>
+
+								<SupplierPublisherTable
+									showEmptyState={filteredAvailable.length === 0}
+									emptyStateMessage={searchQuery ? "No matching available publishers" : "No available publishers"}
+								>
+									<svelte:fragment slot="title">Available Publishers</svelte:fragment>
 									<span
 										slot="badge"
-										class="inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white"
+										class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600"
 									>
-										{filteredAssigned.length}
+										{filteredAvailable.length}
 									</span>
 
-									{#each filteredAssigned as publisher}
-										<SupplierPublisherTableRow publisherName={publisher}>
-											<button
-												slot="action-button"
-												on:click={handleUnassignPublisher(publisher)}
-												class="h-5 whitespace-nowrap rounded border-0 bg-transparent px-1 text-[11px] font-medium text-gray-500 hover:bg-red-50 hover:!text-red-600"
-											>
-												Remove
-											</button>
-										</SupplierPublisherTableRow>
+									{#each filteredAvailable as pub}
+										{#if pub.supplierName}
+											<SupplierPublisherTableRow publisherName={pub.name}>
+												<span
+													slot="badge"
+													class="inline-flex max-w-[100px] truncate rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800"
+													title={`Currently assigned to ${pub.supplierName}`}
+												>
+													{pub.supplierName}
+												</span>
+												<button
+													slot="action-button"
+													on:click={() => {
+														confirmationPublisher = pub.name;
+														confirmationDialogOpen.set(true);
+													}}
+													class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
+												>
+													Re-assign
+												</button>
+											</SupplierPublisherTableRow>
+										{:else}
+											<SupplierPublisherTableRow publisherName={pub.name}>
+												<button
+													slot="action-button"
+													on:click={handleAssignPublisher(pub.name)}
+													class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
+												>
+													Add
+												</button>
+											</SupplierPublisherTableRow>
+										{/if}
 									{/each}
 								</SupplierPublisherTable>
 							</div>
-
-							<SupplierPublisherTable
-								showEmptyState={filteredAvailable.length === 0}
-								emptyStateMessage={searchQuery ? "No matching available publishers" : "No available publishers"}
-							>
-								<svelte:fragment slot="title">Available Publishers</svelte:fragment>
-								<span
-									slot="badge"
-									class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600"
-								>
-									{filteredAvailable.length}
-								</span>
-
-								{#each filteredAvailable as pub}
-									{#if pub.supplierName}
-										<SupplierPublisherTableRow publisherName={pub.name}>
-											<span
-												slot="badge"
-												class="inline-flex max-w-[100px] truncate rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800"
-												title={`Currently assigned to ${pub.supplierName}`}
-											>
-												{pub.supplierName}
-											</span>
-											<button
-												slot="action-button"
-												on:click={() => {
-													confirmationPublisher = pub.name;
-													confirmationDialogOpen.set(true);
-												}}
-												class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
-											>
-												Re-assign
-											</button>
-										</SupplierPublisherTableRow>
-									{:else}
-										<SupplierPublisherTableRow publisherName={pub.name}>
-											<button
-												slot="action-button"
-												on:click={handleAssignPublisher(pub.name)}
-												class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
-											>
-												Add
-											</button>
-										</SupplierPublisherTableRow>
-									{/if}
-								{/each}
-							</SupplierPublisherTable>
 						</div>
 					</div>
 				{/if}
