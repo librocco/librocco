@@ -187,8 +187,8 @@ importers:
         specifier: ~8.5.2
         version: 8.5.8(storybook@8.5.8(prettier@3.4.2))
       '@storybook/addon-svelte-csf':
-        specifier: ~4.2.0
-        version: 4.2.0(@storybook/svelte@8.5.8(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3))(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4)))(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4))
+        specifier: ~5.0.10
+        version: 5.0.10(@storybook/svelte@8.5.8(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3))(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4)))(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4))
       '@storybook/svelte':
         specifier: ~8.5.2
         version: 8.5.8(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3)
@@ -1621,20 +1621,18 @@ packages:
     peerDependencies:
       storybook: ^8.5.8
 
-  '@storybook/addon-svelte-csf@4.2.0':
-    resolution: {integrity: sha512-ius5C6vp+55upbi7MAiJvBSkXxZuokNwkBfmUgY3sAdvp4IAvBp8A+Yvk6bWZqo2TJTfM4ccT3WAmNTxa9m0sw==}
+  '@storybook/addon-svelte-csf@5.0.10':
+    resolution: {integrity: sha512-poSvTS7VdaQ42ZoqW5e4+2Hv1iLO0mekH9fwn/QuBNse48R4WlTyR8XFbHRTfatl9gdc9ZYC4uWzazrmV6zGIA==}
     peerDependencies:
-      '@storybook/svelte': ^7.0.0 || ^8.0.0 || ^8.0.0-beta.0 || ^8.2.0-beta.0
+      '@storybook/svelte': ^0.0.0-0 || ^8.2.0 || ^9.0.0 || ^9.1.0-0 || ^10.0.0-0
       '@sveltejs/vite-plugin-svelte': '*'
+      storybook: ^0.0.0-0 || ^8.2.0 || ^9.0.0 || ^9.1.0-0 || ^10.0.0-0
       svelte: '*'
-      svelte-loader: ^3.1.2
       vite: '*'
     peerDependenciesMeta:
       '@sveltejs/vite-plugin-svelte':
         optional: true
       svelte:
-        optional: true
-      svelte-loader:
         optional: true
       vite:
         optional: true
@@ -1687,6 +1685,9 @@ packages:
 
   '@storybook/csf@0.1.12':
     resolution: {integrity: sha512-9/exVhabisyIVL0VxTCxo01Tdm8wefIXKXfltAPTSr8cbLn5JAxGQ6QV3mjdecLGEOucfoVhAKtJfVHxEK1iqw==}
+
+  '@storybook/csf@0.1.13':
+    resolution: {integrity: sha512-7xOOwCLGB3ebM87eemep89MYRFTko+D8qE7EdAAq74lgdqRR5cOUtYWJLjO2dLtP94nqoOdHJo6MdLLKzg412Q==}
 
   '@storybook/global@5.0.0':
     resolution: {integrity: sha512-FcOqPAXACP0I3oJ/ws6/rrPT9WGhu915Cg8D02a9YxLo0DE9zI+a9A5gRGvmQ09fiWPukqI8ZAEoQEdWUKMQdQ==}
@@ -1751,11 +1752,6 @@ packages:
 
   '@storybook/theming@8.5.8':
     resolution: {integrity: sha512-/Rm6BV778sCT+3Ok861VYmw9BlEV5zcCq2zg5TOVuk8HqZw7H7VHtubVsjukEuhveYCs+oF+i2tv/II6jh6jdg==}
-    peerDependencies:
-      storybook: ^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0
-
-  '@storybook/types@8.6.14':
-    resolution: {integrity: sha512-33kzHZa7h6/EygeLZDcm1PNRTlybokz8dzAh2JYjpETf77pG8jhPmEfrI2oHSAdgNeK7A3OMcGA/EwEN7EJdzw==}
     peerDependencies:
       storybook: ^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0
 
@@ -2760,6 +2756,9 @@ packages:
     resolution: {integrity: sha512-w+5mJ3GuFL+NjVtJlvydShqE1eN3h3PbI7/5LAsYJP/2qtuMXjfL2LpHSRqo4b4eSF5K/DH1JXKUAHSB2UW50g==}
     engines: {node: '>= 0.4'}
 
+  es-toolkit@1.44.0:
+    resolution: {integrity: sha512-6penXeZalaV88MM3cGkFZZfOoLGWshWWfdy0tWw/RlVVyhvMaWSBTOvXNeiW3e5FwdS5ePW0LGEu17zT139ktg==}
+
   es6-promise@3.3.1:
     resolution: {integrity: sha512-SOp9Phqvqn7jtEUxPWdWfWoLmyt2VaJ6MpvP9Comy1MceMXqE6bxvaTu4iaxpYYPzhny28Lc+M87/c2cPK6lDg==}
 
@@ -2910,6 +2909,12 @@ packages:
   esquery@1.7.0:
     resolution: {integrity: sha512-Ap6G0WQwcU/LHsvLwON1fAQX9Zp0A2Y6Y/cJBl9r/JbW90Zyg4/zbG6zzKa2OTALELarYHmKu0GhpM5EO+7T0g==}
     engines: {node: '>=0.10'}
+
+  esrap@1.2.2:
+    resolution: {integrity: sha512-F2pSJklxx1BlQIQgooczXCPHmcWpn6EsP5oo73LQfonG9fIlIENQ8vMmfGXeojP9MrkzUNAfyU5vdFlR9shHAw==}
+
+  esrap@1.4.9:
+    resolution: {integrity: sha512-3OMlcd0a03UGuZpPeUC1HxR3nA23l+HEyCiZw3b3FumJIN9KphoGzDJKMXI1S72jVS1dsenDyQC0kJlO1U9E1g==}
 
   esrap@2.2.1:
     resolution: {integrity: sha512-GiYWG34AN/4CUyaWAgunGt0Rxvr1PTMlGC0vvEov/uOQYWne2bpN03Um+k8jT+q3op33mKouP2zeJ6OlM+qeUg==}
@@ -4368,6 +4373,12 @@ packages:
     resolution: {integrity: sha512-ot0WnXS9fgdkgIcePe6RHNk1WA8+muPa6cSjeR3V8K27q9BB1rTE3R1p7Hv0z1ZyAc8s6Vvv8DIyWf681MAt0w==}
     engines: {node: '>= 0.4'}
 
+  svelte-ast-print@0.4.2:
+    resolution: {integrity: sha512-hRHHufbJoArFmDYQKCpCvc0xUuIEfwYksvyLYEQyH+1xb5LD5sM/IthfooCdXZQtOIqXz6xm7NmaqdfwG4kh6w==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      svelte: ^5.0.0
+
   svelte-check@4.3.5:
     resolution: {integrity: sha512-e4VWZETyXaKGhpkxOXP+B/d0Fp/zKViZoJmneZWe/05Y2aqSKj3YN2nLfYPJBQ87WEiY4BQCQ9hWGu9mPT1a1Q==}
     engines: {node: '>= 18.0.0'}
@@ -4981,6 +4992,9 @@ packages:
 
   yup@1.7.1:
     resolution: {integrity: sha512-GKHFX2nXul2/4Dtfxhozv701jLQHdf6J34YDh2cEkpqoo8le5Mg6/LrdseVLrFarmFygZTlfIhHx/QKfb/QWXw==}
+
+  zimmerframe@1.1.2:
+    resolution: {integrity: sha512-rAbqEGa8ovJy4pyBxZM70hg4pE6gDgaQ0Sl9M3enG3I0d6H4XSAM3GeNGLKnsBpuijUow064sf7ww1nutC5/3w==}
 
   zimmerframe@1.1.4:
     resolution: {integrity: sha512-B58NGBEoc8Y9MWWCQGl/gq9xBCe4IiKM0a2x7GZdQKOW5Exr8S1W24J6OgM1njK8xCRGvAJIL/MxXHf6SkmQKQ==}
@@ -6101,20 +6115,23 @@ snapshots:
       storybook: 8.5.8(prettier@3.4.2)
       ts-dedent: 2.2.0
 
-  '@storybook/addon-svelte-csf@4.2.0(@storybook/svelte@8.5.8(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3))(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4)))(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4))':
+  '@storybook/addon-svelte-csf@5.0.10(@storybook/svelte@8.5.8(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3))(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4)))(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4))':
     dependencies:
-      '@babel/runtime': 7.28.6
+      '@storybook/csf': 0.1.13
       '@storybook/svelte': 8.5.8(storybook@8.5.8(prettier@3.4.2))(svelte@5.37.3)
-      '@storybook/types': 8.6.14(storybook@8.5.8(prettier@3.4.2))
       dedent: 1.7.1
+      es-toolkit: 1.44.0
+      esrap: 1.4.9
       magic-string: 0.30.21
+      storybook: 8.5.8(prettier@3.4.2)
+      svelte-ast-print: 0.4.2(svelte@5.37.3)
+      zimmerframe: 1.1.4
     optionalDependencies:
       '@sveltejs/vite-plugin-svelte': 5.1.1(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4))
       svelte: 5.37.3
       vite: 6.0.15(@types/node@20.4.10)(tsx@4.19.4)
     transitivePeerDependencies:
       - babel-plugin-macros
-      - storybook
 
   '@storybook/addon-toolbars@8.5.8(storybook@8.5.8(prettier@3.4.2))':
     dependencies:
@@ -6173,6 +6190,10 @@ snapshots:
       unplugin: 1.16.1
 
   '@storybook/csf@0.1.12':
+    dependencies:
+      type-fest: 2.19.0
+
+  '@storybook/csf@0.1.13':
     dependencies:
       type-fest: 2.19.0
 
@@ -6279,10 +6300,6 @@ snapshots:
       storybook: 8.5.8(prettier@3.4.2)
 
   '@storybook/theming@8.5.8(storybook@8.5.8(prettier@3.4.2))':
-    dependencies:
-      storybook: 8.5.8(prettier@3.4.2)
-
-  '@storybook/types@8.6.14(storybook@8.5.8(prettier@3.4.2))':
     dependencies:
       storybook: 8.5.8(prettier@3.4.2)
 
@@ -7464,6 +7481,8 @@ snapshots:
       is-date-object: 1.1.0
       is-symbol: 1.1.1
 
+  es-toolkit@1.44.0: {}
+
   es6-promise@3.3.1: {}
 
   esbuild-register@3.6.0(esbuild@0.24.2):
@@ -7743,6 +7762,15 @@ snapshots:
   esquery@1.7.0:
     dependencies:
       estraverse: 5.3.0
+
+  esrap@1.2.2:
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.5.5
+      '@types/estree': 1.0.8
+
+  esrap@1.4.9:
+    dependencies:
+      '@jridgewell/sourcemap-codec': 1.5.5
 
   esrap@2.2.1:
     dependencies:
@@ -9198,6 +9226,12 @@ snapshots:
 
   supports-preserve-symlinks-flag@1.0.0: {}
 
+  svelte-ast-print@0.4.2(svelte@5.37.3):
+    dependencies:
+      esrap: 1.2.2
+      svelte: 5.37.3
+      zimmerframe: 1.1.2
+
   svelte-check@4.3.5(picomatch@4.0.3)(svelte@5.37.3)(typescript@5.9.3):
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
@@ -9840,6 +9874,8 @@ snapshots:
       toposort: 2.0.2
       type-fest: 2.19.0
     optional: true
+
+  zimmerframe@1.1.2: {}
 
   zimmerframe@1.1.4: {}
 

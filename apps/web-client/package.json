@@ -92,7 +92,7 @@
 		"storybook": "~8.5.2",
 		"@storybook/sveltekit": "~8.5.2",
 		"@storybook/svelte": "~8.5.2",
-		"@storybook/addon-svelte-csf": "~4.2.0",
+		"@storybook/addon-svelte-csf": "~5.0.10",
 		"@storybook/addon-essentials": "~8.5.2",
 		"@storybook/addon-a11y": "~8.5.2",
 		"@vitest/browser": "3.0.9",

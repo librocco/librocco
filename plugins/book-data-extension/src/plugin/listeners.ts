@@ -1,4 +1,4 @@
-import { Result } from "../types";
+import type { Result } from "../types";
 
 import { addEventListener, removeEventListener } from "./window-helpers";
 

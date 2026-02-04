@@ -1,6 +1,6 @@
 import { BehaviorSubject } from "rxjs";
 
-import { type BookFetcherPlugin, BookData, fetchBookDataFromSingleSource } from "@librocco/shared";
+import { type BookFetcherPlugin, type BookData, fetchBookDataFromSingleSource } from "@librocco/shared";
 
 const baseurl = "https://www.googleapis.com/books/v1/volumes";
 const reqFields = [
