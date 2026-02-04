@@ -34,6 +34,7 @@ export type MsgSyncStatus = {
 		siteId?: string;
 		schemaName?: string;
 		schemaVersion?: string;
+		schemaHash?: string;
 		stage?: string;
 		ackDbVersion?: number;
 		reason?: string;

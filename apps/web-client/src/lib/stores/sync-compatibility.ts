@@ -169,6 +169,7 @@ export function applyHandshakeStatus(
 		ok: boolean;
 		siteId?: string;
 		schemaVersion?: string;
+		schemaHash?: string;
 		stage?: string;
 		reason?: string;
 		message?: string;
@@ -187,5 +188,16 @@ export function applyHandshakeStatus(
 	}
 
 	const verified = status.stage === "steady" || status.stage === "apply_ack" || status.stage == null;
-	return applyRemoteInfo(dbid, { siteId: status.siteId, schemaVersion: status.schemaVersion, verified });
+	const schemaVersionStr = status.schemaVersion ?? status.schemaHash ?? undefined;
+
+	if (schemaVersionStr && schemaVersionStr !== localSchemaVersion) {
+		syncCompatibility.set({
+			status: "incompatible",
+			reason: "schema_mismatch",
+			message: `Remote schema ${schemaVersionStr} !== local ${localSchemaVersion}`
+		});
+		return { ok: false as const };
+	}
+
+	return applyRemoteInfo(dbid, { siteId: status.siteId, schemaVersion: schemaVersionStr, verified });
 }
