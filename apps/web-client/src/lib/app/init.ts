@@ -27,6 +27,10 @@ import * as suppliers from "$lib/db/cr-sqlite/suppliers";
 import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 
 import { timeLogger } from "$lib/utils/timer";
+import { __forceSyncConnectivityForTests } from "$lib/stores/app";
+import { __forceSyncCompatibilityForTests } from "$lib/stores/sync-compatibility";
+import { __forcePendingForTests } from "$lib/stores/sync-pending";
+import { __forceSyncStateForTests, buildSyncStateForTests } from "$lib/stores/sync-state";
 
 // ---------------------------------- Init functions ---------------------------------- //
 
@@ -168,10 +172,34 @@ function attachWindowHelpers(app: App) {
 	window["migrations"] = migrations;
 	window["deleteDBFromOPFS"] = deleteDBFromOPFS;
 
-	if (IS_E2E || IS_DEBUG) {
-		window["timeLogger"] = timeLogger;
-		window["_performInitialSync"] = _performInitialSync;
-	}
+	// Expose testing/helpers for dev and automation
+	window["timeLogger"] = timeLogger;
+	window["_performInitialSync"] = _performInitialSync;
+	window["__forceSyncIndicator"] = (state: {
+		status?: "disconnected" | "connecting" | "synced" | "syncing" | "stuck" | "incompatible";
+		connectivity?: { connected?: boolean; stuck?: boolean; diagnostics?: any };
+		compatibility?: any;
+		pending?: number;
+		lastAckAt?: number | null;
+		cause?: string;
+		reason?: string;
+		message?: string;
+	}) => {
+		if (state.connectivity) __forceSyncConnectivityForTests(state.connectivity);
+		if (state.compatibility) __forceSyncCompatibilityForTests(state.compatibility);
+		if (typeof state.pending === "number" || state.lastAckAt !== undefined) {
+			__forcePendingForTests(state.pending ?? 0, state.lastAckAt ?? null);
+		}
+		const status = state.status ?? (state.pending && state.pending > 0 ? "syncing" : "synced");
+		__forceSyncStateForTests(
+			buildSyncStateForTests(status as any, state.pending ?? 0, {
+				cause: state.cause,
+				lastAckAt: state.lastAckAt ?? null,
+				reason: state.reason as any,
+				message: state.message
+			})
+		);
+	};
 }
 
 // ---------------------------------- Utils ---------------------------------- //

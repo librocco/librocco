@@ -201,3 +201,8 @@ export function applyHandshakeStatus(
 
 	return applyRemoteInfo(dbid, { siteId: status.siteId, schemaVersion: schemaVersionStr, verified });
 }
+
+// Testing helper (E2E only)
+export function __forceSyncCompatibilityForTests(state: SyncCompatibilityState) {
+	syncCompatibility.set(state);
+}
