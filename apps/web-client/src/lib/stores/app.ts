@@ -5,7 +5,6 @@ import { zod } from "sveltekit-superforms/adapters";
 import { type Writable, type Readable, writable } from "svelte/store";
 
 import type { PluginsInterface } from "$lib/plugins";
-import { IS_E2E } from "$lib/constants";
 
 import { readableFromStream } from "$lib/utils/streams";
 
@@ -170,7 +169,11 @@ type SyncConnectivityMonitorPublic = {
 export const syncConnectivityMonitor: SyncConnectivityMonitorPublic = _syncConnectivityMonitor;
 
 // Testing helper (E2E only)
-export function __forceSyncConnectivityForTests(opts: { connected?: boolean; stuck?: boolean; diagnostics?: Partial<SyncStuckDiagnostics> }) {
+export function __forceSyncConnectivityForTests(opts: {
+	connected?: boolean;
+	stuck?: boolean;
+	diagnostics?: Partial<SyncStuckDiagnostics>;
+}) {
 	if (typeof opts.connected === "boolean") _syncConnectivityMonitor.connected.set(opts.connected);
 	if (typeof opts.stuck === "boolean") _syncConnectivityMonitor.stuck.set(opts.stuck);
 	if (opts.diagnostics) {

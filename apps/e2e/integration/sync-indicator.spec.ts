@@ -39,9 +39,7 @@ test("sync indicator shows labels, pending, and disconnected state", async ({ pa
 		});
 	});
 
-	await expect
-		.poll(async () => badge.getAttribute("data-status"), { timeout: 5000, intervals: [200] })
-		.resolves.toBe("synced");
+	await expect.poll(async () => badge.getAttribute("data-status"), { timeout: 5000, intervals: [200] }).resolves.toBe("synced");
 	await expect(badge).toContainText(/Synced/);
 
 	// Force a syncing state with pending changes
@@ -54,9 +52,7 @@ test("sync indicator shows labels, pending, and disconnected state", async ({ pa
 			lastAckAt: Date.now()
 		});
 	});
-	await expect
-		.poll(async () => badge.getAttribute("data-status"), { timeout: 5000, intervals: [200] })
-		.resolves.toBe("syncing");
+	await expect.poll(async () => badge.getAttribute("data-status"), { timeout: 5000, intervals: [200] }).resolves.toBe("syncing");
 	await expect(badge).toContainText(/3 pending/);
 
 	// Force a disconnected state
@@ -69,7 +65,5 @@ test("sync indicator shows labels, pending, and disconnected state", async ({ pa
 			pending: 0
 		});
 	});
-	await expect
-		.poll(async () => badge.getAttribute("data-status"), { timeout: 5000, intervals: [200] })
-		.resolves.toBe("disconnected");
+	await expect.poll(async () => badge.getAttribute("data-status"), { timeout: 5000, intervals: [200] }).resolves.toBe("disconnected");
 });

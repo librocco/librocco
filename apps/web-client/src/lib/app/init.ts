@@ -6,7 +6,7 @@ import { setLocale } from "@librocco/shared/i18n-svelte";
 import { locales } from "@librocco/shared/i18n-util";
 import { loadedLocales } from "@librocco/shared/i18n-util";
 
-import { DEFAULT_LOCALE, DEFAULT_VFS, IS_DEBUG, IS_E2E } from "$lib/constants";
+import { DEFAULT_LOCALE, DEFAULT_VFS } from "$lib/constants";
 import { DEMO_VFS } from "$lib/db/cr-sqlite/core/constants";
 
 import { type App } from ".";

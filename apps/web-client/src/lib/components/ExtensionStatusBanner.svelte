@@ -102,7 +102,7 @@
 		aria-label={ariaText}
 	>
 		<div class="block h-3 w-3 rounded-full align-baseline {indicatorClass}"></div>
-		<div class="flex flex-col leading-none gap-0.5">
+		<div class="flex flex-col gap-0.5 leading-none">
 			<p class="leading-none">{statusText}</p>
 			{#if detailText}
 				<p class="text-[11px] leading-none text-neutral-400">{detailText}</p>
