@@ -64,7 +64,7 @@
 
 					<button
 						slot="action-button"
-						class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
+						class="h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb] hover:text-accent-foreground"
 					>
 						Add
 					</button>
@@ -73,7 +73,7 @@
 				<SupplierPublisherTableRow publisherName={name}>
 					<button
 						slot="action-button"
-						class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
+						class="h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb] hover:text-accent-foreground"
 					>
 						Re-assign
 					</button>
