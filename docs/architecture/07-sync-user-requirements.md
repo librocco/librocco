@@ -49,6 +49,16 @@ The footer now shows a single "Remote DB" badge (the Book Data Extension badge h
 
 **Current Behavior**: The indicator derives from `syncConnectivityMonitor` plus a pending-changes store that counts local `crsql_changes` rows newer than the last sent version (persisted per DB). Green means connected and no pending local changes.
 
+#### Low-effort UX improvements for the indicator
+
+- Pair color with a short label: show the dot plus text (`Synced`, `Syncing…`, `Disconnected`) to help color-blind users and new users.
+- Add cause on red: include a compact reason (`offline`, `server error`, `schema mismatch`) based on existing connectivity/compatibility state.
+- Show freshness: append “as of <age>s ago”; if no steady ACK within N seconds, flip from yellow to red with “No ack for <age>s”.
+- Make yellow meaningful: use yellow only while waiting for the first steady/apply ACK or while pending > 0; otherwise prefer green/red to avoid ambiguity.
+- Expose pending in-label: when syncing, show `Syncing (N pending)` so users see drain progress.
+- Tooltip/details: clicking/hovering shows connection state, last ack version/time, pending count, schema compatibility, and a retry action; add `aria-label` with the full sentence for accessibility.
+- Retry affordance: when red, show a small “Retry” in the tooltip; when schema mismatch, show “Reload / Update app”.
+
 ### Connectivity Tracking
 
 **File**: `apps/web-client/src/lib/stores/app.ts`
