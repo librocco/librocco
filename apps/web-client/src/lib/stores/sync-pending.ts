@@ -3,6 +3,7 @@ import { writable } from "svelte/store";
 
 import type { IAppDbRx } from "$lib/app/rx";
 import type { DBAsync } from "$lib/db/cr-sqlite/core/types";
+import { markLocalDbError } from "./sync-compatibility";
 
 export const pendingChangesCount = writable(0);
 
@@ -35,6 +36,22 @@ const loadLastAckVersion = async (dbid: string) => {
 	lastAckVersion = 0;
 };
 
+// Error patterns that indicate database corruption or unusable state
+const DB_ERROR_PATTERNS = [
+	"Could not update table infos",
+	"crsql_changes",
+	"no such table",
+	"database disk image is malformed",
+	"database is locked",
+	"database or disk is full"
+];
+
+const isLocalDbError = (error: unknown): boolean => {
+	if (!(error instanceof Error)) return false;
+	const message = error.message.toLowerCase();
+	return DB_ERROR_PATTERNS.some((pattern) => message.toLowerCase().includes(pattern.toLowerCase()));
+};
+
 const refreshPendingCount = async () => {
 	if (!currentDb) return;
 
@@ -47,7 +64,16 @@ const refreshPendingCount = async () => {
 				[lastAckVersion]
 			);
 			pendingChangesCount.set(Number(result?.count ?? 0));
-		} catch {
+		} catch (err) {
+			console.error("[sync-pending] Error refreshing pending count:", err);
+
+			// Check if this is a critical database error
+			if (isLocalDbError(err)) {
+				const message = err instanceof Error ? err.message : String(err);
+				console.error("[sync-pending] Local database error detected - marking as incompatible:", message);
+				markLocalDbError(`Database error: ${message}`);
+			}
+
 			pendingChangesCount.set(0);
 		} finally {
 			refreshPromise = null;

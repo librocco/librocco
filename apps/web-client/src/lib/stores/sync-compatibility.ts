@@ -11,7 +11,8 @@ export type SyncIncompatibilityReason =
 	| "remote_unreachable"
 	| "missing_metadata"
 	| "handshake_failed"
-	| "apply_failed";
+	| "apply_failed"
+	| "local_db_error";
 
 export type SyncCompatibilityState =
 	| { status: "unknown" }
@@ -161,6 +162,19 @@ export function resetSyncCompatibility(dbid: string) {
 
 export function markCompatibilityChecking() {
 	syncCompatibility.set({ status: "checking" });
+}
+
+/**
+ * Mark sync as incompatible due to local database error.
+ * This is used when the local database is in a corrupt or unusable state
+ * (e.g., crsql_changes table is inaccessible).
+ */
+export function markLocalDbError(message: string) {
+	syncCompatibility.set({
+		status: "incompatible",
+		reason: "local_db_error",
+		message
+	});
 }
 
 export function applyHandshakeStatus(

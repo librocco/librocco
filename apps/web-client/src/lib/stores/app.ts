@@ -42,8 +42,9 @@ export const createExtensionAvailabilityStore = (plugins: PluginsInterface) => {
 };
 
 export type SyncStuckDiagnostics = {
-	reason: "rapid_closes" | "timeout" | null;
+	reason: "rapid_closes" | "timeout" | "repeated_disconnects" | null;
 	rapidCloseCount: number;
+	disconnectCount: number;
 	lastOpenTime: number | null;
 	detectedAt: number | null;
 };
@@ -60,6 +61,7 @@ const _syncConnectivityMonitor: SyncConnectivityMonitor = {
 	diagnostics: writable<SyncStuckDiagnostics>({
 		reason: null,
 		rapidCloseCount: 0,
+		disconnectCount: 0,
 		lastOpenTime: null,
 		detectedAt: null
 	}),
@@ -69,6 +71,8 @@ const _syncConnectivityMonitor: SyncConnectivityMonitor = {
 // Sync stuck detection: track rapid connection close patterns
 const SYNC_STUCK_THRESHOLD_MS = 10000; // Consider stuck after 10 seconds of failed connections
 const RAPID_CLOSE_THRESHOLD_MS = 2000; // Connection closing within 2s of opening is "rapid"
+const DISCONNECT_TRACKING_WINDOW_MS = 120000; // Track disconnects within a 2-minute window
+const REPEATED_DISCONNECT_THRESHOLD = 3; // Number of disconnects to trigger "repeated_disconnects"
 
 /** Update sync connectivity monitor event source (worker) */
 export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
@@ -76,12 +80,18 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 	let rapidCloseCount = 0;
 	let stuckTimeout: ReturnType<typeof setTimeout> | null = null;
 
+	// Track all disconnects within a time window to detect repeated connection failures
+	// (even if each connection lasts longer than RAPID_CLOSE_THRESHOLD_MS)
+	let disconnectTimestamps: number[] = [];
+
 	const resetStuckState = () => {
 		rapidCloseCount = 0;
+		disconnectTimestamps = [];
 		_syncConnectivityMonitor.stuck.set(false);
 		_syncConnectivityMonitor.diagnostics.set({
 			reason: null,
 			rapidCloseCount: 0,
+			disconnectCount: 0,
 			lastOpenTime: null,
 			detectedAt: null
 		});
@@ -91,11 +101,12 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 		}
 	};
 
-	const markStuck = (reason: "rapid_closes" | "timeout") => {
+	const markStuck = (reason: "rapid_closes" | "timeout" | "repeated_disconnects") => {
 		_syncConnectivityMonitor.stuck.set(true);
 		_syncConnectivityMonitor.diagnostics.set({
 			reason,
 			rapidCloseCount,
+			disconnectCount: disconnectTimestamps.length,
 			lastOpenTime,
 			detectedAt: Date.now()
 		});
@@ -118,14 +129,31 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 	const unsubscribeClose = worker?.onConnClose(() => {
 		_syncConnectivityMonitor.connected.set(false);
 
+		const now = Date.now();
+
+		// Track this disconnect for repeated disconnect detection
+		disconnectTimestamps.push(now);
+		// Remove old timestamps outside the tracking window
+		disconnectTimestamps = disconnectTimestamps.filter((ts) => now - ts < DISCONNECT_TRACKING_WINDOW_MS);
+
 		// Check if this was a rapid close (connection failed quickly)
-		if (lastOpenTime && Date.now() - lastOpenTime < RAPID_CLOSE_THRESHOLD_MS) {
+		if (lastOpenTime && now - lastOpenTime < RAPID_CLOSE_THRESHOLD_MS) {
 			rapidCloseCount++;
 			// After 3 rapid closes, mark as stuck
 			if (rapidCloseCount >= 3) {
 				markStuck("rapid_closes");
 			}
 		}
+
+		// Check for repeated disconnects (even if not rapid)
+		// This catches the case where handshake succeeds but connection keeps timing out
+		if (disconnectTimestamps.length >= REPEATED_DISCONNECT_THRESHOLD) {
+			console.warn(
+				`[sync] Detected ${disconnectTimestamps.length} disconnects within ${DISCONNECT_TRACKING_WINDOW_MS / 1000}s - marking as stuck`
+			);
+			markStuck("repeated_disconnects");
+		}
+
 		lastOpenTime = null;
 	});
 
@@ -149,6 +177,7 @@ export function resetSyncStuckState() {
 	_syncConnectivityMonitor.diagnostics.set({
 		reason: null,
 		rapidCloseCount: 0,
+		disconnectCount: 0,
 		lastOpenTime: null,
 		detectedAt: null
 	});

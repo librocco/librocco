@@ -442,14 +442,24 @@
 				<!-- Diagnostic details -->
 				{#if isIncompatible}
 					<div class="mb-4 rounded bg-base-200 p-3 font-mono text-xs">
-						<p class="mb-1 font-semibold text-gray-700">Remote DB incompatible</p>
-						<p class="text-gray-600">
-							{#if $syncCompatibilityState.status === "incompatible"}
-								{$syncCompatibilityState.message || "The remote database changed identity. Please resync."}
-							{:else}
-								Remote database not compatible.
-							{/if}
-						</p>
+						{#if $syncCompatibilityState.status === "incompatible" && $syncCompatibilityState.reason === "local_db_error"}
+							<p class="mb-1 font-semibold text-error">Local database error</p>
+							<p class="text-gray-600">
+								{$syncCompatibilityState.message || "The local database is corrupted or inaccessible."}
+							</p>
+							<p class="mt-2 text-gray-500">
+								Your local database needs to be reset. This will download a fresh copy from the server.
+							</p>
+						{:else}
+							<p class="mb-1 font-semibold text-gray-700">Remote DB incompatible</p>
+							<p class="text-gray-600">
+								{#if $syncCompatibilityState.status === "incompatible"}
+									{$syncCompatibilityState.message || "The remote database changed identity. Please resync."}
+								{:else}
+									Remote database not compatible.
+								{/if}
+							</p>
+						{/if}
 					</div>
 				{/if}
 				{#if $syncDiagnostics.reason}
@@ -461,6 +471,10 @@
 							</p>
 						{:else if $syncDiagnostics.reason === "timeout"}
 							<p class="text-gray-600">{tLayout.error_dialog.sync_stuck.diagnostics.timeout()}</p>
+						{:else if $syncDiagnostics.reason === "repeated_disconnects"}
+							<p class="text-gray-600">
+								Connection keeps disconnecting ({$syncDiagnostics.disconnectCount} times). The server may be overloaded or there may be a network issue.
+							</p>
 						{/if}
 						<p class="mt-1 text-gray-500">{tLayout.error_dialog.sync_stuck.diagnostics.hint()}</p>
 					</div>

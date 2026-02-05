@@ -6,11 +6,28 @@ import fs from "fs";
 
 import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
 import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack.js";
+import { extensionPath } from "@vlcn.io/crsqlite";
+
+import { performStartupHealthCheck, checkDatabaseHealth, checkAllDatabases } from "./db-health.js";
 
 const IS_DEV = process.env.IS_DEV === "true";
+const SKIP_HEALTH_CHECK = process.env.SKIP_HEALTH_CHECK === "true";
 const PORT = process.env.PORT || 3000;
 const DB_FOLDER = process.env.DB_FOLDER || "./test-dbs";
 const SCHEMA_FOLDER = process.env.SCHEMA_FOLDER || "./schemas";
+
+// Create the DB folder if it doesn't exist
+if (!fs.existsSync(path.resolve(DB_FOLDER))) {
+	fs.mkdirSync(DB_FOLDER, { recursive: true });
+}
+
+// Perform database health checks before starting the server
+// This will exit the process if critical errors are found
+if (!SKIP_HEALTH_CHECK) {
+	performStartupHealthCheck(path.resolve(DB_FOLDER), extensionPath);
+} else {
+	console.warn("WARNING: Database health checks skipped (SKIP_HEALTH_CHECK=true)");
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -21,11 +38,6 @@ const wsConfig = {
 	pathPattern: /\/sync/,
 	notifyPolling: true
 };
-
-// Create the DB folder if it doesn't exist
-if (!fs.existsSync(path.resolve(wsConfig.dbFolder))) {
-	fs.mkdirSync(wsConfig.dbFolder!, { recursive: true });
-}
 
 const schemaName = "init";
 
@@ -45,6 +57,51 @@ app.use(express.json());
 
 app.get("/", (_, res) => {
 	res.send("Ok");
+});
+
+// Health check endpoint - returns detailed database health status
+app.get("/health", (_, res) => {
+	const results = checkAllDatabases(path.resolve(DB_FOLDER), extensionPath);
+	const allHealthy = Array.from(results.values()).every((r) => r.ok);
+
+	const response: Record<string, unknown> = {
+		status: allHealthy ? "healthy" : "unhealthy",
+		databases: Object.fromEntries(
+			Array.from(results.entries()).map(([name, result]) => [
+				name,
+				{
+					ok: result.ok,
+					checks: result.checks.map((c) => ({
+						name: c.name,
+						passed: c.passed,
+						message: c.message,
+						severity: c.severity
+					}))
+				}
+			])
+		)
+	};
+
+	res.status(allHealthy ? 200 : 503).json(response);
+});
+
+// Health check for a specific database
+app.get("/:dbname/health", (req, res) => {
+	const dbname = req.params.dbname;
+	const dbPath = path.resolve(DB_FOLDER, dbname);
+
+	const result = checkDatabaseHealth(dbPath, extensionPath);
+
+	res.status(result.ok ? 200 : 503).json({
+		database: dbname,
+		ok: result.ok,
+		checks: result.checks.map((c) => ({
+			name: c.name,
+			passed: c.passed,
+			message: c.message,
+			severity: c.severity
+		}))
+	});
 });
 
 if (IS_DEV) {
