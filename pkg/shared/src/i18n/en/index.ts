@@ -906,6 +906,14 @@ const layout = {
 			description: "The sync connection is not working.",
 			call_to_action: "Clear your local database and re-sync from the server to fix this.",
 			button: "Nuke and Resync",
+			incompatible: {
+				local_error_title: "Local database error",
+				local_error_description: "The local database is corrupted or inaccessible.",
+				local_error_hint: "Your local database needs to be reset. This will download a fresh copy from the server.",
+				remote_title: "Remote DB incompatible",
+				remote_fallback: "The remote database changed identity. Please resync.",
+				remote_default: "Remote database not compatible."
+			},
 			diagnostics: {
 				title: "Detected issue:",
 				rapid_closes: "Connection failed {count} time{{s}} immediately after opening.",

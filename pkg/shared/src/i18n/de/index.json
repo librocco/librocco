@@ -818,6 +818,14 @@
         "description": "",
         "call_to_action": "",
         "button": "",
+        "incompatible": {
+          "local_error_title": "",
+          "local_error_description": "",
+          "local_error_hint": "",
+          "remote_title": "",
+          "remote_fallback": "",
+          "remote_default": ""
+        },
         "diagnostics": {
           "title": "",
           "rapid_closes": "",

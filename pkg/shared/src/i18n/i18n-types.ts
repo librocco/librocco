@@ -2324,6 +2324,32 @@ type RootTranslation = {
 				 * N​u​k​e​ ​a​n​d​ ​R​e​s​y​n​c
 				 */
 				button: string
+				incompatible: {
+					/**
+					 * L​o​c​a​l​ ​d​a​t​a​b​a​s​e​ ​e​r​r​o​r
+					 */
+					local_error_title: string
+					/**
+					 * T​h​e​ ​l​o​c​a​l​ ​d​a​t​a​b​a​s​e​ ​i​s​ ​c​o​r​r​u​p​t​e​d​ ​o​r​ ​i​n​a​c​c​e​s​s​i​b​l​e​.
+					 */
+					local_error_description: string
+					/**
+					 * Y​o​u​r​ ​l​o​c​a​l​ ​d​a​t​a​b​a​s​e​ ​n​e​e​d​s​ ​t​o​ ​b​e​ ​r​e​s​e​t​.​ ​T​h​i​s​ ​w​i​l​l​ ​d​o​w​n​l​o​a​d​ ​a​ ​f​r​e​s​h​ ​c​o​p​y​ ​f​r​o​m​ ​t​h​e​ ​s​e​r​v​e​r​.
+					 */
+					local_error_hint: string
+					/**
+					 * R​e​m​o​t​e​ ​D​B​ ​i​n​c​o​m​p​a​t​i​b​l​e
+					 */
+					remote_title: string
+					/**
+					 * T​h​e​ ​r​e​m​o​t​e​ ​d​a​t​a​b​a​s​e​ ​c​h​a​n​g​e​d​ ​i​d​e​n​t​i​t​y​.​ ​P​l​e​a​s​e​ ​r​e​s​y​n​c​.
+					 */
+					remote_fallback: string
+					/**
+					 * R​e​m​o​t​e​ ​d​a​t​a​b​a​s​e​ ​n​o​t​ ​c​o​m​p​a​t​i​b​l​e​.
+					 */
+					remote_default: string
+				}
 				diagnostics: {
 					/**
 					 * D​e​t​e​c​t​e​d​ ​i​s​s​u​e​:
@@ -5205,6 +5231,32 @@ export type TranslationFunctions = {
 				 * Nuke and Resync
 				 */
 				button: () => LocalizedString
+				incompatible: {
+					/**
+					 * Local database error
+					 */
+					local_error_title: () => LocalizedString
+					/**
+					 * The local database is corrupted or inaccessible.
+					 */
+					local_error_description: () => LocalizedString
+					/**
+					 * Your local database needs to be reset. This will download a fresh copy from the server.
+					 */
+					local_error_hint: () => LocalizedString
+					/**
+					 * Remote DB incompatible
+					 */
+					remote_title: () => LocalizedString
+					/**
+					 * The remote database changed identity. Please resync.
+					 */
+					remote_fallback: () => LocalizedString
+					/**
+					 * Remote database not compatible.
+					 */
+					remote_default: () => LocalizedString
+				}
 				diagnostics: {
 					/**
 					 * Detected issue:

@@ -816,6 +816,14 @@
         "description": "La connessione di sincronizzazione non funziona.",
         "call_to_action": "Cancella il database locale e risincronizza dal server per risolvere il problema.",
         "button": "Cancella e risincronizza",
+        "incompatible": {
+          "local_error_title": "Errore database locale",
+          "local_error_description": "Il database locale è corrotto o inaccessibile.",
+          "local_error_hint": "Il database locale deve essere reimpostato. Verrà scaricata una copia aggiornata dal server.",
+          "remote_title": "DB remoto incompatibile",
+          "remote_fallback": "Il database remoto ha cambiato identità. Risincronizza.",
+          "remote_default": "Database remoto non compatibile."
+        },
         "diagnostics": {
           "title": "Problema rilevato:",
           "rapid_closes": "La connessione è fallita {count} volt{{e|a}} subito dopo l'apertura.",

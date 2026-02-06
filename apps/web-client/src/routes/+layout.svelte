@@ -443,18 +443,18 @@
 				{#if isIncompatible}
 					<div class="mb-4 rounded bg-base-200 p-3 font-mono text-xs">
 						{#if $syncCompatibilityState.status === "incompatible" && $syncCompatibilityState.reason === "local_db_error"}
-							<p class="mb-1 font-semibold text-error">Local database error</p>
+							<p class="mb-1 font-semibold text-error">{tLayout.error_dialog.sync_stuck.incompatible.local_error_title()}</p>
 							<p class="text-gray-600">
-								{$syncCompatibilityState.message || "The local database is corrupted or inaccessible."}
+								{tLayout.error_dialog.sync_stuck.incompatible.local_error_description()}
 							</p>
-							<p class="mt-2 text-gray-500">Your local database needs to be reset. This will download a fresh copy from the server.</p>
+							<p class="mt-2 text-gray-500">{tLayout.error_dialog.sync_stuck.incompatible.local_error_hint()}</p>
 						{:else}
-							<p class="mb-1 font-semibold text-gray-700">Remote DB incompatible</p>
+							<p class="mb-1 font-semibold text-gray-700">{tLayout.error_dialog.sync_stuck.incompatible.remote_title()}</p>
 							<p class="text-gray-600">
 								{#if $syncCompatibilityState.status === "incompatible"}
-									{$syncCompatibilityState.message || "The remote database changed identity. Please resync."}
+									{tLayout.error_dialog.sync_stuck.incompatible.remote_fallback()}
 								{:else}
-									Remote database not compatible.
+									{tLayout.error_dialog.sync_stuck.incompatible.remote_default()}
 								{/if}
 							</p>
 						{/if}
