@@ -327,7 +327,7 @@ testOrders(
 		await page.goto(appHash("suppliers", supplier.id));
 
 		// Get the table rows for both orders
-		const table = page.getByRole("table").nth(3);
+		const table = page.getByRole("table");
 		const rows = table.getByRole("row");
 
 		// First order (in reconciliation) should have disabled controls
@@ -400,7 +400,7 @@ testOrders(
 		await page.goto(appHash("suppliers", supplier.id));
 
 		// Select the two non-reconciled orders
-		const table = page.getByRole("table").nth(3);
+		const table = page.getByRole("table");
 		const rows = table.getByRole("row");
 
 		// First order checkbox should be disabled (already in reconciliation)

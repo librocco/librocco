@@ -86,6 +86,8 @@ const plugins = [
 	}
 ];
 
+const daisyThemes = require("daisyui/src/theming/themes");
+
 module.exports = {
 	content: [
 		"./src/**/*.{html,js,svelte,ts}",
@@ -96,7 +98,22 @@ module.exports = {
 	theme,
 	plugins,
 	daisyui: {
-		themes: ["lofi", "sunset"],
+		themes: [
+			{
+				lofi: {
+					...daisyThemes.lofi,
+					accent: "#00d3bb",
+					"accent-content": "#084d49"
+				}
+			},
+			{
+				sunset: {
+					...daisyThemes.sunset,
+					accent: "#00d3bb",
+					"accent-content": "#084d49"
+				}
+			}
+		],
 		// We're silencing the output here as it produces problems during formatting (for some editors)
 		// see: https://github.com/tailwindlabs/tailwindcss/discussions/8380
 		//
