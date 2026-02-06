@@ -2145,7 +2145,7 @@ packages:
     version: 0.2.0
 
   '@vlcn.io/ws-server@file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz':
-    resolution: {integrity: sha512-n7+ZqiNqPXgXxwIGVJpgl5+T2XgxQJZ271SkKTPSN6tKWr5uFxQXH8+0i9Cl71RlcMFf/tEl/wCjkWpnsp+DIA==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
+    resolution: {integrity: sha512-vwsJeTRn7H4h/6XKeI4wgocZNWQMkYy4WiyRBLbJFqKBA8LH9LMqDDyElrRkyMhjnZSJWrrucwesgMzBEZIMYg==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
     version: 0.2.2
 
   '@vlcn.io/xplat-api@file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz':
