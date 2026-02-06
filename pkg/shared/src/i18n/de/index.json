@@ -822,6 +822,7 @@
           "title": "",
           "rapid_closes": "",
           "timeout": "",
+          "repeated_disconnects": "",
           "hint": ""
         }
       }
@@ -871,7 +872,8 @@
       "upsert_100_books": "",
       "run_query": "",
       "executing": "",
-      "corrupt_sync_state": ""
+      "corrupt_sync_state": "",
+      "export_state": ""
     },
     "query_interface": {
       "title": "",

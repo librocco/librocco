@@ -527,7 +527,8 @@ const debug_page = {
 		upsert_100_books: "Upsert 100 Books",
 		run_query: "Run Query",
 		executing: "Executing...",
-		corrupt_sync_state: "Corrupt Sync State"
+		corrupt_sync_state: "Corrupt Sync State",
+		export_state: "Export State"
 	},
 	query_interface: {
 		title: "Database Query Interface",

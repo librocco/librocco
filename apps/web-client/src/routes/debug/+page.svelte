@@ -5,8 +5,11 @@
 	import BookPlus from "$lucide/book-plus";
 	import AlertTriangle from "$lucide/alert-triangle";
 	import Unplug from "$lucide/unplug";
+	import Download from "$lucide/download";
 
 	import { onMount } from "svelte";
+
+	import { get } from "svelte/store";
 
 	import { wrapIter } from "@librocco/shared";
 
@@ -22,6 +25,7 @@
 	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
 	import { goto } from "$lib/utils/navigation";
+	import { exportStateArchive } from "$lib/utils/debug-export";
 
 	import { debugData as dd } from "$lib/__testData__/debugData";
 	import { LL } from "@librocco/shared/i18n-svelte";
@@ -338,6 +342,20 @@
 		}
 	};
 
+	const handleExportState = async () => {
+		isLoading = true;
+		errorMessage = null;
+
+		try {
+			await exportStateArchive(get(app.config.dbid));
+		} catch (error) {
+			console.error("Error exporting state:", error);
+			errorMessage = error;
+		} finally {
+			isLoading = false;
+		}
+	};
+
 	let error = false;
 </script>
 
@@ -360,6 +378,10 @@
 				<button class="btn-warning btn" on:click={corruptSyncState}>
 					<Unplug size={20} />
 					{$LL.debug_page.actions.corrupt_sync_state()}
+				</button>
+				<button class="btn-primary btn" on:click={handleExportState}>
+					<Download size={20} />
+					{$LL.debug_page.actions.export_state()}
 				</button>
 			</div>
 		</div>

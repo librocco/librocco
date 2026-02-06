@@ -2313,11 +2313,11 @@ type RootTranslation = {
 				 */
 				title: string
 				/**
-				 * T​h​e​ ​s​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​c​o​u​l​d​ ​n​o​t​ ​b​e​ ​e​s​t​a​b​l​i​s​h​e​d​.​ ​T​h​i​s​ ​u​s​u​a​l​l​y​ ​h​a​p​p​e​n​s​ ​w​h​e​n​ ​t​h​e​ ​l​o​c​a​l​ ​d​a​t​a​b​a​s​e​ ​i​s​ ​i​n​c​o​m​p​a​t​i​b​l​e​ ​w​i​t​h​ ​t​h​e​ ​s​e​r​v​e​r​ ​(​e​.​g​.​,​ ​a​f​t​e​r​ ​a​ ​s​e​r​v​e​r​ ​d​a​t​a​b​a​s​e​ ​r​e​b​u​i​l​d​)​.
+				 * T​h​e​ ​s​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​i​s​ ​n​o​t​ ​w​o​r​k​i​n​g​.
 				 */
 				description: string
 				/**
-				 * T​o​ ​f​i​x​ ​t​h​i​s​,​ ​y​o​u​ ​c​a​n​ ​c​l​e​a​r​ ​y​o​u​r​ ​l​o​c​a​l​ ​d​a​t​a​b​a​s​e​ ​a​n​d​ ​r​e​-​s​y​n​c​ ​f​r​o​m​ ​t​h​e​ ​s​e​r​v​e​r​.
+				 * C​l​e​a​r​ ​y​o​u​r​ ​l​o​c​a​l​ ​d​a​t​a​b​a​s​e​ ​a​n​d​ ​r​e​-​s​y​n​c​ ​f​r​o​m​ ​t​h​e​ ​s​e​r​v​e​r​ ​t​o​ ​f​i​x​ ​t​h​i​s​.
 				 */
 				call_to_action: string
 				/**
@@ -2326,20 +2326,25 @@ type RootTranslation = {
 				button: string
 				diagnostics: {
 					/**
-					 * D​e​t​e​c​t​e​d​ ​p​a​t​t​e​r​n​:
+					 * D​e​t​e​c​t​e​d​ ​i​s​s​u​e​:
 					 */
 					title: string
 					/**
-					 * C​o​n​n​e​c​t​i​o​n​ ​c​l​o​s​e​d​ ​r​a​p​i​d​l​y​ ​{​c​o​u​n​t​}​ ​t​i​m​e​{​{​s​}​}​ ​i​n​ ​a​ ​r​o​w​.
+					 * C​o​n​n​e​c​t​i​o​n​ ​f​a​i​l​e​d​ ​{​c​o​u​n​t​}​ ​t​i​m​e​{​{​s​}​}​ ​i​m​m​e​d​i​a​t​e​l​y​ ​a​f​t​e​r​ ​o​p​e​n​i​n​g​.
 					 * @param {string | number | boolean} count
 					 */
 					rapid_closes: RequiredParams<'count'>
 					/**
-					 * C​o​n​n​e​c​t​i​o​n​ ​d​i​d​ ​n​o​t​ ​s​t​a​b​i​l​i​z​e​ ​w​i​t​h​i​n​ ​t​h​e​ ​t​i​m​e​o​u​t​ ​p​e​r​i​o​d​.
+					 * C​o​n​n​e​c​t​i​o​n​ ​d​i​d​ ​n​o​t​ ​s​t​a​b​i​l​i​z​e​ ​w​i​t​h​i​n​ ​t​h​e​ ​e​x​p​e​c​t​e​d​ ​t​i​m​e​.
 					 */
 					timeout: string
 					/**
-					 * T​h​i​s​ ​t​y​p​i​c​a​l​l​y​ ​i​n​d​i​c​a​t​e​s​ ​t​h​a​t​ ​t​h​e​ ​s​e​r​v​e​r​ ​d​a​t​a​b​a​s​e​ ​w​a​s​ ​r​e​b​u​i​l​t​ ​w​i​t​h​ ​a​ ​n​e​w​ ​i​d​e​n​t​i​t​y​.
+					 * C​o​n​n​e​c​t​i​o​n​ ​d​r​o​p​p​e​d​ ​{​c​o​u​n​t​}​ ​t​i​m​e​{​{​s​}​}​ ​w​i​t​h​o​u​t​ ​s​t​a​y​i​n​g​ ​c​o​n​n​e​c​t​e​d​.
+					 * @param {string | number | boolean} count
+					 */
+					repeated_disconnects: RequiredParams<'count'>
+					/**
+					 * T​h​e​ ​s​e​r​v​e​r​ ​d​a​t​a​b​a​s​e​ ​w​a​s​ ​l​i​k​e​l​y​ ​r​e​b​u​i​l​t​.​ ​Y​o​u​r​ ​l​o​c​a​l​ ​d​a​t​a​ ​n​e​e​d​s​ ​t​o​ ​b​e​ ​r​e​-​s​y​n​c​e​d​.
 					 */
 					hint: string
 				}
@@ -2466,6 +2471,10 @@ type RootTranslation = {
 			 * C​o​r​r​u​p​t​ ​S​y​n​c​ ​S​t​a​t​e
 			 */
 			corrupt_sync_state: string
+			/**
+			 * E​x​p​o​r​t​ ​S​t​a​t​e
+			 */
+			export_state: string
 		}
 		query_interface: {
 			/**
@@ -5185,11 +5194,11 @@ export type TranslationFunctions = {
 				 */
 				title: () => LocalizedString
 				/**
-				 * The sync connection could not be established. This usually happens when the local database is incompatible with the server (e.g., after a server database rebuild).
+				 * The sync connection is not working.
 				 */
 				description: () => LocalizedString
 				/**
-				 * To fix this, you can clear your local database and re-sync from the server.
+				 * Clear your local database and re-sync from the server to fix this.
 				 */
 				call_to_action: () => LocalizedString
 				/**
@@ -5198,19 +5207,23 @@ export type TranslationFunctions = {
 				button: () => LocalizedString
 				diagnostics: {
 					/**
-					 * Detected pattern:
+					 * Detected issue:
 					 */
 					title: () => LocalizedString
 					/**
-					 * Connection closed rapidly {count} time{{s}} in a row.
+					 * Connection failed {count} time{{s}} immediately after opening.
 					 */
 					rapid_closes: (arg: { count: string | number | boolean }) => LocalizedString
 					/**
-					 * Connection did not stabilize within the timeout period.
+					 * Connection did not stabilize within the expected time.
 					 */
 					timeout: () => LocalizedString
 					/**
-					 * This typically indicates that the server database was rebuilt with a new identity.
+					 * Connection dropped {count} time{{s}} without staying connected.
+					 */
+					repeated_disconnects: (arg: { count: string | number | boolean }) => LocalizedString
+					/**
+					 * The server database was likely rebuilt. Your local data needs to be re-synced.
 					 */
 					hint: () => LocalizedString
 				}
@@ -5337,6 +5350,10 @@ export type TranslationFunctions = {
 			 * Corrupt Sync State
 			 */
 			corrupt_sync_state: () => LocalizedString
+			/**
+			 * Export State
+			 */
+			export_state: () => LocalizedString
 		}
 		query_interface: {
 			/**

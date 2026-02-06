@@ -447,9 +447,7 @@
 							<p class="text-gray-600">
 								{$syncCompatibilityState.message || "The local database is corrupted or inaccessible."}
 							</p>
-							<p class="mt-2 text-gray-500">
-								Your local database needs to be reset. This will download a fresh copy from the server.
-							</p>
+							<p class="mt-2 text-gray-500">Your local database needs to be reset. This will download a fresh copy from the server.</p>
 						{:else}
 							<p class="mb-1 font-semibold text-gray-700">Remote DB incompatible</p>
 							<p class="text-gray-600">
