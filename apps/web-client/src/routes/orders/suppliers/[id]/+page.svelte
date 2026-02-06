@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import { writable } from "svelte/store";
-	import { Download, PencilLine, Plus, Mail } from "$lucide";
-	import UserCircle from "$lucide/user-circle";
+	import { Plus } from "$lucide";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -37,6 +36,8 @@
 
 	import { app } from "$lib/app";
 	import { getDb, getDbRx } from "$lib/app/db";
+
+	import { SupplierCard } from "$lib/components-new/SupplierCard";
 
 	export let data: PageData;
 
@@ -123,87 +124,31 @@
 
 		downloadAsTextFile(generatedLines, `${event.detail.supplierOrderId}-${lines[0]?.supplier_name}-${lines[0]?.orderFormat}`);
 	}
+
+	const handleDeleteSupplier = () => {
+		console.log("Delete supplier functionality not implemented in this page");
+	};
 </script>
 
 <Page title={t.details.supplier_page()} view="orders/suppliers/id" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+		<div class="flex h-full flex-col gap-y-10 max-md:overflow-y-auto md:flex-row md:divide-x">
 			<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 				<div class="card h-full">
-					<div class="card-body gap-y-2 p-0">
-						<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
-							<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-								<h2 class="prose">#{supplier?.id}</h2>
-							</div>
+					<div class="card-body p-0">
+						<div class="col-span-3 overflow-auto border-[#E5E5E5] p-[20px] py-6 px-[20px]">
+							{#if supplier}
+								<SupplierCard
+									name={supplier.name}
+									id={`#${supplier?.id}`}
+									email={supplier.email || "N/A"}
+									address={supplier.address || "N/A"}
+									orderFormat={supplier.orderFormat || "N/A"}
+									on:edit={() => dialogOpen.set(true)}
+									on:delete={handleDeleteSupplier}
+								/>
+							{/if}
 						</div>
-
-						{#if supplier}
-							<dl class="flex flex-col">
-								<div class="flex w-full flex-col gap-y-4 py-6">
-									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-										<div class="max-w-96 flex flex-col gap-y-4">
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">{t.details.supplier_name()}</span>
-													<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{supplier.name}</dd>
-											</div>
-
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">{t.details.supplier_email()}</span>
-													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{supplier.email || "N/A"}</dd>
-											</div>
-
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">{t.details.supplier_address()}</span>
-													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{supplier.address || "N/A"}</dd>
-											</div>
-
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">{t.details.supplier_customerId()}</span>
-													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{supplier.customerId || "N/A"}</dd>
-											</div>
-
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">{t.details.supplier_orderFormat()}</span>
-													<Download aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{supplier.orderFormat || "N/A"}</dd>
-											</div>
-										</div>
-									</div>
-
-									<div class="w-full pr-2">
-										<button
-											class="btn-secondary btn-outline btn-xs btn w-full"
-											type="button"
-											aria-label="Edit supplier details"
-											on:click={() => dialogOpen.set(true)}
-										>
-											<PencilLine aria-hidden size={16} />
-										</button>
-									</div>
-								</div>
-							</dl>
-
-							<div class="card-actions border-t py-6 md:mb-20">
-								<a href={appPath("suppliers", supplier.id, "new-order")} class="btn-secondary btn-outline btn-sm btn" type="button">
-									{t.labels.create_new_order()}
-									<Plus aria-hidden size={20} />
-								</a>
-							</div>
-						{/if}
 					</div>
 				</div>
 			</div>
