@@ -1,5 +1,5 @@
 import { filter, map } from "./generators";
-import { VolumeStock } from "./types";
+import type { VolumeStock } from "./types";
 import { asc, composeCompare } from "./utils";
 
 /**
