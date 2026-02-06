@@ -812,16 +812,16 @@
         "button": "Clicca per eliminare il DB"
       },
       "sync_stuck": {
-        "title": "",
-        "description": "",
-        "call_to_action": "",
-        "button": "",
+        "title": "Problema di sincronizzazione",
+        "description": "La connessione di sincronizzazione non funziona.",
+        "call_to_action": "Cancella il database locale e risincronizza dal server per risolvere il problema.",
+        "button": "Cancella e risincronizza",
         "diagnostics": {
-          "title": "",
-          "rapid_closes": "",
-          "timeout": "",
-          "repeated_disconnects": "",
-          "hint": ""
+          "title": "Problema rilevato:",
+          "rapid_closes": "La connessione è fallita {count} volt{{e|a}} subito dopo l'apertura.",
+          "timeout": "La connessione non si è stabilizzata entro il tempo previsto.",
+          "repeated_disconnects": "La connessione è caduta {count} volt{{e|a}} senza restare stabile.",
+          "hint": "Il database del server è stato probabilmente ricostruito. I dati locali devono essere risincronizzati."
         }
       }
     },
