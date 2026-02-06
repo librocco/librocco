@@ -398,8 +398,8 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 	const statusHistory = await page.evaluate(() => (window as any).__statusHistory as string[]);
 	expect(statusHistory).not.toContain("synced");
 
-	// The modal should show the specific rebuilt message, not the vague network message
-	await expect(page.locator(".modal-box")).toContainText(/rebuilt/i);
+	// The modal should show the specific incompatibility message, not the vague network message
+	await expect(page.locator(".modal-box")).toContainText(/changed identity/i);
 
 	await page.getByRole("button", { name: /nuke/i }).click();
 
