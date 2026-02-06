@@ -7,8 +7,6 @@
 	import { get, writable, derived } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Subscription } from "rxjs";
-
 	import Menu from "$lucide/menu";
 
 	import { afterNavigate } from "$app/navigation";
@@ -81,7 +79,6 @@
 		window.dispatchEvent(new Event("db_ready"));
 	});
 
-	let availabilitySubscription: Subscription;
 	let detachPendingMonitor: (() => void) | null = null;
 	let detachPendingInvalidate: (() => void) | null = null;
 	let detachSyncStatus: (() => void) | null = null;
@@ -151,7 +148,6 @@
 
 	onDestroy(() => {
 		// Run all cleanup functions
-		availabilitySubscription?.unsubscribe();
 		disposer?.();
 		window.removeEventListener("beforeunload", preventUnloadHandler);
 		detachPendingMonitor?.();
@@ -435,7 +431,7 @@
 						{tLayout.error_dialog.sync_stuck.description()}
 					</span>
 					<span class="mb-2 block">
-						{isIncompatible ? tLayout.error_dialog.sync_stuck.call_to_action() : tLayout.error_dialog.sync_stuck.call_to_action()}
+						{tLayout.error_dialog.sync_stuck.call_to_action()}
 					</span>
 				</p>
 

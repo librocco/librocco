@@ -60,7 +60,7 @@ function handleMessage(e: MessageEvent<any>) {
 			return handleStart(msg.payload);
 		}
 		default: {
-			logger.warn("unkonwn message type:", msg._type);
+			logger.warn("unknown message type:", msg._type);
 		}
 	}
 }

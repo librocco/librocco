@@ -106,11 +106,11 @@ app.get("/:dbname/health", (req, res) => {
 
 if (IS_DEV) {
 	console.log("running sync server in dev mode:");
-	console.log("  RPC endpoiont enabled");
+	console.log("  RPC endpoint enabled");
 	console.log("  use RemoteDB to interact with the server DB");
 } else {
 	console.log("running sync server in production mode:");
-	console.log("  RPC endpoiont disabled");
+	console.log("  RPC endpoint disabled");
 	console.log("  only access to the DB is via sync websocket server");
 }
 

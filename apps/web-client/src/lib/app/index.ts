@@ -102,6 +102,6 @@ export async function deleteCurrentDb(app: App, next: { dbid: string; vfs: VFSWh
 
 	// Start sync if it was on before the switch
 	if (get(app.config.syncActive)) {
-		await startSync(app, dbid, get(app.config.syncUrl));
+		await startSync(app, next.dbid, get(app.config.syncUrl));
 	}
 }

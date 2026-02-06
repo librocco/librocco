@@ -209,8 +209,8 @@ export async function startSync(app: App, dbid: string, url: string) {
 					shouldReload = true;
 					await db.close();
 				});
-			} catch {
-				// Probably console log here
+			} catch (err) {
+				console.error("Initial sync failed:", err);
 			} finally {
 				sync.state.set(AppSyncState.Idle);
 			}
