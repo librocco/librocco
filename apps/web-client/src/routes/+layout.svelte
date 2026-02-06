@@ -473,7 +473,7 @@
 							<p class="text-gray-600">{tLayout.error_dialog.sync_stuck.diagnostics.timeout()}</p>
 						{:else if $syncDiagnostics.reason === "repeated_disconnects"}
 							<p class="text-gray-600">
-								Connection keeps disconnecting ({$syncDiagnostics.disconnectCount} times). The server may be overloaded or there may be a network issue.
+								{tLayout.error_dialog.sync_stuck.diagnostics.repeated_disconnects({ count: $syncDiagnostics.disconnectCount })}
 							</p>
 						{/if}
 						<p class="mt-1 text-gray-500">{tLayout.error_dialog.sync_stuck.diagnostics.hint()}</p>

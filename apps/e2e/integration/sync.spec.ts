@@ -370,10 +370,36 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 
 	await resetRemoteDb(page, remoteDbURL, dbName);
 
+	// Track status transitions after reload to verify "synced" never appears
 	await page.reload();
 	await page.goto(baseURL);
 
-	await page.getByText("Remote DB incompatible").waitFor({ timeout: 10000 });
+	await page.evaluate(() => {
+		(window as any).__statusHistory = [] as string[];
+		const badge = document.querySelector('[data-testid="remote-db-badge"]');
+		if (badge) {
+			const initial = badge.getAttribute("data-status");
+			if (initial) (window as any).__statusHistory.push(initial);
+			const observer = new MutationObserver((mutations) => {
+				for (const m of mutations) {
+					if (m.attributeName === "data-status") {
+						const val = (m.target as HTMLElement).getAttribute("data-status");
+						if (val) (window as any).__statusHistory.push(val);
+					}
+				}
+			});
+			observer.observe(badge, { attributes: true, attributeFilter: ["data-status"] });
+		}
+	});
+
+	await page.getByText("Remote DB incompatible").waitFor({ timeout: 5000 });
+
+	// The badge should never have shown "synced" before becoming "incompatible"
+	const statusHistory = await page.evaluate(() => (window as any).__statusHistory as string[]);
+	expect(statusHistory).not.toContain("synced");
+
+	// The modal should show the specific rebuilt message, not the vague network message
+	await expect(page.locator(".modal-box")).toContainText(/rebuilt/i);
 
 	await page.getByRole("button", { name: /nuke/i }).click();
 

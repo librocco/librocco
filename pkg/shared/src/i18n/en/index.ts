@@ -902,15 +902,15 @@ const layout = {
 		},
 		sync_stuck: {
 			title: "Sync connection issue",
-			description:
-				"The sync connection could not be established. This usually happens when the local database is incompatible with the server (e.g., after a server database rebuild).",
-			call_to_action: "To fix this, you can clear your local database and re-sync from the server.",
+			description: "The sync connection is not working.",
+			call_to_action: "Clear your local database and re-sync from the server to fix this.",
 			button: "Nuke and Resync",
 			diagnostics: {
-				title: "Detected pattern:",
-				rapid_closes: "Connection closed rapidly {count} time{{s}} in a row.",
-				timeout: "Connection did not stabilize within the timeout period.",
-				hint: "This typically indicates that the server database was rebuilt with a new identity."
+				title: "Detected issue:",
+				rapid_closes: "Connection failed {count} time{{s}} immediately after opening.",
+				timeout: "Connection did not stabilize within the expected time.",
+				repeated_disconnects: "Connection dropped {count} time{{s}} without staying connected.",
+				hint: "The server database was likely rebuilt. Your local data needs to be re-synced."
 			}
 		}
 	},

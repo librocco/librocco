@@ -195,7 +195,13 @@ export function applyHandshakeStatus(
 		syncCompatibility.set({
 			status: "incompatible",
 			reason:
-				status.reason === "schema_mismatch" ? "schema_mismatch" : status.reason === "apply_failed" ? "apply_failed" : "handshake_failed",
+				status.reason === "schema_mismatch"
+					? "schema_mismatch"
+					: status.reason === "apply_failed"
+						? "apply_failed"
+						: status.reason === "peer_mismatch"
+							? "remote_reset"
+							: "handshake_failed",
 			message
 		});
 		return { ok: false as const };
