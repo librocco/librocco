@@ -14,6 +14,8 @@
 
 	const orderData = [{ id: "order-1", orderId: "#2", supplierName: "BooksRUs", placed: "11/10/2025, 2:15:20 PM" }];
 
+	const emptyOrderData: typeof orderData = [];
+
 	let selectedIds: Set<string> = new Set();
 
 	function toggleSelection(id: string) {
@@ -34,9 +36,9 @@
 				<th scope="col" class="min-w-6 w-auto px-4 py-3 text-left align-middle text-xs">
 					<input type="checkbox" class="h-4 w-4 accent-[#422AD5]" />
 				</th>
-				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left text-xs">Order ID</th>
-				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left text-xs">Supplier Name</th>
-				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left text-xs">Placed</th>
+				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left align-middle text-xs">Order ID</th>
+				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left align-middle text-xs">Supplier Name</th>
+				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left align-middle text-xs">Placed</th>
 			</svelte:fragment>
 
 			<svelte:fragment slot="rows">
@@ -56,6 +58,21 @@
 					</TableRow>
 				{/each}
 			</svelte:fragment>
+		</Table>
+	</div>
+</Story>
+
+<Story name="Supplier Page > Orders (Empty State)">
+	<div class="max-w-xl">
+		<Table columnWidths={["1", "2", "3", "6"]} showEmptyState={true}>
+			<svelte:fragment slot="head-cells">
+				<th scope="col" class="min-w-6 w-auto px-4 py-3 text-left align-middle text-xs" aria-hidden="true"></th>
+				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left text-xs">Order ID</th>
+				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left text-xs">Supplier Name</th>
+				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left text-xs">Placed</th>
+			</svelte:fragment>
+
+			<svelte:fragment slot="empty">No orders found</svelte:fragment>
 		</Table>
 	</div>
 </Story>

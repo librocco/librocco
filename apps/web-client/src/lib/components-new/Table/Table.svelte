@@ -1,7 +1,6 @@
 <script lang="ts">
 	export let columnWidths: Array<string | { value: number; unit?: "%" | "px" | "rem" }> = [];
-
-	$: columnCount = columnWidths.length;
+	export let showEmptyState: boolean = false;
 </script>
 
 <div class="overflow-hidden rounded border border-[#E5E5E5]">
@@ -27,7 +26,15 @@
 		</thead>
 
 		<tbody>
-			<slot name="rows" />
+			{#if showEmptyState}
+				<tr>
+					<td colspan={columnWidths.length || 1} class="text-muted-foreground px-4 py-2 text-center text-sm">
+						<slot name="empty">Nothing to see here</slot>
+					</td>
+				</tr>
+			{:else}
+				<slot name="rows" />
+			{/if}
 		</tbody>
 	</table>
 </div>

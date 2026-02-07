@@ -131,6 +131,50 @@ Parent controls selection state, checkbox provided as cell content:
 </Table>
 ```
 
+### Table with Empty State
+
+Use `showEmptyState` prop to display an empty state instead of rows:
+
+```svelte
+<script>
+  let showEmpty = false;
+  const orders = [{ id: "#1", supplier: "BooksRUs", date: "11/10/2025, 2:15 PM", status: "Pending" }];
+</script>
+
+<Table columnWidths={["2", "3", "4", "3"]} showEmptyState={showEmpty}>
+  <svelte:fragment slot="head-cells">
+    <th scope="col" class="text-muted-foreground px-4 py-3 text-[12px]">Order ID</th>
+    <th scope="col" class="text-muted-foreground px-4 py-3 text-[12px]">Supplier</th>
+    <th scope="col" class="text-muted-foreground px-4 py-3 text-[12px]">Date</th>
+    <th scope="col" class="text-muted-foreground px-4 py-3 text-[12px]">Status</th>
+  </svelte:fragment>
+
+  <svelte:fragment slot="empty">
+    <div class="flex flex-col items-center gap-2">
+      <span class="text-muted-foreground">No orders found</span>
+      <button class="btn-primary btn-sm btn">Create your first order</button>
+    </div>
+  </svelte:fragment>
+
+  <svelte:fragment slot="rows">
+    {#each orders as order}
+      <TableRow>
+        <td class="px-[16px] py-[8px] text-[14px] font-medium">{order.id}</td>
+        <td class="px-[16px] py-[8px] text-[14px]">{order.supplier}</td>
+        <td class="px-[16px] py-[8px] text-[14px]">{order.date}</td>
+        <td class="px-[16px] py-[8px] text-[14px]">
+          <span class="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
+            {order.status}
+          </span>
+        </td>
+      </TableRow>
+    {/each}
+  </svelte:fragment>
+</Table>
+```
+
+The table head remains visible when showing the empty state, and you can provide custom content via the `empty` slot (defaults to "Nothing to see here").
+
 ### Table with Actions and Badges
 
 Full control over cell content allows complex elements:
@@ -202,11 +246,13 @@ To opt out of opinionated padding, provide custom classes on `<td>` or `<th>`:
 **Props:**
 
 - `columnWidths?: Array<string | { value: number; unit?: '%' | 'px' | 'rem' }>` - Optional column width definitions
+- `showEmptyState?: boolean` - Show empty state instead of rows (default: `false`)
 
 **Slots:**
 
 - `head-cells` - Header row cells (`<th>` elements)
 - `rows` - Body rows (parent provides `<TableRow>` components)
+- `empty` - Empty state content (rendered when `showEmptyState={true}`, default: "Nothing to see here")
 
 **Styling:**
 
