@@ -1,9 +1,10 @@
 <script lang="ts">
+	export let variant: "default" | "naked" = "default";
 	export let columnWidths: Array<string | { value: number; unit?: "%" | "px" | "rem" }> = [];
 	export let showEmptyState: boolean = false;
 </script>
 
-<div class="overflow-hidden rounded border border-[#E5E5E5]">
+<div class="overflow-hidden {variant === 'default' ? 'rounded border border-[#E5E5E5]' : ''}">
 	<table class="w-full table-fixed">
 		{#if columnWidths && columnWidths.length > 0}
 			<colgroup>
@@ -20,7 +21,7 @@
 		{/if}
 
 		<thead>
-			<tr class="border-b border-[#E5E5E5] bg-[#FAFAFA] px-4">
+			<tr class="{variant === 'default' ? 'border-b border-[#E5E5E5] bg-[#FAFAFA]' : ''} px-4">
 				<slot name="head-cells" />
 			</tr>
 		</thead>
