@@ -326,6 +326,10 @@ const new_order_page = {
 	}
 };
 
+const table = {
+	empty_message: "Nothing to see here"
+};
+
 const order_list_page = {
 	labels: {
 		save: "Save",
@@ -350,7 +354,6 @@ const order_list_page = {
 		no_matching_assigned_publishers: "No matching assigned publishers",
 		no_available_publishers: "No available publishers",
 		no_matching_available_publishers: "No matching available publishers",
-		nothing_to_see_here: "Nothing to see here",
 		currently_assigned_to: "Currently assigned to {supplierName}"
 	},
 	aria: {
@@ -1141,7 +1144,8 @@ const en = {
 	error_page,
 	books_page,
 	debug_page,
-	forms
+	forms,
+	table
 } satisfies BaseTranslation;
 
 export default en;
