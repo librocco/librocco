@@ -1,4 +1,7 @@
 {
+	"table": {
+		"empty_message": "Nichts zu sehen"
+	},
 	"nav": {
 		"search": "Bestände suchen",
 		"books": "",
@@ -636,7 +639,6 @@
 			"no_matching_assigned_publishers": "Keine passenden zugewiesenen Verlage",
 			"no_available_publishers": "Keine verfügbaren Verlage",
 			"no_matching_available_publishers": "Keine passenden verfügbaren Verlage",
-			"nothing_to_see_here": "Nichts zu sehen",
 			"currently_assigned_to": "Derzeit zugewiesen an {supplierName}"
 		},
 		"aria": {
