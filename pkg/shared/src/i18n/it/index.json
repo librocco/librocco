@@ -265,6 +265,14 @@
       "assigned_publishers": "Editori Assegnati",
       "actions": "Azioni",
       "order_format": "Formato Ordine"
+    },
+    "card": {
+      "supplier_id": "ID Fornitore",
+      "email": "Email",
+      "address": "Indirizzo",
+      "order_format": "Formato ordine",
+      "edit_details": "Modifica dettagli",
+      "delete_supplier": "Elimina fornitore"
     }
   },
   "warehouse_list_page": {
@@ -604,12 +612,7 @@
       "reassign_publisher": "Riassegna a fornitore"
     },
     "details": {
-      "supplier_page": "Pagina fornitore",
-      "supplier_name": "Nome fornitore",
-      "supplier_email": "Email fornitore",
-      "supplier_address": "Indirizzo fornitore",
-      "supplier_customerId": "ID cliente fornitore",
-      "supplier_orderFormat": "Formato ordine fornitore"
+      "supplier_page": "Pagina fornitore"
     },
     "table": {
       "publisher_name": "Nome editore",

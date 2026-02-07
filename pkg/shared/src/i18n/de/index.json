@@ -267,6 +267,14 @@
       "assigned_publishers": "",
       "actions": "",
       "order_format": ""
+    },
+    "card": {
+      "supplier_id": "",
+      "email": "",
+      "address": "",
+      "order_format": "",
+      "edit_details": "",
+      "delete_supplier": ""
     }
   },
   "warehouse_list_page": {
@@ -606,12 +614,7 @@
       "reassign_publisher": ""
     },
     "details": {
-      "supplier_page": "",
-      "supplier_name": "",
-      "supplier_email": "",
-      "supplier_address": "",
-      "supplier_customerId": "",
-      "supplier_orderFormat": ""
+      "supplier_page": ""
     },
     "table": {
       "publisher_name": "",

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 	import { Hash, Mail, MapPin, Download, Trash2 } from "lucide-svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let name = "";
 	export let id = "";
@@ -26,7 +27,7 @@
 
 	<dl class="space-y-3">
 		<div class="flex items-start gap-3 py-1">
-			<dt class="sr-only">Supplier ID</dt>
+			<dt class="sr-only">{$LL.suppliers_page.card.supplier_id()}</dt>
 			<dd class="flex flex-1 items-start gap-3 text-sm">
 				<Hash aria-hidden="true" class="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
 				<span class="flex-1">{id.replace(/^#/, "")}</span>
@@ -34,7 +35,7 @@
 		</div>
 
 		<div class="flex items-start gap-3 py-1">
-			<dt class="sr-only">Email</dt>
+			<dt class="sr-only">{$LL.suppliers_page.card.email()}</dt>
 			<dd class="flex flex-1 items-start gap-3 text-sm">
 				<Mail aria-hidden="true" class="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
 				<span class="flex-1">{email}</span>
@@ -42,7 +43,7 @@
 		</div>
 
 		<div class="flex items-start gap-3 py-1">
-			<dt class="sr-only">Address</dt>
+			<dt class="sr-only">{$LL.suppliers_page.card.address()}</dt>
 			<dd class="flex flex-1 items-start gap-3 text-sm">
 				<MapPin aria-hidden="true" class="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
 				<span class="flex-1">{address}</span>
@@ -50,7 +51,7 @@
 		</div>
 
 		<div class="flex items-start gap-3 py-1">
-			<dt class="sr-only">Order format</dt>
+			<dt class="sr-only">{$LL.suppliers_page.card.order_format()}</dt>
 			<dd class="flex flex-1 items-start gap-3 text-sm">
 				<Download aria-hidden="true" class="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
 				<span class="flex-1">{orderFormat}</span>
@@ -64,7 +65,7 @@
 			class="[&_svg:not([class*='size-'])]:size-4 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-background text-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 has-[>_svg]:px-3 hover:text-accent-foreground inline-flex h-9 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border px-4 py-2 text-sm font-medium outline-none transition-all hover:bg-accent focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0"
 			onclick={handleEdit}
 		>
-			Edit details
+			{$LL.suppliers_page.card.edit_details()}
 		</button>
 	</div>
 
@@ -77,7 +78,7 @@
 			onclick={handleDelete}
 		>
 			<Trash2 aria-hidden="true" class="mr-2 h-4 w-4" />
-			Delete supplier
+			{$LL.suppliers_page.card.delete_supplier()}
 		</button>
 	</div>
 </div>

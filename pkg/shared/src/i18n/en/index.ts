@@ -334,12 +334,7 @@ const order_list_page = {
 		reassign_publisher: "Re-assign to supplier"
 	},
 	details: {
-		supplier_page: "Supplier page",
-		supplier_name: "Supplier name",
-		supplier_email: "Supplier email",
-		supplier_address: "Supplier address",
-		supplier_customerId: "Supplier customer ID",
-		supplier_orderFormat: "Supplier order format"
+		supplier_page: "Supplier page"
 	},
 	table: {
 		publisher_name: "Publisher name",
@@ -445,6 +440,14 @@ const suppliers_page = {
 		assigned_publishers: "Assigned Publishers",
 		actions: "Actions",
 		order_format: "Order Format"
+	},
+	card: {
+		supplier_id: "Supplier ID",
+		email: "Email",
+		address: "Address",
+		order_format: "Order format",
+		edit_details: "Edit details",
+		delete_supplier: "Delete supplier"
 	}
 };
 

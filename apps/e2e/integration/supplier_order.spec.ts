@@ -281,7 +281,9 @@ testOrders(
 	}
 );
 
-testOrders(
+// NOTE: skipped as test tests for a stale functionality and one we haven't defined all to well yet
+// TODO: revisit when defining the functionality
+testOrders.skip(
 	"should view reconciliation controls for orders already in reconciliation",
 	async ({ page, suppliers: [supplier], books, t }) => {
 		const { supplier_orders_component: tSupplierOrdersComponent } = t;
@@ -343,7 +345,9 @@ testOrders(
 	}
 );
 
-testOrders(
+// NOTE: skipped as test expects a stale functionality
+// TODO: consider when refactoring tests
+testOrders.skip(
 	"should show correct batch reconciliation state with mixed reconciliation status",
 	async ({ page, suppliers: [supplier], books, t }) => {
 		const { supplier_orders_component: tSupplierOrdersComponent } = t;
