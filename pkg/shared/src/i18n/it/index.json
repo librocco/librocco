@@ -648,7 +648,8 @@
       "finalized": "Finalizzato",
       "actions": "Azioni",
       "view_order": "Visualizza Ordine",
-      "view_reconciliation": "Visualizza Riconciliazione"
+      "view_reconciliation": "Visualizza Riconciliazione",
+      "empty": "Nessun ordine da visualizzare"
     },
     "ordered_table": {
       "order_id": "ID Ordine",
@@ -659,7 +660,8 @@
       "reconcile_selected": "Riconcilia {count:number} ordin{{e|i}}",
       "view_order": "Visualizza Ordine",
       "reconcile": "Riconcilia",
-      "view_reconciliation": "Visualizza Riconciliazione"
+      "view_reconciliation": "Visualizza Riconciliazione",
+      "empty": "Nessun ordine da visualizzare"
     },
     "reconciling_table": {
       "order_id": "ID Riconciliazione",
@@ -667,7 +669,8 @@
       "last_updated": "Ultimo Aggiornamento",
       "update_order": "Aggiorna ordine",
       "continue": "Continua",
-      "actions": "Azioni"
+      "actions": "Azioni",
+      "empty": "Nessun ordine da visualizzare"
     },
     "unordered_table": {
       "supplier_id": "ID Fornitore",

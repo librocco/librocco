@@ -1814,6 +1814,10 @@ type RootTranslation = {
 			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
+			/**
+			 * N​o​ ​o​r​d​e​r​s​ ​t​o​ ​s​h​o​w
+			 */
+			empty: string
 		}
 		ordered_table: {
 			/**
@@ -1853,6 +1857,10 @@ type RootTranslation = {
 			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
+			/**
+			 * N​o​ ​o​r​d​e​r​s​ ​t​o​ ​s​h​o​w
+			 */
+			empty: string
 		}
 		reconciling_table: {
 			/**
@@ -1879,6 +1887,10 @@ type RootTranslation = {
 			 * A​c​t​i​o​n​s
 			 */
 			actions: string
+			/**
+			 * N​o​ ​o​r​d​e​r​s​ ​t​o​ ​s​h​o​w
+			 */
+			empty: string
 		}
 		unordered_table: {
 			/**
@@ -4652,6 +4664,10 @@ export type TranslationFunctions = {
 			 * View Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
+			/**
+			 * No orders to show
+			 */
+			empty: () => LocalizedString
 		}
 		ordered_table: {
 			/**
@@ -4690,6 +4706,10 @@ export type TranslationFunctions = {
 			 * View Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
+			/**
+			 * No orders to show
+			 */
+			empty: () => LocalizedString
 		}
 		reconciling_table: {
 			/**
@@ -4716,6 +4736,10 @@ export type TranslationFunctions = {
 			 * Actions
 			 */
 			actions: () => LocalizedString
+			/**
+			 * No orders to show
+			 */
+			empty: () => LocalizedString
 		}
 		unordered_table: {
 			/**

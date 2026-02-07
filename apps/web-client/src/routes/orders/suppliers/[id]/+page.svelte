@@ -23,7 +23,7 @@
 		removePublisherFromSupplier,
 		getPlacedSupplierOrderLines
 	} from "$lib/db/cr-sqlite/suppliers";
-	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
+	import OrdersView from "./OrdersView.svelte";
 	import { SupplierPublisherTable, SupplierPublisherTableRow } from "$lib/components-new/SupplierPublisherList";
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
@@ -178,11 +178,7 @@
 
 				<!-- Orders Tab -->
 				{#if $activeTab === "orders"}
-					<div class="mb-20 h-full overflow-x-auto">
-						<div class="h-full">
-							<OrderedTable orders={data.orders} on:reconcile={handleReconcile} on:download={handleDownload} />
-						</div>
-					</div>
+					<OrdersView {data} on:reconcile={handleReconcile} on:download={handleDownload} />
 				{/if}
 
 				<!-- Assigned Publishers Tab -->

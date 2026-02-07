@@ -650,7 +650,8 @@
       "finalized": "",
       "actions": "",
       "view_order": "",
-      "view_reconciliation": ""
+      "view_reconciliation": "",
+      "empty": "Keine Bestellungen zum Anzeigen"
     },
     "ordered_table": {
       "order_id": "",
@@ -661,7 +662,8 @@
       "reconcile_selected": "",
       "view_order": "",
       "reconcile": "",
-      "view_reconciliation": ""
+      "view_reconciliation": "",
+      "empty": "Keine Bestellungen zum Anzeigen"
     },
     "reconciling_table": {
       "order_id": "",
@@ -669,7 +671,8 @@
       "last_updated": "",
       "update_order": "",
       "continue": "",
-      "actions": ""
+      "actions": "",
+      "empty": "Keine Bestellungen zum Anzeigen"
     },
     "unordered_table": {
       "supplier_id": "",

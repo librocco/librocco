@@ -723,7 +723,8 @@ const supplier_orders_component = {
 		finalized: "Finalised",
 		actions: "Actions",
 		view_order: "View Order",
-		view_reconciliation: "View Reconciliation"
+		view_reconciliation: "View Reconciliation",
+		empty: "No orders to show"
 	},
 	ordered_table: {
 		order_id: "Order ID",
@@ -734,7 +735,8 @@ const supplier_orders_component = {
 		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
 		reconcile: "Reconcile",
-		view_reconciliation: "View Reconciliation"
+		view_reconciliation: "View Reconciliation",
+		empty: "No orders to show"
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",
@@ -742,7 +744,8 @@ const supplier_orders_component = {
 		last_updated: "Last Updated",
 		update_order: "Update order",
 		continue: "Continue",
-		actions: "Actions"
+		actions: "Actions",
+		empty: "No orders to show"
 	},
 	unordered_table: {
 		supplier_id: "Supplier ID",
