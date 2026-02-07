@@ -239,12 +239,58 @@ To opt out of opinionated padding, provide custom classes on `<td>` or `<th>`:
 </Table>
 ```
 
+### Naked Variant (Minimal Styling)
+
+Use the `naked` variant for minimal styling when integrating with your own visual system or when you want full control over the table's appearance:
+
+```svelte
+<script>
+  const books = [
+    { isbn: "123", title: "The Great Gatsby", author: "F. Scott Fitzgerald", stock: 5 },
+    { isbn: "321", title: "1984", author: "George Orwell", stock: 3 }
+  ];
+</script>
+
+<Table variant="naked" columnWidths={[{ value: 120, unit: "px" }, { value: 200, unit: "px" }, "flex", { value: 80, unit: "px" }]}>
+  <svelte:fragment slot="head-cells">
+    <th scope="col" class="text-muted-foreground px-4 py-2 text-xs uppercase tracking-wide">ISBN</th>
+    <th scope="col" class="text-muted-foreground px-4 py-2 text-xs uppercase tracking-wide">Title</th>
+    <th scope="col" class="text-muted-foreground px-4 py-2 text-xs uppercase tracking-wide">Author</th>
+    <th scope="col" class="text-muted-foreground px-4 py-2 text-xs uppercase tracking-wide">Stock</th>
+  </svelte:fragment>
+
+  <svelte:fragment slot="rows">
+    {#each books as book (book.isbn)}
+      <TableRow variant="naked">
+        <td class="px-2 py-1.5 text-sm font-medium">{book.isbn}</td>
+        <td class="px-2 py-1.5 text-sm">{book.title}</td>
+        <td class="flex-1 truncate px-2 py-1.5 text-sm">{book.author}</td>
+        <td class="px-2 py-1.5 text-sm">{book.stock}</td>
+      </TableRow>
+    {/each}
+  </svelte:fragment>
+</Table>
+```
+
+**Key differences from default variant:**
+
+- No borders on the container or between rows
+- No background color on the header row
+- No hover effects on rows
+- No selection state highlight
+- More flexible integration with custom styling systems
+
+```
+
 ## API Reference
 
 ### Table
 
 **Props:**
 
+- `variant?: 'default' | 'naked'` - Visual styling variant (default: `'default'`)
+  - `default`: Bordered container, header with background, rows with borders and hover
+  - `naked`: No borders, no backgrounds, no hover effects
 - `columnWidths?: Array<string | { value: number; unit?: '%' | 'px' | 'rem' }>` - Optional column width definitions
 - `showEmptyState?: boolean` - Show empty state instead of rows (default: `false`)
 
@@ -256,15 +302,20 @@ To opt out of opinionated padding, provide custom classes on `<td>` or `<th>`:
 
 **Styling:**
 
-- Wrapper: `overflow-hidden rounded-[4px] border border-[#E5E5E5]`
+- Wrapper (default): `overflow-hidden rounded border border-[#E5E5E5]`
+- Wrapper (naked): `overflow-hidden`
 - Table: `w-full table-fixed`
-- Header row: `border-b border-[#E5E5E5] bg-[#FAFAFA]`
+- Header row (default): `border-b border-[#E5E5E5] bg-[#FAFAFA] px-4`
+- Header row (naked): `px-4`
 
 ### TableRow
 
 **Props:**
 
-- `selected?: boolean` - Whether row is in selected state (adds `bg-[#FAFAFA]` styling)
+- `variant?: 'default' | 'naked'` - Visual styling variant (default: `'default'`)
+  - `default`: Row with border, hover effect, and selection background
+  - `naked`: No border, no hover, no background (selection state ignored)
+- `selected?: boolean` - Whether row is in selected state (adds `bg-[#FAFAFA]` styling in default variant)
 - `className?: string` - Additional CSS classes to apply
 
 **Slots:**
@@ -273,8 +324,8 @@ To opt out of opinionated padding, provide custom classes on `<td>` or `<th>`:
 
 **Styling:**
 
-- Row: `border-b border-[#E5E5E5] px-[16px] py-[8px] transition-colors hover:bg-[#FAFAFA]`
-- Last row: `last:border-b-0`
+- Row (default): `border-b border-[#E5E5E5] px-[16px] py-[8px] transition-colors hover:bg-[#FAFAFA]`, last row: `last:border-b-0`
+- Row (naked): `px-[16px] py-[8px]`
 
 ## Best Practices
 
@@ -295,3 +346,4 @@ The component uses proper HTML table elements:
 - `<td>` for data cells
 
 This ensures proper screen reader navigation and semantic meaning.
+```

@@ -1757,10 +1757,6 @@ type RootTranslation = {
 			 */
 			no_matching_available_publishers: string
 			/**
-			 * N​o​t​h​i​n​g​ ​t​o​ ​s​e​e​ ​h​e​r​e
-			 */
-			nothing_to_see_here: string
-			/**
 			 * C​u​r​r​e​n​t​l​y​ ​a​s​s​i​g​n​e​d​ ​t​o​ ​{​s​u​p​p​l​i​e​r​N​a​m​e​}
 			 * @param {unknown} supplierName
 			 */
@@ -2966,6 +2962,12 @@ type RootTranslation = {
 				form: string
 			}
 		}
+	}
+	table: {
+		/**
+		 * N​o​t​h​i​n​g​ ​t​o​ ​s​e​e​ ​h​e​r​e
+		 */
+		empty_message: string
 	}
 }
 
@@ -4689,10 +4691,6 @@ export type TranslationFunctions = {
 			 */
 			no_matching_available_publishers: () => LocalizedString
 			/**
-			 * Nothing to see here
-			 */
-			nothing_to_see_here: () => LocalizedString
-			/**
 			 * Currently assigned to {supplierName}
 			 */
 			currently_assigned_to: (arg: { supplierName: unknown }) => LocalizedString
@@ -5881,6 +5879,12 @@ export type TranslationFunctions = {
 				form: () => LocalizedString
 			}
 		}
+	}
+	table: {
+		/**
+		 * Nothing to see here
+		 */
+		empty_message: () => LocalizedString
 	}
 }
 
