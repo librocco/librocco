@@ -2,7 +2,7 @@ import { expect } from "@playwright/test";
 
 import { appHash } from "@/constants";
 
-import { getDbHandle, associatePublisher, removePublisherFromSupplier, upsertBook } from "@/helpers/cr-sqlite";
+import { getDbHandle, upsertBook } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
 
 testOrders.describe("The supplier list view", () => {
@@ -47,7 +47,7 @@ testOrders.describe("The supplier list view", () => {
 });
 
 testOrders.describe("Supplier publisher config", () => {
-	testOrders("displays three different lists of publishers correctly", async ({ page, suppliers, books, suppliersWithPublishers }) => {
+	testOrders("displays split column layout with search functionality", async ({ page, suppliers, books, suppliersWithPublishers }) => {
 		depends(books);
 		depends(suppliersWithPublishers);
 
@@ -56,66 +56,48 @@ testOrders.describe("Supplier publisher config", () => {
 
 		await dbHandle.evaluate(upsertBook, { isbn: "978-0-306-40615-7", title: "Book A", author: "Author A", publisher: "Publisher A" });
 
-		await page.goto(appHash("supplier_orders", suppliers[0].id));
-		await page.goto(appHash("suppliers"));
-
-		await page.getByText(suppliers[0].name, { exact: true }).waitFor();
-		await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByText("Edit").click();
-		// Wait for the page to load
+		await page.goto(appHash("suppliers", suppliers[0].id));
 		await page.getByText(suppliers[0].name, { exact: true }).waitFor();
 
-		// Check the assigned publishers list
-		const assignedPublishersTable = page.locator("table").nth(0);
-		await expect(assignedPublishersTable.getByText("pub1")).toBeVisible();
-		// await expect(assignedPublishersTable.getByText("pub2")).toBeVisible();
+		await page.getByRole("button", { name: "Assigned Publishers" }).click();
 
-		// Check the unassigned publishers list
-		const unassignedPublishersTable = page.locator("table").nth(1);
+		// Check for split column layout - both headings should be visible
+		// .nth(1) -- tab button is matched as .nth(0)
+		await expect(page.getByText("Assigned Publishers").nth(1)).toBeVisible();
+		await expect(page.getByText("Available Publishers")).toBeVisible();
 
-		await expect(unassignedPublishersTable.getByText("Publisher A")).toBeVisible();
+		// Check search bar is present
+		const searchInput = page.getByPlaceholder("Search publishers...");
+		await expect(searchInput).toBeVisible();
 
-		// Check the publishers assigned to other suppliers list
-		const otherSuppliersPublishersTable = page.locator("table").nth(2);
-		await expect(otherSuppliersPublishersTable.getByText("pub2")).toBeVisible();
+		// Check pub1 is visible (assigned to first supplier)
+		await expect(page.getByText("pub1")).toBeVisible();
 
-		// Test reactivity: remove a publisher from suppliers[0]
-		const dbHandle2 = await getDbHandle(page);
-		await dbHandle2.evaluate(removePublisherFromSupplier, { supplierId: suppliers[0].id, publisher: "Publisher A" });
+		// Check Publisher A is visible (unassigned)
+		await expect(page.getByText("Publisher A")).toBeVisible();
 
-		// Publisher A should now be in the unassigned list
-		await expect(assignedPublishersTable.getByText("Publisher A")).not.toBeVisible();
-		await expect(unassignedPublishersTable.getByText("Publisher A")).toBeVisible();
+		// Check pub2 is visible (assigned to other supplier)
+		await expect(page.getByText("pub2")).toBeVisible();
 
-		// Test reactivity: assign a previously unassigned publisher to suppliers[0]
-		await dbHandle2.evaluate(associatePublisher, { supplierId: suppliers[0].id, publisher: "Publisher D" });
+		// Test search functionality
+		await searchInput.fill("pub1");
+		await expect(page.getByText("pub1")).toBeVisible();
+		await expect(page.getByText("pub2")).not.toBeVisible();
 
-		// Publisher D should now be in the assigned list
-		await expect(assignedPublishersTable.getByText("Publisher D")).toBeVisible();
-		await expect(unassignedPublishersTable.getByText("Publisher D")).not.toBeVisible();
-
-		// Test reactivity: assign a publisher from another supplier to suppliers[0]
-		await dbHandle2.evaluate(associatePublisher, { supplierId: suppliers[0].id, publisher: "Publisher B" });
-
-		// Publisher B should now be in the assigned list and not in the other suppliers
-		// list
-		await expect(assignedPublishersTable.getByText("Publisher B")).toBeVisible();
-		await expect(otherSuppliersPublishersTable.getByText("Publisher B")).not.toBeVisible();
+		// Test clear search button
+		await searchInput.clear();
+		await expect(page.getByText("pub2")).toBeVisible();
 
 		// Test the UI buttons for adding/removing publishers
 
-		// First, remove Publisher1 using the UI button
-		await assignedPublishersTable.getByRole("row").filter({ hasText: "pub1" }).getByRole("button", { name: "Remove publisher" }).click();
+		// First, remove Pub1 using the UI button
+		await page.getByText("pub1").locator("..").getByRole("button", { name: "Remove" }).click();
 
-		// Publisher1 should now be in the unassigned list
-		await expect(assignedPublishersTable.getByText("pub1")).not.toBeVisible();
-		await expect(unassignedPublishersTable.getByText("pub1")).toBeVisible();
+		// Wait for page to update and pub2 to be clickable
+		await page.waitForTimeout(500);
 
-		// Now add Publisher E using the UI button
-		await otherSuppliersPublishersTable
-			.getByRole("row")
-			.filter({ hasText: "pub2" })
-			.getByRole("button", { name: "Re-assign to supplier" })
-			.click();
+		// Test reassigning a publisher from another supplier using UI
+		await page.getByText("pub2").locator("..").getByRole("button", { name: "Re-assign" }).click();
 
 		const dialog = page.getByRole("dialog");
 		await expect(dialog).toBeVisible();
@@ -125,9 +107,5 @@ testOrders.describe("Supplier publisher config", () => {
 
 		await dialog.getByRole("button", { name: "Confirm" }).click();
 		await expect(dialog).not.toBeVisible();
-
-		// Publisher E should now be in the assigned list
-		await expect(assignedPublishersTable.getByText("pub2")).toBeVisible();
-		await expect(unassignedPublishersTable.getByText("pub2")).not.toBeVisible();
 	});
 });

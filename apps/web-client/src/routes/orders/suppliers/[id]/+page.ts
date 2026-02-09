@@ -5,7 +5,7 @@ import { redirect } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 
-import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails } from "$lib/db/cr-sqlite/suppliers";
+import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails, getPublishersWithSuppliers } from "$lib/db/cr-sqlite/suppliers";
 
 import { appPath } from "$lib/paths";
 import { getPublisherList } from "$lib/db/cr-sqlite/books";
@@ -14,6 +14,11 @@ import { timed } from "$lib/utils/timer";
 
 import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
+
+type PublisherInfo = {
+	name: string;
+	supplierName?: string;
+};
 
 const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 	await parent();
@@ -26,8 +31,7 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 		return {
 			supplier: null,
 			assignedPublishers: [] as string[],
-			publishersAssignedToOtherSuppliers: [] as string[],
-			publishersUnassignedToSuppliers: [] as string[],
+			availablePublishers: [] as PublisherInfo[],
 			orders: [] as PlacedSupplierOrder[]
 		};
 	}
@@ -40,17 +44,20 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 		throw redirect(307, appPath("suppliers"));
 	}
 
-	const [assignedPublishers, allPublishers, allAssignedPublishers] = await Promise.all([
+	const [assignedPublishers, allPublishers, publishersWithSuppliers] = await Promise.all([
 		getPublishersFor(db, id),
 		getPublisherList(db),
-		getPublishersFor(db)
+		getPublishersWithSuppliers(db)
 	]);
 
-	// NOTE: the list of unassigned publishers will contain all publishers not assigned to the supplier
-	// TODO: check if this is the desired behavior, or if we should only list publishers that are not assigned to any supplier
-	const publishersAssignedToOtherSuppliers = allAssignedPublishers.filter((p) => !assignedPublishers.includes(p));
+	const publisherToSupplier = new Map(publishersWithSuppliers.map((p) => [p.publisher, p.supplier_name]));
 
-	const publishersUnassignedToSuppliers = allPublishers.filter((p) => !allAssignedPublishers.includes(p));
+	const availablePublishers: PublisherInfo[] = allPublishers
+		.filter((pub) => !assignedPublishers.includes(pub))
+		.map((pub) => ({
+			name: pub,
+			supplierName: publisherToSupplier.get(pub)
+		}));
 
 	const unreconciledOrders = (await getPlacedSupplierOrders(db, { supplierId: Number(params.id), reconciled: false })).map((order) => ({
 		...order,
@@ -64,8 +71,7 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 	return {
 		supplier,
 		assignedPublishers,
-		publishersAssignedToOtherSuppliers,
-		publishersUnassignedToSuppliers,
+		availablePublishers,
 		orders: [...unreconciledOrders, ...reconciledOrders]
 	};
 };
