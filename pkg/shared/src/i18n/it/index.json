@@ -265,6 +265,14 @@
       "assigned_publishers": "Editori Assegnati",
       "actions": "Azioni",
       "order_format": "Formato Ordine"
+    },
+    "card": {
+      "supplier_id": "ID Fornitore",
+      "email": "Email",
+      "address": "Indirizzo",
+      "order_format": "Formato ordine",
+      "edit_details": "Modifica dettagli",
+      "delete_supplier": "Elimina fornitore"
     }
   },
   "warehouse_list_page": {
@@ -604,12 +612,7 @@
       "reassign_publisher": "Riassegna a fornitore"
     },
     "details": {
-      "supplier_page": "Pagina fornitore",
-      "supplier_name": "Nome fornitore",
-      "supplier_email": "Email fornitore",
-      "supplier_address": "Indirizzo fornitore",
-      "supplier_customerId": "ID cliente fornitore",
-      "supplier_orderFormat": "Formato ordine fornitore"
+      "supplier_page": "Pagina fornitore"
     },
     "table": {
       "publisher_name": "Nome editore",
@@ -648,7 +651,8 @@
       "finalized": "Finalizzato",
       "actions": "Azioni",
       "view_order": "Visualizza Ordine",
-      "view_reconciliation": "Visualizza Riconciliazione"
+      "view_reconciliation": "Visualizza Riconciliazione",
+      "empty": "Nessun ordine da visualizzare"
     },
     "ordered_table": {
       "order_id": "ID Ordine",
@@ -659,7 +663,8 @@
       "reconcile_selected": "Riconcilia {count:number} ordin{{e|i}}",
       "view_order": "Visualizza Ordine",
       "reconcile": "Riconcilia",
-      "view_reconciliation": "Visualizza Riconciliazione"
+      "view_reconciliation": "Visualizza Riconciliazione",
+      "empty": "Nessun ordine da visualizzare"
     },
     "reconciling_table": {
       "order_id": "ID Riconciliazione",
@@ -667,7 +672,8 @@
       "last_updated": "Ultimo Aggiornamento",
       "update_order": "Aggiorna ordine",
       "continue": "Continua",
-      "actions": "Azioni"
+      "actions": "Azioni",
+      "empty": "Nessun ordine da visualizzare"
     },
     "unordered_table": {
       "supplier_id": "ID Fornitore",

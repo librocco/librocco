@@ -749,6 +749,32 @@ type RootTranslation = {
 			 */
 			order_format: string
 		}
+		card: {
+			/**
+			 * S​u​p​p​l​i​e​r​ ​I​D
+			 */
+			supplier_id: string
+			/**
+			 * E​m​a​i​l
+			 */
+			email: string
+			/**
+			 * A​d​d​r​e​s​s
+			 */
+			address: string
+			/**
+			 * O​r​d​e​r​ ​f​o​r​m​a​t
+			 */
+			order_format: string
+			/**
+			 * E​d​i​t​ ​d​e​t​a​i​l​s
+			 */
+			edit_details: string
+			/**
+			 * D​e​l​e​t​e​ ​s​u​p​p​l​i​e​r
+			 */
+			delete_supplier: string
+		}
 	}
 	warehouse_list_page: {
 		/**
@@ -1676,26 +1702,6 @@ type RootTranslation = {
 			 * S​u​p​p​l​i​e​r​ ​p​a​g​e
 			 */
 			supplier_page: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​n​a​m​e
-			 */
-			supplier_name: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​e​m​a​i​l
-			 */
-			supplier_email: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​a​d​d​r​e​s​s
-			 */
-			supplier_address: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​c​u​s​t​o​m​e​r​ ​I​D
-			 */
-			supplier_customerId: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​o​r​d​e​r​ ​f​o​r​m​a​t
-			 */
-			supplier_orderFormat: string
 		}
 		table: {
 			/**
@@ -1814,6 +1820,10 @@ type RootTranslation = {
 			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
+			/**
+			 * N​o​ ​o​r​d​e​r​s​ ​t​o​ ​s​h​o​w
+			 */
+			empty: string
 		}
 		ordered_table: {
 			/**
@@ -1853,6 +1863,10 @@ type RootTranslation = {
 			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
+			/**
+			 * N​o​ ​o​r​d​e​r​s​ ​t​o​ ​s​h​o​w
+			 */
+			empty: string
 		}
 		reconciling_table: {
 			/**
@@ -1879,6 +1893,10 @@ type RootTranslation = {
 			 * A​c​t​i​o​n​s
 			 */
 			actions: string
+			/**
+			 * N​o​ ​o​r​d​e​r​s​ ​t​o​ ​s​h​o​w
+			 */
+			empty: string
 		}
 		unordered_table: {
 			/**
@@ -3609,6 +3627,32 @@ export type TranslationFunctions = {
 			 */
 			order_format: () => LocalizedString
 		}
+		card: {
+			/**
+			 * Supplier ID
+			 */
+			supplier_id: () => LocalizedString
+			/**
+			 * Email
+			 */
+			email: () => LocalizedString
+			/**
+			 * Address
+			 */
+			address: () => LocalizedString
+			/**
+			 * Order format
+			 */
+			order_format: () => LocalizedString
+			/**
+			 * Edit details
+			 */
+			edit_details: () => LocalizedString
+			/**
+			 * Delete supplier
+			 */
+			delete_supplier: () => LocalizedString
+		}
 	}
 	warehouse_list_page: {
 		/**
@@ -4518,26 +4562,6 @@ export type TranslationFunctions = {
 			 * Supplier page
 			 */
 			supplier_page: () => LocalizedString
-			/**
-			 * Supplier name
-			 */
-			supplier_name: () => LocalizedString
-			/**
-			 * Supplier email
-			 */
-			supplier_email: () => LocalizedString
-			/**
-			 * Supplier address
-			 */
-			supplier_address: () => LocalizedString
-			/**
-			 * Supplier customer ID
-			 */
-			supplier_customerId: () => LocalizedString
-			/**
-			 * Supplier order format
-			 */
-			supplier_orderFormat: () => LocalizedString
 		}
 		table: {
 			/**
@@ -4652,6 +4676,10 @@ export type TranslationFunctions = {
 			 * View Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
+			/**
+			 * No orders to show
+			 */
+			empty: () => LocalizedString
 		}
 		ordered_table: {
 			/**
@@ -4690,6 +4718,10 @@ export type TranslationFunctions = {
 			 * View Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
+			/**
+			 * No orders to show
+			 */
+			empty: () => LocalizedString
 		}
 		reconciling_table: {
 			/**
@@ -4716,6 +4748,10 @@ export type TranslationFunctions = {
 			 * Actions
 			 */
 			actions: () => LocalizedString
+			/**
+			 * No orders to show
+			 */
+			empty: () => LocalizedString
 		}
 		unordered_table: {
 			/**

@@ -267,6 +267,14 @@
       "assigned_publishers": "",
       "actions": "",
       "order_format": ""
+    },
+    "card": {
+      "supplier_id": "",
+      "email": "",
+      "address": "",
+      "order_format": "",
+      "edit_details": "",
+      "delete_supplier": ""
     }
   },
   "warehouse_list_page": {
@@ -606,12 +614,7 @@
       "reassign_publisher": ""
     },
     "details": {
-      "supplier_page": "",
-      "supplier_name": "",
-      "supplier_email": "",
-      "supplier_address": "",
-      "supplier_customerId": "",
-      "supplier_orderFormat": ""
+      "supplier_page": ""
     },
     "table": {
       "publisher_name": "",
@@ -650,7 +653,8 @@
       "finalized": "",
       "actions": "",
       "view_order": "",
-      "view_reconciliation": ""
+      "view_reconciliation": "",
+      "empty": "Keine Bestellungen zum Anzeigen"
     },
     "ordered_table": {
       "order_id": "",
@@ -661,7 +665,8 @@
       "reconcile_selected": "",
       "view_order": "",
       "reconcile": "",
-      "view_reconciliation": ""
+      "view_reconciliation": "",
+      "empty": "Keine Bestellungen zum Anzeigen"
     },
     "reconciling_table": {
       "order_id": "",
@@ -669,7 +674,8 @@
       "last_updated": "",
       "update_order": "",
       "continue": "",
-      "actions": ""
+      "actions": "",
+      "empty": "Keine Bestellungen zum Anzeigen"
     },
     "unordered_table": {
       "supplier_id": "",

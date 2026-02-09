@@ -334,12 +334,7 @@ const order_list_page = {
 		reassign_publisher: "Re-assign to supplier"
 	},
 	details: {
-		supplier_page: "Supplier page",
-		supplier_name: "Supplier name",
-		supplier_email: "Supplier email",
-		supplier_address: "Supplier address",
-		supplier_customerId: "Supplier customer ID",
-		supplier_orderFormat: "Supplier order format"
+		supplier_page: "Supplier page"
 	},
 	table: {
 		publisher_name: "Publisher name",
@@ -445,6 +440,14 @@ const suppliers_page = {
 		assigned_publishers: "Assigned Publishers",
 		actions: "Actions",
 		order_format: "Order Format"
+	},
+	card: {
+		supplier_id: "Supplier ID",
+		email: "Email",
+		address: "Address",
+		order_format: "Order format",
+		edit_details: "Edit details",
+		delete_supplier: "Delete supplier"
 	}
 };
 
@@ -723,7 +726,8 @@ const supplier_orders_component = {
 		finalized: "Finalised",
 		actions: "Actions",
 		view_order: "View Order",
-		view_reconciliation: "View Reconciliation"
+		view_reconciliation: "View Reconciliation",
+		empty: "No orders to show"
 	},
 	ordered_table: {
 		order_id: "Order ID",
@@ -734,7 +738,8 @@ const supplier_orders_component = {
 		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
 		reconcile: "Reconcile",
-		view_reconciliation: "View Reconciliation"
+		view_reconciliation: "View Reconciliation",
+		empty: "No orders to show"
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",
@@ -742,7 +747,8 @@ const supplier_orders_component = {
 		last_updated: "Last Updated",
 		update_order: "Update order",
 		continue: "Continue",
-		actions: "Actions"
+		actions: "Actions",
+		empty: "No orders to show"
 	},
 	unordered_table: {
 		supplier_id: "Supplier ID",
