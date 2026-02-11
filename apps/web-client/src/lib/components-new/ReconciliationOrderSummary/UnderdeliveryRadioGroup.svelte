@@ -1,21 +1,32 @@
 <script lang="ts">
-	import { createRadioGroup, melt } from "@melt-ui/svelte";
 	import { createEventDispatcher } from "svelte";
+	import { writable } from "svelte/store";
+	import { createRadioGroup, melt } from "@melt-ui/svelte";
 
 	type UnderdeliveryOption = "pending" | "queue";
 
-	const dispatch = createEventDispatcher<{ change: UnderdeliveryOption }>();
+	const dispatch = createEventDispatcher();
 
-	export let defaultValue: UnderdeliveryOption = "pending";
+	export let defaultValue: UnderdeliveryOption | null = "pending";
+	export let supplierId: string;
+
+	// Store for the value (attached to Melt-UI state), exposed
+	// for stories / tests when we want to explicitly control the state.
+	// Prefer using on:change event listeners in production
+	export let value = writable<UnderdeliveryOption>(defaultValue);
+
+	const underdeliveryOptions: UnderdeliveryOption[] = ["pending", "queue"];
 
 	const {
-		states: { value },
 		elements: { root: radioRoot, item },
 		helpers: { isChecked }
 	} = createRadioGroup({ defaultValue });
-	$: dispatch("change", $value as UnderdeliveryOption);
+	$: dispatch("change", { detail: $value as UnderdeliveryOption });
 
-	const underdeliveryOptions: UnderdeliveryOption[] = ["pending", "queue"];
+	$: isChanged = $value !== defaultValue;
+	function handlePersistChanges() {
+		dispatch("persistChanges", { detail: { selection: $value as UnderdeliveryOption, supplierId } });
+	}
 </script>
 
 <div class="p-4">
@@ -42,4 +53,21 @@
 			</button>
 		{/each}
 	</div>
+
+	{#if isChanged && supplierId}
+		<div class="mt-3 flex items-center justify-between gap-3 rounded border border-neutral-300 bg-[#f8f8f8] p-3 text-sm text-neutral-600">
+			<div class="flex items-center gap-2">
+				<div class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-neutral-400">
+					<span class="text-neutral-500">!</span>
+				</div>
+				<p class="leading-tight">Current choice doesn't match the default configuration for this supplier.</p>
+			</div>
+			<button
+				onclick={handlePersistChanges}
+				class="self-start rounded border border-neutral-400 bg-white px-3 py-1 text-sm transition-colors hover:border-neutral-500 hover:bg-neutral-50"
+			>
+				Persist changes
+			</button>
+		</div>
+	{/if}
 </div>
