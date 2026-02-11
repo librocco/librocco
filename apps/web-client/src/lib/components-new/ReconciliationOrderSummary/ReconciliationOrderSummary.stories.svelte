@@ -36,6 +36,9 @@
 	];
 
 	const underdeliveryBehaviourStore = writable<"pending" | "queue">("pending");
+
+	// For underdelivery config mismatch warning
+	const controlledPendingStore = writable<"pending" | "queue">("pending");
 </script>
 
 <Story name="Completed Order">
@@ -54,7 +57,11 @@
 			books={largeOrderData}
 		>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="pending" on:change={({ detail }) => underdeliveryBehaviourStore.set(detail)} />
+				<UnderdeliveryRadioGroup
+					supplierId="sup-001"
+					defaultValue="pending"
+					on:change={({ detail }) => underdeliveryBehaviourStore.set(detail)}
+				/>
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 
@@ -81,13 +88,45 @@
 <Story name="Multiple Orders">
 	<div class="max-w-5xl space-y-4">
 		<ReconciliationOrderSummary orderId="Order #1" customerName="BooksRUS" undeliveredCount={7} books={booksData}>
-			<svelte:fragment slot="underdelivery_behaviour"><UnderdeliveryRadioGroup defaultValue="pending" /></svelte:fragment>
-		</ReconciliationOrderSummary>
-		<ReconciliationOrderSummary orderId="Order #2" customerName="Academic Press" undeliveredCount={6} books={singleBookData}>
-			<svelte:fragment slot="underdelivery_behaviour"><UnderdeliveryRadioGroup defaultValue="queue" /></svelte:fragment>
+			<svelte:fragment slot="underdelivery_behaviour">
+				<UnderdeliveryRadioGroup defaultValue="pending" supplierId="sup-001" />
+			</svelte:fragment>
 		</ReconciliationOrderSummary>
 		<ReconciliationOrderSummary orderId="Order #3" customerName="Local Books" undeliveredCount={0} books={allDeliveredData}>
-			<svelte:fragment slot="underdelivery_behaviour"><UnderdeliveryRadioGroup defaultValue="pending" /></svelte:fragment>
+			<svelte:fragment slot="underdelivery_behaviour">
+				<UnderdeliveryRadioGroup defaultValue="queue" value={controlledPendingStore} supplierId="sup-003" />
+			</svelte:fragment>
+		</ReconciliationOrderSummary>
+		<ReconciliationOrderSummary orderId="Order #2" customerName="Academic Press" undeliveredCount={6} books={singleBookData}>
+			<svelte:fragment slot="underdelivery_behaviour">
+				<UnderdeliveryRadioGroup defaultValue="queue" supplierId="sup-002" />
+			</svelte:fragment>
+		</ReconciliationOrderSummary>
+	</div>
+</Story>
+
+<Story name="Multiple Orders (Expanded)">
+	<div class="max-w-5xl space-y-4">
+		<ReconciliationOrderSummary expanded={true} orderId="Order #1" customerName="BooksRUS" undeliveredCount={7} books={booksData}>
+			<svelte:fragment slot="underdelivery_behaviour">
+				<UnderdeliveryRadioGroup defaultValue="pending" supplierId="sup-001" />
+			</svelte:fragment>
+		</ReconciliationOrderSummary>
+		<ReconciliationOrderSummary expanded={true} orderId="Order #3" customerName="Local Books" undeliveredCount={0} books={allDeliveredData}>
+			<svelte:fragment slot="underdelivery_behaviour">
+				<UnderdeliveryRadioGroup defaultValue="queue" value={controlledPendingStore} supplierId="sup-003" />
+			</svelte:fragment>
+		</ReconciliationOrderSummary>
+		<ReconciliationOrderSummary
+			expanded={true}
+			orderId="Order #2"
+			customerName="Academic Press"
+			undeliveredCount={6}
+			books={singleBookData}
+		>
+			<svelte:fragment slot="underdelivery_behaviour">
+				<UnderdeliveryRadioGroup defaultValue="queue" supplierId="sup-002" />
+			</svelte:fragment>
 		</ReconciliationOrderSummary>
 	</div>
 </Story>
