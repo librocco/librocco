@@ -5,68 +5,19 @@
 	import CounterBadge from "$lib/components-new/CounterBadge/CounterBadge.svelte";
 	import ArrowRight from "$lucide/arrow-right";
 
-	import type { PlacedSupplierOrderLine, ReconciliationOrderLine } from "$lib/db/cr-sqlite/types";
+	import type { PageData } from "./$types";
+	import { calcStatsBySupplierOrder } from "./utils";
 
-	interface BookWithDelivery {
-		isbn: string;
-		title: string;
-		author: string;
-		ordered: number;
-		delivered: number;
-	}
+	export let data: PageData;
 
-	interface SupplierOrderGroup {
-		supplierOrderId: string;
-		supplierName: string;
-		books: BookWithDelivery[];
-	}
-
-	export let placedOrderLines: PlacedSupplierOrderLine[];
-	export let reconciliationOrderLines: ReconciliationOrderLine[];
 	export let onScan: (isbn: string) => Promise<void> | void;
 	export let onDecrement: (isbn: string) => Promise<void> | void;
 	export let onIncrement: (isbn: string) => Promise<void> | void;
 	export let onContinue: () => void;
 
-	$: groupedBooks = Array.from(
-		new Map(
-			placedOrderLines.map((line) => [
-				line.supplier_order_id,
-				{
-					supplierOrderId: line.supplier_order_id,
-					supplierName: line.supplier_name,
-					books: [] as BookWithDelivery[]
-				}
-			])
-		).entries()
-	).map(([supplierOrderId, group]) => ({
-		...group,
-		books: Array.from(
-			new Map(
-				placedOrderLines
-					.filter((line) => line.supplier_order_id === supplierOrderId)
-					.map((line) => {
-						const deliveredLine = reconciliationOrderLines.find((l) => l.isbn === line.isbn);
-						return [
-							line.isbn,
-							{
-								isbn: line.isbn,
-								title: line.title || "",
-								author: line.authors || "",
-								ordered: line.quantity,
-								delivered: deliveredLine ? deliveredLine.quantity : 0
-							}
-						];
-					})
-			).values()
-		)
-	}));
-
-	$: totalOrdered = placedOrderLines.reduce((sum, line) => sum + line.quantity, 0);
-
-	$: totalDelivered = reconciliationOrderLines.reduce((sum, line) => sum + line.quantity, 0);
-
-	$: totalScanned = new Set(reconciliationOrderLines.map((line) => line.isbn)).size;
+	$: orderStats = calcStatsBySupplierOrder(data);
+	$: totalOrdered = data.placedOrderLines.reduce((sum, line) => sum + line.quantity, 0);
+	$: totalDelivered = data.reconciliationOrderLines.reduce((sum, line) => sum + line.quantity, 0);
 
 	function getDeliveredColorClass(ordered: number, delivered: number): string {
 		if (delivered === 0) {
@@ -97,11 +48,11 @@
 		</div>
 
 		<div class="h-full overflow-y-auto">
-			{#each groupedBooks as supplierOrder (supplierOrder.supplierOrderId)}
+			{#each orderStats as supplierOrder (supplierOrder.supplier_order_id)}
 				<div class="mb-4">
 					<div class="-mb-6">
 						<span class="text-foreground rounded-md bg-[#f8f8f8] px-2 py-0.5 text-xs font-medium">
-							{supplierOrder.supplierName} # {supplierOrder.supplierOrderId}
+							{supplierOrder.supplier_name} # {supplierOrder.supplier_order_id}
 						</span>
 					</div>
 					<Table variant="naked" columnWidths={["2", "3", "4", "2", "2", "2"]}>
@@ -117,9 +68,10 @@
 						</svelte:fragment>
 
 						<svelte:fragment slot="rows">
-							{#each supplierOrder.books as book (book.isbn)}
-								{@const isLastBook = book === supplierOrder.books[supplierOrder.books.length - 1]}
-								{@const deliveredColor = getDeliveredColorClass(book.ordered, book.delivered)}
+							{#each supplierOrder.lines as book, ix (book.isbn)}
+								{@const stats = { ordered: book.orderedQuantity, delivered: book.deliveredQuantity }}
+								{@const isLastBook = ix === supplierOrder.lines.length + 1}
+								{@const deliveredColor = getDeliveredColorClass(stats.ordered, stats.delivered)}
 								<TableRow
 									variant="naked"
 									className="hover:bg-neutral-50 transition-all duration-[120ms] {isLastBook ? '' : 'border-b border-neutral-100'}"
@@ -131,28 +83,28 @@
 										{book.title}
 									</td>
 									<td class="text-foreground min-w-0 flex-1 truncate px-2 py-1.5 align-middle text-sm">
-										{book.author}
+										{book.authors}
 									</td>
 									<td class="text-foreground w-20 px-2 py-1.5 text-start align-middle text-sm font-medium">
-										{book.ordered}
+										{stats.ordered}
 									</td>
 									<td class="flex items-center justify-between gap-2 px-2 py-1.5">
 										<span class="text-sm font-semibold {deliveredColor}">
-											{book.delivered}
+											{stats.delivered}
 										</span>
 										<div class="flex gap-1">
 											<button
 												on:click={() => onDecrement(book.isbn)}
-												disabled={book.delivered === 0}
+												disabled={stats.delivered === 0}
 												class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
-												aria-label={`Decrease delivered quantity for ${book.title}, currently ${book.delivered}`}
+												aria-label={`Decrease delivered quantity for ${book.title}, currently ${stats.delivered}`}
 											>
 												−
 											</button>
 											<button
 												on:click={() => onIncrement(book.isbn)}
 												class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 transition-colors hover:bg-neutral-200"
-												aria-label={`Increase delivered quantity for ${book.title}, currently ${book.delivered}`}
+												aria-label={`Increase delivered quantity for ${book.title}, currently ${stats.delivered}`}
 											>
 												+
 											</button>
@@ -167,11 +119,11 @@
 		</div>
 	</div>
 
-	{#if totalScanned > 0}
+	{#if totalDelivered > 0}
 		<div class="shrink-0 border-t border-neutral-200 bg-neutral-50 px-6 py-4">
 			<div class="flex items-center justify-between">
 				<div class="text-sm text-zinc-900">
-					Total books scanned: <span class="font-medium">{totalScanned}</span>
+					Total books scanned: <span class="font-medium">{totalDelivered}</span>
 				</div>
 				<button
 					on:click={onContinue}

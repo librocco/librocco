@@ -155,9 +155,8 @@
 				<div class="relative flex h-full flex-col overflow-hidden">
 					{#if currentStep === 1}
 						<ReconcileStep1
-							placedOrderLines={data.placedOrderLines}
-							reconciliationOrderLines={books}
 							onScan={handleScanIsbn}
+							{data}
 							onDecrement={handleEditQuantity(-1)}
 							onIncrement={handleEditQuantity(1)}
 							onContinue={() => (currentStep = 2)}
