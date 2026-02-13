@@ -41,6 +41,7 @@ import {
 } from "./types";
 
 import { timed } from "$lib/utils/timer";
+import type { OrderItemStatus } from "@librocco/shared";
 
 /**
  * Creates a new customer or updates an existing one.
@@ -250,19 +251,53 @@ export const removeBooksFromCustomer = async (db: DBAsync, customerId: number, b
 	});
 };
 
-/**
- * Retrieves all book order lines for a specific customer. This includes both active and historical orders.
- * Lines include book data that is displayed in the customer orders table: title, price, authors
- * Orders are returned sorted by ID (oldest first).
- *
- * @param {DB} db - Database connection
- * @param {number} customerId - Customer to query orders for
- * @returns {Promise<CustomerOrderLine[]>} Customer's order lines
- */
-export const getCustomerOrderLines = async (db: TXAsync, customerId: number): Promise<CustomerOrderLine[]> => {
+type StatusFilter = {
+	gte?: OrderItemStatus;
+	lte?: OrderItemStatus;
+	eq?: OrderItemStatus;
+};
+type CustomerOrderLineFilters = {
+	customerId?: number;
+	isbns?: string[];
+	status?: StatusFilter;
+};
+export async function getCustomerOrderLinesCore(db: TXAsync, filters: CustomerOrderLineFilters = {}) {
+	const { customerId, isbns, status } = filters;
+
+	const conditions = [];
+	const params = [];
+
+	if (customerId) {
+		conditions.push("customer_id = ?");
+		params.push(customerId);
+	}
+
+	if (isbns) {
+		const placeholders = Array(isbns.length).fill("?").join(",");
+		conditions.push(`col.isbn in (${placeholders})`);
+		params.push(...isbns);
+	}
+
+	// NOTE: pathological states are allowed -- no validation, will simply return nothing if, for instance, gte > lte
+	if (status) {
+		if (status.eq) {
+			conditions.push("status = ?");
+			params.push(status.eq);
+		}
+		if (status.lte) {
+			conditions.push("status <= ?");
+			params.push(status.lte);
+		}
+		if (status.gte) {
+			conditions.push("status >= ?");
+			params.push(status.gte);
+		}
+	}
+
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT
-			id, customer_id, created, placed, received, collected,
+			col.id, col.customer_id, col.created, col.placed, col.received, col.collected,
+			c.display_id AS customer_display_id, c.fullname,
 			col.isbn,
 			COALESCE(book.title, 'N/A') AS title,
 			COALESCE(book.authors, 'N/A') as authors,
@@ -279,6 +314,7 @@ export const getCustomerOrderLines = async (db: TXAsync, customerId: number): Pr
 				ELSE 0
 			END AS status
 		FROM customer_order_lines col
+		LEFT JOIN customer c ON col.customer_id = c.id
 		LEFT JOIN book ON col.isbn = book.isbn
 		WHERE customer_id = ?
 		ORDER BY created DESC, col.isbn ASC
@@ -286,6 +322,19 @@ export const getCustomerOrderLines = async (db: TXAsync, customerId: number): Pr
 		[customerId]
 	);
 	return result.map(unmarshalCustomerOrderLine);
+}
+
+/**
+ * Retrieves all book order lines for a specific customer. This includes both active and historical orders.
+ * Lines include book data that is displayed in the customer orders table: title, price, authors
+ * Orders are returned sorted by ID (oldest first).
+ *
+ * @param {DB} db - Database connection
+ * @param {number} customerId - Customer to query orders for
+ * @returns {Promise<CustomerOrderLine[]>} Customer's order lines
+ */
+export const getCustomerOrderLines = async (db: TXAsync, customerId: number): Promise<CustomerOrderLine[]> => {
+	return getCustomerOrderLinesCore(db, { customerId });
 };
 
 /**

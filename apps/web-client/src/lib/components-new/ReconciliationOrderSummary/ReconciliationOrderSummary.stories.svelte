@@ -15,24 +15,114 @@
 	import UnderdeliveryActionBadge from "./UnderdeliveryActionBadge.svelte";
 
 	const booksData = [
-		{ isbn: "123", title: "The Great Gatsby", author: "F. Scott Fitzgerald", ordered: 5, delivered: 1 },
-		{ isbn: "321", title: "To Kill a Mockingbird", author: "Harper Lee", ordered: 3, delivered: 0 }
+		{
+			isbn: "123",
+			title: "The Great Gatsby",
+			authors: "F. Scott Fitzgerald",
+			orderedQuantity: 5,
+			deliveredQuantity: 1,
+			supplier_id: 1,
+			supplier_name: "BooksRUS"
+		},
+		{
+			isbn: "321",
+			title: "To Kill a Mockingbird",
+			authors: "Harper Lee",
+			orderedQuantity: 3,
+			deliveredQuantity: 0,
+			supplier_id: 1,
+			supplier_name: "BooksRUS"
+		}
 	];
 
 	const allDeliveredData = [
-		{ isbn: "123", title: "The Great Gatsby", author: "F. Scott Fitzgerald", ordered: 5, delivered: 5 },
-		{ isbn: "321", title: "To Kill a Mockingbird", author: "Harper Lee", ordered: 3, delivered: 3 }
+		{
+			isbn: "123",
+			title: "The Great Gatsby",
+			authors: "F. Scott Fitzgerald",
+			orderedQuantity: 5,
+			deliveredQuantity: 5,
+			supplier_id: 1,
+			supplier_name: "BooksRUS"
+		},
+		{
+			isbn: "321",
+			title: "To Kill a Mockingbird",
+			authors: "Harper Lee",
+			orderedQuantity: 3,
+			deliveredQuantity: 3,
+			supplier_id: 1,
+			supplier_name: "BooksRUS"
+		}
 	];
 
-	const singleBookData = [{ isbn: "456", title: "1984", author: "George Orwell", ordered: 4, delivered: 2 }];
+	const singleBookData = [
+		{
+			isbn: "456",
+			title: "1984",
+			authors: "George Orwell",
+			orderedQuantity: 4,
+			deliveredQuantity: 2,
+			supplier_id: 2,
+			supplier_name: "Academic Press"
+		}
+	];
 
 	const largeOrderData = [
-		{ isbn: "123", title: "The Great Gatsby", author: "F. Scott Fitzgerald", ordered: 5, delivered: 3 },
-		{ isbn: "321", title: "To Kill a Mockingbird", author: "Harper Lee", ordered: 3, delivered: 1 },
-		{ isbn: "456", title: "1984", author: "George Orwell", ordered: 4, delivered: 2 },
-		{ isbn: "789", title: "Pride and Prejudice", author: "Jane Austen", ordered: 2, delivered: 1 },
-		{ isbn: "101", title: "Brave New World", author: "Aldous Huxley", ordered: 3, delivered: 1 },
-		{ isbn: "202", title: "The Catcher in the Rye", author: "J.D. Salinger", ordered: 6, delivered: 2 }
+		{
+			isbn: "123",
+			title: "The Great Gatsby",
+			authors: "F. Scott Fitzgerald",
+			orderedQuantity: 5,
+			deliveredQuantity: 3,
+			supplier_id: 1,
+			supplier_name: "BooksRUS"
+		},
+		{
+			isbn: "321",
+			title: "To Kill a Mockingbird",
+			authors: "Harper Lee",
+			orderedQuantity: 3,
+			deliveredQuantity: 1,
+			supplier_id: 1,
+			supplier_name: "BooksRUS"
+		},
+		{
+			isbn: "456",
+			title: "1984",
+			authors: "George Orwell",
+			orderedQuantity: 4,
+			deliveredQuantity: 2,
+			supplier_id: 2,
+			supplier_name: "Academic Press"
+		},
+		{
+			isbn: "789",
+			title: "Pride and Prejudice",
+			authors: "Jane Austen",
+			orderedQuantity: 2,
+			deliveredQuantity: 1,
+			supplier_id: 2,
+			supplier_name: "Academic Press"
+		},
+		{
+			isbn: "101",
+			title: "Brave New World",
+			authors: "Aldous Huxley",
+			orderedQuantity: 3,
+			deliveredQuantity: 1,
+			supplier_id: 3,
+			supplier_name: "Local Books"
+		},
+		{
+			isbn: "202",
+			title: "The Catcher in the Rye",
+			authors: "J.D. Salinger",
+			orderedQuantity: 6,
+			deliveredQuantity: 2,
+			supplier_id: 3,
+			supplier_name: "Local Books"
+		}
 	];
 
 	const underdeliveryBehaviourStore = writable<"pending" | "queue">("pending");
@@ -58,7 +148,7 @@
 		>
 			<svelte:fragment slot="underdelivery_behaviour">
 				<UnderdeliveryRadioGroup
-					supplierId="sup-001"
+					supplierId={1}
 					defaultValue="pending"
 					on:change={({ detail }) => underdeliveryBehaviourStore.set(detail)}
 				/>
@@ -89,17 +179,17 @@
 	<div class="max-w-5xl space-y-4">
 		<ReconciliationOrderSummary orderId="Order #1" customerName="BooksRUS" undeliveredCount={7} books={booksData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="pending" supplierId="sup-001" />
+				<UnderdeliveryRadioGroup defaultValue="pending" supplierId={1} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 		<ReconciliationOrderSummary orderId="Order #3" customerName="Local Books" undeliveredCount={0} books={allDeliveredData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="queue" value={controlledPendingStore} supplierId="sup-003" />
+				<UnderdeliveryRadioGroup defaultValue="queue" value={controlledPendingStore} supplierId={3} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 		<ReconciliationOrderSummary orderId="Order #2" customerName="Academic Press" undeliveredCount={6} books={singleBookData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="queue" supplierId="sup-002" />
+				<UnderdeliveryRadioGroup defaultValue="queue" supplierId={2} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 	</div>
@@ -109,12 +199,12 @@
 	<div class="max-w-5xl space-y-4">
 		<ReconciliationOrderSummary expanded={true} orderId="Order #1" customerName="BooksRUS" undeliveredCount={7} books={booksData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="pending" supplierId="sup-001" />
+				<UnderdeliveryRadioGroup defaultValue="pending" supplierId={1} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 		<ReconciliationOrderSummary expanded={true} orderId="Order #3" customerName="Local Books" undeliveredCount={0} books={allDeliveredData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="queue" value={controlledPendingStore} supplierId="sup-003" />
+				<UnderdeliveryRadioGroup defaultValue="queue" value={controlledPendingStore} supplierId={3} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 		<ReconciliationOrderSummary
@@ -125,7 +215,7 @@
 			books={singleBookData}
 		>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="queue" supplierId="sup-002" />
+				<UnderdeliveryRadioGroup defaultValue="queue" supplierId={2} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 	</div>
