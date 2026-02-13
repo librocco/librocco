@@ -589,6 +589,67 @@
 				"title": "",
 				"description": ""
 			}
+		},
+		"step1": {
+			"stats": {
+				"total_ordered": "Insgesamt bestellt",
+				"total_delivered": "Insgesamt geliefert"
+			},
+			"table": {
+				"isbn": "ISBN",
+				"title": "Titel",
+				"authors": "Autoren",
+				"order_quantity": "Bestellmenge",
+				"delivered": "Geliefert",
+				"controls": "Steuerelemente für gelieferte Menge"
+			},
+			"aria_labels": {
+				"decrease_quantity": "Gelieferte Menge für {title} verringern, aktuell {count}",
+				"increase_quantity": "Gelieferte Menge für {title} erhöhen, aktuell {count}"
+			},
+			"footer": {
+				"total_scanned": "Insgesamt gescannte Bücher: {count}",
+				"continue": "Weiter"
+			}
+		},
+		"step2": {
+			"stats": {
+				"total_ordered": "Insgesamt bestellt",
+				"total_delivered": "Insgesamt geliefert"
+			},
+			"order_summary": {
+				"order_id": "Bestellung #{id}",
+				"books_undelivered": "{count} Buch{{/er}} nicht geliefert",
+				"complete": "Vollständig",
+				"status": "Status",
+				"missing": "{count} fehlend"
+			},
+			"underdelivery": {
+				"title": "Aktion für fehlende Bücher",
+				"options": {
+					"pending": "Bestellung als ausstehende Lieferung markieren",
+					"queue": "Bestellung als Warteschlangenlieferung markieren"
+				},
+				"warning": "Die aktuelle Wahl entspricht nicht der Standardkonfiguration für diesen Lieferanten.",
+				"persist_button": "Änderungen speichern"
+			},
+			"customer_notification": {
+				"message_pending": "Kunden werden benachrichtigt, dass gelieferte Bücher zur Abholung bereitstehen",
+				"message_finalized": "Diese Kunden wurden benachrichtigt, dass gelieferte Bücher zur Abholung bereitstehen",
+				"table": {
+					"customer": "Kunde",
+					"id": "ID",
+					"order_date": "Bestelldatum"
+				},
+				"copy_label": "({count} Exempl{{ar|are}})"
+			},
+			"actions": {
+				"back": "← Zurück",
+				"finalize": "Lieferung abschließen"
+			},
+			"finalized": {
+				"message": "Lieferung abgeschlossen am {date:Date|dateShort}"
+			}
 		}
 	},
 	"order_page": {
