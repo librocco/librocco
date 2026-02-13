@@ -1,14 +1,8 @@
 <script lang="ts">
-	import ArrowRight from "$lucide/arrow-right";
-	import ClockArrowUp from "$lucide/clock-arrow-up";
-	import Check from "$lucide/check";
-	import Trash from "$lucide/trash";
 	import { filter, scan } from "rxjs";
 	import { onDestroy, onMount } from "svelte";
 
 	import { createDialog } from "@melt-ui/svelte";
-
-	import { asc } from "@librocco/shared";
 
 	import { page } from "$app/stores";
 	import { invalidate } from "$app/navigation";
@@ -16,18 +10,16 @@
 	import { Page } from "$lib/controllers";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
-	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 	import ReconcileStep1 from "./ReconcileStep1.svelte";
-	import { processOrderDelivery } from "$lib/components/supplier-orders/utils";
+	import ReconcileStep2 from "./ReconcileStep2.svelte";
 
 	import type { PageData } from "./$types";
 
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 	import {
 		upsertReconciliationOrderLines,
-		deleteOrderLineFromReconciliationOrder,
 		finalizeReconciliationOrder,
 		deleteReconciliationOrder
 	} from "$lib/db/cr-sqlite/order-reconciliation";
@@ -35,7 +27,6 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import LL from "@librocco/shared/i18n-svelte";
-	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import { appPath } from "$lib/paths";
 
 	import { app } from "$lib/app";
@@ -58,8 +49,9 @@
 	});
 	$: goto = racefreeGoto(disposer);
 
-	$: ({ reconciliationOrderLines: books = [], plugins } = data);
+	$: plugins = data.plugins;
 
+	// TODO: verify the book data fetching is necessary here
 	async function handleIsbnSubmit(isbn: string) {
 		const db = await getDb(app);
 		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
@@ -93,18 +85,8 @@
 			.subscribe((b) => upsertBook(db, b));
 	}
 
-	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
-	// Extract different orders from placedOrderLines
-	$: placedOrders = [...new Map(data.placedOrderLines?.map((l) => [l.supplier_order_id, l.supplier_name])).entries()].sort(
-		asc(([, supplier_name]) => supplier_name)
-	);
-
-	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
-	$: totalUnmatched = processedOrderDelivery.unmatchedBooks.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
 	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
-
-	const handleScanIsbn = async (isbn: string) =>
-		upsertReconciliationOrderLines(await getDb(app), parseInt($page.params.id), [{ isbn, quantity: 1 }]);
+	$: totalDelivered = data?.reconciliationOrderLines.reduce((acc, { quantity }) => acc + quantity, 0);
 
 	// Supports only incdement / decrement by 1
 	const handleEditQuantity = (quantity: -1 | 1) => async (isbn: string) => {
@@ -134,10 +116,6 @@
 		await goto(appPath("supplier_orders"));
 	}
 
-	const handleConfirmDeleteDialog = () => {
-		deleteDialogOpen.set(true);
-	};
-
 	async function handleDelete() {
 		deleteDialogOpen.set(false);
 
@@ -155,45 +133,19 @@
 				<div class="relative flex h-full flex-col overflow-hidden">
 					{#if currentStep === 1}
 						<ReconcileStep1
-							onScan={handleScanIsbn}
 							{data}
+							onScan={handleIsbnSubmit}
 							onDecrement={handleEditQuantity(-1)}
 							onIncrement={handleEditQuantity(1)}
 							onContinue={() => (currentStep = 2)}
 						/>
 					{:else if currentStep > 1}
-						<ComparisonTable reconciledBooks={processedOrderDelivery} />
-					{/if}
-
-					{#if currentStep > 1}
-						<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
-							<div class="mx-2 flex w-full flex-row justify-between bg-base-300 py-2 shadow-lg">
-								{#if currentStep > 1}
-									<dl class="stats flex">
-										<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-											<dt class="stat-title">{t.stats.total_delivered()}:</dt>
-											<dd class="stat-value text-lg">
-												{totalDelivered} / {totalOrdered}
-											</dd>
-										</div>
-									</dl>
-								{/if}
-								<button
-									disabled={data?.reconciliationOrder.finalized}
-									class="btn-primary btn ml-auto"
-									on:click={async () => {
-										if (currentStep === 1) {
-											currentStep = 2;
-										} else {
-											commitDialogOpen.set(true);
-										}
-									}}
-								>
-									{currentStep === 1 ? "Compare" : "Commit"}
-									<ArrowRight aria-hidden size={20} class="hidden md:block" />
-								</button>
-							</div>
-						</div>
+						<ReconcileStep2
+							{data}
+							finalized={data?.reconciliationOrder.finalized}
+							onBack={() => (currentStep = 1)}
+							onFinalize={() => commitDialogOpen.set(true)}
+						/>
 					{/if}
 				</div>
 			</div>
@@ -203,7 +155,7 @@
 
 <PageCenterDialog dialog={commitDialog} title="" description="">
 	<CommitDialog
-		deliveredBookCount={totalDelivered + totalUnmatched}
+		deliveredBookCount={totalDelivered}
 		rejectedBookCount={totalOrdered - totalDelivered}
 		on:cancel={() => commitDialogOpen.set(false)}
 		on:confirm={handleCommit}

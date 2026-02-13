@@ -2,21 +2,15 @@
 	import { ChevronDown } from "lucide-svelte";
 	import { createCollapsible, melt } from "@melt-ui/svelte";
 
+	import type { ReconciliationProcessedLine } from "$lib/components/supplier-orders/utils";
+
 	import Table from "$lib/components-new/Table/Table.svelte";
 	import TableRow from "$lib/components-new/Table/TableRow.svelte";
-
-	type Book = {
-		isbn: string;
-		title: string;
-		author: string;
-		ordered: number;
-		delivered: number;
-	};
 
 	export let orderId = "";
 	export let customerName = "";
 	export let undeliveredCount = 0;
-	export let books: Book[] = [];
+	export let books: ReconciliationProcessedLine[] = [];
 	export let expanded = false;
 
 	export let interactive = true;
@@ -33,12 +27,8 @@
 		expanded = $open;
 	}
 
-	const allDelivered = books.every((book) => book.ordered === book.delivered) && books.length > 0;
+	const allDelivered = books.every((book) => book.orderedQuantity === book.orderedQuantity) && books.length > 0;
 	const hasBooks = books.length > 0;
-
-	function getMissingCount(book: Book): number {
-		return book.ordered - book.delivered;
-	}
 </script>
 
 <div use:melt={$collapsibleRoot} class="rounded-lg border border-neutral-200">
@@ -86,6 +76,7 @@
 					<svelte:fragment slot="rows">
 						{#each books as book (book.isbn)}
 							{@const isLastBook = book === books[books.length - 1]}
+							{@const missingQuantity = book.orderedQuantity - book.deliveredQuantity}
 							<TableRow variant="naked" className="transition-all duration-100 {isLastBook ? '' : 'border-b border-neutral-100'}">
 								<td class="text-foreground line-clamp-1 w-32 min-w-0 shrink-0 px-2 py-1.5 align-middle text-sm font-medium">
 									{book.isbn}
@@ -94,18 +85,18 @@
 									{book.title}
 								</td>
 								<td class="text-foreground min-w-0 flex-1 truncate px-2 py-1.5 align-middle text-sm">
-									{book.author}
+									{book.authors}
 								</td>
 								<td class="text-foreground w-20 px-2 py-1.5 text-start align-middle text-sm">
-									{book.ordered}
+									{book.orderedQuantity}
 								</td>
 								<td class="text-foreground w-20 px-2 py-1.5 text-start align-middle text-sm font-medium">
-									{book.delivered}
+									{book.deliveredQuantity}
 								</td>
 								<td class="flex w-20 justify-start px-2 py-1.5 align-middle">
-									{#if getMissingCount(book) > 0}
+									{#if missingQuantity > 0}
 										<span class="whitespace-nowrap rounded bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
-											{getMissingCount(book)} missing
+											{missingQuantity} missing
 										</span>
 									{:else}
 										<span class="rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800"> Complete </span>

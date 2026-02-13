@@ -15,20 +15,23 @@
 		{
 			isbn: "123",
 			title: "The Great Gatsby",
+			total: 2,
 			customers: [
-				{ name: "Sarah Johnson", id: "C001", orderDate: "Dec 15, 10:30 AM" },
-				{ name: "Michael Chen", id: "C002", orderDate: "Dec 16, 02:20 PM" }
+				{ fullname: "Sarah Johnson", customer_display_id: "1", created: new Date("2024-12-15T10:30:00") },
+				{ fullname: "Michael Chen", customer_display_id: "2", created: new Date("2024-12-16T14:20:00") }
 			]
 		},
 		{
 			isbn: "321",
 			title: "To Kill a Mockingbird",
-			customers: [{ name: "James Taylor", id: "C006", orderDate: "Dec 15, 01:00 PM" }]
+			total: 1,
+			customers: [{ fullname: "James Taylor", customer_display_id: "6", created: new Date("2024-12-15T13:00:00") }]
 		},
 		{
 			isbn: "456",
 			title: "1984",
-			customers: [{ name: "Jennifer Lee", id: "C009", orderDate: "Dec 14, 09:00 AM" }]
+			total: 1,
+			customers: [{ fullname: "Jennifer Lee", customer_display_id: "9", created: new Date("2024-12-14T09:00:00") }]
 		}
 	];
 
@@ -36,10 +39,11 @@
 		{
 			isbn: "789",
 			title: "Pride and Prejudice",
+			total: 3,
 			customers: [
-				{ name: "Emma Watson", id: "C010", orderDate: "Dec 12, 11:45 PM" },
-				{ name: "Robert Brown", id: "C011", orderDate: "Dec 13, 09:15 AM" },
-				{ name: "Lisa Anderson", id: "C012", orderDate: "Dec 13, 03:30 PM" }
+				{ fullname: "Emma Watson", customer_display_id: "10", created: new Date("2024-12-12T23:45:00") },
+				{ fullname: "Robert Brown", customer_display_id: "11", created: new Date("2024-12-13T09:15:00") },
+				{ fullname: "Lisa Anderson", customer_display_id: "12", created: new Date("2024-12-13T15:30:00") }
 			]
 		}
 	];
@@ -48,41 +52,46 @@
 		{
 			isbn: "123",
 			title: "The Great Gatsby",
+			total: 4,
 			customers: [
-				{ name: "Sarah Johnson", id: "C001", orderDate: "Dec 15, 10:30 AM" },
-				{ name: "Michael Chen", id: "C002", orderDate: "Dec 16, 02:20 PM" },
-				{ name: "Emma Davis", id: "C003", orderDate: "Dec 14, 11:00 AM" },
-				{ name: "John Smith", id: "C004", orderDate: "Dec 15, 04:45 PM" }
+				{ fullname: "Sarah Johnson", customer_display_id: "1", created: new Date("2024-12-15T10:30:00") },
+				{ fullname: "Michael Chen", customer_display_id: "2", created: new Date("2024-12-16T14:20:00") },
+				{ fullname: "Emma Davis", customer_display_id: "3", created: new Date("2024-12-14T11:00:00") },
+				{ fullname: "John Smith", customer_display_id: "4", created: new Date("2024-12-15T16:45:00") }
 			]
 		},
 		{
 			isbn: "321",
 			title: "To Kill a Mockingbird",
+			total: 2,
 			customers: [
-				{ name: "James Taylor", id: "C006", orderDate: "Dec 15, 01:00 PM" },
-				{ name: "Margaret White", id: "C007", orderDate: "Dec 16, 09:20 AM" }
+				{ fullname: "James Taylor", customer_display_id: "6", created: new Date("2024-12-15T13:00:00") },
+				{ fullname: "Margaret White", customer_display_id: "7", created: new Date("2024-12-16T09:20:00") }
 			]
 		},
 		{
 			isbn: "456",
 			title: "1984",
+			total: 3,
 			customers: [
-				{ name: "Jennifer Lee", id: "C009", orderDate: "Dec 14, 09:00 AM" },
-				{ name: "David Kim", id: "C013", orderDate: "Dec 17, 02:15 PM" },
-				{ name: "Sophie Martin", id: "C014", orderDate: "Dec 18, 11:30 AM" }
+				{ fullname: "Jennifer Lee", customer_display_id: "9", created: new Date("2024-12-14T09:00:00") },
+				{ fullname: "David Kim", customer_display_id: "13", created: new Date("2024-12-17T14:15:00") },
+				{ fullname: "Sophie Martin", customer_display_id: "14", created: new Date("2024-12-18T11:30:00") }
 			]
 		},
 		{
 			isbn: "654",
 			title: "Brave New World",
-			customers: [{ name: "Thomas Green", id: "C015", orderDate: "Dec 19, 04:00 PM" }]
+			total: 1,
+			customers: [{ fullname: "Thomas Green", customer_display_id: "15", created: new Date("2024-12-19T16:00:00") }]
 		},
 		{
 			isbn: "987",
 			title: "The Catcher in the Rye",
+			total: 2,
 			customers: [
-				{ name: "Rachel Adams", id: "C016", orderDate: "Dec 20, 10:00 AM" },
-				{ name: "Christopher Lee", id: "C017", orderDate: "Dec 20, 03:45 PM" }
+				{ fullname: "Rachel Adams", customer_display_id: "16", created: new Date("2024-12-20T10:00:00") },
+				{ fullname: "Christopher Lee", customer_display_id: "17", created: new Date("2024-12-20T15:45:00") }
 			]
 		}
 	];
