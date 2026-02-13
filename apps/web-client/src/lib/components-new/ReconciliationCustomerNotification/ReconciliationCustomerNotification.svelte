@@ -30,7 +30,7 @@
 
 	const hasBooks = books.length > 0;
 	$: t = $LL.reconcile_page.step2.customer_notification;
-	$: label = (finalized ? t.message_finalized() : t.message_pending());
+	$: label = finalized ? t.message_finalized() : t.message_pending();
 
 	function getCopyLabel(count: number): string {
 		return t.copy_label({ count });
