@@ -52,8 +52,10 @@ export enum OrderLineStatus {
 export type DBCustomerOrderLine = {
 	// A customer order line as it is stored in the database
 	id: number;
+	fullname: string;
 	isbn: string;
 	customer_id: number;
+	customer_display_id: string;
 	created: number; // as milliseconds since epoch
 	placed?: number; // as milliseconds since epoch
 	received?: number; // as milliseconds since epoch
@@ -64,7 +66,9 @@ export type DBCustomerOrderLine = {
 export type CustomerOrderLine = {
 	// A customer order line to be passed around in the application
 	id: number;
+	fullname: string;
 	customer_id: number;
+	customer_display_id: string;
 	created: Date; // Date when the book order was entered
 	placed?: Date; // Last date when the book order was placed to the supplier
 	received?: Date; // Date when the book order was received from the supplier
@@ -128,6 +132,7 @@ export type PlacedSupplierOrder = {
 	created: number;
 	reconciliation_order_id: number | null;
 	reconciliation_last_updated_at: number | null;
+	finalized: number | null;
 } & PossibleSupplierOrder;
 
 /**

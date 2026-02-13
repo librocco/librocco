@@ -1,1032 +1,1099 @@
 {
-  "nav": {
-    "search": "Ricerca magazzino",
-    "books": "Dati dei libri",
-    "inventory": "Gestione magazzini",
-    "sale": "Vendita",
-    "purchase": "Acquisto",
-    "settings": "Impostazioni",
-    "history": "Storico",
-    "supplier_orders": "Ordini fornitori",
-    "customers": "Clienti"
-  },
-  "page_headings": {
-    "outbound": "Vendite",
-    "inbound": "Acquisti",
-    "warehouse": "Magazzini"
-  },
-  "search": {
-    "title": "Ricerca",
-    "empty": {
-      "title": "Cerca nei magazzini",
-      "description": "Ricerca per titolo, autore o ISBN"
-    },
-    "placeholder": "Cerca per ISBN"
-  },
-  "history_page": {
-    "title": "Storico",
-    "tabs": {
-      "by_date": "Per Data",
-      "by_isbn": "Per ISBN",
-      "notes_by_date": "Note Per Data",
-      "by_warehouse": "Per Magazzino"
-    },
-    "date_tab": {
-      "stats": {
-        "title": "Statistiche",
-        "total_purchase_book_count": "Totale libri acquistati",
-        "total_purchase_cover_price": "Prezzo di copertina acquisti",
-        "total_purchase_discounted_price": "Prezzo scontato acquisti",
-        "total_sale_book_count": "Totale libri venduti",
-        "total_sale_cover_price": "Prezzo di copertina vendite",
-        "total_sale_discounted_price": "Prezzo scontato vendite"
-      },
-      "transactions": {
-        "title": "Transazioni",
-        "committed": "Confermate"
-      },
-      "placeholder_box": {
-        "title": "Nessun libro in quella data",
-        "description": "Prova a selezionare una data diversa."
-      }
-    },
-    "isbn_tab": {
-      "titles": {
-        "transactions": "Transazioni",
-        "history": "Storico"
-      },
-      "search": {
-        "placeholder": "Cerca"
-      },
-      "isbn_id": {
-        "titles": {
-          "stock": "Scorte"
-        },
-        "placeholder_box": {
-          "title": "Nessuna transazione trovata",
-          "description": "Non ci sono transazioni registrate per questo ISBN"
-        }
-      },
-      "placeholder_box": {
-        "title": "Nessun libro selezionato",
-        "description": "Usa il campo di ricerca per trovare il libro che stai cercando"
-      }
-    },
-    "notes_tab": {
-      "date": {
-        "history": "Storico",
-        "books": "Libri",
-        "total_cover_price": "Prezzo di copertina totale",
-        "committed": "Confermate",
-        "total_discounted_price": "Prezzo scontato totale"
-      },
-      "archive": {
-        "committed_at": "Confermato il",
-        "export_csv": "Esporta CSV",
-        "column_headers": {
-          "quantity": "quantità",
-          "isbn": "ISBN",
-          "title": "titolo",
-          "publisher": "editore",
-          "authors": "autori",
-          "year": "anno",
-          "price": "prezzo",
-          "category": "categoria",
-          "edited_by": "a_cura_di",
-          "out_of_print": "fuori_catalogo"
-        }
-      },
-      "placeholder": {
-        "title": "Nessuna nota trovata",
-        "description": "Non ci sono note confermate in questa data"
-      }
-    },
-    "warehouse_tab": {
-      "note_table": {
-        "filter_options": {
-          "all": "Tutti",
-          "purchase": "Acquisti",
-          "sale": "Vendite"
-        },
-        "column_headers": {
-          "quantity": "quantità",
-          "isbn": "ISBN",
-          "title": "titolo",
-          "publisher": "editore",
-          "authors": "autori",
-          "year": "anno",
-          "price": "prezzo",
-          "category": "categoria",
-          "edited_by": "a_cura_di",
-          "out_of_print": "fuori_catalogo"
-        },
-        "heading": {
-          "history": "storico",
-          "export_csv": "Esporta CSV",
-          "from": "Da",
-          "to": "A",
-          "filter": "Filtro"
-        },
-        "titles": {
-          "transactions": "Transazioni"
-        },
-        "placeholder": {
-          "title": "Nessuna transazione trovata",
-          "description": "Non ci sono transazioni nel periodo selezionato"
-        }
-      },
-      "stats": {
-        "books": "{ no_of_books } libr{{o|i}}",
-        "discount": "sconto"
-      }
-    }
-  },
-  "inventory_page": {
-    "purchase_tab": {
-      "placeholder_box": {
-        "title": "Nessuna nota aperta",
-        "description": "Inizia creando una nuova nota con il magazzino appropriato"
-      },
-      "stats": {
-        "back_to_warehouses": "Torna ai magazzini",
-        "books": "{ no_of_books } libr{{o|i}}",
-        "last_updated": "Aggiornato"
-      },
-      "labels": {
-        "button_edit": "Modifica",
-        "button_delete": "Elimina"
-      }
-    },
-    "warehouses_tab": {
-      "title": "Magazzini",
-      "labels": {
-        "button_create_purchase": "Nuovo acquisto",
-        "create_warehouse": "Crea magazzino"
-      },
-      "placeholder": {
-        "title": "Nessun magazzino",
-        "description": "Inizia creando un magazzino"
-      }
-    }
-  },
-  "orders_page": {
-    "labels": {
-      "checkout": "Cassa",
-      "create_sale_note": "Crea nuova nota di vendita"
-    }
-  },
-  "customer_orders_page": {
-    "title": "Ordini Clienti",
-    "labels": {
-      "new_order": "Nuovo Ordine",
-      "edit": "Modifica",
-      "save": "Salva",
-      "create": "Crea",
-      "edit_customer": "Modifica cliente",
-      "print_receipt": "Stampa ricevuta",
-      "edit_line": "Modifica riga",
-      "collect": "Ritira",
-      "delete_row": "Elimina riga",
-      "edit_row": "Modifica riga"
-    },
-    "table_columns": {
-      "order_id": "ID",
-      "name": "Nome",
-      "email": "Email",
-      "updated": "Aggiornato",
-      "actions": "Azioni",
-      "isbn": "ISBN",
-      "title": "Titolo",
-      "authors": "Autori",
-      "price": "Prezzo",
-      "publisher": "Editore",
-      "status": "Stato"
-    },
-    "placeholder": {
-      "search": "Cerca clienti per nome",
-      "no_orders": {
-        "title": "Non ci sono clienti",
-        "description": "Crea un nuovo ordine cliente per iniziare"
-      },
-      "scan_title": "Scansiona per aggiungere libri",
-      "scan_description": "Collega lo scanner di codici a barre e premi il grilletto"
-    },
-    "new_customer_dialog": {
-      "title": "modulo nuovo cliente",
-      "description": "inserisci i dettagli del nuovo cliente"
-    },
-    "customer_details": {
-      "last_updated": "Ultimo aggiornamento",
-      "customer_id": "ID Cliente",
-      "customer_email": "Email cliente",
-      "customer_phone": "Telefono cliente",
-      "secondary_phone": "Telefono secondario",
-      "deposit": "Acconto",
-      "deposit_amount": "Acconto €{amount}",
-      "books_heading": "Libri",
-      "total": "Totale:"
-    },
-    "status": {
-      "collected": "Ritirato",
-      "delivered": "Consegnato",
-      "placed": "Ordinato",
-      "pending": "In attesa"
-    },
-    "status_badges": {
-      "with_date": "{status} - {date:Date|dateShort}"
-    },
-    "dialogs": {
-      "new_customer": {
-        "title": "Crea nuovo ordine"
-      },
-      "edit_customer": {
-        "title": "Modifica dettagli cliente"
-      }
-    }
-  },
-  "suppliers_page": {
-    "title": "Fornitori",
-    "placeholder": {
-      "title": "Non ci sono fornitori",
-      "description": "Crea un nuovo fornitore per gestire i cataloghi editoriali"
-    },
-    "dialog": {
-      "new_order_title": "Crea nuovo fornitore"
-    },
-    "labels": {
-      "save": "Crea",
-      "new_supplier": "Nuovo Fornitore",
-      "edit": "Modifica"
-    },
-    "columns": {
-      "name": "Nome",
-      "email": "Email",
-      "address": "Indirizzo",
-      "assigned_publishers": "Editori Assegnati",
-      "actions": "Azioni",
-      "order_format": "Formato Ordine"
-    }
-  },
-  "warehouse_list_page": {
-    "title": "Magazzini",
-    "stats": {
-      "books": "libri",
-      "discount": "sconto"
-    },
-    "labels": {
-      "new_note": "Nuova nota",
-      "view_stock": "Visualizza Scorte",
-      "edit": "Modifica",
-      "delete": "Elimina"
-    },
-    "placeholder": {
-      "title": "Nessun magazzino",
-      "description": "Inizia creando un magazzino"
-    }
-  },
-  "warehouse_page": {
-    "table": {
-      "quantity": "Quantità",
-      "isbn": "ISBN",
-      "title": "Titolo",
-      "publisher": "Editore",
-      "authors": "Autori",
-      "year": "Anno",
-      "price": "Prezzo",
-      "category": "Categoria",
-      "edited_by": "A cura di",
-      "out_of_print": "Fuori catalogo"
-    },
-    "labels": {
-      "export_to_csv": "Esporta in CSV",
-      "new_note": "Nuova nota",
-      "edit_row": "Modifica riga",
-      "print_book_label": "Stampa etichetta libro",
-      "edit_book_details": "Modifica dettagli libro",
-      "manually_edit_book_details": "Modifica manualmente dettagli libro"
-    },
-    "placeholder": {
-      "title": "Aggiungi nuova nota di acquisto",
-      "description": "Inizia aggiungendo una nuova nota"
-    }
-  },
-  "sale_note": {
-    "commit_dialog": {
-      "title": "Confermare vendita \"{entity}\"?",
-      "description": "{ bookCount } libr{{o|i}} verr{{à|anno}} rimoss{{o|i}} dalle scorte",
-      "stock_adjustement_detail": {
-        "summary": "Alcune quantità richieste sono maggiori di quelle disponibili. Controlla le seguenti modifiche alle scorte:",
-        "detail_list": {
-          "row": "{isbn} da {warehouse}",
-          "requested": "Richiesto: {quantity:number} {{copia|copie}}",
-          "available": "Disponibile: {quantity:number} {{copia|copie}}",
-          "adjustment": "Modifica: {quantity:number} {{copia|copie}}"
-        }
-      }
-    },
-    "force_withdrawal_dialog": {
-      "title": "Forzare il prelievo per {isbn:string}?",
-      "cancel": "Annulla",
-      "confirm": "Conferma",
-      "description": "Questo libro è esaurito. Se sei sicuro che esistano copie aggiuntive, puoi selezionare manualmente un magazzino per forzare il prelievo.",
-      "selected_warehouse_message": "Verrà registrato un adeguamento per {quantity:number} {{copia|copie}} di {isbn:string} in {displayName:string}."
-    },
-    "create_custom_item_dialog": {
-      "title": "Crea articolo personalizzato"
-    },
-    "edit_custom_item_dialog": {
-      "title": "Modifica articolo personalizzato"
-    },
-    "labels": {
-      "new_note": "Nuova Nota",
-      "edit": "Modifica",
-      "print_book_label": "Stampa etichetta libro",
-      "delete_row": "Elimina riga",
-      "edit_row": "Modifica riga",
-      "delete": "Elimina",
-      "commit": "Conferma",
-      "print": "Stampa",
-      "custom_item": "Articolo personalizzato",
-      "force_withdrawal": "Forza prelievo"
-    },
-    "stats": {
-      "last_updated": "Ultimo aggiornamento",
-      "books": "{ bookCount } libr{{o|i}}"
-    },
-    "placeholder": {
-      "select_warehouse": "Seleziona un magazzino",
-      "any_warehouse": "Qualsiasi magazzino",
-      "no_warehouses": "Nessun magazzino disponibile",
-      "scan_title": "Scansiona per selezionare libri da...",
-      "scan_description": "Collega lo scanner di codici a barre e premi il grilletto"
-    },
-    "alerts": {
-      "insufficient_quantity": "Il magazzino che stai cercando di assegnare non ha più quantità disponibile, clicca Forza Prelievo per selezionare un altro magazzino",
-      "no_warehouse_selected_commit_self": "Assicurati che tutti gli articoli abbiano un magazzino assegnato."
-    }
-  },
-  "sale_page": {
-    "heading": "Vendita",
-    "stats": {
-      "last_updated": "Ultimo aggiornamento",
-      "books": "{ bookCount } libr{{o|i}}"
-    },
-    "labels": {
-      "new_sale": "Nuova Vendita",
-      "edit": "Modifica",
-      "print_book_label": "Stampa etichetta libro",
-      "delete_row": "Elimina riga",
-      "no_open_sales": "Nessuna vendita aperta",
-      "get_started": "Inizia aggiungendo una nuova vendita"
-    }
-  },
-  "purchase_note": {
-    "commit_dialog": {
-      "title": "Confermare acquisto \"{entity}\"?",
-      "description": "{ bookCount } libr{{o|i}} verr{{à|anno}} aggiunti a { warehouseName }"
-    },
-    "stats": {
-      "last_updated": "Ultimo aggiornamento"
-    },
-    "labels": {
-      "commit": "Conferma",
-      "print": "Stampa",
-      "auto_print_book_labels": "Stampa automatica etichette libri",
-      "delete": "Elimina",
-      "edit_row": "Modifica riga",
-      "print_book_label": "Stampa etichetta libro",
-      "delete_row": "Elimina riga",
-      "edit": "Modifica"
-    },
-    "placeholder": {
-      "scan_title": "Scansiona per aggiungere libri",
-      "scan_description": "Collega lo scanner di codici a barre e premi il grilletto"
-    }
-  },
-  "settings_page": {
-    "headings": {
-      "settings": "Impostazioni",
-      "device_settings": "Impostazioni dispositivo",
-      "sync_settings": "Impostazioni sincronizzazione",
-      "db_management": "Gestione database",
-      "demo_reset": "Ripristinare il DB allo stato iniziale?"
-    },
-    "descriptions": {
-      "sync_settings": "Gestisci il nome del DB, l'URL di sincronizzazione e la connessione. Nota: Questo verrà unito con la selezione DB in futuro",
-      "db_management": "Usa questa sezione per creare, selezionare, importare, esportare o eliminare un database",
-      "import": "Trascina e rilascia il tuo file .sqlite3 qui per importare",
-      "device_settings": "Gestisci le connessioni ai dispositivi esterni",
-      "demo_reset_1": "Clicca sul pulsante qui sotto per ripristinare il DB allo stato iniziale",
-      "demo_reset_2": "Tutte le modifiche effettuate andranno perse e il DB verrà ripristinato allo stato demo iniziale."
-    },
-    "actions": {
-      "nuke_and_resync": "Elimina e risincronizza"
-    },
-    "demo_actions": {
-      "reset_db": "Ripristina database"
-    },
-    "stats": {
-      "version": "Versione"
-    },
-    "labels": {
-      "new": "Nuovo"
-    }
-  },
-  "stock_page": {
-    "labels": {
-      "edit_book_details": "Modifica dettagli libro",
-      "manually_edit_book_details": "Modifica manualmente dettagli libro",
-      "edit_row": "Modifica riga",
-      "print_book_label": "Stampa etichetta libro",
-      "popover_control": "Azioni riga"
-    },
-    "placeholder_box": {
-      "no_results": {
-        "title": "Nessun risultato",
-        "description": "La ricerca non ha prodotto risultati"
-      }
-    }
-  },
-  "common": {
-    "delete_dialog": {
-      "title": "Eliminare permanentemente {entity}?",
-      "description": "Una volta eliminata questa nota, non potrai più accedervi"
-    },
-    "edit_book_dialog": {
-      "title": "Modifica dettagli libro",
-      "description": "Aggiorna i dettagli del libro"
-    },
-    "edit_warehouse_dialog": {
-      "title": "Aggiorna dettagli magazzino",
-      "description": "Aggiorna i dettagli del magazzino"
-    },
-    "delete_warehouse_dialog": {
-      "description": "Una volta eliminato questo magazzino { bookCount } libr{{o|i}} verr{{à|anno}} rimoss{{o|i}} dalle tue scorte"
-    },
-    "delete_database_dialog": {
-      "description": "Una volta eliminato questo database non potrà essere ripristinato. Per salvare prima un backup, usa il pulsante esporta."
-    },
-    "create_database_dialog": {
-      "title": "Crea nuovo database",
-      "description": "Inserisci il nome per il nuovo database"
-    },
-    "action_dropdown_trigger_aria": "apri menu azioni",
-    "actions": {
-      "cancel": "Annulla",
-      "confirm": "Conferma",
-      "import": "Importa",
-      "select": "Seleziona",
-      "reload": "Ricarica",
-      "print": "Stampa tabella"
-    },
-    "placeholders": {
-      "no_results": "Nessun risultato",
-      "search_found_no_results": "La ricerca non ha prodotto risultati",
-      "unknown_title": "Titolo sconosciuto"
-    },
-    "loading": "Caricamento"
-  },
-  "supplier_orders_page": {
-    "title": {
-      "supplier_orders": "Ordini Fornitori"
-    },
-    "labels": {
-      "suppliers": "Fornitori"
-    },
-    "tabs": {
-      "unordered": "Non ordinati",
-      "ordered": "Ordinati",
-      "reconciling": "In riconciliazione",
-      "completed": "Completati"
-    },
-    "placeholder": {
-      "title": "Non ci sono ordini fornitori in sospeso",
-      "description": "Crea ordini clienti per generare ordini fornitori",
-      "button": "Nuovo Ordine Cliente"
-    }
-  },
-  "new_order_page": {
-    "title": "Nuovo Ordine Fornitore",
-    "aria": {
-      "last_updated": "Ultimo aggiornamento"
-    },
-    "stats": {
-      "total_books": "Totale libri",
-      "total_value": "Valore totale",
-      "selected_books": "Libri selezionati",
-      "order_format": "Formato Ordine",
-      "no_order_format": "Il formato ordine deve essere configurato",
-      "go_to_supplier": "Vai al fornitore"
-    },
-    "table": {
-      "quantity": "Quantità",
-      "total": "Totale",
-      "books": "Libri",
-      "isbn": "ISBN",
-      "title": "Titolo",
-      "authors": "Autori"
-    },
-    "labels": {
-      "select": "Seleziona",
-      "place_order": "Effettua Ordine",
-      "no_format_tooltip": "Nessun formato configurato"
-    }
-  },
-  "reconcile_page": {
-    "title": {
-      "reconcile_deliveries": "Riconcilia Consegne"
-    },
-    "stats": {
-      "created": "Creato",
-      "last_updated": "Ultimo Aggiornamento",
-      "includes_supplier_orders": "Include ordini fornitori",
-      "total_delivered": "Totale consegnato",
-      "finalized_at": "Finalizzato il"
-    },
-    "placeholder": {
-      "description": "Scansiona o inserisci gli ISBN dei libri consegnati per iniziare la riconciliazione."
-    },
-    "table": {
-      "isbn": "ISBN",
-      "title": "Titolo",
-      "authors": "Autori",
-      "quantity": "Quantità",
-      "price": "Prezzo"
-    },
-    "delete_dialog": {
-      "title": "Elimina Ordine di Riconciliazione",
-      "description": "Sei sicuro di voler eliminare questo ordine di riconciliazione? Questa azione eliminerà tutte le righe scansionate."
-    },
-    "steps": {
-      "populate": {
-        "title": "Popola",
-        "description": "Libri consegnati"
-      },
-      "compare": {
-        "title": "Confronta",
-        "description": "Con ordinati"
-      },
-      "commit": {
-        "title": "Conferma",
-        "description": "Notifica clienti"
-      }
-    }
-  },
-  "order_page": {
-    "title": "Ordine Fornitore"
-  },
-  "reconciled_list_page": {
-    "labels": {
-      "view_reconciliation": "Visualizza Riconciliazione",
-      "reconcile": "Riconcilia",
-      "print_order": "Stampa Ordine",
-      "download_order": "Scarica Ordine"
-    },
-    "stats": {
-      "total_books": "Totale libri",
-      "ordered": "Ordinati",
-      "total_value": "Valore totale"
-    },
-    "table": {
-      "books": "Libri",
-      "isbn": "ISBN",
-      "title": "Titolo",
-      "authors": "Autori",
-      "quantity": "Quantità",
-      "total_price": "Prezzo Totale"
-    }
-  },
-  "order_list_page": {
-    "labels": {
-      "remove_publisher": "Rimuovi editore",
-      "create_new_order": "Crea nuovo ordine",
-      "add_to_supplier": "Aggiungi al fornitore",
-      "reassign_publisher": "Riassegna a fornitore"
-    },
-    "details": {
-      "supplier_page": "Pagina fornitore",
-      "supplier_name": "Nome fornitore",
-      "supplier_email": "Email fornitore",
-      "supplier_address": "Indirizzo fornitore",
-      "supplier_customerId": "ID cliente fornitore",
-      "supplier_orderFormat": "Formato ordine fornitore"
-    },
-    "table": {
-      "publisher_name": "Nome editore",
-      "assigned_publishers": "Editori assegnati",
-      "unassigned_publishers": "Editori non assegnati",
-      "other_supplier_publishers": "Editori Altri Fornitori"
-    },
-    "dialogs": {
-      "reassign_publisher": {
-        "title": "Riassegna editore",
-        "description": "Sei sicuro di voler rimuovere {publisher} dal suo precedente fornitore e assegnarlo a {supplier}?"
-      }
-    }
-  },
-  "supplier_orders_component": {
-    "commit_dialog": {
-      "heading": "Finalizza ordine di riconciliazione",
-      "delivered_book_count": "{ deliveredBookCount } libri verranno contrassegnati come consegnati (e pronti per il ritiro)",
-      "rejected_book_count": "{ rejectedBookCount } libri verranno contrassegnati come rifiutati (in attesa di riordino)",
-      "cancel": "Annulla",
-      "confirm": "Conferma"
-    },
-    "comparison_table": {
-      "isbn": "ISBN",
-      "title": "Titolo",
-      "authors": "Autori",
-      "price": "Prezzo",
-      "ordered_quantity": "Quantità Ordinata",
-      "delivered_quantity": "Quantità Consegnata",
-      "unmatched_books": "Libri Non Corrispondenti"
-    },
-    "completed_table": {
-      "supplier_id": "ID Ordine",
-      "supplier": "Nome Fornitore",
-      "books": "Libri",
-      "finalized": "Finalizzato",
-      "actions": "Azioni",
-      "view_order": "Visualizza Ordine",
-      "view_reconciliation": "Visualizza Riconciliazione"
-    },
-    "ordered_table": {
-      "order_id": "ID Ordine",
-      "select": "Seleziona",
-      "supplier": "Nome Fornitore",
-      "placed": "Effettuato",
-      "actions": "Azioni",
-      "reconcile_selected": "Riconcilia {count:number} ordin{{e|i}}",
-      "view_order": "Visualizza Ordine",
-      "reconcile": "Riconcilia",
-      "view_reconciliation": "Visualizza Riconciliazione"
-    },
-    "reconciling_table": {
-      "order_id": "ID Riconciliazione",
-      "supplier_orders": "Ordini Fornitori",
-      "last_updated": "Ultimo Aggiornamento",
-      "update_order": "Aggiorna ordine",
-      "continue": "Continua",
-      "actions": "Azioni"
-    },
-    "unordered_table": {
-      "supplier_id": "ID Fornitore",
-      "supplier": "Nome Fornitore",
-      "books": "N. di Libri",
-      "place_order": "Effettua Ordine",
-      "actions": "Azioni"
-    }
-  },
-  "table_components": {
-    "inventory_tables": {
-      "book_price_cell": {
-        "discounted_price": "Prezzo Scontato",
-        "original_price": "Prezzo Originale",
-        "percentage_discount": "Percentuale Sconto"
-      },
-      "inbound_table": {
-        "isbn": "ISBN",
-        "book": "Libro",
-        "title": "Titolo",
-        "authors": "Autori",
-        "price": "Prezzo",
-        "quantity": "Quantità",
-        "publisher": "Editore",
-        "year": "Anno",
-        "edited_by": "A Cura di",
-        "op": "F.C.",
-        "category": "Categoria",
-        "delivered_quantity": "Quantità Consegnata",
-        "unmatched_books": "Libri Non Corrispondenti"
-      },
-      "stock_table": {
-        "isbn": "ISBN",
-        "book": "Libro",
-        "title": "Titolo",
-        "authors": "Autori",
-        "price": "Prezzo",
-        "quantity": "Quantità",
-        "publisher": "Editore",
-        "year": "Anno",
-        "edited_by": "A Cura di",
-        "op": "F.C.",
-        "category": "Categoria",
-        "delivered_quantity": "Quantità Consegnata",
-        "unmatched_books": "Libri Non Corrispondenti"
-      },
-      "outbound_table": {
-        "isbn": "ISBN",
-        "book": "Libro",
-        "title": "Titolo",
-        "authors": "Autori",
-        "price": "Prezzo",
-        "quantity": "Quantità",
-        "publisher": "Editore",
-        "year": "Anno",
-        "warehouse": "Magazzino",
-        "category": "Categoria",
-        "row_actions": "Azioni Riga",
-        "type": "Tipo"
-      }
-    },
-    "order_tables": {
-      "order_line_table": {
-        "isbn": "ISBN",
-        "book": "Libro",
-        "title": "Titolo",
-        "status": "Stato",
-        "authors": "Autori",
-        "price": "Prezzo",
-        "publisher": "Editore",
-        "year": "Anno",
-        "discounted_price": "Prezzo Scontato",
-        "original_price": "Prezzo Originale",
-        "percentage_discount": "Percentuale Sconto"
-      },
-      "supplier_order_table": {
-        "supplier": "Fornitore",
-        "total_books": "Totale Libri",
-        "ordered": "Ordinati",
-        "order_no": "N. Ordine",
-        "edit": "Modifica",
-        "manage": "Gestisci"
-      }
-    }
-  },
-  "misc_components": {
-    "extension_banner": {
-      "book_data_extension": "Estensione Dati Libro",
-      "remote_db": "DB Remoto",
-      "reload_translations_override": "Ricarica override traduzioni"
-    },
-    "page_layout": {
-      "stock": "Scorte",
-      "checkout": "Cassa"
-    },
-    "warehouse_select": {
-      "label": {
-        "aria": "Seleziona un magazzino da cui prelevare il libro {rowIx:number}",
-        "forced": "Forzato",
-        "book_count": "{count:number} {{copia|copie}} disponibil{{e|i}}"
-      },
-      "default_option": "Seleziona un magazzino",
-      "empty_options": "Nessuna scorta disponibile..."
-    }
-  },
-  "layout": {
-    "mobile_nav": {
-      "trigger": {
-        "aria_label": "Apri navigazione mobile"
-      },
-      "dialog": {
-        "title": "Navigazione Mobile",
-        "description": "Naviga nell'applicazione"
-      }
-    },
-    "sync_dialog": {
-      "title": "Sincronizzazione in corso",
-      "description": {
-        "in_progress": "La sincronizzazione iniziale del DB è in corso. Potrebbe richiedere un po' di tempo",
-        "progress": "Progresso ({nProcessed}/{nTotal}):",
-        "warning": "Non navigare via mentre la sincronizzazione è in corso poiché il DB risulterà corrotto e la sincronizzazione dovrà essere riavviata."
-      }
-    },
-    "error_dialog": {
-      "demo_db_not_initialised": {
-        "title": "Carica il DB con dati",
-        "call_to_action": "Clicca sul pulsante qui sotto per caricare il DB precompilato con dati demo",
-        "description": "Questo scaricherà il file demo DB .sqlite3 e lo memorizzerà nell'OPFS del browser (per uso nell'app)",
-        "button": "Carica DB"
-      },
-      "schema_mismatch": {
-        "title": "Errore: Schema DB non corrispondente",
-        "description": "La versione dello schema del tuo DB non corrisponde all'ultima versione dello schema. Clicca automigrazione per migrare all'ultima versione.",
-        "latest_version": "Ultima versione schema: {wantVersion}",
-        "your_version": "Versione schema del tuo DB: {gotVersion}",
-        "button": "Automigrazione"
-      },
-      "corrupted": {
-        "title": "Errore: DB corrotto",
-        "description": "L'unico modo per usare l'app sembra essere eliminarlo e ricominciare da capo.",
-        "note": "Nota: Questo non risincronizzerà il database. Se vuoi sincronizzare il DB con quello remoto, fallo dalla pagina delle impostazioni (dopo la reinizializzazione)",
-        "button": "Clicca per eliminare il DB"
-      }
-    }
-  },
-  "error_page": {
-    "title": "Errore",
-    "message": {
-      "title": "Qualcosa è andato storto!",
-      "description": "Prova a controllare la connessione internet se stai usando un database online."
-    }
-  },
-  "books_page": {
-    "title": "Libri conosciuti",
-    "placeholder": {
-      "empty_database": {
-        "title": "Nessun risultato",
-        "description": "Il database dei libri è vuoto. Inizia aggiungendo alcuni libri alle scorte."
-      },
-      "no_results": {
-        "title": "Nessun risultato",
-        "description": "La ricerca non ha prodotto risultati"
-      }
-    },
-    "labels": {
-      "popover_control": "Azioni riga",
-      "edit_row": "Modifica riga",
-      "print_book_label": "Stampa etichetta libro",
-      "edit_book_details": "Modifica dettagli libro",
-      "manually_edit_book_details": "Modifica manualmente dettagli libro"
-    }
-  },
-  "debug_page": {
-    "title": "Debug",
-    "actions": {
-      "populate_database": "Popola Database",
-      "reset_database": "Ripristina Database",
-      "upsert_100_books": "Inserisci 100 Libri",
-      "run_query": "Esegui Query",
-      "executing": "Esecuzione in corso..."
-    },
-    "query_interface": {
-      "title": "Interfaccia Query Database",
-      "results_title": "Risultati Query:",
-      "no_results": "Nessun risultato trovato."
-    },
-    "table": {
-      "title": "Tabella",
-      "number_of_objects": "Numero di oggetti"
-    }
-  },
-  "forms": {
-    "sync_settings": {
-      "labels": {
-        "database_name": "Nome Database (questo probabilmente cambierà in futuro)",
-        "remote_sync_url": "URL Database Sincronizzazione Remoto",
-        "save_reload": "Salva e Ricarica",
-        "connection_status": {
-          "on": "ON",
-          "off": "OFF"
-        }
-      },
-      "aria": {
-        "form": "Modifica configurazione connessione database remoto"
-      }
-    },
-    "device_settings": {
-      "labels": {
-        "label_printer_url": "URL Stampante Etichette",
-        "receipt_printer_url": "URL Stampante Ricevute",
-        "save_reload": "Salva e Ricarica"
-      },
-      "aria": {
-        "form": "Modifica configurazione connessione database remoto"
-      }
-    },
-    "database_delete": {
-      "labels": {
-        "confirm_typing": "Conferma digitando il nome del database",
-        "type_instruction": "Digita '{matchConfirmation}'",
-        "confirm_button": "Conferma"
-      }
-    },
-    "warehouse_delete": {
-      "labels": {
-        "confirm_typing": "Conferma digitando il nome del magazzino",
-        "type_instruction": "Digita '{matchConfirmation}'",
-        "confirm_button": "Conferma",
-        "cancel_button": "Annulla"
-      }
-    },
-    "supplier_meta": {
-      "labels": {
-        "name": "Nome",
-        "email": "Email",
-        "address": "Indirizzo",
-        "customer_id": "ID Cliente",
-        "cancel_button": "Annulla",
-        "order_format": "Formato Ordine",
-        "order_format_message": "Seleziona un formato ordine"
-      },
-      "aria": {
-        "form": "Modifica nome, email o acconto dell'ordine cliente"
-      }
-    },
-    "book_form": {
-      "labels": {
-        "isbn": "ISBN",
-        "fill_details": "Compila dettagli",
-        "title": "Titolo",
-        "price": "Prezzo",
-        "year": "Anno",
-        "authors": "Autori",
-        "publisher": "Editore",
-        "edited_by": "A cura di",
-        "category": "Categoria",
-        "out_of_print": "Fuori Catalogo",
-        "out_of_print_help": "Questo libro non è più disponibile dall'editore",
-        "cancel_button": "Annulla",
-        "save_button": "Salva"
-      },
-      "placeholders": {
-        "isbn": "0000000000"
-      },
-      "aria": {
-        "form": "Modifica dettagli libro"
-      }
-    },
-    "daisy_ui_book_form": {
-      "labels": {
-        "isbn": "ISBN",
-        "fill_details": "Compila dettagli",
-        "title": "Titolo",
-        "price": "Prezzo",
-        "year": "Anno",
-        "authors": "Autori",
-        "publisher": "Editore",
-        "edited_by": "A cura di",
-        "category": "Categoria",
-        "out_of_print": "Fuori Catalogo",
-        "cancel_button": "Annulla",
-        "save_button": "Salva"
-      },
-      "placeholders": {
-        "isbn": "0000000000"
-      },
-      "aria": {
-        "form": "Modifica dettagli libro"
-      }
-    },
-    "scanner_form": {
-      "placeholders": {
-        "isbn": "Inserisci ISBN dei libri ordinati"
-      }
-    },
-    "daisy_ui_scanner_form": {
-      "placeholders": {
-        "isbn": "Inserisci ISBN dei libri ordinati"
-      }
-    },
-    "customer_order_meta": {
-      "labels": {
-        "display_id": "ID Visualizzato",
-        "name": "Nome",
-        "email": "Email",
-        "deposit": "Acconto",
-        "phone1": "Telefono 1",
-        "phone2": "Telefono 2",
-        "cancel_button": "Annulla"
-      },
-      "validation": {
-        "display_id_not_unique": "Questo ID è già in uso dal cliente \"{fullname}\" con {bookCount} libr{{o|i}} ordinat{{o|i}}"
-      },
-      "aria": {
-        "form": "Modifica nome, email o acconto dell'ordine cliente"
-      }
-    },
-    "database_create": {
-      "labels": {
-        "name": "Nome",
-        "cancel_button": "Annulla",
-        "save_button": "Salva"
-      },
-      "placeholders": {
-        "name": "Nome database"
-      },
-      "aria": {
-        "form": "Crea nuovo database"
-      }
-    },
-    "warehouse_form": {
-      "labels": {
-        "name": "Nome",
-        "discount": "Sconto",
-        "discount_help": "Applicato ai prezzi dei libri",
-        "cancel_button": "Annulla",
-        "save_button": "Salva"
-      },
-      "placeholders": {
-        "name": "Nome magazzino",
-        "discount": "0"
-      },
-      "aria": {
-        "form": "Modifica dettagli magazzino"
-      }
-    },
-    "custom_item_form": {
-      "labels": {
-        "title": "Titolo",
-        "price": "Prezzo",
-        "cancel_button": "Annulla",
-        "save_button": "Salva"
-      },
-      "placeholders": {
-        "price": "0"
-      },
-      "aria": {
-        "form": "Modifica dettagli libro"
-      }
-    }
-  }
+	"nav": {
+		"search": "Ricerca magazzino",
+		"books": "Dati dei libri",
+		"inventory": "Gestione magazzini",
+		"sale": "Vendita",
+		"purchase": "Acquisto",
+		"settings": "Impostazioni",
+		"history": "Storico",
+		"supplier_orders": "Ordini fornitori",
+		"customers": "Clienti"
+	},
+	"page_headings": {
+		"outbound": "Vendite",
+		"inbound": "Acquisti",
+		"warehouse": "Magazzini"
+	},
+	"search": {
+		"title": "Ricerca",
+		"empty": {
+			"title": "Cerca nei magazzini",
+			"description": "Ricerca per titolo, autore o ISBN"
+		},
+		"placeholder": "Cerca per ISBN"
+	},
+	"history_page": {
+		"title": "Storico",
+		"tabs": {
+			"by_date": "Per Data",
+			"by_isbn": "Per ISBN",
+			"notes_by_date": "Note Per Data",
+			"by_warehouse": "Per Magazzino"
+		},
+		"date_tab": {
+			"stats": {
+				"title": "Statistiche",
+				"total_purchase_book_count": "Totale libri acquistati",
+				"total_purchase_cover_price": "Prezzo di copertina acquisti",
+				"total_purchase_discounted_price": "Prezzo scontato acquisti",
+				"total_sale_book_count": "Totale libri venduti",
+				"total_sale_cover_price": "Prezzo di copertina vendite",
+				"total_sale_discounted_price": "Prezzo scontato vendite"
+			},
+			"transactions": {
+				"title": "Transazioni",
+				"committed": "Confermate"
+			},
+			"placeholder_box": {
+				"title": "Nessun libro in quella data",
+				"description": "Prova a selezionare una data diversa."
+			}
+		},
+		"isbn_tab": {
+			"titles": {
+				"transactions": "Transazioni",
+				"history": "Storico"
+			},
+			"search": {
+				"placeholder": "Cerca"
+			},
+			"isbn_id": {
+				"titles": {
+					"stock": "Scorte"
+				},
+				"placeholder_box": {
+					"title": "Nessuna transazione trovata",
+					"description": "Non ci sono transazioni registrate per questo ISBN"
+				}
+			},
+			"placeholder_box": {
+				"title": "Nessun libro selezionato",
+				"description": "Usa il campo di ricerca per trovare il libro che stai cercando"
+			}
+		},
+		"notes_tab": {
+			"date": {
+				"history": "Storico",
+				"books": "Libri",
+				"total_cover_price": "Prezzo di copertina totale",
+				"committed": "Confermate",
+				"total_discounted_price": "Prezzo scontato totale"
+			},
+			"archive": {
+				"committed_at": "Confermato il",
+				"export_csv": "Esporta CSV",
+				"column_headers": {
+					"quantity": "quantità",
+					"isbn": "ISBN",
+					"title": "titolo",
+					"publisher": "editore",
+					"authors": "autori",
+					"year": "anno",
+					"price": "prezzo",
+					"category": "categoria",
+					"edited_by": "a_cura_di",
+					"out_of_print": "fuori_catalogo"
+				}
+			},
+			"placeholder": {
+				"title": "Nessuna nota trovata",
+				"description": "Non ci sono note confermate in questa data"
+			}
+		},
+		"warehouse_tab": {
+			"note_table": {
+				"filter_options": {
+					"all": "Tutti",
+					"purchase": "Acquisti",
+					"sale": "Vendite"
+				},
+				"column_headers": {
+					"quantity": "quantità",
+					"isbn": "ISBN",
+					"title": "titolo",
+					"publisher": "editore",
+					"authors": "autori",
+					"year": "anno",
+					"price": "prezzo",
+					"category": "categoria",
+					"edited_by": "a_cura_di",
+					"out_of_print": "fuori_catalogo"
+				},
+				"heading": {
+					"history": "storico",
+					"export_csv": "Esporta CSV",
+					"from": "Da",
+					"to": "A",
+					"filter": "Filtro"
+				},
+				"titles": {
+					"transactions": "Transazioni"
+				},
+				"placeholder": {
+					"title": "Nessuna transazione trovata",
+					"description": "Non ci sono transazioni nel periodo selezionato"
+				}
+			},
+			"stats": {
+				"books": "{ no_of_books } libr{{o|i}}",
+				"discount": "sconto"
+			}
+		}
+	},
+	"inventory_page": {
+		"purchase_tab": {
+			"placeholder_box": {
+				"title": "Nessuna nota aperta",
+				"description": "Inizia creando una nuova nota con il magazzino appropriato"
+			},
+			"stats": {
+				"back_to_warehouses": "Torna ai magazzini",
+				"books": "{ no_of_books } libr{{o|i}}",
+				"last_updated": "Aggiornato"
+			},
+			"labels": {
+				"button_edit": "Modifica",
+				"button_delete": "Elimina"
+			}
+		},
+		"warehouses_tab": {
+			"title": "Magazzini",
+			"labels": {
+				"button_create_purchase": "Nuovo acquisto",
+				"create_warehouse": "Crea magazzino"
+			},
+			"placeholder": {
+				"title": "Nessun magazzino",
+				"description": "Inizia creando un magazzino"
+			}
+		}
+	},
+	"orders_page": {
+		"labels": {
+			"checkout": "Cassa",
+			"create_sale_note": "Crea nuova nota di vendita"
+		}
+	},
+	"customer_orders_page": {
+		"title": "Ordini Clienti",
+		"labels": {
+			"new_order": "Nuovo Ordine",
+			"edit": "Modifica",
+			"save": "Salva",
+			"create": "Crea",
+			"edit_customer": "Modifica cliente",
+			"print_receipt": "Stampa ricevuta",
+			"edit_line": "Modifica riga",
+			"collect": "Ritira",
+			"delete_row": "Elimina riga",
+			"edit_row": "Modifica riga"
+		},
+		"table_columns": {
+			"order_id": "ID",
+			"name": "Nome",
+			"email": "Email",
+			"updated": "Aggiornato",
+			"actions": "Azioni",
+			"isbn": "ISBN",
+			"title": "Titolo",
+			"authors": "Autori",
+			"price": "Prezzo",
+			"publisher": "Editore",
+			"status": "Stato"
+		},
+		"placeholder": {
+			"search": "Cerca clienti per nome",
+			"no_orders": {
+				"title": "Non ci sono clienti",
+				"description": "Crea un nuovo ordine cliente per iniziare"
+			},
+			"scan_title": "Scansiona per aggiungere libri",
+			"scan_description": "Collega lo scanner di codici a barre e premi il grilletto"
+		},
+		"new_customer_dialog": {
+			"title": "modulo nuovo cliente",
+			"description": "inserisci i dettagli del nuovo cliente"
+		},
+		"customer_details": {
+			"last_updated": "Ultimo aggiornamento",
+			"customer_id": "ID Cliente",
+			"customer_email": "Email cliente",
+			"customer_phone": "Telefono cliente",
+			"secondary_phone": "Telefono secondario",
+			"deposit": "Acconto",
+			"deposit_amount": "Acconto €{amount}",
+			"books_heading": "Libri",
+			"total": "Totale:"
+		},
+		"status": {
+			"collected": "Ritirato",
+			"delivered": "Consegnato",
+			"placed": "Ordinato",
+			"pending": "In attesa"
+		},
+		"status_badges": {
+			"with_date": "{status} - {date:Date|dateShort}"
+		},
+		"dialogs": {
+			"new_customer": {
+				"title": "Crea nuovo ordine"
+			},
+			"edit_customer": {
+				"title": "Modifica dettagli cliente"
+			}
+		}
+	},
+	"suppliers_page": {
+		"title": "Fornitori",
+		"placeholder": {
+			"title": "Non ci sono fornitori",
+			"description": "Crea un nuovo fornitore per gestire i cataloghi editoriali"
+		},
+		"dialog": {
+			"new_order_title": "Crea nuovo fornitore"
+		},
+		"labels": {
+			"save": "Crea",
+			"new_supplier": "Nuovo Fornitore",
+			"edit": "Modifica"
+		},
+		"columns": {
+			"name": "Nome",
+			"email": "Email",
+			"address": "Indirizzo",
+			"assigned_publishers": "Editori Assegnati",
+			"actions": "Azioni",
+			"order_format": "Formato Ordine"
+		},
+		"card": {
+			"supplier_id": "ID Fornitore",
+			"email": "Email",
+			"address": "Indirizzo",
+			"order_format": "Formato ordine",
+			"edit_details": "Modifica dettagli",
+			"delete_supplier": "Elimina fornitore"
+		}
+	},
+	"warehouse_list_page": {
+		"title": "Magazzini",
+		"stats": {
+			"books": "libri",
+			"discount": "sconto"
+		},
+		"labels": {
+			"new_note": "Nuova nota",
+			"view_stock": "Visualizza Scorte",
+			"edit": "Modifica",
+			"delete": "Elimina"
+		},
+		"placeholder": {
+			"title": "Nessun magazzino",
+			"description": "Inizia creando un magazzino"
+		}
+	},
+	"warehouse_page": {
+		"table": {
+			"quantity": "Quantità",
+			"isbn": "ISBN",
+			"title": "Titolo",
+			"publisher": "Editore",
+			"authors": "Autori",
+			"year": "Anno",
+			"price": "Prezzo",
+			"category": "Categoria",
+			"edited_by": "A cura di",
+			"out_of_print": "Fuori catalogo"
+		},
+		"labels": {
+			"export_to_csv": "Esporta in CSV",
+			"new_note": "Nuova nota",
+			"edit_row": "Modifica riga",
+			"print_book_label": "Stampa etichetta libro",
+			"edit_book_details": "Modifica dettagli libro",
+			"manually_edit_book_details": "Modifica manualmente dettagli libro"
+		},
+		"placeholder": {
+			"title": "Aggiungi nuova nota di acquisto",
+			"description": "Inizia aggiungendo una nuova nota"
+		}
+	},
+	"sale_note": {
+		"commit_dialog": {
+			"title": "Confermare vendita \"{entity}\"?",
+			"description": "{ bookCount } libr{{o|i}} verr{{à|anno}} rimoss{{o|i}} dalle scorte",
+			"stock_adjustement_detail": {
+				"summary": "Alcune quantità richieste sono maggiori di quelle disponibili. Controlla le seguenti modifiche alle scorte:",
+				"detail_list": {
+					"row": "{isbn} da {warehouse}",
+					"requested": "Richiesto: {quantity:number} {{copia|copie}}",
+					"available": "Disponibile: {quantity:number} {{copia|copie}}",
+					"adjustment": "Modifica: {quantity:number} {{copia|copie}}"
+				}
+			}
+		},
+		"force_withdrawal_dialog": {
+			"title": "Forzare il prelievo per {isbn:string}?",
+			"cancel": "Annulla",
+			"confirm": "Conferma",
+			"description": "Questo libro è esaurito. Se sei sicuro che esistano copie aggiuntive, puoi selezionare manualmente un magazzino per forzare il prelievo.",
+			"selected_warehouse_message": "Verrà registrato un adeguamento per {quantity:number} {{copia|copie}} di {isbn:string} in {displayName:string}."
+		},
+		"create_custom_item_dialog": {
+			"title": "Crea articolo personalizzato"
+		},
+		"edit_custom_item_dialog": {
+			"title": "Modifica articolo personalizzato"
+		},
+		"labels": {
+			"new_note": "Nuova Nota",
+			"edit": "Modifica",
+			"print_book_label": "Stampa etichetta libro",
+			"delete_row": "Elimina riga",
+			"edit_row": "Modifica riga",
+			"delete": "Elimina",
+			"commit": "Conferma",
+			"print": "Stampa",
+			"custom_item": "Articolo personalizzato",
+			"force_withdrawal": "Forza prelievo"
+		},
+		"stats": {
+			"last_updated": "Ultimo aggiornamento",
+			"books": "{ bookCount } libr{{o|i}}"
+		},
+		"placeholder": {
+			"select_warehouse": "Seleziona un magazzino",
+			"any_warehouse": "Qualsiasi magazzino",
+			"no_warehouses": "Nessun magazzino disponibile",
+			"scan_title": "Scansiona per selezionare libri da...",
+			"scan_description": "Collega lo scanner di codici a barre e premi il grilletto"
+		},
+		"alerts": {
+			"insufficient_quantity": "Il magazzino che stai cercando di assegnare non ha più quantità disponibile, clicca Forza Prelievo per selezionare un altro magazzino",
+			"no_warehouse_selected_commit_self": "Assicurati che tutti gli articoli abbiano un magazzino assegnato."
+		}
+	},
+	"sale_page": {
+		"heading": "Vendita",
+		"stats": {
+			"last_updated": "Ultimo aggiornamento",
+			"books": "{ bookCount } libr{{o|i}}"
+		},
+		"labels": {
+			"new_sale": "Nuova Vendita",
+			"edit": "Modifica",
+			"print_book_label": "Stampa etichetta libro",
+			"delete_row": "Elimina riga",
+			"no_open_sales": "Nessuna vendita aperta",
+			"get_started": "Inizia aggiungendo una nuova vendita"
+		}
+	},
+	"purchase_note": {
+		"commit_dialog": {
+			"title": "Confermare acquisto \"{entity}\"?",
+			"description": "{ bookCount } libr{{o|i}} verr{{à|anno}} aggiunti a { warehouseName }"
+		},
+		"stats": {
+			"last_updated": "Ultimo aggiornamento"
+		},
+		"labels": {
+			"commit": "Conferma",
+			"print": "Stampa",
+			"auto_print_book_labels": "Stampa automatica etichette libri",
+			"delete": "Elimina",
+			"edit_row": "Modifica riga",
+			"print_book_label": "Stampa etichetta libro",
+			"delete_row": "Elimina riga",
+			"edit": "Modifica"
+		},
+		"placeholder": {
+			"scan_title": "Scansiona per aggiungere libri",
+			"scan_description": "Collega lo scanner di codici a barre e premi il grilletto"
+		}
+	},
+	"settings_page": {
+		"headings": {
+			"settings": "Impostazioni",
+			"device_settings": "Impostazioni dispositivo",
+			"sync_settings": "Impostazioni sincronizzazione",
+			"db_management": "Gestione database",
+			"demo_reset": "Ripristinare il DB allo stato iniziale?"
+		},
+		"descriptions": {
+			"sync_settings": "Gestisci il nome del DB, l'URL di sincronizzazione e la connessione. Nota: Questo verrà unito con la selezione DB in futuro",
+			"db_management": "Usa questa sezione per creare, selezionare, importare, esportare o eliminare un database",
+			"import": "Trascina e rilascia il tuo file .sqlite3 qui per importare",
+			"device_settings": "Gestisci le connessioni ai dispositivi esterni",
+			"demo_reset_1": "Clicca sul pulsante qui sotto per ripristinare il DB allo stato iniziale",
+			"demo_reset_2": "Tutte le modifiche effettuate andranno perse e il DB verrà ripristinato allo stato demo iniziale."
+		},
+		"actions": {
+			"nuke_and_resync": "Elimina e risincronizza"
+		},
+		"demo_actions": {
+			"reset_db": "Ripristina database"
+		},
+		"stats": {
+			"version": "Versione"
+		},
+		"labels": {
+			"new": "Nuovo"
+		}
+	},
+	"stock_page": {
+		"labels": {
+			"edit_book_details": "Modifica dettagli libro",
+			"manually_edit_book_details": "Modifica manualmente dettagli libro",
+			"edit_row": "Modifica riga",
+			"print_book_label": "Stampa etichetta libro",
+			"popover_control": "Azioni riga"
+		},
+		"placeholder_box": {
+			"no_results": {
+				"title": "Nessun risultato",
+				"description": "La ricerca non ha prodotto risultati"
+			}
+		}
+	},
+	"common": {
+		"delete_dialog": {
+			"title": "Eliminare permanentemente {entity}?",
+			"description": "Una volta eliminata questa nota, non potrai più accedervi"
+		},
+		"edit_book_dialog": {
+			"title": "Modifica dettagli libro",
+			"description": "Aggiorna i dettagli del libro"
+		},
+		"edit_warehouse_dialog": {
+			"title": "Aggiorna dettagli magazzino",
+			"description": "Aggiorna i dettagli del magazzino"
+		},
+		"delete_warehouse_dialog": {
+			"description": "Una volta eliminato questo magazzino { bookCount } libr{{o|i}} verr{{à|anno}} rimoss{{o|i}} dalle tue scorte"
+		},
+		"delete_database_dialog": {
+			"description": "Una volta eliminato questo database non potrà essere ripristinato. Per salvare prima un backup, usa il pulsante esporta."
+		},
+		"create_database_dialog": {
+			"title": "Crea nuovo database",
+			"description": "Inserisci il nome per il nuovo database"
+		},
+		"action_dropdown_trigger_aria": "apri menu azioni",
+		"actions": {
+			"cancel": "Annulla",
+			"confirm": "Conferma",
+			"import": "Importa",
+			"select": "Seleziona",
+			"reload": "Ricarica",
+			"print": "Stampa tabella"
+		},
+		"placeholders": {
+			"no_results": "Nessun risultato",
+			"search_found_no_results": "La ricerca non ha prodotto risultati",
+			"unknown_title": "Titolo sconosciuto"
+		},
+		"loading": "Caricamento"
+	},
+	"supplier_orders_page": {
+		"title": {
+			"supplier_orders": "Ordini Fornitori"
+		},
+		"labels": {
+			"suppliers": "Fornitori"
+		},
+		"tabs": {
+			"unordered": "Non ordinati",
+			"ordered": "Ordinati",
+			"reconciling": "In riconciliazione",
+			"completed": "Completati"
+		},
+		"placeholder": {
+			"title": "Non ci sono ordini fornitori in sospeso",
+			"description": "Crea ordini clienti per generare ordini fornitori",
+			"button": "Nuovo Ordine Cliente"
+		}
+	},
+	"new_order_page": {
+		"title": "Nuovo Ordine Fornitore",
+		"aria": {
+			"last_updated": "Ultimo aggiornamento"
+		},
+		"stats": {
+			"total_books": "Totale libri",
+			"total_value": "Valore totale",
+			"selected_books": "Libri selezionati",
+			"order_format": "Formato Ordine",
+			"no_order_format": "Il formato ordine deve essere configurato",
+			"go_to_supplier": "Vai al fornitore"
+		},
+		"table": {
+			"quantity": "Quantità",
+			"total": "Totale",
+			"books": "Libri",
+			"isbn": "ISBN",
+			"title": "Titolo",
+			"authors": "Autori"
+		},
+		"labels": {
+			"select": "Seleziona",
+			"place_order": "Effettua Ordine",
+			"no_format_tooltip": "Nessun formato configurato"
+		}
+	},
+	"reconcile_page": {
+		"title": {
+			"reconcile_deliveries": "Riconcilia Consegne"
+		},
+		"stats": {
+			"created": "Creato",
+			"last_updated": "Ultimo Aggiornamento",
+			"includes_supplier_orders": "Include ordini fornitori",
+			"total_delivered": "Totale consegnato",
+			"finalized_at": "Finalizzato il"
+		},
+		"placeholder": {
+			"description": "Scansiona o inserisci gli ISBN dei libri consegnati per iniziare la riconciliazione."
+		},
+		"table": {
+			"isbn": "ISBN",
+			"title": "Titolo",
+			"authors": "Autori",
+			"quantity": "Quantità",
+			"price": "Prezzo"
+		},
+		"delete_dialog": {
+			"title": "Elimina Ordine di Riconciliazione",
+			"description": "Sei sicuro di voler eliminare questo ordine di riconciliazione? Questa azione eliminerà tutte le righe scansionate."
+		},
+		"steps": {
+			"populate": {
+				"title": "Popola",
+				"description": "Libri consegnati"
+			},
+			"compare": {
+				"title": "Confronta",
+				"description": "Con ordinati"
+			},
+			"commit": {
+				"title": "Conferma",
+				"description": "Notifica clienti"
+			}
+		},
+		"step1": {
+			"stats": {
+				"total_ordered": "Totale ordinato",
+				"total_delivered": "Totale consegnato"
+			},
+			"table": {
+				"isbn": "ISBN",
+				"title": "Titolo",
+				"authors": "Autori",
+				"order_quantity": "Quantità ordinata",
+				"delivered": "Consegnato",
+				"controls": "Controlli quantità consegnata"
+			},
+			"aria_labels": {
+				"decrease_quantity": "Diminuisci quantità consegnata per {title}, attualmente {count}",
+				"increase_quantity": "Aumenta quantità consegnata per {title}, attualmente {count}"
+			},
+			"footer": {
+				"total_scanned": "Totale libri scansionati: {count}",
+				"continue": "Continua"
+			}
+		},
+		"step2": {
+			"stats": {
+				"total_ordered": "Totale ordinato",
+				"total_delivered": "Totale consegnato"
+			},
+			"order_summary": {
+				"order_id": "Ordine #{id}",
+				"books_undelivered": "{count} libr{{o|i}} non consegnat{{o|i}}",
+				"complete": "Completo",
+				"status": "Stato",
+				"missing": "{count} mancante{{i}}"
+			},
+			"underdelivery": {
+				"title": "Azione per libri mancanti",
+				"options": {
+					"pending": "Contrassegna ordine come consegna in sospeso",
+					"queue": "Contrassegna ordine come consegna in coda"
+				},
+				"warning": "La scelta attuale non corrisponde alla configurazione predefinita per questo fornitore.",
+				"persist_button": "Salva modifiche"
+			},
+			"customer_notification": {
+				"message_pending": "I clienti saranno notificati che i libri consegnati sono pronti per il ritiro",
+				"message_finalized": "Questi clienti sono stati notificati che i libri consegnati sono pronti per il ritiro",
+				"table": {
+					"customer": "Cliente",
+					"id": "ID",
+					"order_date": "Data ordine"
+				},
+				"copy_label": "({count} copi{{a|e}})"
+			},
+			"actions": {
+				"back": "← Indietro",
+				"finalize": "Finalizza consegna"
+			},
+			"finalized": {
+				"message": "Consegna finalizzata il {date:Date|dateShort}"
+			}
+		}
+	},
+	"order_page": {
+		"title": "Ordine Fornitore"
+	},
+	"reconciled_list_page": {
+		"labels": {
+			"view_reconciliation": "Visualizza Riconciliazione",
+			"reconcile": "Riconcilia",
+			"print_order": "Stampa Ordine",
+			"download_order": "Scarica Ordine"
+		},
+		"stats": {
+			"total_books": "Totale libri",
+			"ordered": "Ordinati",
+			"total_value": "Valore totale"
+		},
+		"table": {
+			"books": "Libri",
+			"isbn": "ISBN",
+			"title": "Titolo",
+			"authors": "Autori",
+			"quantity": "Quantità",
+			"total_price": "Prezzo Totale"
+		}
+	},
+	"order_list_page": {
+		"labels": {
+			"remove_publisher": "Rimuovi editore",
+			"create_new_order": "Crea nuovo ordine",
+			"add_to_supplier": "Aggiungi al fornitore",
+			"reassign_publisher": "Riassegna a fornitore"
+		},
+		"details": {
+			"supplier_page": "Pagina fornitore"
+		},
+		"table": {
+			"publisher_name": "Nome editore",
+			"assigned_publishers": "Editori assegnati",
+			"unassigned_publishers": "Editori non assegnati",
+			"other_supplier_publishers": "Editori Altri Fornitori"
+		},
+		"dialogs": {
+			"reassign_publisher": {
+				"title": "Riassegna editore",
+				"description": "Sei sicuro di voler rimuovere {publisher} dal suo precedente fornitore e assegnarlo a {supplier}?"
+			}
+		}
+	},
+	"supplier_orders_component": {
+		"commit_dialog": {
+			"heading": "Finalizza ordine di riconciliazione",
+			"delivered_book_count": "{ deliveredBookCount } libri verranno contrassegnati come consegnati (e pronti per il ritiro)",
+			"rejected_book_count": "{ rejectedBookCount } libri verranno contrassegnati come rifiutati (in attesa di riordino)",
+			"cancel": "Annulla",
+			"confirm": "Conferma"
+		},
+		"comparison_table": {
+			"isbn": "ISBN",
+			"title": "Titolo",
+			"authors": "Autori",
+			"price": "Prezzo",
+			"ordered_quantity": "Quantità Ordinata",
+			"delivered_quantity": "Quantità Consegnata",
+			"unmatched_books": "Libri Non Corrispondenti"
+		},
+		"completed_table": {
+			"supplier_id": "ID Ordine",
+			"supplier": "Nome Fornitore",
+			"books": "Libri",
+			"finalized": "Finalizzato",
+			"actions": "Azioni",
+			"view_order": "Visualizza Ordine",
+			"view_reconciliation": "Visualizza Riconciliazione",
+			"empty": "Nessun ordine da visualizzare"
+		},
+		"ordered_table": {
+			"order_id": "ID Ordine",
+			"select": "Seleziona",
+			"supplier": "Nome Fornitore",
+			"placed": "Effettuato",
+			"actions": "Azioni",
+			"reconcile_selected": "Riconcilia {count:number} ordin{{e|i}}",
+			"view_order": "Visualizza Ordine",
+			"reconcile": "Riconcilia",
+			"view_reconciliation": "Visualizza Riconciliazione",
+			"empty": "Nessun ordine da visualizzare"
+		},
+		"reconciling_table": {
+			"order_id": "ID Riconciliazione",
+			"supplier_orders": "Ordini Fornitori",
+			"last_updated": "Ultimo Aggiornamento",
+			"update_order": "Aggiorna ordine",
+			"continue": "Continua",
+			"actions": "Azioni",
+			"empty": "Nessun ordine da visualizzare"
+		},
+		"unordered_table": {
+			"supplier_id": "ID Fornitore",
+			"supplier": "Nome Fornitore",
+			"books": "N. di Libri",
+			"place_order": "Effettua Ordine",
+			"actions": "Azioni"
+		}
+	},
+	"table_components": {
+		"inventory_tables": {
+			"book_price_cell": {
+				"discounted_price": "Prezzo Scontato",
+				"original_price": "Prezzo Originale",
+				"percentage_discount": "Percentuale Sconto"
+			},
+			"inbound_table": {
+				"isbn": "ISBN",
+				"book": "Libro",
+				"title": "Titolo",
+				"authors": "Autori",
+				"price": "Prezzo",
+				"quantity": "Quantità",
+				"publisher": "Editore",
+				"year": "Anno",
+				"edited_by": "A Cura di",
+				"op": "F.C.",
+				"category": "Categoria",
+				"delivered_quantity": "Quantità Consegnata",
+				"unmatched_books": "Libri Non Corrispondenti"
+			},
+			"stock_table": {
+				"isbn": "ISBN",
+				"book": "Libro",
+				"title": "Titolo",
+				"authors": "Autori",
+				"price": "Prezzo",
+				"quantity": "Quantità",
+				"publisher": "Editore",
+				"year": "Anno",
+				"edited_by": "A Cura di",
+				"op": "F.C.",
+				"category": "Categoria",
+				"delivered_quantity": "Quantità Consegnata",
+				"unmatched_books": "Libri Non Corrispondenti"
+			},
+			"outbound_table": {
+				"isbn": "ISBN",
+				"book": "Libro",
+				"title": "Titolo",
+				"authors": "Autori",
+				"price": "Prezzo",
+				"quantity": "Quantità",
+				"publisher": "Editore",
+				"year": "Anno",
+				"warehouse": "Magazzino",
+				"category": "Categoria",
+				"row_actions": "Azioni Riga",
+				"type": "Tipo"
+			}
+		},
+		"order_tables": {
+			"order_line_table": {
+				"isbn": "ISBN",
+				"book": "Libro",
+				"title": "Titolo",
+				"status": "Stato",
+				"authors": "Autori",
+				"price": "Prezzo",
+				"publisher": "Editore",
+				"year": "Anno",
+				"discounted_price": "Prezzo Scontato",
+				"original_price": "Prezzo Originale",
+				"percentage_discount": "Percentuale Sconto"
+			},
+			"supplier_order_table": {
+				"supplier": "Fornitore",
+				"total_books": "Totale Libri",
+				"ordered": "Ordinati",
+				"order_no": "N. Ordine",
+				"edit": "Modifica",
+				"manage": "Gestisci"
+			}
+		}
+	},
+	"misc_components": {
+		"extension_banner": {
+			"book_data_extension": "Estensione Dati Libro",
+			"remote_db": "DB Remoto",
+			"reload_translations_override": "Ricarica override traduzioni"
+		},
+		"page_layout": {
+			"stock": "Scorte",
+			"checkout": "Cassa"
+		},
+		"warehouse_select": {
+			"label": {
+				"aria": "Seleziona un magazzino da cui prelevare il libro {rowIx:number}",
+				"forced": "Forzato",
+				"book_count": "{count:number} {{copia|copie}} disponibil{{e|i}}"
+			},
+			"default_option": "Seleziona un magazzino",
+			"empty_options": "Nessuna scorta disponibile..."
+		}
+	},
+	"layout": {
+		"mobile_nav": {
+			"trigger": {
+				"aria_label": "Apri navigazione mobile"
+			},
+			"dialog": {
+				"title": "Navigazione Mobile",
+				"description": "Naviga nell'applicazione"
+			}
+		},
+		"sync_dialog": {
+			"title": "Sincronizzazione in corso",
+			"description": {
+				"in_progress": "La sincronizzazione iniziale del DB è in corso. Potrebbe richiedere un po' di tempo",
+				"progress": "Progresso ({nProcessed}/{nTotal}):",
+				"warning": "Non navigare via mentre la sincronizzazione è in corso poiché il DB risulterà corrotto e la sincronizzazione dovrà essere riavviata."
+			}
+		},
+		"error_dialog": {
+			"demo_db_not_initialised": {
+				"title": "Carica il DB con dati",
+				"call_to_action": "Clicca sul pulsante qui sotto per caricare il DB precompilato con dati demo",
+				"description": "Questo scaricherà il file demo DB .sqlite3 e lo memorizzerà nell'OPFS del browser (per uso nell'app)",
+				"button": "Carica DB"
+			},
+			"schema_mismatch": {
+				"title": "Errore: Schema DB non corrispondente",
+				"description": "La versione dello schema del tuo DB non corrisponde all'ultima versione dello schema. Clicca automigrazione per migrare all'ultima versione.",
+				"latest_version": "Ultima versione schema: {wantVersion}",
+				"your_version": "Versione schema del tuo DB: {gotVersion}",
+				"button": "Automigrazione"
+			},
+			"corrupted": {
+				"title": "Errore: DB corrotto",
+				"description": "L'unico modo per usare l'app sembra essere eliminarlo e ricominciare da capo.",
+				"note": "Nota: Questo non risincronizzerà il database. Se vuoi sincronizzare il DB con quello remoto, fallo dalla pagina delle impostazioni (dopo la reinizializzazione)",
+				"button": "Clicca per eliminare il DB"
+			}
+		}
+	},
+	"error_page": {
+		"title": "Errore",
+		"message": {
+			"title": "Qualcosa è andato storto!",
+			"description": "Prova a controllare la connessione internet se stai usando un database online."
+		}
+	},
+	"books_page": {
+		"title": "Libri conosciuti",
+		"placeholder": {
+			"empty_database": {
+				"title": "Nessun risultato",
+				"description": "Il database dei libri è vuoto. Inizia aggiungendo alcuni libri alle scorte."
+			},
+			"no_results": {
+				"title": "Nessun risultato",
+				"description": "La ricerca non ha prodotto risultati"
+			}
+		},
+		"labels": {
+			"popover_control": "Azioni riga",
+			"edit_row": "Modifica riga",
+			"print_book_label": "Stampa etichetta libro",
+			"edit_book_details": "Modifica dettagli libro",
+			"manually_edit_book_details": "Modifica manualmente dettagli libro"
+		}
+	},
+	"debug_page": {
+		"title": "Debug",
+		"actions": {
+			"populate_database": "Popola Database",
+			"reset_database": "Ripristina Database",
+			"upsert_100_books": "Inserisci 100 Libri",
+			"run_query": "Esegui Query",
+			"executing": "Esecuzione in corso..."
+		},
+		"query_interface": {
+			"title": "Interfaccia Query Database",
+			"results_title": "Risultati Query:",
+			"no_results": "Nessun risultato trovato."
+		},
+		"table": {
+			"title": "Tabella",
+			"number_of_objects": "Numero di oggetti"
+		}
+	},
+	"forms": {
+		"sync_settings": {
+			"labels": {
+				"database_name": "Nome Database (questo probabilmente cambierà in futuro)",
+				"remote_sync_url": "URL Database Sincronizzazione Remoto",
+				"save_reload": "Salva e Ricarica",
+				"connection_status": {
+					"on": "ON",
+					"off": "OFF"
+				}
+			},
+			"aria": {
+				"form": "Modifica configurazione connessione database remoto"
+			}
+		},
+		"device_settings": {
+			"labels": {
+				"label_printer_url": "URL Stampante Etichette",
+				"receipt_printer_url": "URL Stampante Ricevute",
+				"save_reload": "Salva e Ricarica"
+			},
+			"aria": {
+				"form": "Modifica configurazione connessione database remoto"
+			}
+		},
+		"database_delete": {
+			"labels": {
+				"confirm_typing": "Conferma digitando il nome del database",
+				"type_instruction": "Digita '{matchConfirmation}'",
+				"confirm_button": "Conferma"
+			}
+		},
+		"warehouse_delete": {
+			"labels": {
+				"confirm_typing": "Conferma digitando il nome del magazzino",
+				"type_instruction": "Digita '{matchConfirmation}'",
+				"confirm_button": "Conferma",
+				"cancel_button": "Annulla"
+			}
+		},
+		"supplier_meta": {
+			"labels": {
+				"name": "Nome",
+				"email": "Email",
+				"address": "Indirizzo",
+				"customer_id": "ID Cliente",
+				"cancel_button": "Annulla",
+				"order_format": "Formato Ordine",
+				"order_format_message": "Seleziona un formato ordine"
+			},
+			"aria": {
+				"form": "Modifica nome, email o acconto dell'ordine cliente"
+			}
+		},
+		"book_form": {
+			"labels": {
+				"isbn": "ISBN",
+				"fill_details": "Compila dettagli",
+				"title": "Titolo",
+				"price": "Prezzo",
+				"year": "Anno",
+				"authors": "Autori",
+				"publisher": "Editore",
+				"edited_by": "A cura di",
+				"category": "Categoria",
+				"out_of_print": "Fuori Catalogo",
+				"out_of_print_help": "Questo libro non è più disponibile dall'editore",
+				"cancel_button": "Annulla",
+				"save_button": "Salva"
+			},
+			"placeholders": {
+				"isbn": "0000000000"
+			},
+			"aria": {
+				"form": "Modifica dettagli libro"
+			}
+		},
+		"daisy_ui_book_form": {
+			"labels": {
+				"isbn": "ISBN",
+				"fill_details": "Compila dettagli",
+				"title": "Titolo",
+				"price": "Prezzo",
+				"year": "Anno",
+				"authors": "Autori",
+				"publisher": "Editore",
+				"edited_by": "A cura di",
+				"category": "Categoria",
+				"out_of_print": "Fuori Catalogo",
+				"cancel_button": "Annulla",
+				"save_button": "Salva"
+			},
+			"placeholders": {
+				"isbn": "0000000000"
+			},
+			"aria": {
+				"form": "Modifica dettagli libro"
+			}
+		},
+		"scanner_form": {
+			"placeholders": {
+				"isbn": "Inserisci ISBN dei libri ordinati"
+			}
+		},
+		"daisy_ui_scanner_form": {
+			"placeholders": {
+				"isbn": "Inserisci ISBN dei libri ordinati"
+			}
+		},
+		"customer_order_meta": {
+			"labels": {
+				"display_id": "ID Visualizzato",
+				"name": "Nome",
+				"email": "Email",
+				"deposit": "Acconto",
+				"phone1": "Telefono 1",
+				"phone2": "Telefono 2",
+				"cancel_button": "Annulla"
+			},
+			"validation": {
+				"display_id_not_unique": "Questo ID è già in uso dal cliente \"{fullname}\" con {bookCount} libr{{o|i}} ordinat{{o|i}}"
+			},
+			"aria": {
+				"form": "Modifica nome, email o acconto dell'ordine cliente"
+			}
+		},
+		"database_create": {
+			"labels": {
+				"name": "Nome",
+				"cancel_button": "Annulla",
+				"save_button": "Salva"
+			},
+			"placeholders": {
+				"name": "Nome database"
+			},
+			"aria": {
+				"form": "Crea nuovo database"
+			}
+		},
+		"warehouse_form": {
+			"labels": {
+				"name": "Nome",
+				"discount": "Sconto",
+				"discount_help": "Applicato ai prezzi dei libri",
+				"cancel_button": "Annulla",
+				"save_button": "Salva"
+			},
+			"placeholders": {
+				"name": "Nome magazzino",
+				"discount": "0"
+			},
+			"aria": {
+				"form": "Modifica dettagli magazzino"
+			}
+		},
+		"custom_item_form": {
+			"labels": {
+				"title": "Titolo",
+				"price": "Prezzo",
+				"cancel_button": "Annulla",
+				"save_button": "Salva"
+			},
+			"placeholders": {
+				"price": "0"
+			},
+			"aria": {
+				"form": "Modifica dettagli libro"
+			}
+		}
+	}
 }

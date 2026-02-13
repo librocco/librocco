@@ -40,7 +40,7 @@
 
 	<slot name="main" slot="main" />
 
-	<svelte:fragment slot="footer">
+	<div class="flex w-full justify-end" slot="footer">
 		<ExtensionStatusBanner {plugins} />
-	</svelte:fragment>
+	</div>
 </PageLayout>

@@ -388,7 +388,8 @@ async function _getPlacedSupplierOrders(
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
 			ro.id as reconciliation_order_id,
-			ro.updatedAt as reconciliation_last_updated_at
+			ro.updatedAt as reconciliation_last_updated_at,
+			ro.finalized
         FROM supplier_order so
 		LEFT JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
