@@ -417,6 +417,67 @@ const reconcile_page = {
 			title: "Commit",
 			description: "Notify customers"
 		}
+	},
+	step1: {
+		stats: {
+			total_ordered: "Total Ordered",
+			total_delivered: "Total Delivered"
+		},
+		table: {
+			isbn: "ISBN",
+			title: "Title",
+			authors: "Authors",
+			order_quantity: "Order Quantity",
+			delivered: "Delivered",
+			controls: "Delivered Quantity Controls"
+		},
+		aria_labels: {
+			decrease_quantity: "Decrease delivered quantity for {title}, currently {count}",
+			increase_quantity: "Increase delivered quantity for {title}, currently {count}"
+		},
+		footer: {
+			total_scanned: "Total books scanned: {count}",
+			continue: "Continue"
+		}
+	},
+	step2: {
+		stats: {
+			total_ordered: "Total Ordered",
+			total_delivered: "Total Delivered"
+		},
+		order_summary: {
+			order_id: "Order #{id}",
+			books_undelivered: "{count} book{{s}} undelivered",
+			complete: "Complete",
+			status: "Status",
+			missing: "{count} missing"
+		},
+		underdelivery: {
+			title: "Action for missing books",
+			options: {
+				pending: "Mark order as pending delivery",
+				queue: "Mark order as queue delivery"
+			},
+			warning: "Current choice doesn't match the default configuration for this supplier.",
+			persist_button: "Persist changes"
+		},
+		customer_notification: {
+			message_pending: "Customers will be notified that delivered books are ready for collection",
+			message_finalized: "These customers were notified that delivered books are ready for collection",
+			table: {
+				customer: "Customer",
+				id: "ID",
+				order_date: "Order Date"
+			},
+			copy_label: "({count} cop{{y|ies}})"
+		},
+		actions: {
+			back: "← Back",
+			finalize: "Finalize Delivery"
+		},
+		finalized: {
+			message: "Delivery finalized on {date:Date|dateShort}"
+		}
 	}
 };
 const suppliers_page = {
