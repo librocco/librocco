@@ -2,20 +2,14 @@
 	import { ChevronDown, Bell } from "lucide-svelte";
 	import { createCollapsible, melt } from "@melt-ui/svelte";
 
-	type Customer = {
-		name: string;
-		id: string;
-		orderDate: string;
-	};
+	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 
-	type Book = {
-		isbn: string;
-		title: string;
-		customers: Customer[];
-	};
+	// TODO: the following are duplicates from routes/orders/suppliers/reconcile/[id]/utils.ts -- move into a standardised location
+	type CustomerDeliveryEntry = Pick<CustomerOrderLine, "fullname" | "customer_display_id" | "created">;
+	type DeliveryByISBN = { isbn: string; title: string; total: number; customers: CustomerDeliveryEntry[] };
 
 	export let message = "Customers will be notified that delivered books are ready for collection";
-	export let books: Book[] = [];
+	export let books: DeliveryByISBN[] = [];
 	export let expanded = false;
 
 	export let interactive = true;
@@ -86,13 +80,13 @@
 								{@const isLastCustomer = index === book.customers.length - 1}
 								<div class="flex items-center gap-4 px-2 py-1 {!isLastCustomer ? 'border-b border-neutral-200' : ''}">
 									<div class="min-w-0 flex-1">
-										<span class="text-foreground text-sm">{customer.name}</span>
+										<span class="text-foreground text-sm">{customer.fullname}</span>
 									</div>
 									<div class="w-32">
-										<span class="text-muted-foreground text-sm">{customer.id}</span>
+										<span class="text-muted-foreground text-sm">{customer.customer_display_id}</span>
 									</div>
 									<div class="w-44">
-										<span class="text-muted-foreground text-sm">{customer.orderDate}</span>
+										<span class="text-muted-foreground text-sm">{customer.created}</span>
 									</div>
 								</div>
 							{/each}
