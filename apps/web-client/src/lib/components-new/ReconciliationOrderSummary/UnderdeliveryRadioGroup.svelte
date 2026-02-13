@@ -5,10 +5,14 @@
 
 	type UnderdeliveryOption = "pending" | "queue";
 
-	const dispatch = createEventDispatcher();
-
 	export let defaultValue: UnderdeliveryOption | null = "pending";
-	export let supplierId: string;
+	export let supplierId: number;
+
+	type Events = {
+		change: UnderdeliveryOption;
+		persistChanges: { selection: UnderdeliveryOption; supplierId: number };
+	};
+	const dispatch = createEventDispatcher<Events>();
 
 	// Store for the value (attached to Melt-UI state), exposed
 	// for stories / tests when we want to explicitly control the state.
@@ -21,11 +25,11 @@
 		elements: { root: radioRoot, item },
 		helpers: { isChecked }
 	} = createRadioGroup({ defaultValue });
-	$: dispatch("change", { detail: $value as UnderdeliveryOption });
+	$: dispatch("change", $value as UnderdeliveryOption);
 
 	$: isChanged = $value !== defaultValue;
 	function handlePersistChanges() {
-		dispatch("persistChanges", { detail: { selection: $value as UnderdeliveryOption, supplierId } });
+		dispatch("persistChanges", { selection: $value as UnderdeliveryOption, supplierId });
 	}
 </script>
 
