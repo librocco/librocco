@@ -9,20 +9,21 @@ The ReconciliationOrderSummary component displays customer order details during 
 ## Features
 
 - **Expandable/collapsible** using MeltUI's Collapsible builder
-- **Responsive layout**: Table view on desktop, card view on mobile
-- **Action selection** for handling missing books (pending delivery vs queue)
+- **Slot-based action selection** for handling missing books (pending delivery vs queue)
 - **Status badges**: Visual indicators for missing items and completed orders
 - **Push-based expansion**: Content pushes surrounding elements down when opened (no overlay)
+- **View-only mode**: Can be set to non-interactive for read-only displays
 
 ## Props
 
-| Prop               | Type      | Required | Default | Description                         |
-| ------------------ | --------- | -------- | ------- | ----------------------------------- |
-| `orderId`          | `string`  | Yes      | -       | Order identifier (e.g., "Order #1") |
-| `customerName`     | `string`  | Yes      | -       | Customer or supplier name           |
-| `undeliveredCount` | `number`  | Yes      | -       | Number of books not yet delivered   |
-| `books`            | `Book[]`  | Yes      | -       | Array of book objects               |
-| `expanded`         | `boolean` | No       | `false` | Initial open/closed state           |
+| Prop               | Type      | Required | Default | Description                               |
+| ------------------ | --------- | -------- | ------- | ----------------------------------------- |
+| `orderId`          | `string`  | Yes      | -       | Order identifier (e.g., "Order #1")       |
+| `customerName`     | `string`  | Yes      | -       | Customer or supplier name                 |
+| `undeliveredCount` | `number`  | Yes      | -       | Number of books not yet delivered         |
+| `books`            | `Book[]`  | Yes      | -       | Array of book objects                     |
+| `expanded`         | `boolean` | No       | `false` | Initial open/closed state                 |
+| `interactive`      | `boolean` | No       | `true`  | Whether expand/collapse toggle is enabled |
 
 ## Book Type
 
@@ -30,18 +31,15 @@ The ReconciliationOrderSummary component displays customer order details during 
 type Book = {
   isbn: string;
   title: string;
-  author: string;
-  ordered: number;
-  delivered: number;
+  authors: string;
+  orderedQuantity: number;
+  deliveredQuantity: number;
 };
 ```
 
-## Events
+## Slots
 
-- `actionSelected` - Fired when user selects an action for missing books
-  - Payload: `{ action: "pending" | "queue" }`
-  - "pending" - Mark order as pending delivery
-  - "queue" - Add missing books to order queue
+- `underdelivery_behaviour` - Content for underdelivery action selection (typically `UnderdeliveryRadioGroup` or `UnderdeliveryActionBadge`)
 
 ## Usage Examples
 
@@ -55,27 +53,21 @@ type Book = {
     {
       isbn: "123",
       title: "The Great Gatsby",
-      author: "F. Scott Fitzgerald",
-      ordered: 5,
-      delivered: 1
+      authors: "F. Scott Fitzgerald",
+      orderedQuantity: 5,
+      deliveredQuantity: 1
     }
   ];
-
-  function handleAction(event) {
-    console.log("Action selected:", event.detail.action);
-  }
 </script>
 
-<ReconciliationOrderSummary
-  orderId="Order #1"
-  customerName="BooksRUS"
-  :undeliveredCount="7"
-  :books="books"
-  on:actionSelected={handleAction}
-/>
+<ReconciliationOrderSummary orderId="Order #1" customerName="BooksRUS" :undeliveredCount="4" :books="books">
+  <svelte:fragment slot="underdelivery_behaviour">
+    <!-- UnderdeliveryRadioGroup component -->
+  </svelte:fragment>
+</ReconciliationOrderSummary>
 ```
 
-### With Initial expanded State
+### With Initial Expanded State
 
 ```svelte
 <ReconciliationOrderSummary orderId="Order #2" customerName="Academic Press" :undeliveredCount="6" :books="booksArray" expanded={true} />
@@ -91,7 +83,6 @@ type Book = {
       customerName={order.customer}
       :undeliveredCount={order.undelivered}
       :books={order.books}
-      on:actionSelected={(e) => handleAction(order.id, e.detail.action)}
     />
   {/each}
 </div>
@@ -109,8 +100,7 @@ The header displays different badges depending on the order state:
 
 ### Book List
 
-- **Desktop**: Shows a table with columns for ISBN, Title, Author, Ordered, Delivered, and Status
-- **Mobile**: Shows cards for each book with the same information stacked vertically
+Shows a table with columns for ISBN, Title, Authors, Ordered Quantity, Delivered Quantity, and Status. The table uses the "naked" variant for minimal styling to integrate with the component's design.
 
 ### Status Indicators
 
@@ -121,18 +111,14 @@ Each book shows a status badge:
 
 ### Action Selection
 
-When books are undelivered, two radio-style options appear:
+Action selection for handling missing books is handled via the `underdelivery_behaviour` slot. This allows you to provide custom action components like `UnderdeliveryRadioGroup` for interactive selections or `UnderdeliveryActionBadge` for read-only displays.
 
-1. **Mark order as pending delivery** - Action value: "pending"
-2. **Add missing books to order queue** - Action value: "queue"
+The slot content is only rendered when there are books in the order. Typical implementations include:
 
-The action section is hidden when all books are delivered.
+- **UnderdeliveryRadioGroup**: Interactive radio buttons to choose between "pending delivery" or "queue" actions, with a warning when selection deviates from supplier default
+- **UnderdeliveryActionBadge**: Read-only display showing the selected action
 
-### Responsive Design
-
-- Breakpoint: `md` (768px)
-- Use Storybook's mobile viewport to test the mobile layout
-- Mobile cards include vertical dividers (|) between ISBN, title, and author
+This design provides flexibility in how actions are selected and displayed while keeping the ReconciliationOrderSummary component focused on displaying order details.
 
 ## Accessibility
 

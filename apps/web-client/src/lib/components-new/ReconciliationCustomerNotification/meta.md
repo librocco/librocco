@@ -16,12 +16,12 @@ The ReconciliationCustomerNotification component displays a notification about c
 
 ## Props
 
-| Prop          | Type      | Required | Default                                                                    | Description                                        |
-| ------------- | --------- | -------- | -------------------------------------------------------------------------- | -------------------------------------------------- |
-| `message`     | `string`  | No       | "Customers will be notified that delivered books are ready for collection" | Notification message text to display in the header |
-| `books`       | `Book[]`  | Yes      | -                                                                          | Array of book objects with customer mappings       |
-| `expanded`    | `boolean` | No       | `false`                                                                    | Initial open/closed state                          |
-| `interactive` | `boolean` | No       | `true`                                                                     | Whether expand/collapse toggle is enabled          |
+| Prop          | Type      | Required | Default | Description                                                           |
+| ------------- | --------- | -------- | ------- | --------------------------------------------------------------------- |
+| `finalized`   | `boolean` | No       | `false` | Whether the notification is in finalized state (affects message text) |
+| `books`       | `Book[]`  | Yes      | -       | Array of book objects with customer mappings                          |
+| `expanded`    | `boolean` | No       | `false` | Initial open/closed state                                             |
+| `interactive` | `boolean` | No       | `true`  | Whether expand/collapse toggle is enabled                             |
 
 ## Book Type
 
@@ -29,6 +29,7 @@ The ReconciliationCustomerNotification component displays a notification about c
 type Book = {
   isbn: string;
   title: string;
+  total: number;
   customers: Customer[];
 };
 ```
@@ -37,9 +38,9 @@ type Book = {
 
 ```typescript
 type Customer = {
-  name: string;
-  id: string;
-  orderDate: string;
+  fullname: string;
+  customer_display_id: string;
+  created: string;
 };
 ```
 
@@ -55,9 +56,10 @@ type Customer = {
     {
       isbn: "123",
       title: "The Great Gatsby",
+      total: 2,
       customers: [
-        { name: "Sarah Johnson", id: "C001", orderDate: "Dec 15, 10:30 AM" },
-        { name: "Michael Chen", id: "C002", orderDate: "Dec 16, 02:20 PM" }
+        { fullname: "Sarah Johnson", customer_display_id: "C001", created: "Dec 15, 10:30 AM" },
+        { fullname: "Michael Chen", customer_display_id: "C002", created: "Dec 16, 02:20 PM" }
       ]
     }
   ];
@@ -66,10 +68,10 @@ type Customer = {
 <ReconciliationCustomerNotification :books="books" />
 ```
 
-### With Custom Message
+### Finalized State (Read-Only Mode)
 
 ```svelte
-<ReconciliationCustomerNotification message="These customers will receive a digital receipt for their ordered books" :books="books" />
+<ReconciliationCustomerNotification :books="books" finalized={true} expanded={true} interactive={false} />
 ```
 
 ### Expanded by Default
@@ -81,23 +83,15 @@ type Customer = {
 ### View-Only Mode (Non-Interactive)
 
 ```svelte
-<ReconciliationCustomerNotification
-  message="These customers were notified that delivered books are ready for collection"
-  :books="books"
-  expanded={true}
-  interactive={false}
-/>
+<ReconciliationCustomerNotification :books="books" finalized={true} expanded={true} interactive={false} />
 ```
 
 ### Multiple Notifications
 
 ```svelte
 <div class="space-y-4">
-  <ReconciliationCustomerNotification
-    message="Customers will be notified that delivered books are ready for collection"
-    :books="deliveredBooks"
-  />
-  <ReconciliationCustomerNotification message="These customers will receive a digital receipt" :books="receiptBooks" expanded={true} />
+  <ReconciliationCustomerNotification :books="deliveredBooks" />
+  <ReconciliationCustomerNotification :books="receiptBooks" expanded={true} />
 </div>
 ```
 
@@ -108,7 +102,9 @@ type Customer = {
 The header displays:
 
 - **Bell icon**: Visual indicator for notification
-- **Message text**: Customizable notification message (default: about books ready for collection)
+- **Message text**: Auto-generated notification message based on `finalized` prop:
+  - When `finalized={false}`: "Customers will be notified that delivered books are ready for collection"
+  - When `finalized={true}`: "These customers were notified that delivered books are ready for collection"
 - **Chevron arrow**: Expands/collapses the content (rotates 180° when open)
 
 When interactive:
