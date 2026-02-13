@@ -5,6 +5,8 @@
 	import CounterBadge from "$lib/components-new/CounterBadge/CounterBadge.svelte";
 	import ArrowRight from "$lucide/arrow-right";
 
+	import LL from "@librocco/shared/i18n-svelte";
+
 	import type { PageData } from "./$types";
 	import { calcStatsBySupplierOrder } from "./utils";
 
@@ -18,6 +20,8 @@
 	$: orderStats = calcStatsBySupplierOrder(data);
 	$: totalOrdered = data.placedOrderLines.reduce((sum, line) => sum + line.quantity, 0);
 	$: totalDelivered = data.reconciliationOrderLines.reduce((sum, line) => sum + line.quantity, 0);
+
+	$: t = $LL.reconcile_page;
 
 	function getDeliveredColorClass(ordered: number, delivered: number): string {
 		if (delivered === 0) {
@@ -43,8 +47,8 @@
 
 	<div class="flex h-full flex-col space-y-4 overflow-hidden bg-white px-6 py-4">
 		<div class="flex gap-3">
-			<CounterBadge label="Total Ordered" value={totalOrdered} />
-			<CounterBadge label="Total Delivered" value={totalDelivered} />
+			<CounterBadge label={t.step1.stats.total_ordered()} value={totalOrdered} />
+			<CounterBadge label={t.step1.stats.total_delivered()} value={totalDelivered} />
 		</div>
 
 		<div class="h-full overflow-y-auto">
@@ -57,13 +61,17 @@
 					</div>
 					<Table variant="naked" columnWidths={["2", "3", "4", "2", "2", "2"]}>
 						<svelte:fragment slot="head-cells">
-							<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide"> ISBN </th>
-							<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide"> Title </th>
-							<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide"> Author </th>
-							<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"> Ordered </th>
-							<th scope="col" class="text-muted-foreground w-32 px-2 py-1.5 text-left text-xs uppercase tracking-wide"> Delivered </th>
+							<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.isbn()}</th>
+							<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.title()}</th>
+							<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.authors()}</th>
+							<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"
+								>{t.table.quantity()}</th
+							>
+							<th scope="col" class="text-muted-foreground w-32 px-2 py-1.5 text-left text-xs uppercase tracking-wide"
+								>{t.step1.table.delivered()}</th
+							>
 							<th scope="col" class="text-muted-foreground w-32 px-2 py-1.5 text-left text-xs uppercase tracking-wide">
-								<span class="sr-only">Delivered Quantity Controls</span>
+								<span class="sr-only">{t.step1.table.controls()}</span>
 							</th>
 						</svelte:fragment>
 
@@ -97,14 +105,14 @@
 												on:click={() => onDecrement(book.isbn)}
 												disabled={stats.delivered === 0}
 												class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
-												aria-label={`Decrease delivered quantity for ${book.title}, currently ${stats.delivered}`}
+												aria-label={t.step1.aria_labels.decrease_quantity({ title: book.title, count: stats.delivered })}
 											>
 												−
 											</button>
 											<button
 												on:click={() => onIncrement(book.isbn)}
 												class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 transition-colors hover:bg-neutral-200"
-												aria-label={`Increase delivered quantity for ${book.title}, currently ${stats.delivered}`}
+												aria-label={t.step1.aria_labels.increase_quantity({ title: book.title, count: stats.delivered })}
 											>
 												+
 											</button>
@@ -123,13 +131,13 @@
 		<div class="shrink-0 border-t border-neutral-200 bg-neutral-50 px-6 py-4">
 			<div class="flex items-center justify-between">
 				<div class="text-sm text-zinc-900">
-					Total books scanned: <span class="font-medium">{totalDelivered}</span>
+					{t.step1.footer.total_scanned({ count: totalDelivered })}
 				</div>
 				<button
 					on:click={onContinue}
 					class="flex items-center gap-2 rounded-md bg-zinc-900 px-6 py-2 text-white transition-colors hover:bg-zinc-800"
 				>
-					Continue
+					{t.step1.footer.continue()}
 					<ArrowRight aria-hidden />
 				</button>
 			</div>

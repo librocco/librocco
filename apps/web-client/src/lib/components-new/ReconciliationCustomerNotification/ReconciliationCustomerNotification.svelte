@@ -2,13 +2,15 @@
 	import { ChevronDown, Bell } from "lucide-svelte";
 	import { createCollapsible, melt } from "@melt-ui/svelte";
 
+	import LL from "@librocco/shared/i18n-svelte";
+
 	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 
 	// TODO: the following are duplicates from routes/orders/suppliers/reconcile/[id]/utils.ts -- move into a standardised location
 	type CustomerDeliveryEntry = Pick<CustomerOrderLine, "fullname" | "customer_display_id" | "created">;
 	type DeliveryByISBN = { isbn: string; title: string; total: number; customers: CustomerDeliveryEntry[] };
 
-	export let message = "Customers will be notified that delivered books are ready for collection";
+	export let finalized = false;
 	export let books: DeliveryByISBN[] = [];
 	export let expanded = false;
 
@@ -27,9 +29,11 @@
 	}
 
 	const hasBooks = books.length > 0;
+	$: t = $LL.reconcile_page.step2.customer_notification;
+	$: label = (finalized ? t.message_finalized() : t.message_pending());
 
 	function getCopyLabel(count: number): string {
-		return count === 1 ? "(1 copy)" : `(${count} copies)`;
+		return t.copy_label({ count });
 	}
 </script>
 
@@ -38,7 +42,7 @@
 		<div class="flex items-center gap-6">
 			<div class="flex min-w-0 flex-1 items-center gap-2">
 				<Bell class="text-foreground h-4 w-4 shrink-0" aria-hidden="true" />
-				<p class="text-foreground text-sm">{message}</p>
+				<p class="text-foreground text-sm">{label}</p>
 			</div>
 			<button
 				class="shrink-0 rounded p-1 transition-colors {interactive ? 'hover:bg-neutral-200' : ''}"
@@ -67,13 +71,13 @@
 						<div>
 							<div class="flex gap-4 px-2 pb-1.5 pt-1.5">
 								<div class="flex-1">
-									<span class="text-muted-foreground text-xs font-normal uppercase tracking-[0.3px]">Customer</span>
+									<span class="text-muted-foreground text-xs font-normal uppercase tracking-[0.3px]">{t.table.customer()}</span>
 								</div>
 								<div class="w-32">
-									<span class="text-muted-foreground text-xs font-normal uppercase tracking-[0.3px]">ID</span>
+									<span class="text-muted-foreground text-xs font-normal uppercase tracking-[0.3px]">{t.table.id()}</span>
 								</div>
 								<div class="w-44">
-									<span class="text-muted-foreground text-xs font-normal uppercase tracking-[0.3px]">Order Date</span>
+									<span class="text-muted-foreground text-xs font-normal uppercase tracking-[0.3px]">{t.table.order_date()}</span>
 								</div>
 							</div>
 							{#each book.customers as customer, index}

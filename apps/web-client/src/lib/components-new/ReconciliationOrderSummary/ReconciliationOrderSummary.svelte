@@ -2,6 +2,8 @@
 	import { ChevronDown } from "lucide-svelte";
 	import { createCollapsible, melt } from "@melt-ui/svelte";
 
+	import LL from "@librocco/shared/i18n-svelte";
+
 	import type { ReconciliationProcessedLine } from "$lib/components/supplier-orders/utils";
 
 	import Table from "$lib/components-new/Table/Table.svelte";
@@ -29,6 +31,8 @@
 
 	const allDelivered = books.every((book) => book.orderedQuantity === book.orderedQuantity) && books.length > 0;
 	const hasBooks = books.length > 0;
+
+	$: t = $LL.reconcile_page;
 </script>
 
 <div use:melt={$collapsibleRoot} class="rounded-lg border border-neutral-200">
@@ -41,10 +45,10 @@
 						<span class="text-muted-foreground text-sm">{orderId}</span>
 						{#if !allDelivered && hasBooks}
 							<span class="rounded bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
-								{undeliveredCount} books undelivered
+								{t.step2.order_summary.books_undelivered({ count: undeliveredCount })}
 							</span>
 						{:else if allDelivered && hasBooks}
-							<span class="rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800"> Complete </span>
+							<span class="rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800">{t.step2.order_summary.complete()}</span>
 						{/if}
 					</div>
 				</div>
@@ -65,12 +69,18 @@
 			<div class="px-2 py-2">
 				<Table variant="naked" columnWidths={["2", "3", "4", "2", "2", "2"]}>
 					<svelte:fragment slot="head-cells">
-						<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide"> ISBN </th>
-						<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide"> Title </th>
-						<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide"> Author </th>
-						<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"> Ordered </th>
-						<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"> Delivered </th>
-						<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"> Status </th>
+						<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.isbn()}</th>
+						<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.title()}</th>
+						<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.authors()}</th>
+						<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"
+							>{t.table.quantity()}</th
+						>
+						<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"
+							>{t.table.quantity()}</th
+						>
+						<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"
+							>{t.step2.order_summary.status()}</th
+						>
 					</svelte:fragment>
 
 					<svelte:fragment slot="rows">
@@ -96,10 +106,11 @@
 								<td class="flex w-20 justify-start px-2 py-1.5 align-middle">
 									{#if missingQuantity > 0}
 										<span class="whitespace-nowrap rounded bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
-											{missingQuantity} missing
+											{t.step2.order_summary.missing({ count: missingQuantity })}
 										</span>
 									{:else}
-										<span class="rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800"> Complete </span>
+										<span class="rounded bg-green-100 px-2 py-1 text-xs font-medium text-green-800">{t.step2.order_summary.complete()}</span
+										>
 									{/if}
 								</td>
 							</TableRow>
