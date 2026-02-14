@@ -256,13 +256,14 @@ type StatusFilter = {
 	lte?: OrderItemStatus;
 	eq?: OrderItemStatus;
 };
-type CustomerOrderLineFilters = {
+type CustomerOrderLineOpts = {
 	customerId?: number;
 	isbns?: string[];
 	status?: StatusFilter;
+	orderBy?: string;
 };
-export async function getCustomerOrderLinesCore(db: TXAsync, filters: CustomerOrderLineFilters = {}) {
-	const { customerId, isbns, status } = filters;
+export async function getCustomerOrderLinesCore(db: TXAsync, opts: CustomerOrderLineOpts = {}) {
+	const { customerId, isbns, status } = opts;
 
 	const conditions = [];
 	const params = [];
@@ -294,6 +295,8 @@ export async function getCustomerOrderLinesCore(db: TXAsync, filters: CustomerOr
 		}
 	}
 
+	const orderBy = opts.orderBy || "created DESC, col.isbn ASC";
+
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT
 			col.id, col.customer_id, col.created, col.placed, col.received, col.collected,
@@ -317,7 +320,7 @@ export async function getCustomerOrderLinesCore(db: TXAsync, filters: CustomerOr
 		LEFT JOIN customer c ON col.customer_id = c.id
 		LEFT JOIN book ON col.isbn = book.isbn
 		WHERE customer_id = ?
-		ORDER BY created DESC, col.isbn ASC
+		ORDER BY ${orderBy}
 		`,
 		[customerId]
 	);
