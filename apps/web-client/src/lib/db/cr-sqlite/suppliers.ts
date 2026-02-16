@@ -146,7 +146,7 @@ async function _getPublishersFor(db: TXAsync, supplierId?: number): Promise<stri
 		`SELECT publisher
 		FROM supplier_publisher
 		${whereCondition}
-		ORDER BY publisher ASC;`
+		ORDER BY publisher COLLATE NOCASE ASC;`
 	);
 
 	// For some reason `stmt.all` does not accept a type arg. Docs say it should
@@ -169,7 +169,7 @@ async function _getPublishersWithSuppliers(db: TXAsync): Promise<{ publisher: st
 			s.name as supplier_name
 		FROM supplier_publisher sp
 		LEFT JOIN supplier s ON sp.supplier_id = s.id
-		ORDER BY sp.publisher ASC
+		ORDER BY sp.publisher COLLATE NOCASE ASC
 	`;
 	return await db.execO<{ publisher: string; supplier_name: string }>(query);
 }
@@ -257,7 +257,7 @@ async function _getPossibleSupplierOrders(db: TXAsync): Promise<PossibleSupplier
             SUM(COALESCE(book.price, 0)) as total_book_price
         FROM supplier
     	RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
-        RIGHT JOIN book ON sp.publisher = book.publisher
+        RIGHT JOIN book ON sp.publisher = book.publisher COLLATE NOCASE
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
 
 		-- sometimes a book can be received before being placed with the supplier due to overdelivery
@@ -313,7 +313,7 @@ async function _getPossibleSupplierOrderLines(db: TXAsync, supplierId: number | 
 			SUM(COALESCE(book.price, 0)) as line_price
        	FROM supplier
         RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
-        RIGHT JOIN book ON sp.publisher = book.publisher
+        RIGHT JOIN book ON sp.publisher = book.publisher COLLATE NOCASE
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
 		${whereClause}
       	GROUP BY book.isbn

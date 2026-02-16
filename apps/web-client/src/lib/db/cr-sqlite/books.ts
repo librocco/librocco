@@ -134,7 +134,9 @@ async function _getBookData(db: TXAsync, isbn: string): Promise<Required<BookDat
 
 async function _getPublisherList(db: TXAsync): Promise<string[]> {
 	// NOTE: the WHERE clause is essential to prevent `null` values crashing the app
-	const res = await db.execO<{ publisher: string }>(`SELECT DISTINCT publisher FROM book WHERE publisher IS NOT NULL`);
+	const res = await db.execO<{ publisher: string }>(
+		`SELECT DISTINCT publisher FROM book WHERE publisher IS NOT NULL ORDER BY publisher COLLATE NOCASE ASC`
+	);
 	return res.map(({ publisher }) => publisher);
 }
 
