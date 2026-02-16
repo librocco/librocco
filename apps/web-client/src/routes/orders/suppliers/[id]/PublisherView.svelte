@@ -47,7 +47,7 @@
 	};
 </script>
 
-<div class="mb-4 flex h-full w-full flex-col pb-4">
+<div class="mb-4 flex min-h-0 w-full flex-1 flex-col pb-4">
 	<div class="sticky top-0 z-20 mb-4 bg-white px-5 pb-4">
 		<div class="relative flex items-center gap-2">
 			<div class="relative w-full">

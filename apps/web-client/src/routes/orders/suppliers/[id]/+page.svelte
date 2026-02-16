@@ -113,7 +113,7 @@
 
 <Page title={t.details.supplier_page()} view="orders/suppliers/id" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div class="flex h-full flex-col gap-y-10 max-md:overflow-y-auto md:flex-row md:divide-x">
+		<div class="flex h-full flex-col gap-y-10 md:flex-row md:divide-x">
 			<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 				<div class="card h-full">
 					<div class="card-body p-0">
@@ -136,7 +136,7 @@
 				</div>
 			</div>
 
-			<div class="mb-20 flex h-full w-full flex-col gap-y-2">
+			<div class="flex min-h-0 w-full flex-1 flex-col gap-y-2 overflow-hidden">
 				<!-- Tab Navigation -->
 				<div class="z-20 bg-white px-5 pt-6 pb-6">
 					<nav class="flex gap-2">

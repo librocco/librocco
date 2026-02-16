@@ -193,7 +193,7 @@
 			</button>
 		</div>
 
-		<div class="h-full w-full p-4">
+		<div class="w-full flex-1 p-4">
 			{#if orderStatusFilter === "unordered"}
 				{#if possibleOrders.length === 0 && placedOrders.length === 0}
 					<div class="mx-auto w-fit max-w-xl translate-y-1/2">
