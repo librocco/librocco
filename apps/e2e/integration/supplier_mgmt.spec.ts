@@ -64,7 +64,7 @@ testOrders.describe("Supplier publisher config", () => {
 		// Check for split column layout - both headings should be visible
 		// .nth(1) -- tab button is matched as .nth(0)
 		await expect(page.getByText("Assigned Publishers").nth(1)).toBeVisible();
-		await expect(page.getByText("Available Publishers")).toBeVisible();
+		await expect(page.getByText("Unassigned publishers")).toBeVisible();
 
 		// Check search bar is present
 		const searchInput = page.getByPlaceholder("Search publishers...");
