@@ -198,7 +198,15 @@
 			displayName={supplier.name}
 			options={{
 				SPA: true,
-				validators: zod(supplierDeleteSchema(supplier.name.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, ""))),
+				validators: zod(
+					supplierDeleteSchema(
+						supplier.name
+							.toLowerCase()
+							.replace(/[^a-z0-9]/g, "_")
+							.replace(/_+/g, "_")
+							.replace(/^_+|_+$/g, "")
+					)
+				),
 				onUpdate: ({ form }) => {
 					if (form.valid) {
 						handleDeleteSupplier();
