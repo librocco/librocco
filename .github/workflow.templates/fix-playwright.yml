@@ -1,0 +1,273 @@
+name: Fix Playwright Failures
+
+"on":
+  workflow_run:
+    workflows: ["PlaywrightMatrix"]
+    types: [completed]
+
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID of a failed PlaywrightMatrix run to analyse (leave empty for smoke test)"
+        required: false
+      smoke_test:
+        description: "Run a smoke test only (verify API key + gh access, no fixes)"
+        type: boolean
+        default: false
+      skip_wait:
+        description: "Skip the 30-minute human grace period"
+        type: boolean
+        default: true
+
+jobs:
+  #! ── Smoke test job (push or manual) ──────────────────────────────────
+  smoke-test:
+    if: inputs.smoke_test == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Run smoke test
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== Smoke test: verify Anthropic API key and gh CLI ==="
+
+          # 1. Verify gh can list PlaywrightMatrix runs
+          echo "--- gh run list ---"
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow PlaywrightMatrix --limit 3
+
+          # 2. Verify claude can call the API
+          echo "--- claude -p ---"
+          claude -p "Reply with exactly: SMOKE_TEST_OK" --max-turns 1 --allowedTools ""
+
+          # 3. Verify e2e test files are present
+          echo "--- e2e files ---"
+          ls apps/e2e/integration/*.spec.ts | head -5
+
+          echo "=== Smoke test passed ==="
+
+  #! ── Main auto-fix job (workflow_run or workflow_dispatch) ─────────────
+  auto-fix:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.smoke_test != true) ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'failure' &&
+       github.event.workflow_run.event == 'schedule')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: read
+    timeout-minutes: 60
+
+    env:
+      FAILED_RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id || '' }}
+
+    steps:
+      #! ── 1. Check if a human is already on it ──────────────────────────
+      - name: Check for existing fix activity
+        id: precheck
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELATED_PRS=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+            --json number,title,headRefName,author,updatedAt \
+            --jq '[.[] | select(
+              (.title  | test("playwright|e2e|flaky|test.fix"; "i")) or
+              (.headRefName | test("fix.*e2e|fix.*playwright|fix.*flaky"; "i"))
+            )]')
+
+          PR_COUNT=$(echo "$RELATED_PRS" | jq 'length')
+          echo "related_prs=$RELATED_PRS" >> "$GITHUB_OUTPUT"
+          echo "pr_count=$PR_COUNT"       >> "$GITHUB_OUTPUT"
+
+          if [ "$PR_COUNT" -gt 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping — found $PR_COUNT open PR(s) likely addressing this:"
+            echo "$RELATED_PRS" | jq -r '.[] | "  #\(.number) by @\(.author.login): \(.title)"'
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      #! ── 2. Grace period: give humans 30 min to react ─────────────────
+      - name: Wait 30 minutes for human response
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          inputs.skip_wait != true
+        run: sleep 1800
+
+      #! ── 3. Re-check after the wait ───────────────────────────────────
+      - name: Re-check for activity
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          inputs.skip_wait != true
+        id: recheck
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELATED_PRS=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
+            --json number,title,headRefName \
+            --jq '[.[] | select(
+              (.title  | test("playwright|e2e|flaky|test.fix"; "i")) or
+              (.headRefName | test("fix.*e2e|fix.*playwright|fix.*flaky"; "i"))
+            )] | length')
+
+          if [ "$RELATED_PRS" -gt 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Skipping after wait — a human opened a related PR in the meantime."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      #! ── 4. Extract failure summary ────────────────────────────────────
+      - name: Extract failure summary
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true' &&
+          env.FAILED_RUN_ID != ''
+        id: failures
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN_ID="${FAILED_RUN_ID}"
+
+          echo "::group::Failed jobs"
+          FAILED_JOBS=$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json jobs \
+            --jq '[.jobs[] | select(.conclusion == "failure") | {name, id: .databaseId}]')
+          echo "$FAILED_JOBS" | jq .
+          echo "::endgroup::"
+
+          # Pick the first failed job and extract Playwright failure lines
+          FIRST_JOB_ID=$(echo "$FAILED_JOBS" | jq -r '.[0].id // empty')
+          FAILURE_LINES=""
+          if [ -n "$FIRST_JOB_ID" ]; then
+            echo "::group::Failure details from job $FIRST_JOB_ID"
+            FAILURE_LINES=$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
+              --log-failed --job "$FIRST_JOB_ID" 2>&1 | grep -E '✘|Error:|FAIL|Timeout' | head -50 || true)
+            echo "$FAILURE_LINES"
+            echo "::endgroup::"
+          fi
+
+          # Write to file for the prompt (avoids GITHUB_OUTPUT escaping issues)
+          {
+            echo "## Failed jobs"
+            echo "$FAILED_JOBS" | jq -r '.[] | "- \(.name)"'
+            echo ""
+            echo "## Error lines (first failed job)"
+            echo "$FAILURE_LINES"
+          } > /tmp/failure-summary.txt
+
+          cat /tmp/failure-summary.txt
+          echo "has_summary=true" >> "$GITHUB_OUTPUT"
+
+      #! ── 5. Checkout the repo ──────────────────────────────────────────
+      - name: Checkout
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+          fetch-depth: 0
+
+      #! ── 6. Let Claude analyse & fix ───────────────────────────────────
+      - name: Run Claude Code
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: "--max-turns 20 --allowedTools Bash Read Write Edit Glob Grep"
+          prompt: |
+            The scheduled Playwright e2e matrix CI just failed.
+            Failed run: https://github.com/${{ github.repository }}/actions/runs/${{ env.FAILED_RUN_ID }}
+
+            ## Repository context
+
+            This is a Rush monorepo. The e2e tests live in `apps/e2e/`:
+            - `apps/e2e/integration/` — test spec files (Playwright Test)
+            - `apps/e2e/helpers/` — reusable test helpers (dashboard, table, forms, cr-sqlite DB helpers, etc.)
+            - `apps/e2e/playwright.config.ts` — config (15s test timeout, chromium + firefox)
+            - `apps/e2e/helpers/fixtures.ts` — test fixtures (testBase, testInventory, testOrders)
+            - `apps/e2e/helpers/cr-sqlite.ts` — DB setup helpers that run in browser context via `page.evaluateHandle`
+
+            Tests use a helper API: `getDashboard(page)` → `dashboard.content()` → `content.table()` / `content.entityList()` etc.
+            DB setup uses `getDbHandle(page)` then `dbHandle.evaluate(helperFn, params)`.
+
+            IMPORTANT: Workflow files in `.github/workflows/` are generated from
+            `.github/workflow.templates/` using ytt. Never edit workflows directly.
+
+            ## Pre-extracted failure info
+
+            ${{ steps.failures.outputs.has_summary == 'true' && 'Read /tmp/failure-summary.txt for a pre-extracted summary.' || 'No failure summary available — use gh to fetch logs.' }}
+
+            ## Step 1: Investigate
+
+            1. If `/tmp/failure-summary.txt` exists, read it first.
+            2. Otherwise, get the failed jobs:
+               ```
+               gh run view ${{ env.FAILED_RUN_ID }} --repo ${{ github.repository }} --json jobs \
+                 --jq '[.jobs[] | select(.conclusion == "failure") | {name, id: .databaseId}]'
+               ```
+            3. Then get error lines from one failed job:
+               ```
+               gh run view ${{ env.FAILED_RUN_ID }} --repo ${{ github.repository }} \
+                 --log-failed --job <JOB_ID> 2>&1 | grep -E '✘|Error:|FAIL|Timeout' | head -50
+               ```
+            4. Check if `main` already has a fix (recent commits touching `apps/e2e/`):
+               ```
+               git log --oneline -10 -- apps/e2e/
+               ```
+            5. Check for open PRs addressing this:
+               ```
+               gh pr list --repo ${{ github.repository }} --state open --json title,headRefName \
+                 --jq '[.[] | select(.title | test("e2e|playwright|flaky|test"; "i"))]'
+               ```
+               If you find existing work, STOP — do NOT create a competing fix.
+
+            ## Step 2: Fix
+
+            6. Read the failing test file(s) and the relevant helpers.
+            7. Identify the root cause. Common patterns:
+               - Missing `await` on Playwright actions (fill, press, click)
+               - Hardcoded `waitForTimeout` — replace with `waitFor()`, `expect().toBeVisible()`, etc.
+               - Flaky selectors or race conditions
+               - Scroll/intersection observer issues (check CSS on scroll containers)
+               - Slow DB setup — batch `evaluate()` calls instead of looping
+            8. Only modify files in `apps/e2e/` unless the failure is clearly an app bug.
+
+            ## Step 3: Finish
+
+            9. Do NOT run git commands (no add, commit, push). The workflow handles that.
+            10. If you cannot determine the fix with confidence, make no changes
+                and explain what you found.
+
+      #! ── 7. Open a PR if Claude made changes ──────────────────────────
+      - name: Create Pull Request
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: auto-fix/playwright-${{ env.FAILED_RUN_ID }}
+          commit-message: "fix: playwright e2e test failures (automated)"
+          title: "fix: playwright e2e test failures (automated)"
+          body: |
+            Automated fix by Claude Code.
+
+            **Triggered by failed run:** https://github.com/${{ github.repository }}/actions/runs/${{ env.FAILED_RUN_ID }}
+
+            Please review before merging.
+          labels: automated,e2e
+          delete-branch: true
