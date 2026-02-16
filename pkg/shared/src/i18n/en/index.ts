@@ -462,6 +462,9 @@ const suppliers_page = {
 		order_format: "Order format",
 		edit_details: "Edit details",
 		delete_supplier: "Delete supplier"
+	},
+	errors: {
+		active_orders: "Cannot delete: supplier has active orders or unfinalized reconciliations"
 	}
 };
 
@@ -574,6 +577,9 @@ const common = {
 	},
 	delete_database_dialog: {
 		description: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`
+	},
+	delete_supplier_dialog: {
+		description: "This will permanently delete this supplier and remove all publisher associations."
 	},
 	create_database_dialog: {
 		title: "Create new database",
@@ -961,6 +967,14 @@ const forms = {
 	warehouse_delete: {
 		labels: {
 			confirm_typing: "Confirm by typing warehouse name",
+			type_instruction: "Type '{matchConfirmation}'",
+			confirm_button: "Confirm",
+			cancel_button: "Cancel"
+		}
+	},
+	supplier_delete: {
+		labels: {
+			confirm_typing: "Confirm by typing supplier name",
 			type_instruction: "Type '{matchConfirmation}'",
 			confirm_button: "Confirm",
 			cancel_button: "Cancel"

@@ -775,6 +775,12 @@ type RootTranslation = {
 			 */
 			delete_supplier: string
 		}
+		errors: {
+			/**
+			 * C​a​n​n​o​t​ ​d​e​l​e​t​e​:​ ​s​u​p​p​l​i​e​r​ ​h​a​s​ ​a​c​t​i​v​e​ ​o​r​d​e​r​s​ ​o​r​ ​u​n​f​i​n​a​l​i​z​e​d​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n​s
+			 */
+			active_orders: string
+		}
 	}
 	warehouse_list_page: {
 		/**
@@ -1326,6 +1332,12 @@ type RootTranslation = {
 		delete_database_dialog: {
 			/**
 			 * O​n​c​e​ ​y​o​u​ ​d​e​l​e​t​e​ ​t​h​i​s​ ​d​a​t​a​b​a​s​e​ ​i​t​ ​c​a​n​'​t​ ​b​e​ ​r​e​s​t​o​r​e​d​.​ ​I​n​ ​o​r​d​e​r​ ​t​o​ ​s​a​v​e​ ​t​h​e​ ​b​a​c​k​u​p​ ​f​i​r​s​t​,​ ​p​l​e​a​s​e​ ​u​s​e​ ​t​h​e​ ​e​x​p​o​r​t​ ​b​u​t​t​o​n​.
+			 */
+			description: string
+		}
+		delete_supplier_dialog: {
+			/**
+			 * T​h​i​s​ ​w​i​l​l​ ​p​e​r​m​a​n​e​n​t​l​y​ ​d​e​l​e​t​e​ ​t​h​i​s​ ​s​u​p​p​l​i​e​r​ ​a​n​d​ ​r​e​m​o​v​e​ ​a​l​l​ ​p​u​b​l​i​s​h​e​r​ ​a​s​s​o​c​i​a​t​i​o​n​s​.
 			 */
 			description: string
 		}
@@ -2601,6 +2613,27 @@ type RootTranslation = {
 				cancel_button: string
 			}
 		}
+		supplier_delete: {
+			labels: {
+				/**
+				 * C​o​n​f​i​r​m​ ​b​y​ ​t​y​p​i​n​g​ ​s​u​p​p​l​i​e​r​ ​n​a​m​e
+				 */
+				confirm_typing: string
+				/**
+				 * T​y​p​e​ ​'​{​m​a​t​c​h​C​o​n​f​i​r​m​a​t​i​o​n​}​'
+				 * @param {unknown} matchConfirmation
+				 */
+				type_instruction: RequiredParams<'matchConfirmation'>
+				/**
+				 * C​o​n​f​i​r​m
+				 */
+				confirm_button: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+			}
+		}
 		supplier_meta: {
 			labels: {
 				/**
@@ -3692,6 +3725,12 @@ export type TranslationFunctions = {
 			 */
 			delete_supplier: () => LocalizedString
 		}
+		errors: {
+			/**
+			 * Cannot delete: supplier has active orders or unfinalized reconciliations
+			 */
+			active_orders: () => LocalizedString
+		}
 	}
 	warehouse_list_page: {
 		/**
@@ -4225,6 +4264,12 @@ export type TranslationFunctions = {
 		delete_database_dialog: {
 			/**
 			 * Once you delete this database it can't be restored. In order to save the backup first, please use the export button.
+			 */
+			description: () => LocalizedString
+		}
+		delete_supplier_dialog: {
+			/**
+			 * This will permanently delete this supplier and remove all publisher associations.
 			 */
 			description: () => LocalizedString
 		}
@@ -5470,6 +5515,26 @@ export type TranslationFunctions = {
 			labels: {
 				/**
 				 * Confirm by typing warehouse name
+				 */
+				confirm_typing: () => LocalizedString
+				/**
+				 * Type '{matchConfirmation}'
+				 */
+				type_instruction: (arg: { matchConfirmation: unknown }) => LocalizedString
+				/**
+				 * Confirm
+				 */
+				confirm_button: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+			}
+		}
+		supplier_delete: {
+			labels: {
+				/**
+				 * Confirm by typing supplier name
 				 */
 				confirm_typing: () => LocalizedString
 				/**
