@@ -274,7 +274,10 @@
       "address": "",
       "order_format": "",
       "edit_details": "",
-      "delete_supplier": ""
+      "delete_supplier": "Lieferant löschen"
+    },
+    "errors": {
+      "active_orders": "Löschen nicht möglich: Lieferant hat aktive Bestellungen oder nicht abgeschlossene Abstimmungen"
     }
   },
   "warehouse_list_page": {
@@ -475,6 +478,9 @@
     },
     "delete_database_dialog": {
       "description": ""
+    },
+    "delete_supplier_dialog": {
+      "description": "Dies löscht den Lieferanten dauerhaft und entfernt alle Verlagszuordnungen."
     },
     "create_database_dialog": {
       "title": "",
@@ -928,6 +934,14 @@
         "type_instruction": "",
         "confirm_button": "",
         "cancel_button": ""
+      }
+    },
+    "supplier_delete": {
+      "labels": {
+        "confirm_typing": "Bestätigen Sie durch Eingabe des Lieferantennamens",
+        "type_instruction": "Geben Sie '{matchConfirmation}' ein",
+        "confirm_button": "Bestätigen",
+        "cancel_button": "Abbrechen"
       }
     },
     "supplier_meta": {

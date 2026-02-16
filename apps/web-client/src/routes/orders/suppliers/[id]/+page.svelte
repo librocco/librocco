@@ -15,8 +15,9 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import { Page } from "$lib/controllers";
 
-	import { supplierSchema } from "$lib/forms/schemas";
-	import { upsertSupplier, getPlacedSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
+	import { supplierSchema, supplierDeleteSchema } from "$lib/forms/schemas";
+	import { upsertSupplier, getPlacedSupplierOrderLines, deleteSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import SupplierDeleteForm from "$lib/forms/SupplierDeleteForm.svelte";
 	import OrdersView from "./OrdersView.svelte";
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
@@ -57,12 +58,21 @@
 	$: ({ plugins, supplier } = data);
 
 	$: t = $LL.order_list_page;
+	$: t_suppliers = $LL.suppliers_page;
+
+	$: hasActiveOrders = data.placedOrders.length > 0 || data.reconcilingOrders.length > 0;
+	$: canDelete = !hasActiveOrders;
 
 	// #region dialog
 	const dialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: dialogOpen }
 	} = dialog;
+
+	const deleteDialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: deleteDialogOpen }
+	} = deleteDialog;
 	// #endregion dialog
 
 	const handleUpdateSupplier = async (_data: Partial<Supplier>) => {
@@ -92,8 +102,12 @@
 		downloadAsTextFile(generatedLines, `${event.detail.supplierOrderId}-${lines[0]?.supplier_name}-${lines[0]?.orderFormat}`);
 	}
 
-	const handleDeleteSupplier = () => {
-		console.log("Delete supplier functionality not implemented in this page");
+	const handleDeleteSupplier = async () => {
+		if (!supplier?.id) return;
+		const db = await getDb(app);
+		await deleteSupplier(db, supplier.id);
+		deleteDialogOpen.set(false);
+		goto(appPath("suppliers"));
 	};
 </script>
 
@@ -111,8 +125,10 @@
 									email={supplier.email || "N/A"}
 									address={supplier.address || "N/A"}
 									orderFormat={supplier.orderFormat || "N/A"}
+									deleteDisabled={!canDelete}
+									deleteDisabledReason={t_suppliers.errors.active_orders()}
 									on:edit={() => dialogOpen.set(true)}
-									on:delete={handleDeleteSupplier}
+									on:delete={() => deleteDialogOpen.set(true)}
 								/>
 							{/if}
 						</div>
@@ -174,6 +190,24 @@
 		formatList={orderFormats}
 		onCancel={() => dialogOpen.set(false)}
 	/>
+</PageCenterDialog>
+
+<PageCenterDialog dialog={deleteDialog} title="" description={$LL.common.delete_supplier_dialog.description()}>
+	{#if supplier}
+		<SupplierDeleteForm
+			displayName={supplier.name}
+			options={{
+				SPA: true,
+				validators: zod(supplierDeleteSchema(supplier.name.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/_+/g, "_").replace(/^_+|_+$/g, ""))),
+				onUpdate: ({ form }) => {
+					if (form.valid) {
+						handleDeleteSupplier();
+					}
+				}
+			}}
+			onCancel={() => deleteDialogOpen.set(false)}
+		/>
+	{/if}
 </PageCenterDialog>
 
 <style global>

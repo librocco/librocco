@@ -8,6 +8,8 @@
 	export let email = "";
 	export let address = "";
 	export let orderFormat = "";
+	export let deleteDisabled = false;
+	export let deleteDisabledReason = "";
 
 	const dispatch = createEventDispatcher();
 
@@ -76,9 +78,13 @@
 			data-slot="button"
 			class="[&_svg:not([class*='size-'])]:size-4 focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-background text-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 has-[>_svg]:px-3 inline-flex h-9 w-full shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-md border px-4 py-2 text-sm font-medium outline-none transition-all hover:border-red-600 hover:bg-red-100 hover:text-red-600 focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0"
 			onclick={handleDelete}
+			disabled={deleteDisabled}
 		>
 			<Trash2 aria-hidden="true" class="mr-2 h-4 w-4" />
 			{$LL.suppliers_page.card.delete_supplier()}
 		</button>
+		{#if deleteDisabled && deleteDisabledReason}
+			<p class="text-muted-foreground mt-1 text-xs">{deleteDisabledReason}</p>
+		{/if}
 	</div>
 </div>

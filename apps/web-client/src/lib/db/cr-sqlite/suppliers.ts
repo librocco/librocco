@@ -535,6 +535,39 @@ async function _createSupplierOrder(
 	});
 }
 
+/**
+ * Deletes a supplier and its publisher associations.
+ *
+ * Guards against deletion if the supplier has active orders (placed but not in any finalized reconciliation).
+ * Supplier order records are preserved for historical purposes.
+ *
+ * @param db - The database instance
+ * @param id - The supplier id to delete
+ * @throws {Error} If the supplier has active (unreconciled or unfinalized) orders
+ */
+async function _deleteSupplier(db: DBAsync, id: number) {
+	const activeOrders = await db.execO<{ id: number }>(
+		`SELECT so.id FROM supplier_order so
+		LEFT JOIN (
+			SELECT CAST(value AS INTEGER) as supplier_order_id, ro.finalized
+			FROM reconciliation_order ro
+			CROSS JOIN json_each(ro.supplier_order_ids)
+		) ro ON so.id = ro.supplier_order_id
+		WHERE so.supplier_id = ?
+			AND (ro.supplier_order_id IS NULL OR ro.finalized = 0)`,
+		[id]
+	);
+
+	if (activeOrders.length > 0) {
+		throw new Error("Cannot delete supplier with active orders or unfinalized reconciliations");
+	}
+
+	await db.tx(async (tx) => {
+		await tx.exec("DELETE FROM supplier_publisher WHERE supplier_id = ?", [id]);
+		await tx.exec("DELETE FROM supplier WHERE id = ?", [id]);
+	});
+}
+
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 export const getAllSuppliers = timed(_getAllSuppliers);
 export const getSupplierDetails = timed(_getSupplierDetails);
@@ -548,3 +581,4 @@ export const getPossibleSupplierOrderLines = timed(_getPossibleSupplierOrderLine
 export const getPlacedSupplierOrders = timed(_getPlacedSupplierOrders);
 export const getPlacedSupplierOrderLines = timed(_getPlacedSupplierOrderLines);
 export const createSupplierOrder = timed(_createSupplierOrder);
+export const deleteSupplier = timed(_deleteSupplier);

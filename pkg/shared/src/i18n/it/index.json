@@ -273,6 +273,9 @@
       "order_format": "Formato ordine",
       "edit_details": "Modifica dettagli",
       "delete_supplier": "Elimina fornitore"
+    },
+    "errors": {
+      "active_orders": "Impossibile eliminare: il fornitore ha ordini attivi o riconciliazioni non finalizzate"
     }
   },
   "warehouse_list_page": {
@@ -473,6 +476,9 @@
     },
     "delete_database_dialog": {
       "description": "Una volta eliminato questo database non potrà essere ripristinato. Per salvare prima un backup, usa il pulsante esporta."
+    },
+    "delete_supplier_dialog": {
+      "description": "Questo eliminerà permanentemente il fornitore e rimuoverà tutte le associazioni con gli editori."
     },
     "create_database_dialog": {
       "title": "Crea nuovo database",
@@ -923,6 +929,14 @@
     "warehouse_delete": {
       "labels": {
         "confirm_typing": "Conferma digitando il nome del magazzino",
+        "type_instruction": "Digita '{matchConfirmation}'",
+        "confirm_button": "Conferma",
+        "cancel_button": "Annulla"
+      }
+    },
+    "supplier_delete": {
+      "labels": {
+        "confirm_typing": "Conferma digitando il nome del fornitore",
         "type_instruction": "Digita '{matchConfirmation}'",
         "confirm_button": "Conferma",
         "cancel_button": "Annulla"
