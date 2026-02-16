@@ -145,7 +145,7 @@
 
 <Page title={t.title.supplier_orders()} view="orders/suppliers/orders" {app} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-2 divide-y">
-		<div class="flex flex-row justify-between gap-x-2 overflow-x-auto p-4">
+		<div class="flex flex-row flex-wrap justify-between gap-x-2 gap-y-2 p-4">
 			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
 				<button
 					class="btn-sm btn {orderStatusFilter === 'unordered' ? 'btn-primary' : 'btn-outline'}"
