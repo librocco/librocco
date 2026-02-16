@@ -622,7 +622,7 @@
       "assigned_publishers": "Zugewiesene Verlage"
     },
     "table": {
-      "unassigned_publishers": ""
+      "unassigned_publishers": "Nicht zugewiesene Verlage"
     },
     "placeholders": {
       "search_publishers": "Verlage suchen...",
