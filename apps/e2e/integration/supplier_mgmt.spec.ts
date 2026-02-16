@@ -93,8 +93,8 @@ testOrders.describe("Supplier publisher config", () => {
 		// First, remove Pub1 using the UI button
 		await page.getByText("pub1").locator("..").getByRole("button", { name: "Remove" }).click();
 
-		// Wait for page to update and pub2 to be clickable
-		await page.waitForTimeout(500);
+		// Wait for the removal to take effect
+		await expect(page.getByText("pub1").locator("..").getByRole("button", { name: "Remove" })).not.toBeVisible();
 
 		// Test reassigning a publisher from another supplier using UI
 		await page.getByText("pub2").locator("..").getByRole("button", { name: "Re-assign" }).click();

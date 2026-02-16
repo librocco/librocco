@@ -398,8 +398,8 @@ test("should update default warehouse for outbound note using dropdown", async (
 	// Change the default warehouse to Warehouse 2
 	await defaultWarehouseDropdown.selectOption({ label: "Warehouse 2" });
 
-	// Wait for the update to be processed
-	await page.waitForTimeout(500);
+	// Verify the selection took effect
+	await expect(defaultWarehouseDropdown).toHaveValue("2");
 
 	// Add a book to the note - it should use the new default warehouse
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);

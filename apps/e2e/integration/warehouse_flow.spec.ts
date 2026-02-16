@@ -2,15 +2,13 @@ import { baseURL } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard } from "@/helpers/dashboard";
-import { getDbHandle, addVolumesToNote, commitNote, createInboundNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
+import { getDbHandle, addVolumesToNote, addVolumesToNoteBatch, commitNote, createInboundNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
 
 import { book1 } from "@/integration/data";
 
 test.beforeEach(async ({ page }) => {
-	await page.waitForTimeout(1000);
 	// Load the app
 	await page.goto(baseURL);
-	await page.waitForTimeout(1000);
 
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
@@ -35,8 +33,6 @@ test('should create a new warehouse, on "New warehouse" and redirect to it', asy
 	// Create a new warehouse
 	await dashboard.view("inventory").waitFor();
 	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
-
-	await page.waitForTimeout(2000);
 
 	// Check that we've been redirected to the new warehouse's page
 	await dashboard.view("warehouse").waitFor();
@@ -387,10 +383,7 @@ test("should progressively load entries until all are shown", async ({ page }) =
 	const db = await getDbHandle(page);
 	await db.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 	await db.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
-	// TODO: replace this with a batched op
-	for (const e of entries) {
-		await db.evaluate(addVolumesToNote, [1, e] as const);
-	}
+	await db.evaluate(addVolumesToNoteBatch, [1, entries] as const);
 	await db.evaluate(commitNote, 1);
 
 	const dashboard = getDashboard(page);

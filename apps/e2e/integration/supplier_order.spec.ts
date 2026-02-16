@@ -82,7 +82,6 @@ testOrders(
 
 		// NOTE: this should be unnecessary once the reactivity fix is in
 		await page.reload();
-		await page.waitForTimeout(500);
 
 		// Use supplier 1 for the test
 		await table
@@ -176,7 +175,6 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 
 	// NOTE: this should be unnecessary once the reactivity fix is in
 	await page.reload();
-	await page.waitForTimeout(500);
 
 	// Use supplier 1 for the test
 	await table
