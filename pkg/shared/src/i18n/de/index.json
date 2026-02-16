@@ -608,19 +608,33 @@
   },
   "order_list_page": {
     "labels": {
-      "remove_publisher": "",
-      "create_new_order": "",
-      "add_to_supplier": "",
-      "reassign_publisher": ""
+      "save": "Speichern",
+      "remove": "Entfernen",
+      "reassign": "Neu zuweisen",
+      "add": "Hinzufügen"
     },
     "details": {
-      "supplier_page": ""
+      "supplier_page": "",
+      "update_supplier_details": "Lieferantendetails aktualisieren"
+    },
+    "tabs": {
+      "orders": "Bestellungen",
+      "assigned_publishers": "Zugewiesene Verlage"
     },
     "table": {
-      "publisher_name": "",
-      "assigned_publishers": "",
-      "unassigned_publishers": "",
-      "other_supplier_publishers": ""
+      "unassigned_publishers": ""
+    },
+    "placeholders": {
+      "search_publishers": "Verlage suchen...",
+      "no_assigned_publishers": "Keine zugewiesenen Verlage",
+      "no_matching_assigned_publishers": "Keine passenden zugewiesenen Verlage",
+      "no_available_publishers": "Keine verfügbaren Verlage",
+      "no_matching_available_publishers": "Keine passenden verfügbaren Verlage",
+      "nothing_to_see_here": "Nichts zu sehen",
+      "currently_assigned_to": "Derzeit zugewiesen an {supplierName}"
+    },
+    "aria": {
+      "clear_search": "Suche löschen"
     },
     "dialogs": {
       "reassign_publisher": {
@@ -819,6 +833,10 @@
         "note": "",
         "button": ""
       }
+    },
+    "runtime_error_toast": {
+      "title": "",
+      "description": ""
     }
   },
   "error_page": {
@@ -850,7 +868,12 @@
   },
   "debug_page": {
     "title": "",
+    "labels": {
+      "runtime_error": ""
+    },
     "actions": {
+      "trigger_load_error": "",
+      "trigger_runtime_error": "",
       "populate_database": "",
       "reset_database": "",
       "upsert_100_books": "",

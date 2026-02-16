@@ -328,19 +328,33 @@ const new_order_page = {
 
 const order_list_page = {
 	labels: {
-		remove_publisher: "Remove publisher",
-		create_new_order: "Create new order",
-		add_to_supplier: "Add to supplier",
-		reassign_publisher: "Re-assign to supplier"
+		save: "Save",
+		remove: "Remove",
+		reassign: "Re-assign",
+		add: "Add"
 	},
 	details: {
-		supplier_page: "Supplier page"
+		supplier_page: "Supplier page",
+		update_supplier_details: "Update supplier details"
+	},
+	tabs: {
+		orders: "Orders",
+		assigned_publishers: "Assigned Publishers"
 	},
 	table: {
-		publisher_name: "Publisher name",
-		assigned_publishers: "Assigned publishers",
-		unassigned_publishers: "Unassigned publishers",
-		other_supplier_publishers: "Other Supplier Publishers"
+		unassigned_publishers: "Unassigned publishers"
+	},
+	placeholders: {
+		search_publishers: "Search publishers...",
+		no_assigned_publishers: "No assigned publishers",
+		no_matching_assigned_publishers: "No matching assigned publishers",
+		no_available_publishers: "No available publishers",
+		no_matching_available_publishers: "No matching available publishers",
+		nothing_to_see_here: "Nothing to see here",
+		currently_assigned_to: "Currently assigned to {supplierName}"
+	},
+	aria: {
+		clear_search: "Clear search"
 	},
 	dialogs: {
 		reassign_publisher: {

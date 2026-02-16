@@ -67,13 +67,13 @@
 				</svg>
 				<input
 					type="text"
-					placeholder="Search publishers..."
+					placeholder={t.placeholders.search_publishers()}
 					bind:value={searchQuery}
 					class="h-9 w-full rounded border border-none border-gray-300 bg-white py-1 pl-9 pr-3 text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
 				/>
 			</div>
 			{#if searchQuery}
-				<button on:click={() => (searchQuery = "")} class="btn-xs btn-circle btn" aria-label="Clear search">✕</button>
+				<button on:click={() => (searchQuery = "")} class="btn-xs btn-circle btn" aria-label={t.aria.clear_search()}>✕</button>
 			{/if}
 		</div>
 	</div>
@@ -83,9 +83,9 @@
 			<div class="flex min-w-0 flex-1 flex-col border-gray-200">
 				<SupplierPublisherTable
 					showEmptyState={filteredAssigned.length === 0}
-					emptyStateMessage={searchQuery ? "No matching assigned publishers" : "No assigned publishers"}
+					emptyStateMessage={searchQuery ? t.placeholders.no_matching_assigned_publishers() : t.placeholders.no_assigned_publishers()}
 				>
-					<svelte:fragment slot="title">Assigned Publishers</svelte:fragment>
+					<svelte:fragment slot="title">{t.tabs.assigned_publishers()}</svelte:fragment>
 
 					<span slot="badge" class="inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white">
 						{filteredAssigned.length}
@@ -98,7 +98,7 @@
 								on:click={handleUnassignPublisher(publisher)}
 								class="h-5 whitespace-nowrap rounded border-0 bg-transparent px-1 text-[11px] font-medium text-gray-500 hover:bg-red-50 hover:!text-red-600"
 							>
-								Remove
+								{t.labels.remove()}
 							</button>
 						</SupplierPublisherTableRow>
 					{/each}
@@ -107,9 +107,9 @@
 
 			<SupplierPublisherTable
 				showEmptyState={filteredAvailable.length === 0}
-				emptyStateMessage={searchQuery ? "No matching available publishers" : "No available publishers"}
+				emptyStateMessage={searchQuery ? t.placeholders.no_matching_available_publishers() : t.placeholders.no_available_publishers()}
 			>
-				<svelte:fragment slot="title">Available Publishers</svelte:fragment>
+				<svelte:fragment slot="title">{t.table.unassigned_publishers()}</svelte:fragment>
 				<span slot="badge" class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
 					{filteredAvailable.length}
 				</span>
@@ -120,7 +120,7 @@
 							<span
 								slot="badge"
 								class="inline-flex truncate rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800"
-								title={`Currently assigned to ${pub.supplierName}`}
+								title={t.placeholders.currently_assigned_to({ supplierName: pub.supplierName })}
 							>
 								{pub.supplierName}
 							</span>
@@ -132,7 +132,7 @@
 								}}
 								class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
 							>
-								Re-assign
+								{t.labels.reassign()}
 							</button>
 						</SupplierPublisherTableRow>
 					{:else}
@@ -142,7 +142,7 @@
 								on:click={handleAssignPublisher(pub.name)}
 								class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
 							>
-								Add
+								{t.labels.add()}
 							</button>
 						</SupplierPublisherTableRow>
 					{/if}
@@ -157,8 +157,8 @@
 	title={t.dialogs.reassign_publisher.title()}
 	description={t.dialogs.reassign_publisher.description({ publisher: confirmationPublisher, supplier: supplier.name })}
 	labels={{
-		confirm: "Confirm",
-		cancel: "Cancel"
+		confirm: $LL.common.actions.confirm(),
+		cancel: $LL.common.actions.cancel()
 	}}
 	onConfirm={() => {
 		handleAssignPublisher(confirmationPublisher)();

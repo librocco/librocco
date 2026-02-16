@@ -1,4 +1,6 @@
 <script lang="ts">
+	import LL from "@librocco/shared/i18n-svelte";
+
 	export let columnWidths: Array<string | { value: number; unit?: "%" | "px" | "rem" }> = [];
 	export let showEmptyState: boolean = false;
 </script>
@@ -29,7 +31,7 @@
 			{#if showEmptyState}
 				<tr>
 					<td colspan={columnWidths.length || 1} class="text-muted-foreground px-4 py-2 text-center text-sm">
-						<slot name="empty">Nothing to see here</slot>
+						<slot name="empty">{$LL.order_list_page.placeholders.nothing_to_see_here()}</slot>
 					</td>
 				</tr>
 			{:else}

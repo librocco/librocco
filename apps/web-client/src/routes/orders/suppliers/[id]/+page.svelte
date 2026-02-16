@@ -130,7 +130,7 @@
 								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'} px-4 py-2 text-[14px]"
 							on:click={() => activeTab.set("orders")}
 						>
-							Orders
+							{t.tabs.orders()}
 						</button>
 						<button
 							class="rounded font-normal transition-colors {$activeTab === 'publishers'
@@ -138,7 +138,7 @@
 								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'} px-4 py-2 text-[14px]"
 							on:click={() => activeTab.set("publishers")}
 						>
-							Assigned Publishers
+							{t.tabs.assigned_publishers()}
 						</button>
 					</nav>
 				</div>
@@ -159,8 +159,8 @@
 
 <PageCenterDialog {dialog} title="" description="">
 	<SupplierMetaForm
-		heading="Update supplier details"
-		saveLabel="Save"
+		heading={t.details.update_supplier_details()}
+		saveLabel={t.labels.save()}
 		data={defaults(stripNulls(supplier), zod(supplierSchema($LL)))}
 		options={{
 			SPA: true,
