@@ -136,7 +136,7 @@
 				</div>
 			</div>
 
-			<div class="flex min-h-0 w-full flex-1 flex-col gap-y-2 overflow-hidden">
+			<div class="flex min-h-0 w-full flex-1 flex-col gap-y-2 overflow-y-auto">
 				<!-- Tab Navigation -->
 				<div class="z-20 bg-white px-5 pt-6 pb-6">
 					<nav class="flex gap-2">
