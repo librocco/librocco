@@ -2,7 +2,15 @@ import { baseURL } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
 import { getDashboard } from "@/helpers/dashboard";
-import { getDbHandle, addVolumesToNote, addVolumesToNoteBatch, commitNote, createInboundNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
+import {
+	getDbHandle,
+	addVolumesToNote,
+	addVolumesToNoteBatch,
+	commitNote,
+	createInboundNote,
+	upsertBook,
+	upsertWarehouse
+} from "@/helpers/cr-sqlite";
 
 import { book1 } from "@/integration/data";
 
