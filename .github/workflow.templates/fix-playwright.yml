@@ -57,7 +57,7 @@ jobs:
   #! ── Main auto-fix job (workflow_run or workflow_dispatch) ─────────────
   auto-fix:
     if: >-
-      (github.event_name == 'workflow_dispatch' && inputs.smoke_test != true) ||
+      (github.event_name == 'workflow_dispatch' && inputs.smoke_test != true && inputs.run_id != '') ||
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'failure' &&
        github.event.workflow_run.event == 'schedule')
@@ -65,8 +65,9 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      issues: write
       actions: read
-    timeout-minutes: 60
+    timeout-minutes: 120
 
     env:
       FAILED_RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id || '' }}
@@ -83,7 +84,7 @@ jobs:
             --jq '[.[] | select(
               (.title  | test("playwright|e2e|flaky|test.fix"; "i")) or
               (.headRefName | test("fix.*e2e|fix.*playwright|fix.*flaky"; "i"))
-            )]')
+            )]' | jq -c '.')
 
           PR_COUNT=$(echo "$RELATED_PRS" | jq 'length')
           echo "related_prs=$RELATED_PRS" >> "$GITHUB_OUTPUT"
@@ -179,7 +180,123 @@ jobs:
           lfs: true
           fetch-depth: 0
 
-      #! ── 6. Let Claude analyse & fix ───────────────────────────────────
+      #! ── 6. Setup Node, deps, build, browsers, services ────────────────
+      - uses: actions/setup-node@v4
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        with:
+          node-version: "22"
+
+      - name: Load cached cr-sqlite artefacts
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        uses: actions/cache/restore@v4
+        with:
+          path: 3rd-party/artefacts
+          key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+
+      - name: Cache node modules
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.rush
+            ~/.pnpm-store
+            common/temp
+            ./common/temp/node_modules/
+          key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Add local rush scripts to PATH
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+
+      - name: Install packages
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        run: rush install
+
+      - name: Build packages
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        run: |
+          set +e
+          rush build
+          exit_code=$?
+          if [ $exit_code -eq 0 ] || [ $exit_code -eq 1 ]; then
+            echo "Build completed (exit code: $exit_code)"
+            exit 0
+          else
+            echo "Build failed with exit code: $exit_code"
+            exit $exit_code
+          fi
+
+      - name: Build the app
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        run: cd apps/web-client && rushx build:e2e
+
+      - name: Restructure build for /preview base path
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        run: |
+          cd apps/web-client
+          mkdir preview
+          mv build/* preview/
+          mv preview build/
+
+      - name: Download playwright browsers
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        run: cd apps/e2e && npx playwright install
+
+      - name: Install uv (Python package manager)
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          working-directory: python-apps/launcher
+
+      - name: Clean stale test DBs (fix schema mismatch)
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
+
+      - name: Start headless launcher in background
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        run: |
+          mkdir -p ~/.local/share/librocco-launcher/logs
+          uv run --directory python-apps/launcher python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
+          echo $! > /tmp/launcher.pid
+          echo "Started launcher (PID: $(cat /tmp/launcher.pid))"
+
+      - name: Wait for services to be ready
+        if: >-
+          steps.precheck.outputs.skip != 'true' &&
+          steps.recheck.outputs.skip != 'true'
+        run: |
+          echo "Waiting for sync server..."
+          timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
+          echo "Waiting for Caddy/web app..."
+          timeout 30 bash -c 'until curl -f -k https://localhost:8433/preview/ 2>/dev/null; do sleep 1; done'
+          echo "All services ready!"
+
+      #! ── 7. Let Claude analyse & fix ───────────────────────────────────
       - name: Run Claude Code
         id: claude
         continue-on-error: true
@@ -187,13 +304,19 @@ jobs:
           steps.precheck.outputs.skip != 'true' &&
           steps.recheck.outputs.skip != 'true'
         uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_args: "--max-turns 30 --allowedTools Bash Read Write Edit Glob Grep"
+          claude_args: "--max-turns 40 --allowedTools Bash Read Write Edit Glob Grep"
           prompt: |
             The scheduled Playwright e2e matrix CI just failed.
             Failed run: https://github.com/${{ github.repository }}/actions/runs/${{ env.FAILED_RUN_ID }}
+
+            ## Read first
+            - docs/ci-llm.md
+            - AGENTS.md
 
             ## Repository context
 
@@ -251,26 +374,14 @@ jobs:
 
             ## Step 3: Finish
 
-            9. Do NOT run git commands (no add, commit, push). The workflow handles that.
-            10. If you cannot determine the fix with confidence, make no changes
+            9. Create a branch, commit, push, and open a PR.
+            10. Monitor PR checks until green or time runs out.
+            11. If checks fail and you have time, iterate and push to the same branch.
+            12. If you cannot determine the fix with confidence, make no changes
                 and explain what you found.
 
-      #! ── 7. Open a PR if Claude made changes ──────────────────────────
-      - name: Create Pull Request
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: auto-fix/playwright-${{ env.FAILED_RUN_ID }}
-          commit-message: "fix: playwright e2e test failures (automated)"
-          title: "fix: playwright e2e test failures (automated)"
-          body: |
-            Automated fix by Claude Code.
-
-            **Triggered by failed run:** https://github.com/${{ github.repository }}/actions/runs/${{ env.FAILED_RUN_ID }}
-
-            Please review before merging.
-          labels: automated,e2e
-          delete-branch: true
+      #! ── 8. Stop services ────────────────────────────────────────────
+      - name: Stop services
+        if: always()
+        run: |
+          if [ -f /tmp/launcher.pid ]; then kill $(cat /tmp/launcher.pid) || true; fi
