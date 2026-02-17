@@ -295,6 +295,7 @@ export async function getCustomerOrderLinesCore(db: TXAsync, opts: CustomerOrder
 		}
 	}
 
+	const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 	const orderBy = opts.orderBy || "created DESC, col.isbn ASC";
 
 	const result = await db.execO<DBCustomerOrderLine>(
@@ -319,10 +320,10 @@ export async function getCustomerOrderLinesCore(db: TXAsync, opts: CustomerOrder
 		FROM customer_order_lines col
 		LEFT JOIN customer c ON col.customer_id = c.id
 		LEFT JOIN book ON col.isbn = book.isbn
-		WHERE customer_id = ?
+		${where}
 		ORDER BY ${orderBy}
 		`,
-		[customerId]
+		params
 	);
 	return result.map(unmarshalCustomerOrderLine);
 }
