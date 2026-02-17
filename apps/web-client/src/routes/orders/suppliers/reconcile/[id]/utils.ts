@@ -18,7 +18,7 @@ export function calcStatsBySupplierOrder(data?: PageData) {
 	const orders = new Map<number, SupplierOrderSummary>();
 
 	for (const line of placedOrderLines) {
-		const { supplier_order_id, supplier_name, isbn } = line;
+		const { supplier_order_id, supplier_name, underdelivery_policy, isbn } = line;
 
 		const remainingScanned = scannedLineLookup.get(isbn);
 
@@ -30,6 +30,7 @@ export function calcStatsBySupplierOrder(data?: PageData) {
 		// Create supplier order entry if not exists
 		const order: SupplierOrderSummary = orders.get(supplier_order_id) || {
 			supplier_name,
+			underdelivery_policy: underdelivery_policy ?? 0,
 			supplier_order_id,
 			lines: [],
 			totalOrdered: 0,
