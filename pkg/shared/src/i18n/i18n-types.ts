@@ -767,6 +767,10 @@ type RootTranslation = {
 			 */
 			order_format: string
 			/**
+			 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+			 */
+			underdelivery_policy: string
+			/**
 			 * E​d​i​t​ ​d​e​t​a​i​l​s
 			 */
 			edit_details: string
@@ -2762,6 +2766,10 @@ type RootTranslation = {
 				 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​n​ ​o​r​d​e​r​ ​f​o​r​m​a​t
 				 */
 				order_format_message: string
+				/**
+				 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+				 */
+				underdelivery_policy: string
 			}
 			aria: {
 				/**
@@ -3814,6 +3822,10 @@ export type TranslationFunctions = {
 			 * Order format
 			 */
 			order_format: () => LocalizedString
+			/**
+			 * Underdelivery policy
+			 */
+			underdelivery_policy: () => LocalizedString
 			/**
 			 * Edit details
 			 */
@@ -5769,6 +5781,10 @@ export type TranslationFunctions = {
 				 * Please select an order format
 				 */
 				order_format_message: () => LocalizedString
+				/**
+				 * Underdelivery policy
+				 */
+				underdelivery_policy: () => LocalizedString
 			}
 			aria: {
 				/**

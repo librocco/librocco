@@ -1,7 +1,7 @@
 export function prepareTranslations(base: any, override: any): any {
 	if (Array.isArray(base)) return [...base];
 
-	if (typeof base !== 'object' || base === null) return override;
+	if (typeof base !== "object" || base === null) return override;
 
 	const result: Record<string, unknown> = {};
 
@@ -12,12 +12,12 @@ export function prepareTranslations(base: any, override: any): any {
 		const overrideVal = override?.[key];
 
 		if (
-			overrideVal === '' || // remove empty strings
+			overrideVal === "" || // remove empty strings
 			overrideVal === undefined ||
-			(typeof overrideVal === 'object' && overrideVal !== null && Object.keys(overrideVal).length === 0)
+			(typeof overrideVal === "object" && overrideVal !== null && Object.keys(overrideVal).length === 0)
 		) {
 			result[key] = baseVal;
-		} else if (typeof baseVal === 'object' && typeof overrideVal === 'object') {
+		} else if (typeof baseVal === "object" && typeof overrideVal === "object") {
 			result[key] = prepareTranslations(baseVal, overrideVal);
 		} else {
 			result[key] = overrideVal;

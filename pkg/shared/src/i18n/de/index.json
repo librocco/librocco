@@ -273,6 +273,7 @@
 			"email": "",
 			"address": "",
 			"order_format": "",
+			"underdelivery_policy": "",
 			"edit_details": "",
 			"delete_supplier": ""
 		}
@@ -880,6 +881,10 @@
 				"note": "",
 				"button": ""
 			}
+		},
+		"runtime_error_toast": {
+			"title": "",
+			"description": ""
 		}
 	},
 	"error_page": {
@@ -911,7 +916,12 @@
 	},
 	"debug_page": {
 		"title": "",
+		"labels": {
+			"runtime_error": ""
+		},
 		"actions": {
+			"trigger_load_error": "",
+			"trigger_runtime_error": "",
 			"populate_database": "",
 			"reset_database": "",
 			"upsert_100_books": "",
@@ -976,7 +986,8 @@
 				"customer_id": "",
 				"cancel_button": "",
 				"order_format": "",
-				"order_format_message": ""
+				"order_format_message": "",
+				"underdelivery_policy": ""
 			},
 			"aria": {
 				"form": ""
