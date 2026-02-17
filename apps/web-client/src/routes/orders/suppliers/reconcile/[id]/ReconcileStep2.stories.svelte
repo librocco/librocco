@@ -27,7 +27,8 @@
 				quantity: 7,
 				price: 12.99,
 				supplier_id: 1,
-				supplier_name: "BooksRUS"
+				supplier_name: "BooksRUS",
+				underdelivery_policy: 0
 			} as any,
 			{
 				id: 2,
@@ -37,7 +38,8 @@
 				quantity: 3,
 				price: 14.99,
 				supplier_id: 1,
-				supplier_name: "BooksRUS"
+				supplier_name: "BooksRUS",
+				underdelivery_policy: 0
 			} as any,
 			{
 				id: 3,
@@ -47,7 +49,8 @@
 				quantity: 4,
 				price: 10.99,
 				supplier_id: 2,
-				supplier_name: "Academic Press"
+				supplier_name: "Academic Press",
+				underdelivery_policy: 1
 			} as any
 		],
 		reconciliationOrderLines: [
@@ -117,6 +120,21 @@
 		<ReconcileStep2
 			data={mockData as PageData}
 			finalized={true}
+			onBack={() => {
+				console.log("Back clicked");
+			}}
+			onFinalize={() => {
+				console.log("Finalize clicked");
+			}}
+		/>
+	</div>
+</Story>
+
+<Story name="Different Underdelivery Policies">
+	<div class="h-[800px]">
+		<ReconcileStep2
+			data={mockData as PageData}
+			finalized={false}
 			onBack={() => {
 				console.log("Back clicked");
 			}}

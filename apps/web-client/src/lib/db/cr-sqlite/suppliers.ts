@@ -259,6 +259,7 @@ async function _getPossibleSupplierOrders(db: TXAsync): Promise<PossibleSupplier
 				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
+			COALESCE(supplier.underdelivery_policy, 0) as underdelivery_policy,
             COUNT(*) as total_book_number,
             SUM(COALESCE(book.price, 0)) as total_book_price
         FROM supplier
@@ -311,19 +312,20 @@ async function _getPossibleSupplierOrderLines(db: TXAsync, supplierId: number | 
 				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
+			COALESCE(supplier.underdelivery_policy, 0) as underdelivery_policy,
 			col.isbn,
-    		COALESCE(book.title, 'N/A') AS title,
-    		COALESCE(book.authors, 'N/A') AS authors,
+     		COALESCE(book.title, 'N/A') AS title,
+     		COALESCE(book.authors, 'N/A') AS authors,
 			COUNT(*) as quantity,
 			COALESCE(book.price, 0) as price,
 			SUM(COALESCE(book.price, 0)) as line_price
-       	FROM supplier
-        RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
-        RIGHT JOIN book ON sp.publisher = book.publisher
-        RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
+        	FROM supplier
+         RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
+         RIGHT JOIN book ON sp.publisher = book.publisher
+         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
 		${whereClause}
-      	GROUP BY book.isbn
-      	ORDER BY book.isbn ASC
+       	GROUP BY book.isbn
+       	ORDER BY book.isbn ASC
 	`;
 
 	// We need to build a query that will yield all books we can order, grouped by supplier
@@ -390,6 +392,7 @@ async function _getPlacedSupplierOrders(
 				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE s.name
 			END as supplier_name,
+			COALESCE(s.underdelivery_policy, 0) as underdelivery_policy,
             so.created,
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
@@ -451,6 +454,7 @@ async function _getPlacedSupplierOrderLines(db: TXAsync, supplier_order_ids: num
 				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE s.name
 			END as supplier_name,
+			COALESCE(s.underdelivery_policy, 0) as underdelivery_policy,
             so.created
 
 		FROM supplier_order_line AS sol
