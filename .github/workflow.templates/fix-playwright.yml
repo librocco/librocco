@@ -287,7 +287,74 @@ jobs:
             10. If you cannot determine the fix with confidence, make no changes
                 and explain what you found.
 
-      #! ── 5. Stop services & upload logs ─────────────────────────────
+      #! ── 5. Summarise, stop services & upload logs ────────────────────
+      - name: Summarise Claude run
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LOG="/home/runner/work/_temp/claude-execution-output.json"
+          if [ ! -f "$LOG" ]; then
+            echo "No Claude execution log found." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Extract the last result line from the JSONL log
+          RESULT=$(grep '"type":"result"' "$LOG" | tail -1 || true)
+          if [ -z "$RESULT" ]; then
+            RESULT=$(grep '"type": "result"' "$LOG" | tail -1 || true)
+          fi
+
+          if [ -z "$RESULT" ]; then
+            echo "No result entry found in Claude log." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          COST=$(echo "$RESULT" | jq -r '.total_cost_usd // "unknown"')
+          TURNS=$(echo "$RESULT" | jq -r '.num_turns // "unknown"')
+          DURATION=$(echo "$RESULT" | jq -r '.duration_ms // 0')
+          SUBTYPE=$(echo "$RESULT" | jq -r '.subtype // "unknown"')
+          DURATION_MIN=$(echo "scale=1; $DURATION / 60000" | bc 2>/dev/null || echo "?")
+
+          # Format cost nicely
+          if [ "$COST" != "unknown" ]; then
+            COST_FMT=$(printf '$%.2f' "$COST")
+          else
+            COST_FMT="unknown"
+          fi
+
+          # Write job summary
+          {
+            echo "## Claude Code Auto-fix Summary"
+            echo ""
+            echo "| Metric | Value |"
+            echo "|--------|-------|"
+            echo "| Result | \`$SUBTYPE\` |"
+            echo "| Turns | $TURNS |"
+            echo "| Duration | ${DURATION_MIN} min |"
+            echo "| Cost | $COST_FMT |"
+            echo "| Failed run | [${FAILED_RUN_ID}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${FAILED_RUN_ID}) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # If Claude opened a PR, add cost info as a comment
+          PR_BRANCH="auto-fix/playwright-${FAILED_RUN_ID:-manual}"
+          PR_NUMBER=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$PR_BRANCH" --json number --jq '.[0].number // empty' 2>/dev/null || true)
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$(cat <<COMMENTEOF
+          **Claude Code run summary**
+
+          | Metric | Value |
+          |--------|-------|
+          | Result | \`$SUBTYPE\` |
+          | Turns | $TURNS |
+          | Duration | ${DURATION_MIN} min |
+          | Cost | $COST_FMT |
+          | Workflow run | [View logs](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) |
+          COMMENTEOF
+          )"
+            echo "Posted cost summary to PR #$PR_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Stop services
         if: always()
         run: |
