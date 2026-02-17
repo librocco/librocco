@@ -202,6 +202,7 @@ jobs:
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
           claude_args: "--max-turns 40 --allowedTools Bash Read Write Edit Glob Grep"
           prompt: |
             The scheduled Playwright e2e matrix CI just failed.
@@ -286,8 +287,16 @@ jobs:
             10. If you cannot determine the fix with confidence, make no changes
                 and explain what you found.
 
-      #! ── 5. Stop services ────────────────────────────────────────────
+      #! ── 5. Stop services & upload logs ─────────────────────────────
       - name: Stop services
         if: always()
         run: |
           if [ -f /tmp/launcher.pid ]; then kill $(cat /tmp/launcher.pid) || true; fi
+
+      - name: Upload Claude execution log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-execution-log-${{ env.FAILED_RUN_ID }}
+          path: /home/runner/work/_temp/claude-execution-output.json
+          retention-days: 30
