@@ -20,7 +20,7 @@ export function calcStatsBySupplierOrder(data?: PageData) {
 	for (const line of placedOrderLines) {
 		const { supplier_order_id, supplier_name, underdelivery_policy, isbn } = line;
 
-		const remainingScanned = scannedLineLookup.get(isbn);
+		const remainingScanned = scannedLineLookup.get(isbn) || 0;
 
 		const orderedQuantity = line.quantity;
 		const deliveredQuantity = Math.min(remainingScanned, orderedQuantity);
@@ -67,6 +67,6 @@ export function calcCustomerOrderDelivery(data: PageData): DeliveryByISBN[] {
 		isbn,
 		title,
 		total: quantity,
-		customers: [...customerLineLookup.get(isbn)].slice(0, quantity)
+		customers: [...(customerLineLookup.get(isbn) || [])].slice(0, quantity)
 	}));
 }
