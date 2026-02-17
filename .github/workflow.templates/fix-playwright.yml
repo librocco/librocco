@@ -1,0 +1,366 @@
+name: Fix Playwright Failures
+
+"on":
+  workflow_run:
+    workflows: ["PlaywrightMatrix"]
+    types: [completed]
+
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Run ID of a failed PlaywrightMatrix run to analyse (leave empty for smoke test)"
+        required: false
+      smoke_test:
+        description: "Run a smoke test only (verify API key + gh access, no fixes)"
+        type: boolean
+        default: false
+
+jobs:
+  #! ── Smoke test job (push or manual) ──────────────────────────────────
+  smoke-test:
+    if: inputs.smoke_test == true
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Run smoke test
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "=== Smoke test: verify Anthropic API key and gh CLI ==="
+
+          # 1. Verify gh can list PlaywrightMatrix runs
+          echo "--- gh run list ---"
+          gh run list --repo "$GITHUB_REPOSITORY" --workflow PlaywrightMatrix --limit 3
+
+          # 2. Verify claude can call the API
+          echo "--- claude -p ---"
+          claude -p "Reply with exactly: SMOKE_TEST_OK" --max-turns 1 --allowedTools ""
+
+          # 3. Verify e2e test files are present
+          echo "--- e2e files ---"
+          ls apps/e2e/integration/*.spec.ts | head -5
+
+          echo "=== Smoke test passed ==="
+
+  #! ── Main auto-fix job (workflow_run or workflow_dispatch) ─────────────
+  auto-fix:
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.smoke_test != true && inputs.run_id != '') ||
+      (github.event_name == 'workflow_run' &&
+       github.event.workflow_run.conclusion == 'failure' &&
+       github.event.workflow_run.event == 'schedule')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      actions: read
+    timeout-minutes: 120
+
+    env:
+      FAILED_RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id || '' }}
+
+    steps:
+      #! ── 1. Extract failure summary ────────────────────────────────────
+      - name: Extract failure summary
+        if: env.FAILED_RUN_ID != ''
+        id: failures
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN_ID="${FAILED_RUN_ID}"
+
+          echo "::group::Failed jobs"
+          FAILED_JOBS=$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" --json jobs \
+            --jq '[.jobs[] | select(.conclusion == "failure") | {name, id: .databaseId}]')
+          echo "$FAILED_JOBS" | jq .
+          echo "::endgroup::"
+
+          # Pick the first failed job and extract Playwright failure lines
+          FIRST_JOB_ID=$(echo "$FAILED_JOBS" | jq -r '.[0].id // empty')
+          FAILURE_LINES=""
+          if [ -n "$FIRST_JOB_ID" ]; then
+            echo "::group::Failure details from job $FIRST_JOB_ID"
+            FAILURE_LINES=$(gh run view "$RUN_ID" --repo "$GITHUB_REPOSITORY" \
+              --log-failed --job "$FIRST_JOB_ID" 2>&1 | grep -E '✘|Error:|FAIL|Timeout' | head -50 || true)
+            echo "$FAILURE_LINES"
+            echo "::endgroup::"
+          fi
+
+          # Write to file for the prompt (avoids GITHUB_OUTPUT escaping issues)
+          {
+            echo "## Failed jobs"
+            echo "$FAILED_JOBS" | jq -r '.[] | "- \(.name)"'
+            echo ""
+            echo "## Error lines (first failed job)"
+            echo "$FAILURE_LINES"
+          } > /tmp/failure-summary.txt
+
+          cat /tmp/failure-summary.txt
+          echo "has_summary=true" >> "$GITHUB_OUTPUT"
+
+      #! ── 2. Checkout the repo ──────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+          fetch-depth: 0
+
+      #! ── 3. Setup Node, deps, build, browsers, services ────────────────
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Load cached cr-sqlite artefacts
+        uses: actions/cache/restore@v4
+        with:
+          path: 3rd-party/artefacts
+          key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.rush
+            ~/.pnpm-store
+            common/temp
+            ./common/temp/node_modules/
+          key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
+
+      - name: Add local rush scripts to PATH
+        run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+
+      - name: Install packages
+        run: rush install
+
+      - name: Build packages
+        run: |
+          set +e
+          rush build
+          exit_code=$?
+          if [ $exit_code -eq 0 ] || [ $exit_code -eq 1 ]; then
+            echo "Build completed (exit code: $exit_code)"
+            exit 0
+          else
+            echo "Build failed with exit code: $exit_code"
+            exit $exit_code
+          fi
+
+      - name: Build the app
+        run: cd apps/web-client && rushx build:e2e
+
+      - name: Restructure build for /preview base path
+        run: |
+          cd apps/web-client
+          mkdir preview
+          mv build/* preview/
+          mv preview build/
+
+      - name: Download playwright browsers
+        run: cd apps/e2e && npx playwright install
+
+      - name: Install uv (Python package manager)
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          working-directory: python-apps/launcher
+
+      - name: Clean stale test DBs (fix schema mismatch)
+        run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
+
+      - name: Start headless launcher in background
+        run: |
+          mkdir -p ~/.local/share/librocco-launcher/logs
+          uv run --directory python-apps/launcher python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
+          echo $! > /tmp/launcher.pid
+          echo "Started launcher (PID: $(cat /tmp/launcher.pid))"
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for sync server..."
+          timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
+          echo "Waiting for Caddy/web app..."
+          timeout 30 bash -c 'until curl -f -k https://localhost:8433/preview/ 2>/dev/null; do sleep 1; done'
+          echo "All services ready!"
+
+      #! ── 4. Let Claude analyse & fix ───────────────────────────────────
+      - name: Run Claude Code
+        id: claude
+        continue-on-error: true
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
+          claude_args: "--max-turns 40 --allowedTools Bash Read Write Edit Glob Grep"
+          prompt: |
+            The scheduled Playwright e2e matrix CI just failed.
+            Failed run: https://github.com/${{ github.repository }}/actions/runs/${{ env.FAILED_RUN_ID }}
+
+            ## Read first
+            - docs/ci-llm.md
+            - AGENTS.md
+
+            ## Repository context
+
+            This is a Rush monorepo. The e2e tests live in `apps/e2e/`:
+            - `apps/e2e/integration/` — test spec files (Playwright Test)
+            - `apps/e2e/helpers/` — reusable test helpers (dashboard, table, forms, cr-sqlite DB helpers, etc.)
+            - `apps/e2e/playwright.config.ts` — config (15s test timeout, chromium + firefox)
+            - `apps/e2e/helpers/fixtures.ts` — test fixtures (testBase, testInventory, testOrders)
+            - `apps/e2e/helpers/cr-sqlite.ts` — DB setup helpers that run in browser context via `page.evaluateHandle`
+
+            Tests use a helper API: `getDashboard(page)` → `dashboard.content()` → `content.table()` / `content.entityList()` etc.
+            DB setup uses `getDbHandle(page)` then `dbHandle.evaluate(helperFn, params)`.
+
+            IMPORTANT: Workflow files in `.github/workflows/` are generated from
+            `.github/workflow.templates/` using ytt. Never edit workflows directly.
+
+            ## Pre-extracted failure info
+
+            ${{ steps.failures.outputs.has_summary == 'true' && 'Read /tmp/failure-summary.txt for a pre-extracted summary.' || 'No failure summary available — use gh to fetch logs.' }}
+
+            ## Step 0: Check if a fix already exists
+
+            Before doing any work, determine whether this failure is already addressed:
+
+            1. Check recent commits on `main` that touch the failing test files:
+               ```
+               git log --oneline -20 -- apps/e2e/
+               ```
+            2. Check for open PRs or branches that may already fix this:
+               ```
+               gh pr list --repo ${{ github.repository }} --state open --json number,title,headRefName,author \
+                 --jq '.[] | "\(.number)\t\(.author.login)\t\(.headRefName)\t\(.title)"'
+               ```
+            3. Check for recent `auto-fix/playwright-*` branches (even if no PR yet):
+               ```
+               git branch -r --list 'origin/auto-fix/playwright-*' --sort=-committerdate | head -5
+               ```
+
+            If you find an existing fix (merged commit, open PR, or in-progress branch) that
+            addresses the **specific failures** from this run, STOP immediately. Explain what
+            you found and make no changes. Use your judgement — a PR titled "fix login page"
+            does not address a failing "warehouse_flow" test.
+
+            ## Step 1: Investigate
+
+            1. If `/tmp/failure-summary.txt` exists, read it first.
+            2. Otherwise, get the failed jobs:
+               ```
+               gh run view ${{ env.FAILED_RUN_ID }} --repo ${{ github.repository }} --json jobs \
+                 --jq '[.jobs[] | select(.conclusion == "failure") | {name, id: .databaseId}]'
+               ```
+            3. Then get error lines from one failed job:
+               ```
+               gh run view ${{ env.FAILED_RUN_ID }} --repo ${{ github.repository }} \
+                 --log-failed --job <JOB_ID> 2>&1 | grep -E '✘|Error:|FAIL|Timeout' | head -50
+               ```
+
+            ## Step 2: Fix
+
+            4. Read the failing test file(s) and the relevant helpers.
+            5. Identify the root cause. Common patterns:
+               - Missing `await` on Playwright actions (fill, press, click)
+               - Hardcoded `waitForTimeout` — replace with `waitFor()`, `expect().toBeVisible()`, etc.
+               - Flaky selectors or race conditions
+               - Scroll/intersection observer issues (check CSS on scroll containers)
+               - Slow DB setup — batch `evaluate()` calls instead of looping
+            6. Only modify files in `apps/e2e/` unless the failure is clearly an app bug.
+
+            ## Step 3: Finish
+
+            7. Create a branch, commit, push, and open a PR.
+            8. Monitor PR checks until green or time runs out.
+            9. If checks fail and you have time, iterate and push to the same branch.
+            10. If you cannot determine the fix with confidence, make no changes
+                and explain what you found.
+
+      #! ── 5. Summarise, stop services & upload logs ────────────────────
+      - name: Summarise Claude run
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          LOG="/home/runner/work/_temp/claude-execution-output.json"
+          if [ ! -f "$LOG" ]; then
+            echo "No Claude execution log found." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # The log file may be a JSON array or concatenated JSON objects.
+          # Use jq --slurp to handle both, then find the result entry.
+          RESULT=$(jq -s '[.[] | if type == "array" then .[] else . end | select(.type == "result")] | last' "$LOG" 2>/dev/null || true)
+
+          if [ -z "$RESULT" ] || [ "$RESULT" = "null" ]; then
+            echo "No result entry found in Claude log." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          COST=$(echo "$RESULT" | jq -r '.total_cost_usd // "unknown"')
+          TURNS=$(echo "$RESULT" | jq -r '.num_turns // "unknown"')
+          DURATION=$(echo "$RESULT" | jq -r '.duration_ms // 0')
+          SUBTYPE=$(echo "$RESULT" | jq -r '.subtype // "unknown"')
+          DURATION_MIN=$(echo "scale=1; $DURATION / 60000" | bc 2>/dev/null || echo "?")
+
+          # Format cost nicely
+          if [ "$COST" != "unknown" ]; then
+            COST_FMT=$(printf '$%.2f' "$COST")
+          else
+            COST_FMT="unknown"
+          fi
+
+          # Write job summary
+          {
+            echo "## Claude Code Auto-fix Summary"
+            echo ""
+            echo "| Metric | Value |"
+            echo "|--------|-------|"
+            echo "| Result | \`$SUBTYPE\` |"
+            echo "| Turns | $TURNS |"
+            echo "| Duration | ${DURATION_MIN} min |"
+            echo "| Cost | $COST_FMT |"
+            echo "| Failed run | [${FAILED_RUN_ID}](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${FAILED_RUN_ID}) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          # If Claude opened a PR, add cost info as a comment
+          PR_BRANCH="auto-fix/playwright-${FAILED_RUN_ID:-manual}"
+          PR_NUMBER=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$PR_BRANCH" --json number --jq '.[0].number // empty' 2>/dev/null || true)
+          if [ -n "$PR_NUMBER" ]; then
+            COMMENT_BODY="**Claude Code run summary**
+
+          | Metric | Value |
+          |--------|-------|
+          | Result | \`$SUBTYPE\` |
+          | Turns | $TURNS |
+          | Duration | ${DURATION_MIN} min |
+          | Cost | $COST_FMT |
+          | Workflow run | [View logs](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) |"
+
+            gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$COMMENT_BODY"
+            echo "Posted cost summary to PR #$PR_NUMBER" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Stop services
+        if: always()
+        run: |
+          if [ -f /tmp/launcher.pid ]; then kill $(cat /tmp/launcher.pid) || true; fi
+
+      - name: Upload Claude execution log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-execution-log-${{ env.FAILED_RUN_ID }}
+          path: /home/runner/work/_temp/claude-execution-output.json
+          retention-days: 30
