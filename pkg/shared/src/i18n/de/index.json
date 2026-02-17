@@ -276,6 +276,7 @@
 			"email": "",
 			"address": "",
 			"order_format": "",
+			"underdelivery_policy": "",
 			"edit_details": "",
 			"delete_supplier": "Lieferant löschen"
 		},
@@ -1015,7 +1016,8 @@
 				"customer_id": "",
 				"cancel_button": "",
 				"order_format": "",
-				"order_format_message": ""
+				"order_format_message": "",
+				"underdelivery_policy": ""
 			},
 			"aria": {
 				"form": ""

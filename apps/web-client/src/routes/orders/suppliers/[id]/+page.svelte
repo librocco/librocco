@@ -75,10 +75,11 @@
 	} = deleteDialog;
 	// #endregion dialog
 
-	const handleUpdateSupplier = async (_data: Partial<Supplier>) => {
+	const handleUpdateSupplier = async (_data: Partial<Supplier> & { underdeliveryPolicy?: string }) => {
 		const db = await getDb(app);
 		const data = { ...stripNulls(supplier), ..._data };
-		await upsertSupplier(db, data);
+		const underdelivery_policy = _data.underdeliveryPolicy ? (_data.underdeliveryPolicy === "queue" ? 1 : 0) : undefined;
+		await upsertSupplier(db, { ...data, underdelivery_policy });
 		dialogOpen.set(false);
 	};
 
@@ -127,6 +128,7 @@
 									orderFormat={supplier.orderFormat || "N/A"}
 									deleteDisabled={!canDelete}
 									deleteDisabledReason={t_suppliers.errors.active_orders()}
+									underdeliveryPolicy={supplier.underdelivery_policy ?? 0}
 									on:edit={() => dialogOpen.set(true)}
 									on:delete={() => deleteDialogOpen.set(true)}
 								/>
@@ -177,7 +179,10 @@
 	<SupplierMetaForm
 		heading={t.details.update_supplier_details()}
 		saveLabel={t.labels.save()}
-		data={defaults(stripNulls(supplier), zod(supplierSchema($LL)))}
+		data={defaults(
+			{ ...stripNulls(supplier), underdeliveryPolicy: supplier?.underdelivery_policy === 1 ? "queue" : "pending" },
+			zod(supplierSchema($LL))
+		)}
 		options={{
 			SPA: true,
 			validators: zod(supplierSchema($LL)),

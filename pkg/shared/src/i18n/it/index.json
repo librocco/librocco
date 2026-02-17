@@ -274,6 +274,7 @@
 			"email": "Email",
 			"address": "Indirizzo",
 			"order_format": "Formato ordine",
+			"underdelivery_policy": "",
 			"edit_details": "Modifica dettagli",
 			"delete_supplier": "Elimina fornitore"
 		},
@@ -952,7 +953,8 @@
 				"customer_id": "ID Cliente",
 				"cancel_button": "Annulla",
 				"order_format": "Formato Ordine",
-				"order_format_message": "Seleziona un formato ordine"
+				"order_format_message": "Seleziona un formato ordine",
+				"underdelivery_policy": ""
 			},
 			"aria": {
 				"form": "Modifica nome, email o acconto dell'ordine cliente"
