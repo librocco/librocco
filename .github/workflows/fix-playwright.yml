@@ -61,7 +61,6 @@ jobs:
       contents: write
       pull-requests: write
       actions: read
-      id-token: write
     timeout-minutes: 60
     env:
       FAILED_RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id || '' }}
@@ -159,6 +158,7 @@ jobs:
       uses: anthropics/claude-code-action@v1
       with:
         anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+        github_token: ${{ secrets.GITHUB_TOKEN }}
         claude_args: --max-turns 20 --allowedTools Bash Read Write Edit Glob Grep
         prompt: |
           The scheduled Playwright e2e matrix CI just failed.
