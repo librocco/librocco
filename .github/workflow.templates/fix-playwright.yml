@@ -14,10 +14,6 @@ name: Fix Playwright Failures
         description: "Run a smoke test only (verify API key + gh access, no fixes)"
         type: boolean
         default: false
-      skip_wait:
-        description: "Skip the 30-minute human grace period"
-        type: boolean
-        default: true
 
 jobs:
   #! ── Smoke test job (push or manual) ──────────────────────────────────
@@ -73,67 +69,9 @@ jobs:
       FAILED_RUN_ID: ${{ inputs.run_id || github.event.workflow_run.id || '' }}
 
     steps:
-      #! ── 1. Check if a human is already on it ──────────────────────────
-      - name: Check for existing fix activity
-        id: precheck
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RELATED_PRS=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
-            --json number,title,headRefName,author,updatedAt \
-            --jq '[.[] | select(
-              (.title  | test("playwright|e2e|flaky|test.fix"; "i")) or
-              (.headRefName | test("fix.*e2e|fix.*playwright|fix.*flaky"; "i"))
-            )]' | jq -c '.')
-
-          PR_COUNT=$(echo "$RELATED_PRS" | jq 'length')
-          echo "related_prs=$RELATED_PRS" >> "$GITHUB_OUTPUT"
-          echo "pr_count=$PR_COUNT"       >> "$GITHUB_OUTPUT"
-
-          if [ "$PR_COUNT" -gt 0 ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping — found $PR_COUNT open PR(s) likely addressing this:"
-            echo "$RELATED_PRS" | jq -r '.[] | "  #\(.number) by @\(.author.login): \(.title)"'
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      #! ── 2. Grace period: give humans 30 min to react ─────────────────
-      - name: Wait 30 minutes for human response
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          inputs.skip_wait != true
-        run: sleep 1800
-
-      #! ── 3. Re-check after the wait ───────────────────────────────────
-      - name: Re-check for activity
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          inputs.skip_wait != true
-        id: recheck
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          RELATED_PRS=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open \
-            --json number,title,headRefName \
-            --jq '[.[] | select(
-              (.title  | test("playwright|e2e|flaky|test.fix"; "i")) or
-              (.headRefName | test("fix.*e2e|fix.*playwright|fix.*flaky"; "i"))
-            )] | length')
-
-          if [ "$RELATED_PRS" -gt 0 ]; then
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            echo "::notice::Skipping after wait — a human opened a related PR in the meantime."
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      #! ── 4. Extract failure summary ────────────────────────────────────
+      #! ── 1. Extract failure summary ────────────────────────────────────
       - name: Extract failure summary
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true' &&
-          env.FAILED_RUN_ID != ''
+        if: env.FAILED_RUN_ID != ''
         id: failures
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -169,38 +107,26 @@ jobs:
           cat /tmp/failure-summary.txt
           echo "has_summary=true" >> "$GITHUB_OUTPUT"
 
-      #! ── 5. Checkout the repo ──────────────────────────────────────────
+      #! ── 2. Checkout the repo ──────────────────────────────────────────
       - name: Checkout
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         uses: actions/checkout@v4
         with:
           submodules: recursive
           lfs: true
           fetch-depth: 0
 
-      #! ── 6. Setup Node, deps, build, browsers, services ────────────────
+      #! ── 3. Setup Node, deps, build, browsers, services ────────────────
       - uses: actions/setup-node@v4
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         with:
           node-version: "22"
 
       - name: Load cached cr-sqlite artefacts
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         uses: actions/cache/restore@v4
         with:
           path: 3rd-party/artefacts
           key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
 
       - name: Cache node modules
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -211,21 +137,12 @@ jobs:
           key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
 
       - name: Add local rush scripts to PATH
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
 
       - name: Install packages
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         run: rush install
 
       - name: Build packages
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         run: |
           set +e
           rush build
@@ -239,15 +156,9 @@ jobs:
           fi
 
       - name: Build the app
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         run: cd apps/web-client && rushx build:e2e
 
       - name: Restructure build for /preview base path
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         run: |
           cd apps/web-client
           mkdir preview
@@ -255,30 +166,18 @@ jobs:
           mv preview build/
 
       - name: Download playwright browsers
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         run: cd apps/e2e && npx playwright install
 
       - name: Install uv (Python package manager)
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           working-directory: python-apps/launcher
 
       - name: Clean stale test DBs (fix schema mismatch)
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
 
       - name: Start headless launcher in background
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         run: |
           mkdir -p ~/.local/share/librocco-launcher/logs
           uv run --directory python-apps/launcher python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
@@ -286,9 +185,6 @@ jobs:
           echo "Started launcher (PID: $(cat /tmp/launcher.pid))"
 
       - name: Wait for services to be ready
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         run: |
           echo "Waiting for sync server..."
           timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
@@ -296,13 +192,10 @@ jobs:
           timeout 30 bash -c 'until curl -f -k https://localhost:8433/preview/ 2>/dev/null; do sleep 1; done'
           echo "All services ready!"
 
-      #! ── 7. Let Claude analyse & fix ───────────────────────────────────
+      #! ── 4. Let Claude analyse & fix ───────────────────────────────────
       - name: Run Claude Code
         id: claude
         continue-on-error: true
-        if: >-
-          steps.precheck.outputs.skip != 'true' &&
-          steps.recheck.outputs.skip != 'true'
         uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -337,6 +230,29 @@ jobs:
 
             ${{ steps.failures.outputs.has_summary == 'true' && 'Read /tmp/failure-summary.txt for a pre-extracted summary.' || 'No failure summary available — use gh to fetch logs.' }}
 
+            ## Step 0: Check if a fix already exists
+
+            Before doing any work, determine whether this failure is already addressed:
+
+            1. Check recent commits on `main` that touch the failing test files:
+               ```
+               git log --oneline -20 -- apps/e2e/
+               ```
+            2. Check for open PRs or branches that may already fix this:
+               ```
+               gh pr list --repo ${{ github.repository }} --state open --json number,title,headRefName,author \
+                 --jq '.[] | "\(.number)\t\(.author.login)\t\(.headRefName)\t\(.title)"'
+               ```
+            3. Check for recent `auto-fix/playwright-*` branches (even if no PR yet):
+               ```
+               git branch -r --list 'origin/auto-fix/playwright-*' --sort=-committerdate | head -5
+               ```
+
+            If you find an existing fix (merged commit, open PR, or in-progress branch) that
+            addresses the **specific failures** from this run, STOP immediately. Explain what
+            you found and make no changes. Use your judgement — a PR titled "fix login page"
+            does not address a failing "warehouse_flow" test.
+
             ## Step 1: Investigate
 
             1. If `/tmp/failure-summary.txt` exists, read it first.
@@ -350,37 +266,27 @@ jobs:
                gh run view ${{ env.FAILED_RUN_ID }} --repo ${{ github.repository }} \
                  --log-failed --job <JOB_ID> 2>&1 | grep -E '✘|Error:|FAIL|Timeout' | head -50
                ```
-            4. Check if `main` already has a fix (recent commits touching `apps/e2e/`):
-               ```
-               git log --oneline -10 -- apps/e2e/
-               ```
-            5. Check for open PRs addressing this:
-               ```
-               gh pr list --repo ${{ github.repository }} --state open --json title,headRefName \
-                 --jq '[.[] | select(.title | test("e2e|playwright|flaky|test"; "i"))]'
-               ```
-               If you find existing work, STOP — do NOT create a competing fix.
 
             ## Step 2: Fix
 
-            6. Read the failing test file(s) and the relevant helpers.
-            7. Identify the root cause. Common patterns:
+            4. Read the failing test file(s) and the relevant helpers.
+            5. Identify the root cause. Common patterns:
                - Missing `await` on Playwright actions (fill, press, click)
                - Hardcoded `waitForTimeout` — replace with `waitFor()`, `expect().toBeVisible()`, etc.
                - Flaky selectors or race conditions
                - Scroll/intersection observer issues (check CSS on scroll containers)
                - Slow DB setup — batch `evaluate()` calls instead of looping
-            8. Only modify files in `apps/e2e/` unless the failure is clearly an app bug.
+            6. Only modify files in `apps/e2e/` unless the failure is clearly an app bug.
 
             ## Step 3: Finish
 
-            9. Create a branch, commit, push, and open a PR.
-            10. Monitor PR checks until green or time runs out.
-            11. If checks fail and you have time, iterate and push to the same branch.
-            12. If you cannot determine the fix with confidence, make no changes
+            7. Create a branch, commit, push, and open a PR.
+            8. Monitor PR checks until green or time runs out.
+            9. If checks fail and you have time, iterate and push to the same branch.
+            10. If you cannot determine the fix with confidence, make no changes
                 and explain what you found.
 
-      #! ── 8. Stop services ────────────────────────────────────────────
+      #! ── 5. Stop services ────────────────────────────────────────────
       - name: Stop services
         if: always()
         run: |
