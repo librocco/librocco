@@ -11,18 +11,22 @@ Librocco's order flow manages the lifecycle of book orders from customer request
 ### User Stories
 
 #### US1: Customer Places an Order
+
 A customer walks into the shop and requests books. The bookstore clerk creates a customer order and adds books to it. The system tracks each book as a separate order line in **Pending** state.
 
 **Acceptance Criteria:**
+
 - Customer information (name, email, phone, deposit) can be captured
 - Multiple books can be added to a single customer order
 - Each book is stored as an individual order line
 - Order lines are automatically assigned a `created` timestamp
 
 #### US2: Bookshop Orders from Suppliers
+
 The bookstore clerk views all pending customer orders grouped by supplier (via publisher associations) and creates one or more supplier orders.
 
 **Acceptance Criteria:**
+
 - Pending customer order lines are aggregated by supplier
 - Books are grouped via: book → publisher → supplier relationship
 - Clerk can select a subset of aggregations for each supplier order (to reduce order size)
@@ -30,9 +34,11 @@ The bookstore clerk views all pending customer orders grouped by supplier (via p
 - A supplier order is created with `created` timestamp
 
 #### US3: Shipment Received & Reconciled
+
 A shipment arrives from one or more suppliers. The clerk creates a reconciliation order, scans incoming books, and reconciles against ordered quantities.
 
 **Acceptance Criteria:**
+
 - One or more supplier orders can be selected for reconciliation
 - Incoming books are scanned/added to the reconciliation order
 - System compares delivered vs. ordered quantities
@@ -43,12 +49,36 @@ A shipment arrives from one or more suppliers. The clerk creates a reconciliatio
 - Customer orders become "Received" state
 
 #### US4: Customer Collects Books
+
 The customer returns to collect their books. The clerk marks the received books as collected.
 
 **Acceptance Criteria:**
+
 - Received books (with `received` timestamp) can be marked as collected
 - Books are marked with `collected` timestamp
 - Customer order becomes complete
+
+#### US5: Configure Supplier Underdelivery Policy
+
+A bookstore administrator configures how underdelivery is handled for each supplier.
+
+**Acceptance Criteria:**
+
+- Each supplier has an underdelivery policy setting (pending/queue)
+- Policy can be set when creating a supplier
+- Policy can be updated for existing suppliers
+- Default policy is "pending"
+
+#### US6: Automatic Continuation Orders (Queue Policy)
+
+When a supplier with "queue" policy underdelivers, the system automatically creates a continuation order.
+
+**Acceptance Criteria:**
+
+- Underdelivered quantities are added to a new supplier order
+- Continuation order is linked to the original order
+- Customer order lines remain in "Placed" state
+- Clerk can review and place the continuation order
 
 ---
 
@@ -74,14 +104,15 @@ customer_order_lines (
 
 **Order Line States** (based on timestamp presence):
 
-| State          | created | placed | received | collected |
-|----------------|---------|--------|----------|-----------|
-| **Pending**    | ✓       | ✗      | ✗        | ✗         |
-| **Placed**     | ✓       | ✓      | ✗        | ✗         |
-| **Received**   | ✓       | ✓      | ✓        | ✗         |
-| **Collected**  | ✓       | ✓      | ✓        | ✓         |
+| State         | created | placed | received | collected |
+| ------------- | ------- | ------ | -------- | --------- |
+| **Pending**   | ✓       | ✗      | ✗        | ✗         |
+| **Placed**    | ✓       | ✓      | ✗        | ✗         |
+| **Received**  | ✓       | ✓      | ✓        | ✗         |
+| **Collected** | ✓       | ✓      | ✓        | ✓         |
 
 Status is derived via SQL query:
+
 ```sql
 CASE
   WHEN collected IS NOT NULL THEN 3  -- Collected
@@ -149,9 +180,26 @@ supplier (
   name TEXT,
   email TEXT,
   address TEXT,
-  orderFormat TEXT
+  orderFormat TEXT,
+  underdelivery_policy INTEGER DEFAULT 0  -- 0 = pending, 1 = queue
 )
 ```
+
+The `supplier` table stores supplier information including the underdelivery policy that determines how underdelivery is handled during reconciliation.
+
+#### Supplier Order Continuation
+
+```sql
+supplier_order_continuation (
+  parent_order_id INTEGER NOT NULL,
+  continuation_order_id INTEGER NOT NULL,
+  PRIMARY KEY (parent_order_id, continuation_order_id),
+  FOREIGN KEY (parent_order_id) REFERENCES supplier_order(id),
+  FOREIGN KEY (continuation_order_id) REFERENCES supplier_order(id)
+)
+```
+
+The `supplier_order_continuation` table links continuation orders (created for underdelivery with "queue" policy) to their parent orders. This allows tracking of order relationships and history.
 
 A publisher is associated with exactly one supplier. A "General" pseudo-supplier (supplier_id = NULL) handles books whose publishers are not associated with any configured supplier.
 
@@ -167,7 +215,7 @@ A publisher is associated with exactly one supplier. A "General" pseudo-supplier
 // customers.ts:211
 await db.tx(async (db) => {
   const timestamp = Date.now();
-  const params = bookIsbns.map(isbn => [customerId, isbn, timestamp]).flat();
+  const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
 
   // Insert book lines with created timestamp
   await db.exec(
@@ -177,13 +225,12 @@ await db.tx(async (db) => {
   );
 
   // Update customer timestamp
-  await db.exec("UPDATE customer SET updated_at = ? WHERE id = ?",
-    [timestamp, customerId]
-  );
+  await db.exec("UPDATE customer SET updated_at = ? WHERE id = ?", [timestamp, customerId]);
 });
 ```
 
 **Key Points:**
+
 - Each ISBN in the array becomes a separate order line
 - Multiple copies of same book = multiple order lines with same ISBN
 - All lines initially have only `created` timestamp → **Pending** state
@@ -194,6 +241,7 @@ await db.tx(async (db) => {
 #### Flow 2: Supplier Order Creation
 
 **Endpoints:**
+
 - `getPossibleSupplierOrders()` - List suppliers with aggregated pending lines
 - `getPossibleSupplierOrderLines(supplierId)` - Get detailed pending lines for a supplier
 - `createSupplierOrder(id, supplierId, orderLines[])` - Place supplier order
@@ -201,10 +249,11 @@ await db.tx(async (db) => {
 **Aggregation Query:**
 
 ```sql
--- customers.ts:248
+-- suppliers.ts:259
 SELECT
   supplier_id,
   COALESCE(supplier.name, 'General') as supplier_name,
+  COALESCE(supplier.underdelivery_policy, 0) as underdelivery_policy,
   COUNT(*) as total_book_number,
   SUM(COALESCE(book.price, 0)) as total_book_price
 FROM supplier
@@ -212,7 +261,7 @@ RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
 RIGHT JOIN book ON sp.publisher = book.publisher
 RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
 WHERE col.placed IS NULL AND col.received IS NULL  -- Pending lines only
-GROUP BY supplier.id, supplier.name
+GROUP BY supplier.id, supplier.name, supplier.underdelivery_policy
 ORDER BY supplier_name ASC
 ```
 
@@ -263,17 +312,54 @@ await db.tx(async (db) => {
 ```
 
 **Key Points:**
+
 - Only `placed IS NULL AND received IS NULL` lines are eligible
 - Lines selected by FCFS: `ORDER BY created ASC`
- Clerk can select subset of aggregated lines via UI checkboxes
+  Clerk can select subset of aggregated lines via UI checkboxes
 - Excess supplier order quantity is allowed (no strict validation)
 - History table tracks which supplier order each line went through
+
+**Supplier Order Creation with Underdelivery Policy:**
+
+When creating or updating a supplier, the underdelivery policy can be configured:
+
+```typescript
+// suppliers.ts:110-127
+await db.exec(
+  `INSERT INTO supplier (id, name, email, address, customerId, orderFormat, underdelivery_policy)
+   VALUES (?, ?, ?, ?, ?, ?, ?)
+   ON CONFLICT(id) DO UPDATE SET
+    name = COALESCE(?, name),
+    email = COALESCE(?, email),
+    address = COALESCE(?, address),
+    customerId = COALESCE(?, customerId),
+    orderFormat = COALESCE(?, orderFormat),
+    underdelivery_policy = COALESCE(?, underdelivery_policy);`,
+  [
+    supplier.id,
+    supplier.name,
+    supplier.email,
+    supplier.address,
+    supplier.customerId ?? null,
+    supplier.orderFormat ?? null,
+    supplier.underdelivery_policy ?? 0 // Default to pending
+    // ... update values
+  ]
+);
+```
+
+**Key Points:**
+
+- Default policy is `0` (pending)
+- Policy can be changed at any time
+- Policy affects future reconciliations only
 
 ---
 
 #### Flow 3: Shipment Reconciliation
 
 **Endpoints:**
+
 - `createReconciliationOrder(id, supplierOrderIds[])`
 - `upsertReconciliationOrderLines(id, lines[])` - Add scanned books
 - `getReconciliationOrderLines(id)` - Get scanned books
@@ -320,61 +406,140 @@ await db.tx(async (txDb) => {
 
 ```typescript
 // order-reconciliation.ts:367
-const receivedLines = new Map(...await db.exec("SELECT isbn, quantity FROM reconciliation_order_lines WHERE reconciliation_order_id = ?", [id]));
-const orderedLines = new Map(...await db.exec("SELECT isbn, SUM(quantity) FROM supplier_order_line WHERE supplier_order_id IN (?, ?, ...) GROUP BY isbn", supplierOrderIds));
+const receivedLinesQuery = `
+  SELECT
+    isbn,
+    quantity
+  FROM reconciliation_order_lines
+  WHERE reconciliation_order_id = ?
+`;
+const receivedLineBudget = await db.execA<[isbn: string, quantity: number]>(receivedLinesQuery, [id]).then((res) => new Map(res));
 
-const overdeliveredLines = new Map<string, {ordered: number, delivered: number}>();
+const supplierOrderLineQuery = `
+  SELECT
+    so.supplier_id,
+    sol.supplier_order_id,
+    sol.isbn,
+    sol.quantity,
+    so.created,
+    s.underdelivery_policy
+  FROM supplier_order_line sol
+  LEFT JOIN supplier_order so ON sol.supplier_order_id = so.id
+  LEFT JOIN supplier s ON so.supplier_id = s.id
+  WHERE sol.supplier_order_id IN (${multiplyString("?", supplierOrderIds.length)})
+  ORDER BY so.created ASC
+`;
 
-await db.tx(async (txDb) => {
-  const timestamp = Date.now();
-  await txDb.exec("UPDATE reconciliation_order SET finalized = 1, updatedAt = ? WHERE id = ?", [timestamp, id]);
+type SupplierOrderLineItem = {
+  supplier_id: number;
+  supplier_order_id: number;
+  isbn: string;
+  quantity: number;
+  underdelivery_policy: 0 | 1;
+  created: number;
+};
+const supplierOrderLines = await db.execO<SupplierOrderLineItem>(supplierOrderLineQuery, supplierOrderIds);
 
-  const allISBNS = new Set([...orderedLines.keys(), ...receivedLines.keys()]);
+const isbns = [...new Set(supplierOrderLines.map(({ isbn }) => isbn))];
+const customerOrderLines = await getCustomerOrderLinesCore(db, { isbns, orderBy: "created ASC", status: { eq: OrderItemStatus.Placed } });
 
-  for (const isbn of allISBNS) {
-    const orderedQuantity = orderedLines.get(isbn) || 0;
-    const receivedQuantity = receivedLines.get(isbn) || 0;
-    const rejectQuantity = orderedQuantity - receivedQuantity;
+const customerOrdersByISBN = new Map<string, number[]>();
+for (const { isbn, id } of customerOrderLines) {
+  const existing = customerOrdersByISBN.get(isbn) || [];
+  existing.push(id);
+  customerOrdersByISBN.set(isbn, existing);
+}
 
-    // Track overdelivery
-    if (rejectQuantity < 0) {
-      overdeliveredLines.set(isbn, { ordered: orderedQuantity, delivered: receivedQuantity });
+const linesToDeliver: number[] = [];
+const linesToReject: number[] = [];
+type ContinuationOrderLine = { parent_order_id: number; supplier_id: number; isbn: string; quantity: number };
+const continuationOrderLines: ContinuationOrderLine[] = [];
+
+for (const { isbn, quantity: ordered, supplier_id, supplier_order_id, underdelivery_policy } of supplierOrderLines) {
+  const budget = receivedLineBudget.get(isbn) || 0;
+  const delivered = Math.min(ordered, budget);
+  const remainingBudget = budget - delivered;
+  const underdelivered = ordered - delivered;
+
+  receivedLineBudget.set(isbn, remainingBudget);
+
+  if (delivered > 0) {
+    const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
+
+    if (customerOrderLines.length < delivered) {
+      const msg = [
+        "unexpected state: remaining placed customer order lines < delivered lines",
+        `  isbn: ${isbn}`,
+        `  delivered: ${delivered}`,
+        `  remining customer orders: ${customerOrderLines.length}`
+      ].join("\n");
+      throw new Error(msg);
     }
 
-    // Get all in-progress customer order lines for this ISBN
-    const customerOrderLines = await txDb.execO<{id: number, placed: number | null}>(
-      "SELECT id, placed FROM customer_order_lines
-       WHERE isbn = ? AND received IS NULL
-       ORDER BY created ASC",
-      [isbn]
-    );
+    const idsToDeliver = customerOrderLines.splice(0, delivered);
 
-    // FCFS: First N lines received, last M lines rejected
-    const receivedIds = customerOrderLines.splice(0, receivedQuantity).map(({id}) => id);
-
-    // Reject only placed lines, from the end (most recently placed first)
-    const rejectedIds = customerOrderLines
-      .reverse()
-      .filter(({placed}) => Boolean(placed)) // Only reject placed lines
-      .slice(0, Math.max(rejectQuantity, 0))
-      .map(({id}) => id);
-
-    // Mark received
-    await txDb.exec(
-      "UPDATE customer_order_lines SET received = ? WHERE id IN (?, ?, ...)",
-      [timestamp, ...receivedIds]
-    );
-
-    // Mark rejected (back to pending)
-    await txDb.exec(
-      "UPDATE customer_order_lines SET placed = NULL WHERE id IN (?, ?, ...)",
-      rejectedIds
-    );
+    linesToDeliver.push(...idsToDeliver);
+    customerOrdersByISBN.set(isbn, customerOrderLines);
   }
 
-  // Log warning for overdelivery
-  if (overdeliveredLines.size > 0) {
-    console.warn("Overdelivery detected: "...);
+  if (underdelivered > 0 && underdelivery_policy === 0) {
+    const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
+
+    if (customerOrderLines.length < underdelivered) {
+      const msg = [
+        "unexpected state: remaining placed customer order lines < underdelivered lines",
+        `  isbn: ${isbn}`,
+        `  underdelivered: ${underdelivered}`,
+        `  remaining customer orders: ${customerOrderLines.length}`
+      ].join("\n");
+      throw new Error(msg);
+    }
+
+    const idsToReject = customerOrderLines.splice(-underdelivered, underdelivered);
+
+    linesToReject.push(...idsToReject);
+    customerOrdersByISBN.set(isbn, customerOrderLines);
+  }
+
+  if (underdelivered > 0 && underdelivery_policy === 1) {
+    continuationOrderLines.push({ isbn, quantity: underdelivered, supplier_id, parent_order_id: supplier_order_id });
+  }
+}
+
+return db.tx(async (txDb) => {
+  const timestamp = Date.now();
+  await txDb.exec(`UPDATE reconciliation_order SET finalized = 1, updatedAt = ? WHERE id = ?;`, [timestamp, id]);
+
+  if (linesToDeliver.length > 0) {
+    await txDb.exec(`UPDATE customer_order_lines SET received = ? WHERE id IN (${multiplyString("?", linesToDeliver.length)})`, [
+      timestamp,
+      ...linesToDeliver
+    ]);
+  }
+
+  if (linesToReject.length > 0) {
+    await txDb.exec(`UPDATE customer_order_lines SET placed = NULL WHERE id IN (${multiplyString("?", linesToReject.length)})`, [
+      timestamp,
+      ...linesToReject
+    ]);
+  }
+
+  const continuationOrders = _group(continuationOrderLines, (line) => [line.parent_order_id, line]);
+  for (const [parent_order_id, _lines] of continuationOrders) {
+    const lines = [..._lines];
+
+    const id = Math.floor(Math.random() * 1000000);
+    const supplierId = lines[0].supplier_id;
+
+    await txDb.exec("INSERT INTO supplier_order (id, supplier_id, created) VALUES (?, ?, ?)", [id, supplierId, timestamp]);
+    await txDb.exec("INSERT INTO supplier_order_continuation (parent_order_id, continuation_order_id) VALUES (?, ?)", [
+      parent_order_id,
+      id
+    ]);
+
+    const placeholders = Array(lines.length).fill("(?, ?, ?)").join(",\n");
+    const params = lines.flatMap(({ isbn, quantity }) => [id, isbn, quantity]);
+    await txDb.exec(`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES ${placeholders}`, params);
   }
 });
 ```
@@ -382,23 +547,171 @@ await db.tx(async (txDb) => {
 **Key Points:**
 
 1. **Fulfillment** - First `receivedQuantity` lines are marked as `received`:
+
    - Lines ordered by `created ASC` (FCFS)
    - This satisfies: "first order placed gets first book"
 
-2. **Underdelivery** - Excess `(ordered - received)` lines are rejected:
+2. **Underdelivery** - Excess `(ordered - received)` lines are handled based on policy:
+
+   **Policy = "pending" (0):**
+
    - From remaining lines, filter to `placed IS NOT NULL` only
    - Sort by `created DESC`, take first M
    - Set `placed = NULL` (back to **Pending** state)
    - These lines re-appear in the "Unordered" supplier orders view
-   - This satisfies: "latest-placed lines marked for reordering"
+
+   **Policy = "queue" (1):**
+
+   - Create continuation order with underdelivered quantities
+   - Link continuation order to parent order
+   - Customer order lines remain in **Placed** state
+   - Clerk can review and place continuation order
 
 3. **Overdelivery** - Extra books spill over:
+
    - If `receivedQuantity > orderedQuantity`, query continues until all received books assigned
    - Can reconcile lines from other supplier orders or even `placed IS NULL` (pending) lines
    - Warning logged but lines aren't rejected
    - This satisfies: "overdelivery can serve pending orders early"
 
 4. **Isolation** - The query uses `received IS NULL` (not `placed IS NOT NULL`) to find all un-reconciled lines, allowing overdelivery to reconcile pending lines too.
+
+5. **Continuation Orders** - When policy is "queue":
+   - New supplier orders are automatically created for underdelivered items
+   - Orders are linked via `supplier_order_continuation` table
+   - Allows tracking of order relationships and history
+
+---
+
+### Underdelivery Policy
+
+When a supplier delivers fewer books than ordered, the system handles underdelivery based on the supplier's **underdelivery policy** setting. Each supplier can be configured with one of two policies:
+
+#### Policy Options
+
+**1. Pending (default)**
+
+- Underdelivered books are rejected and returned to **Pending** state
+- Customer order lines have `placed = NULL` set
+- Books reappear in the "Unordered" supplier orders view
+- Clerk must manually reorder these books
+
+**2. Queue**
+
+- Underdelivered books are automatically added to a **continuation order**
+- A new supplier order is created with the missing quantities
+- The continuation order is linked to the original order via `supplier_order_continuation` table
+- Customer order lines remain in **Placed** state
+- Clerk can review and place the continuation order
+
+#### Configuration
+
+The underdelivery policy is configured per supplier:
+
+```typescript
+type Supplier = {
+  id?: number | null;
+  name?: string;
+  email?: string;
+  address?: string;
+  customerId?: number;
+  orderFormat?: Format;
+  underdelivery_policy?: 0 | 1; // 0 = pending, 1 = queue
+};
+```
+
+**UI Location:**
+
+- Supplier Card: Displays current policy ("pending" or "queue")
+- Supplier Form: Dropdown to select policy when creating/updating suppliers
+
+#### Reconciliation Flow with Underdelivery Policy
+
+**When Policy = "pending" (0):**
+
+```typescript
+// order-reconciliation.ts:472-491
+if (underdelivered > 0 && underdelivery_policy === 0) {
+  // Reject underdelivered lines (set placed = NULL)
+  const idsToReject = customerOrderLines.splice(-underdelivered, underdelivered);
+  linesToReject.push(...idsToReject);
+}
+```
+
+**When Policy = "queue" (1):**
+
+```typescript
+// order-reconciliation.ts:494-496
+if (underdelivered > 0 && underdelivery_policy === 1) {
+  // Create continuation order line
+  continuationOrderLines.push({ isbn, quantity: underdelivered, supplier_id, parent_order_id: supplier_order_id });
+}
+
+// Later: Create continuation orders
+// order-reconciliation.ts:518-534
+const continuationOrders = _group(continuationOrderLines, (line) => [line.parent_order_id, line]);
+for (const [parent_order_id, _lines] of continuationOrders) {
+  // Create new supplier order
+  await txDb.exec("INSERT INTO supplier_order (id, supplier_id, created) VALUES (?, ?, ?)", [id, supplierId, timestamp]);
+  // Link to parent order
+  await txDb.exec("INSERT INTO supplier_order_continuation (parent_order_id, continuation_order_id) VALUES (?, ?)", [parent_order_id, id]);
+  // Add underdelivered lines
+  await txDb.exec(`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES ...`, params);
+}
+```
+
+#### Database Schema Updates
+
+**Supplier Table:**
+
+```sql
+ALTER TABLE supplier ADD COLUMN underdelivery_policy INTEGER DEFAULT 0;
+-- 0 = pending, 1 = queue
+```
+
+**Supplier Order Continuation Table:**
+
+```sql
+CREATE TABLE supplier_order_continuation (
+  parent_order_id INTEGER NOT NULL,
+  continuation_order_id INTEGER NOT NULL,
+  PRIMARY KEY (parent_order_id, continuation_order_id),
+  FOREIGN KEY (parent_order_id) REFERENCES supplier_order(id),
+  FOREIGN KEY (continuation_order_id) REFERENCES supplier_order(id)
+);
+```
+
+**PlacedSupplierOrder Type:**
+
+```typescript
+export type PlacedSupplierOrder = {
+  id: number;
+  created: number;
+  reconciliation_order_id: number | null;
+  reconciliation_last_updated_at: number | null;
+  finalized: number | null;
+  parent_order_id: number | null; // NEW: Links to continuation parent
+} & PossibleSupplierOrder;
+```
+
+#### UI Components
+
+**SupplierCard Component:**
+
+- Displays underdelivery policy with History icon
+- Shows "pending" or "queue" label
+
+**ReconcileStep2 Component:**
+
+- Shows UnderdeliveryActionBadge for each supplier order
+- Badge displays action based on policy:
+  - "Order marked as pending delivery" (pending policy)
+  - "Missing books added to order queue" (queue policy)
+
+**SupplierMetaForm Component:**
+
+- Dropdown to select underdelivery policy
+- Options: "pending" (default) and "queue"
 
 ---
 
@@ -424,10 +737,107 @@ await db.exec(
 ```
 
 **Key Points:**
+
 - Explicit step separate from receiving
 - Only affects lines that already have `received IS NOT NULL`
 - Customer order marked complete only when ALL lines have `collected IS NOT NULL`
 - Customer order list shows `completed` flag for status
+
+---
+
+## Bug Fixes
+
+### 1. Date Formatting in ReconciliationCustomerNotification
+
+**Issue:** Customer order dates were displayed as raw timestamps instead of formatted dates.
+
+**Fix:** Added proper date formatting using i18n formatters:
+
+```typescript
+// ReconciliationCustomerNotification.svelte:35-39
+function formatOrderDate(created: Date): string {
+  const datePart = $dateFormatters.dateShort(created);
+  const timePart = $dateFormatters.timeOnly(created);
+  return `${datePart}, ${timePart}`;
+}
+```
+
+**Impact:** Customer order dates now display as "Feb 17, 2026, 2:30 PM" instead of raw timestamps.
+
+### 2. Customer Order Retrieval - Status Filter
+
+**Issue:** Customer order retrieval was using `status: { lte: OrderItemStatus.Placed }` which included pending orders in reconciliation.
+
+**Fix:** Changed to `status: { eq: OrderItemStatus.Placed }` to only include placed orders:
+
+```typescript
+// order-reconciliation.ts:415
+const customerOrderLines = await getCustomerOrderLinesCore(db, {
+  isbns,
+  orderBy: "created ASC",
+  status: { eq: OrderItemStatus.Placed } // Changed from lte to eq
+});
+```
+
+**Impact:** Reconciliation now correctly processes only placed customer orders, preventing premature fulfillment of pending orders.
+
+### 3. Null Checks in Delivery Stats Calculation
+
+**Issue:** Potential runtime errors when customer order lines are undefined.
+
+**Fix:** Added null checks and fallbacks:
+
+```typescript
+// utils.ts:23, 68
+const remainingScanned = scannedLineLookup.get(isbn) || 0; // Added fallback
+customers: [...(customerLineLookup.get(isbn) || [])].slice(0, quantity); // Added fallback
+```
+
+**Impact:** Prevents runtime errors when lookup maps return undefined.
+
+### 4. Length Checks Before DB Updates
+
+**Issue:** DB update queries were executed even when there were no lines to update.
+
+**Fix:** Added length checks before DB operations:
+
+```typescript
+// order-reconciliation.ts:503-515
+if (linesToDeliver.length > 0) {
+  // NEW: Length check
+  await txDb.exec(`UPDATE customer_order_lines SET received = ? WHERE id IN (...)`, [timestamp, ...linesToDeliver]);
+}
+
+if (linesToReject.length > 0) {
+  // NEW: Length check
+  await txDb.exec(`UPDATE customer_order_lines SET placed = NULL WHERE id IN (...)`, [timestamp, ...linesToReject]);
+}
+```
+
+**Impact:** Prevents unnecessary DB operations and potential SQL errors with empty IN clauses.
+
+### 5. Centralized Type Definitions
+
+**Issue:** Duplicate type definitions across multiple components.
+
+**Fix:** Centralized common types in `types.ts`:
+
+```typescript
+// types.ts:89-90
+export type CustomerDeliveryEntry = Pick<CustomerOrderLine, "fullname" | "customer_display_id" | "created">;
+export type DeliveryByISBN = { isbn: string; title: string; total: number; customers: CustomerDeliveryEntry[] };
+```
+
+These types are now imported by:
+
+- `ReconciliationCustomerNotification.svelte`
+- `routes/orders/suppliers/reconcile/[id]/utils.ts`
+
+**Benefits:**
+
+- Single source of truth for type definitions
+- Easier to maintain and update
+- Prevents type inconsistencies
 
 ---
 
@@ -458,8 +868,8 @@ A supplier order cannot be in multiple active reconciliation orders:
 // order-reconciliation.ts:101
 const existingReconOrders = await getAllReconciliationOrders(db);
 const conflicts = existingReconOrders
-  .map(order => ({ ...order, supplierOrderIds: order.supplierOrderIds.filter(id => supplierOrderIds.includes(id)) }))
-  .filter(order => order.supplierOrderIds.length);
+  .map((order) => ({ ...order, supplierOrderIds: order.supplierOrderIds.filter((id) => supplierOrderIds.includes(id)) }))
+  .filter((order) => order.supplierOrderIds.length);
 
 if (conflicts.length) {
   throw new ErrSupplierOrdersAlreadyReconciling(supplierOrderIds, conflicts);
@@ -555,16 +965,58 @@ The consolidation allows handling of split or combined shipments more efficientl
 
 ---
 
+### 9. Underdelivery Policy Behavior
+
+The underdelivery policy determines how missing books are handled during reconciliation:
+
+**Pending Policy (default):**
+
+- Underdelivered books are rejected and returned to pending state
+- Customer order lines have `placed = NULL` set
+- Books must be manually reordered
+- Suitable for suppliers with unreliable delivery
+
+**Queue Policy:**
+
+- Underdelivered books are automatically added to continuation order
+- Customer order lines remain in placed state
+- Continuation order is linked to parent order
+- Suitable for suppliers with reliable but incomplete delivery
+
+**Implementation:**
+
+```typescript
+// order-reconciliation.ts:472-496
+if (underdelivered > 0) {
+  if (underdelivery_policy === 0) {
+    // Reject lines
+    const idsToReject = customerOrderLines.splice(-underdelivered, underdelivered);
+    linesToReject.push(...idsToReject);
+  } else if (underdelivery_policy === 1) {
+    // Create continuation order
+    continuationOrderLines.push({
+      isbn,
+      quantity: underdelivered,
+      supplier_id,
+      parent_order_id: supplier_order_id
+    });
+  }
+}
+```
+
+---
+
 ## Summary Table
 
-| Step | Action | Customer Order Line State | Key Tables |
-|------|--------|--------------------------|------------|
-| 1 | Customer places order | **Pending** (created timestamp) | `customer_order_lines` |
-| 2 | Bookshop orders from supplier | **Placed** (placed timestamp) | `supplier_order`, `customer_order_lines`, `customer_order_line_supplier_order` |
-| 3a | Reconciliation: received books | **Received** (received timestamp) | `reconciliation_order`, `reconciliation_order_lines` |
-| 3b | Reconciliation: underdelivery rejection | Back to **Pending** (placed = NULL) | `customer_order_lines` |
-| 3c | Reconciliation: overdelivery spillover | **Received** (even if not placed) | `customer_order_lines` |
-| 4 | Customer collects | **Collected** (collected timestamp) | `customer_order_lines` |
+| Step | Action                                         | Customer Order Line State                      | Key Tables                                                                     |
+| ---- | ---------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| 1    | Customer places order                          | **Pending** (created timestamp)                | `customer_order_lines`                                                         |
+| 2    | Bookshop orders from supplier                  | **Placed** (placed timestamp)                  | `supplier_order`, `customer_order_lines`, `customer_order_line_supplier_order` |
+| 3a   | Reconciliation: received books                 | **Received** (received timestamp)              | `reconciliation_order`, `reconciliation_order_lines`                           |
+| 3b   | Reconciliation: underdelivery (pending policy) | Back to **Pending** (placed = NULL)            | `customer_order_lines`                                                         |
+| 3c   | Reconciliation: underdelivery (queue policy)   | Remains **Placed**, continuation order created | `supplier_order_continuation`, `supplier_order_line`                           |
+| 3d   | Reconciliation: overdelivery spillover         | **Received** (even if not placed)              | `customer_order_lines`                                                         |
+| 4    | Customer collects                              | **Collected** (collected timestamp)            | `customer_order_lines`                                                         |
 
 **First-Come-First-Served Implementation:**
 
@@ -577,7 +1029,7 @@ The consolidation allows handling of split or combined shipments more efficientl
 ```
 [Pending] --order placed--> [Placed] --reconciliation--> [Received] --collection--> [Collected]
   ^                                                         |
-  |------------ underdelivery (placed=NULL) ----------------|
-                  OR
+  |------------ underdelivery (pending policy, placed=NULL) -|
+  |------------ underdelivery (queue policy, continuation order created) -|
   |----------- overdelivery spillover from received --------|
 ```
