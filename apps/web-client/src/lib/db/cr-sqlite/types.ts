@@ -86,6 +86,9 @@ export type CustomerOrderLineHistory = {
 	placed: Date;
 };
 
+export type CustomerDeliveryEntry = Pick<CustomerOrderLine, "fullname" | "customer_display_id" | "created">;
+export type DeliveryByISBN = { isbn: string; title: string; total: number; customers: CustomerDeliveryEntry[] };
+
 /* Suppliers */
 
 /**
