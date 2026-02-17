@@ -749,6 +749,38 @@ type RootTranslation = {
 			 */
 			order_format: string
 		}
+		card: {
+			/**
+			 * S​u​p​p​l​i​e​r​ ​I​D
+			 */
+			supplier_id: string
+			/**
+			 * E​m​a​i​l
+			 */
+			email: string
+			/**
+			 * A​d​d​r​e​s​s
+			 */
+			address: string
+			/**
+			 * O​r​d​e​r​ ​f​o​r​m​a​t
+			 */
+			order_format: string
+			/**
+			 * E​d​i​t​ ​d​e​t​a​i​l​s
+			 */
+			edit_details: string
+			/**
+			 * D​e​l​e​t​e​ ​s​u​p​p​l​i​e​r
+			 */
+			delete_supplier: string
+		}
+		errors: {
+			/**
+			 * C​a​n​n​o​t​ ​d​e​l​e​t​e​:​ ​s​u​p​p​l​i​e​r​ ​h​a​s​ ​a​c​t​i​v​e​ ​o​r​d​e​r​s​ ​o​r​ ​u​n​f​i​n​a​l​i​z​e​d​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n​s
+			 */
+			active_orders: string
+		}
 	}
 	warehouse_list_page: {
 		/**
@@ -1303,6 +1335,12 @@ type RootTranslation = {
 			 */
 			description: string
 		}
+		delete_supplier_dialog: {
+			/**
+			 * T​h​i​s​ ​w​i​l​l​ ​p​e​r​m​a​n​e​n​t​l​y​ ​d​e​l​e​t​e​ ​t​h​i​s​ ​s​u​p​p​l​i​e​r​ ​a​n​d​ ​r​e​m​o​v​e​ ​a​l​l​ ​p​u​b​l​i​s​h​e​r​ ​a​s​s​o​c​i​a​t​i​o​n​s​.
+			 */
+			description: string
+		}
 		create_database_dialog: {
 			/**
 			 * C​r​e​a​t​e​ ​n​e​w​ ​d​a​t​a​b​a​s​e
@@ -1655,21 +1693,21 @@ type RootTranslation = {
 	order_list_page: {
 		labels: {
 			/**
-			 * R​e​m​o​v​e​ ​p​u​b​l​i​s​h​e​r
+			 * S​a​v​e
 			 */
-			remove_publisher: string
+			save: string
 			/**
-			 * C​r​e​a​t​e​ ​n​e​w​ ​o​r​d​e​r
+			 * R​e​m​o​v​e
 			 */
-			create_new_order: string
+			remove: string
 			/**
-			 * A​d​d​ ​t​o​ ​s​u​p​p​l​i​e​r
+			 * R​e​-​a​s​s​i​g​n
 			 */
-			add_to_supplier: string
+			reassign: string
 			/**
-			 * R​e​-​a​s​s​i​g​n​ ​t​o​ ​s​u​p​p​l​i​e​r
+			 * A​d​d
 			 */
-			reassign_publisher: string
+			add: string
 		}
 		details: {
 			/**
@@ -1677,43 +1715,62 @@ type RootTranslation = {
 			 */
 			supplier_page: string
 			/**
-			 * S​u​p​p​l​i​e​r​ ​n​a​m​e
+			 * U​p​d​a​t​e​ ​s​u​p​p​l​i​e​r​ ​d​e​t​a​i​l​s
 			 */
-			supplier_name: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​e​m​a​i​l
-			 */
-			supplier_email: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​a​d​d​r​e​s​s
-			 */
-			supplier_address: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​c​u​s​t​o​m​e​r​ ​I​D
-			 */
-			supplier_customerId: string
-			/**
-			 * S​u​p​p​l​i​e​r​ ​o​r​d​e​r​ ​f​o​r​m​a​t
-			 */
-			supplier_orderFormat: string
+			update_supplier_details: string
 		}
-		table: {
+		tabs: {
 			/**
-			 * P​u​b​l​i​s​h​e​r​ ​n​a​m​e
+			 * O​r​d​e​r​s
 			 */
-			publisher_name: string
+			orders: string
 			/**
-			 * A​s​s​i​g​n​e​d​ ​p​u​b​l​i​s​h​e​r​s
+			 * A​s​s​i​g​n​e​d​ ​P​u​b​l​i​s​h​e​r​s
 			 */
 			assigned_publishers: string
+		}
+		table: {
 			/**
 			 * U​n​a​s​s​i​g​n​e​d​ ​p​u​b​l​i​s​h​e​r​s
 			 */
 			unassigned_publishers: string
+		}
+		placeholders: {
 			/**
-			 * O​t​h​e​r​ ​S​u​p​p​l​i​e​r​ ​P​u​b​l​i​s​h​e​r​s
+			 * S​e​a​r​c​h​ ​p​u​b​l​i​s​h​e​r​s​.​.​.
 			 */
-			other_supplier_publishers: string
+			search_publishers: string
+			/**
+			 * N​o​ ​a​s​s​i​g​n​e​d​ ​p​u​b​l​i​s​h​e​r​s
+			 */
+			no_assigned_publishers: string
+			/**
+			 * N​o​ ​m​a​t​c​h​i​n​g​ ​a​s​s​i​g​n​e​d​ ​p​u​b​l​i​s​h​e​r​s
+			 */
+			no_matching_assigned_publishers: string
+			/**
+			 * N​o​ ​a​v​a​i​l​a​b​l​e​ ​p​u​b​l​i​s​h​e​r​s
+			 */
+			no_available_publishers: string
+			/**
+			 * N​o​ ​m​a​t​c​h​i​n​g​ ​a​v​a​i​l​a​b​l​e​ ​p​u​b​l​i​s​h​e​r​s
+			 */
+			no_matching_available_publishers: string
+			/**
+			 * N​o​t​h​i​n​g​ ​t​o​ ​s​e​e​ ​h​e​r​e
+			 */
+			nothing_to_see_here: string
+			/**
+			 * C​u​r​r​e​n​t​l​y​ ​a​s​s​i​g​n​e​d​ ​t​o​ ​{​s​u​p​p​l​i​e​r​N​a​m​e​}
+			 * @param {unknown} supplierName
+			 */
+			currently_assigned_to: RequiredParams<'supplierName'>
+		}
+		aria: {
+			/**
+			 * C​l​e​a​r​ ​s​e​a​r​c​h
+			 */
+			clear_search: string
 		}
 		dialogs: {
 			reassign_publisher: {
@@ -1814,6 +1871,10 @@ type RootTranslation = {
 			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
+			/**
+			 * N​o​ ​o​r​d​e​r​s​ ​t​o​ ​s​h​o​w
+			 */
+			empty: string
 		}
 		ordered_table: {
 			/**
@@ -1853,6 +1914,10 @@ type RootTranslation = {
 			 * V​i​e​w​ ​R​e​c​o​n​c​i​l​i​a​t​i​o​n
 			 */
 			view_reconciliation: string
+			/**
+			 * N​o​ ​o​r​d​e​r​s​ ​t​o​ ​s​h​o​w
+			 */
+			empty: string
 		}
 		reconciling_table: {
 			/**
@@ -1879,6 +1944,10 @@ type RootTranslation = {
 			 * A​c​t​i​o​n​s
 			 */
 			actions: string
+			/**
+			 * N​o​ ​o​r​d​e​r​s​ ​t​o​ ​s​h​o​w
+			 */
+			empty: string
 		}
 		unordered_table: {
 			/**
@@ -2527,6 +2596,27 @@ type RootTranslation = {
 			labels: {
 				/**
 				 * C​o​n​f​i​r​m​ ​b​y​ ​t​y​p​i​n​g​ ​w​a​r​e​h​o​u​s​e​ ​n​a​m​e
+				 */
+				confirm_typing: string
+				/**
+				 * T​y​p​e​ ​'​{​m​a​t​c​h​C​o​n​f​i​r​m​a​t​i​o​n​}​'
+				 * @param {unknown} matchConfirmation
+				 */
+				type_instruction: RequiredParams<'matchConfirmation'>
+				/**
+				 * C​o​n​f​i​r​m
+				 */
+				confirm_button: string
+				/**
+				 * C​a​n​c​e​l
+				 */
+				cancel_button: string
+			}
+		}
+		supplier_delete: {
+			labels: {
+				/**
+				 * C​o​n​f​i​r​m​ ​b​y​ ​t​y​p​i​n​g​ ​s​u​p​p​l​i​e​r​ ​n​a​m​e
 				 */
 				confirm_typing: string
 				/**
@@ -3609,6 +3699,38 @@ export type TranslationFunctions = {
 			 */
 			order_format: () => LocalizedString
 		}
+		card: {
+			/**
+			 * Supplier ID
+			 */
+			supplier_id: () => LocalizedString
+			/**
+			 * Email
+			 */
+			email: () => LocalizedString
+			/**
+			 * Address
+			 */
+			address: () => LocalizedString
+			/**
+			 * Order format
+			 */
+			order_format: () => LocalizedString
+			/**
+			 * Edit details
+			 */
+			edit_details: () => LocalizedString
+			/**
+			 * Delete supplier
+			 */
+			delete_supplier: () => LocalizedString
+		}
+		errors: {
+			/**
+			 * Cannot delete: supplier has active orders or unfinalized reconciliations
+			 */
+			active_orders: () => LocalizedString
+		}
 	}
 	warehouse_list_page: {
 		/**
@@ -4145,6 +4267,12 @@ export type TranslationFunctions = {
 			 */
 			description: () => LocalizedString
 		}
+		delete_supplier_dialog: {
+			/**
+			 * This will permanently delete this supplier and remove all publisher associations.
+			 */
+			description: () => LocalizedString
+		}
 		create_database_dialog: {
 			/**
 			 * Create new database
@@ -4497,21 +4625,21 @@ export type TranslationFunctions = {
 	order_list_page: {
 		labels: {
 			/**
-			 * Remove publisher
+			 * Save
 			 */
-			remove_publisher: () => LocalizedString
+			save: () => LocalizedString
 			/**
-			 * Create new order
+			 * Remove
 			 */
-			create_new_order: () => LocalizedString
+			remove: () => LocalizedString
 			/**
-			 * Add to supplier
+			 * Re-assign
 			 */
-			add_to_supplier: () => LocalizedString
+			reassign: () => LocalizedString
 			/**
-			 * Re-assign to supplier
+			 * Add
 			 */
-			reassign_publisher: () => LocalizedString
+			add: () => LocalizedString
 		}
 		details: {
 			/**
@@ -4519,43 +4647,61 @@ export type TranslationFunctions = {
 			 */
 			supplier_page: () => LocalizedString
 			/**
-			 * Supplier name
+			 * Update supplier details
 			 */
-			supplier_name: () => LocalizedString
-			/**
-			 * Supplier email
-			 */
-			supplier_email: () => LocalizedString
-			/**
-			 * Supplier address
-			 */
-			supplier_address: () => LocalizedString
-			/**
-			 * Supplier customer ID
-			 */
-			supplier_customerId: () => LocalizedString
-			/**
-			 * Supplier order format
-			 */
-			supplier_orderFormat: () => LocalizedString
+			update_supplier_details: () => LocalizedString
 		}
-		table: {
+		tabs: {
 			/**
-			 * Publisher name
+			 * Orders
 			 */
-			publisher_name: () => LocalizedString
+			orders: () => LocalizedString
 			/**
-			 * Assigned publishers
+			 * Assigned Publishers
 			 */
 			assigned_publishers: () => LocalizedString
+		}
+		table: {
 			/**
 			 * Unassigned publishers
 			 */
 			unassigned_publishers: () => LocalizedString
+		}
+		placeholders: {
 			/**
-			 * Other Supplier Publishers
+			 * Search publishers...
 			 */
-			other_supplier_publishers: () => LocalizedString
+			search_publishers: () => LocalizedString
+			/**
+			 * No assigned publishers
+			 */
+			no_assigned_publishers: () => LocalizedString
+			/**
+			 * No matching assigned publishers
+			 */
+			no_matching_assigned_publishers: () => LocalizedString
+			/**
+			 * No available publishers
+			 */
+			no_available_publishers: () => LocalizedString
+			/**
+			 * No matching available publishers
+			 */
+			no_matching_available_publishers: () => LocalizedString
+			/**
+			 * Nothing to see here
+			 */
+			nothing_to_see_here: () => LocalizedString
+			/**
+			 * Currently assigned to {supplierName}
+			 */
+			currently_assigned_to: (arg: { supplierName: unknown }) => LocalizedString
+		}
+		aria: {
+			/**
+			 * Clear search
+			 */
+			clear_search: () => LocalizedString
 		}
 		dialogs: {
 			reassign_publisher: {
@@ -4652,6 +4798,10 @@ export type TranslationFunctions = {
 			 * View Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
+			/**
+			 * No orders to show
+			 */
+			empty: () => LocalizedString
 		}
 		ordered_table: {
 			/**
@@ -4690,6 +4840,10 @@ export type TranslationFunctions = {
 			 * View Reconciliation
 			 */
 			view_reconciliation: () => LocalizedString
+			/**
+			 * No orders to show
+			 */
+			empty: () => LocalizedString
 		}
 		reconciling_table: {
 			/**
@@ -4716,6 +4870,10 @@ export type TranslationFunctions = {
 			 * Actions
 			 */
 			actions: () => LocalizedString
+			/**
+			 * No orders to show
+			 */
+			empty: () => LocalizedString
 		}
 		unordered_table: {
 			/**
@@ -5357,6 +5515,26 @@ export type TranslationFunctions = {
 			labels: {
 				/**
 				 * Confirm by typing warehouse name
+				 */
+				confirm_typing: () => LocalizedString
+				/**
+				 * Type '{matchConfirmation}'
+				 */
+				type_instruction: (arg: { matchConfirmation: unknown }) => LocalizedString
+				/**
+				 * Confirm
+				 */
+				confirm_button: () => LocalizedString
+				/**
+				 * Cancel
+				 */
+				cancel_button: () => LocalizedString
+			}
+		}
+		supplier_delete: {
+			labels: {
+				/**
+				 * Confirm by typing supplier name
 				 */
 				confirm_typing: () => LocalizedString
 				/**

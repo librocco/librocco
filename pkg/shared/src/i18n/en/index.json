@@ -28,8 +28,8 @@
     "tabs": {
       "by_date": "By Date",
       "by_isbn": "By ISBN",
-      "notes_by_date": "Notes By Date",
-      "by_warehouse": "By Warehouse"
+      "notes_by_date": "Notes by date",
+      "by_warehouse": "by Warehouse"
     },
     "date_tab": {
       "stats": {
@@ -265,6 +265,17 @@
       "assigned_publishers": "Assigned Publishers",
       "actions": "Actions",
       "order_format": "Order Format"
+    },
+    "card": {
+      "supplier_id": "Supplier ID",
+      "email": "Email",
+      "address": "Address",
+      "order_format": "Order format",
+      "edit_details": "Edit details",
+      "delete_supplier": "Delete supplier"
+    },
+    "errors": {
+      "active_orders": "Cannot delete: supplier has active orders or unfinalized reconciliations"
     }
   },
   "warehouse_list_page": {
@@ -466,6 +477,9 @@
     "delete_database_dialog": {
       "description": "Once you delete this database it can't be restored. In order to save the backup first, please use the export button."
     },
+    "delete_supplier_dialog": {
+      "description": "This will permanently delete this supplier and remove all publisher associations."
+    },
     "create_database_dialog": {
       "title": "Create new database",
       "description": "Please type in the name for the new database"
@@ -598,24 +612,33 @@
   },
   "order_list_page": {
     "labels": {
-      "remove_publisher": "Remove publisher",
-      "create_new_order": "Create new order",
-      "add_to_supplier": "Add to supplier",
-      "reassign_publisher": "Re-assign to supplier"
+      "save": "Save",
+      "remove": "Remove",
+      "reassign": "Re-assign",
+      "add": "Add"
     },
     "details": {
       "supplier_page": "Supplier page",
-      "supplier_name": "Supplier name",
-      "supplier_email": "Supplier email",
-      "supplier_address": "Supplier address",
-      "supplier_customerId": "Supplier customer ID",
-      "supplier_orderFormat": "Supplier order format"
+      "update_supplier_details": "Update supplier details"
+    },
+    "tabs": {
+      "orders": "Orders",
+      "assigned_publishers": "Assigned Publishers"
     },
     "table": {
-      "publisher_name": "Publisher name",
-      "assigned_publishers": "Assigned publishers",
-      "unassigned_publishers": "Unassigned publishers",
-      "other_supplier_publishers": "Other Supplier Publishers"
+      "unassigned_publishers": "Unassigned publishers"
+    },
+    "placeholders": {
+      "search_publishers": "Search publishers...",
+      "no_assigned_publishers": "No assigned publishers",
+      "no_matching_assigned_publishers": "No matching assigned publishers",
+      "no_available_publishers": "No available publishers",
+      "no_matching_available_publishers": "No matching available publishers",
+      "nothing_to_see_here": "Nothing to see here",
+      "currently_assigned_to": "Currently assigned to {supplierName}"
+    },
+    "aria": {
+      "clear_search": "Clear search"
     },
     "dialogs": {
       "reassign_publisher": {
@@ -648,7 +671,8 @@
       "finalized": "Finalised",
       "actions": "Actions",
       "view_order": "View Order",
-      "view_reconciliation": "View Reconciliation"
+      "view_reconciliation": "View Reconciliation",
+      "empty": "No orders to show"
     },
     "ordered_table": {
       "order_id": "Order ID",
@@ -659,7 +683,8 @@
       "reconcile_selected": "Reconcile {count:number} order{{s}}",
       "view_order": "View Order",
       "reconcile": "Reconcile",
-      "view_reconciliation": "View Reconciliation"
+      "view_reconciliation": "View Reconciliation",
+      "empty": "No orders to show"
     },
     "reconciling_table": {
       "order_id": "Reconciliation ID",
@@ -667,7 +692,8 @@
       "last_updated": "Last Updated",
       "update_order": "Update order",
       "continue": "Continue",
-      "actions": "Actions"
+      "actions": "Actions",
+      "empty": "No orders to show"
     },
     "unordered_table": {
       "supplier_id": "Supplier ID",
@@ -811,6 +837,10 @@
         "note": "Note: This won't resync the database. If you want to sync up the DB with the remote one, please do so on the settings page (after reinitialisation)",
         "button": "Click to delete the DB"
       }
+    },
+    "runtime_error_toast": {
+      "title": "An unexpected error occurred",
+      "description": "If it persists, try reloading the page."
     }
   },
   "error_page": {
@@ -842,7 +872,12 @@
   },
   "debug_page": {
     "title": "Debug",
+    "labels": {
+      "runtime_error": "Kaboom! Runtime error"
+    },
     "actions": {
+      "trigger_load_error": "Trigger Load Error",
+      "trigger_runtime_error": "Trigger Runtime Error",
       "populate_database": "Populate Database",
       "reset_database": "Reset Database",
       "upsert_100_books": "Upsert 100 Books",
@@ -894,6 +929,14 @@
     "warehouse_delete": {
       "labels": {
         "confirm_typing": "Confirm by typing warehouse name",
+        "type_instruction": "Type '{matchConfirmation}'",
+        "confirm_button": "Confirm",
+        "cancel_button": "Cancel"
+      }
+    },
+    "supplier_delete": {
+      "labels": {
+        "confirm_typing": "Confirm by typing supplier name",
         "type_instruction": "Type '{matchConfirmation}'",
         "confirm_button": "Confirm",
         "cancel_button": "Cancel"

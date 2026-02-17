@@ -147,7 +147,7 @@ testOrders("supplier page: update: doesn't submit the form without any changes m
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit supplier" }).click();
+	await page.getByRole("button", { name: "Edit details" }).click();
 
 	await dialog.waitFor();
 	await dialog.getByText("Update supplier details").waitFor();
@@ -167,7 +167,7 @@ testOrders("supplier page: update: submits the form with all fields changed", as
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit supplier" }).click();
+	await page.getByRole("button", { name: "Edit details" }).click();
 
 	await dialog.getByText("Update supplier details").waitFor();
 
@@ -192,7 +192,7 @@ testOrders("supplier page: update: submits the form with only name updated", asy
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit supplier" }).click();
+	await page.getByRole("button", { name: "Edit details" }).click();
 
 	await dialog.getByText("Update supplier details").waitFor();
 
@@ -217,7 +217,7 @@ testOrders("supplier page: update: submits the form with only email updated", as
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit supplier" }).click();
+	await page.getByRole("button", { name: "Edit details" }).click();
 
 	await dialog.getByText("Update supplier details").waitFor();
 
@@ -238,7 +238,7 @@ testOrders("supplier page: update: doesn't allow for blank name field update", a
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit supplier" }).click();
+	await page.getByRole("button", { name: "Edit details" }).click();
 
 	await dialog.getByText("Update supplier details").waitFor();
 
@@ -259,7 +259,7 @@ testOrders("supplier page: update: doesn't allow for submission with invalid ema
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit supplier" }).click();
+	await page.getByRole("button", { name: "Edit details" }).click();
 
 	await dialog.getByText("Update supplier details").waitFor();
 
@@ -285,7 +285,7 @@ testOrders("supplier page: update: allows updates to a supplier without an email
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit supplier" }).click();
+	await page.getByRole("button", { name: "Edit details" }).click();
 
 	await dialog.getByText("Update supplier details").waitFor();
 
@@ -310,7 +310,7 @@ testOrders("supplier page: update: allows for blank email string", async ({ page
 
 	const dialog = page.getByRole("dialog");
 
-	await page.getByRole("button", { name: "Edit supplier" }).click();
+	await page.getByRole("button", { name: "Edit details" }).click();
 
 	await dialog.getByText("Update supplier details").waitFor();
 

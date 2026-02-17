@@ -7,8 +7,12 @@ import {
 	getPublishersFor,
 	associatePublisher,
 	getSupplierDetails,
-	removePublisherFromSupplier
+	removePublisherFromSupplier,
+	deleteSupplier,
+	createSupplierOrder
 } from "../suppliers";
+import { createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
+import { upsertBook } from "../books";
 import { orderFormats } from "$lib/enums/orders";
 
 // Test fixtures
@@ -286,5 +290,103 @@ describe("Publisher associations:", () => {
 			const publishers = await getPublishersFor(db, supplier1.id);
 			expect(publishers).toEqual([publisher1, publisher2, publisher3]);
 		});
+	});
+});
+
+describe("deleteSupplier:", () => {
+	it("deletes supplier record", async () => {
+		const db = await getRandomDb();
+		await upsertSupplier(db, supplier1);
+
+		await deleteSupplier(db, supplier1.id);
+
+		const suppliers = await getAllSuppliers(db);
+		expect(suppliers).toEqual([]);
+		expect(await getSupplierDetails(db, supplier1.id)).toBeUndefined();
+	});
+
+	it("removes publisher associations", async () => {
+		const db = await getRandomDb();
+		await upsertSupplier(db, supplier1);
+		await associatePublisher(db, supplier1.id, publisher1);
+		await associatePublisher(db, supplier1.id, publisher2);
+
+		await deleteSupplier(db, supplier1.id);
+
+		const publishers = await getPublishersFor(db, supplier1.id);
+		expect(publishers).toEqual([]);
+	});
+
+	it("does not affect other suppliers", async () => {
+		const db = await getRandomDb();
+		await upsertSupplier(db, supplier1);
+		await upsertSupplier(db, supplier2);
+		await associatePublisher(db, supplier1.id, publisher1);
+		await associatePublisher(db, supplier2.id, publisher2);
+
+		await deleteSupplier(db, supplier1.id);
+
+		const suppliers = await getAllSuppliers(db);
+		expect(suppliers).toEqual([{ ...supplier2, numPublishers: 1 }]);
+		const publishers = await getPublishersFor(db, supplier2.id);
+		expect(publishers).toEqual([publisher2]);
+	});
+
+	it("throws when supplier has placed (unreconciled) orders", async () => {
+		const db = await getRandomDb();
+		await upsertSupplier(db, supplier1);
+		await associatePublisher(db, supplier1.id, "TestPub");
+		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
+
+		// Create a supplier order directly (no customer orders needed for this test)
+		await createSupplierOrder(db, 100, supplier1.id, [{ isbn: "test-1", quantity: 1, supplier_id: supplier1.id }]);
+
+		await expect(deleteSupplier(db, supplier1.id)).rejects.toThrow("Cannot delete supplier with active orders");
+	});
+
+	it("throws when supplier has unfinalized reconciliation", async () => {
+		const db = await getRandomDb();
+		await upsertSupplier(db, supplier1);
+		await associatePublisher(db, supplier1.id, "TestPub");
+		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
+
+		await createSupplierOrder(db, 100, supplier1.id, [{ isbn: "test-1", quantity: 1, supplier_id: supplier1.id }]);
+		await createReconciliationOrder(db, 200, [100]);
+
+		await expect(deleteSupplier(db, supplier1.id)).rejects.toThrow("Cannot delete supplier with active orders");
+	});
+
+	it("succeeds when all orders are in finalized reconciliations", async () => {
+		const db = await getRandomDb();
+		await upsertSupplier(db, supplier1);
+		await associatePublisher(db, supplier1.id, "TestPub");
+		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
+
+		await createSupplierOrder(db, 100, supplier1.id, [{ isbn: "test-1", quantity: 1, supplier_id: supplier1.id }]);
+		await createReconciliationOrder(db, 200, [100]);
+		await finalizeReconciliationOrder(db, 200);
+
+		// Should not throw
+		await deleteSupplier(db, supplier1.id);
+
+		expect(await getSupplierDetails(db, supplier1.id)).toBeUndefined();
+	});
+
+	it("preserves past supplier orders after deletion", async () => {
+		const db = await getRandomDb();
+		await upsertSupplier(db, supplier1);
+		await associatePublisher(db, supplier1.id, "TestPub");
+		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
+
+		await createSupplierOrder(db, 100, supplier1.id, [{ isbn: "test-1", quantity: 1, supplier_id: supplier1.id }]);
+		await createReconciliationOrder(db, 200, [100]);
+		await finalizeReconciliationOrder(db, 200);
+
+		await deleteSupplier(db, supplier1.id);
+
+		// Supplier order rows should still exist
+		const orders = await db.execO<{ id: number }>("SELECT id FROM supplier_order WHERE id = 100");
+		expect(orders).toHaveLength(1);
+		expect(orders[0].id).toBe(100);
 	});
 });

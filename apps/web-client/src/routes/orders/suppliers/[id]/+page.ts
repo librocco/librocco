@@ -3,9 +3,15 @@ import { browser } from "$app/environment";
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
-import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
+import type { PlacedSupplierOrder, PossibleSupplierOrderLine } from "$lib/db/cr-sqlite/types";
 
-import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails, getPublishersWithSuppliers } from "$lib/db/cr-sqlite/suppliers";
+import {
+	getPlacedSupplierOrders,
+	getPublishersFor,
+	getSupplierDetails,
+	getPublishersWithSuppliers,
+	getPossibleSupplierOrderLines
+} from "$lib/db/cr-sqlite/suppliers";
 
 import { appPath } from "$lib/paths";
 import { getPublisherList } from "$lib/db/cr-sqlite/books";
@@ -20,6 +26,8 @@ type PublisherInfo = {
 	supplierName?: string;
 };
 
+type OrderWithReconciled = PlacedSupplierOrder & { reconciled: boolean };
+
 const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 	await parent();
 	depends("supplier:data");
@@ -32,7 +40,10 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 			supplier: null,
 			assignedPublishers: [] as string[],
 			availablePublishers: [] as PublisherInfo[],
-			orders: [] as PlacedSupplierOrder[]
+			possibleOrders: [] as PossibleSupplierOrderLine[],
+			placedOrders: [] as OrderWithReconciled[],
+			reconcilingOrders: [] as OrderWithReconciled[],
+			completedOrders: [] as OrderWithReconciled[]
 		};
 	}
 
@@ -59,20 +70,29 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 			supplierName: publisherToSupplier.get(pub)
 		}));
 
-	const unreconciledOrders = (await getPlacedSupplierOrders(db, { supplierId: Number(params.id), reconciled: false })).map((order) => ({
-		...order,
-		reconciled: false
-	}));
-	const reconciledOrders = (await getPlacedSupplierOrders(db, { supplierId: Number(params.id), reconciled: true })).map((order) => ({
-		...order,
-		reconciled: true
-	}));
+	const possibleOrders = await getPossibleSupplierOrderLines(db, Number(params.id));
+	const allPlacedOrders = await getPlacedSupplierOrders(db, { supplierId: Number(params.id) });
+
+	const placedOrders = allPlacedOrders
+		.filter((order) => order.reconciliation_order_id === null)
+		.map((order) => ({ ...order, reconciled: false }));
+
+	const reconcilingOrders = allPlacedOrders
+		.filter((order) => order.reconciliation_order_id !== null && order.finalized === 0)
+		.map((order) => ({ ...order, reconciled: true }));
+
+	const completedOrders = allPlacedOrders
+		.filter((order) => order.reconciliation_order_id !== null && order.finalized === 1)
+		.map((order) => ({ ...order, reconciled: true }));
 
 	return {
 		supplier,
 		assignedPublishers,
 		availablePublishers,
-		orders: [...unreconciledOrders, ...reconciledOrders]
+		possibleOrders,
+		placedOrders,
+		reconcilingOrders,
+		completedOrders
 	};
 };
 
