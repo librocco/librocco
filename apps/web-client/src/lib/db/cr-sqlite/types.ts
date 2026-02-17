@@ -99,6 +99,7 @@ export type Supplier = {
 	address?: string;
 	customerId?: number;
 	orderFormat?: Format;
+	underdelivery_policy?: 0 | 1;
 };
 export type Format = "PBM" | "Standard" | "RCS-3" | "RCS-5" | "Loescher-3" | "Loescher-5";
 export type SupplierExtended = Supplier & {

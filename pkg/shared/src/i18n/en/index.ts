@@ -524,6 +524,7 @@ const suppliers_page = {
 		email: "Email",
 		address: "Address",
 		order_format: "Order format",
+		underdelivery_policy: "Underdelivery policy",
 		edit_details: "Edit details",
 		delete_supplier: "Delete supplier"
 	},
@@ -1052,7 +1053,8 @@ const forms = {
 			customer_id: "Customer ID",
 			cancel_button: "Cancel",
 			order_format: "Order Format",
-			order_format_message: "Please select an order format"
+			order_format_message: "Please select an order format",
+			underdelivery_policy: "Underdelivery policy"
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"
