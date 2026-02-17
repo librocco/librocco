@@ -1,7 +1,7 @@
 # CI LLM Guide (Playwright Auto-fix)
 
 This guide is for the Claude Code automation in the `Fix Playwright Failures` workflow.
-Read this file before investigating failures. Then consult `AGENTS.md` for command references.
+Read this file before investigating failures.
 
 ## Operating Constraints
 
