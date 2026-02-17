@@ -154,12 +154,14 @@ jobs:
         lfs: true
         fetch-depth: 0
     - name: Run Claude Code
+      id: claude
+      continue-on-error: true
       if: steps.precheck.outputs.skip != 'true' && steps.recheck.outputs.skip != 'true'
       uses: anthropics/claude-code-action@v1
       with:
         anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        claude_args: --max-turns 20 --allowedTools Bash Read Write Edit Glob Grep
+        claude_args: --max-turns 30 --allowedTools Bash Read Write Edit Glob Grep
         prompt: |
           The scheduled Playwright e2e matrix CI just failed.
           Failed run: https://github.com/${{ github.repository }}/actions/runs/${{ env.FAILED_RUN_ID }}
