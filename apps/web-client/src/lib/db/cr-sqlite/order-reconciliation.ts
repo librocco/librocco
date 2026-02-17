@@ -500,15 +500,19 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		const timestamp = Date.now();
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1, updatedAt = ? WHERE id = ?;`, [timestamp, id]);
 
-		await txDb.exec(`UPDATE customer_order_lines SET received = ? WHERE id IN (${multiplyString("?", linesToDeliver.length)})`, [
-			timestamp,
-			...linesToDeliver
-		]);
+		if (linesToDeliver.length > 0) {
+			await txDb.exec(`UPDATE customer_order_lines SET received = ? WHERE id IN (${multiplyString("?", linesToDeliver.length)})`, [
+				timestamp,
+				...linesToDeliver
+			]);
+		}
 
-		await txDb.exec(`UPDATE customer_order_lines SET placed = NULL WHERE id IN (${multiplyString("?", linesToReject.length)})`, [
-			timestamp,
-			...linesToReject
-		]);
+		if (linesToReject.length > 0) {
+			await txDb.exec(`UPDATE customer_order_lines SET placed = NULL WHERE id IN (${multiplyString("?", linesToReject.length)})`, [
+				timestamp,
+				...linesToReject
+			]);
+		}
 
 		// Place continuation orders
 		const continuationOrders = _group(continuationOrderLines, (line) => [line.parent_order_id, line]);
