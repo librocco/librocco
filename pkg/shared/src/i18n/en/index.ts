@@ -328,24 +328,33 @@ const new_order_page = {
 
 const order_list_page = {
 	labels: {
-		remove_publisher: "Remove publisher",
-		create_new_order: "Create new order",
-		add_to_supplier: "Add to supplier",
-		reassign_publisher: "Re-assign to supplier"
+		save: "Save",
+		remove: "Remove",
+		reassign: "Re-assign",
+		add: "Add"
 	},
 	details: {
 		supplier_page: "Supplier page",
-		supplier_name: "Supplier name",
-		supplier_email: "Supplier email",
-		supplier_address: "Supplier address",
-		supplier_customerId: "Supplier customer ID",
-		supplier_orderFormat: "Supplier order format"
+		update_supplier_details: "Update supplier details"
+	},
+	tabs: {
+		orders: "Orders",
+		assigned_publishers: "Assigned Publishers"
 	},
 	table: {
-		publisher_name: "Publisher name",
-		assigned_publishers: "Assigned publishers",
-		unassigned_publishers: "Unassigned publishers",
-		other_supplier_publishers: "Other Supplier Publishers"
+		unassigned_publishers: "Unassigned publishers"
+	},
+	placeholders: {
+		search_publishers: "Search publishers...",
+		no_assigned_publishers: "No assigned publishers",
+		no_matching_assigned_publishers: "No matching assigned publishers",
+		no_available_publishers: "No available publishers",
+		no_matching_available_publishers: "No matching available publishers",
+		nothing_to_see_here: "Nothing to see here",
+		currently_assigned_to: "Currently assigned to {supplierName}"
+	},
+	aria: {
+		clear_search: "Clear search"
 	},
 	dialogs: {
 		reassign_publisher: {
@@ -445,6 +454,17 @@ const suppliers_page = {
 		assigned_publishers: "Assigned Publishers",
 		actions: "Actions",
 		order_format: "Order Format"
+	},
+	card: {
+		supplier_id: "Supplier ID",
+		email: "Email",
+		address: "Address",
+		order_format: "Order format",
+		edit_details: "Edit details",
+		delete_supplier: "Delete supplier"
+	},
+	errors: {
+		active_orders: "Cannot delete: supplier has active orders or unfinalized reconciliations"
 	}
 };
 
@@ -557,6 +577,9 @@ const common = {
 	},
 	delete_database_dialog: {
 		description: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`
+	},
+	delete_supplier_dialog: {
+		description: "This will permanently delete this supplier and remove all publisher associations."
 	},
 	create_database_dialog: {
 		title: "Create new database",
@@ -723,7 +746,8 @@ const supplier_orders_component = {
 		finalized: "Finalised",
 		actions: "Actions",
 		view_order: "View Order",
-		view_reconciliation: "View Reconciliation"
+		view_reconciliation: "View Reconciliation",
+		empty: "No orders to show"
 	},
 	ordered_table: {
 		order_id: "Order ID",
@@ -734,7 +758,8 @@ const supplier_orders_component = {
 		reconcile_selected: "Reconcile {count:number} order{{s}}",
 		view_order: "View Order",
 		reconcile: "Reconcile",
-		view_reconciliation: "View Reconciliation"
+		view_reconciliation: "View Reconciliation",
+		empty: "No orders to show"
 	},
 	reconciling_table: {
 		order_id: "Reconciliation ID",
@@ -742,7 +767,8 @@ const supplier_orders_component = {
 		last_updated: "Last Updated",
 		update_order: "Update order",
 		continue: "Continue",
-		actions: "Actions"
+		actions: "Actions",
+		empty: "No orders to show"
 	},
 	unordered_table: {
 		supplier_id: "Supplier ID",
@@ -941,6 +967,14 @@ const forms = {
 	warehouse_delete: {
 		labels: {
 			confirm_typing: "Confirm by typing warehouse name",
+			type_instruction: "Type '{matchConfirmation}'",
+			confirm_button: "Confirm",
+			cancel_button: "Cancel"
+		}
+	},
+	supplier_delete: {
+		labels: {
+			confirm_typing: "Confirm by typing supplier name",
 			type_instruction: "Type '{matchConfirmation}'",
 			confirm_button: "Confirm",
 			cancel_button: "Cancel"

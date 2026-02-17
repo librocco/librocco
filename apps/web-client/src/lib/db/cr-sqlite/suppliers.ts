@@ -146,7 +146,7 @@ async function _getPublishersFor(db: TXAsync, supplierId?: number): Promise<stri
 		`SELECT publisher
 		FROM supplier_publisher
 		${whereCondition}
-		ORDER BY publisher ASC;`
+		ORDER BY publisher COLLATE NOCASE ASC;`
 	);
 
 	// For some reason `stmt.all` does not accept a type arg. Docs say it should
@@ -169,7 +169,7 @@ async function _getPublishersWithSuppliers(db: TXAsync): Promise<{ publisher: st
 			s.name as supplier_name
 		FROM supplier_publisher sp
 		LEFT JOIN supplier s ON sp.supplier_id = s.id
-		ORDER BY sp.publisher ASC
+		ORDER BY sp.publisher COLLATE NOCASE ASC
 	`;
 	return await db.execO<{ publisher: string; supplier_name: string }>(query);
 }
@@ -257,7 +257,7 @@ async function _getPossibleSupplierOrders(db: TXAsync): Promise<PossibleSupplier
             SUM(COALESCE(book.price, 0)) as total_book_price
         FROM supplier
     	RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
-        RIGHT JOIN book ON sp.publisher = book.publisher
+        RIGHT JOIN book ON sp.publisher = book.publisher COLLATE NOCASE
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
 
 		-- sometimes a book can be received before being placed with the supplier due to overdelivery
@@ -313,7 +313,7 @@ async function _getPossibleSupplierOrderLines(db: TXAsync, supplierId: number | 
 			SUM(COALESCE(book.price, 0)) as line_price
        	FROM supplier
         RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
-        RIGHT JOIN book ON sp.publisher = book.publisher
+        RIGHT JOIN book ON sp.publisher = book.publisher COLLATE NOCASE
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
 		${whereClause}
       	GROUP BY book.isbn
@@ -388,7 +388,8 @@ async function _getPlacedSupplierOrders(
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
 			ro.id as reconciliation_order_id,
-			ro.updatedAt as reconciliation_last_updated_at
+			ro.updatedAt as reconciliation_last_updated_at,
+			ro.finalized
         FROM supplier_order so
 		LEFT JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
@@ -534,6 +535,39 @@ async function _createSupplierOrder(
 	});
 }
 
+/**
+ * Deletes a supplier and its publisher associations.
+ *
+ * Guards against deletion if the supplier has active orders (placed but not in any finalized reconciliation).
+ * Supplier order records are preserved for historical purposes.
+ *
+ * @param db - The database instance
+ * @param id - The supplier id to delete
+ * @throws {Error} If the supplier has active (unreconciled or unfinalized) orders
+ */
+async function _deleteSupplier(db: DBAsync, id: number) {
+	const activeOrders = await db.execO<{ id: number }>(
+		`SELECT so.id FROM supplier_order so
+		LEFT JOIN (
+			SELECT CAST(value AS INTEGER) as supplier_order_id, ro.finalized
+			FROM reconciliation_order ro
+			CROSS JOIN json_each(ro.supplier_order_ids)
+		) ro ON so.id = ro.supplier_order_id
+		WHERE so.supplier_id = ?
+			AND (ro.supplier_order_id IS NULL OR ro.finalized = 0)`,
+		[id]
+	);
+
+	if (activeOrders.length > 0) {
+		throw new Error("Cannot delete supplier with active orders or unfinalized reconciliations");
+	}
+
+	await db.tx(async (tx) => {
+		await tx.exec("DELETE FROM supplier_publisher WHERE supplier_id = ?", [id]);
+		await tx.exec("DELETE FROM supplier WHERE id = ?", [id]);
+	});
+}
+
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 export const getAllSuppliers = timed(_getAllSuppliers);
 export const getSupplierDetails = timed(_getSupplierDetails);
@@ -547,3 +581,4 @@ export const getPossibleSupplierOrderLines = timed(_getPossibleSupplierOrderLine
 export const getPlacedSupplierOrders = timed(_getPlacedSupplierOrders);
 export const getPlacedSupplierOrderLines = timed(_getPlacedSupplierOrderLines);
 export const createSupplierOrder = timed(_createSupplierOrder);
+export const deleteSupplier = timed(_deleteSupplier);

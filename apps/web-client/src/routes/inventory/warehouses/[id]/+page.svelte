@@ -173,7 +173,7 @@
 </script>
 
 <Page title={displayName} view="warehouse" {app} {plugins}>
-	<div slot="main" class="h-full w-full flex-col gap-y-4 divide-y overflow-auto">
+	<div slot="main" class="flex h-full w-full flex-col gap-y-4 divide-y">
 		<div class="p-4">
 			<Breadcrumbs class="" links={breadcrumbs} />
 			<div class="flex justify-between">
@@ -206,7 +206,7 @@
 					</div>
 				</div>
 			{:else}
-				<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<div use:scroll.container={{ rootMargin: "400px" }} class="min-h-0 flex-1 overflow-y-auto" style="scrollbar-width: thin">
 					<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 					<div>
 						<StockTable {table}>

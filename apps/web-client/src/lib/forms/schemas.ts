@@ -31,6 +31,14 @@ export const warehouseDeleteSchema = (matchConfirmation: string) => {
 	});
 };
 
+export type SupplierDeleteFormSchema = Infer<ReturnType<typeof supplierDeleteSchema>>;
+export const supplierDeleteSchema = (matchConfirmation: string) => {
+	const reg = new RegExp("^" + matchConfirmation + "$");
+	return z.object({
+		confirmation: z.string().regex(reg)
+	});
+};
+
 export type DatabaseCreateFormSchema = Infer<typeof databaseCreateSchema>;
 const dbidRegex = /^[a-zA-Z0-9._]+$/;
 export const databaseCreateSchema = z.object({

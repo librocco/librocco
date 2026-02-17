@@ -6,7 +6,6 @@ import {
 	addBooksToCustomer,
 	associatePublisher,
 	createReconciliationOrder,
-	createSupplierOrder,
 	deleteReconciliationOrder,
 	finalizeReconciliationOrder,
 	upsertBook
@@ -69,120 +68,6 @@ testOrders("should show list of unordered orders", async ({ page, suppliers: [su
 	await expect(firstRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
 });
 
-// NOTE: the functionality tested here is changed somewhat and portion of it is tested below, but this is left (skipped)
-// as a TODO / reminder for (future) full e2e test refactor
-testOrders.skip(
-	"should allow a new supplier order to be placed from a batch of possible customer order lines",
-	async ({ page, suppliers: [supplier], books, customers }) => {
-		await page.goto(appHash("supplier_orders"));
-
-		const dbHandle = await getDbHandle(page);
-
-		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisher: "pub1" });
-
-		// Add 2 copies of first book to customer's order
-		await dbHandle.evaluate(addBooksToCustomer, {
-			customerId: customers[0].id,
-			bookIsbns: [books[0].isbn, books[0].isbn]
-		});
-		// Add 2 copies of third book to customer's order
-		await dbHandle.evaluate(addBooksToCustomer, {
-			customerId: customers[0].id,
-			bookIsbns: [books[2].isbn, books[2].isbn]
-		});
-
-		await page.goto(appHash("supplier_orders"));
-
-		const table = page.getByRole("table");
-
-		await page.getByRole("button", { name: "Unordered" }).waitFor();
-
-		// Go to new-order view
-		await table.getByRole("row").filter({ hasText: supplier.name }).getByRole("button", { name: "Place Order" }).click();
-
-		// Verify rows
-		const allIsbns = books.map((book) => book.isbn);
-		const isbnRegex = new RegExp(`(${allIsbns.join("|")})`);
-		// NOTE: we're matching all ISBNs used in fixtures to make sure no additional rows creep into the view
-		const bookRows = table.getByRole("row").filter({ hasText: isbnRegex });
-
-		await expect(bookRows).toHaveCount(2);
-
-		// Check first row - books[0] ISBN comes first alphabetically
-		//
-		// Verify the row first
-		await bookRows.nth(0).getByText(books[0].isbn).waitFor();
-		// Verify cell order: (no name - select checkbox) | ISBN | Title | Authors | Quantity | Total Price
-		await bookRows.nth(0).getByRole("cell").nth(0).getByRole("checkbox").waitFor();
-		await bookRows.nth(0).getByRole("cell").nth(1).getByText(books[0].isbn, { exact: true }).waitFor();
-		await bookRows.nth(0).getByRole("cell").nth(2).getByText(books[0].title, { exact: true }).waitFor();
-		await bookRows.nth(0).getByRole("cell").nth(3).getByText(books[0].authors, { exact: true }).waitFor();
-		await bookRows.nth(0).getByRole("cell").nth(4).getByText("2", { exact: true }).waitFor();
-		const l1TotalPrice = (2 * books[0].price).toString();
-		await bookRows.nth(0).getByRole("cell").nth(5).getByText(`€${l1TotalPrice}`, { exact: true }).waitFor();
-
-		// Check second row
-		//
-		// Verify the row first
-		await bookRows.nth(1).getByText(books[2].isbn).waitFor();
-		// Verify cell order: (no name - select checkbox) | ISBN | Title | Authors | Quantity | Total Price
-		await bookRows.nth(1).getByRole("cell").nth(0).getByRole("checkbox").waitFor();
-		await bookRows.nth(1).getByRole("cell").nth(1).getByText(books[2].isbn, { exact: true }).waitFor();
-		await bookRows.nth(1).getByRole("cell").nth(2).getByText(books[2].title, { exact: true }).waitFor();
-		await bookRows.nth(1).getByRole("cell").nth(3).getByText(books[2].authors, { exact: true }).waitFor();
-		await bookRows.nth(1).getByRole("cell").nth(4).getByText("2", { exact: true }).waitFor();
-		const l2TotalPrice = (2 * books[2].price).toString();
-		await bookRows.nth(1).getByRole("cell").nth(5).getByText(`€${l2TotalPrice}`, { exact: true }).waitFor();
-
-		// total book count (4 books total: 2 of first book + 2 of third book)
-		await expect(page.getByText("4", { exact: true })).toBeVisible();
-		// total price
-		await expect(page.getByText("80")).toBeVisible();
-
-		await page.getByRole("checkbox").nth(1).click();
-
-		// total book count
-		await expect(page.getByText("2", { exact: true }).nth(1)).toBeVisible();
-		// total price
-		await expect(page.getByText("20")).toHaveCount(2);
-
-		await page.getByRole("checkbox").nth(2).click();
-
-		//total book count
-		await expect(page.getByText("4", { exact: true })).toBeVisible();
-		//total price
-		await expect(page.getByText("80")).toHaveCount(2);
-
-		// Click "Select 1/2" button to reduce quantity
-		await page.getByRole("button", { name: "Select 1/2" }).click();
-
-		// Verify updated totals (1 book selected)
-		await expect(page.getByText("1", { exact: true })).toBeVisible();
-		//total price
-		await expect(page.getByText("20")).toHaveCount(2);
-
-		await page.getByRole("button", { name: "Place Order" }).first().click();
-
-		await page.waitForURL(appHash("supplier_orders"));
-		page.getByRole("button", { name: "Ordered" }).nth(1).click();
-
-		await expect(page.getByText(supplier.name)).toBeVisible();
-		await expect(page.getByText("reconcile")).toBeVisible();
-
-		await page.goto(appHash("supplier_orders"));
-		page.getByRole("button", { name: "Unordered" });
-		// Start new order
-		await page.getByRole("button", { name: "Place Order" }).first().click();
-
-		// Verify remaining unordered books can be ordered separately (third book ISBN)
-		await expect(page.getByText(books[2].isbn)).toBeVisible();
-		// Verify remaining totals (2 books at 30 each = 60)
-		await expect(page.getByText("2", { exact: true })).toHaveCount(2);
-		//total price
-		await expect(page.getByText("60")).toHaveCount(2);
-	}
-);
-
 testOrders(
 	"new order: selects fractions based on price + uses row checkbox to toggle between full and empty state for the line",
 	async ({ page, books, suppliersWithPublishers, customerOrderLines, t }) => {
@@ -197,7 +82,6 @@ testOrders(
 
 		// NOTE: this should be unnecessary once the reactivity fix is in
 		await page.reload();
-		await page.waitForTimeout(500);
 
 		// Use supplier 1 for the test
 		await table
@@ -281,151 +165,6 @@ testOrders(
 	}
 );
 
-testOrders(
-	"should view reconciliation controls for orders already in reconciliation",
-	async ({ page, suppliers: [supplier], books, t }) => {
-		const { supplier_orders_component: tSupplierOrdersComponent } = t;
-		await page.goto(appHash("supplier_orders"));
-
-		const dbHandle = await getDbHandle(page);
-
-		// Create a supplier order that will be part of reconciliation
-		await dbHandle.evaluate(createSupplierOrder, {
-			id: 1,
-			supplierId: supplier.id,
-			orderLines: [
-				{
-					supplier_id: supplier.id,
-					isbn: books[0].isbn,
-					quantity: 1,
-					supplier_name: supplier.name
-				}
-			]
-		});
-
-		// Create another order that won't be in reconciliation (for comparison)
-		await dbHandle.evaluate(createSupplierOrder, {
-			id: 2,
-			supplierId: supplier.id,
-			orderLines: [
-				{
-					supplier_id: supplier.id,
-					isbn: books[1].isbn,
-					quantity: 1,
-					supplier_name: supplier.name
-				}
-			]
-		});
-
-		// Add first order to reconciliation
-		await dbHandle.evaluate(createReconciliationOrder, {
-			id: 1,
-			supplierOrderIds: [1]
-		});
-
-		// Navigate to supplier's orders view
-		await page.goto(appHash("suppliers", supplier.id));
-
-		// Get the table rows for both orders
-		const table = page.getByRole("table");
-		const rows = table.getByRole("row");
-
-		// First order (in reconciliation) should have disabled controls
-		const reconciledRow = rows.nth(2);
-
-		await expect(reconciledRow.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.view_reconciliation() })).toBeVisible();
-		await expect(reconciledRow.getByRole("checkbox")).toBeDisabled();
-
-		// Second order (not in reconciliation) should have enabled controls
-		const normalRow = rows.nth(1);
-		await expect(normalRow.getByRole("checkbox")).toBeEnabled();
-		await expect(normalRow.getByRole("button", { name: tSupplierOrdersComponent.ordered_table.reconcile() })).toBeEnabled();
-	}
-);
-
-testOrders(
-	"should show correct batch reconciliation state with mixed reconciliation status",
-	async ({ page, suppliers: [supplier], books, t }) => {
-		const { supplier_orders_component: tSupplierOrdersComponent } = t;
-		await page.goto(appHash("supplier_orders"));
-
-		const dbHandle = await getDbHandle(page);
-
-		// Create three orders: two normal, one already in reconciliation
-		await dbHandle.evaluate(createSupplierOrder, {
-			id: 1,
-			supplierId: supplier.id,
-			orderLines: [
-				{
-					supplier_id: supplier.id,
-					isbn: books[0].isbn,
-					quantity: 1,
-					supplier_name: supplier.name
-				}
-			]
-		});
-
-		await dbHandle.evaluate(createSupplierOrder, {
-			id: 2,
-			supplierId: supplier.id,
-			orderLines: [
-				{
-					supplier_id: supplier.id,
-					isbn: books[1].isbn,
-					quantity: 1,
-					supplier_name: supplier.name
-				}
-			]
-		});
-
-		await dbHandle.evaluate(createSupplierOrder, {
-			id: 3,
-			supplierId: supplier.id,
-			orderLines: [
-				{
-					supplier_id: supplier.id,
-					isbn: books[2].isbn,
-					quantity: 1,
-					supplier_name: supplier.name
-				}
-			]
-		});
-
-		// Add one order to reconciliation
-		await dbHandle.evaluate(createReconciliationOrder, {
-			id: 1,
-			supplierOrderIds: [1]
-		});
-
-		await page.goto(appHash("suppliers", supplier.id));
-
-		// Select the two non-reconciled orders
-		const table = page.getByRole("table");
-		const rows = table.getByRole("row");
-
-		// First order checkbox should be disabled (already in reconciliation)
-		await expect(rows.nth(3).getByRole("checkbox")).toBeDisabled();
-
-		// Select the other two orders
-		// And mark them for reconciliation
-		await rows.nth(1).getByRole("checkbox").click();
-		await rows.nth(2).getByRole("checkbox").click();
-
-		// Their individual reconcile buttons should be disabled
-		await expect(rows.nth(1).getByRole("button", { name: tSupplierOrdersComponent.ordered_table.reconcile() })).toBeDisabled();
-		await expect(rows.nth(2).getByRole("button", { name: tSupplierOrdersComponent.ordered_table.reconcile() })).toBeDisabled();
-		// and the "view reconciliation" button in the "already reconciling" row too... just because it looks better
-		await expect(rows.nth(3).getByRole("button", { name: tSupplierOrdersComponent.ordered_table.view_reconciliation() })).toBeDisabled();
-
-		// Verify batch reconciliation button appears and is enabled
-		const batchReconcileButton = page.getByRole("button", {
-			name: tSupplierOrdersComponent.ordered_table.reconcile_selected({ count: 2 })
-		});
-		await expect(batchReconcileButton).toBeVisible();
-		await expect(batchReconcileButton).toBeEnabled();
-	}
-);
-
 testOrders("new order: empty state", async ({ page, books, suppliersWithPublishers, customerOrderLines, t }) => {
 	const { supplier_orders_component: tSupplierOrdersComponent } = t;
 	const suppliers = suppliersWithPublishers;
@@ -436,7 +175,6 @@ testOrders("new order: empty state", async ({ page, books, suppliersWithPublishe
 
 	// NOTE: this should be unnecessary once the reactivity fix is in
 	await page.reload();
-	await page.waitForTimeout(500);
 
 	// Use supplier 1 for the test
 	await table

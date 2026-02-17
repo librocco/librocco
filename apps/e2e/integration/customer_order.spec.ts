@@ -160,8 +160,8 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	const firstRow = table.getByRole("row").nth(1);
 
 	const isbnField = page.getByRole("textbox");
-	isbnField.fill(books[0].isbn);
-	isbnField.press("Enter");
+	await isbnField.fill(books[0].isbn);
+	await isbnField.press("Enter");
 
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
@@ -169,8 +169,8 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(firstRow.getByRole("cell", { name: `€${books[0].price.toFixed(2)}`, exact: true })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: /Pending - .+/ })).toBeVisible();
 
-	isbnField.fill(books[2].isbn);
-	isbnField.press("Enter");
+	await isbnField.fill(books[2].isbn);
+	await isbnField.press("Enter");
 
 	// Sorted: last-created-first => the book we've just added should be the first row
 	await expect(firstRow.getByRole("cell", { name: books[2].isbn })).toBeVisible();
