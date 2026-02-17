@@ -39,7 +39,7 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 	const isbns = Array.from(new Set(placedOrderLines.map(({ isbn }) => isbn)));
 
 	// Collect pending as well for early fills in case of overdelivery (unlikely, but supported)
-	const customerOrderLines = await getCustomerOrderLinesCore(db, { isbns, status: { lte: OrderItemStatus.Placed } });
+	const customerOrderLines = await getCustomerOrderLinesCore(db, { isbns, status: { eq: OrderItemStatus.Placed } });
 
 	return { reconciliationOrder, placedOrderLines, reconciliationOrderLines, customerOrderLines };
 };
