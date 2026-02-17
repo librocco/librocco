@@ -28,3 +28,11 @@ i18n-util.sync.ts
 i18n-util.ts
 src/i18n/**/*.ts
 src/i18n/**/*.json
+
+# DON'T ignore source files - consistent formatting = consistent diffs
+!src/i18n/en/*.ts
+!src/i18n/it/*.ts
+!src/i18n/de/*.ts
+!src/i18n/en/*.json
+!src/i18n/it/*.json
+!src/i18n/de/*.json
