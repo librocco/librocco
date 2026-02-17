@@ -11,7 +11,7 @@ import type { ReconciliationProcessedLine } from "$lib/components/supplier-order
 // 	delivered: number;
 // };
 
-export type SupplierOrderSummary = {
+export type SupplierOrderReconciliationSummary = {
 	supplier_order_id: number;
 	supplier_name: string;
 	underdelivery_policy: 0 | 1;
