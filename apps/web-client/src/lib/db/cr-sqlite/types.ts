@@ -113,6 +113,7 @@ export type SupplierExtended = Supplier & {
 export type SupplierJoinData = {
 	supplier_id: number;
 	supplier_name: string;
+	underdelivery_policy?: 0 | 1;
 };
 
 /**

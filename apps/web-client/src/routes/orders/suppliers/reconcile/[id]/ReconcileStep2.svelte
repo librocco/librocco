@@ -38,7 +38,8 @@
 
 	<div class="flex flex-1 flex-col overflow-y-auto bg-white px-6 pb-6">
 		<div class="mb-4 space-y-4">
-			{#each orderStats as { supplier_order_id, supplier_name, totalUnderdelivered, lines }}
+			{#each orderStats as { supplier_order_id, supplier_name, underdelivery_policy, totalUnderdelivered, lines }}
+				{@const underdeliveryAction = underdelivery_policy === 0 ? "pending" : "queue"}
 				<ReconciliationOrderSummary
 					orderId={t.order_summary.order_id({ id: supplier_order_id })}
 					customerName={supplier_name}
@@ -47,7 +48,7 @@
 					interactive={!finalized}
 					expanded={finalized}
 				>
-					<UnderdeliveryActionBadge slot="underdelivery_behaviour" value="pending" />
+					<UnderdeliveryActionBadge slot="underdelivery_behaviour" value={underdeliveryAction} />
 				</ReconciliationOrderSummary>
 			{/each}
 		</div>
