@@ -918,7 +918,6 @@ const layout = {
 				title: "Detected issue:",
 				rapid_closes: "Connection failed {count} time{{s}} immediately after opening.",
 				timeout: "Connection did not stabilize within the expected time.",
-				repeated_disconnects: "Connection dropped {count} time{{s}} without staying connected.",
 				hint: "The server database was likely rebuilt. Your local data needs to be re-synced."
 			}
 		}

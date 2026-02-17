@@ -828,7 +828,6 @@
           "title": "Problema rilevato:",
           "rapid_closes": "La connessione è fallita {count} volt{{e|a}} subito dopo l'apertura.",
           "timeout": "La connessione non si è stabilizzata entro il tempo previsto.",
-          "repeated_disconnects": "La connessione è caduta {count} volt{{e|a}} senza restare stabile.",
           "hint": "Il database del server è stato probabilmente ricostruito. I dati locali devono essere risincronizzati."
         }
       }

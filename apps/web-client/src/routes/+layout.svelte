@@ -465,10 +465,6 @@
 							</p>
 						{:else if $syncDiagnostics.reason === "timeout"}
 							<p class="text-gray-600">{tLayout.error_dialog.sync_stuck.diagnostics.timeout()}</p>
-						{:else if $syncDiagnostics.reason === "repeated_disconnects"}
-							<p class="text-gray-600">
-								{tLayout.error_dialog.sync_stuck.diagnostics.repeated_disconnects({ count: $syncDiagnostics.disconnectCount })}
-							</p>
 						{/if}
 						<p class="mt-1 text-gray-500">{tLayout.error_dialog.sync_stuck.diagnostics.hint()}</p>
 					</div>

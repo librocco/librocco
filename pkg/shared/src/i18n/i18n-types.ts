@@ -2365,11 +2365,6 @@ type RootTranslation = {
 					 */
 					timeout: string
 					/**
-					 * C​o​n​n​e​c​t​i​o​n​ ​d​r​o​p​p​e​d​ ​{​c​o​u​n​t​}​ ​t​i​m​e​{​{​s​}​}​ ​w​i​t​h​o​u​t​ ​s​t​a​y​i​n​g​ ​c​o​n​n​e​c​t​e​d​.
-					 * @param {string | number | boolean} count
-					 */
-					repeated_disconnects: RequiredParams<'count'>
-					/**
 					 * T​h​e​ ​s​e​r​v​e​r​ ​d​a​t​a​b​a​s​e​ ​w​a​s​ ​l​i​k​e​l​y​ ​r​e​b​u​i​l​t​.​ ​Y​o​u​r​ ​l​o​c​a​l​ ​d​a​t​a​ ​n​e​e​d​s​ ​t​o​ ​b​e​ ​r​e​-​s​y​n​c​e​d​.
 					 */
 					hint: string
@@ -5270,10 +5265,6 @@ export type TranslationFunctions = {
 					 * Connection did not stabilize within the expected time.
 					 */
 					timeout: () => LocalizedString
-					/**
-					 * Connection dropped {count} time{{s}} without staying connected.
-					 */
-					repeated_disconnects: (arg: { count: string | number | boolean }) => LocalizedString
 					/**
 					 * The server database was likely rebuilt. Your local data needs to be re-synced.
 					 */
