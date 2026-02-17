@@ -1,9 +1,9 @@
 import { _groupIntoMap } from "@librocco/shared";
 
 import type { PageData } from "./$types";
-import type { SupplierOrderSummary } from "./types";
+import type { SupplierOrderReconciliationSummary } from "./types";
 import type { ReconciliationProcessedLine } from "$lib/components/supplier-orders/utils";
-import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
+import type { CustomerDeliveryEntry, DeliveryByISBN } from "$lib/db/cr-sqlite/types";
 
 export function calcStatsBySupplierOrder(data?: PageData) {
 	if (!data) {
@@ -14,8 +14,8 @@ export function calcStatsBySupplierOrder(data?: PageData) {
 
 	const scannedLineLookup = new Map(reconciliationOrderLines.map(({ isbn, quantity }) => [isbn, quantity]));
 
-	// Map { supplier_order_id => SupplierOrderSummary }
-	const orders = new Map<number, SupplierOrderSummary>();
+	// Map { supplier_order_id => SupplierOrderReconciliationSummary }
+	const orders = new Map<number, SupplierOrderReconciliationSummary>();
 
 	for (const line of placedOrderLines) {
 		const { supplier_order_id, supplier_name, underdelivery_policy, isbn } = line;
@@ -28,7 +28,7 @@ export function calcStatsBySupplierOrder(data?: PageData) {
 		scannedLineLookup.set(isbn, remainingScanned - deliveredQuantity); // Safe with underdelivery (will deduct 0)
 
 		// Create supplier order entry if not exists
-		const order: SupplierOrderSummary = orders.get(supplier_order_id) || {
+		const order: SupplierOrderReconciliationSummary = orders.get(supplier_order_id) || {
 			supplier_name,
 			underdelivery_policy: underdelivery_policy ?? 0,
 			supplier_order_id,
@@ -50,8 +50,6 @@ export function calcStatsBySupplierOrder(data?: PageData) {
 	return Array.from(orders.values());
 }
 
-type CustomerDeliveryEntry = Pick<CustomerOrderLine, "fullname" | "customer_display_id" | "created">;
-type DeliveryByISBN = { isbn: string; title: string; total: number; customers: CustomerDeliveryEntry[] };
 export function calcCustomerOrderDelivery(data: PageData): DeliveryByISBN[] {
 	if (!data) {
 		return [];

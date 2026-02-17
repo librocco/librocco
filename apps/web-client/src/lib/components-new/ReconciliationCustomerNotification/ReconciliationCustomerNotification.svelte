@@ -3,12 +3,8 @@
 	import { createCollapsible, melt } from "@melt-ui/svelte";
 
 	import LL from "@librocco/shared/i18n-svelte";
-
-	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
-
-	// TODO: the following are duplicates from routes/orders/suppliers/reconcile/[id]/utils.ts -- move into a standardised location
-	type CustomerDeliveryEntry = Pick<CustomerOrderLine, "fullname" | "customer_display_id" | "created">;
-	type DeliveryByISBN = { isbn: string; title: string; total: number; customers: CustomerDeliveryEntry[] };
+	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
+	import type { CustomerDeliveryEntry, DeliveryByISBN } from "$lib/db/cr-sqlite/types";
 
 	export let finalized = false;
 	export let books: DeliveryByISBN[] = [];
@@ -34,6 +30,12 @@
 
 	function getCopyLabel(count: number): string {
 		return t.copy_label({ count });
+	}
+
+	function formatOrderDate(created: Date): string {
+		const datePart = $dateFormatters.dateShort(created);
+		const timePart = $dateFormatters.timeOnly(created);
+		return `${datePart}, ${timePart}`;
 	}
 </script>
 
@@ -90,7 +92,7 @@
 										<span class="text-muted-foreground text-sm">{customer.customer_display_id}</span>
 									</div>
 									<div class="w-44">
-										<span class="text-muted-foreground text-sm">{customer.created}</span>
+										<span class="text-muted-foreground text-sm">{formatOrderDate(customer.created)}</span>
 									</div>
 								</div>
 							{/each}
