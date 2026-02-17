@@ -47,6 +47,7 @@ async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
 			COALESCE(address, 'N/A') as address,
 			COALESCE(customerId, 'N/A') as customerId,
 			orderFormat,
+			COALESCE(underdelivery_policy, 0) as underdelivery_policy,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -84,6 +85,7 @@ async function _getSupplierDetails(db: TXAsync, id: number | null): Promise<Supp
 			address,
 			customerId,
 			orderFormat,
+			underdelivery_policy,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -108,14 +110,15 @@ async function _upsertSupplier(db: TXAsync, supplier: Supplier) {
 	}
 
 	await db.exec(
-		`INSERT INTO supplier (id, name, email, address, customerId, orderFormat)
-        VALUES (?, ?, ?, ?, ?, ?)
+		`INSERT INTO supplier (id, name, email, address, customerId, orderFormat, underdelivery_policy)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
         	name = COALESCE(?, name),
             email = COALESCE(?, email),
             address = COALESCE(?, address),
             customerId = COALESCE(?, customerId),
-            orderFormat = COALESCE(?, orderFormat)
+            orderFormat = COALESCE(?, orderFormat),
+            underdelivery_policy = COALESCE(?, underdelivery_policy)
             ;`,
 		[
 			supplier.id,
@@ -124,11 +127,13 @@ async function _upsertSupplier(db: TXAsync, supplier: Supplier) {
 			supplier.address ?? null,
 			supplier.customerId ?? null,
 			supplier.orderFormat ?? null,
+			supplier.underdelivery_policy ?? 0,
 			supplier.name ?? null,
 			supplier.email ?? null,
 			supplier.address ?? null,
 			supplier.customerId ?? null,
-			supplier.orderFormat ?? null
+			supplier.orderFormat ?? null,
+			supplier.underdelivery_policy ?? 0
 		]
 	);
 }
@@ -226,6 +231,7 @@ export function createGeneralSupplierMock(): SupplierExtended {
 		address: undefined,
 		customerId: undefined,
 		orderFormat: undefined,
+		underdelivery_policy: 0,
 		numPublishers: 0
 	};
 }
