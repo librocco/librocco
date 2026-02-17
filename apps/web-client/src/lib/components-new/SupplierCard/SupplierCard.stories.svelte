@@ -30,6 +30,7 @@
 			orderFormat="N/A"
 			on:edit={handleEdit}
 			on:delete={handleDelete}
+			underdeliveryPolicy={0}
 		/>
 	</div>
 </Story>
@@ -44,6 +45,7 @@
 			orderFormat="Not configured"
 			on:edit={handleEdit}
 			on:delete={handleDelete}
+			underdeliveryPolicy={0}
 		/>
 	</div>
 </Story>
@@ -58,6 +60,7 @@
 			orderFormat="Available on request via email or call during business hours"
 			on:edit={handleEdit}
 			on:delete={handleDelete}
+			underdeliveryPolicy={1}
 		/>
 	</div>
 </Story>
@@ -72,6 +75,7 @@
 			orderFormat="Manual"
 			on:edit={handleEdit}
 			on:delete={handleDelete}
+			underdeliveryPolicy={0}
 		/>
 	</div>
 </Story>
