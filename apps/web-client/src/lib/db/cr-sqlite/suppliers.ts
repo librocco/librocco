@@ -395,14 +395,16 @@ async function _getPlacedSupplierOrders(
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
 			ro.id as reconciliation_order_id,
 			ro.updatedAt as reconciliation_last_updated_at,
-			ro.finalized
+			ro.finalized,
+			soc.parent_order_id
         FROM supplier_order so
 		LEFT JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
 		LEFT JOIN book ON sol.isbn = book.isbn
 		LEFT JOIN ro ON so.id = ro.supplier_order_id
+		LEFT JOIN supplier_order_continuation soc ON so.id = soc.continuation_order_id
 		${whereClause}
-        GROUP BY so.id, so.supplier_id, s.name, so.created, ro.id
+        GROUP BY so.id, so.supplier_id, s.name, so.created, ro.id, soc.parent_order_id
         ORDER BY so.created DESC
 	`;
 
