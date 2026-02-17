@@ -271,13 +271,11 @@ jobs:
           exit 0
         fi
 
-        # Extract the last result line from the JSONL log
-        RESULT=$(grep '"type":"result"' "$LOG" | tail -1 || true)
-        if [ -z "$RESULT" ]; then
-          RESULT=$(grep '"type": "result"' "$LOG" | tail -1 || true)
-        fi
+        # The log file may be a JSON array or concatenated JSON objects.
+        # Use jq --slurp to handle both, then find the result entry.
+        RESULT=$(jq -s '[.[] | if type == "array" then .[] else . end | select(.type == "result")] | last' "$LOG" 2>/dev/null || true)
 
-        if [ -z "$RESULT" ]; then
+        if [ -z "$RESULT" ] || [ "$RESULT" = "null" ]; then
           echo "No result entry found in Claude log." >> "$GITHUB_STEP_SUMMARY"
           exit 0
         fi
@@ -312,8 +310,7 @@ jobs:
         PR_BRANCH="auto-fix/playwright-${FAILED_RUN_ID:-manual}"
         PR_NUMBER=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$PR_BRANCH" --json number --jq '.[0].number // empty' 2>/dev/null || true)
         if [ -n "$PR_NUMBER" ]; then
-          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$(cat <<COMMENTEOF
-        **Claude Code run summary**
+          COMMENT_BODY="**Claude Code run summary**
 
         | Metric | Value |
         |--------|-------|
@@ -321,9 +318,9 @@ jobs:
         | Turns | $TURNS |
         | Duration | ${DURATION_MIN} min |
         | Cost | $COST_FMT |
-        | Workflow run | [View logs](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) |
-        COMMENTEOF
-        )"
+        | Workflow run | [View logs](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) |"
+
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body "$COMMENT_BODY"
           echo "Posted cost summary to PR #$PR_NUMBER" >> "$GITHUB_STEP_SUMMARY"
         fi
     - name: Stop services
