@@ -3,7 +3,7 @@ import { _groupIntoMap } from "@librocco/shared";
 import type { PageData } from "./$types";
 import type { SupplierOrderReconciliationSummary } from "./types";
 import type { ReconciliationProcessedLine } from "$lib/components/supplier-orders/utils";
-import type { CustomerDeliveryEntry, DeliveryByISBN } from "$lib/db/cr-sqlite/types";
+import type { DeliveryByISBN } from "$lib/db/cr-sqlite/types";
 
 export function calcStatsBySupplierOrder(data?: PageData) {
 	if (!data) {
@@ -56,9 +56,9 @@ export function calcCustomerOrderDelivery(data: PageData): DeliveryByISBN[] {
 	}
 
 	// Map { isbn => Iterable<CustomerDeliveryEntry> }
-	const customerLineLookup = _groupIntoMap(data.customerOrderLines, ({ isbn, fullname, customer_display_id, created }) => [
+	const customerLineLookup = _groupIntoMap(data.customerOrderLines, ({ isbn, customer_name, customer_display_id, created }) => [
 		isbn,
-		{ fullname, customer_display_id, created }
+		{ customer_name, customer_display_id, created }
 	]);
 
 	return data.reconciliationOrderLines.map(({ isbn, title, quantity }) => ({
