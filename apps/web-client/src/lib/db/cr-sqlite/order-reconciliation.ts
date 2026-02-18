@@ -393,7 +393,7 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 			sol.isbn,
 			sol.quantity,
 			so.created,
-			s.underdelivery_policy
+			COALESCE(s.underdelivery_policy, 0) AS underdelivery_policy
 		FROM supplier_order_line sol
 		LEFT JOIN supplier_order so ON sol.supplier_order_id = so.id
 		LEFT JOIN supplier s ON so.supplier_id = s.id
@@ -410,6 +410,7 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		created: number;
 	};
 	const supplierOrderLines = await db.execO<SupplierOrderLineItem>(supplierOrderLineQuery, supplierOrderIds);
+	console.log({ supplierOrderLines });
 
 	const isbns = [...new Set(supplierOrderLines.map(({ isbn }) => isbn))];
 	const customerOrderLines = await getCustomerOrderLinesCore(db, { isbns, orderBy: "created ASC", status: { eq: OrderItemStatus.Placed } });
@@ -447,6 +448,8 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		// Update the running received budget for isbn
 		receivedLineBudget.set(isbn, remainingBudget);
 
+		console.log({ delivered });
+
 		// Mark customer order lines for delivery
 		if (delivered > 0) {
 			const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
@@ -467,6 +470,9 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 			linesToDeliver.push(...idsToDeliver);
 			customerOrdersByISBN.set(isbn, customerOrderLines);
 		}
+
+		console.log({ underdelivery_policy });
+		console.log({ underdelivered });
 
 		// Underdelivered - reject
 		if (underdelivered > 0 && underdelivery_policy === 0) {
@@ -496,6 +502,8 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		}
 	}
 
+	console.log(JSON.stringify({ linesToReject }));
+
 	return db.tx(async (txDb) => {
 		const timestamp = Date.now();
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1, updatedAt = ? WHERE id = ?;`, [timestamp, id]);
@@ -509,7 +517,6 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 
 		if (linesToReject.length > 0) {
 			await txDb.exec(`UPDATE customer_order_lines SET placed = NULL WHERE id IN (${multiplyString("?", linesToReject.length)})`, [
-				timestamp,
 				...linesToReject
 			]);
 		}

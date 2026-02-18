@@ -301,7 +301,7 @@ export async function getCustomerOrderLinesCore(db: TXAsync, opts: CustomerOrder
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT
 			col.id, col.customer_id, col.created, col.placed, col.received, col.collected,
-			c.display_id AS customer_display_id, c.fullname,
+			c.display_id AS customer_display_id, COALESCE(c.fullname, 'N/A') AS customer_name,
 			col.isbn,
 			COALESCE(book.title, 'N/A') AS title,
 			COALESCE(book.authors, 'N/A') as authors,

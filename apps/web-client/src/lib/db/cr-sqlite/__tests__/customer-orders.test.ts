@@ -565,8 +565,10 @@ describe("Customer order lines", () => {
 					placed: undefined,
 					received: undefined,
 					collected: undefined,
+					status: expect.any(Number),
 					customer_id: expect.any(Number),
-					status: expect.any(Number)
+					customer_name: expect.any(String),
+					customer_display_id: expect.any(String)
 				}
 			]);
 		});
@@ -593,8 +595,10 @@ describe("Customer order lines", () => {
 					placed: undefined,
 					received: undefined,
 					collected: undefined,
+					status: expect.any(Number),
 					customer_id: expect.any(Number),
-					status: expect.any(Number)
+					customer_name: expect.any(String),
+					customer_display_id: expect.any(String)
 				}
 			]);
 		});
