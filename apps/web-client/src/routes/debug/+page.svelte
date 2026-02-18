@@ -32,8 +32,10 @@
 
 	import { app } from "$lib/app";
 	import { getDb } from "$lib/app/db";
+	import { Page } from "$lib/controllers";
 
 	export let data: LayoutData;
+	$: ({ plugins } = data);
 
 	let book;
 	let supplier;
@@ -359,12 +361,8 @@
 	let error = false;
 </script>
 
-<div id="content" class="h-full w-full overflow-y-auto">
-	<header class="flex h-16 items-center justify-between border-b border-base-content">
-		<h2 class="pl-[70px] text-lg font-medium lg:pl-5">{$LL.debug_page.title()}</h2>
-	</header>
-
-	<div class="flex h-full w-full flex-col px-4">
+<Page title={$LL.debug_page.title()} view="debug" {app} {plugins}>
+	<div slot="main" class="flex h-full w-full flex-col px-4">
 		<div class="flex items-center justify-between self-end p-4">
 			<div class="gap-2">
 				<button class="btn-primary btn" on:click={triggerLoadError}>
@@ -472,7 +470,7 @@
 			</div>
 		</div>
 	</div>
-</div>
+</Page>
 
 {#if error}
 	{@html (() => {
