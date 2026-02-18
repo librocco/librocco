@@ -1,88 +1,85 @@
 name: Node Version Alignment
-
 "on":
   pull_request:
     paths:
-      - "rush.json"
-      - ".nvmrc"
-      - "python-apps/launcher/launcher/binary_manager.py"
-      - ".github/workflow.templates/node-version-alignment.yml"
-      - ".github/workflows/node-version-alignment.yml"
+    - rush.json
+    - .nvmrc
+    - python-apps/launcher/launcher/binary_manager.py
+    - .github/workflow.templates/node-version-alignment.yml
+    - .github/workflows/node-version-alignment.yml
   push:
     branches-ignore:
-      - "ci-debug/*"
-      - "wip/**"
+    - ci-debug/*
+    - wip/**
     paths:
-      - "rush.json"
-      - ".nvmrc"
-      - "python-apps/launcher/launcher/binary_manager.py"
-      - ".github/workflow.templates/node-version-alignment.yml"
-      - ".github/workflows/node-version-alignment.yml"
-
+    - rush.json
+    - .nvmrc
+    - python-apps/launcher/launcher/binary_manager.py
+    - .github/workflow.templates/node-version-alignment.yml
+    - .github/workflows/node-version-alignment.yml
 jobs:
   check-node-version-alignment:
     name: Check Node Version Alignment
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+    - name: Validate Rush, nvmrc, and launcher Node versions
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import re
+        from pathlib import Path
 
-      - name: Validate Rush, nvmrc, and launcher Node versions
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import re
-          from pathlib import Path
+        root = Path(".")
 
-          root = Path(".")
+        rush_raw = (root / "rush.json").read_text(encoding="utf-8")
+        range_match = re.search(r'"nodeSupportedVersionRange"\s*:\s*"([^"]+)"', rush_raw)
+        if not range_match:
+            raise SystemExit("Could not find nodeSupportedVersionRange in rush.json")
+        rush_range = range_match.group(1)
 
-          rush_raw = (root / "rush.json").read_text(encoding="utf-8")
-          range_match = re.search(r'"nodeSupportedVersionRange"\s*:\s*"([^"]+)"', rush_raw)
-          if not range_match:
-              raise SystemExit("Could not find nodeSupportedVersionRange in rush.json")
-          rush_range = range_match.group(1)
+        rush_major_match = re.search(r">=\s*(\d+)", rush_range)
+        if not rush_major_match:
+            raise SystemExit(f"Could not parse minimum Node major from rush range: {rush_range}")
+        rush_major = int(rush_major_match.group(1))
 
-          rush_major_match = re.search(r">=\s*(\d+)", rush_range)
-          if not rush_major_match:
-              raise SystemExit(f"Could not parse minimum Node major from rush range: {rush_range}")
-          rush_major = int(rush_major_match.group(1))
+        nvmrc = (root / ".nvmrc").read_text(encoding="utf-8").strip()
+        if not nvmrc:
+            raise SystemExit(".nvmrc is empty")
+        nvmrc_clean = nvmrc[1:] if nvmrc.startswith("v") else nvmrc
+        if not re.match(r"^\d+(?:\.\d+(?:\.\d+)?)?$", nvmrc_clean):
+            raise SystemExit(f"Unsupported .nvmrc format: {nvmrc}")
+        nvmrc_major = int(nvmrc_clean.split(".")[0])
 
-          nvmrc = (root / ".nvmrc").read_text(encoding="utf-8").strip()
-          if not nvmrc:
-              raise SystemExit(".nvmrc is empty")
-          nvmrc_clean = nvmrc[1:] if nvmrc.startswith("v") else nvmrc
-          if not re.match(r"^\d+(?:\.\d+(?:\.\d+)?)?$", nvmrc_clean):
-              raise SystemExit(f"Unsupported .nvmrc format: {nvmrc}")
-          nvmrc_major = int(nvmrc_clean.split(".")[0])
+        launcher_raw = (
+            root / "python-apps" / "launcher" / "launcher" / "binary_manager.py"
+        ).read_text(encoding="utf-8")
+        launcher_match = re.search(r'^\s*NODE_VERSION\s*=\s*"([^"]+)"', launcher_raw, re.MULTILINE)
+        if not launcher_match:
+            raise SystemExit("Could not find NODE_VERSION in python-apps/launcher/launcher/binary_manager.py")
+        launcher_version = launcher_match.group(1).strip()
+        launcher_clean = launcher_version[1:] if launcher_version.startswith("v") else launcher_version
+        if not re.match(r"^\d+(?:\.\d+(?:\.\d+)?)?$", launcher_clean):
+            raise SystemExit(f"Unsupported launcher NODE_VERSION format: {launcher_version}")
+        launcher_major = int(launcher_clean.split(".")[0])
 
-          launcher_raw = (
-              root / "python-apps" / "launcher" / "launcher" / "binary_manager.py"
-          ).read_text(encoding="utf-8")
-          launcher_match = re.search(r'^\s*NODE_VERSION\s*=\s*"([^"]+)"', launcher_raw, re.MULTILINE)
-          if not launcher_match:
-              raise SystemExit("Could not find NODE_VERSION in python-apps/launcher/launcher/binary_manager.py")
-          launcher_version = launcher_match.group(1).strip()
-          launcher_clean = launcher_version[1:] if launcher_version.startswith("v") else launcher_version
-          if not re.match(r"^\d+(?:\.\d+(?:\.\d+)?)?$", launcher_clean):
-              raise SystemExit(f"Unsupported launcher NODE_VERSION format: {launcher_version}")
-          launcher_major = int(launcher_clean.split(".")[0])
+        errors = []
+        if nvmrc_major != rush_major:
+            errors.append(
+                f".nvmrc major ({nvmrc_major}) must match rush.json nodeSupportedVersionRange major ({rush_major})"
+            )
+        if launcher_major != rush_major:
+            errors.append(
+                f"launcher NODE_VERSION major ({launcher_major}) must match rush.json nodeSupportedVersionRange major ({rush_major})"
+            )
 
-          errors = []
-          if nvmrc_major != rush_major:
-              errors.append(
-                  f".nvmrc major ({nvmrc_major}) must match rush.json nodeSupportedVersionRange major ({rush_major})"
-              )
-          if launcher_major != rush_major:
-              errors.append(
-                  f"launcher NODE_VERSION major ({launcher_major}) must match rush.json nodeSupportedVersionRange major ({rush_major})"
-              )
+        if errors:
+            print("Node version alignment check failed:")
+            for error in errors:
+                print(f" - {error}")
+            print(f"Details: rush range='{rush_range}', .nvmrc='{nvmrc}', launcher NODE_VERSION='{launcher_version}'")
+            raise SystemExit(1)
 
-          if errors:
-              print("Node version alignment check failed:")
-              for error in errors:
-                  print(f" - {error}")
-              print(f"Details: rush range='{rush_range}', .nvmrc='{nvmrc}', launcher NODE_VERSION='{launcher_version}'")
-              raise SystemExit(1)
-
-          print("Node version alignment check passed.")
-          print(f"rush range='{rush_range}', .nvmrc='{nvmrc}', launcher NODE_VERSION='{launcher_version}'")
-          PY
+        print("Node version alignment check passed.")
+        print(f"rush range='{rush_range}', .nvmrc='{nvmrc}', launcher NODE_VERSION='{launcher_version}'")
+        PY
