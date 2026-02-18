@@ -113,6 +113,18 @@
 			e.returnValue = "";
 		}
 	};
+
+	// Release OPFS file handles on page unload to prevent lock conflicts on rapid reload.
+	// This is best-effort: the browser may not complete the close before the page is destroyed,
+	// but it significantly reduces the window for NoModificationAllowedError on reload.
+	const releaseDbOnUnload = () => {
+		try {
+			app.db.db?.close();
+		} catch {
+			// Best-effort: ignore errors during teardown
+		}
+	};
+
 	let disposer: () => void;
 
 	onMount(async () => {
@@ -127,6 +139,7 @@
 		// Prevent user from navigating away if sync is in progress
 		// NOTE: this is a noop if sync not active (e.g. in demo mode)
 		window.addEventListener("beforeunload", preventUnloadHandler);
+		window.addEventListener("pagehide", releaseDbOnUnload);
 
 		const currentDb = await getDb(app);
 		detachPendingMonitor = await attachPendingMonitor(currentDb, getDbRx(app), get(dbid));
@@ -150,6 +163,7 @@
 		// Run all cleanup functions
 		disposer?.();
 		window.removeEventListener("beforeunload", preventUnloadHandler);
+		window.removeEventListener("pagehide", releaseDbOnUnload);
 		detachPendingMonitor?.();
 		detachPendingInvalidate?.();
 		detachSyncStatus?.();

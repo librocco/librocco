@@ -36,21 +36,30 @@ const loadLastAckVersion = async (dbid: string) => {
 	lastAckVersion = 0;
 };
 
-// Error patterns that indicate database corruption or unusable state
-const DB_ERROR_PATTERNS = [
-	"Could not update table infos",
-	"crsql_changes",
-	"no such table",
-	"database disk image is malformed",
-	"database is locked",
-	"database or disk is full"
-];
+// Error patterns that indicate permanent database corruption (nuke required)
+const PERMANENT_ERROR_PATTERNS = ["database disk image is malformed", "database or disk is full"];
+
+// Error patterns that may be transient (retry before giving up)
+const TRANSIENT_ERROR_PATTERNS = ["Could not update table infos", "crsql_changes", "no such table", "database is locked"];
 
 const isLocalDbError = (error: unknown): boolean => {
 	if (!(error instanceof Error)) return false;
 	const message = error.message.toLowerCase();
-	return DB_ERROR_PATTERNS.some((pattern) => message.toLowerCase().includes(pattern.toLowerCase()));
+	return [...PERMANENT_ERROR_PATTERNS, ...TRANSIENT_ERROR_PATTERNS].some((pattern) =>
+		message.toLowerCase().includes(pattern.toLowerCase())
+	);
 };
+
+const isPermanentDbError = (error: unknown): boolean => {
+	if (!(error instanceof Error)) return false;
+	const message = error.message.toLowerCase();
+	return PERMANENT_ERROR_PATTERNS.some((pattern) => message.toLowerCase().includes(pattern.toLowerCase()));
+};
+
+const RETRY_COUNT = 3;
+const RETRY_DELAY_MS = 500;
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const refreshPendingCount = async () => {
 	if (!currentDb) return;
@@ -58,26 +67,47 @@ const refreshPendingCount = async () => {
 	if (refreshPromise) return refreshPromise;
 
 	refreshPromise = (async () => {
-		try {
-			const [result] = await currentDb.execO<{ count: number }>(
-				"SELECT COUNT(*) as count FROM crsql_changes WHERE site_id = crsql_site_id() AND db_version > ?",
-				[lastAckVersion]
-			);
-			pendingChangesCount.set(Number(result?.count ?? 0));
-		} catch (err) {
-			console.error("[sync-pending] Error refreshing pending count:", err);
+		let lastError: unknown = null;
 
-			// Check if this is a critical database error
-			if (isLocalDbError(err)) {
-				const message = err instanceof Error ? err.message : String(err);
-				console.error("[sync-pending] Local database error detected - marking as incompatible:", message);
-				markLocalDbError(`Database error: ${message}`);
+		for (let attempt = 0; attempt < RETRY_COUNT; attempt++) {
+			try {
+				const [result] = await currentDb.execO<{ count: number }>(
+					"SELECT COUNT(*) as count FROM crsql_changes WHERE site_id = crsql_site_id() AND db_version > ?",
+					[lastAckVersion]
+				);
+				pendingChangesCount.set(Number(result?.count ?? 0));
+				return;
+			} catch (err) {
+				lastError = err;
+
+				// Permanent errors: don't retry, mark immediately
+				if (isPermanentDbError(err)) {
+					break;
+				}
+
+				// Non-DB errors: don't retry
+				if (!isLocalDbError(err)) {
+					console.error("[sync-pending] Error refreshing pending count:", err);
+					pendingChangesCount.set(0);
+					return;
+				}
+
+				// Transient DB error: log and retry
+				if (attempt < RETRY_COUNT - 1) {
+					console.warn(`[sync-pending] Transient error (attempt ${attempt + 1}/${RETRY_COUNT}), retrying:`, err);
+					await delay(RETRY_DELAY_MS);
+				}
 			}
-
-			pendingChangesCount.set(0);
-		} finally {
-			refreshPromise = null;
 		}
+
+		// All retries exhausted or permanent error
+		if (isLocalDbError(lastError)) {
+			const message = lastError instanceof Error ? lastError.message : String(lastError);
+			console.error("[sync-pending] Local database error detected - marking as incompatible:", message);
+			markLocalDbError(`Database error: ${message}`);
+		}
+
+		pendingChangesCount.set(0);
 	})();
 
 	return refreshPromise;
