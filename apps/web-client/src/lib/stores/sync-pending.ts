@@ -93,9 +93,12 @@ const refreshPendingCount = async () => {
 						return;
 					}
 
-					// Transient DB error: log and retry
+					// Transient DB error: retry (silently on first attempt — cr-sqlite's
+					// crsql_changes virtual table may not be ready immediately after DB init)
 					if (attempt < RETRY_COUNT - 1) {
-						console.warn(`[sync-pending] Transient error (attempt ${attempt + 1}/${RETRY_COUNT}), retrying:`, err);
+						if (attempt > 0) {
+							console.warn(`[sync-pending] Transient error (attempt ${attempt + 1}/${RETRY_COUNT}), retrying:`, err);
+						}
 						await delay(RETRY_DELAY_MS);
 					}
 				}

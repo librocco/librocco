@@ -22,6 +22,7 @@
 	import { Sidebar } from "$lib/components";
 
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
+	import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
 	import { syncConnectivityMonitor, updateSyncConnectivityMonitor, resetSyncStuckState } from "$lib/stores";
@@ -114,15 +115,12 @@
 		}
 	};
 
-	// Synchronously terminate the DB worker on page unload to immediately release OPFS file handles.
-	// Worker.terminate() is synchronous, unlike db.close() which is async over Comlink and may not
-	// complete before the page is destroyed.
+	// Synchronously terminate all DB workers on page unload to immediately release OPFS file handles.
+	// terminateAllWorkers() is synchronous and works even if the page reloads during DB init
+	// (before app.db.db is set), because it tracks workers at module level from the moment they're created.
 	const releaseDbOnUnload = () => {
 		try {
-			const db = app.db.db as any;
-			if (db?.terminate) {
-				db.terminate();
-			}
+			terminateAllWorkers();
 		} catch {
 			// Best-effort: ignore errors during teardown
 		}
@@ -144,39 +142,19 @@
 		window.addEventListener("beforeunload", preventUnloadHandler);
 		window.addEventListener("pagehide", releaseDbOnUnload);
 
-		// Wait for DB to be ready (needed for sync status subscription)
-		await getDb(app);
-
-		// Delay attaching the pending monitor until the first successful sync handshake.
-		// cr-sqlite's crsql_changes virtual table needs the extension to finish scanning
-		// sqlite_master for clock tables. By waiting for the first sync handshake, we ensure
-		// the extension is fully initialized, eliminating "Could not update table infos" errors.
-		let pendingMonitorAttached = false;
-		const attachPendingMonitorOnce = async () => {
-			if (pendingMonitorAttached) return;
-			pendingMonitorAttached = true;
-
-			const currentDb = app.db.db;
-			if (!currentDb) return;
-
-			detachPendingMonitor = await attachPendingMonitor(currentDb, getDbRx(app), get(dbid));
-			detachPendingInvalidate = getDbRx(app).onInvalidate(async () => {
-				detachPendingMonitor?.();
-				if (app.db.db && app.db.dbid) {
-					detachPendingMonitor = await attachPendingMonitor(app.db.db, getDbRx(app), app.db.dbid);
-				}
-			});
-		};
-
+		const currentDb = await getDb(app);
+		detachPendingMonitor = await attachPendingMonitor(currentDb, getDbRx(app), get(dbid));
+		detachPendingInvalidate = getDbRx(app).onInvalidate(async () => {
+			detachPendingMonitor?.();
+			if (app.db.db && app.db.dbid) {
+				detachPendingMonitor = await attachPendingMonitor(app.db.db, getDbRx(app), app.db.dbid);
+			}
+		});
 		detachSyncStatus = await app.sync.runExclusive(async (sync) => {
 			return sync.worker.onSyncStatus((payload) => {
 				applyHandshakeStatus(get(dbid), payload);
 				if (payload.ackDbVersion != null) {
 					void setLastAckedVersion(payload.ackDbVersion, get(dbid));
-				}
-				// Attach pending monitor on first successful sync status
-				if (!pendingMonitorAttached) {
-					void attachPendingMonitorOnce();
 				}
 			});
 		});

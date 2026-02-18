@@ -5,6 +5,21 @@ import type { DBAsync, OnUpdateCallback, StmtAsync, TMutex, TXCallback, _TXAsync
 import DBWorker from "./worker-db.worker?worker";
 import type { MsgInit } from "./worker-db.worker";
 
+// Track all active DB workers so they can be terminated synchronously on page unload,
+// even if the page reloads before getWorkerDB() completes (before app.db.db is set).
+const activeWorkers = new Set<Worker>();
+
+/**
+ * Synchronously terminates all active DB workers, immediately releasing OPFS file handles.
+ * Call this from pagehide/beforeunload to prevent lock conflicts on rapid reload.
+ */
+export function terminateAllWorkers(): void {
+	for (const w of activeWorkers) {
+		w.terminate();
+	}
+	activeWorkers.clear();
+}
+
 export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync> {
 	const wkr = await initWorker(dbname, vfs);
 
@@ -17,6 +32,7 @@ export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync>
 function initWorker(dbname: string, vfs: string) {
 	const name = [dbname, vfs].join("---");
 	const wkr = new DBWorker({ name });
+	activeWorkers.add(wkr);
 
 	return new Promise<Worker>((resolve, reject) => {
 		const listener = (e: MessageEvent) => {
@@ -66,6 +82,7 @@ class WorkerDB implements DBAsync {
 	 */
 	terminate(): void {
 		this._worker.terminate();
+		activeWorkers.delete(this._worker);
 	}
 
 	prepare(sql: string) {
