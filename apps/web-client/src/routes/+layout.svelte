@@ -25,7 +25,7 @@
 	import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
-	import { syncConnectivityMonitor, updateSyncConnectivityMonitor, resetSyncStuckState } from "$lib/stores";
+	import { resetSyncStuckState } from "$lib/stores";
 	import { applyHandshakeStatus, resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
 	import { attachPendingMonitor, resetPendingTracker, setLastAckedVersion } from "$lib/stores/sync-pending";
 
@@ -257,13 +257,13 @@
 		forceVisible: true
 	});
 
-	// Show sync stuck dialog when sync is stuck and sync is supposed to be active
-	const syncStuck = syncConnectivityMonitor.stuck;
-	const syncDiagnostics = syncConnectivityMonitor.diagnostics;
+	// Show nuke-and-resync dialog only for actual DB incompatibility (schema mismatch, remote reset, etc.).
+	// Server being unreachable ("stuck") is normal for a local-first app — the footer badge
+	// already shows the connectivity state, no need for a disruptive dialog.
 	const syncCompatibilityState = syncCompatibility;
 	let isIncompatible = false;
 	$: isIncompatible = $syncCompatibilityState.status === "incompatible";
-	$: $syncStuckDialogOpen = ($syncStuck || isIncompatible) && $syncActive;
+	$: $syncStuckDialogOpen = isIncompatible && $syncActive;
 
 	const handleNukeAndResync = async () => {
 		syncStuckDialogOpen.set(false);
@@ -469,19 +469,6 @@
 								{/if}
 							</p>
 						{/if}
-					</div>
-				{/if}
-				{#if $syncDiagnostics.reason}
-					<div class="mb-4 rounded bg-base-200 p-3 font-mono text-xs">
-						<p class="mb-1 font-semibold text-gray-700">{tLayout.error_dialog.sync_stuck.diagnostics.title()}</p>
-						{#if $syncDiagnostics.reason === "rapid_closes"}
-							<p class="text-gray-600">
-								{tLayout.error_dialog.sync_stuck.diagnostics.rapid_closes({ count: $syncDiagnostics.rapidCloseCount })}
-							</p>
-						{:else if $syncDiagnostics.reason === "timeout"}
-							<p class="text-gray-600">{tLayout.error_dialog.sync_stuck.diagnostics.timeout()}</p>
-						{/if}
-						<p class="mt-1 text-gray-500">{tLayout.error_dialog.sync_stuck.diagnostics.hint()}</p>
 					</div>
 				{/if}
 
