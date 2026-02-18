@@ -52,9 +52,9 @@ export enum OrderLineStatus {
 export type DBCustomerOrderLine = {
 	// A customer order line as it is stored in the database
 	id: number;
-	fullname: string;
 	isbn: string;
 	customer_id: number;
+	customer_name: string;
 	customer_display_id: string;
 	created: number; // as milliseconds since epoch
 	placed?: number; // as milliseconds since epoch
@@ -66,8 +66,8 @@ export type DBCustomerOrderLine = {
 export type CustomerOrderLine = {
 	// A customer order line to be passed around in the application
 	id: number;
-	fullname: string;
 	customer_id: number;
+	customer_name: string;
 	customer_display_id: string;
 	created: Date; // Date when the book order was entered
 	placed?: Date; // Last date when the book order was placed to the supplier
@@ -86,7 +86,7 @@ export type CustomerOrderLineHistory = {
 	placed: Date;
 };
 
-export type CustomerDeliveryEntry = Pick<CustomerOrderLine, "fullname" | "customer_display_id" | "created">;
+export type CustomerDeliveryEntry = Pick<CustomerOrderLine, "customer_name" | "customer_display_id" | "created">;
 export type DeliveryByISBN = { isbn: string; title: string; total: number; customers: CustomerDeliveryEntry[] };
 
 /* Suppliers */

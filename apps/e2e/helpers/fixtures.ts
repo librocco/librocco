@@ -111,8 +111,8 @@ const supplierOrders: FixtureSupplierOrder[] = [
 	{
 		order: { id: 2, supplier_id: 1, supplier_name: "sup1", totalBooks: 6 },
 		lines: [
-			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 3 },
-			{ isbn: "9999", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
+			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 1 },
+			{ isbn: "9999", supplier_id: 1, supplier_name: "sup1", quantity: 1 },
 			{ isbn: "7777", supplier_id: 1, supplier_name: "sup1", quantity: 1 }
 		]
 	},
