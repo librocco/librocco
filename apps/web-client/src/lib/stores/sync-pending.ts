@@ -56,8 +56,8 @@ const isPermanentDbError = (error: unknown): boolean => {
 	return PERMANENT_ERROR_PATTERNS.some((pattern) => message.toLowerCase().includes(pattern.toLowerCase()));
 };
 
-const RETRY_COUNT = 3;
-const RETRY_DELAY_MS = 500;
+const RETRY_COUNT = 2;
+const RETRY_DELAY_MS = 300;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 

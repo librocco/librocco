@@ -11,7 +11,7 @@ export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync>
 	const ifc = Comlink.wrap<DBAsync>(wkr);
 	const [__mutex, siteid, filename, tablesUsedStmt] = await Promise.all([ifc.__mutex, ifc.siteid, ifc.filename, ifc.tablesUsedStmt]);
 
-	return new WorkerDB(ifc, __mutex, siteid, filename, tablesUsedStmt);
+	return new WorkerDB(wkr, ifc, __mutex, siteid, filename, tablesUsedStmt);
 }
 
 function initWorker(dbname: string, vfs: string) {
@@ -45,7 +45,10 @@ function initWorker(dbname: string, vfs: string) {
 }
 
 class WorkerDB implements DBAsync {
+	private _worker: Worker;
+
 	constructor(
+		worker: Worker,
 		readonly remote: Comlink.Remote<DBAsync>,
 		// TODO: running the mutex over a Comlink proxy might not be the terribly performant solution,
 		// check if we should implement a local mutex here.
@@ -53,7 +56,17 @@ class WorkerDB implements DBAsync {
 		readonly siteid: string,
 		readonly filename: string,
 		readonly tablesUsedStmt: StmtAsync
-	) {}
+	) {
+		this._worker = worker;
+	}
+
+	/**
+	 * Synchronously terminates the underlying Web Worker, immediately releasing
+	 * any OPFS file handles. Use this on page unload instead of the async close().
+	 */
+	terminate(): void {
+		this._worker.terminate();
+	}
 
 	prepare(sql: string) {
 		return this.remote.prepare(sql);
