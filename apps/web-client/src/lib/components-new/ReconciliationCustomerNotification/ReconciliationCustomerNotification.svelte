@@ -4,7 +4,7 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
-	import type { CustomerDeliveryEntry, DeliveryByISBN } from "$lib/db/cr-sqlite/types";
+	import type { DeliveryByISBN } from "$lib/db/cr-sqlite/types";
 
 	export let finalized = false;
 	export let books: DeliveryByISBN[] = [];
@@ -86,7 +86,7 @@
 								{@const isLastCustomer = index === book.customers.length - 1}
 								<div class="flex items-center gap-4 px-2 py-1 {!isLastCustomer ? 'border-b border-neutral-200' : ''}">
 									<div class="min-w-0 flex-1">
-										<span class="text-foreground text-sm">{customer.fullname}</span>
+										<span class="text-foreground text-sm">{customer.customer_name}</span>
 									</div>
 									<div class="w-32">
 										<span class="text-muted-foreground text-sm">{customer.customer_display_id}</span>

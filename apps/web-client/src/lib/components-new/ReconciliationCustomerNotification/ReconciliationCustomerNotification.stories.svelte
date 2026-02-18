@@ -17,21 +17,21 @@
 			title: "The Great Gatsby",
 			total: 2,
 			customers: [
-				{ fullname: "Sarah Johnson", customer_display_id: "1", created: new Date("2024-12-15T10:30:00") },
-				{ fullname: "Michael Chen", customer_display_id: "2", created: new Date("2024-12-16T14:20:00") }
+				{ customer_name: "Sarah Johnson", customer_display_id: "1", created: new Date("2024-12-15T10:30:00") },
+				{ customer_name: "Michael Chen", customer_display_id: "2", created: new Date("2024-12-16T14:20:00") }
 			]
 		},
 		{
 			isbn: "321",
 			title: "To Kill a Mockingbird",
 			total: 1,
-			customers: [{ fullname: "James Taylor", customer_display_id: "6", created: new Date("2024-12-15T13:00:00") }]
+			customers: [{ customer_name: "James Taylor", customer_display_id: "6", created: new Date("2024-12-15T13:00:00") }]
 		},
 		{
 			isbn: "456",
 			title: "1984",
 			total: 1,
-			customers: [{ fullname: "Jennifer Lee", customer_display_id: "9", created: new Date("2024-12-14T09:00:00") }]
+			customers: [{ customer_name: "Jennifer Lee", customer_display_id: "9", created: new Date("2024-12-14T09:00:00") }]
 		}
 	];
 
@@ -41,9 +41,9 @@
 			title: "Pride and Prejudice",
 			total: 3,
 			customers: [
-				{ fullname: "Emma Watson", customer_display_id: "10", created: new Date("2024-12-12T23:45:00") },
-				{ fullname: "Robert Brown", customer_display_id: "11", created: new Date("2024-12-13T09:15:00") },
-				{ fullname: "Lisa Anderson", customer_display_id: "12", created: new Date("2024-12-13T15:30:00") }
+				{ customer_name: "Emma Watson", customer_display_id: "10", created: new Date("2024-12-12T23:45:00") },
+				{ customer_name: "Robert Brown", customer_display_id: "11", created: new Date("2024-12-13T09:15:00") },
+				{ customer_name: "Lisa Anderson", customer_display_id: "12", created: new Date("2024-12-13T15:30:00") }
 			]
 		}
 	];
@@ -54,10 +54,10 @@
 			title: "The Great Gatsby",
 			total: 4,
 			customers: [
-				{ fullname: "Sarah Johnson", customer_display_id: "1", created: new Date("2024-12-15T10:30:00") },
-				{ fullname: "Michael Chen", customer_display_id: "2", created: new Date("2024-12-16T14:20:00") },
-				{ fullname: "Emma Davis", customer_display_id: "3", created: new Date("2024-12-14T11:00:00") },
-				{ fullname: "John Smith", customer_display_id: "4", created: new Date("2024-12-15T16:45:00") }
+				{ customer_name: "Sarah Johnson", customer_display_id: "1", created: new Date("2024-12-15T10:30:00") },
+				{ customer_name: "Michael Chen", customer_display_id: "2", created: new Date("2024-12-16T14:20:00") },
+				{ customer_name: "Emma Davis", customer_display_id: "3", created: new Date("2024-12-14T11:00:00") },
+				{ customer_name: "John Smith", customer_display_id: "4", created: new Date("2024-12-15T16:45:00") }
 			]
 		},
 		{
@@ -65,8 +65,8 @@
 			title: "To Kill a Mockingbird",
 			total: 2,
 			customers: [
-				{ fullname: "James Taylor", customer_display_id: "6", created: new Date("2024-12-15T13:00:00") },
-				{ fullname: "Margaret White", customer_display_id: "7", created: new Date("2024-12-16T09:20:00") }
+				{ customer_name: "James Taylor", customer_display_id: "6", created: new Date("2024-12-15T13:00:00") },
+				{ customer_name: "Margaret White", customer_display_id: "7", created: new Date("2024-12-16T09:20:00") }
 			]
 		},
 		{
@@ -74,24 +74,24 @@
 			title: "1984",
 			total: 3,
 			customers: [
-				{ fullname: "Jennifer Lee", customer_display_id: "9", created: new Date("2024-12-14T09:00:00") },
-				{ fullname: "David Kim", customer_display_id: "13", created: new Date("2024-12-17T14:15:00") },
-				{ fullname: "Sophie Martin", customer_display_id: "14", created: new Date("2024-12-18T11:30:00") }
+				{ customer_name: "Jennifer Lee", customer_display_id: "9", created: new Date("2024-12-14T09:00:00") },
+				{ customer_name: "David Kim", customer_display_id: "13", created: new Date("2024-12-17T14:15:00") },
+				{ customer_name: "Sophie Martin", customer_display_id: "14", created: new Date("2024-12-18T11:30:00") }
 			]
 		},
 		{
 			isbn: "654",
 			title: "Brave New World",
 			total: 1,
-			customers: [{ fullname: "Thomas Green", customer_display_id: "15", created: new Date("2024-12-19T16:00:00") }]
+			customers: [{ customer_name: "Thomas Green", customer_display_id: "15", created: new Date("2024-12-19T16:00:00") }]
 		},
 		{
 			isbn: "987",
 			title: "The Catcher in the Rye",
 			total: 2,
 			customers: [
-				{ fullname: "Rachel Adams", customer_display_id: "16", created: new Date("2024-12-20T10:00:00") },
-				{ fullname: "Christopher Lee", customer_display_id: "17", created: new Date("2024-12-20T15:45:00") }
+				{ customer_name: "Rachel Adams", customer_display_id: "16", created: new Date("2024-12-20T10:00:00") },
+				{ customer_name: "Christopher Lee", customer_display_id: "17", created: new Date("2024-12-20T15:45:00") }
 			]
 		}
 	];
