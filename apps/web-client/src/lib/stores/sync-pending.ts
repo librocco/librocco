@@ -67,47 +67,51 @@ const refreshPendingCount = async () => {
 	if (refreshPromise) return refreshPromise;
 
 	refreshPromise = (async () => {
-		let lastError: unknown = null;
+		try {
+			let lastError: unknown = null;
 
-		for (let attempt = 0; attempt < RETRY_COUNT; attempt++) {
-			try {
-				const [result] = await currentDb.execO<{ count: number }>(
-					"SELECT COUNT(*) as count FROM crsql_changes WHERE site_id = crsql_site_id() AND db_version > ?",
-					[lastAckVersion]
-				);
-				pendingChangesCount.set(Number(result?.count ?? 0));
-				return;
-			} catch (err) {
-				lastError = err;
-
-				// Permanent errors: don't retry, mark immediately
-				if (isPermanentDbError(err)) {
-					break;
-				}
-
-				// Non-DB errors: don't retry
-				if (!isLocalDbError(err)) {
-					console.error("[sync-pending] Error refreshing pending count:", err);
-					pendingChangesCount.set(0);
+			for (let attempt = 0; attempt < RETRY_COUNT; attempt++) {
+				try {
+					const [result] = await currentDb.execO<{ count: number }>(
+						"SELECT COUNT(*) as count FROM crsql_changes WHERE site_id = crsql_site_id() AND db_version > ?",
+						[lastAckVersion]
+					);
+					pendingChangesCount.set(Number(result?.count ?? 0));
 					return;
-				}
+				} catch (err) {
+					lastError = err;
 
-				// Transient DB error: log and retry
-				if (attempt < RETRY_COUNT - 1) {
-					console.warn(`[sync-pending] Transient error (attempt ${attempt + 1}/${RETRY_COUNT}), retrying:`, err);
-					await delay(RETRY_DELAY_MS);
+					// Permanent errors: don't retry, mark immediately
+					if (isPermanentDbError(err)) {
+						break;
+					}
+
+					// Non-DB errors: don't retry
+					if (!isLocalDbError(err)) {
+						console.error("[sync-pending] Error refreshing pending count:", err);
+						pendingChangesCount.set(0);
+						return;
+					}
+
+					// Transient DB error: log and retry
+					if (attempt < RETRY_COUNT - 1) {
+						console.warn(`[sync-pending] Transient error (attempt ${attempt + 1}/${RETRY_COUNT}), retrying:`, err);
+						await delay(RETRY_DELAY_MS);
+					}
 				}
 			}
-		}
 
-		// All retries exhausted or permanent error
-		if (isLocalDbError(lastError)) {
-			const message = lastError instanceof Error ? lastError.message : String(lastError);
-			console.error("[sync-pending] Local database error detected - marking as incompatible:", message);
-			markLocalDbError(`Database error: ${message}`);
-		}
+			// All retries exhausted or permanent error
+			if (isLocalDbError(lastError)) {
+				const message = lastError instanceof Error ? lastError.message : String(lastError);
+				console.error("[sync-pending] Local database error detected - marking as incompatible:", message);
+				markLocalDbError(`Database error: ${message}`);
+			}
 
-		pendingChangesCount.set(0);
+			pendingChangesCount.set(0);
+		} finally {
+			refreshPromise = null;
+		}
 	})();
 
 	return refreshPromise;
