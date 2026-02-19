@@ -210,8 +210,15 @@ export async function startSync(app: App, dbid: string, url: string) {
 		// ---------------------------------- 1. Initial Sync ---------------------------------- //
 		const isEmpty = await isEmptyDB(db);
 		const opfsSupported = vfsSupportsOPFS(getVfs(app));
+		const initialSyncReloadGuardKey = `librocco-initial-sync-reload:${dbid}`;
+		const shouldRunInitialSync = isEmpty && opfsSupported && (!browser || window.sessionStorage.getItem(initialSyncReloadGuardKey) !== "1");
 
-		if (isEmpty && opfsSupported) {
+		if (!isEmpty && browser) {
+			// DB is no longer empty; clear any stale guard from previous initial-sync reload attempt.
+			window.sessionStorage.removeItem(initialSyncReloadGuardKey);
+		}
+
+		if (shouldRunInitialSync) {
 			sync.state.set(AppSyncState.InitialSync);
 			let shouldReload = false;
 			try {
@@ -228,6 +235,8 @@ export async function startSync(app: App, dbid: string, url: string) {
 			}
 
 			if (shouldReload && browser) {
+				// Guard against repeated reload loops (e.g. remote DB is also empty).
+				window.sessionStorage.setItem(initialSyncReloadGuardKey, "1");
 				// Re-initialize the app against the swapped-in DB file.
 				window.location.reload();
 				return;
