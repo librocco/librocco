@@ -102,7 +102,9 @@ class SharedConnectionSyncDB implements SyncDB {
 			db.prepare(
 				`SELECT "table", "pk", "cid", "val", "col_version", "db_version", NULL, "cl", seq FROM crsql_changes WHERE db_version > ? AND site_id IS NOT ?`
 			),
-			db.prepare(`INSERT INTO crsql_changes ("table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`),
+			db.prepare(
+				`INSERT INTO crsql_changes ("table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+			),
 			db.prepare(`INSERT INTO "crsql_tracked_peers" ("site_id", "event", "version", "seq", "tag") VALUES (?, ?, ?, ?, 0) ON CONFLICT DO UPDATE SET
 				"version" = MAX("version", excluded."version"),
 				"seq" = CASE "version" > excluded."version" WHEN 1 THEN "seq" ELSE excluded."seq" END`)
@@ -129,11 +131,7 @@ class SharedConnectionSyncDB implements SyncDB {
 		);
 	}
 
-	async pullChangeset(
-		since: readonly [bigint, number],
-		excludeSites: readonly Uint8Array[],
-		localOnly: boolean
-	): Promise<any[]> {
+	async pullChangeset(since: readonly [bigint, number], excludeSites: readonly Uint8Array[], localOnly: boolean): Promise<any[]> {
 		void localOnly;
 		const ret = await this.#pullChangesetStmt.all(null, since[0], excludeSites[0]);
 		for (const c of ret) {

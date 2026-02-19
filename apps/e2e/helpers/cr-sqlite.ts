@@ -32,26 +32,45 @@ declare global {
  * await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
  * ```
  */
-export function getDbHandle(page: Page) {
-	return page.evaluateHandle(async () => {
-		const w = window as { [key: string]: any };
+export async function getDbHandle(page: Page) {
+	const maxAttempts = 5;
 
-		// Wait for the db to become initialised
-		await new Promise<void>((res) => {
-			if (w["db_ready"]) {
-				return res();
-			} else {
-				// Creating a separate function, as we want to run the listener only once and then remove it
-				const finalise = () => {
-					window.removeEventListener("db_ready", finalise);
-					res();
-				};
-				window.addEventListener("db_ready", finalise);
+	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+		try {
+			return await page.evaluateHandle(async () => {
+				const w = window as { [key: string]: any };
+
+				// Wait for the db to become initialised
+				await new Promise<void>((res) => {
+					if (w["db_ready"]) {
+						return res();
+					}
+
+					// Creating a separate function, as we want to run the listener only once and then remove it
+					const finalise = () => {
+						window.removeEventListener("db_ready", finalise);
+						res();
+					};
+					window.addEventListener("db_ready", finalise);
+				});
+
+				return (await w["_getDb"](w["_app"])) as DB;
+			});
+		} catch (err) {
+			const msg = String(err);
+			const isNavigationReset = msg.includes("Execution context was destroyed");
+
+			if (!isNavigationReset || attempt === maxAttempts) {
+				throw err;
 			}
-		});
 
-		return (await w["_getDb"](w["_app"])) as DB;
-	});
+			// During initial sync the app can reload once after swapping OPFS DB file.
+			// Wait for the next document to settle, then retry the DB handle lookup.
+			await page.waitForLoadState("domcontentloaded");
+		}
+	}
+
+	throw new Error("Failed to acquire DB handle");
 }
 
 /**
