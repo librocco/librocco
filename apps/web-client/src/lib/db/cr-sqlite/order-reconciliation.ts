@@ -410,7 +410,6 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		created: number;
 	};
 	const supplierOrderLines = await db.execO<SupplierOrderLineItem>(supplierOrderLineQuery, supplierOrderIds);
-	console.log({ supplierOrderLines });
 
 	const isbns = [...new Set(supplierOrderLines.map(({ isbn }) => isbn))];
 	const customerOrderLines = await getCustomerOrderLinesCore(db, { isbns, orderBy: "created ASC", status: { eq: OrderItemStatus.Placed } });
@@ -448,8 +447,6 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		// Update the running received budget for isbn
 		receivedLineBudget.set(isbn, remainingBudget);
 
-		console.log({ delivered });
-
 		// Mark customer order lines for delivery
 		if (delivered > 0) {
 			const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
@@ -470,9 +467,6 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 			linesToDeliver.push(...idsToDeliver);
 			customerOrdersByISBN.set(isbn, customerOrderLines);
 		}
-
-		console.log({ underdelivery_policy });
-		console.log({ underdelivered });
 
 		// Underdelivered - reject
 		if (underdelivered > 0 && underdelivery_policy === 0) {
@@ -501,8 +495,6 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 			continuationOrderLines.push({ isbn, quantity: underdelivered, supplier_id, parent_order_id: supplier_order_id });
 		}
 	}
-
-	console.log(JSON.stringify({ linesToReject }));
 
 	return db.tx(async (txDb) => {
 		const timestamp = Date.now();
