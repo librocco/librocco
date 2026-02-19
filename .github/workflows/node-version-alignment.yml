@@ -1,0 +1,76 @@
+name: Node Version Alignment
+"on":
+  pull_request:
+    paths:
+    - rush.json
+    - .nvmrc
+    - python-apps/launcher/launcher/binary_manager.py
+    - .github/workflow.templates/node-version-alignment.yml
+    - .github/workflows/node-version-alignment.yml
+  push:
+    branches-ignore:
+    - ci-debug/*
+    - wip/**
+    paths:
+    - rush.json
+    - .nvmrc
+    - python-apps/launcher/launcher/binary_manager.py
+    - .github/workflow.templates/node-version-alignment.yml
+    - .github/workflows/node-version-alignment.yml
+jobs:
+  check-node-version-alignment:
+    name: Check Node Version Alignment
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Validate Rush, nvmrc, and launcher Node versions
+      shell: bash
+      run: |
+        python3 - <<'PY'
+        import re, sys
+        from pathlib import Path
+
+        root = Path(".")
+
+        # .nvmrc is the source of truth — must be a full X.Y.Z version.
+        nvmrc = (root / ".nvmrc").read_text(encoding="utf-8").strip().lstrip("v")
+        if not re.match(r"^\d+\.\d+\.\d+$", nvmrc):
+            sys.exit(f".nvmrc must be a full X.Y.Z version, got: '{nvmrc}'")
+
+        # rush.json — nodeSupportedVersionRange
+        rush_raw = (root / "rush.json").read_text(encoding="utf-8")
+        m = re.search(r'"nodeSupportedVersionRange"\s*:\s*"([^"]+)"', rush_raw)
+        if not m:
+            sys.exit("Could not find nodeSupportedVersionRange in rush.json")
+        rush_range = m.group(1)
+
+        # launcher — NODE_VERSION
+        launcher_raw = (
+            root / "python-apps" / "launcher" / "launcher" / "binary_manager.py"
+        ).read_text(encoding="utf-8")
+        m = re.search(r'^\s*NODE_VERSION\s*=\s*"([^"]+)"', launcher_raw, re.MULTILINE)
+        if not m:
+            sys.exit("Could not find NODE_VERSION in binary_manager.py")
+        launcher = m.group(1).strip().lstrip("v")
+
+        # rush.json must use this exact range format so the check works.
+        # If you need to change the format, update this script too.
+        expected_range = f">={nvmrc} <{int(nvmrc.split('.')[0]) + 1}.0.0"
+
+        errors = []
+        if launcher != nvmrc:
+            errors.append(f"launcher NODE_VERSION '{launcher}' != .nvmrc '{nvmrc}'")
+        if rush_range != expected_range:
+            errors.append(
+                f"rush.json range '{rush_range}' != expected '{expected_range}'"
+                f" (range must use format '>=X.Y.Z <NEXT_MAJOR.0.0')"
+            )
+
+        if errors:
+            print("Node version alignment check failed:", file=sys.stderr)
+            for e in errors:
+                print(f"  - {e}", file=sys.stderr)
+            sys.exit(1)
+
+        print(f"Node versions aligned: {nvmrc}")
+        PY

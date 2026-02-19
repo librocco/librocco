@@ -36,7 +36,7 @@ class BinaryManager:
         "windows_arm64": "51e5e0d4f159222a4d0b70a43fbb009fefa4050a4fa269894768bbb7d147ed81e3f14449f87b843f8c4147dda1dabe24e67b34863ee666c6692b9008f9517396",
     }
 
-    NODE_VERSION = "20.18.1"
+    NODE_VERSION = "22.22.0"
     NODE_RELEASE_BASE = "https://nodejs.org/dist"
     NODE_SHASUMS_FILE = "SHASUMS256.txt"
 
