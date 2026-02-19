@@ -1,5 +1,6 @@
 import { chunks } from "@librocco/shared";
 import type { Transport } from "@vlcn.io/ws-client";
+import { bytesToHex, type SyncStatus } from "@vlcn.io/ws-common";
 import type { Changes } from "@vlcn.io/ws-common";
 
 import type { ProgressState } from "$lib/types";
@@ -10,6 +11,29 @@ export class SyncEventEmitter {
 	progressListeners = new Set<Listener<ProgressState>>();
 	changesReceivedListeners = new Set<Listener<{ timestamp: number }>>();
 	changesProcessedListeners = new Set<Listener<{ timestamp: number }>>();
+	outgoingChangesListeners = new Set<Listener<{ maxDbVersion: number; changeCount: number }>>();
+	#lastSyncStatus: {
+		ok: boolean;
+		siteId?: string;
+		schemaName?: string;
+		schemaVersion?: string;
+		stage?: string;
+		ackDbVersion?: number;
+		reason?: string;
+		message?: string;
+	} | null = null;
+	syncStatusListeners = new Set<
+		Listener<{
+			ok: boolean;
+			siteId?: string;
+			schemaName?: string;
+			schemaVersion?: string;
+			stage?: string;
+			ackDbVersion?: number;
+			reason?: string;
+			message?: string;
+		}>
+	>();
 
 	private _notify =
 		<M>(listeners: Set<Listener<M>>) =>
@@ -23,16 +47,37 @@ export class SyncEventEmitter {
 		<M>(listeners: Set<Listener<M>>) =>
 		(cb: Listener<M>) => {
 			listeners.add(cb);
+			if (listeners === this.syncStatusListeners && this.#lastSyncStatus != null) {
+				cb(this.#lastSyncStatus as M);
+			}
 			return () => listeners.delete(cb);
 		};
 
 	onChangesReceived = this._listen(this.changesReceivedListeners);
 	onChangesProcessed = this._listen(this.changesProcessedListeners);
 	onProgress = this._listen(this.progressListeners);
+	onOutgoingChanges = this._listen(this.outgoingChangesListeners);
+	onSyncStatus = this._listen(this.syncStatusListeners);
 
 	notifyChangesReceived = this._notify(this.changesReceivedListeners);
 	notifyChangesProcessed = this._notify(this.changesProcessedListeners);
 	notifyProgress = this._notify(this.progressListeners);
+	notifyOutgoingChanges = this._notify(this.outgoingChangesListeners);
+	notifySyncStatus = this._notify(this.syncStatusListeners);
+
+	notifySyncStatusWithCache(msg: {
+		ok: boolean;
+		siteId?: string;
+		schemaName?: string;
+		schemaVersion?: string;
+		stage?: string;
+		ackDbVersion?: number;
+		reason?: string;
+		message?: string;
+	}) {
+		this.#lastSyncStatus = msg;
+		this.notifySyncStatus(msg);
+	}
 }
 
 export class ConnectionEventEmitter {
@@ -71,13 +116,14 @@ class ChangesProcessor {
 	#maxChunkSize: number;
 
 	#queue: Changes[] = [];
-	#nProcessed = 0;
+	#processedRecords = 0;
+	#totalRecords = 0;
 
 	#active = true;
 	#running = false;
 
 	onChunk: ((task: ChunkTask) => Promise<void>) | null = null;
-	onDone: ((hadChanges: boolean) => void) | null = null;
+	onDone: ((hadChanges: boolean, totals: { nProcessed: number; nTotal: number }) => void) | null = null;
 
 	constructor(config: SyncConfig) {
 		this.#maxChunkSize = config.maxChunkSize;
@@ -89,22 +135,26 @@ class ChangesProcessor {
 			const chunk = this.#queue[i];
 
 			// Process chunk
-			const task = { chunk, nProcessed: this.#nProcessed, nTotal: this.#queue.length };
+			const task = { chunk, nProcessed: this.#processedRecords, nTotal: this.#totalRecords };
 			await this.onChunk?.(task);
 
-			this.#nProcessed++;
+			this.#processedRecords += chunk.changes.length;
 			i++;
 		}
 
 		// Cleanup
 		const hadChanges = i > 0;
+		const totals = { nProcessed: this.#processedRecords, nTotal: this.#totalRecords };
 		this.#queue = [];
+		this.#processedRecords = 0;
+		this.#totalRecords = 0;
 		this.#running = false;
 
-		this.onDone?.(hadChanges);
+		this.onDone?.(hadChanges, totals);
 	};
 
 	enqueue({ _tag, sender, changes, since }: Changes) {
+		this.#totalRecords += changes.length;
 		for (const chunk of chunks(changes, this.#maxChunkSize)) {
 			this.#queue.push({ _tag, sender, changes: chunk, since });
 		}
@@ -126,7 +176,7 @@ class ChangesProcessor {
 		// Only call onDone if no queue is currently running
 		// If a queue is running, it will call onDone when it finishes
 		if (!this.#running) {
-			this.onDone?.(false);
+			this.onDone?.(false, { nProcessed: 0, nTotal: 0 });
 		}
 	}
 }
@@ -154,7 +204,7 @@ export class SyncTransportController implements Transport {
 
 		// Propagate the immutable transport methods
 		this.announcePresence = this.#transport.announcePresence.bind(this.#transport);
-		this.sendChanges = this.#transport.sendChanges.bind(this.#transport);
+		this.sendChanges = this._sendChanges.bind(this);
 		this.rejectChanges = this.#transport.rejectChanges.bind(this.#transport);
 		this.close = this.#transport.close.bind(this.#transport);
 
@@ -166,14 +216,15 @@ export class SyncTransportController implements Transport {
 
 		// Wire up connection event handlers
 		this.#transport.onConnOpen = () => {
-			this.#isConnected = true;
-			this.#connectionEmitter.notifyConnOpen();
+			this.#isConnected = false;
 		};
 
 		this.#transport.onConnClose = () => {
 			this.#isConnected = false;
 			this.#connectionEmitter.notifyConnClose();
 		};
+
+		this.#transport.onSyncStatus = this._onSyncStatus.bind(this);
 
 		// Setup the changes processor
 		this.#changesProcessor = new ChangesProcessor(config);
@@ -186,10 +237,15 @@ export class SyncTransportController implements Transport {
 	}
 
 	private async _onChangesReceived(msg: Parameters<Transport["onChangesReceived"]>[0]) {
+		this.#progressEmitter.notifyProgress({ active: true, nProcessed: 0, nTotal: msg.changes.length });
 		this.#changesProcessor.enqueue(msg);
 	}
 
 	private _onStartStreaming(msg: Parameters<Transport["onStartStreaming"]>[0]) {
+		if (!this.#isConnected) {
+			this.#isConnected = true;
+			this.#connectionEmitter.notifyConnOpen();
+		}
 		this.onStartStreaming?.(msg);
 	}
 
@@ -202,11 +258,48 @@ export class SyncTransportController implements Transport {
 		await this.onChangesReceived?.(chunk);
 	}
 
-	private _onDone(hadChanges: boolean) {
-		this.#progressEmitter.notifyProgress({ active: false, nProcessed: 0, nTotal: 0 });
+	private _onDone(hadChanges: boolean, totals: { nProcessed: number; nTotal: number }) {
+		this.#progressEmitter.notifyProgress({ active: false, nProcessed: totals.nProcessed, nTotal: totals.nTotal });
 		if (hadChanges) {
 			this.#progressEmitter.notifyChangesReceived({ timestamp: Date.now() });
 		}
+	}
+
+	private _onSyncStatus(msg: SyncStatus) {
+		const siteIdHex = msg.siteId ? bytesToHex(msg.siteId) : undefined;
+		this.#progressEmitter.notifySyncStatusWithCache({
+			ok: msg.ok,
+			siteId: siteIdHex,
+			schemaName: msg.schemaName,
+			schemaVersion: msg.schemaVersion?.toString(),
+			stage: msg.stage,
+			ackDbVersion: msg.ackDbVersion != null ? Number(msg.ackDbVersion) : undefined,
+			reason: msg.reason,
+			message: msg.message
+		});
+
+		if (msg.ok && !this.#isConnected) {
+			this.#isConnected = true;
+			this.#connectionEmitter.notifyConnOpen();
+		} else if (!msg.ok) {
+			const wasConnected = this.#isConnected;
+			this.#isConnected = false;
+			if (wasConnected) {
+				this.#connectionEmitter.notifyConnClose();
+			}
+		}
+	}
+
+	private _sendChanges(msg: Parameters<Transport["sendChanges"]>[0]) {
+		const result = this.#transport.sendChanges(msg);
+		if (result === "sent") {
+			const maxDbVersion = msg.changes.reduce((max, change) => {
+				const dbVersion = Number(change[5]);
+				return dbVersion > max ? dbVersion : max;
+			}, 0);
+			this.#progressEmitter.notifyOutgoingChanges({ maxDbVersion, changeCount: msg.changes.length });
+		}
+		return result;
 	}
 
 	start(...params: Parameters<Transport["start"]>) {

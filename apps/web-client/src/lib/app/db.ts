@@ -5,7 +5,7 @@ import type { DBAsync, VFSWhitelist } from "$lib/db/cr-sqlite/core/types";
 
 import type { App } from "./index";
 import { waitForStore } from "./utils";
-import { ErrDbNotInit, ErrDBIDMismatch, ErrDBCorrupted, ErrDbNotSet } from "./errors";
+import { ErrDbNotInit, ErrDBIDMismatch, ErrDBCorrupted, ErrDBOpenTransient, ErrDbNotSet } from "./errors";
 import { AppDbRx, type IAppDbRx } from "./rx";
 import { checkOPFSFileExists } from "$lib/db/cr-sqlite/core/utils";
 import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
@@ -33,6 +33,20 @@ export enum AppDbState {
 type DbCtx = { db: DBAsync; vfs: VFSWhitelist };
 
 type SetStateReturn = { ok: true } | { ok: false; error: Error };
+
+const TRANSIENT_DB_OPEN_PATTERNS = [
+	"database is locked",
+	"sqlite_busy",
+	"access handle",
+	"could not acquire",
+	"lock request denied",
+	"lock"
+];
+
+const isTransientDbOpenError = (err: Error): boolean => {
+	const message = err.message.toLowerCase();
+	return TRANSIENT_DB_OPEN_PATTERNS.some((pattern) => message.includes(pattern));
+};
 
 export interface IAppDb {
 	state: Readable<AppDbState>;
@@ -125,8 +139,36 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	app.db.dbid = dbid;
 	app.db.setState(dbid, AppDbState.Loading);
 
-	// Initialising
-	const db = await getDBCore(dbid, vfs);
+	// Initialising — retry a few times to handle transient OPFS lock conflicts
+	// (e.g. previous page's worker still holding the file handle after a rapid reload)
+	const DB_OPEN_RETRIES = 3;
+	const DB_OPEN_RETRY_DELAY_MS = 800;
+
+	let db: DBAsync;
+	let lastOpenError: Error | null = null;
+	for (let attempt = 0; attempt < DB_OPEN_RETRIES; attempt++) {
+		try {
+			db = await getDBCore(dbid, vfs);
+			lastOpenError = null;
+			break;
+		} catch (e) {
+			lastOpenError = e as Error;
+			if (attempt < DB_OPEN_RETRIES - 1) {
+				console.warn(`[db] Failed to open database (attempt ${attempt + 1}/${DB_OPEN_RETRIES}), retrying...`, e);
+				await new Promise((r) => setTimeout(r, DB_OPEN_RETRY_DELAY_MS));
+			}
+		}
+	}
+	if (lastOpenError) {
+		if (isTransientDbOpenError(lastOpenError)) {
+			const err = new ErrDBOpenTransient(`Failed to open database: ${lastOpenError.message}`);
+			app.db.setState(dbid, AppDbState.Error, err);
+			throw err;
+		}
+
+		app.db.setState(dbid, AppDbState.Error, lastOpenError);
+		throw lastOpenError;
+	}
 
 	// Integrity check - if this fails, DB needs to be nuked
 	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");

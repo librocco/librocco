@@ -139,6 +139,7 @@
 				<h2 id="splash-subtitle">Or hang loose – your choice.</h2>
 				<p id="splash-error" class="error-details" style="display: none"></p>
 				<button id="splash-action" class="action-btn" style="display: none">Reset Database</button>
+				<button id="splash-reload" class="action-btn" style="display: none" onclick="window.location.reload()">Reload Page</button>
 			</div>
 		</div>
 		<script>
@@ -152,31 +153,55 @@
 					subtitle: "Updating to the latest version..."
 				},
 				error: {
-					title: "Migration Error",
+					title: "Database Error",
 					subtitle:
 						"There was a problem updating the database. Click Reset Database below to continue. Your data will be re-synced from the server."
+				},
+				error_transient: {
+					title: "Database Temporarily Unavailable",
+					subtitle: "The database could not be opened, likely due to a previous session still closing. Try reloading the page."
 				}
 			};
 
 			// Callback for init-store to notify phase changes
 			window.__dbInitUpdate = function (phase, error) {
 				const splash = document.getElementById("app-splash");
+				// If splash has already been removed (after "ready" phase), nothing to update
+				if (!splash) return;
+
 				const title = document.getElementById("splash-title");
 				const subtitle = document.getElementById("splash-subtitle");
 				const errorEl = document.getElementById("splash-error");
 				const actionBtn = document.getElementById("splash-action");
+				const reloadBtn = document.getElementById("splash-reload");
 
-				const msg = splashMessages[phase] || splashMessages.idle;
+				// Guard against missing elements (shouldn't happen, but be safe)
+				if (!title || !subtitle) return;
+
+				// Determine if this is a transient error (reload-recoverable) vs permanent (nuke required)
+				const isTransient = phase === "error" && error && error.name === "ErrDBOpenTransient";
+				const effectivePhase = isTransient ? "error_transient" : phase;
+
+				const msg = splashMessages[effectivePhase] || splashMessages.idle;
 				title.textContent = msg.title;
 				subtitle.textContent = msg.subtitle;
 
-				if (phase === "error") {
+				if (effectivePhase === "error_transient") {
+					splash.classList.add("error");
+					if (error && error.message) {
+						errorEl.textContent = error.message;
+						errorEl.style.display = "block";
+					}
+					actionBtn.style.display = "none";
+					reloadBtn.style.display = "inline-block";
+				} else if (phase === "error") {
 					splash.classList.add("error");
 					if (error && error.message) {
 						errorEl.textContent = error.message;
 						errorEl.style.display = "block";
 					}
 					actionBtn.style.display = "inline-block";
+					reloadBtn.style.display = "none";
 				} else if (phase === "ready") {
 					splash.classList.add("bye");
 					splash.addEventListener("animationend", function () {
@@ -186,6 +211,7 @@
 					splash.classList.remove("error");
 					errorEl.style.display = "none";
 					actionBtn.style.display = "none";
+					reloadBtn.style.display = "none";
 				}
 			};
 

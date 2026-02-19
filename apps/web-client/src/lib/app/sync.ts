@@ -17,6 +17,7 @@ import { isEmptyDB } from "$lib/db/cr-sqlite/db";
 import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 import { browser } from "$app/environment";
 import { updateSyncConnectivityMonitor } from "$lib/stores";
+import { checkSyncCompatibility, markCompatibilityChecking } from "$lib/stores/sync-compatibility";
 
 // ---------------------------------- Structs ---------------------------------- //
 export enum AppSyncState {
@@ -208,8 +209,8 @@ export async function startSync(app: App, dbid: string, url: string) {
 					shouldReload = true;
 					await db.close();
 				});
-			} catch {
-				// Probably console log here
+			} catch (err) {
+				console.error("Initial sync failed:", err);
 			} finally {
 				sync.state.set(AppSyncState.Idle);
 			}
@@ -222,7 +223,13 @@ export async function startSync(app: App, dbid: string, url: string) {
 		}
 
 		// ---------------------------------- 2. Live Sync ---------------------------------- //
+		markCompatibilityChecking();
 		sync.start(dbid, url);
+
+		// Once sync is running, re-run compatibility check to capture remote metadata that may have been missing on first pass
+		checkSyncCompatibility({ dbid, syncUrl: url, mode: "background" }).catch((err) =>
+			console.warn("Post-start compatibility check failed", err)
+		);
 	});
 }
 
