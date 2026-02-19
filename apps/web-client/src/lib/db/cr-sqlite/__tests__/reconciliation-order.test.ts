@@ -1281,7 +1281,6 @@ describe("Reconciliation order deletion", () => {
 			expect(supplierOrders).toEqual([
 				{
 					created: expect.any(Number),
-					finalized: null,
 					id: 1,
 					supplier_id: 1,
 					supplier_name: null,
