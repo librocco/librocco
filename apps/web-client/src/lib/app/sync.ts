@@ -189,7 +189,7 @@ export async function startSync(app: App, dbid: string, url: string) {
 	await waitForStore(app.sync.state, ($s) => $s > AppSyncState.Initializing);
 
 	// TODO: this should also be run exclusively with respect to the DB
-	app.sync.runExclusive(async (sync) => {
+	await app.sync.runExclusive(async (sync) => {
 		// If sync is active:
 		// - no need to start (idempotency)
 		// - it's safe to assume the initial sync was already attempted
@@ -309,5 +309,5 @@ function getRemoteDbFileUrl(syncUrl: string, dbid: string) {
 }
 
 export async function stopSync(app: App) {
-	app.sync.runExclusive((sync) => sync.stop());
+	await app.sync.runExclusive((sync) => sync.stop());
 }

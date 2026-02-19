@@ -15,7 +15,6 @@
 	import { app, nukeAndResyncDb } from "$lib/app";
 	import { AppDbState, getDb, getDbRx, getVfs } from "$lib/app/db";
 
-	import type { LayoutData } from "./$types";
 
 	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
 
@@ -25,9 +24,19 @@
 	import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
-	import { resetSyncStuckState } from "$lib/stores";
-	import { applyHandshakeStatus, resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
-	import { attachPendingMonitor, resetPendingTracker, setLastAckedVersion } from "$lib/stores/sync-pending";
+	import { resetSyncStuckState, syncConnectivityMonitor } from "$lib/stores";
+	import { applyHandshakeStatus, checkSyncCompatibility, resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
+	import { attachPendingMonitor, resetPendingTracker, setLastAckedVersion, pendingChangesCount } from "$lib/stores/sync-pending";
+	import { attachLocalDbHealthMonitor, resetLocalDbHealth, runLocalDbQuickCheck } from "$lib/stores/local-db-health";
+	import { recordSyncAck, recordSyncStatus, resetSyncRuntimeHealth } from "$lib/stores/sync-runtime-health";
+	import { createSyncState } from "$lib/stores/sync-state";
+	import {
+		markAutoRecoveryAttempt,
+		markAutoRecoveryFailure,
+		markAutoRecoveryNoop,
+		markAutoRecoverySuccess,
+		resetAutoRecoveryState
+	} from "$lib/stores/sync-auto-recovery";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
@@ -38,8 +47,6 @@
 
 	import { appPath } from "$lib/paths";
 	import { initializeSync, startSync, stopSync } from "$lib/app/sync";
-
-	export let data: LayoutData;
 
 	const dbState = app.db.state;
 
@@ -83,11 +90,61 @@
 	let detachPendingMonitor: (() => void) | null = null;
 	let detachPendingInvalidate: (() => void) | null = null;
 	let detachSyncStatus: (() => void) | null = null;
+	let detachLocalDbHealth: (() => void) | null = null;
+	let detachStaleRecovery: (() => void) | null = null;
 
 	// Config stores
 	const dbid = app.config.dbid;
 	const syncUrl = app.config.syncUrl;
 	const syncActive = app.config.syncActive;
+	const syncState = createSyncState(syncActive);
+
+	const STALE_RECOVERY_COOLDOWN_MS = 60_000;
+	const DISCONNECT_RECOVERY_MIN_MS = 15_000;
+	let staleRecoveryRunning = false;
+	let staleRecoveryLastAttemptAt = 0;
+
+	const attemptStaleRecovery = async () => {
+		if (staleRecoveryRunning) return;
+		if (Date.now() - staleRecoveryLastAttemptAt < STALE_RECOVERY_COOLDOWN_MS) return;
+
+		staleRecoveryRunning = true;
+		staleRecoveryLastAttemptAt = Date.now();
+		markAutoRecoveryAttempt();
+
+		try {
+			const currentDbid = get(dbid);
+			const currentSyncUrl = get(syncUrl);
+			const db = await getDb(app);
+
+			await runLocalDbQuickCheck(db);
+			const compatibilityResult = await checkSyncCompatibility({
+				dbid: currentDbid,
+				syncUrl: currentSyncUrl,
+				mode: "strict"
+			});
+
+			const isDisconnected = !get(syncConnectivityMonitor.connected);
+			const disconnectedForMs = (() => {
+				const since = get(syncConnectivityMonitor.diagnostics).disconnectedSince;
+				return since ? Date.now() - since : 0;
+			})();
+			const disconnectedTooLong = isDisconnected && disconnectedForMs >= DISCONNECT_RECOVERY_MIN_MS;
+			const hasPending = get(pendingChangesCount) > 0;
+			if (!compatibilityResult.ok || disconnectedTooLong || (isDisconnected && hasPending)) {
+				await stopSync(app);
+				await startSync(app, currentDbid, currentSyncUrl);
+				markAutoRecoverySuccess();
+			} else {
+				markAutoRecoveryNoop();
+			}
+		} catch (error) {
+			console.warn("[sync] stale-recovery attempt failed:", error);
+			markAutoRecoveryFailure(error);
+		} finally {
+			staleRecoveryRunning = false;
+		}
+	};
 
 	// Update sync on each change to settings
 	//
@@ -143,20 +200,35 @@
 		window.addEventListener("pagehide", releaseDbOnUnload);
 
 		const currentDb = await getDb(app);
+		detachLocalDbHealth = await attachLocalDbHealthMonitor(currentDb);
 		detachPendingMonitor = await attachPendingMonitor(currentDb, getDbRx(app), get(dbid));
 		detachPendingInvalidate = getDbRx(app).onInvalidate(async () => {
+			detachLocalDbHealth?.();
 			detachPendingMonitor?.();
+			resetSyncRuntimeHealth();
 			if (app.db.db && app.db.dbid) {
+				detachLocalDbHealth = await attachLocalDbHealthMonitor(app.db.db);
 				detachPendingMonitor = await attachPendingMonitor(app.db.db, getDbRx(app), app.db.dbid);
 			}
 		});
 		detachSyncStatus = await app.sync.runExclusive(async (sync) => {
 			return sync.worker.onSyncStatus((payload) => {
+				recordSyncStatus(payload);
 				applyHandshakeStatus(get(dbid), payload);
 				if (payload.ackDbVersion != null) {
+					recordSyncAck();
 					void setLastAckedVersion(payload.ackDbVersion, get(dbid));
 				}
 			});
+		});
+
+		detachStaleRecovery = syncState.subscribe(() => {
+			if (!get(syncActive)) return;
+			const disconnectedSince = get(syncConnectivityMonitor.diagnostics).disconnectedSince;
+			const disconnectedTooLong = Boolean(disconnectedSince && Date.now() - disconnectedSince >= DISCONNECT_RECOVERY_MIN_MS);
+			if (disconnectedTooLong) {
+				void attemptStaleRecovery();
+			}
 		});
 	});
 
@@ -168,7 +240,12 @@
 		detachPendingMonitor?.();
 		detachPendingInvalidate?.();
 		detachSyncStatus?.();
+		detachLocalDbHealth?.();
+		detachStaleRecovery?.();
 		resetPendingTracker();
+		resetSyncRuntimeHealth();
+		resetLocalDbHealth();
+		resetAutoRecoveryState();
 	});
 
 	const {

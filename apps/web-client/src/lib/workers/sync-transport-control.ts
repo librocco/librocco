@@ -216,7 +216,10 @@ export class SyncTransportController implements Transport {
 
 		// Wire up connection event handlers
 		this.#transport.onConnOpen = () => {
-			this.#isConnected = false;
+			if (!this.#isConnected) {
+				this.#isConnected = true;
+				this.#connectionEmitter.notifyConnOpen();
+			}
 		};
 
 		this.#transport.onConnClose = () => {

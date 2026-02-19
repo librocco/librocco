@@ -28,6 +28,17 @@
 		});
 	};
 
+	export const toastSuccess = ({ title, description, detail }: Omit<ToastData, "style">) => {
+		addToast({
+			data: {
+				title,
+				description,
+				style: "success",
+				detail
+			}
+		});
+	};
+
 	const styleMap = {
 		error: "bg-error text-error-content",
 		success: "bg-success text-success-content"
@@ -76,7 +87,7 @@
 					use:melt={$close(id)}
 					aria-label="close notification"
 				>
-					<span aria-hidden>
+					<span aria-hidden="true">
 						<X />
 					</span>
 				</button>
