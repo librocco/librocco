@@ -323,7 +323,7 @@
 	</div>
 
 	<!-- flex flex-1 flex-col justify-items-center overflow-y-auto -->
-	<main class="h-full w-full overflow-y-auto">
+	<main class="h-full w-full overflow-hidden">
 		{#if !$mobileNavOpen}
 			<button
 				use:melt={$mobileNavTrigger}
