@@ -22,6 +22,26 @@ export type MsgChangesProcessed = {
 	payload: { timestamp: number };
 };
 
+export type MsgOutgoingChanges = {
+	_type: "outgoingChanges";
+	payload: { maxDbVersion: number; changeCount: number };
+};
+
+export type MsgSyncStatus = {
+	_type: "sync.status";
+	payload: {
+		ok: boolean;
+		siteId?: string;
+		schemaName?: string;
+		schemaVersion?: string;
+		schemaHash?: string;
+		stage?: string;
+		ackDbVersion?: number;
+		reason?: string;
+		message?: string;
+	};
+};
+
 export type MsgProgress = {
 	_type: "progress";
 	payload: ProgressState;

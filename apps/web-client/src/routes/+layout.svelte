@@ -7,14 +7,12 @@
 	import { get, writable, derived } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Subscription } from "rxjs";
-
 	import Menu from "$lucide/menu";
 
 	import { afterNavigate } from "$app/navigation";
 	import { beforeNavigate } from "$app/navigation";
 
-	import { app } from "$lib/app";
+	import { app, nukeAndResyncDb } from "$lib/app";
 	import { AppDbState, getDb, getDbRx, getVfs } from "$lib/app/db";
 
 	import type { LayoutData } from "./$types";
@@ -24,9 +22,12 @@
 	import { Sidebar } from "$lib/components";
 
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
+	import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
-	import { updateSyncConnectivityMonitor } from "$lib/stores";
+	import { resetSyncStuckState } from "$lib/stores";
+	import { applyHandshakeStatus, resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
+	import { attachPendingMonitor, resetPendingTracker, setLastAckedVersion } from "$lib/stores/sync-pending";
 
 	import { default as Toaster, toastError } from "$lib/components/Melt/Toaster.svelte";
 
@@ -79,7 +80,9 @@
 		window.dispatchEvent(new Event("db_ready"));
 	});
 
-	let availabilitySubscription: Subscription;
+	let detachPendingMonitor: (() => void) | null = null;
+	let detachPendingInvalidate: (() => void) | null = null;
+	let detachSyncStatus: (() => void) | null = null;
 
 	// Config stores
 	const dbid = app.config.dbid;
@@ -111,6 +114,18 @@
 			e.returnValue = "";
 		}
 	};
+
+	// Synchronously terminate all DB workers on page unload to immediately release OPFS file handles.
+	// terminateAllWorkers() is synchronous and works even if the page reloads during DB init
+	// (before app.db.db is set), because it tracks workers at module level from the moment they're created.
+	const releaseDbOnUnload = () => {
+		try {
+			terminateAllWorkers();
+		} catch {
+			// Best-effort: ignore errors during teardown
+		}
+	};
+
 	let disposer: () => void;
 
 	onMount(async () => {
@@ -125,13 +140,35 @@
 		// Prevent user from navigating away if sync is in progress
 		// NOTE: this is a noop if sync not active (e.g. in demo mode)
 		window.addEventListener("beforeunload", preventUnloadHandler);
+		window.addEventListener("pagehide", releaseDbOnUnload);
+
+		const currentDb = await getDb(app);
+		detachPendingMonitor = await attachPendingMonitor(currentDb, getDbRx(app), get(dbid));
+		detachPendingInvalidate = getDbRx(app).onInvalidate(async () => {
+			detachPendingMonitor?.();
+			if (app.db.db && app.db.dbid) {
+				detachPendingMonitor = await attachPendingMonitor(app.db.db, getDbRx(app), app.db.dbid);
+			}
+		});
+		detachSyncStatus = await app.sync.runExclusive(async (sync) => {
+			return sync.worker.onSyncStatus((payload) => {
+				applyHandshakeStatus(get(dbid), payload);
+				if (payload.ackDbVersion != null) {
+					void setLastAckedVersion(payload.ackDbVersion, get(dbid));
+				}
+			});
+		});
 	});
 
 	onDestroy(() => {
 		// Run all cleanup functions
-		availabilitySubscription?.unsubscribe();
 		disposer?.();
 		window.removeEventListener("beforeunload", preventUnloadHandler);
+		window.removeEventListener("pagehide", releaseDbOnUnload);
+		detachPendingMonitor?.();
+		detachPendingInvalidate?.();
+		detachSyncStatus?.();
+		resetPendingTracker();
 	});
 
 	const {
@@ -206,6 +243,48 @@
 
 	$: $errorDialogOpen = Boolean($dbState === AppDbState.Error);
 
+	// Sync stuck dialog
+	const {
+		elements: {
+			overlay: syncStuckDialogOverlay,
+			content: syncStuckDialogContent,
+			portalled: syncStuckDialogPortalled,
+			title: syncStuckDialogTitle,
+			description: syncStuckDialogDescription
+		},
+		states: { open: syncStuckDialogOpen }
+	} = createDialog({
+		forceVisible: true
+	});
+
+	// Show nuke-and-resync dialog only for actual DB incompatibility (schema mismatch, remote reset, etc.).
+	// Server being unreachable ("stuck") is normal for a local-first app — the footer badge
+	// already shows the connectivity state, no need for a disruptive dialog.
+	const syncCompatibilityState = syncCompatibility;
+	let isIncompatible = false;
+	$: isIncompatible = $syncCompatibilityState.status === "incompatible";
+	$: $syncStuckDialogOpen = isIncompatible && $syncActive;
+
+	const handleNukeAndResync = async () => {
+		syncStuckDialogOpen.set(false);
+		resetSyncStuckState();
+		resetSyncCompatibility($dbid);
+		await nukeAndResyncDb(app, $dbid, getVfs(app));
+	};
+
+	const syncStuckCopy = {
+		title: "Sync connection issue",
+		description: "The sync connection is not working.",
+		callToAction: "Clear your local database and re-sync from the server to fix this.",
+		button: "Nuke and Resync",
+		localErrorTitle: "Local database error",
+		localErrorDescription: "The local database is corrupted or inaccessible.",
+		localErrorHint: "Your local database needs to be reset. This will download a fresh copy from the server.",
+		remoteTitle: "Remote DB incompatible",
+		remoteFallback: "The remote database changed identity. Please resync.",
+		remoteDefault: "Remote database not compatible."
+	};
+
 	$: ({ layout: tLayout, common: tCommon } = $LL);
 
 	// DEMO
@@ -244,7 +323,7 @@
 	</div>
 
 	<!-- flex flex-1 flex-col justify-items-center overflow-y-auto -->
-	<main class="h-full w-full overflow-hidden">
+	<main class="h-full w-full overflow-y-auto">
 		{#if !$mobileNavOpen}
 			<button
 				use:melt={$mobileNavTrigger}
@@ -353,6 +432,65 @@
 				<div class="w-full text-end">
 					<button on:click={handleFetchDemoDB} type="button" class="btn-secondary btn">
 						{tLayout.error_dialog.demo_db_not_initialised.button()}
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{/if}
+
+{#if $syncStuckDialogOpen}
+	<!-- Sync stuck dialog - shown when sync connection repeatedly fails -->
+	<div use:melt={$syncStuckDialogPortalled}>
+		<div use:melt={$syncStuckDialogOverlay} class="fixed inset-0 z-[100] bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+
+		<div
+			class="fixed left-1/2 top-1/2 z-[200] max-h-screen w-full translate-x-[-50%] translate-y-[-50%] overflow-y-auto px-4 md:max-w-md md:px-0"
+			transition:fade={{ duration: 250 }}
+			use:melt={$syncStuckDialogContent}
+		>
+			<div class="modal-box overflow-clip rounded-lg md:shadow-2xl">
+				<h2 use:melt={$syncStuckDialogTitle} class="mb-4 text-xl font-semibold leading-7 text-gray-900">
+					{syncStuckCopy.title}
+				</h2>
+
+				<p class="mb-4 text-sm leading-6 text-gray-600" use:melt={$syncStuckDialogDescription}>
+					<span class="mb-2 block">
+						{syncStuckCopy.description}
+					</span>
+					<span class="mb-2 block">
+						{syncStuckCopy.callToAction}
+					</span>
+				</p>
+
+				<!-- Diagnostic details -->
+				{#if isIncompatible}
+					<div class="mb-4 rounded bg-base-200 p-3 font-mono text-xs">
+						{#if $syncCompatibilityState.status === "incompatible" && $syncCompatibilityState.reason === "local_db_error"}
+							<p class="mb-1 font-semibold text-error">{syncStuckCopy.localErrorTitle}</p>
+							<p class="text-gray-600">
+								{syncStuckCopy.localErrorDescription}
+							</p>
+							<p class="mt-2 text-gray-500">{syncStuckCopy.localErrorHint}</p>
+						{:else}
+							<p class="mb-1 font-semibold text-gray-700">{syncStuckCopy.remoteTitle}</p>
+							<p class="text-gray-600">
+								{#if $syncCompatibilityState.status === "incompatible"}
+									{syncStuckCopy.remoteFallback}
+								{:else}
+									{syncStuckCopy.remoteDefault}
+								{/if}
+							</p>
+						{/if}
+					</div>
+				{/if}
+
+				<div class="flex w-full justify-end gap-x-2">
+					<button on:click={() => syncStuckDialogOpen.set(false)} type="button" class="btn-ghost btn">
+						{tCommon.actions.cancel()}
+					</button>
+					<button on:click={handleNukeAndResync} type="button" class="btn-primary btn">
+						{syncStuckCopy.button}
 					</button>
 				</div>
 			</div>

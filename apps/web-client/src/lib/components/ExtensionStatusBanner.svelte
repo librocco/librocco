@@ -3,19 +3,43 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 
-	import type { PluginsInterface } from "$lib/plugins";
-	import { createExtensionAvailabilityStore, syncConnectivityMonitor } from "$lib/stores";
+	import { app } from "$lib/app";
+	import { createSyncState } from "$lib/stores/sync-state";
 	import { updateTranslationOverrides, translationOverridesStore, TRANSLATION_OVERRIDES_ENABLED } from "$lib/i18n-overrides";
 
-	export let plugins: PluginsInterface;
-
-	const { connected: syncConnected } = syncConnectivityMonitor;
-	$: extensionAvailable = createExtensionAvailabilityStore(plugins);
+	const syncState = createSyncState(app.config.syncActive);
 
 	async function updateTranslationsButtonClicked() {
 		await updateTranslationOverrides({ notOlderThanSecs: 0 });
 		invalidateAll();
 	}
+
+	$: remoteDbLabel = (() => {
+		if ($syncState.status === "incompatible") {
+			return `${$LL.misc_components.extension_banner.remote_db()} (incompatible)`;
+		}
+
+		if ($syncState.pending > 0) {
+			return `${$LL.misc_components.extension_banner.remote_db()} (${$syncState.pending} pending)`;
+		}
+
+		return $LL.misc_components.extension_banner.remote_db();
+	})();
+
+	$: indicatorClass = (() => {
+		switch ($syncState.status) {
+			case "connecting":
+				return "bg-warning";
+			case "synced":
+			case "syncing":
+				return "bg-success";
+			case "incompatible":
+			case "stuck":
+			case "disconnected":
+			default:
+				return "bg-error";
+		}
+	})();
 </script>
 
 <div class="flex items-center gap-4 py-1.5">
@@ -25,13 +49,13 @@
 			<p class="leading-none">{$LL.misc_components.extension_banner.reload_translations_override()}</p>
 		</button>
 	{/if}
-	<div class="badge-content badge-outline badge badge-md gap-x-2">
-		<div class="block h-3 w-3 rounded-full align-baseline {$extensionAvailable ? 'bg-success' : 'bg-error'}"></div>
-
-		<p class="leading-none">{$LL.misc_components.extension_banner.book_data_extension()}</p>
-	</div>
-	<div class="badge-content badge-outline badge badge-md gap-x-2">
-		<div class="block h-3 w-3 rounded-full align-baseline {$syncConnected ? 'bg-success' : 'bg-error'}"></div>
-		<p class="leading-none">{$LL.misc_components.extension_banner.remote_db()}</p>
+	<div
+		class="badge-content badge-outline badge badge-md gap-x-2"
+		data-testid="remote-db-badge"
+		data-status={$syncState.status}
+		data-pending={$syncState.pending}
+	>
+		<div class="block h-3 w-3 rounded-full align-baseline {indicatorClass}"></div>
+		<p class="leading-none">{remoteDbLabel}</p>
 	</div>
 </div>

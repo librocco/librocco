@@ -158,17 +158,6 @@ export async function addVolumesToNote(db: DB, params: readonly [noteId: number,
 	await window.note.addVolumesToNote(db, id, volume);
 }
 
-/**
- * Batch variant of addVolumesToNote — loops inside a single evaluate() call
- * to avoid 100+ Node↔browser round-trips during test setup.
- */
-export async function addVolumesToNoteBatch(db: DB, params: readonly [noteId: number, volumes: VolumeStock[]]): Promise<void> {
-	const [id, volumes] = params;
-	for (const volume of volumes) {
-		await window.note.addVolumesToNote(db, id, volume);
-	}
-}
-
 export type NoteCustomItem = { id: number; title: string; price: number };
 
 /**
@@ -223,6 +212,14 @@ export async function upsertSupplier(db: DB, supplier: Supplier): Promise<void> 
 export async function associatePublisher(db: DB, params: { supplierId: number; publisher: string }): Promise<void> {
 	const { supplierId, publisher } = params;
 	await window.suppliers.associatePublisher(db, supplierId, publisher);
+}
+
+export async function resetRemoteDb(page: Page, baseUrl: string, dbName: string) {
+	const url = `${baseUrl}${dbName}/reset`;
+	const response = await page.request.post(url);
+	if (!response.ok()) {
+		throw new Error(`Failed to reset remote DB: ${response.status()} ${response.statusText()}`);
+	}
 }
 
 /**

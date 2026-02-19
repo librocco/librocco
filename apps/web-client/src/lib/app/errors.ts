@@ -51,6 +51,18 @@ export class ErrDBCorrupted extends Error {
 }
 
 /**
+ * Thrown when the DB fails to open due to a transient issue (e.g. OPFS file handle lock
+ * from a previous page load that hasn't been released yet). A simple page reload typically
+ * resolves this — no data loss, no nuke required.
+ */
+export class ErrDBOpenTransient extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = "ErrDBOpenTransient";
+	}
+}
+
+/**
  * Thrown when trying to retrieve the app sync interface (e.g. `await getAppSync(app)`) before the sync was registered to the app
  */
 export class ErrInvalidSyncURL extends Error {
