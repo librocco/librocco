@@ -884,7 +884,9 @@
 			"reset_database": "",
 			"upsert_100_books": "",
 			"run_query": "",
-			"executing": ""
+			"executing": "",
+			"corrupt_sync_state": "",
+			"export_state": ""
 		},
 		"query_interface": {
 			"title": "",
