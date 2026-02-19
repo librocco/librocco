@@ -33,6 +33,7 @@
 	import { app } from "$lib/app";
 	import { getDb } from "$lib/app/db";
 	import { Page } from "$lib/controllers";
+	import { resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
 
 	export let data: LayoutData;
 	$: ({ plugins } = data);
@@ -315,10 +316,12 @@
 		throw new Error($LL.debug_page.labels.runtime_error());
 	};
 
+	const REMOTE_SITE_IDS_KEY = "librocco-remote-site-ids";
+
 	/**
-	 * Corrupts the local database's sync identity by changing its site_id.
-	 * This simulates the state where the local DB is incompatible with the server
-	 * (e.g., after a server database rebuild), triggering the sync stuck detection.
+	 * Corrupts sync compatibility state for debug purposes.
+	 * It mutates local sync identity and persisted remembered remote identity,
+	 * which causes compatibility checks to flag the DB as incompatible.
 	 */
 	const corruptSyncState = async () => {
 		isLoading = true;
@@ -334,10 +337,46 @@
 			// Update the site_id in crsql_site_id table (ordinal 0 is "myself")
 			await db.exec("UPDATE crsql_site_id SET site_id = ? WHERE ordinal = 0", [newSiteId]);
 
+			const dbid = get(app.config.dbid);
+			const rememberedRaw = localStorage.getItem(REMOTE_SITE_IDS_KEY);
+			const remembered = rememberedRaw ? JSON.parse(rememberedRaw) : {};
+			remembered[dbid] = Array.from(newSiteId)
+				.map((n) => n.toString(16).padStart(2, "0"))
+				.join("");
+			localStorage.setItem(REMOTE_SITE_IDS_KEY, JSON.stringify(remembered));
+
+			// Also set current store state for immediate visual feedback.
+			syncCompatibility.set({
+				status: "incompatible",
+				reason: "remote_reset",
+				message: "Debug: forced incompatible sync state (persisted)"
+			});
+
 			console.log("Sync state corrupted - site_id changed to:", newSiteId);
-			alert("Sync state corrupted! Reload the page to trigger sync stuck detection.");
+			alert("Sync state corrupted and persisted incompatibility forced.");
 		} catch (error) {
 			console.error("Error corrupting sync state:", error);
+			errorMessage = error;
+		} finally {
+			isLoading = false;
+		}
+	};
+
+	const fixCorruptSyncState = async () => {
+		isLoading = true;
+		errorMessage = null;
+
+		try {
+			const dbid = get(app.config.dbid);
+			const rememberedRaw = localStorage.getItem(REMOTE_SITE_IDS_KEY);
+			const remembered = rememberedRaw ? JSON.parse(rememberedRaw) : {};
+			delete remembered[dbid];
+			localStorage.setItem(REMOTE_SITE_IDS_KEY, JSON.stringify(remembered));
+
+			resetSyncCompatibility(dbid);
+			alert("Sync compatibility state reset. If needed, wait for handshake or reload the page.");
+		} catch (error) {
+			console.error("Error resetting sync state:", error);
 			errorMessage = error;
 		} finally {
 			isLoading = false;
@@ -362,9 +401,9 @@
 </script>
 
 <Page title={$LL.debug_page.title()} view="debug" {app} {plugins}>
-	<div slot="main" class="flex h-full w-full flex-col px-4">
+	<div slot="main" class="flex h-full min-h-0 w-full flex-col overflow-hidden px-4">
 		<div class="flex items-center justify-between self-end p-4">
-			<div class="gap-2">
+			<div class="flex flex-wrap justify-end gap-2">
 				<button class="btn-primary btn" on:click={triggerLoadError}>
 					<AlertTriangle size={20} />
 					{$LL.debug_page.actions.trigger_load_error()}
@@ -377,6 +416,10 @@
 					<Unplug size={20} />
 					{$LL.debug_page.actions.corrupt_sync_state()}
 				</button>
+				<button class="btn-success btn" on:click={fixCorruptSyncState}>
+					<RotateCcw size={20} />
+					Fix sync state
+				</button>
 				<button class="btn-primary btn" on:click={handleExportState}>
 					<Download size={20} />
 					{$LL.debug_page.actions.export_state()}
@@ -385,7 +428,7 @@
 		</div>
 
 		<div class="flex items-center justify-between self-end p-4">
-			<div class="gap-2">
+			<div class="flex flex-wrap justify-end gap-2">
 				<button class="btn-primary btn" on:click={() => populateDatabase()}>
 					<Plus size={20} />
 					{$LL.debug_page.actions.populate_database()}
@@ -401,28 +444,30 @@
 			</div>
 		</div>
 
-		<div class="flex py-2">
-			<div class="mr-5 flex-auto overflow-x-auto py-2">
+		<div class="flex min-h-0 flex-1 flex-col gap-4 py-2 lg:flex-row">
+			<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
 				<h2 class="prose font-bold">{$LL.debug_page.query_interface.title()}</h2>
-				<div class="mr-5 flex flex-col py-2">
+				<div class="flex flex-col gap-2 py-2">
 					<textarea bind:value={query} id="query"></textarea>
 
-					<button class="btn-primary btn" on:click={executeQuery} disabled={isLoading}>
+					<button class="btn-primary btn self-start" on:click={executeQuery} disabled={isLoading}>
 						<Play size={20} />
 						{isLoading ? $LL.debug_page.actions.executing() : $LL.debug_page.actions.run_query()}
 					</button>
+				</div>
 
+				<div class="min-h-0 flex-1 overflow-auto py-2">
 					{#if queryResult || errorMessage}
-						<h2 class="prose mt-3 font-bold">{$LL.debug_page.query_interface.results_title()}</h2>
+						<h2 class="prose mb-3 font-bold">{$LL.debug_page.query_interface.results_title()}</h2>
 
 						{#if errorMessage}
-							<div class="mt-4 rounded-lg bg-red-500 p-3 text-white shadow">
+							<div class="rounded-lg bg-red-500 p-3 text-white shadow">
 								{errorMessage}
 							</div>
 						{:else if queryResult.length === 0}
 							<p>{$LL.debug_page.query_interface.no_results()}</p>
 						{:else}
-							<table class="table">
+							<table class="table table-pin-rows">
 								<thead>
 									<tr>
 										{#each Object.keys(queryResult[0]) as column}
@@ -444,29 +489,32 @@
 					{/if}
 				</div>
 			</div>
-			<div class="w-64 overflow-x-auto py-2">
-				<table class="table">
-					<thead>
-						<tr>
-							<th scope="col">{$LL.debug_page.table.title()}</th>
-							<th scope="col">{$LL.debug_page.table.number_of_objects()}</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each tableData as row}
-							<tr class="hover focus-within:bg-base-200">
-								<td>{row.label}</td>
-								<td>
-									{#if isLoading}
-										<div class="spinner"></div>
-									{:else}
-										{row.value()}
-									{/if}
-								</td>
+
+			<div class="flex min-h-0 w-full flex-col overflow-hidden py-2 lg:w-72 lg:flex-none">
+				<div class="min-h-0 flex-1 overflow-auto">
+					<table class="table table-pin-rows">
+						<thead>
+							<tr>
+								<th scope="col">{$LL.debug_page.table.title()}</th>
+								<th scope="col">{$LL.debug_page.table.number_of_objects()}</th>
 							</tr>
-						{/each}
-					</tbody>
-				</table>
+						</thead>
+						<tbody>
+							{#each tableData as row}
+								<tr class="hover focus-within:bg-base-200">
+									<td>{row.label}</td>
+									<td>
+										{#if isLoading}
+											<div class="spinner"></div>
+										{:else}
+											{row.value()}
+										{/if}
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</div>
 	</div>
