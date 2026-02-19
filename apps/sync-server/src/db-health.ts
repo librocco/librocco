@@ -280,7 +280,10 @@ export function checkAllDatabases(dbFolder: string, extensionPath: string): Map<
 	}
 
 	const files = fs.readdirSync(dbFolder);
-	const dbFiles = files.filter((f) => f.endsWith(".sqlite3") && !f.endsWith("-wal") && !f.endsWith("-shm"));
+	const dbFiles = files.filter((f) => {
+		const isDbFile = f.endsWith(".sqlite3") || f.endsWith(".sqlite") || f.endsWith(".db");
+		return isDbFile && !f.endsWith("-wal") && !f.endsWith("-shm");
+	});
 
 	for (const dbFile of dbFiles) {
 		const dbPath = path.join(dbFolder, dbFile);
