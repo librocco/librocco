@@ -10,22 +10,23 @@ import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack.js";
 import { extensionPath } from "@vlcn.io/crsqlite";
 
 import { performStartupHealthCheck, checkDatabaseHealth, checkAllDatabases } from "./db-health.js";
+import { migrateDatabasesOnStartup } from "./startup-migrations.js";
 
 const IS_DEV = process.env.IS_DEV === "true";
 const SKIP_HEALTH_CHECK = process.env.SKIP_HEALTH_CHECK === "true";
 const PORT = process.env.PORT || 3000;
-const DB_FOLDER = process.env.DB_FOLDER || "./test-dbs";
-const SCHEMA_FOLDER = process.env.SCHEMA_FOLDER || "./schemas";
+const DB_FOLDER = path.resolve(process.env.DB_FOLDER || "./test-dbs");
+const SCHEMA_FOLDER = path.resolve(process.env.SCHEMA_FOLDER || "./schemas");
 
 // Create the DB folder if it doesn't exist
-if (!fs.existsSync(path.resolve(DB_FOLDER))) {
+if (!fs.existsSync(DB_FOLDER)) {
 	fs.mkdirSync(DB_FOLDER, { recursive: true });
 }
 
 // Perform database health checks before starting the server
 // This will exit the process if critical errors are found
 if (!SKIP_HEALTH_CHECK) {
-	performStartupHealthCheck(path.resolve(DB_FOLDER), extensionPath);
+	performStartupHealthCheck(DB_FOLDER, extensionPath);
 } else {
 	console.warn("WARNING: Database health checks skipped (SKIP_HEALTH_CHECK=true)");
 }
@@ -70,7 +71,7 @@ app.get("/", (_, res) => {
 
 // Health check endpoint - returns detailed database health status
 app.get("/health", (_, res) => {
-	const results = checkAllDatabases(path.resolve(DB_FOLDER), extensionPath);
+	const results = checkAllDatabases(DB_FOLDER, extensionPath);
 	const allHealthy = Array.from(results.values()).every((r) => r.ok);
 
 	const response: Record<string, unknown> = {
@@ -214,6 +215,18 @@ app.get("/:dbname/file", async (req, res) => {
 });
 
 // Bind only to localhost for security (not accessible from network)
+try {
+	await migrateDatabasesOnStartup({
+		dbFolder: DB_FOLDER,
+		schemaName,
+		useDatabase: (dbName, schema, cb) => dbCache.use(dbName, schema, cb)
+	});
+} catch (err) {
+	const message = err instanceof Error ? err.message : String(err);
+	console.error(`Exiting due to startup migration failure: ${message}`);
+	process.exit(1);
+}
+
 server.listen(Number(PORT), "127.0.0.1", () => {
 	console.log("info", `listening on http://127.0.0.1:${PORT}!`);
 });
