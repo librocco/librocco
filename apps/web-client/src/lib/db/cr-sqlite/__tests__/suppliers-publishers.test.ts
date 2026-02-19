@@ -14,6 +14,7 @@ import {
 import { createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 import { upsertBook } from "../books";
 import { orderFormats } from "$lib/enums/orders";
+import { addBooksToCustomer, upsertCustomer } from "../customers";
 
 // Test fixtures
 const supplier1 = {
@@ -370,6 +371,10 @@ describe("deleteSupplier:", () => {
 		await associatePublisher(db, supplier1.id, "TestPub");
 		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
 
+		// Add customer order line to not affect the finalization (throws if not enough customer order lines to deliver/reject)
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["test-1"]);
+
 		await createSupplierOrder(db, 100, supplier1.id, [{ isbn: "test-1", quantity: 1, supplier_id: supplier1.id }]);
 		await createReconciliationOrder(db, 200, [100]);
 		await finalizeReconciliationOrder(db, 200);
@@ -385,6 +390,10 @@ describe("deleteSupplier:", () => {
 		await upsertSupplier(db, supplier1);
 		await associatePublisher(db, supplier1.id, "TestPub");
 		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
+
+		// Add customer order line to not affect the finalization (throws if not enough customer order lines to deliver/reject)
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["test-1"]);
 
 		await createSupplierOrder(db, 100, supplier1.id, [{ isbn: "test-1", quantity: 1, supplier_id: supplier1.id }]);
 		await createReconciliationOrder(db, 200, [100]);
