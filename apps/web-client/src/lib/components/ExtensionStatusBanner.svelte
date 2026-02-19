@@ -24,6 +24,32 @@
 			return `${$LL.misc_components.extension_banner.remote_db()} (incompatible)`;
 		}
 
+		if ($syncState.status === "disconnected") {
+			return `${$LL.misc_components.extension_banner.remote_db()} (sync disabled)`;
+		}
+
+		if ($syncState.status === "connecting") {
+			const detail = $syncState.reason === "checking_compatibility" ? "checking compatibility" : "reconnecting";
+			return `${$LL.misc_components.extension_banner.remote_db()} (${detail})`;
+		}
+
+		if ($syncState.status === "stuck") {
+			const detail = $syncState.reason === "rapid_closes" ? "reconnect loop" : "no connection";
+			return `${$LL.misc_components.extension_banner.remote_db()} (${detail})`;
+		}
+
+		if ($syncState.status === "warning") {
+			const detail =
+				$syncState.reason === "local_db_warning"
+					? "local db warning"
+					: $syncState.reason === "ack_stale"
+						? "ack stale"
+						: $syncState.reason === "pending_stale"
+							? "pending stale"
+							: "sync warning";
+			return `${$LL.misc_components.extension_banner.remote_db()} (${detail})`;
+		}
+
 		if ($syncState.pending > 0) {
 			return `${$LL.misc_components.extension_banner.remote_db()} (${$syncState.pending} pending)`;
 		}
@@ -31,18 +57,44 @@
 		return $LL.misc_components.extension_banner.remote_db();
 	})();
 
+	$: remoteDbTitle = (() => {
+		if ($syncState.status === "disconnected") {
+			return "Sync is disabled in settings";
+		}
+		if ($syncState.status === "connecting") {
+			return $syncState.reason === "checking_compatibility"
+				? "Connected, waiting for sync compatibility check to complete"
+				: "Sync connection is not active. Reconnecting…";
+		}
+		if ($syncState.status === "warning") {
+			return $syncState.message;
+		}
+		if ($syncState.status === "incompatible") {
+			return $syncState.message || "Local and remote databases are not compatible";
+		}
+		if ($syncState.status === "stuck") {
+			return $syncState.message;
+		}
+		return "Remote DB sync status";
+	})();
+
 	$: indicatorClass = (() => {
 		switch ($syncState.status) {
 			case "connecting":
+				return $syncState.reason === "reconnecting" ? "bg-error" : "bg-warning";
+			case "warning":
 				return "bg-warning";
 			case "synced":
 			case "syncing":
 				return "bg-success";
 			case "incompatible":
-			case "stuck":
-			case "disconnected":
-			default:
 				return "bg-error";
+			case "stuck":
+				return $syncState.reason === "timeout" ? "bg-error" : "bg-warning";
+			case "disconnected":
+				return "bg-base-content/40";
+			default:
+				return "bg-base-content/40";
 		}
 	})();
 </script>
@@ -63,6 +115,12 @@
 		data-testid="remote-db-badge"
 		data-status={$syncState.status}
 		data-pending={$syncState.pending}
+		data-reason={
+			$syncState.status === "connecting" || $syncState.status === "incompatible" || $syncState.status === "warning" || $syncState.status === "stuck"
+				? $syncState.reason
+				: ""
+		}
+		title={remoteDbTitle}
 	>
 		<div class="block h-3 w-3 rounded-full align-baseline {indicatorClass}"></div>
 		<p class="leading-none">{remoteDbLabel}</p>
