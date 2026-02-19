@@ -153,9 +153,6 @@ app.get("/:dbname/meta", async (req, res) => {
 	const dbname = req.params.dbname;
 
 	try {
-		const dbPath = path.resolve(wsConfig.dbFolder!, dbname);
-		const metaPath = `${dbPath}.meta.json`;
-
 		let meta: { siteId: string; schemaName?: string; schemaVersion?: string } | null = null;
 
 		// Ensure the DB exists on disk before returning metadata
@@ -170,8 +167,6 @@ app.get("/:dbname/meta", async (req, res) => {
 		if (!meta || !meta.siteId) {
 			return res.status(500).json({ message: `Metadata not available for DB ${dbname}` });
 		}
-
-		fs.writeFileSync(metaPath, JSON.stringify(meta), "utf-8");
 
 		return res.json(meta);
 	} catch (err) {
