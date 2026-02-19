@@ -3,10 +3,9 @@ import { Mutex } from "async-mutex";
 
 import type { ProgressState } from "$lib/types";
 
-import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 import WorkerInterface from "$lib/workers/WorkerInterface";
 
-import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
+import { isSyncWorkerBridge, type DBAsync, type VFSWhitelist } from "$lib/db/cr-sqlite/core";
 import { deleteDBFromOPFS, fetchAndStoreDBFile, wrapFileHandle } from "$lib/db/cr-sqlite/core/utils";
 
 import type { App } from "./index";
@@ -30,7 +29,7 @@ export enum AppSyncState {
 }
 
 interface IAppSyncCore {
-	destroy(): void;
+	destroy(): Promise<void>;
 }
 
 interface IAppSyncExclusive extends IAppSyncCore {
@@ -42,8 +41,9 @@ interface IAppSyncExclusive extends IAppSyncCore {
 	initialSyncProgressStore: Writable<ProgressState>;
 
 	active: boolean;
-	start(dbid: string, url: string): void;
-	stop(): void;
+	bindDb(db: DBAsync): boolean;
+	start(dbid: string, url: string): Promise<void>;
+	stop(): Promise<void>;
 }
 
 export interface IAppSync {
@@ -72,42 +72,45 @@ class AppSyncCore implements IAppSyncExclusive {
 	}
 
 	syncProgressStore = writable<ProgressState>({ active: false, nTotal: 0, nProcessed: 0 });
-	#syncProgressDisposer: () => void;
+	#syncProgressDisposer: () => void = () => {};
 
 	initialSyncProgressStore = writable<ProgressState>({ active: false, nTotal: 0, nProcessed: 0 });
 
 	constructor(worker?: WorkerInterface) {
-		// Worker is only accessible from browser
-		// TODO: This is a quick fix -- handle this in a nicer way
-		if (browser) {
-			this.worker = worker || new WorkerInterface(new SyncWorker());
-			this.#syncProgressDisposer = this.worker.onProgress(($progress) => this.syncProgressStore.set($progress));
-		}
+		this.worker = worker || new WorkerInterface();
+		this.#syncProgressDisposer = this.worker.onProgress(($progress) => this.syncProgressStore.set($progress));
+	}
+
+	bindDb(db: DBAsync): boolean {
+		const supported = isSyncWorkerBridge(db);
+		this.worker.bind(supported ? db : null);
+		return supported;
 	}
 
 	// TODO: listen to DB invalidations and reset the sync (if active) when DB invalidated
-	start(dbid: string, url: string) {
+	async start(dbid: string, url: string) {
 		const cfg = this.#activeConfig;
 
 		// NOOP -- nothing to do here
 		if (cfg && cfg.dbid == dbid && cfg.url == url) return;
 
 		// Stop sync if active with different setup (noop otherwise)
-		this.stop();
+		await this.stop();
 
-		this.worker.startSync(dbid, { url, room: dbid });
+		await this.worker.startSync(dbid, { url, room: dbid });
 		this.#activeConfig = { dbid, url };
 	}
 
-	stop() {
+	async stop() {
 		if (!this.active) return;
-		this.worker.stopSync(this.#activeConfig.dbid);
+		await this.worker.stopSync(this.#activeConfig.dbid);
 		this.#activeConfig = null;
 	}
 
-	destroy() {
-		this.stop();
+	async destroy() {
+		await this.stop();
 		this.#syncProgressDisposer?.();
+		this.worker.destroy();
 	}
 }
 
@@ -131,9 +134,7 @@ export class AppSync implements IAppSync {
 	}
 
 	destroy() {
-		this.runExclusive(() => {
-			this.core.destroy();
-		});
+		void this.runExclusive(() => this.core.destroy());
 	}
 
 	/**
@@ -150,12 +151,18 @@ export class AppSync implements IAppSync {
 // ---------------------------------- Functions ---------------------------------- //
 export async function initializeSync(app: App, vfs: VFSWhitelist) {
 	return app.sync.runExclusive(async (sync) => {
-		// noop if already initialised
-		if (get(sync.state) >= AppSyncState.Initializing) return;
+		// If already initialised, just ensure we're bound to the latest DB.
+		if (get(sync.state) >= AppSyncState.Initializing) {
+			const db = await getDb(app);
+			sync.bindDb(db);
+			return;
+		}
 
 		// Initialise the worker
 		sync.state.set(AppSyncState.Initializing);
+		const db = await getDb(app);
 		sync.worker.start(vfs);
+		sync.bindDb(db);
 		updateSyncConnectivityMonitor(sync.worker);
 
 		// Subscribe to sync changes to notify UI subscribers (debounced to avoid UI thrashing)
@@ -189,7 +196,12 @@ export async function startSync(app: App, dbid: string, url: string) {
 	await waitForStore(app.sync.state, ($s) => $s > AppSyncState.Initializing);
 
 	// TODO: this should also be run exclusively with respect to the DB
-	app.sync.runExclusive(async (sync) => {
+	return app.sync.runExclusive(async (sync) => {
+		if (!sync.bindDb(db)) {
+			console.warn("[sync] Current DB backend does not support integrated sync runtime; skipping sync start");
+			return;
+		}
+
 		// If sync is active:
 		// - no need to start (idempotency)
 		// - it's safe to assume the initial sync was already attempted
@@ -224,7 +236,7 @@ export async function startSync(app: App, dbid: string, url: string) {
 
 		// ---------------------------------- 2. Live Sync ---------------------------------- //
 		markCompatibilityChecking();
-		sync.start(dbid, url);
+		await sync.start(dbid, url);
 
 		// Once sync is running, re-run compatibility check to capture remote metadata that may have been missing on first pass
 		checkSyncCompatibility({ dbid, syncUrl: url, mode: "background" }).catch((err) =>
@@ -309,5 +321,5 @@ function getRemoteDbFileUrl(syncUrl: string, dbid: string) {
 }
 
 export async function stopSync(app: App) {
-	app.sync.runExclusive((sync) => sync.stop());
+	return app.sync.runExclusive((sync) => sync.stop());
 }

@@ -1,33 +1,12 @@
-import { WorkerInterface as WI } from "@vlcn.io/ws-client";
+import type { DBAsync, SyncTransportOptions, SyncWorkerBridge, VFSWhitelist } from "$lib/db/cr-sqlite/core";
+import { isSyncWorkerBridge } from "$lib/db/cr-sqlite/core";
+import type { MsgSyncStatus } from "./types";
 
-import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
-import type {
-	MsgChangesProcessed,
-	MsgChangesReceived,
-	MsgConnectionClose,
-	MsgConnectionOpen,
-	MsgSyncStatus,
-	MsgOutgoingChanges,
-	MsgProgress,
-	MsgReady,
-	MsgStart
-} from "./types";
+import { ConnectionEventEmitter, SyncEventEmitter } from "./sync-transport-control";
 
-import { SyncEventEmitter, ConnectionEventEmitter } from "./sync-transport-control";
-
-type OutbounrMessage = MsgStart;
-type InboundMessage =
-	| MsgChangesReceived
-	| MsgChangesProcessed
-	| MsgOutgoingChanges
-	| MsgProgress
-	| MsgReady
-	| MsgConnectionOpen
-	| MsgConnectionClose
-	| MsgSyncStatus;
-
-export default class WorkerInterface extends WI {
-	#worker: Worker;
+export default class WorkerInterface {
+	#endpoint: SyncWorkerBridge | null = null;
+	#bridgeDisposers: Array<() => void> = [];
 
 	#syncEmitter: SyncEventEmitter;
 	#connEmitter: ConnectionEventEmitter;
@@ -42,73 +21,85 @@ export default class WorkerInterface extends WI {
 
 	#isConnected = false;
 
-	constructor(worker: Worker) {
-		super(worker);
-		this.#worker = worker;
-
+	constructor(endpoint?: DBAsync | SyncWorkerBridge | null) {
 		this.#syncEmitter = new SyncEventEmitter();
 
 		this.#connEmitter = new ConnectionEventEmitter();
 		this.#connEmitter.onConnOpen(() => (this.#isConnected = true));
 		this.#connEmitter.onConnClose(() => (this.#isConnected = false));
 
-		this.#worker.addEventListener("message", this._handleMessage.bind(this));
-
 		this.#initPromise = new Promise((resolve) => {
 			this.#initPromiseResolver = resolve;
 		});
-	}
 
-	private _sendMessage(msg: OutbounrMessage) {
-		this.#worker.postMessage(msg);
-	}
-
-	private _handleMessage(e: MessageEvent<unknown>) {
-		if (!(e as MessageEvent<InboundMessage>).data._type) return;
-		const { data: msg } = e as MessageEvent<InboundMessage>;
-
-		switch (msg._type) {
-			case "changesReceived":
-				this.#syncEmitter.notifyChangesReceived(msg.payload);
-				break;
-			case "changesProcessed":
-				this.#syncEmitter.notifyChangesProcessed(msg.payload);
-				break;
-			case "progress":
-				this.#syncEmitter.notifyProgress(msg.payload);
-				break;
-			case "outgoingChanges":
-				this.#syncEmitter.notifyOutgoingChanges(msg.payload);
-				break;
-			case "ready":
-				this.#initPromiseResolver();
-				break;
-			case "connection.open":
-				this.#connEmitter.notifyConnOpen();
-				break;
-			case "connection.close":
-				this.#connEmitter.notifyConnClose();
-				break;
-			case "sync.status":
-				this.#syncEmitter.notifySyncStatusWithCache(msg.payload);
-				break;
-			default:
-				break;
+		if (endpoint) {
+			this.bind(endpoint);
 		}
 	}
 
-	start(vfs: VFSWhitelist) {
-		if (!vfs) {
-			console.warn("[worker] No VFS specified, noop -- worker not started");
+	bind(endpoint: DBAsync | SyncWorkerBridge | null) {
+		const nextEndpoint = endpoint && isSyncWorkerBridge(endpoint) ? endpoint : null;
+		if (nextEndpoint === this.#endpoint) {
 			return;
 		}
 
-		this.#vfs = vfs;
+		const wasConnected = this.#isConnected;
+		this.#disposeBridge();
+		this.#endpoint = nextEndpoint;
+		this.#isConnected = false;
+		if (wasConnected) {
+			this.#connEmitter.notifyConnClose();
+		}
 
-		this._sendMessage({
-			_type: "start",
-			payload: { vfs }
-		});
+		if (!nextEndpoint) {
+			this.#initPromiseResolver();
+			return;
+		}
+
+		this.#bridgeDisposers = [
+			nextEndpoint.onChangesReceived((msg) => this.#syncEmitter.notifyChangesReceived(msg)),
+			nextEndpoint.onChangesProcessed((msg) => this.#syncEmitter.notifyChangesProcessed(msg)),
+			nextEndpoint.onProgress((msg) => this.#syncEmitter.notifyProgress(msg)),
+			nextEndpoint.onOutgoingChanges((msg) => this.#syncEmitter.notifyOutgoingChanges(msg)),
+			nextEndpoint.onSyncStatus((msg) => this.#syncEmitter.notifySyncStatusWithCache(msg)),
+			nextEndpoint.onConnOpen(() => this.#connEmitter.notifyConnOpen()),
+			nextEndpoint.onConnClose(() => this.#connEmitter.notifyConnClose())
+		];
+
+		if (nextEndpoint.isConnected) {
+			this.#connEmitter.notifyConnOpen();
+		}
+		this.#initPromiseResolver();
+	}
+
+	#disposeBridge() {
+		for (const dispose of this.#bridgeDisposers) {
+			dispose();
+		}
+		this.#bridgeDisposers = [];
+	}
+
+	start(vfs: VFSWhitelist) {
+		this.#vfs = vfs;
+	}
+
+	startSync(dbid: string, transportOpts: SyncTransportOptions) {
+		if (!this.#endpoint) {
+			console.warn("[worker] Sync endpoint is not bound, noop -- sync not started");
+			return;
+		}
+		return this.#endpoint.startSync(dbid, transportOpts);
+	}
+
+	stopSync(dbid: string) {
+		if (!this.#endpoint) return;
+		this.#endpoint.stopSync(dbid);
+	}
+
+	destroy() {
+		this.#disposeBridge();
+		this.#endpoint = null;
+		this.#isConnected = false;
 	}
 
 	vfs() {
