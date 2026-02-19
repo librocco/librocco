@@ -158,6 +158,17 @@ export async function addVolumesToNote(db: DB, params: readonly [noteId: number,
 	await window.note.addVolumesToNote(db, id, volume);
 }
 
+/**
+ * Batch variant of addVolumesToNote — loops inside a single evaluate() call
+ * to avoid 100+ Node↔browser round-trips during test setup.
+ */
+export async function addVolumesToNoteBatch(db: DB, params: readonly [noteId: number, volumes: VolumeStock[]]): Promise<void> {
+	const [id, volumes] = params;
+	for (const volume of volumes) {
+		await window.note.addVolumesToNote(db, id, volume);
+	}
+}
+
 export type NoteCustomItem = { id: number; title: string; price: number };
 
 /**

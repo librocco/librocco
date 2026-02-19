@@ -1,17 +1,17 @@
 <script lang="ts">
 	import { invalidateAll } from "$app/navigation";
 
-import LL from "@librocco/shared/i18n-svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
-import { app } from "$lib/app";
-import type { PluginsInterface } from "$lib/plugins";
-import { createExtensionAvailabilityStore } from "$lib/stores";
-import { createSyncState } from "$lib/stores/sync-state";
-import { updateTranslationOverrides, translationOverridesStore, TRANSLATION_OVERRIDES_ENABLED } from "$lib/i18n-overrides";
+	import { app } from "$lib/app";
+	import type { PluginsInterface } from "$lib/plugins";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { createSyncState } from "$lib/stores/sync-state";
+	import { updateTranslationOverrides, translationOverridesStore, TRANSLATION_OVERRIDES_ENABLED } from "$lib/i18n-overrides";
 
-export let plugins: PluginsInterface;
+	export let plugins: PluginsInterface;
 
-const syncState = createSyncState(app.config.syncActive);
+	const syncState = createSyncState(app.config.syncActive);
 	$: extensionAvailable = createExtensionAvailabilityStore(plugins);
 
 	async function updateTranslationsButtonClicked() {
