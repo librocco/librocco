@@ -882,7 +882,9 @@
 			"reset_database": "Ripristina Database",
 			"upsert_100_books": "Inserisci 100 Libri",
 			"run_query": "Esegui Query",
-			"executing": "Esecuzione in corso..."
+			"executing": "Esecuzione in corso...",
+			"corrupt_sync_state": "",
+			"export_state": ""
 		},
 		"query_interface": {
 			"title": "Interfaccia Query Database",

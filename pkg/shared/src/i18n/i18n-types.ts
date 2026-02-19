@@ -2494,6 +2494,14 @@ type RootTranslation = {
 			 * E​x​e​c​u​t​i​n​g​.​.​.
 			 */
 			executing: string
+			/**
+			 * C​o​r​r​u​p​t​ ​S​y​n​c​ ​S​t​a​t​e
+			 */
+			corrupt_sync_state: string
+			/**
+			 * E​x​p​o​r​t​ ​S​t​a​t​e
+			 */
+			export_state: string
 		}
 		query_interface: {
 			/**
@@ -5414,6 +5422,14 @@ export type TranslationFunctions = {
 			 * Executing...
 			 */
 			executing: () => LocalizedString
+			/**
+			 * Corrupt Sync State
+			 */
+			corrupt_sync_state: () => LocalizedString
+			/**
+			 * Export State
+			 */
+			export_state: () => LocalizedString
 		}
 		query_interface: {
 			/**

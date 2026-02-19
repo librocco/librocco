@@ -546,7 +546,9 @@ const debug_page = {
 		reset_database: "Reset Database",
 		upsert_100_books: "Upsert 100 Books",
 		run_query: "Run Query",
-		executing: "Executing..."
+		executing: "Executing...",
+		corrupt_sync_state: "Corrupt Sync State",
+		export_state: "Export State"
 	},
 	query_interface: {
 		title: "Database Query Interface",
