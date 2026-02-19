@@ -1,13 +1,18 @@
 <script lang="ts">
 	import { invalidateAll } from "$app/navigation";
 
-	import LL from "@librocco/shared/i18n-svelte";
+import LL from "@librocco/shared/i18n-svelte";
 
-	import { app } from "$lib/app";
-	import { createSyncState } from "$lib/stores/sync-state";
-	import { updateTranslationOverrides, translationOverridesStore, TRANSLATION_OVERRIDES_ENABLED } from "$lib/i18n-overrides";
+import { app } from "$lib/app";
+import type { PluginsInterface } from "$lib/plugins";
+import { createExtensionAvailabilityStore } from "$lib/stores";
+import { createSyncState } from "$lib/stores/sync-state";
+import { updateTranslationOverrides, translationOverridesStore, TRANSLATION_OVERRIDES_ENABLED } from "$lib/i18n-overrides";
 
-	const syncState = createSyncState(app.config.syncActive);
+export let plugins: PluginsInterface;
+
+const syncState = createSyncState(app.config.syncActive);
+	$: extensionAvailable = createExtensionAvailabilityStore(plugins);
 
 	async function updateTranslationsButtonClicked() {
 		await updateTranslationOverrides({ notOlderThanSecs: 0 });
@@ -49,6 +54,10 @@
 			<p class="leading-none">{$LL.misc_components.extension_banner.reload_translations_override()}</p>
 		</button>
 	{/if}
+	<div class="badge-content badge-outline badge badge-md gap-x-2">
+		<div class="block h-3 w-3 rounded-full align-baseline {$extensionAvailable ? 'bg-success' : 'bg-error'}"></div>
+		<p class="leading-none">{$LL.misc_components.extension_banner.book_data_extension()}</p>
+	</div>
 	<div
 		class="badge-content badge-outline badge badge-md gap-x-2"
 		data-testid="remote-db-badge"
