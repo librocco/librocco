@@ -1,11 +1,21 @@
 import { chunks } from "@librocco/shared";
 import type { Transport } from "@vlcn.io/ws-client";
-import { bytesToHex, type SyncStatus } from "@vlcn.io/ws-common";
+import { bytesToHex } from "@vlcn.io/ws-common";
 import type { Changes } from "@vlcn.io/ws-common";
 
 import type { ProgressState } from "$lib/types";
 
 type Listener<M = undefined> = M extends undefined ? () => void : (msg: M) => void;
+type SyncStatus = {
+	ok: boolean;
+	siteId: Uint8Array | null;
+	schemaName: string;
+	schemaVersion: bigint;
+	stage?: string;
+	ackDbVersion?: bigint;
+	reason?: string;
+	message?: string;
+};
 
 export class SyncEventEmitter {
 	progressListeners = new Set<Listener<ProgressState>>();
@@ -224,7 +234,7 @@ export class SyncTransportController implements Transport {
 			this.#connectionEmitter.notifyConnClose();
 		};
 
-		this.#transport.onSyncStatus = this._onSyncStatus.bind(this);
+		(this.#transport as { onSyncStatus?: (msg: SyncStatus) => void }).onSyncStatus = this._onSyncStatus.bind(this);
 
 		// Setup the changes processor
 		this.#changesProcessor = new ChangesProcessor(config);
