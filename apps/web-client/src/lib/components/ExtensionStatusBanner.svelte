@@ -114,11 +114,12 @@
 		data-testid="remote-db-badge"
 		data-status={$syncState.status}
 		data-pending={$syncState.pending}
-		data-reason={
-			$syncState.status === "connecting" || $syncState.status === "incompatible" || $syncState.status === "warning" || $syncState.status === "stuck"
-				? $syncState.reason
-				: ""
-		}
+		data-reason={$syncState.status === "connecting" ||
+		$syncState.status === "incompatible" ||
+		$syncState.status === "warning" ||
+		$syncState.status === "stuck"
+			? $syncState.reason
+			: ""}
 		title={remoteDbTitle}
 	>
 		<div class="block h-3 w-3 rounded-full align-baseline {indicatorClass}"></div>

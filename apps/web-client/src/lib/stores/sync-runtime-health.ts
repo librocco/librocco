@@ -111,10 +111,7 @@ if (browser && !(globalThis as Record<string, unknown>)[storageGuardKey]) {
 			const parsed = JSON.parse(event.newValue) as { lastStatusAt?: number | null; lastAckAt?: number | null };
 			syncRuntimeHealth.update((state) => ({
 				...state,
-				lastStatusAt:
-					typeof parsed.lastStatusAt === "number"
-						? Math.max(state.lastStatusAt ?? 0, parsed.lastStatusAt)
-						: state.lastStatusAt,
+				lastStatusAt: typeof parsed.lastStatusAt === "number" ? Math.max(state.lastStatusAt ?? 0, parsed.lastStatusAt) : state.lastStatusAt,
 				lastAckAt: typeof parsed.lastAckAt === "number" ? Math.max(state.lastAckAt ?? 0, parsed.lastAckAt) : state.lastAckAt
 			}));
 		} catch {

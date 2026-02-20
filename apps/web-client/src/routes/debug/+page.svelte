@@ -130,19 +130,19 @@
 	const TIMELINE_LIMIT = 5;
 	const TIMELINE_STORAGE_KEY = "librocco-debug-sync-timeline";
 	let diagnosticsTimeline: TimelineEntry[] = [];
-let connectionProbe: ConnectionProbeResult | null = null;
-let isRunningConnectionProbe = false;
-let handshakeStatusCheck: HandshakeStatusCheckResult | null = null;
-let syncConfigSanity: SyncConfigSanityResult | null = null;
-let isRunningHandshakeCheck = false;
-let isRunningSanityCheck = false;
+	let connectionProbe: ConnectionProbeResult | null = null;
+	let isRunningConnectionProbe = false;
+	let handshakeStatusCheck: HandshakeStatusCheckResult | null = null;
+	let syncConfigSanity: SyncConfigSanityResult | null = null;
+	let isRunningHandshakeCheck = false;
+	let isRunningSanityCheck = false;
 	let lastConnectivitySig = "";
 	let lastCompatibilitySig = "";
 	let lastLocalDbSig = "";
 	let lastPendingSig = "";
 	let lastAutoRecoverySig = "";
 
-	const quoteIdentifier = (identifier: string) => `"${identifier.replace(/"/g, "\"\"")}"`;
+	const quoteIdentifier = (identifier: string) => `"${identifier.replace(/"/g, '""')}"`;
 
 	const fmtAge = (ts: number | null, now: number) => {
 		if (!ts) return $LL.debug_page.health_rail.never();
@@ -174,9 +174,7 @@ let isRunningSanityCheck = false;
 
 	const formatUiLabel = (value: string | null | undefined) => {
 		if (!value) return $LL.debug_page.health_rail.none();
-		return value
-			.replace(/_/g, " ")
-			.replace(/\b\w/g, (char) => char.toUpperCase());
+		return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 	};
 
 	const buildMetaProbeUrl = (syncUrl: string, dbid: string) => {
@@ -237,11 +235,7 @@ let isRunningSanityCheck = false;
 	$: connectionViaOtherTab = !$syncConnected && statusAgeSec != null && statusAgeSec <= 15;
 	$: connectionTone = $syncStuck ? "error" : $syncConnected || connectionViaOtherTab ? "success" : "error";
 	$: compatibilityTone =
-		$syncCompatibility.status === "incompatible"
-			? "error"
-			: $syncCompatibility.status === "compatible"
-				? "success"
-				: "warning";
+		$syncCompatibility.status === "incompatible" ? "error" : $syncCompatibility.status === "compatible" ? "success" : "warning";
 	$: localDbTone = $localDbHealth.status === "error" ? "error" : $localDbHealth.status === "ok" ? "success" : "warning";
 	$: pendingTone = $pendingChangesCount > 0 ? "warning" : "success";
 	$: statusHeartbeatAt = $syncConnected
@@ -325,11 +319,7 @@ let isRunningSanityCheck = false;
 							error: String($syncAutoRecovery.lastError)
 						})
 					: $LL.debug_page.timeline_events.auto_recovery({ result: String($syncAutoRecovery.lastResult || $LL.debug_page.checks.na()) }),
-				$syncAutoRecovery.lastResult === "failure"
-					? "error"
-					: $syncAutoRecovery.lastResult === "success"
-						? "success"
-						: "info"
+				$syncAutoRecovery.lastResult === "failure" ? "error" : $syncAutoRecovery.lastResult === "success" ? "success" : "info"
 			);
 		}
 		lastAutoRecoverySig = sig;
@@ -723,18 +713,18 @@ let isRunningSanityCheck = false;
 				syncUrl,
 				mode: "strict"
 			});
-				toastSuccess({
-					title: $LL.debug_page.notifications.compat_identity_reset_title(),
-					description: $LL.debug_page.notifications.compat_identity_reset_desc()
-				});
+			toastSuccess({
+				title: $LL.debug_page.notifications.compat_identity_reset_title(),
+				description: $LL.debug_page.notifications.compat_identity_reset_desc()
+			});
 		} catch (error) {
 			console.error("Error resetting sync state:", error);
 			errorMessage = error;
-				toastError({
-					title: $LL.debug_page.notifications.reset_identity_failed_title(),
-					description: $LL.debug_page.notifications.reset_identity_failed_desc(),
-					detail: error instanceof Error ? error.message : String(error)
-				});
+			toastError({
+				title: $LL.debug_page.notifications.reset_identity_failed_title(),
+				description: $LL.debug_page.notifications.reset_identity_failed_desc(),
+				detail: error instanceof Error ? error.message : String(error)
+			});
 		} finally {
 			isLoading = false;
 		}
@@ -1020,19 +1010,19 @@ let isRunningSanityCheck = false;
 			};
 
 			if (metaResult.ok && wsResult.ok) {
-					pushTimeline($LL.debug_page.timeline_events.check_connection_probe_passed(), "success");
-					toastSuccess({
-						title: $LL.debug_page.notifications.connection_probe_passed_title(),
-						description: $LL.debug_page.notifications.connection_probe_passed_desc()
-					});
-				} else {
-					pushTimeline($LL.debug_page.timeline_events.check_connection_probe_issues(), "warning");
-					toastError({
-						title: $LL.debug_page.notifications.connection_probe_issues_title(),
-						description: $LL.debug_page.notifications.connection_probe_issues_desc(),
-						detail: `meta=${metaResult.ok ? "ok" : "fail"}, ws=${wsResult.ok ? "ok" : "fail"}`
-					});
-				}
+				pushTimeline($LL.debug_page.timeline_events.check_connection_probe_passed(), "success");
+				toastSuccess({
+					title: $LL.debug_page.notifications.connection_probe_passed_title(),
+					description: $LL.debug_page.notifications.connection_probe_passed_desc()
+				});
+			} else {
+				pushTimeline($LL.debug_page.timeline_events.check_connection_probe_issues(), "warning");
+				toastError({
+					title: $LL.debug_page.notifications.connection_probe_issues_title(),
+					description: $LL.debug_page.notifications.connection_probe_issues_desc(),
+					detail: `meta=${metaResult.ok ? "ok" : "fail"}, ws=${wsResult.ok ? "ok" : "fail"}`
+				});
+			}
 		} catch (error) {
 			console.error("Error running connection probe:", error);
 			errorMessage = error;
@@ -1154,16 +1144,16 @@ let isRunningSanityCheck = false;
 			if (!connectedNow) {
 				handshakeStatusCheck = {
 					at: Date.now(),
-						ok: false,
-						reason: "transport_closed",
-						message: $LL.debug_page.status_messages.transport_disconnected(),
-						timedOut: false
-					};
-					pushTimeline($LL.debug_page.timeline_events.check_handshake_disconnected(), "warning");
-					toastError({
-						title: $LL.debug_page.notifications.handshake_status_unavailable_title(),
-						description: $LL.debug_page.notifications.handshake_status_unavailable_desc()
-					});
+					ok: false,
+					reason: "transport_closed",
+					message: $LL.debug_page.status_messages.transport_disconnected(),
+					timedOut: false
+				};
+				pushTimeline($LL.debug_page.timeline_events.check_handshake_disconnected(), "warning");
+				toastError({
+					title: $LL.debug_page.notifications.handshake_status_unavailable_title(),
+					description: $LL.debug_page.notifications.handshake_status_unavailable_desc()
+				});
 				return;
 			}
 
@@ -1185,14 +1175,14 @@ let isRunningSanityCheck = false;
 						finish({
 							at: Date.now(),
 							ok: false,
-								reason: connected ? latestErr?.reason : "transport_closed",
-								message: connected
-									? $LL.debug_page.status_messages.no_sync_status_timeout()
-									: diag.disconnectedSince
-										? $LL.debug_page.status_messages.transport_disconnected_age({ age: fmtAge(diag.disconnectedSince, nowTs) })
-										: $LL.debug_page.status_messages.transport_disconnected_plain(),
-								timedOut: true
-							});
+							reason: connected ? latestErr?.reason : "transport_closed",
+							message: connected
+								? $LL.debug_page.status_messages.no_sync_status_timeout()
+								: diag.disconnectedSince
+									? $LL.debug_page.status_messages.transport_disconnected_age({ age: fmtAge(diag.disconnectedSince, nowTs) })
+									: $LL.debug_page.status_messages.transport_disconnected_plain(),
+							timedOut: true
+						});
 					}, 3000);
 
 					const onSyncStatus = (payload: {
@@ -1284,22 +1274,22 @@ let isRunningSanityCheck = false;
 			if (syncUrl?.trim()) {
 				try {
 					const parsed = new URL(syncUrl);
-						wsUrlOk = parsed.protocol === "ws:" || parsed.protocol === "wss:";
-						if (!wsUrlOk) {
-							problems.push($LL.debug_page.sanity_problems.sync_url_protocol_invalid({ protocol: parsed.protocol }));
-						}
-					} catch {
-						problems.push($LL.debug_page.sanity_problems.sync_url_invalid());
+					wsUrlOk = parsed.protocol === "ws:" || parsed.protocol === "wss:";
+					if (!wsUrlOk) {
+						problems.push($LL.debug_page.sanity_problems.sync_url_protocol_invalid({ protocol: parsed.protocol }));
 					}
+				} catch {
+					problems.push($LL.debug_page.sanity_problems.sync_url_invalid());
 				}
+			}
 
 			if (syncUrl?.trim() && dbid?.trim()) {
-					try {
-						metaUrl = buildMetaProbeUrl(syncUrl, dbid);
-					} catch {
-						problems.push($LL.debug_page.sanity_problems.meta_url_derive_failed());
-					}
+				try {
+					metaUrl = buildMetaProbeUrl(syncUrl, dbid);
+				} catch {
+					problems.push($LL.debug_page.sanity_problems.meta_url_derive_failed());
 				}
+			}
 
 			syncConfigSanity = {
 				at: Date.now(),
@@ -1350,10 +1340,10 @@ let isRunningSanityCheck = false;
 			const syncActive = get(app.config.syncActive);
 			if (!syncActive) {
 				markAutoRecoveryNoop();
-					toastError({
-						title: $LL.debug_page.notifications.sync_disabled_title(),
-						description: $LL.debug_page.notifications.sync_disabled_manual_recovery_desc()
-					});
+				toastError({
+					title: $LL.debug_page.notifications.sync_disabled_title(),
+					description: $LL.debug_page.notifications.sync_disabled_manual_recovery_desc()
+				});
 				return;
 			}
 
@@ -1372,26 +1362,26 @@ let isRunningSanityCheck = false;
 				await stopSync(app);
 				await startSync(app, dbid, syncUrl);
 				markAutoRecoverySuccess();
-					toastSuccess({
-						title: $LL.debug_page.notifications.manual_auto_recovery_applied_title(),
-						description: $LL.debug_page.notifications.manual_auto_recovery_applied_desc()
-					});
-				} else {
-					markAutoRecoveryNoop();
-					toastSuccess({
-						title: $LL.debug_page.notifications.manual_auto_recovery_not_needed_title(),
-						description: $LL.debug_page.notifications.manual_auto_recovery_not_needed_desc()
-					});
-				}
+				toastSuccess({
+					title: $LL.debug_page.notifications.manual_auto_recovery_applied_title(),
+					description: $LL.debug_page.notifications.manual_auto_recovery_applied_desc()
+				});
+			} else {
+				markAutoRecoveryNoop();
+				toastSuccess({
+					title: $LL.debug_page.notifications.manual_auto_recovery_not_needed_title(),
+					description: $LL.debug_page.notifications.manual_auto_recovery_not_needed_desc()
+				});
+			}
 		} catch (error) {
 			console.error("Error running manual auto-recovery:", error);
 			errorMessage = error;
 			markAutoRecoveryFailure(error);
-				toastError({
-					title: $LL.debug_page.notifications.manual_auto_recovery_failed_title(),
-					description: $LL.debug_page.notifications.manual_auto_recovery_failed_desc(),
-					detail: error instanceof Error ? error.message : String(error)
-				});
+			toastError({
+				title: $LL.debug_page.notifications.manual_auto_recovery_failed_title(),
+				description: $LL.debug_page.notifications.manual_auto_recovery_failed_desc(),
+				detail: error instanceof Error ? error.message : String(error)
+			});
 		} finally {
 			isLoading = false;
 		}
@@ -1403,10 +1393,10 @@ let isRunningSanityCheck = false;
 		try {
 			const syncActive = get(app.config.syncActive);
 			if (!syncActive) {
-					toastError({
-						title: $LL.debug_page.notifications.sync_disabled_title(),
-						description: $LL.debug_page.notifications.sync_disabled_restart_desc()
-					});
+				toastError({
+					title: $LL.debug_page.notifications.sync_disabled_title(),
+					description: $LL.debug_page.notifications.sync_disabled_restart_desc()
+				});
 				return;
 			}
 
@@ -1414,18 +1404,18 @@ let isRunningSanityCheck = false;
 			const syncUrl = get(app.config.syncUrl);
 			await stopSync(app);
 			await startSync(app, dbid, syncUrl);
-				toastSuccess({
-					title: $LL.debug_page.notifications.sync_worker_restarted_title(),
-					description: $LL.debug_page.notifications.sync_worker_restarted_desc()
-				});
+			toastSuccess({
+				title: $LL.debug_page.notifications.sync_worker_restarted_title(),
+				description: $LL.debug_page.notifications.sync_worker_restarted_desc()
+			});
 		} catch (error) {
 			console.error("Error restarting sync worker:", error);
 			errorMessage = error;
-				toastError({
-					title: $LL.debug_page.notifications.restart_sync_worker_failed_title(),
-					description: $LL.debug_page.notifications.restart_sync_worker_failed_desc(),
-					detail: error instanceof Error ? error.message : String(error)
-				});
+			toastError({
+				title: $LL.debug_page.notifications.restart_sync_worker_failed_title(),
+				description: $LL.debug_page.notifications.restart_sync_worker_failed_desc(),
+				detail: error instanceof Error ? error.message : String(error)
+			});
 		} finally {
 			isLoading = false;
 		}
@@ -1477,18 +1467,18 @@ let isRunningSanityCheck = false;
 			a.remove();
 			URL.revokeObjectURL(url);
 
-				toastSuccess({
-					title: $LL.debug_page.notifications.diagnostics_exported_title(),
-					description: $LL.debug_page.notifications.diagnostics_exported_desc()
-				});
+			toastSuccess({
+				title: $LL.debug_page.notifications.diagnostics_exported_title(),
+				description: $LL.debug_page.notifications.diagnostics_exported_desc()
+			});
 		} catch (error) {
 			console.error("Error exporting sync diagnostics:", error);
 			errorMessage = error;
-				toastError({
-					title: $LL.debug_page.notifications.export_diagnostics_failed_title(),
-					description: $LL.debug_page.notifications.export_diagnostics_failed_desc(),
-					detail: error instanceof Error ? error.message : String(error)
-				});
+			toastError({
+				title: $LL.debug_page.notifications.export_diagnostics_failed_title(),
+				description: $LL.debug_page.notifications.export_diagnostics_failed_desc(),
+				detail: error instanceof Error ? error.message : String(error)
+			});
 		} finally {
 			isLoading = false;
 		}
@@ -1557,7 +1547,10 @@ let isRunningSanityCheck = false;
 											: $LL.debug_page.health_rail.derived_transport()}
 									</div>
 									<div class="opacity-70">
-										{$LL.debug_page.health_rail.events_line({ openCount: $syncConnDiagnostics.openCount, closeCount: $syncConnDiagnostics.closeCount })}
+										{$LL.debug_page.health_rail.events_line({
+											openCount: $syncConnDiagnostics.openCount,
+											closeCount: $syncConnDiagnostics.closeCount
+										})}
 										{#if $syncConnDiagnostics.disconnectedSince}
 											.{$LL.debug_page.health_rail.disconnected_for({ age: fmtAge($syncConnDiagnostics.disconnectedSince, nowTs) })}
 										{/if}
@@ -1612,7 +1605,7 @@ let isRunningSanityCheck = false;
 													? "error"
 													: $syncAutoRecovery.lastResult === "success"
 														? "success"
-													: "info"
+														: "info"
 											)}`}
 										>
 											{$LL.debug_page.health_rail.auto_recovery_status({
@@ -1629,7 +1622,9 @@ let isRunningSanityCheck = false;
 						</div>
 
 						<div class="rounded-lg border border-base-300 bg-base-200/40 p-3">
-							<div class="mb-2 text-xs font-semibold uppercase tracking-wide opacity-70">{$LL.debug_page.diagnostics.freshness.title()}</div>
+							<div class="mb-2 text-xs font-semibold uppercase tracking-wide opacity-70">
+								{$LL.debug_page.diagnostics.freshness.title()}
+							</div>
 							<p class="mb-3 text-xs opacity-70">{$LL.debug_page.diagnostics.freshness.description()}</p>
 							<div class="grid gap-3 md:grid-cols-3 xl:grid-cols-1">
 								<div class="text-xs">
@@ -1640,15 +1635,18 @@ let isRunningSanityCheck = false;
 										</span>
 									</div>
 									<div class="mb-1 flex justify-between opacity-70">
-										<span>{$syncConnected
-											? $LL.debug_page.freshness.status_connected_live()
-											: statusAgeSec == null
-												? $LL.debug_page.freshness.na()
-												: $LL.debug_page.freshness.status_since_last_heartbeat({ seconds: statusAgeSec })}</span>
+										<span
+											>{$syncConnected
+												? $LL.debug_page.freshness.status_connected_live()
+												: statusAgeSec == null
+													? $LL.debug_page.freshness.na()
+													: $LL.debug_page.freshness.status_since_last_heartbeat({ seconds: statusAgeSec })}</span
+										>
 										<span>{$LL.debug_page.freshness.warn_stale({ warn: statusWarnSec, stale: statusErrorSec })}</span>
 									</div>
 									<div class="mb-1 opacity-70">{$LL.debug_page.freshness.last_at({ time: fmtTs(statusHeartbeatAt) })}</div>
-									<progress class={`progress w-full ${levelProgressClass(statusFreshnessLevel)}`} value={statusHealthPct} max="100"></progress>
+									<progress class={`progress w-full ${levelProgressClass(statusFreshnessLevel)}`} value={statusHealthPct} max="100"
+									></progress>
 									<div class="mt-1 opacity-70">{$LL.debug_page.freshness.status_description()}</div>
 								</div>
 								<div class="text-xs">
@@ -1659,11 +1657,13 @@ let isRunningSanityCheck = false;
 										</span>
 									</div>
 									<div class="mb-1 flex justify-between opacity-70">
-										<span>{$pendingChangesCount > 0
-											? ackAgeSec == null
-												? $LL.debug_page.health_rail.never()
-												: $LL.debug_page.freshness.seconds_ago({ seconds: ackAgeSec })
-											: $LL.debug_page.freshness.no_pending_changes()}</span>
+										<span
+											>{$pendingChangesCount > 0
+												? ackAgeSec == null
+													? $LL.debug_page.health_rail.never()
+													: $LL.debug_page.freshness.seconds_ago({ seconds: ackAgeSec })
+												: $LL.debug_page.freshness.no_pending_changes()}</span
+										>
 										<span>{$LL.debug_page.freshness.warn_stale({ warn: ackWarnSec, stale: ackErrorSec })}</span>
 									</div>
 									<div class="mb-1 opacity-70">{$LL.debug_page.freshness.last_at({ time: fmtTs($syncRuntimeHealth.lastAckAt) })}</div>
@@ -1678,11 +1678,13 @@ let isRunningSanityCheck = false;
 										</span>
 									</div>
 									<div class="mb-1 flex justify-between opacity-70">
-										<span>{$pendingChangesCount > 0
-											? pendingAgeSec == null
-												? $LL.debug_page.freshness.na()
-												: $LL.debug_page.freshness.seconds_ago({ seconds: pendingAgeSec })
-											: $LL.debug_page.freshness.queue_empty()}</span>
+										<span
+											>{$pendingChangesCount > 0
+												? pendingAgeSec == null
+													? $LL.debug_page.freshness.na()
+													: $LL.debug_page.freshness.seconds_ago({ seconds: pendingAgeSec })
+												: $LL.debug_page.freshness.queue_empty()}</span
+										>
 										<span>{$LL.debug_page.freshness.warn_stale({ warn: queueWarnSec, stale: queueErrorSec })}</span>
 									</div>
 									<div class="mb-1 opacity-70">
@@ -1690,7 +1692,8 @@ let isRunningSanityCheck = false;
 											time: $pendingChangesLastActiveAt ? fmtTs($pendingChangesLastActiveAt) : $LL.debug_page.health_rail.never()
 										})}
 									</div>
-									<progress class={`progress w-full ${levelProgressClass(queueFreshnessLevel)}`} value={queueHealthPct} max="100"></progress>
+									<progress class={`progress w-full ${levelProgressClass(queueFreshnessLevel)}`} value={queueHealthPct} max="100"
+									></progress>
 									<div class="mt-1 opacity-70">{$LL.debug_page.freshness.queue_description()}</div>
 								</div>
 							</div>
@@ -1704,11 +1707,11 @@ let isRunningSanityCheck = false;
 										{$LL.debug_page.diagnostics.timeline.latest_events({ count: Math.min(diagnosticsTimeline.length, TIMELINE_LIMIT) })}
 									</div>
 									{#if $syncRuntimeHealth.recentErrors.length > 0}
-										<button class="btn-neutral btn btn-xs" on:click={copyLastSyncErrors}>
+										<button class="btn-neutral btn-xs btn" on:click={copyLastSyncErrors}>
 											<Download size={14} />
 											{$LL.debug_page.actions.copy()}
 										</button>
-										<button class="btn-outline btn btn-xs" on:click={clearLastSyncErrors}>{$LL.debug_page.actions.clear()}</button>
+										<button class="btn-outline btn-xs btn" on:click={clearLastSyncErrors}>{$LL.debug_page.actions.clear()}</button>
 									{/if}
 								</div>
 							</div>
@@ -1721,7 +1724,9 @@ let isRunningSanityCheck = false;
 										{#each diagnosticsTimeline as evt}
 											<li class="rounded border border-base-300 bg-base-100 p-2">
 												<div class="flex items-center justify-between gap-2">
-													<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(evt.severity)}`}>{evt.message}</span>
+													<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(evt.severity)}`}
+														>{evt.message}</span
+													>
 													<span class="shrink-0 opacity-60">{new Date(evt.at).toLocaleTimeString()}</span>
 												</div>
 											</li>
@@ -1729,7 +1734,9 @@ let isRunningSanityCheck = false;
 									</ul>
 								{/if}
 								{#if $syncRuntimeHealth.recentErrors.length > 0}
-									<div class="mt-2 border-t border-base-300 pt-2 text-xs font-semibold opacity-70">{$LL.debug_page.diagnostics.timeline.recent_sync_errors()}</div>
+									<div class="mt-2 border-t border-base-300 pt-2 text-xs font-semibold opacity-70">
+										{$LL.debug_page.diagnostics.timeline.recent_sync_errors()}
+									</div>
 									<ul class="mt-1 space-y-1 text-xs">
 										{#each $syncRuntimeHealth.recentErrors as err}
 											<li class="rounded border border-base-300 bg-base-100 p-2">
@@ -1762,7 +1769,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.checks.recheck_sync_compatibility.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.checks.recheck_sync_compatibility.description()}</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={recheckSyncCompatibilityNow} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={recheckSyncCompatibilityNow}
+								disabled={isLoading}
+							>
 								<Play size={16} />
 								{$LL.debug_page.actions.run_check()}
 							</button>
@@ -1774,7 +1785,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_db_quick_check.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_db_quick_check.description()}</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runDbQuickCheck} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runDbQuickCheck}
+								disabled={isLoading}
+							>
 								<Play size={16} />
 								{$LL.debug_page.actions.run_check()}
 							</button>
@@ -1786,7 +1801,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_db_integrity_check.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_db_integrity_check.description()}</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runDbIntegrityCheck} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runDbIntegrityCheck}
+								disabled={isLoading}
+							>
 								<AlertTriangle size={16} />
 								{$LL.debug_page.actions.run_check()}
 							</button>
@@ -1798,7 +1817,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_connection_probe.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_connection_probe.description()}</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runConnectionProbe} disabled={isLoading || isRunningConnectionProbe}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runConnectionProbe}
+								disabled={isLoading || isRunningConnectionProbe}
+							>
 								<Play size={16} />
 								{isRunningConnectionProbe ? $LL.debug_page.actions.running() : $LL.debug_page.actions.run_check()}
 							</button>
@@ -1810,7 +1833,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_handshake_status_check.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_handshake_status_check.description()}</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runHandshakeStatusCheck} disabled={isLoading || isRunningHandshakeCheck}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runHandshakeStatusCheck}
+								disabled={isLoading || isRunningHandshakeCheck}
+							>
 								<Play size={16} />
 								{isRunningHandshakeCheck ? $LL.debug_page.actions.running() : $LL.debug_page.actions.run_check()}
 							</button>
@@ -1822,7 +1849,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_sync_config_sanity.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_sync_config_sanity.description()}</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runSyncConfigSanityCheck} disabled={isLoading || isRunningSanityCheck}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runSyncConfigSanityCheck}
+								disabled={isLoading || isRunningSanityCheck}
+							>
 								<Play size={16} />
 								{isRunningSanityCheck ? $LL.debug_page.actions.running() : $LL.debug_page.actions.run_check()}
 							</button>
@@ -1834,11 +1865,11 @@ let isRunningSanityCheck = false;
 						<div class="mb-2 flex items-center justify-between gap-2">
 							<div class="font-semibold">{$LL.debug_page.checks.last_connection_probe()}</div>
 							<div class="flex items-center gap-1">
-								<button class="btn-neutral btn btn-xs" on:click={copyConnectionProbeResult}>
+								<button class="btn-neutral btn-xs btn" on:click={copyConnectionProbeResult}>
 									<Download size={14} />
 									{$LL.debug_page.actions.copy()}
 								</button>
-								<button class="btn-outline btn btn-xs" on:click={clearConnectionProbeResult}>{$LL.debug_page.actions.clear()}</button>
+								<button class="btn-outline btn-xs btn" on:click={clearConnectionProbeResult}>{$LL.debug_page.actions.clear()}</button>
 							</div>
 						</div>
 						<div class="grid gap-1">
@@ -1847,11 +1878,13 @@ let isRunningSanityCheck = false;
 							<div class="truncate">{$LL.debug_page.checks.db_id()}: {connectionProbe.dbid}</div>
 							<div class="truncate">{$LL.debug_page.checks.sync_url()}: {connectionProbe.syncUrl}</div>
 							<div class="truncate">
-								{$LL.debug_page.checks.meta()}: {connectionProbe.meta.ok ? $LL.debug_page.checks.ok() : $LL.debug_page.checks.fail()} | status {connectionProbe.meta.status ?? $LL.debug_page.checks.na()} | {connectionProbe.meta.latencyMs} ms
+								{$LL.debug_page.checks.meta()}: {connectionProbe.meta.ok ? $LL.debug_page.checks.ok() : $LL.debug_page.checks.fail()} | status
+								{connectionProbe.meta.status ?? $LL.debug_page.checks.na()} | {connectionProbe.meta.latencyMs} ms
 								{connectionProbe.meta.error ? ` | ${connectionProbe.meta.error}` : ""}
 							</div>
 							<div class="truncate">
-								{$LL.debug_page.checks.websocket()}: {connectionProbe.ws.ok ? $LL.debug_page.checks.ok() : $LL.debug_page.checks.fail()} | close {connectionProbe.ws.closeCode ?? $LL.debug_page.checks.na()} | {connectionProbe.ws.latencyMs} ms
+								{$LL.debug_page.checks.websocket()}: {connectionProbe.ws.ok ? $LL.debug_page.checks.ok() : $LL.debug_page.checks.fail()} | close
+								{connectionProbe.ws.closeCode ?? $LL.debug_page.checks.na()} | {connectionProbe.ws.latencyMs} ms
 								{connectionProbe.ws.error ? ` | ${connectionProbe.ws.error}` : ""}
 							</div>
 							{#if connectionProbe.meta.bodySnippet}
@@ -1865,16 +1898,20 @@ let isRunningSanityCheck = false;
 						<div class="mb-2 flex items-center justify-between gap-2">
 							<div class="font-semibold">{$LL.debug_page.checks.last_handshake_status_check()}</div>
 							<div class="flex items-center gap-1">
-								<button class="btn-neutral btn btn-xs" on:click={copyHandshakeStatusCheckResult}>
+								<button class="btn-neutral btn-xs btn" on:click={copyHandshakeStatusCheckResult}>
 									<Download size={14} />
 									{$LL.debug_page.actions.copy()}
 								</button>
-								<button class="btn-outline btn btn-xs" on:click={clearHandshakeStatusCheckResult}>{$LL.debug_page.actions.clear()}</button>
+								<button class="btn-outline btn-xs btn" on:click={clearHandshakeStatusCheckResult}>{$LL.debug_page.actions.clear()}</button>
 							</div>
 						</div>
 						<div class="grid gap-1">
 							<div>{$LL.debug_page.checks.time()}: {new Date(handshakeStatusCheck.at).toLocaleTimeString()}</div>
-							<div>{$LL.debug_page.checks.result()}: {handshakeStatusCheck.ok ? $LL.debug_page.checks.ok() : $LL.debug_page.checks.fail()}{handshakeStatusCheck.timedOut ? ` (${$LL.debug_page.checks.timed_out()})` : ""}</div>
+							<div>
+								{$LL.debug_page.checks.result()}: {handshakeStatusCheck.ok
+									? $LL.debug_page.checks.ok()
+									: $LL.debug_page.checks.fail()}{handshakeStatusCheck.timedOut ? ` (${$LL.debug_page.checks.timed_out()})` : ""}
+							</div>
 							<div>{$LL.debug_page.checks.stage()}: {handshakeStatusCheck.stage || $LL.debug_page.checks.na()}</div>
 							<div>{$LL.debug_page.checks.ack_db_version()}: {handshakeStatusCheck.ackDbVersion ?? $LL.debug_page.checks.na()}</div>
 							<div>{$LL.debug_page.checks.reason()}: {handshakeStatusCheck.reason || $LL.debug_page.checks.na()}</div>
@@ -1887,11 +1924,11 @@ let isRunningSanityCheck = false;
 						<div class="mb-2 flex items-center justify-between gap-2">
 							<div class="font-semibold">{$LL.debug_page.checks.last_sync_config_sanity_check()}</div>
 							<div class="flex items-center gap-1">
-								<button class="btn-neutral btn btn-xs" on:click={copySyncConfigSanityResult}>
+								<button class="btn-neutral btn-xs btn" on:click={copySyncConfigSanityResult}>
 									<Download size={14} />
 									{$LL.debug_page.actions.copy()}
 								</button>
-								<button class="btn-outline btn btn-xs" on:click={clearSyncConfigSanityResult}>{$LL.debug_page.actions.clear()}</button>
+								<button class="btn-outline btn-xs btn" on:click={clearSyncConfigSanityResult}>{$LL.debug_page.actions.clear()}</button>
 							</div>
 						</div>
 						<div class="grid gap-1">
@@ -1899,7 +1936,9 @@ let isRunningSanityCheck = false;
 							<div>{$LL.debug_page.checks.sync_active()}: {String(syncConfigSanity.syncActive)}</div>
 							<div class="truncate">{$LL.debug_page.checks.db_id()}: {syncConfigSanity.dbid || $LL.debug_page.checks.na()}</div>
 							<div class="truncate">{$LL.debug_page.checks.sync_url()}: {syncConfigSanity.syncUrl || $LL.debug_page.checks.na()}</div>
-							<div class="truncate">{$LL.debug_page.checks.derived_meta_url()}: {syncConfigSanity.metaUrl || $LL.debug_page.checks.na()}</div>
+							<div class="truncate">
+								{$LL.debug_page.checks.derived_meta_url()}: {syncConfigSanity.metaUrl || $LL.debug_page.checks.na()}
+							</div>
 							<div>{$LL.debug_page.checks.ws_protocol_valid()}: {String(syncConfigSanity.wsUrlOk)}</div>
 							<div>{$LL.debug_page.checks.issues()}: {syncConfigSanity.problems.length}</div>
 							{#if syncConfigSanity.problems.length > 0}
@@ -1924,7 +1963,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.recovery_actions.restart_sync_worker.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.recovery_actions.restart_sync_worker.description()}</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={restartSyncWorker} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={restartSyncWorker}
+								disabled={isLoading}
+							>
 								<RotateCcw size={16} />
 								{$LL.debug_page.actions.run_action()}
 							</button>
@@ -1936,7 +1979,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.recovery_actions.reset_compatibility_identity.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.recovery_actions.reset_compatibility_identity.description()}</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={fixCorruptSyncState} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={fixCorruptSyncState}
+								disabled={isLoading}
+							>
 								<RotateCcw size={16} />
 								{$LL.debug_page.actions.run_action()}
 							</button>
@@ -1948,7 +1995,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.recovery_actions.run_manual_auto_recovery.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.recovery_actions.run_manual_auto_recovery.description()}</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runManualAutoRecovery} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runManualAutoRecovery}
+								disabled={isLoading}
+							>
 								<RotateCcw size={16} />
 								{$LL.debug_page.actions.run_action()}
 							</button>
@@ -1961,7 +2012,7 @@ let isRunningSanityCheck = false;
 								<p class="text-xs opacity-70">{$LL.debug_page.recovery_actions.nuke_and_resync_now.description()}</p>
 							</div>
 							<button
-								class="btn btn-sm shrink-0 self-start w-36 justify-center border-red-800 bg-red-700 text-white hover:bg-red-800"
+								class="btn-sm btn w-36 shrink-0 justify-center self-start border-red-800 bg-red-700 text-white hover:bg-red-800"
 								on:click={nukeAndResyncNow}
 								disabled={isLoading}
 							>
@@ -1983,7 +2034,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.inject_actions.inject_sync_transport_failure.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.inject_actions.inject_sync_transport_failure.description()}</p>
 							</div>
-							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={toggleSyncTransportFailure} disabled={isLoading}>
+							<button
+								class="btn-warning btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={toggleSyncTransportFailure}
+								disabled={isLoading}
+							>
 								<Unplug size={16} />
 								{$syncUrlConfig === INJECTED_SYNC_FAILURE_URL ? $LL.debug_page.actions.restore() : $LL.debug_page.actions.run_action()}
 							</button>
@@ -1995,7 +2050,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.inject_actions.corrupt_local_site_identity.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.inject_actions.corrupt_local_site_identity.description()}</p>
 							</div>
-							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={corruptSyncState} disabled={isLoading}>
+							<button
+								class="btn-warning btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={corruptSyncState}
+								disabled={isLoading}
+							>
 								<Unplug size={16} />
 								{$LL.debug_page.actions.run_action()}
 							</button>
@@ -2007,7 +2066,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.inject_actions.trigger_load_error.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.inject_actions.trigger_load_error.description()}</p>
 							</div>
-							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={triggerLoadError} disabled={isLoading}>
+							<button
+								class="btn-warning btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={triggerLoadError}
+								disabled={isLoading}
+							>
 								<AlertTriangle size={16} />
 								{$LL.debug_page.actions.run_action()}
 							</button>
@@ -2019,7 +2082,7 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.inject_actions.trigger_runtime_error.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.inject_actions.trigger_runtime_error.description()}</p>
 							</div>
-							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={throwError} disabled={isLoading}>
+							<button class="btn-warning btn-sm btn w-36 shrink-0 justify-center self-start" on:click={throwError} disabled={isLoading}>
 								<AlertTriangle size={16} />
 								{$LL.debug_page.actions.run_action()}
 							</button>
@@ -2038,7 +2101,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.data_tools.export_state.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.export_state.description()}</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={handleExportState} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={handleExportState}
+								disabled={isLoading}
+							>
 								<Download size={16} />
 								{$LL.debug_page.actions.export()}
 							</button>
@@ -2050,7 +2117,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.data_tools.export_sync_diagnostics.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.export_sync_diagnostics.description()}</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={exportSyncDiagnostics} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={exportSyncDiagnostics}
+								disabled={isLoading}
+							>
 								<Download size={16} />
 								{$LL.debug_page.actions.export()}
 							</button>
@@ -2062,7 +2133,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.data_tools.populate_database.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.populate_database.description()}</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={() => populateDatabase()} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={() => populateDatabase()}
+								disabled={isLoading}
+							>
 								<Plus size={16} />
 								{$LL.debug_page.actions.run_action()}
 							</button>
@@ -2074,7 +2149,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">{$LL.debug_page.data_tools.upsert_100_books.title()}</div>
 								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.upsert_100_books.description()}</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={() => upsert100Books()} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={() => upsert100Books()}
+								disabled={isLoading}
+							>
 								<BookPlus size={16} />
 								{$LL.debug_page.actions.run_action()}
 							</button>
@@ -2087,7 +2166,7 @@ let isRunningSanityCheck = false;
 								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.reset_database.description()}</p>
 							</div>
 							<button
-								class="btn btn-sm shrink-0 self-start w-36 justify-center border-red-800 bg-red-700 text-white hover:bg-red-800"
+								class="btn-sm btn w-36 shrink-0 justify-center self-start border-red-800 bg-red-700 text-white hover:bg-red-800"
 								on:click={() => resetDatabase()}
 								disabled={isLoading}
 							>
@@ -2106,7 +2185,12 @@ let isRunningSanityCheck = false;
 							{:else if tableExplorerData.length === 0}
 								<p class="text-sm opacity-70">{$LL.debug_page.data_tools.table_explorer.no_tables()}</p>
 							{:else}
-								<select class="select select-bordered w-full" value={selectedExplorerTable || ""} on:change={handleExplorerTableChange} disabled={isTableLoading}>
+								<select
+									class="select-bordered select w-full"
+									value={selectedExplorerTable || ""}
+									on:change={handleExplorerTableChange}
+									disabled={isTableLoading}
+								>
 									<option value="">{$LL.debug_page.data_tools.table_explorer.select_table()}</option>
 									{#each tableExplorerData as table}
 										<option value={table.name}>{table.name}</option>
@@ -2118,12 +2202,15 @@ let isRunningSanityCheck = false;
 									<div class="spinner"></div>
 								{:else if selectedExplorerTable}
 									<div class="mb-2 text-xs opacity-70">
-										{$LL.debug_page.data_tools.table_explorer.total_rows({ count: selectedExplorerTableRowCount, limit: TABLE_PREVIEW_LIMIT })}
+										{$LL.debug_page.data_tools.table_explorer.total_rows({
+											count: selectedExplorerTableRowCount,
+											limit: TABLE_PREVIEW_LIMIT
+										})}
 									</div>
 									{#if selectedExplorerTableRows.length === 0}
 										<p class="text-sm opacity-70">{$LL.debug_page.data_tools.table_explorer.no_rows()}</p>
 									{:else}
-										<table class="table table-pin-rows">
+										<table class="table-pin-rows table">
 											<thead>
 												<tr>
 													{#each Object.keys(selectedExplorerTableRows[0]) as column}
@@ -2167,7 +2254,7 @@ let isRunningSanityCheck = false;
 								{:else if queryResult.length === 0}
 									<p>{$LL.debug_page.query_interface.no_results()}</p>
 								{:else}
-									<table class="table table-pin-rows">
+									<table class="table-pin-rows table">
 										<thead>
 											<tr>
 												{#each Object.keys(queryResult[0]) as column}
