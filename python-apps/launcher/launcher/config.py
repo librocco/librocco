@@ -162,6 +162,12 @@ https://:{CADDY_PORT} {{
         reverse_proxy localhost:3000
     }}
 
+    # Proxy sync database HTTP endpoints to the sync server
+    @syncDb path_regexp syncDb ^/[^/]+/(health|meta|exec|reset|file)$
+    handle @syncDb {{
+        reverse_proxy 127.0.0.1:3000
+    }}
+
     # Proxy database RPC endpoints to the sync server (for testing/dev)
     handle /*.db/* {{
         reverse_proxy localhost:3000

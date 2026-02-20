@@ -133,9 +133,13 @@ ${dnsName} {
     }
 
     @sync path /sync*
+    @syncDb path_regexp syncDb ^/[^/]+/(health|meta|exec|reset|file)$
 
-    # Route /sync requests to the fixed backend port
+    # Route /sync requests and sync DB API routes to the fixed backend port
     route @sync {
+        reverse_proxy 127.0.0.1:3000
+    }
+    route @syncDb {
         reverse_proxy 127.0.0.1:3000
     }
 
@@ -159,9 +163,15 @@ ${dnsName} {
     @port header_regexp port Host ^[^.-]+-(\\d+)\\.${escapedDNSName}$
     # Matcher for sync path
     @sync path /sync*
+    @syncDb path_regexp syncDb ^/[^/]+/(health|meta|exec|reset|file)$
+    # Combined matcher requiring both sync route and subdomain port
     # Combined matcher requiring both @sync and @port
     @syncAndPort {
         path /sync*
+        header_regexp port Host ^[^.-]+-(\\d+)\\.${escapedDNSName}$
+    }
+    @syncDbAndPort {
+        path_regexp syncDb ^/[^/]+/(health|meta|exec|reset|file)$
         header_regexp port Host ^[^.-]+-(\\d+)\\.${escapedDNSName}$
     }
 
@@ -169,6 +179,9 @@ ${dnsName} {
     route {
         # Handle requests matching BOTH @sync and @port (using the combined matcher)
         handle @syncAndPort {
+            reverse_proxy localhost:{http.regexp.port.1}
+        }
+        handle @syncDbAndPort {
             reverse_proxy localhost:{http.regexp.port.1}
         }
 
