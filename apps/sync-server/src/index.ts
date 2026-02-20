@@ -7,6 +7,7 @@ import fs from "fs";
 
 import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
 import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack.js";
+import wsServerFsUtil from "@vlcn.io/ws-server/dist/fs/util.js";
 import { extensionPath } from "@vlcn.io/crsqlite";
 
 import { performStartupHealthCheck, checkDatabaseHealth, checkAllDatabases } from "./db-health.js";
@@ -33,6 +34,20 @@ if (!SKIP_HEALTH_CHECK) {
 const app = express();
 const server = http.createServer(app);
 const openSockets = new Set<Socket>();
+
+const normalizeDbidFromPath = (filename: string): string => {
+	const base = path.basename(filename);
+	if (base === "") {
+		return base;
+	}
+
+	const withoutTouch = base.endsWith(".touch") ? base.slice(0, -".touch".length) : base;
+	return withoutTouch.replace(/-(?:pos|shm|wal)$/, "");
+};
+
+// Ensure file-notification IDs include DB extensions (e.g. `.sqlite3`) and still handle SQLite
+// sidecar files like `.wal`/`.shm`/`.pos` consistently.
+wsServerFsUtil.fileEventNameToDbId = normalizeDbidFromPath;
 
 server.on("connection", (socket) => {
 	openSockets.add(socket);

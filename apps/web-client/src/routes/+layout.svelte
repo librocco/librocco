@@ -83,6 +83,7 @@
 	let detachPendingMonitor: (() => void) | null = null;
 	let detachPendingInvalidate: (() => void) | null = null;
 	let detachSyncStatus: (() => void) | null = null;
+	let detachSyncOutgoing: (() => void) | null = null;
 
 	// Config stores
 	const dbid = app.config.dbid;
@@ -158,6 +159,11 @@
 				}
 			});
 		});
+		detachSyncOutgoing = await app.sync.runExclusive(async (sync) => {
+			return sync.worker.onOutgoingChanges((payload) => {
+				void setLastAckedVersion(payload.maxDbVersion, get(dbid));
+			});
+		});
 	});
 
 	onDestroy(() => {
@@ -168,6 +174,7 @@
 		detachPendingMonitor?.();
 		detachPendingInvalidate?.();
 		detachSyncStatus?.();
+		detachSyncOutgoing?.();
 		resetPendingTracker();
 	});
 
