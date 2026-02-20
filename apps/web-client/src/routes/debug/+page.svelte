@@ -145,7 +145,7 @@ let isRunningSanityCheck = false;
 	const quoteIdentifier = (identifier: string) => `"${identifier.replace(/"/g, "\"\"")}"`;
 
 	const fmtAge = (ts: number | null, now: number) => {
-		if (!ts) return "never";
+		if (!ts) return $LL.debug_page.health_rail.never();
 		const diffSec = Math.max(0, Math.floor((now - ts) / 1000));
 		if (diffSec < 60) return `${diffSec}s ago`;
 		const min = Math.floor(diffSec / 60);
@@ -154,7 +154,7 @@ let isRunningSanityCheck = false;
 	};
 
 	const fmtTs = (ts: number | null) => {
-		if (!ts) return "never";
+		if (!ts) return $LL.debug_page.health_rail.never();
 		return new Date(ts).toLocaleTimeString();
 	};
 
@@ -173,7 +173,7 @@ let isRunningSanityCheck = false;
 	};
 
 	const formatUiLabel = (value: string | null | undefined) => {
-		if (!value) return "None";
+		if (!value) return $LL.debug_page.health_rail.none();
 		return value
 			.replace(/_/g, " ")
 			.replace(/\b\w/g, (char) => char.toUpperCase());
@@ -209,10 +209,10 @@ let isRunningSanityCheck = false;
 	};
 
 	const levelLabel = (level: FreshnessLevel) => {
-		if (level === "ok") return "Healthy";
-		if (level === "warn") return "Warning";
-		if (level === "error") return "Stale";
-		return "N/A";
+		if (level === "ok") return $LL.debug_page.freshness.healthy();
+		if (level === "warn") return $LL.debug_page.freshness.warning();
+		if (level === "error") return $LL.debug_page.freshness.stale();
+		return $LL.debug_page.freshness.na();
 	};
 
 	const levelClass = (level: FreshnessLevel) => {
@@ -266,10 +266,10 @@ let isRunningSanityCheck = false;
 		if (lastConnectivitySig && sig !== lastConnectivitySig) {
 			pushTimeline(
 				$syncStuck
-					? `Connection marked stuck (${String($syncConnDiagnostics.reason || "unknown")})`
+					? $LL.debug_page.timeline_events.connection_stuck({ reason: String($syncConnDiagnostics.reason || $LL.debug_page.checks.na()) })
 					: $syncConnected
-						? "Connection restored"
-						: "Connection lost",
+						? $LL.debug_page.timeline_events.connection_restored()
+						: $LL.debug_page.timeline_events.connection_lost(),
 				$syncStuck ? "warning" : $syncConnected ? "success" : "error"
 			);
 		}
@@ -281,8 +281,8 @@ let isRunningSanityCheck = false;
 		if (lastCompatibilitySig && sig !== lastCompatibilitySig) {
 			pushTimeline(
 				$syncCompatibility.status === "incompatible"
-					? `Compatibility issue: ${$syncCompatibility.reason}`
-					: `Compatibility state: ${$syncCompatibility.status}`,
+					? $LL.debug_page.timeline_events.compatibility_issue({ reason: String($syncCompatibility.reason) })
+					: $LL.debug_page.timeline_events.compatibility_state({ status: String($syncCompatibility.status) }),
 				$syncCompatibility.status === "incompatible" ? "error" : "info"
 			);
 		}
@@ -293,7 +293,9 @@ let isRunningSanityCheck = false;
 		const sig = `${$localDbHealth.status}|${$localDbHealth.message || ""}`;
 		if (lastLocalDbSig && sig !== lastLocalDbSig) {
 			pushTimeline(
-				$localDbHealth.status === "ok" ? "Local DB health check passed" : `Local DB health: ${$localDbHealth.status}`,
+				$localDbHealth.status === "ok"
+					? $LL.debug_page.timeline_events.local_db_health_passed()
+					: $LL.debug_page.timeline_events.local_db_health_status({ status: String($localDbHealth.status) }),
 				$localDbHealth.status === "error" ? "error" : $localDbHealth.status === "ok" ? "success" : "warning"
 			);
 		}
@@ -304,7 +306,9 @@ let isRunningSanityCheck = false;
 		const sig = String($pendingChangesCount);
 		if (lastPendingSig && sig !== lastPendingSig) {
 			pushTimeline(
-				$pendingChangesCount > 0 ? `Pending changes: ${$pendingChangesCount}` : "Pending queue drained",
+				$pendingChangesCount > 0
+					? $LL.debug_page.timeline_events.pending_changes({ count: $pendingChangesCount })
+					: $LL.debug_page.timeline_events.pending_queue_drained(),
 				$pendingChangesCount > 0 ? "warning" : "success"
 			);
 		}
@@ -315,7 +319,12 @@ let isRunningSanityCheck = false;
 		const sig = `${$syncAutoRecovery.lastAttemptAt || ""}|${$syncAutoRecovery.lastResult || ""}|${$syncAutoRecovery.lastError || ""}`;
 		if (lastAutoRecoverySig && sig !== lastAutoRecoverySig && $syncAutoRecovery.lastAttemptAt) {
 			pushTimeline(
-				`Auto recovery: ${$syncAutoRecovery.lastResult || "unknown"}${$syncAutoRecovery.lastError ? ` (${String($syncAutoRecovery.lastError)})` : ""}`,
+				$syncAutoRecovery.lastError
+					? $LL.debug_page.timeline_events.auto_recovery_with_error({
+							result: String($syncAutoRecovery.lastResult || $LL.debug_page.checks.na()),
+							error: String($syncAutoRecovery.lastError)
+						})
+					: $LL.debug_page.timeline_events.auto_recovery({ result: String($syncAutoRecovery.lastResult || $LL.debug_page.checks.na()) }),
 				$syncAutoRecovery.lastResult === "failure"
 					? "error"
 					: $syncAutoRecovery.lastResult === "success"
@@ -539,7 +548,7 @@ let isRunningSanityCheck = false;
 	const resetDatabase = async function resetDatabase() {
 		errorMessage = null;
 
-		if (!confirm("This deletes all rows from core local tables used by the app. Continue?")) {
+		if (!confirm($LL.debug_page.dialogs.confirm_reset_database())) {
 			return;
 		}
 
@@ -680,15 +689,15 @@ let isRunningSanityCheck = false;
 
 			console.log("Sync state corrupted - site_id changed to:", newSiteId);
 			toastSuccess({
-				title: "Local site identity corrupted",
-				description: "Updated crsql_site_id and remembered identity. Compatibility should turn incompatible."
+				title: $LL.debug_page.notifications.local_identity_corrupted_title(),
+				description: $LL.debug_page.notifications.local_identity_corrupted_desc()
 			});
 		} catch (error) {
 			console.error("Error corrupting sync state:", error);
 			errorMessage = error;
 			toastError({
-				title: "Corrupt identity failed",
-				description: "Could not mutate local site identity.",
+				title: $LL.debug_page.notifications.corrupt_identity_failed_title(),
+				description: $LL.debug_page.notifications.corrupt_identity_failed_desc(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		} finally {
@@ -714,18 +723,18 @@ let isRunningSanityCheck = false;
 				syncUrl,
 				mode: "strict"
 			});
-			toastSuccess({
-				title: "Compatibility identity reset",
-				description: "Cleared remembered remote site identity and re-ran strict compatibility check."
-			});
+				toastSuccess({
+					title: $LL.debug_page.notifications.compat_identity_reset_title(),
+					description: $LL.debug_page.notifications.compat_identity_reset_desc()
+				});
 		} catch (error) {
 			console.error("Error resetting sync state:", error);
 			errorMessage = error;
-			toastError({
-				title: "Reset identity failed",
-				description: "Could not reset remembered compatibility identity.",
-				detail: error instanceof Error ? error.message : String(error)
-			});
+				toastError({
+					title: $LL.debug_page.notifications.reset_identity_failed_title(),
+					description: $LL.debug_page.notifications.reset_identity_failed_desc(),
+					detail: error instanceof Error ? error.message : String(error)
+				});
 		} finally {
 			isLoading = false;
 		}
@@ -738,8 +747,8 @@ let isRunningSanityCheck = false;
 			const syncActive = get(app.config.syncActive);
 			if (!syncActive) {
 				toastError({
-					title: "Sync disabled",
-					description: "Enable sync first to inject transport failures."
+					title: $LL.debug_page.notifications.sync_disabled_title(),
+					description: $LL.debug_page.notifications.sync_disabled_inject_desc()
 				});
 				return;
 			}
@@ -753,8 +762,8 @@ let isRunningSanityCheck = false;
 				await stopSync(app);
 				await startSync(app, dbid, INJECTED_SYNC_FAILURE_URL);
 				toastSuccess({
-					title: "Sync transport failure injected",
-					description: `Sync URL set to ${INJECTED_SYNC_FAILURE_URL}`
+					title: $LL.debug_page.notifications.sync_transport_failure_injected_title(),
+					description: $LL.debug_page.notifications.sync_transport_failure_injected_desc({ url: INJECTED_SYNC_FAILURE_URL })
 				});
 			} else {
 				const restoreUrl = savedSyncUrlBeforeInjection || "ws://localhost:3000/sync";
@@ -763,16 +772,16 @@ let isRunningSanityCheck = false;
 				await startSync(app, dbid, restoreUrl);
 				savedSyncUrlBeforeInjection = null;
 				toastSuccess({
-					title: "Sync transport restored",
-					description: `Sync URL restored to ${restoreUrl}`
+					title: $LL.debug_page.notifications.sync_transport_restored_title(),
+					description: $LL.debug_page.notifications.sync_transport_restored_desc({ url: restoreUrl })
 				});
 			}
 		} catch (error) {
 			console.error("Error toggling sync transport failure:", error);
 			errorMessage = error;
 			toastError({
-				title: "Sync transport toggle failed",
-				description: "Could not inject/restore transport failure.",
+				title: $LL.debug_page.notifications.sync_transport_toggle_failed_title(),
+				description: $LL.debug_page.notifications.sync_transport_toggle_failed_desc(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		} finally {
@@ -802,21 +811,21 @@ let isRunningSanityCheck = false;
 			const ok = await runLocalDbQuickCheck(db);
 			if (ok) {
 				toastSuccess({
-					title: "DB quick_check passed",
-					description: "Local DB quick_check returned ok."
+					title: $LL.debug_page.notifications.db_quick_check_passed_title(),
+					description: $LL.debug_page.notifications.db_quick_check_passed_desc()
 				});
 			} else {
 				toastError({
-					title: "DB quick_check found issues",
-					description: "Run integrity_check for full diagnostics."
+					title: $LL.debug_page.notifications.db_quick_check_issues_title(),
+					description: $LL.debug_page.notifications.db_quick_check_issues_desc()
 				});
 			}
 		} catch (error) {
 			console.error("Error running local DB quick_check:", error);
 			errorMessage = error;
 			toastError({
-				title: "DB quick_check failed",
-				description: "Could not run local DB quick_check.",
+				title: $LL.debug_page.notifications.db_quick_check_failed_title(),
+				description: $LL.debug_page.notifications.db_quick_check_failed_desc(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		} finally {
@@ -832,12 +841,12 @@ let isRunningSanityCheck = false;
 			const result = await runLocalDbIntegrityCheck(db);
 			if (result.ok) {
 				toastSuccess({
-					title: "DB integrity_check passed",
+					title: $LL.debug_page.notifications.db_integrity_check_passed_title(),
 					description: result.message
 				});
 			} else {
 				toastError({
-					title: "DB integrity_check failed",
+					title: $LL.debug_page.notifications.db_integrity_check_failed_title(),
 					description: result.message
 				});
 			}
@@ -845,8 +854,8 @@ let isRunningSanityCheck = false;
 			console.error("Error running local DB integrity_check:", error);
 			errorMessage = error;
 			toastError({
-				title: "DB integrity_check failed",
-				description: "Could not run local DB integrity_check.",
+				title: $LL.debug_page.notifications.db_integrity_check_failed_title(),
+				description: $LL.debug_page.notifications.db_integrity_check_failed_desc(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		} finally {
@@ -863,21 +872,21 @@ let isRunningSanityCheck = false;
 			const result = await checkSyncCompatibility({ dbid, syncUrl, mode: "strict" });
 			if (result.ok) {
 				toastSuccess({
-					title: "Compatibility check passed",
-					description: "Local and remote sync compatibility is valid."
+					title: $LL.debug_page.notifications.compat_check_passed_title(),
+					description: $LL.debug_page.notifications.compat_check_passed_desc()
 				});
 			} else {
 				toastError({
-					title: "Compatibility check failed",
-					description: "Local and remote sync compatibility did not pass."
+					title: $LL.debug_page.notifications.compat_check_failed_title(),
+					description: $LL.debug_page.notifications.compat_check_failed_desc()
 				});
 			}
 		} catch (error) {
 			console.error("Error rechecking sync compatibility:", error);
 			errorMessage = error;
 			toastError({
-				title: "Compatibility check failed",
-				description: "Could not run strict compatibility check.",
+				title: $LL.debug_page.notifications.compat_check_failed_title(),
+				description: $LL.debug_page.notifications.compat_check_failed_run_desc(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		} finally {
@@ -1011,26 +1020,26 @@ let isRunningSanityCheck = false;
 			};
 
 			if (metaResult.ok && wsResult.ok) {
-				pushTimeline("Check: connection probe passed", "success");
-				toastSuccess({
-					title: "Connection probe passed",
-					description: "Meta endpoint and WebSocket transport are reachable."
-				});
-			} else {
-				pushTimeline("Check: connection probe found issues", "warning");
-				toastError({
-					title: "Connection probe found issues",
-					description: "Check probe details in the Checks section.",
-					detail: `meta=${metaResult.ok ? "ok" : "fail"}, ws=${wsResult.ok ? "ok" : "fail"}`
-				});
-			}
+					pushTimeline($LL.debug_page.timeline_events.check_connection_probe_passed(), "success");
+					toastSuccess({
+						title: $LL.debug_page.notifications.connection_probe_passed_title(),
+						description: $LL.debug_page.notifications.connection_probe_passed_desc()
+					});
+				} else {
+					pushTimeline($LL.debug_page.timeline_events.check_connection_probe_issues(), "warning");
+					toastError({
+						title: $LL.debug_page.notifications.connection_probe_issues_title(),
+						description: $LL.debug_page.notifications.connection_probe_issues_desc(),
+						detail: `meta=${metaResult.ok ? "ok" : "fail"}, ws=${wsResult.ok ? "ok" : "fail"}`
+					});
+				}
 		} catch (error) {
 			console.error("Error running connection probe:", error);
 			errorMessage = error;
-			pushTimeline("Check: connection probe failed", "error");
+			pushTimeline($LL.debug_page.timeline_events.check_connection_probe_failed(), "error");
 			toastError({
-				title: "Connection probe failed",
-				description: "Could not complete connection probe.",
+				title: $LL.debug_page.notifications.connection_probe_failed_title(),
+				description: $LL.debug_page.notifications.connection_probe_failed_desc(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		} finally {
@@ -1044,13 +1053,13 @@ let isRunningSanityCheck = false;
 		try {
 			await navigator.clipboard.writeText(JSON.stringify(connectionProbe, null, 2));
 			toastSuccess({
-				title: "Probe result copied",
-				description: "Connection probe JSON copied to clipboard."
+				title: $LL.debug_page.notifications.probe_copied_title(),
+				description: $LL.debug_page.notifications.probe_copied_desc()
 			});
 		} catch (error) {
 			toastError({
-				title: "Copy failed",
-				description: "Could not copy probe result to clipboard.",
+				title: $LL.debug_page.notifications.copy_failed_title(),
+				description: $LL.debug_page.notifications.copy_failed_probe(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		}
@@ -1061,13 +1070,13 @@ let isRunningSanityCheck = false;
 		try {
 			await navigator.clipboard.writeText(JSON.stringify(syncConfigSanity, null, 2));
 			toastSuccess({
-				title: "Sync config copied",
-				description: "Sync config sanity result copied to clipboard."
+				title: $LL.debug_page.notifications.sync_config_copied_title(),
+				description: $LL.debug_page.notifications.sync_config_copied_desc()
 			});
 		} catch (error) {
 			toastError({
-				title: "Copy failed",
-				description: "Could not copy sync config sanity result.",
+				title: $LL.debug_page.notifications.copy_failed_title(),
+				description: $LL.debug_page.notifications.copy_failed_config(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		}
@@ -1078,13 +1087,13 @@ let isRunningSanityCheck = false;
 		try {
 			await navigator.clipboard.writeText(JSON.stringify(handshakeStatusCheck, null, 2));
 			toastSuccess({
-				title: "Handshake status copied",
-				description: "Handshake status check result copied to clipboard."
+				title: $LL.debug_page.notifications.handshake_status_copied_title(),
+				description: $LL.debug_page.notifications.handshake_status_copied_desc()
 			});
 		} catch (error) {
 			toastError({
-				title: "Copy failed",
-				description: "Could not copy handshake status check result.",
+				title: $LL.debug_page.notifications.copy_failed_title(),
+				description: $LL.debug_page.notifications.copy_failed_handshake(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		}
@@ -1103,13 +1112,13 @@ let isRunningSanityCheck = false;
 				)
 			);
 			toastSuccess({
-				title: "Sync errors copied",
-				description: "Recent sync errors copied to clipboard."
+				title: $LL.debug_page.notifications.sync_errors_copied_title(),
+				description: $LL.debug_page.notifications.sync_errors_copied_desc()
 			});
 		} catch (error) {
 			toastError({
-				title: "Copy failed",
-				description: "Could not copy sync errors.",
+				title: $LL.debug_page.notifications.copy_failed_title(),
+				description: $LL.debug_page.notifications.copy_failed_sync_errors(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		}
@@ -1130,8 +1139,8 @@ let isRunningSanityCheck = false;
 	const clearLastSyncErrors = () => {
 		resetSyncRuntimeHealth();
 		toastSuccess({
-			title: "Sync errors cleared",
-			description: "Recent sync runtime errors were cleared."
+			title: $LL.debug_page.notifications.sync_errors_cleared_title(),
+			description: $LL.debug_page.notifications.sync_errors_cleared_desc()
 		});
 	};
 
@@ -1145,16 +1154,16 @@ let isRunningSanityCheck = false;
 			if (!connectedNow) {
 				handshakeStatusCheck = {
 					at: Date.now(),
-					ok: false,
-					reason: "transport_closed",
-					message: "Transport is currently disconnected.",
-					timedOut: false
-				};
-				pushTimeline("Check: handshake failed (transport disconnected)", "warning");
-				toastError({
-					title: "Handshake status unavailable",
-					description: "Transport is disconnected. Reconnect or run a recovery action first."
-				});
+						ok: false,
+						reason: "transport_closed",
+						message: $LL.debug_page.status_messages.transport_disconnected(),
+						timedOut: false
+					};
+					pushTimeline($LL.debug_page.timeline_events.check_handshake_disconnected(), "warning");
+					toastError({
+						title: $LL.debug_page.notifications.handshake_status_unavailable_title(),
+						description: $LL.debug_page.notifications.handshake_status_unavailable_desc()
+					});
 				return;
 			}
 
@@ -1176,12 +1185,14 @@ let isRunningSanityCheck = false;
 						finish({
 							at: Date.now(),
 							ok: false,
-							reason: connected ? latestErr?.reason : "transport_closed",
-							message: connected
-								? "No sync.status event received within timeout."
-								: `Transport is disconnected${diag.disconnectedSince ? ` (${fmtAge(diag.disconnectedSince, nowTs)})` : ""}.`,
-							timedOut: true
-						});
+								reason: connected ? latestErr?.reason : "transport_closed",
+								message: connected
+									? $LL.debug_page.status_messages.no_sync_status_timeout()
+									: diag.disconnectedSince
+										? $LL.debug_page.status_messages.transport_disconnected_age({ age: fmtAge(diag.disconnectedSince, nowTs) })
+										: $LL.debug_page.status_messages.transport_disconnected_plain(),
+								timedOut: true
+							});
 					}, 3000);
 
 					const onSyncStatus = (payload: {
@@ -1219,25 +1230,30 @@ let isRunningSanityCheck = false;
 
 			handshakeStatusCheck = result;
 			if (result.ok) {
-				pushTimeline("Check: handshake status passed", "success");
+				pushTimeline($LL.debug_page.timeline_events.check_handshake_passed(), "success");
 				toastSuccess({
-					title: "Handshake status received",
-					description: `Stage: ${result.stage || "n/a"}, acknowledgment: ${result.ackDbVersion ?? "n/a"}`
+					title: $LL.debug_page.notifications.handshake_status_received_title(),
+					description: $LL.debug_page.notifications.handshake_status_received_desc({
+						stage: result.stage || $LL.debug_page.checks.na(),
+						ack: String(result.ackDbVersion ?? $LL.debug_page.checks.na())
+					})
 				});
 			} else {
-				pushTimeline("Check: handshake status failed", result.timedOut ? "warning" : "error");
+				pushTimeline($LL.debug_page.timeline_events.check_handshake_failed(), result.timedOut ? "warning" : "error");
 				toastError({
-					title: result.timedOut ? "Handshake check timed out" : "Handshake reported issues",
-					description: result.message || result.reason || "sync.status reported failure"
+					title: result.timedOut
+						? $LL.debug_page.notifications.handshake_check_timed_out_title()
+						: $LL.debug_page.notifications.handshake_reported_issues_title(),
+					description: result.message || result.reason || $LL.debug_page.notifications.sync_status_reported_failure()
 				});
 			}
 		} catch (error) {
 			console.error("Error running handshake status check:", error);
 			errorMessage = error;
-			pushTimeline("Check: handshake status check failed", "error");
+			pushTimeline($LL.debug_page.timeline_events.check_handshake_check_failed(), "error");
 			toastError({
-				title: "Handshake status check failed",
-				description: "Could not read worker sync.status payload.",
+				title: $LL.debug_page.notifications.handshake_status_check_failed_title(),
+				description: $LL.debug_page.notifications.handshake_status_check_failed_desc(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		} finally {
@@ -1259,31 +1275,31 @@ let isRunningSanityCheck = false;
 			let metaUrl: string | null = null;
 
 			if (!dbid?.trim()) {
-				problems.push("DB ID is empty.");
+				problems.push($LL.debug_page.sanity_problems.db_id_empty());
 			}
 			if (!syncUrl?.trim()) {
-				problems.push("Sync URL is empty.");
+				problems.push($LL.debug_page.sanity_problems.sync_url_empty());
 			}
 
 			if (syncUrl?.trim()) {
 				try {
 					const parsed = new URL(syncUrl);
-					wsUrlOk = parsed.protocol === "ws:" || parsed.protocol === "wss:";
-					if (!wsUrlOk) {
-						problems.push(`Sync URL protocol must be ws/wss (got ${parsed.protocol}).`);
+						wsUrlOk = parsed.protocol === "ws:" || parsed.protocol === "wss:";
+						if (!wsUrlOk) {
+							problems.push($LL.debug_page.sanity_problems.sync_url_protocol_invalid({ protocol: parsed.protocol }));
+						}
+					} catch {
+						problems.push($LL.debug_page.sanity_problems.sync_url_invalid());
 					}
-				} catch {
-					problems.push("Sync URL is not a valid URL.");
 				}
-			}
 
 			if (syncUrl?.trim() && dbid?.trim()) {
-				try {
-					metaUrl = buildMetaProbeUrl(syncUrl, dbid);
-				} catch {
-					problems.push("Could not derive meta URL from sync URL + DB ID.");
+					try {
+						metaUrl = buildMetaProbeUrl(syncUrl, dbid);
+					} catch {
+						problems.push($LL.debug_page.sanity_problems.meta_url_derive_failed());
+					}
 				}
-			}
 
 			syncConfigSanity = {
 				at: Date.now(),
@@ -1296,25 +1312,25 @@ let isRunningSanityCheck = false;
 			};
 
 			if (problems.length === 0) {
-				pushTimeline("Check: sync config sanity passed", "success");
+				pushTimeline($LL.debug_page.timeline_events.check_config_sanity_passed(), "success");
 				toastSuccess({
-					title: "Sync config sanity passed",
-					description: "Sync URL, DB ID, and derived meta URL look valid."
+					title: $LL.debug_page.notifications.sync_config_sanity_passed_title(),
+					description: $LL.debug_page.notifications.sync_config_sanity_passed_desc()
 				});
 			} else {
-				pushTimeline(`Check: sync config sanity found ${problems.length} issue(s)`, "warning");
+				pushTimeline($LL.debug_page.timeline_events.check_config_sanity_issues({ count: problems.length }), "warning");
 				toastError({
-					title: "Sync config sanity found issues",
-					description: `${problems.length} issue(s) found. See details in Checks section.`
+					title: $LL.debug_page.notifications.sync_config_sanity_issues_title(),
+					description: $LL.debug_page.notifications.sync_config_sanity_issues_desc({ count: problems.length })
 				});
 			}
 		} catch (error) {
 			console.error("Error running sync config sanity check:", error);
 			errorMessage = error;
-			pushTimeline("Check: sync config sanity failed", "error");
+			pushTimeline($LL.debug_page.timeline_events.check_config_sanity_failed(), "error");
 			toastError({
-				title: "Sync config sanity failed",
-				description: "Could not run config sanity checks.",
+				title: $LL.debug_page.notifications.sync_config_sanity_failed_title(),
+				description: $LL.debug_page.notifications.sync_config_sanity_failed_desc(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		} finally {
@@ -1334,10 +1350,10 @@ let isRunningSanityCheck = false;
 			const syncActive = get(app.config.syncActive);
 			if (!syncActive) {
 				markAutoRecoveryNoop();
-				toastError({
-					title: "Sync disabled",
-					description: "Enable sync first to run manual auto-recovery."
-				});
+					toastError({
+						title: $LL.debug_page.notifications.sync_disabled_title(),
+						description: $LL.debug_page.notifications.sync_disabled_manual_recovery_desc()
+					});
 				return;
 			}
 
@@ -1356,26 +1372,26 @@ let isRunningSanityCheck = false;
 				await stopSync(app);
 				await startSync(app, dbid, syncUrl);
 				markAutoRecoverySuccess();
-				toastSuccess({
-					title: "Manual auto-recovery applied",
-					description: "Performed checks and restarted sync worker."
-				});
-			} else {
-				markAutoRecoveryNoop();
-				toastSuccess({
-					title: "Manual auto-recovery not needed",
-					description: "Checks passed; no restart was required."
-				});
-			}
+					toastSuccess({
+						title: $LL.debug_page.notifications.manual_auto_recovery_applied_title(),
+						description: $LL.debug_page.notifications.manual_auto_recovery_applied_desc()
+					});
+				} else {
+					markAutoRecoveryNoop();
+					toastSuccess({
+						title: $LL.debug_page.notifications.manual_auto_recovery_not_needed_title(),
+						description: $LL.debug_page.notifications.manual_auto_recovery_not_needed_desc()
+					});
+				}
 		} catch (error) {
 			console.error("Error running manual auto-recovery:", error);
 			errorMessage = error;
 			markAutoRecoveryFailure(error);
-			toastError({
-				title: "Manual auto-recovery failed",
-				description: "Could not complete recovery sequence.",
-				detail: error instanceof Error ? error.message : String(error)
-			});
+				toastError({
+					title: $LL.debug_page.notifications.manual_auto_recovery_failed_title(),
+					description: $LL.debug_page.notifications.manual_auto_recovery_failed_desc(),
+					detail: error instanceof Error ? error.message : String(error)
+				});
 		} finally {
 			isLoading = false;
 		}
@@ -1387,10 +1403,10 @@ let isRunningSanityCheck = false;
 		try {
 			const syncActive = get(app.config.syncActive);
 			if (!syncActive) {
-				toastError({
-					title: "Sync disabled",
-					description: "Enable sync first to restart the sync worker."
-				});
+					toastError({
+						title: $LL.debug_page.notifications.sync_disabled_title(),
+						description: $LL.debug_page.notifications.sync_disabled_restart_desc()
+					});
 				return;
 			}
 
@@ -1398,18 +1414,18 @@ let isRunningSanityCheck = false;
 			const syncUrl = get(app.config.syncUrl);
 			await stopSync(app);
 			await startSync(app, dbid, syncUrl);
-			toastSuccess({
-				title: "Sync worker restarted",
-				description: "Sync worker stop/start sequence completed."
-			});
+				toastSuccess({
+					title: $LL.debug_page.notifications.sync_worker_restarted_title(),
+					description: $LL.debug_page.notifications.sync_worker_restarted_desc()
+				});
 		} catch (error) {
 			console.error("Error restarting sync worker:", error);
 			errorMessage = error;
-			toastError({
-				title: "Restart sync worker failed",
-				description: "Could not restart sync worker.",
-				detail: error instanceof Error ? error.message : String(error)
-			});
+				toastError({
+					title: $LL.debug_page.notifications.restart_sync_worker_failed_title(),
+					description: $LL.debug_page.notifications.restart_sync_worker_failed_desc(),
+					detail: error instanceof Error ? error.message : String(error)
+				});
 		} finally {
 			isLoading = false;
 		}
@@ -1461,25 +1477,25 @@ let isRunningSanityCheck = false;
 			a.remove();
 			URL.revokeObjectURL(url);
 
-			toastSuccess({
-				title: "Diagnostics exported",
-				description: "Sync diagnostics JSON downloaded and copied to clipboard when permitted."
-			});
+				toastSuccess({
+					title: $LL.debug_page.notifications.diagnostics_exported_title(),
+					description: $LL.debug_page.notifications.diagnostics_exported_desc()
+				});
 		} catch (error) {
 			console.error("Error exporting sync diagnostics:", error);
 			errorMessage = error;
-			toastError({
-				title: "Export diagnostics failed",
-				description: "Could not export sync diagnostics.",
-				detail: error instanceof Error ? error.message : String(error)
-			});
+				toastError({
+					title: $LL.debug_page.notifications.export_diagnostics_failed_title(),
+					description: $LL.debug_page.notifications.export_diagnostics_failed_desc(),
+					detail: error instanceof Error ? error.message : String(error)
+				});
 		} finally {
 			isLoading = false;
 		}
 	};
 
 	const nukeAndResyncNow = async () => {
-		if (!confirm("This will delete the local DB and re-sync from remote. Continue?")) {
+		if (!confirm($LL.debug_page.dialogs.confirm_nuke_resync())) {
 			return;
 		}
 
@@ -1488,15 +1504,15 @@ let isRunningSanityCheck = false;
 		try {
 			await nukeAndResyncDb(app, get(app.config.dbid), getVfs(app));
 			toastSuccess({
-				title: "Resync started",
-				description: "Local DB was reset and remote resync has started."
+				title: $LL.debug_page.notifications.resync_started_title(),
+				description: $LL.debug_page.notifications.resync_started_desc()
 			});
 		} catch (error) {
 			console.error("Error running nuke and resync:", error);
 			errorMessage = error;
 			toastError({
-				title: "Nuke and resync failed",
-				description: "Could not reset local DB and start resync.",
+				title: $LL.debug_page.notifications.nuke_resync_failed_title(),
+				description: $LL.debug_page.notifications.nuke_resync_failed_desc(),
 				detail: error instanceof Error ? error.message : String(error)
 			});
 		} finally {
@@ -1511,166 +1527,194 @@ let isRunningSanityCheck = false;
 	<div slot="main" class="h-full w-full overflow-auto pb-8">
 		<div class="w-full space-y-6 px-4 py-4">
 			<section class="border-b border-base-300 pb-6">
-				<h2 class="text-lg font-semibold">Diagnostics</h2>
-				<p class="mb-3 text-sm opacity-70">Visual runtime snapshot for connection, compatibility, queue, and local DB health.</p>
+				<h2 class="text-lg font-semibold">{$LL.debug_page.sections.diagnostics.title()}</h2>
+				<p class="mb-3 text-sm opacity-70">{$LL.debug_page.sections.diagnostics.description()}</p>
 				<div class="mb-3 space-y-3">
 					<div class="grid gap-3 xl:grid-cols-3">
 						<div class="rounded-lg border border-base-300 bg-base-200/40 p-3">
 							<div class="mb-2 flex items-center justify-between">
-								<div class="text-xs font-semibold uppercase tracking-wide opacity-70">Health Rail</div>
+								<div class="text-xs font-semibold uppercase tracking-wide opacity-70">{$LL.debug_page.diagnostics.health_rail.title()}</div>
 								<div class="text-xs opacity-70">{new Date(nowTs).toLocaleTimeString()}</div>
 							</div>
-							<p class="mb-3 text-xs opacity-70">
-								Core sync health metrics. These values summarize transport, compatibility, local DB condition, pending write pressure, and automatic recovery behavior.
-							</p>
+							<p class="mb-3 text-xs opacity-70">{$LL.debug_page.health_rail.description()}</p>
 							<div class="space-y-3">
 								<div class="text-xs">
 									<div class="mb-1 flex items-center justify-between gap-2">
-										<span class="font-semibold">Connection</span>
+										<span class="font-semibold">{$LL.debug_page.health_rail.connection()}</span>
 										<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(connectionTone)}`}>
 											{$syncStuck
-												? `Stuck (${formatUiLabel($syncConnDiagnostics.reason || "unknown")})`
+												? `${$LL.debug_page.health_rail.stuck()} (${formatUiLabel($syncConnDiagnostics.reason || $LL.debug_page.checks.na())})`
 												: $syncConnected
-													? "Connected (transport open)"
+													? $LL.debug_page.health_rail.connected_transport_open()
 													: connectionViaOtherTab
-														? "Connected (other tab)"
-														: "Disconnected (transport closed)"}
+														? $LL.debug_page.health_rail.connected_other_tab()
+														: $LL.debug_page.health_rail.disconnected_transport_closed()}
 										</span>
 									</div>
 									<div class="opacity-70">
-										Derived from sync transport events and stuck detection{connectionViaOtherTab ? "; heartbeat currently comes from another tab" : "."}
+										{connectionViaOtherTab
+											? $LL.debug_page.health_rail.derived_transport_other_tab()
+											: $LL.debug_page.health_rail.derived_transport()}
 									</div>
 									<div class="opacity-70">
-										Events: {$syncConnDiagnostics.openCount} Open / {$syncConnDiagnostics.closeCount} Close
+										{$LL.debug_page.health_rail.events_line({ openCount: $syncConnDiagnostics.openCount, closeCount: $syncConnDiagnostics.closeCount })}
 										{#if $syncConnDiagnostics.disconnectedSince}
-											. Disconnected for {fmtAge($syncConnDiagnostics.disconnectedSince, nowTs)}
+											.{$LL.debug_page.health_rail.disconnected_for({ age: fmtAge($syncConnDiagnostics.disconnectedSince, nowTs) })}
 										{/if}
 									</div>
 								</div>
 								<div class="text-xs">
 									<div class="mb-1 flex items-center justify-between gap-2">
-										<span class="font-semibold">Compatibility</span>
+										<span class="font-semibold">{$LL.debug_page.health_rail.compatibility()}</span>
 										<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(compatibilityTone)}`}>
 											{$syncCompatibility.status === "incompatible"
 												? `Incompatible (${formatUiLabel($syncCompatibility.reason)})`
 												: $syncCompatibility.status === "compatible"
-													? `Compatible (schema ${$syncCompatibility.remoteSchemaVersion ?? localSchemaVersionLabel})`
+													? $LL.debug_page.health_rail.compatible_schema({
+															schemaVersion: String($syncCompatibility.remoteSchemaVersion ?? localSchemaVersionLabel)
+														})
 													: `${formatUiLabel($syncCompatibility.status)} (schema ${localSchemaVersionLabel})`}
 										</span>
 									</div>
-									<div class="opacity-70">Derived from local/remote identity and schema checks.</div>
+									<div class="opacity-70">{$LL.debug_page.health_rail.derived_compatibility()}</div>
 								</div>
 								<div class="text-xs">
 									<div class="mb-1 flex items-center justify-between gap-2">
-										<span class="font-semibold">Local DB</span>
+										<span class="font-semibold">{$LL.debug_page.health_rail.local_db()}</span>
 										<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(localDbTone)}`}>
-											{formatUiLabel($localDbHealth.status)} ({$localDbHealth.lastIntegrityCheckAt ? "Integrity Check" : $localDbHealth.lastQuickCheckAt ? "Quick Check" : "None"})
+											{$LL.debug_page.health_rail.local_db_status({
+												status: formatUiLabel($localDbHealth.status),
+												check: $localDbHealth.lastIntegrityCheckAt
+													? $LL.debug_page.health_rail.integrity_check()
+													: $localDbHealth.lastQuickCheckAt
+														? $LL.debug_page.health_rail.quick_check()
+														: $LL.debug_page.health_rail.none()
+											})}
 										</span>
 									</div>
-									<div class="opacity-70">Derived from local database health checks.</div>
+									<div class="opacity-70">{$LL.debug_page.health_rail.derived_local_db()}</div>
 								</div>
 								<div class="text-xs">
 									<div class="mb-1 flex items-center justify-between gap-2">
-										<span class="font-semibold">Pending queue</span>
+										<span class="font-semibold">{$LL.debug_page.health_rail.pending_queue()}</span>
 										<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(pendingTone)}`}>
-											{$pendingChangesCount} pending
+											{$LL.debug_page.health_rail.pending_count({ count: $pendingChangesCount })}
 										</span>
 									</div>
-									<div class="opacity-70">Derived from unsent local changes.</div>
+									<div class="opacity-70">{$LL.debug_page.health_rail.derived_pending()}</div>
 								</div>
 								<div class="text-xs">
 									<div class="mb-1 flex items-center justify-between gap-2">
-										<span class="font-semibold">Auto recovery</span>
+										<span class="font-semibold">{$LL.debug_page.health_rail.auto_recovery()}</span>
 										<span
 											class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(
 												$syncAutoRecovery.lastResult === "failure"
 													? "error"
 													: $syncAutoRecovery.lastResult === "success"
 														? "success"
-														: "info"
+													: "info"
 											)}`}
 										>
-											{formatUiLabel($syncAutoRecovery.lastResult || "idle")} ({$syncAutoRecovery.lastAttemptAt ? fmtAge($syncAutoRecovery.lastAttemptAt, nowTs) : "Never"})
+											{$LL.debug_page.health_rail.auto_recovery_status({
+												result: formatUiLabel($syncAutoRecovery.lastResult || "idle"),
+												age: $syncAutoRecovery.lastAttemptAt
+													? fmtAge($syncAutoRecovery.lastAttemptAt, nowTs)
+													: $LL.debug_page.health_rail.never()
+											})}
 										</span>
 									</div>
-									<div class="opacity-70">Derived from automatic stale-state recovery attempts.</div>
+									<div class="opacity-70">{$LL.debug_page.health_rail.derived_auto_recovery()}</div>
 								</div>
 							</div>
 						</div>
 
 						<div class="rounded-lg border border-base-300 bg-base-200/40 p-3">
-							<div class="mb-2 text-xs font-semibold uppercase tracking-wide opacity-70">Freshness</div>
-							<p class="mb-3 text-xs opacity-70">
-								Freshness indicates how recent sync signals are. Each metric shows explicit thresholds and a state: Healthy, Warning, Stale, or N/A.
-							</p>
+							<div class="mb-2 text-xs font-semibold uppercase tracking-wide opacity-70">{$LL.debug_page.diagnostics.freshness.title()}</div>
+							<p class="mb-3 text-xs opacity-70">{$LL.debug_page.diagnostics.freshness.description()}</p>
 							<div class="grid gap-3 md:grid-cols-3 xl:grid-cols-1">
 								<div class="text-xs">
 									<div class="mb-1 flex justify-between">
-										<span class="font-semibold">Status heartbeat</span>
+										<span class="font-semibold">{$LL.debug_page.freshness.status_heartbeat()}</span>
 										<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${levelClass(statusFreshnessLevel)}`}>
 											{levelLabel(statusFreshnessLevel)}
 										</span>
 									</div>
 									<div class="mb-1 flex justify-between opacity-70">
-										<span>{$syncConnected ? "Connected (live)" : statusAgeSec == null ? "never" : `${statusAgeSec}s since last heartbeat`}</span>
-										<span>Warn {statusWarnSec}s, stale {statusErrorSec}s</span>
+										<span>{$syncConnected
+											? $LL.debug_page.freshness.status_connected_live()
+											: statusAgeSec == null
+												? $LL.debug_page.freshness.na()
+												: $LL.debug_page.freshness.status_since_last_heartbeat({ seconds: statusAgeSec })}</span>
+										<span>{$LL.debug_page.freshness.warn_stale({ warn: statusWarnSec, stale: statusErrorSec })}</span>
 									</div>
-									<div class="mb-1 opacity-70">Last at: {fmtTs(statusHeartbeatAt)}</div>
+									<div class="mb-1 opacity-70">{$LL.debug_page.freshness.last_at({ time: fmtTs(statusHeartbeatAt) })}</div>
 									<progress class={`progress w-full ${levelProgressClass(statusFreshnessLevel)}`} value={statusHealthPct} max="100"></progress>
-									<div class="mt-1 opacity-70">Transport keepalive liveness (WebSocket ping/pong), independent from pending writes.</div>
+									<div class="mt-1 opacity-70">{$LL.debug_page.freshness.status_description()}</div>
 								</div>
 								<div class="text-xs">
 									<div class="mb-1 flex justify-between">
-										<span class="font-semibold">Server confirmation</span>
+										<span class="font-semibold">{$LL.debug_page.freshness.server_confirmation()}</span>
 										<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${levelClass(ackFreshnessLevel)}`}>
 											{levelLabel(ackFreshnessLevel)}
 										</span>
 									</div>
 									<div class="mb-1 flex justify-between opacity-70">
-										<span>{$pendingChangesCount > 0 ? (ackAgeSec == null ? "never" : `${ackAgeSec}s ago`) : "No pending changes"}</span>
-										<span>Warn {ackWarnSec}s, stale {ackErrorSec}s</span>
+										<span>{$pendingChangesCount > 0
+											? ackAgeSec == null
+												? $LL.debug_page.health_rail.never()
+												: $LL.debug_page.freshness.seconds_ago({ seconds: ackAgeSec })
+											: $LL.debug_page.freshness.no_pending_changes()}</span>
+										<span>{$LL.debug_page.freshness.warn_stale({ warn: ackWarnSec, stale: ackErrorSec })}</span>
 									</div>
-									<div class="mb-1 opacity-70">Last at: {fmtTs($syncRuntimeHealth.lastAckAt)}</div>
+									<div class="mb-1 opacity-70">{$LL.debug_page.freshness.last_at({ time: fmtTs($syncRuntimeHealth.lastAckAt) })}</div>
 									<progress class={`progress w-full ${levelProgressClass(ackFreshnessLevel)}`} value={ackHealthPct} max="100"></progress>
-									<div class="mt-1 opacity-70">Age of last server acknowledgment while queue has pending writes.</div>
+									<div class="mt-1 opacity-70">{$LL.debug_page.freshness.ack_description()}</div>
 								</div>
 								<div class="text-xs">
 									<div class="mb-1 flex justify-between">
-										<span class="font-semibold">Queue age</span>
+										<span class="font-semibold">{$LL.debug_page.freshness.queue_age()}</span>
 										<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${levelClass(queueFreshnessLevel)}`}>
 											{levelLabel(queueFreshnessLevel)}
 										</span>
 									</div>
 									<div class="mb-1 flex justify-between opacity-70">
-										<span>{$pendingChangesCount > 0 ? (pendingAgeSec == null ? "n/a" : `${pendingAgeSec}s ago`) : "Queue empty"}</span>
-										<span>Warn {queueWarnSec}s, stale {queueErrorSec}s</span>
+										<span>{$pendingChangesCount > 0
+											? pendingAgeSec == null
+												? $LL.debug_page.freshness.na()
+												: $LL.debug_page.freshness.seconds_ago({ seconds: pendingAgeSec })
+											: $LL.debug_page.freshness.queue_empty()}</span>
+										<span>{$LL.debug_page.freshness.warn_stale({ warn: queueWarnSec, stale: queueErrorSec })}</span>
 									</div>
 									<div class="mb-1 opacity-70">
-										Last queue activity: {$pendingChangesLastActiveAt ? fmtTs($pendingChangesLastActiveAt) : "never"}
+										{$LL.debug_page.freshness.last_queue_activity({
+											time: $pendingChangesLastActiveAt ? fmtTs($pendingChangesLastActiveAt) : $LL.debug_page.health_rail.never()
+										})}
 									</div>
 									<progress class={`progress w-full ${levelProgressClass(queueFreshnessLevel)}`} value={queueHealthPct} max="100"></progress>
-									<div class="mt-1 opacity-70">Age of oldest unsent local change.</div>
+									<div class="mt-1 opacity-70">{$LL.debug_page.freshness.queue_description()}</div>
 								</div>
 							</div>
 						</div>
 
 						<div class="rounded-lg border border-base-300 bg-base-200/40 p-3">
 							<div class="mb-2 flex items-center justify-between">
-								<div class="text-xs font-semibold uppercase tracking-wide opacity-70">Timeline</div>
+								<div class="text-xs font-semibold uppercase tracking-wide opacity-70">{$LL.debug_page.diagnostics.timeline.title()}</div>
 								<div class="flex items-center gap-2">
-									<div class="text-xs opacity-70">latest {Math.min(diagnosticsTimeline.length, TIMELINE_LIMIT)} events</div>
+									<div class="text-xs opacity-70">
+										{$LL.debug_page.diagnostics.timeline.latest_events({ count: Math.min(diagnosticsTimeline.length, TIMELINE_LIMIT) })}
+									</div>
 									{#if $syncRuntimeHealth.recentErrors.length > 0}
 										<button class="btn-neutral btn btn-xs" on:click={copyLastSyncErrors}>
 											<Download size={14} />
-											Copy
+											{$LL.debug_page.actions.copy()}
 										</button>
-										<button class="btn-outline btn btn-xs" on:click={clearLastSyncErrors}>Clear</button>
+										<button class="btn-outline btn btn-xs" on:click={clearLastSyncErrors}>{$LL.debug_page.actions.clear()}</button>
 									{/if}
 								</div>
 							</div>
 							<div class="max-h-56 overflow-auto">
 								{#if diagnosticsTimeline.length === 0 && $syncRuntimeHealth.recentErrors.length === 0}
-									<p class="text-xs opacity-70">No changes recorded in this session yet.</p>
+									<p class="text-xs opacity-70">{$LL.debug_page.diagnostics.timeline.no_changes()}</p>
 								{/if}
 								{#if diagnosticsTimeline.length > 0}
 									<ul class="space-y-1 text-xs">
@@ -1685,7 +1729,7 @@ let isRunningSanityCheck = false;
 									</ul>
 								{/if}
 								{#if $syncRuntimeHealth.recentErrors.length > 0}
-									<div class="mt-2 border-t border-base-300 pt-2 text-xs font-semibold opacity-70">Recent sync errors</div>
+									<div class="mt-2 border-t border-base-300 pt-2 text-xs font-semibold opacity-70">{$LL.debug_page.diagnostics.timeline.recent_sync_errors()}</div>
 									<ul class="mt-1 space-y-1 text-xs">
 										{#each $syncRuntimeHealth.recentErrors as err}
 											<li class="rounded border border-base-300 bg-base-100 p-2">
@@ -1709,78 +1753,78 @@ let isRunningSanityCheck = false;
 			</section>
 
 			<section class="border-b border-base-300 pb-6">
-				<h2 class="text-lg font-semibold">Checks</h2>
-				<p class="mb-3 text-sm opacity-70">Run explicit diagnostics and export current sync troubleshooting data.</p>
+				<h2 class="text-lg font-semibold">{$LL.debug_page.sections.checks.title()}</h2>
+				<p class="mb-3 text-sm opacity-70">{$LL.debug_page.sections.checks.description()}</p>
 				<div class="grid gap-2 md:grid-cols-2">
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Recheck sync compatibility</div>
-								<p class="text-xs opacity-70">Runs the strict local-vs-remote identity check and refreshes compatibility state.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.checks.recheck_sync_compatibility.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.checks.recheck_sync_compatibility.description()}</p>
 							</div>
 							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={recheckSyncCompatibilityNow} disabled={isLoading}>
 								<Play size={16} />
-								Run check
+								{$LL.debug_page.actions.run_check()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Run DB quick check</div>
-								<p class="text-xs opacity-70">Fast structural check of local SQLite integrity for routine diagnostics.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_db_quick_check.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_db_quick_check.description()}</p>
 							</div>
 							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runDbQuickCheck} disabled={isLoading}>
 								<Play size={16} />
-								Run check
+								{$LL.debug_page.actions.run_check()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Run DB integrity check</div>
-								<p class="text-xs opacity-70">Deeper integrity scan. Slower; use when you suspect corruption.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_db_integrity_check.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_db_integrity_check.description()}</p>
 							</div>
 							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runDbIntegrityCheck} disabled={isLoading}>
 								<AlertTriangle size={16} />
-								Run check
+								{$LL.debug_page.actions.run_check()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Run connection probe</div>
-								<p class="text-xs opacity-70">Checks sync meta endpoint and a direct WebSocket open to diagnose timeout issues.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_connection_probe.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_connection_probe.description()}</p>
 							</div>
 							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runConnectionProbe} disabled={isLoading || isRunningConnectionProbe}>
 								<Play size={16} />
-								{isRunningConnectionProbe ? "Running..." : "Run check"}
+								{isRunningConnectionProbe ? $LL.debug_page.actions.running() : $LL.debug_page.actions.run_check()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Run handshake status check</div>
-								<p class="text-xs opacity-70">Reads the latest worker `sync.status` payload (stage, reason, acknowledgment version).</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_handshake_status_check.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_handshake_status_check.description()}</p>
 							</div>
 							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runHandshakeStatusCheck} disabled={isLoading || isRunningHandshakeCheck}>
 								<Play size={16} />
-								{isRunningHandshakeCheck ? "Running..." : "Run check"}
+								{isRunningHandshakeCheck ? $LL.debug_page.actions.running() : $LL.debug_page.actions.run_check()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Check sync URL/config sanity</div>
-								<p class="text-xs opacity-70">Validates DB ID, sync URL format, protocol, and derived meta URL.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.checks.run_sync_config_sanity.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.checks.run_sync_config_sanity.description()}</p>
 							</div>
 							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runSyncConfigSanityCheck} disabled={isLoading || isRunningSanityCheck}>
 								<Play size={16} />
-								{isRunningSanityCheck ? "Running..." : "Run check"}
+								{isRunningSanityCheck ? $LL.debug_page.actions.running() : $LL.debug_page.actions.run_check()}
 							</button>
 						</div>
 					</div>
@@ -1788,30 +1832,30 @@ let isRunningSanityCheck = false;
 				{#if connectionProbe}
 					<div class="mt-3 rounded border border-base-300 bg-base-200/40 p-3 text-xs">
 						<div class="mb-2 flex items-center justify-between gap-2">
-							<div class="font-semibold">Last connection probe</div>
+							<div class="font-semibold">{$LL.debug_page.checks.last_connection_probe()}</div>
 							<div class="flex items-center gap-1">
 								<button class="btn-neutral btn btn-xs" on:click={copyConnectionProbeResult}>
 									<Download size={14} />
-									Copy
+									{$LL.debug_page.actions.copy()}
 								</button>
-								<button class="btn-outline btn btn-xs" on:click={clearConnectionProbeResult}>Clear</button>
+								<button class="btn-outline btn btn-xs" on:click={clearConnectionProbeResult}>{$LL.debug_page.actions.clear()}</button>
 							</div>
 						</div>
 						<div class="grid gap-1">
-							<div>Time: {new Date(connectionProbe.at).toLocaleTimeString()}</div>
-							<div>Sync active: {String(connectionProbe.syncActive)}</div>
-							<div class="truncate">DB ID: {connectionProbe.dbid}</div>
-							<div class="truncate">Sync URL: {connectionProbe.syncUrl}</div>
+							<div>{$LL.debug_page.checks.time()}: {new Date(connectionProbe.at).toLocaleTimeString()}</div>
+							<div>{$LL.debug_page.checks.sync_active()}: {String(connectionProbe.syncActive)}</div>
+							<div class="truncate">{$LL.debug_page.checks.db_id()}: {connectionProbe.dbid}</div>
+							<div class="truncate">{$LL.debug_page.checks.sync_url()}: {connectionProbe.syncUrl}</div>
 							<div class="truncate">
-								Meta: {connectionProbe.meta.ok ? "OK" : "FAIL"} | status {connectionProbe.meta.status ?? "n/a"} | {connectionProbe.meta.latencyMs} ms
+								{$LL.debug_page.checks.meta()}: {connectionProbe.meta.ok ? $LL.debug_page.checks.ok() : $LL.debug_page.checks.fail()} | status {connectionProbe.meta.status ?? $LL.debug_page.checks.na()} | {connectionProbe.meta.latencyMs} ms
 								{connectionProbe.meta.error ? ` | ${connectionProbe.meta.error}` : ""}
 							</div>
 							<div class="truncate">
-								WebSocket: {connectionProbe.ws.ok ? "OK" : "FAIL"} | close {connectionProbe.ws.closeCode ?? "n/a"} | {connectionProbe.ws.latencyMs} ms
+								{$LL.debug_page.checks.websocket()}: {connectionProbe.ws.ok ? $LL.debug_page.checks.ok() : $LL.debug_page.checks.fail()} | close {connectionProbe.ws.closeCode ?? $LL.debug_page.checks.na()} | {connectionProbe.ws.latencyMs} ms
 								{connectionProbe.ws.error ? ` | ${connectionProbe.ws.error}` : ""}
 							</div>
 							{#if connectionProbe.meta.bodySnippet}
-								<div class="truncate opacity-70">Meta body snippet: {connectionProbe.meta.bodySnippet}</div>
+								<div class="truncate opacity-70">{$LL.debug_page.checks.meta_body_snippet()}: {connectionProbe.meta.bodySnippet}</div>
 							{/if}
 						</div>
 					</div>
@@ -1819,45 +1863,45 @@ let isRunningSanityCheck = false;
 				{#if handshakeStatusCheck}
 					<div class="mt-3 rounded border border-base-300 bg-base-200/40 p-3 text-xs">
 						<div class="mb-2 flex items-center justify-between gap-2">
-							<div class="font-semibold">Last handshake status check</div>
+							<div class="font-semibold">{$LL.debug_page.checks.last_handshake_status_check()}</div>
 							<div class="flex items-center gap-1">
 								<button class="btn-neutral btn btn-xs" on:click={copyHandshakeStatusCheckResult}>
 									<Download size={14} />
-									Copy
+									{$LL.debug_page.actions.copy()}
 								</button>
-								<button class="btn-outline btn btn-xs" on:click={clearHandshakeStatusCheckResult}>Clear</button>
+								<button class="btn-outline btn btn-xs" on:click={clearHandshakeStatusCheckResult}>{$LL.debug_page.actions.clear()}</button>
 							</div>
 						</div>
 						<div class="grid gap-1">
-							<div>Time: {new Date(handshakeStatusCheck.at).toLocaleTimeString()}</div>
-							<div>Result: {handshakeStatusCheck.ok ? "OK" : "FAIL"}{handshakeStatusCheck.timedOut ? " (timed out)" : ""}</div>
-							<div>Stage: {handshakeStatusCheck.stage || "n/a"}</div>
-							<div>Acknowledgment DB version: {handshakeStatusCheck.ackDbVersion ?? "n/a"}</div>
-							<div>Reason: {handshakeStatusCheck.reason || "n/a"}</div>
-							<div class="truncate">Message: {handshakeStatusCheck.message || "n/a"}</div>
+							<div>{$LL.debug_page.checks.time()}: {new Date(handshakeStatusCheck.at).toLocaleTimeString()}</div>
+							<div>{$LL.debug_page.checks.result()}: {handshakeStatusCheck.ok ? $LL.debug_page.checks.ok() : $LL.debug_page.checks.fail()}{handshakeStatusCheck.timedOut ? ` (${$LL.debug_page.checks.timed_out()})` : ""}</div>
+							<div>{$LL.debug_page.checks.stage()}: {handshakeStatusCheck.stage || $LL.debug_page.checks.na()}</div>
+							<div>{$LL.debug_page.checks.ack_db_version()}: {handshakeStatusCheck.ackDbVersion ?? $LL.debug_page.checks.na()}</div>
+							<div>{$LL.debug_page.checks.reason()}: {handshakeStatusCheck.reason || $LL.debug_page.checks.na()}</div>
+							<div class="truncate">{$LL.debug_page.checks.message()}: {handshakeStatusCheck.message || $LL.debug_page.checks.na()}</div>
 						</div>
 					</div>
 				{/if}
 				{#if syncConfigSanity}
 					<div class="mt-3 rounded border border-base-300 bg-base-200/40 p-3 text-xs">
 						<div class="mb-2 flex items-center justify-between gap-2">
-							<div class="font-semibold">Last sync config sanity check</div>
+							<div class="font-semibold">{$LL.debug_page.checks.last_sync_config_sanity_check()}</div>
 							<div class="flex items-center gap-1">
 								<button class="btn-neutral btn btn-xs" on:click={copySyncConfigSanityResult}>
 									<Download size={14} />
-									Copy
+									{$LL.debug_page.actions.copy()}
 								</button>
-								<button class="btn-outline btn btn-xs" on:click={clearSyncConfigSanityResult}>Clear</button>
+								<button class="btn-outline btn btn-xs" on:click={clearSyncConfigSanityResult}>{$LL.debug_page.actions.clear()}</button>
 							</div>
 						</div>
 						<div class="grid gap-1">
-							<div>Time: {new Date(syncConfigSanity.at).toLocaleTimeString()}</div>
-							<div>Sync active: {String(syncConfigSanity.syncActive)}</div>
-							<div class="truncate">DB ID: {syncConfigSanity.dbid || "n/a"}</div>
-							<div class="truncate">Sync URL: {syncConfigSanity.syncUrl || "n/a"}</div>
-							<div class="truncate">Derived meta URL: {syncConfigSanity.metaUrl || "n/a"}</div>
-							<div>WS protocol valid: {String(syncConfigSanity.wsUrlOk)}</div>
-							<div>Issues: {syncConfigSanity.problems.length}</div>
+							<div>{$LL.debug_page.checks.time()}: {new Date(syncConfigSanity.at).toLocaleTimeString()}</div>
+							<div>{$LL.debug_page.checks.sync_active()}: {String(syncConfigSanity.syncActive)}</div>
+							<div class="truncate">{$LL.debug_page.checks.db_id()}: {syncConfigSanity.dbid || $LL.debug_page.checks.na()}</div>
+							<div class="truncate">{$LL.debug_page.checks.sync_url()}: {syncConfigSanity.syncUrl || $LL.debug_page.checks.na()}</div>
+							<div class="truncate">{$LL.debug_page.checks.derived_meta_url()}: {syncConfigSanity.metaUrl || $LL.debug_page.checks.na()}</div>
+							<div>{$LL.debug_page.checks.ws_protocol_valid()}: {String(syncConfigSanity.wsUrlOk)}</div>
+							<div>{$LL.debug_page.checks.issues()}: {syncConfigSanity.problems.length}</div>
 							{#if syncConfigSanity.problems.length > 0}
 								<ul class="list-inside list-disc opacity-80">
 									{#each syncConfigSanity.problems as problem}
@@ -1871,50 +1915,50 @@ let isRunningSanityCheck = false;
 			</section>
 
 			<section class="border-b border-base-300 pb-6">
-				<h2 class="text-lg font-semibold">Recovery</h2>
-				<p class="mb-3 text-sm opacity-70">Use the least destructive fix first.</p>
+				<h2 class="text-lg font-semibold">{$LL.debug_page.sections.recovery.title()}</h2>
+				<p class="mb-3 text-sm opacity-70">{$LL.debug_page.sections.recovery.description()}</p>
 				<div class="grid gap-2 md:grid-cols-2">
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Restart sync worker</div>
-								<p class="text-xs opacity-70">Stops and starts the sync worker to recover from temporary worker/network issues.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.recovery_actions.restart_sync_worker.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.recovery_actions.restart_sync_worker.description()}</p>
 							</div>
 							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={restartSyncWorker} disabled={isLoading}>
 								<RotateCcw size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Reset compatibility identity</div>
-								<p class="text-xs opacity-70">Clears remembered remote site ID for this DB and re-runs strict compatibility checks.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.recovery_actions.reset_compatibility_identity.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.recovery_actions.reset_compatibility_identity.description()}</p>
 							</div>
 							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={fixCorruptSyncState} disabled={isLoading}>
 								<RotateCcw size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Run manual auto-recovery</div>
-								<p class="text-xs opacity-70">Runs quick DB check + strict compatibility check and restarts sync if stale/blocked.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.recovery_actions.run_manual_auto_recovery.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.recovery_actions.run_manual_auto_recovery.description()}</p>
 							</div>
 							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runManualAutoRecovery} disabled={isLoading}>
 								<RotateCcw size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-red-400/60 bg-red-50/20 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Nuke and resync now</div>
-								<p class="text-xs opacity-70">Destructive: deletes local DB and re-downloads state from remote.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.recovery_actions.nuke_and_resync_now.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.recovery_actions.nuke_and_resync_now.description()}</p>
 							</div>
 							<button
 								class="btn btn-sm shrink-0 self-start w-36 justify-center border-red-800 bg-red-700 text-white hover:bg-red-800"
@@ -1922,7 +1966,7 @@ let isRunningSanityCheck = false;
 								disabled={isLoading}
 							>
 								<AlertTriangle size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
@@ -1930,54 +1974,54 @@ let isRunningSanityCheck = false;
 			</section>
 
 			<section class="border-b border-base-300 pb-6">
-				<h2 class="text-lg font-semibold">Inject Problems</h2>
-				<p class="mb-3 text-sm opacity-70">Force failures to test resilience and recovery flows.</p>
+				<h2 class="text-lg font-semibold">{$LL.debug_page.sections.inject_problems.title()}</h2>
+				<p class="mb-3 text-sm opacity-70">{$LL.debug_page.sections.inject_problems.description()}</p>
 				<div class="grid gap-2 md:grid-cols-2">
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Inject sync transport failure</div>
-								<p class="text-xs opacity-70">Temporarily points sync to an unreachable URL to force connection errors. Run again to restore.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.inject_actions.inject_sync_transport_failure.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.inject_actions.inject_sync_transport_failure.description()}</p>
 							</div>
 							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={toggleSyncTransportFailure} disabled={isLoading}>
 								<Unplug size={16} />
-								{$syncUrlConfig === INJECTED_SYNC_FAILURE_URL ? "Restore" : "Run action"}
+								{$syncUrlConfig === INJECTED_SYNC_FAILURE_URL ? $LL.debug_page.actions.restore() : $LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Corrupt local site identity</div>
-								<p class="text-xs opacity-70">Writes a random value into local `crsql_site_id` and remembered identity to force compatibility mismatch.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.inject_actions.corrupt_local_site_identity.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.inject_actions.corrupt_local_site_identity.description()}</p>
 							</div>
 							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={corruptSyncState} disabled={isLoading}>
 								<Unplug size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Trigger load error</div>
-								<p class="text-xs opacity-70">Navigates to the load error route to test error-state handling.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.inject_actions.trigger_load_error.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.inject_actions.trigger_load_error.description()}</p>
 							</div>
 							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={triggerLoadError} disabled={isLoading}>
 								<AlertTriangle size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Trigger runtime error</div>
-								<p class="text-xs opacity-70">Throws a runtime exception for testing crash/error boundaries.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.inject_actions.trigger_runtime_error.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.inject_actions.trigger_runtime_error.description()}</p>
 							</div>
 							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={throwError} disabled={isLoading}>
 								<AlertTriangle size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
@@ -1985,62 +2029,62 @@ let isRunningSanityCheck = false;
 			</section>
 
 			<section class="border-b border-base-300 pb-6">
-				<h2 class="text-lg font-semibold">Data Tools</h2>
-				<p class="mb-3 text-sm opacity-70">Seed/reset/export helpers, table exploration, and custom query execution.</p>
+				<h2 class="text-lg font-semibold">{$LL.debug_page.sections.data_tools.title()}</h2>
+				<p class="mb-3 text-sm opacity-70">{$LL.debug_page.sections.data_tools.description()}</p>
 				<div class="grid gap-2 md:grid-cols-2">
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Export state</div>
-								<p class="text-xs opacity-70">Exports current local app state archive for debugging.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.data_tools.export_state.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.export_state.description()}</p>
 							</div>
 							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={handleExportState} disabled={isLoading}>
 								<Download size={16} />
-								Export
+								{$LL.debug_page.actions.export()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Export sync diagnostics</div>
-								<p class="text-xs opacity-70">Downloads runtime sync diagnostics JSON (also copied to clipboard when allowed).</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.data_tools.export_sync_diagnostics.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.export_sync_diagnostics.description()}</p>
 							</div>
 							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={exportSyncDiagnostics} disabled={isLoading}>
 								<Download size={16} />
-								Export
+								{$LL.debug_page.actions.export()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Populate database</div>
-								<p class="text-xs opacity-70">Inserts debug seed data for quick local testing.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.data_tools.populate_database.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.populate_database.description()}</p>
 							</div>
 							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={() => populateDatabase()} disabled={isLoading}>
 								<Plus size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-base-300 bg-base-100 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Upsert 100 books</div>
-								<p class="text-xs opacity-70">Adds deterministic sample books and publisher/supplier links.</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.data_tools.upsert_100_books.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.upsert_100_books.description()}</p>
 							</div>
 							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={() => upsert100Books()} disabled={isLoading}>
 								<BookPlus size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
 					<div class="rounded border border-red-400/60 bg-red-50/20 p-3">
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
-								<div class="text-sm font-semibold">Reset database</div>
-								<p class="text-xs opacity-70">Destructive: deletes all rows from core local business tables (books, customers, suppliers, orders).</p>
+								<div class="text-sm font-semibold">{$LL.debug_page.data_tools.reset_database.title()}</div>
+								<p class="text-xs opacity-70">{$LL.debug_page.data_tools.reset_database.description()}</p>
 							</div>
 							<button
 								class="btn btn-sm shrink-0 self-start w-36 justify-center border-red-800 bg-red-700 text-white hover:bg-red-800"
@@ -2048,22 +2092,22 @@ let isRunningSanityCheck = false;
 								disabled={isLoading}
 							>
 								<RotateCcw size={16} />
-								Run action
+								{$LL.debug_page.actions.run_action()}
 							</button>
 						</div>
 					</div>
 				</div>
 				<div class="mt-4 space-y-4 border-t border-base-300 pt-4">
 					<div>
-						<h3 class="mb-2 text-base font-semibold">Table Explorer</h3>
+						<h3 class="mb-2 text-base font-semibold">{$LL.debug_page.data_tools.table_explorer.title()}</h3>
 						<div class="space-y-3">
 							{#if isLoading}
 								<div class="spinner"></div>
 							{:else if tableExplorerData.length === 0}
-								<p class="text-sm opacity-70">No tables found.</p>
+								<p class="text-sm opacity-70">{$LL.debug_page.data_tools.table_explorer.no_tables()}</p>
 							{:else}
 								<select class="select select-bordered w-full" value={selectedExplorerTable || ""} on:change={handleExplorerTableChange} disabled={isTableLoading}>
-									<option value="">Select table</option>
+									<option value="">{$LL.debug_page.data_tools.table_explorer.select_table()}</option>
 									{#each tableExplorerData as table}
 										<option value={table.name}>{table.name}</option>
 									{/each}
@@ -2074,10 +2118,10 @@ let isRunningSanityCheck = false;
 									<div class="spinner"></div>
 								{:else if selectedExplorerTable}
 									<div class="mb-2 text-xs opacity-70">
-										{selectedExplorerTableRowCount} row{selectedExplorerTableRowCount === 1 ? "" : "s"} total. Showing up to {TABLE_PREVIEW_LIMIT}.
+										{$LL.debug_page.data_tools.table_explorer.total_rows({ count: selectedExplorerTableRowCount, limit: TABLE_PREVIEW_LIMIT })}
 									</div>
 									{#if selectedExplorerTableRows.length === 0}
-										<p class="text-sm opacity-70">No rows.</p>
+										<p class="text-sm opacity-70">{$LL.debug_page.data_tools.table_explorer.no_rows()}</p>
 									{:else}
 										<table class="table table-pin-rows">
 											<thead>
@@ -2153,7 +2197,7 @@ let isRunningSanityCheck = false;
 
 {#if error}
 	{@html (() => {
-		throw new Error("Kaboom! Render time error");
+		throw new Error($LL.debug_page.labels.render_time_error());
 	})()}
 {/if}
 

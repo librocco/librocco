@@ -537,7 +537,8 @@ const books_page = {
 const debug_page = {
 	title: "Debug",
 	labels: {
-		runtime_error: "Kaboom! Runtime error"
+		runtime_error: "Kaboom! Runtime error",
+		render_time_error: "Kaboom! Render time error"
 	},
 	actions: {
 		trigger_load_error: "Trigger Load Error",
@@ -547,8 +548,342 @@ const debug_page = {
 		upsert_100_books: "Upsert 100 Books",
 		run_query: "Run Query",
 		executing: "Executing...",
-		corrupt_sync_state: "Corrupt Sync State",
-		export_state: "Export State"
+		run_check: "Run check",
+		run_action: "Run action",
+		running: "Running...",
+		export: "Export",
+		copy: "Copy",
+		clear: "Clear",
+		restore: "Restore"
+	},
+	sections: {
+		diagnostics: {
+			title: "Diagnostics",
+			description: "Visual runtime snapshot for connection, compatibility, queue, and local DB health."
+		},
+		checks: {
+			title: "Checks",
+			description: "Run explicit diagnostics and export current sync troubleshooting data."
+		},
+		recovery: {
+			title: "Recovery",
+			description: "Use the least destructive fix first."
+		},
+		inject_problems: {
+			title: "Inject Problems",
+			description: "Force failures to test resilience and recovery flows."
+		},
+		data_tools: {
+			title: "Data Tools",
+			description: "Seed/reset/export helpers, table exploration, and custom query execution."
+		}
+	},
+	diagnostics: {
+		health_rail: {
+			title: "Health Rail"
+		},
+		freshness: {
+			title: "Freshness",
+			description: "Freshness indicates how recent sync signals are. Each metric shows explicit thresholds and a state: Healthy, Warning, Stale, or N/A."
+		},
+		timeline: {
+			title: "Timeline",
+			latest_events: "latest {count:number} events",
+			no_changes: "No changes recorded in this session yet.",
+			recent_sync_errors: "Recent sync errors"
+		}
+	},
+	health_rail: {
+		description:
+			"Core sync health metrics. These values summarize transport, compatibility, local DB condition, pending write pressure, and automatic recovery behavior.",
+		connection: "Connection",
+		compatibility: "Compatibility",
+		local_db: "Local DB",
+		pending_queue: "Pending queue",
+		auto_recovery: "Auto recovery",
+		none: "None",
+		never: "Never",
+		open: "Open",
+		close: "Close",
+		connected_transport_open: "Connected (transport open)",
+		connected_other_tab: "Connected (other tab)",
+		disconnected_transport_closed: "Disconnected (transport closed)",
+		stuck: "Stuck",
+		compatible_schema: "Compatible (schema {schemaVersion:string})",
+		derived_transport: "Derived from sync transport events and stuck detection.",
+		derived_transport_other_tab: "Derived from sync transport events and stuck detection; heartbeat currently comes from another tab.",
+		events_line: "Events: {openCount:number} Open / {closeCount:number} Close",
+		disconnected_for: "Disconnected for {age:string}",
+		derived_compatibility: "Derived from local/remote identity and schema checks.",
+		local_db_status: "{status:string} ({check:string})",
+		quick_check: "Quick Check",
+		integrity_check: "Integrity Check",
+		derived_local_db: "Derived from local database health checks.",
+		pending_count: "{count:number} pending",
+		derived_pending: "Derived from unsent local changes.",
+		auto_recovery_status: "{result:string} ({age:string})",
+		derived_auto_recovery: "Derived from automatic stale-state recovery attempts."
+	},
+	freshness: {
+		status_heartbeat: "Status heartbeat",
+		server_confirmation: "Server confirmation",
+		queue_age: "Queue age",
+		healthy: "Healthy",
+		warning: "Warning",
+		stale: "Stale",
+		na: "N/A",
+		status_connected_live: "Connected (live)",
+		status_since_last_heartbeat: "{seconds:number}s since last heartbeat",
+		warn_stale: "Warn {warn:number}s, stale {stale:number}s",
+		last_at: "Last at: {time:string}",
+		status_description: "Transport keepalive liveness (WebSocket ping/pong), independent from pending writes.",
+		no_pending_changes: "No pending changes",
+		seconds_ago: "{seconds:number}s ago",
+		ack_description: "Age of last server acknowledgment while queue has pending writes.",
+		queue_empty: "Queue empty",
+		last_queue_activity: "Last queue activity: {time:string}",
+		queue_description: "Age of oldest unsent local change."
+	},
+	checks: {
+		recheck_sync_compatibility: {
+			title: "Recheck sync compatibility",
+			description: "Runs the strict local-vs-remote identity check and refreshes compatibility state."
+		},
+		run_db_quick_check: {
+			title: "Run DB quick check",
+			description: "Fast structural check of local SQLite integrity for routine diagnostics."
+		},
+		run_db_integrity_check: {
+			title: "Run DB integrity check",
+			description: "Deeper integrity scan. Slower; use when you suspect corruption."
+		},
+		run_connection_probe: {
+			title: "Run connection probe",
+			description: "Checks sync meta endpoint and a direct WebSocket open to diagnose timeout issues."
+		},
+		run_handshake_status_check: {
+			title: "Run handshake status check",
+			description: "Reads the latest worker sync.status payload (stage, reason, acknowledgment version)."
+		},
+		run_sync_config_sanity: {
+			title: "Check sync URL/config sanity",
+			description: "Validates DB ID, sync URL format, protocol, and derived meta URL."
+		},
+		last_connection_probe: "Last connection probe",
+		last_handshake_status_check: "Last handshake status check",
+		last_sync_config_sanity_check: "Last sync config sanity check",
+		time: "Time",
+		sync_active: "Sync active",
+		db_id: "DB ID",
+		sync_url: "Sync URL",
+		meta: "Meta",
+		websocket: "WebSocket",
+		meta_body_snippet: "Meta body snippet",
+		result: "Result",
+		stage: "Stage",
+		ack_db_version: "Acknowledgment DB version",
+		reason: "Reason",
+		message: "Message",
+		derived_meta_url: "Derived meta URL",
+		ws_protocol_valid: "WS protocol valid",
+		issues: "Issues",
+		ok: "OK",
+		fail: "FAIL",
+		timed_out: "timed out",
+		na: "n/a"
+	},
+	recovery_actions: {
+		restart_sync_worker: {
+			title: "Restart sync worker",
+			description: "Stops and starts the sync worker to recover from temporary worker/network issues."
+		},
+		reset_compatibility_identity: {
+			title: "Reset compatibility identity",
+			description: "Clears remembered remote site ID for this DB and re-runs strict compatibility checks."
+		},
+		run_manual_auto_recovery: {
+			title: "Run manual auto-recovery",
+			description: "Runs quick DB check + strict compatibility check and restarts sync if stale/blocked."
+		},
+		nuke_and_resync_now: {
+			title: "Nuke and resync now",
+			description: "Destructive: deletes local DB and re-downloads state from remote."
+		}
+	},
+	inject_actions: {
+		inject_sync_transport_failure: {
+			title: "Inject sync transport failure",
+			description: "Temporarily points sync to an unreachable URL to force connection errors. Run again to restore."
+		},
+		corrupt_local_site_identity: {
+			title: "Corrupt local site identity",
+			description: "Writes a random value into local crsql_site_id and remembered identity to force compatibility mismatch."
+		},
+		trigger_load_error: {
+			title: "Trigger load error",
+			description: "Navigates to the load error route to test error-state handling."
+		},
+		trigger_runtime_error: {
+			title: "Trigger runtime error",
+			description: "Throws a runtime exception for testing crash/error boundaries."
+		}
+	},
+	data_tools: {
+		export_state: {
+			title: "Export state",
+			description: "Exports current local app state archive for debugging."
+		},
+		export_sync_diagnostics: {
+			title: "Export sync diagnostics",
+			description: "Downloads runtime sync diagnostics JSON (also copied to clipboard when allowed)."
+		},
+		populate_database: {
+			title: "Populate database",
+			description: "Inserts debug seed data for quick local testing."
+		},
+		upsert_100_books: {
+			title: "Upsert 100 books",
+			description: "Adds deterministic sample books and publisher/supplier links."
+		},
+		reset_database: {
+			title: "Reset database",
+			description: "Destructive: deletes all rows from core local business tables (books, customers, suppliers, orders)."
+		},
+		table_explorer: {
+			title: "Table Explorer",
+			no_tables: "No tables found.",
+			select_table: "Select table",
+			total_rows: "{count:number} row{{s}} total. Showing up to {limit:number}.",
+			no_rows: "No rows."
+		}
+	},
+	timeline_events: {
+		connection_stuck: "Connection marked stuck ({reason:string})",
+		connection_restored: "Connection restored",
+		connection_lost: "Connection lost",
+		compatibility_issue: "Compatibility issue: {reason:string}",
+		compatibility_state: "Compatibility state: {status:string}",
+		local_db_health_passed: "Local DB health check passed",
+		local_db_health_status: "Local DB health: {status:string}",
+		pending_changes: "Pending changes: {count:number}",
+		pending_queue_drained: "Pending queue drained",
+		auto_recovery: "Auto recovery: {result:string}",
+		auto_recovery_with_error: "Auto recovery: {result:string} ({error:string})",
+		check_connection_probe_passed: "Check: connection probe passed",
+		check_connection_probe_issues: "Check: connection probe found issues",
+		check_connection_probe_failed: "Check: connection probe failed",
+		check_handshake_disconnected: "Check: handshake failed (transport disconnected)",
+		check_handshake_passed: "Check: handshake status passed",
+		check_handshake_failed: "Check: handshake status failed",
+		check_handshake_check_failed: "Check: handshake status check failed",
+		check_config_sanity_passed: "Check: sync config sanity passed",
+		check_config_sanity_issues: "Check: sync config sanity found {count:number} issue(s)",
+		check_config_sanity_failed: "Check: sync config sanity failed"
+	},
+	dialogs: {
+		confirm_reset_database: "This deletes all rows from core local tables used by the app. Continue?",
+		confirm_nuke_resync: "This will delete the local DB and re-sync from remote. Continue?"
+	},
+	status_messages: {
+		transport_disconnected: "Transport is currently disconnected.",
+		no_sync_status_timeout: "No sync.status event received within timeout.",
+		transport_disconnected_age: "Transport is disconnected ({age:string}).",
+		transport_disconnected_plain: "Transport is disconnected."
+	},
+	sanity_problems: {
+		db_id_empty: "DB ID is empty.",
+		sync_url_empty: "Sync URL is empty.",
+		sync_url_protocol_invalid: "Sync URL protocol must be ws/wss (got {protocol:string}).",
+		sync_url_invalid: "Sync URL is not a valid URL.",
+		meta_url_derive_failed: "Could not derive meta URL from sync URL + DB ID."
+	},
+	notifications: {
+		copy_failed_title: "Copy failed",
+		copy_failed_probe: "Could not copy probe result to clipboard.",
+		copy_failed_config: "Could not copy sync config sanity result.",
+		copy_failed_handshake: "Could not copy handshake status check result.",
+		copy_failed_sync_errors: "Could not copy sync errors.",
+		local_identity_corrupted_title: "Local site identity corrupted",
+		local_identity_corrupted_desc: "Updated crsql_site_id and remembered identity. Compatibility should turn incompatible.",
+		corrupt_identity_failed_title: "Corrupt identity failed",
+		corrupt_identity_failed_desc: "Could not mutate local site identity.",
+		compat_identity_reset_title: "Compatibility identity reset",
+		compat_identity_reset_desc: "Cleared remembered remote site identity and re-ran strict compatibility check.",
+		reset_identity_failed_title: "Reset identity failed",
+		reset_identity_failed_desc: "Could not reset remembered compatibility identity.",
+		sync_disabled_title: "Sync disabled",
+		sync_disabled_inject_desc: "Enable sync first to inject transport failures.",
+		sync_disabled_manual_recovery_desc: "Enable sync first to run manual auto-recovery.",
+		sync_disabled_restart_desc: "Enable sync first to restart the sync worker.",
+		sync_transport_failure_injected_title: "Sync transport failure injected",
+		sync_transport_failure_injected_desc: "Sync URL set to {url:string}",
+		sync_transport_restored_title: "Sync transport restored",
+		sync_transport_restored_desc: "Sync URL restored to {url:string}",
+		sync_transport_toggle_failed_title: "Sync transport toggle failed",
+		sync_transport_toggle_failed_desc: "Could not inject/restore transport failure.",
+		db_quick_check_passed_title: "DB quick_check passed",
+		db_quick_check_passed_desc: "Local DB quick_check returned ok.",
+		db_quick_check_issues_title: "DB quick_check found issues",
+		db_quick_check_issues_desc: "Run integrity_check for full diagnostics.",
+		db_quick_check_failed_title: "DB quick_check failed",
+		db_quick_check_failed_desc: "Could not run local DB quick_check.",
+		db_integrity_check_passed_title: "DB integrity_check passed",
+		db_integrity_check_failed_title: "DB integrity_check failed",
+		db_integrity_check_failed_desc: "Could not run local DB integrity_check.",
+		compat_check_passed_title: "Compatibility check passed",
+		compat_check_passed_desc: "Local and remote sync compatibility is valid.",
+		compat_check_failed_title: "Compatibility check failed",
+		compat_check_failed_desc: "Local and remote sync compatibility did not pass.",
+		compat_check_failed_run_desc: "Could not run strict compatibility check.",
+		connection_probe_passed_title: "Connection probe passed",
+		connection_probe_passed_desc: "Meta endpoint and WebSocket transport are reachable.",
+		connection_probe_issues_title: "Connection probe found issues",
+		connection_probe_issues_desc: "Check probe details in the Checks section.",
+		connection_probe_failed_title: "Connection probe failed",
+		connection_probe_failed_desc: "Could not complete connection probe.",
+		probe_copied_title: "Probe result copied",
+		probe_copied_desc: "Connection probe JSON copied to clipboard.",
+		sync_config_copied_title: "Sync config copied",
+		sync_config_copied_desc: "Sync config sanity result copied to clipboard.",
+		handshake_status_copied_title: "Handshake status copied",
+		handshake_status_copied_desc: "Handshake status check result copied to clipboard.",
+		sync_errors_copied_title: "Sync errors copied",
+		sync_errors_copied_desc: "Recent sync errors copied to clipboard.",
+		sync_errors_cleared_title: "Sync errors cleared",
+		sync_errors_cleared_desc: "Recent sync runtime errors were cleared.",
+		handshake_status_unavailable_title: "Handshake status unavailable",
+		handshake_status_unavailable_desc: "Transport is disconnected. Reconnect or run a recovery action first.",
+		handshake_status_received_title: "Handshake status received",
+		handshake_status_received_desc: "Stage: {stage:string}, acknowledgment: {ack:string}",
+		handshake_check_timed_out_title: "Handshake check timed out",
+		handshake_reported_issues_title: "Handshake reported issues",
+		sync_status_reported_failure: "sync.status reported failure",
+		handshake_status_check_failed_title: "Handshake status check failed",
+		handshake_status_check_failed_desc: "Could not read worker sync.status payload.",
+		sync_config_sanity_passed_title: "Sync config sanity passed",
+		sync_config_sanity_passed_desc: "Sync URL, DB ID, and derived meta URL look valid.",
+		sync_config_sanity_issues_title: "Sync config sanity found issues",
+		sync_config_sanity_issues_desc: "{count:number} issue(s) found. See details in Checks section.",
+		sync_config_sanity_failed_title: "Sync config sanity failed",
+		sync_config_sanity_failed_desc: "Could not run config sanity checks.",
+		manual_auto_recovery_applied_title: "Manual auto-recovery applied",
+		manual_auto_recovery_applied_desc: "Performed checks and restarted sync worker.",
+		manual_auto_recovery_not_needed_title: "Manual auto-recovery not needed",
+		manual_auto_recovery_not_needed_desc: "Checks passed; no restart was required.",
+		manual_auto_recovery_failed_title: "Manual auto-recovery failed",
+		manual_auto_recovery_failed_desc: "Could not complete recovery sequence.",
+		sync_worker_restarted_title: "Sync worker restarted",
+		sync_worker_restarted_desc: "Sync worker stop/start sequence completed.",
+		restart_sync_worker_failed_title: "Restart sync worker failed",
+		restart_sync_worker_failed_desc: "Could not restart sync worker.",
+		diagnostics_exported_title: "Diagnostics exported",
+		diagnostics_exported_desc: "Sync diagnostics JSON downloaded and copied to clipboard when permitted.",
+		export_diagnostics_failed_title: "Export diagnostics failed",
+		export_diagnostics_failed_desc: "Could not export sync diagnostics.",
+		resync_started_title: "Resync started",
+		resync_started_desc: "Local DB was reset and remote resync has started.",
+		nuke_resync_failed_title: "Nuke and resync failed",
+		nuke_resync_failed_desc: "Could not reset local DB and start resync."
 	},
 	query_interface: {
 		title: "Database Query Interface",
