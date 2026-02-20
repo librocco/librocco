@@ -22,7 +22,7 @@ async function rpc<T>(url: string, body: any, token?: string): Promise<T> {
 	const parseResponse = async <R>(): Promise<R> => {
 		const text = await res.text();
 		if (!text.trim()) {
-			return ({ rows: [] } as unknown) as R;
+			return { rows: [] } as unknown as R;
 		}
 
 		try {
@@ -33,7 +33,7 @@ async function rpc<T>(url: string, body: any, token?: string): Promise<T> {
 	};
 
 	if (!res.ok) {
-		const json = await parseResponse<{ isSQLiteError?: boolean; message?: string }>();
+		const json = await parseResponse<{ isSQLiteError?: boolean; message?: string; code?: string }>();
 		if (json?.isSQLiteError) {
 			const { message, code } = json;
 			throw new SQLiteError(message, code);
