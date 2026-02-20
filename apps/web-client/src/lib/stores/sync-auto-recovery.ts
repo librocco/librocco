@@ -48,4 +48,3 @@ export function markAutoRecoveryFailure(error: unknown) {
 export function resetAutoRecoveryState() {
 	syncAutoRecovery.set(initialState);
 }
-

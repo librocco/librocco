@@ -584,7 +584,8 @@ const debug_page = {
 		},
 		freshness: {
 			title: "Freshness",
-			description: "Freshness indicates how recent sync signals are. Each metric shows explicit thresholds and a state: Healthy, Warning, Stale, or N/A."
+			description:
+				"Freshness indicates how recent sync signals are. Each metric shows explicit thresholds and a state: Healthy, Warning, Stale, or N/A."
 		},
 		timeline: {
 			title: "Timeline",

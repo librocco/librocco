@@ -15,7 +15,6 @@
 	import { app, nukeAndResyncDb } from "$lib/app";
 	import { AppDbState, getDb, getDbRx, getVfs } from "$lib/app/db";
 
-
 	import { DEMO_DB_NAME, DEMO_DB_URL, IS_DEBUG, IS_DEMO, IS_E2E } from "$lib/constants";
 
 	import { Sidebar } from "$lib/components";
