@@ -13,6 +13,8 @@ import {
 } from "@/helpers/circus";
 
 test.setTimeout(45_000);
+const BEFORE_ALL_TIMEOUT_MS = 60_000;
+const WARMUP_TIMEOUT_MS = 10_000;
 
 const getStableRemoteDbHandle = (page: Page) => retry(() => getRemoteDbHandle(page, remoteDbURL), { attempts: 5, delayMs: 300 });
 
@@ -43,24 +45,32 @@ const retry = async <T>(fn: () => Promise<T>, opts: { attempts?: number; delayMs
 };
 
 test.beforeAll(async ({ browser }, testInfo) => {
-	testInfo.setTimeout(35_000);
+	testInfo.setTimeout(BEFORE_ALL_TIMEOUT_MS);
 
 	await waitForServer();
 
 	const context = await browser.newContext({ ignoreHTTPSErrors: true });
 	const page = await context.newPage();
 	try {
-		// Warm up the app once so later navigations skip initial SvelteKit/Vite cold start.
-		await page.goto(baseURL, { waitUntil: "networkidle" });
-		await page.waitForSelector('body[hydrated="true"]', { timeout: 30000 });
-		await page.waitForSelector("#app-splash", { state: "detached", timeout: 30000 });
+		await warmupApp(page, WARMUP_TIMEOUT_MS);
 	} catch (error) {
 		// Best-effort warmup: if the splash never detaches we still proceed with the real tests.
-		console.warn("Warmup page did not finish before timeout", error);
+		console.warn(`Warmup page did not finish before timeout (${WARMUP_TIMEOUT_MS}ms)`, error);
 	} finally {
-		await context.close();
+		try {
+			await context.close();
+		} catch (error) {
+			console.warn("Warmup context failed to close cleanly", error);
+		}
 	}
 });
+
+async function warmupApp(page: Page, timeoutMs: number): Promise<void> {
+	// Using "domcontentloaded" avoids waiting on background network activity that can block "networkidle" in CI.
+	await page.goto(baseURL, { waitUntil: "domcontentloaded", timeout: timeoutMs });
+	await page.waitForSelector('body[hydrated="true"]', { timeout: timeoutMs });
+	await page.waitForSelector("#app-splash", { state: "detached", timeout: timeoutMs });
+}
 
 async function waitForServer(timeoutMs = 45_000) {
 	const deadline = Date.now() + timeoutMs;
