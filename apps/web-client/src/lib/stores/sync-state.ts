@@ -30,7 +30,7 @@ export type SyncState =
 	| {
 			status: "stuck";
 			pending: number;
-			reason: "rapid_closes" | "timeout";
+			reason: "rapid_closes";
 			message: string;
 	  }
 	| { status: "incompatible"; pending: number; reason: SyncIncompatibilityReason; message?: string };
@@ -49,20 +49,20 @@ export const createSyncState = (syncActive: Readable<boolean>) =>
 			syncHealthTick,
 			localDbHealth
 		],
-		([active, connected, stuck, diagnostics, pending, pendingSince, compatibility, runtime, _tick, dbHealth]) => {
-			const now = Date.now();
+		([active, connected, stuck, diagnostics, pending, pendingSince, compatibility, runtime, tick, dbHealth]) => {
+			const now = tick;
 
 			if (!active) return { status: "disconnected", pending };
 			if (compatibility.status === "incompatible") {
 				return { status: "incompatible", pending, reason: compatibility.reason, message: compatibility.message };
 			}
 			if (stuck) {
-				const reason = diagnostics.reason === "rapid_closes" ? "rapid_closes" : "timeout";
-				const message =
-					reason === "rapid_closes"
-						? `Sync reconnect loop detected (${diagnostics.rapidCloseCount} rapid disconnects).`
-						: "No sync connection established for over 10 seconds.";
-				return { status: "stuck", pending, reason, message };
+				return {
+					status: "stuck",
+					pending,
+					reason: "rapid_closes",
+					message: `Sync reconnect loop detected (${diagnostics.rapidCloseCount} rapid disconnects).`
+				};
 			}
 			if (!connected) return { status: "connecting", pending, reason: "reconnecting" };
 			if (

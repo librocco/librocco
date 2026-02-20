@@ -43,7 +43,7 @@ export const createExtensionAvailabilityStore = (plugins: PluginsInterface) => {
 };
 
 export type SyncStuckDiagnostics = {
-	reason: "rapid_closes" | "timeout" | null;
+	reason: "rapid_closes" | null;
 	rapidCloseCount: number;
 	openCount: number;
 	closeCount: number;
@@ -146,7 +146,7 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 		});
 	};
 
-	const markStuck = (reason: "rapid_closes" | "timeout") => {
+	const markStuck = (reason: "rapid_closes") => {
 		_syncConnectivityMonitor.stuck.set(true);
 		_syncConnectivityMonitor.diagnostics.set({
 			reason,

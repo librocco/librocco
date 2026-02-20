@@ -34,8 +34,7 @@
 		}
 
 		if ($syncState.status === "stuck") {
-			const detail = $syncState.reason === "rapid_closes" ? "reconnect loop" : "no connection";
-			return `${$LL.misc_components.extension_banner.remote_db()} (${detail})`;
+			return `${$LL.misc_components.extension_banner.remote_db()} (reconnect loop)`;
 		}
 
 		if ($syncState.status === "warning") {
@@ -90,7 +89,7 @@
 			case "incompatible":
 				return "bg-error";
 			case "stuck":
-				return $syncState.reason === "timeout" ? "bg-error" : "bg-warning";
+				return "bg-warning";
 			case "disconnected":
 				return "bg-base-content/40";
 			default:

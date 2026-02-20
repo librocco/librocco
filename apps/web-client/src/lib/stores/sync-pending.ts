@@ -265,5 +265,4 @@ export function resetPendingTracker() {
 	pendingChangesCount.set(0);
 	pendingChangesSince.set(null);
 	pendingChangesLastActiveAt.set(null);
-	persistPendingTimestamps(null, null);
 }
