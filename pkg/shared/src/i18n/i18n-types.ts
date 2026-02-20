@@ -2464,6 +2464,10 @@ type RootTranslation = {
 			 * K​a​b​o​o​m​!​ ​R​u​n​t​i​m​e​ ​e​r​r​o​r
 			 */
 			runtime_error: string
+			/**
+			 * K​a​b​o​o​m​!​ ​R​e​n​d​e​r​ ​t​i​m​e​ ​e​r​r​o​r
+			 */
+			render_time_error: string
 		}
 		actions: {
 			/**
@@ -2495,13 +2499,1133 @@ type RootTranslation = {
 			 */
 			executing: string
 			/**
-			 * C​o​r​r​u​p​t​ ​S​y​n​c​ ​S​t​a​t​e
+			 * R​u​n​ ​c​h​e​c​k
 			 */
-			corrupt_sync_state: string
+			run_check: string
 			/**
-			 * E​x​p​o​r​t​ ​S​t​a​t​e
+			 * R​u​n​ ​a​c​t​i​o​n
 			 */
-			export_state: string
+			run_action: string
+			/**
+			 * R​u​n​n​i​n​g​.​.​.
+			 */
+			running: string
+			/**
+			 * E​x​p​o​r​t
+			 */
+			'export': string
+			/**
+			 * C​o​p​y
+			 */
+			copy: string
+			/**
+			 * C​l​e​a​r
+			 */
+			clear: string
+			/**
+			 * R​e​s​t​o​r​e
+			 */
+			restore: string
+		}
+		sections: {
+			diagnostics: {
+				/**
+				 * D​i​a​g​n​o​s​t​i​c​s
+				 */
+				title: string
+				/**
+				 * V​i​s​u​a​l​ ​r​u​n​t​i​m​e​ ​s​n​a​p​s​h​o​t​ ​f​o​r​ ​c​o​n​n​e​c​t​i​o​n​,​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​,​ ​q​u​e​u​e​,​ ​a​n​d​ ​l​o​c​a​l​ ​D​B​ ​h​e​a​l​t​h​.
+				 */
+				description: string
+			}
+			checks: {
+				/**
+				 * C​h​e​c​k​s
+				 */
+				title: string
+				/**
+				 * R​u​n​ ​e​x​p​l​i​c​i​t​ ​d​i​a​g​n​o​s​t​i​c​s​ ​a​n​d​ ​e​x​p​o​r​t​ ​c​u​r​r​e​n​t​ ​s​y​n​c​ ​t​r​o​u​b​l​e​s​h​o​o​t​i​n​g​ ​d​a​t​a​.
+				 */
+				description: string
+			}
+			recovery: {
+				/**
+				 * R​e​c​o​v​e​r​y
+				 */
+				title: string
+				/**
+				 * U​s​e​ ​t​h​e​ ​l​e​a​s​t​ ​d​e​s​t​r​u​c​t​i​v​e​ ​f​i​x​ ​f​i​r​s​t​.
+				 */
+				description: string
+			}
+			inject_problems: {
+				/**
+				 * I​n​j​e​c​t​ ​P​r​o​b​l​e​m​s
+				 */
+				title: string
+				/**
+				 * F​o​r​c​e​ ​f​a​i​l​u​r​e​s​ ​t​o​ ​t​e​s​t​ ​r​e​s​i​l​i​e​n​c​e​ ​a​n​d​ ​r​e​c​o​v​e​r​y​ ​f​l​o​w​s​.
+				 */
+				description: string
+			}
+			data_tools: {
+				/**
+				 * D​a​t​a​ ​T​o​o​l​s
+				 */
+				title: string
+				/**
+				 * S​e​e​d​/​r​e​s​e​t​/​e​x​p​o​r​t​ ​h​e​l​p​e​r​s​,​ ​t​a​b​l​e​ ​e​x​p​l​o​r​a​t​i​o​n​,​ ​a​n​d​ ​c​u​s​t​o​m​ ​q​u​e​r​y​ ​e​x​e​c​u​t​i​o​n​.
+				 */
+				description: string
+			}
+		}
+		diagnostics: {
+			health_rail: {
+				/**
+				 * H​e​a​l​t​h​ ​R​a​i​l
+				 */
+				title: string
+			}
+			freshness: {
+				/**
+				 * F​r​e​s​h​n​e​s​s
+				 */
+				title: string
+				/**
+				 * F​r​e​s​h​n​e​s​s​ ​i​n​d​i​c​a​t​e​s​ ​h​o​w​ ​r​e​c​e​n​t​ ​s​y​n​c​ ​s​i​g​n​a​l​s​ ​a​r​e​.​ ​E​a​c​h​ ​m​e​t​r​i​c​ ​s​h​o​w​s​ ​e​x​p​l​i​c​i​t​ ​t​h​r​e​s​h​o​l​d​s​ ​a​n​d​ ​a​ ​s​t​a​t​e​:​ ​H​e​a​l​t​h​y​,​ ​W​a​r​n​i​n​g​,​ ​S​t​a​l​e​,​ ​o​r​ ​N​/​A​.
+				 */
+				description: string
+			}
+			timeline: {
+				/**
+				 * T​i​m​e​l​i​n​e
+				 */
+				title: string
+				/**
+				 * l​a​t​e​s​t​ ​{​c​o​u​n​t​}​ ​e​v​e​n​t​s
+				 * @param {number} count
+				 */
+				latest_events: RequiredParams<'count'>
+				/**
+				 * N​o​ ​c​h​a​n​g​e​s​ ​r​e​c​o​r​d​e​d​ ​i​n​ ​t​h​i​s​ ​s​e​s​s​i​o​n​ ​y​e​t​.
+				 */
+				no_changes: string
+				/**
+				 * R​e​c​e​n​t​ ​s​y​n​c​ ​e​r​r​o​r​s
+				 */
+				recent_sync_errors: string
+			}
+		}
+		health_rail: {
+			/**
+			 * C​o​r​e​ ​s​y​n​c​ ​h​e​a​l​t​h​ ​m​e​t​r​i​c​s​.​ ​T​h​e​s​e​ ​v​a​l​u​e​s​ ​s​u​m​m​a​r​i​z​e​ ​t​r​a​n​s​p​o​r​t​,​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​,​ ​l​o​c​a​l​ ​D​B​ ​c​o​n​d​i​t​i​o​n​,​ ​p​e​n​d​i​n​g​ ​w​r​i​t​e​ ​p​r​e​s​s​u​r​e​,​ ​a​n​d​ ​a​u​t​o​m​a​t​i​c​ ​r​e​c​o​v​e​r​y​ ​b​e​h​a​v​i​o​r​.
+			 */
+			description: string
+			/**
+			 * C​o​n​n​e​c​t​i​o​n
+			 */
+			connection: string
+			/**
+			 * C​o​m​p​a​t​i​b​i​l​i​t​y
+			 */
+			compatibility: string
+			/**
+			 * L​o​c​a​l​ ​D​B
+			 */
+			local_db: string
+			/**
+			 * P​e​n​d​i​n​g​ ​q​u​e​u​e
+			 */
+			pending_queue: string
+			/**
+			 * A​u​t​o​ ​r​e​c​o​v​e​r​y
+			 */
+			auto_recovery: string
+			/**
+			 * N​o​n​e
+			 */
+			none: string
+			/**
+			 * N​e​v​e​r
+			 */
+			never: string
+			/**
+			 * O​p​e​n
+			 */
+			open: string
+			/**
+			 * C​l​o​s​e
+			 */
+			close: string
+			/**
+			 * C​o​n​n​e​c​t​e​d​ ​(​t​r​a​n​s​p​o​r​t​ ​o​p​e​n​)
+			 */
+			connected_transport_open: string
+			/**
+			 * C​o​n​n​e​c​t​e​d​ ​(​o​t​h​e​r​ ​t​a​b​)
+			 */
+			connected_other_tab: string
+			/**
+			 * D​i​s​c​o​n​n​e​c​t​e​d​ ​(​t​r​a​n​s​p​o​r​t​ ​c​l​o​s​e​d​)
+			 */
+			disconnected_transport_closed: string
+			/**
+			 * S​t​u​c​k
+			 */
+			stuck: string
+			/**
+			 * C​o​m​p​a​t​i​b​l​e​ ​(​s​c​h​e​m​a​ ​{​s​c​h​e​m​a​V​e​r​s​i​o​n​}​)
+			 * @param {string} schemaVersion
+			 */
+			compatible_schema: RequiredParams<'schemaVersion'>
+			/**
+			 * D​e​r​i​v​e​d​ ​f​r​o​m​ ​s​y​n​c​ ​t​r​a​n​s​p​o​r​t​ ​e​v​e​n​t​s​ ​a​n​d​ ​s​t​u​c​k​ ​d​e​t​e​c​t​i​o​n​.
+			 */
+			derived_transport: string
+			/**
+			 * D​e​r​i​v​e​d​ ​f​r​o​m​ ​s​y​n​c​ ​t​r​a​n​s​p​o​r​t​ ​e​v​e​n​t​s​ ​a​n​d​ ​s​t​u​c​k​ ​d​e​t​e​c​t​i​o​n​;​ ​h​e​a​r​t​b​e​a​t​ ​c​u​r​r​e​n​t​l​y​ ​c​o​m​e​s​ ​f​r​o​m​ ​a​n​o​t​h​e​r​ ​t​a​b​.
+			 */
+			derived_transport_other_tab: string
+			/**
+			 * E​v​e​n​t​s​:​ ​{​o​p​e​n​C​o​u​n​t​}​ ​O​p​e​n​ ​/​ ​{​c​l​o​s​e​C​o​u​n​t​}​ ​C​l​o​s​e
+			 * @param {number} closeCount
+			 * @param {number} openCount
+			 */
+			events_line: RequiredParams<'closeCount' | 'openCount'>
+			/**
+			 * D​i​s​c​o​n​n​e​c​t​e​d​ ​f​o​r​ ​{​a​g​e​}
+			 * @param {string} age
+			 */
+			disconnected_for: RequiredParams<'age'>
+			/**
+			 * D​e​r​i​v​e​d​ ​f​r​o​m​ ​l​o​c​a​l​/​r​e​m​o​t​e​ ​i​d​e​n​t​i​t​y​ ​a​n​d​ ​s​c​h​e​m​a​ ​c​h​e​c​k​s​.
+			 */
+			derived_compatibility: string
+			/**
+			 * {​s​t​a​t​u​s​}​ ​(​{​c​h​e​c​k​}​)
+			 * @param {string} check
+			 * @param {string} status
+			 */
+			local_db_status: RequiredParams<'check' | 'status'>
+			/**
+			 * Q​u​i​c​k​ ​C​h​e​c​k
+			 */
+			quick_check: string
+			/**
+			 * I​n​t​e​g​r​i​t​y​ ​C​h​e​c​k
+			 */
+			integrity_check: string
+			/**
+			 * D​e​r​i​v​e​d​ ​f​r​o​m​ ​l​o​c​a​l​ ​d​a​t​a​b​a​s​e​ ​h​e​a​l​t​h​ ​c​h​e​c​k​s​.
+			 */
+			derived_local_db: string
+			/**
+			 * {​c​o​u​n​t​}​ ​p​e​n​d​i​n​g
+			 * @param {number} count
+			 */
+			pending_count: RequiredParams<'count'>
+			/**
+			 * D​e​r​i​v​e​d​ ​f​r​o​m​ ​u​n​s​e​n​t​ ​l​o​c​a​l​ ​c​h​a​n​g​e​s​.
+			 */
+			derived_pending: string
+			/**
+			 * {​r​e​s​u​l​t​}​ ​(​{​a​g​e​}​)
+			 * @param {string} age
+			 * @param {string} result
+			 */
+			auto_recovery_status: RequiredParams<'age' | 'result'>
+			/**
+			 * D​e​r​i​v​e​d​ ​f​r​o​m​ ​a​u​t​o​m​a​t​i​c​ ​s​t​a​l​e​-​s​t​a​t​e​ ​r​e​c​o​v​e​r​y​ ​a​t​t​e​m​p​t​s​.
+			 */
+			derived_auto_recovery: string
+		}
+		freshness: {
+			/**
+			 * S​t​a​t​u​s​ ​h​e​a​r​t​b​e​a​t
+			 */
+			status_heartbeat: string
+			/**
+			 * S​e​r​v​e​r​ ​c​o​n​f​i​r​m​a​t​i​o​n
+			 */
+			server_confirmation: string
+			/**
+			 * Q​u​e​u​e​ ​a​g​e
+			 */
+			queue_age: string
+			/**
+			 * H​e​a​l​t​h​y
+			 */
+			healthy: string
+			/**
+			 * W​a​r​n​i​n​g
+			 */
+			warning: string
+			/**
+			 * S​t​a​l​e
+			 */
+			stale: string
+			/**
+			 * N​/​A
+			 */
+			na: string
+			/**
+			 * C​o​n​n​e​c​t​e​d​ ​(​l​i​v​e​)
+			 */
+			status_connected_live: string
+			/**
+			 * {​s​e​c​o​n​d​s​}​s​ ​s​i​n​c​e​ ​l​a​s​t​ ​h​e​a​r​t​b​e​a​t
+			 * @param {number} seconds
+			 */
+			status_since_last_heartbeat: RequiredParams<'seconds'>
+			/**
+			 * W​a​r​n​ ​{​w​a​r​n​}​s​,​ ​s​t​a​l​e​ ​{​s​t​a​l​e​}​s
+			 * @param {number} stale
+			 * @param {number} warn
+			 */
+			warn_stale: RequiredParams<'stale' | 'warn'>
+			/**
+			 * L​a​s​t​ ​a​t​:​ ​{​t​i​m​e​}
+			 * @param {string} time
+			 */
+			last_at: RequiredParams<'time'>
+			/**
+			 * T​r​a​n​s​p​o​r​t​ ​k​e​e​p​a​l​i​v​e​ ​l​i​v​e​n​e​s​s​ ​(​W​e​b​S​o​c​k​e​t​ ​p​i​n​g​/​p​o​n​g​)​,​ ​i​n​d​e​p​e​n​d​e​n​t​ ​f​r​o​m​ ​p​e​n​d​i​n​g​ ​w​r​i​t​e​s​.
+			 */
+			status_description: string
+			/**
+			 * N​o​ ​p​e​n​d​i​n​g​ ​c​h​a​n​g​e​s
+			 */
+			no_pending_changes: string
+			/**
+			 * {​s​e​c​o​n​d​s​}​s​ ​a​g​o
+			 * @param {number} seconds
+			 */
+			seconds_ago: RequiredParams<'seconds'>
+			/**
+			 * A​g​e​ ​o​f​ ​l​a​s​t​ ​s​e​r​v​e​r​ ​a​c​k​n​o​w​l​e​d​g​m​e​n​t​ ​w​h​i​l​e​ ​q​u​e​u​e​ ​h​a​s​ ​p​e​n​d​i​n​g​ ​w​r​i​t​e​s​.
+			 */
+			ack_description: string
+			/**
+			 * Q​u​e​u​e​ ​e​m​p​t​y
+			 */
+			queue_empty: string
+			/**
+			 * L​a​s​t​ ​q​u​e​u​e​ ​a​c​t​i​v​i​t​y​:​ ​{​t​i​m​e​}
+			 * @param {string} time
+			 */
+			last_queue_activity: RequiredParams<'time'>
+			/**
+			 * A​g​e​ ​o​f​ ​o​l​d​e​s​t​ ​u​n​s​e​n​t​ ​l​o​c​a​l​ ​c​h​a​n​g​e​.
+			 */
+			queue_description: string
+		}
+		checks: {
+			recheck_sync_compatibility: {
+				/**
+				 * R​e​c​h​e​c​k​ ​s​y​n​c​ ​c​o​m​p​a​t​i​b​i​l​i​t​y
+				 */
+				title: string
+				/**
+				 * R​u​n​s​ ​t​h​e​ ​s​t​r​i​c​t​ ​l​o​c​a​l​-​v​s​-​r​e​m​o​t​e​ ​i​d​e​n​t​i​t​y​ ​c​h​e​c​k​ ​a​n​d​ ​r​e​f​r​e​s​h​e​s​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​s​t​a​t​e​.
+				 */
+				description: string
+			}
+			run_db_quick_check: {
+				/**
+				 * R​u​n​ ​D​B​ ​q​u​i​c​k​ ​c​h​e​c​k
+				 */
+				title: string
+				/**
+				 * F​a​s​t​ ​s​t​r​u​c​t​u​r​a​l​ ​c​h​e​c​k​ ​o​f​ ​l​o​c​a​l​ ​S​Q​L​i​t​e​ ​i​n​t​e​g​r​i​t​y​ ​f​o​r​ ​r​o​u​t​i​n​e​ ​d​i​a​g​n​o​s​t​i​c​s​.
+				 */
+				description: string
+			}
+			run_db_integrity_check: {
+				/**
+				 * R​u​n​ ​D​B​ ​i​n​t​e​g​r​i​t​y​ ​c​h​e​c​k
+				 */
+				title: string
+				/**
+				 * D​e​e​p​e​r​ ​i​n​t​e​g​r​i​t​y​ ​s​c​a​n​.​ ​S​l​o​w​e​r​;​ ​u​s​e​ ​w​h​e​n​ ​y​o​u​ ​s​u​s​p​e​c​t​ ​c​o​r​r​u​p​t​i​o​n​.
+				 */
+				description: string
+			}
+			run_connection_probe: {
+				/**
+				 * R​u​n​ ​c​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e
+				 */
+				title: string
+				/**
+				 * C​h​e​c​k​s​ ​s​y​n​c​ ​m​e​t​a​ ​e​n​d​p​o​i​n​t​ ​a​n​d​ ​a​ ​d​i​r​e​c​t​ ​W​e​b​S​o​c​k​e​t​ ​o​p​e​n​ ​t​o​ ​d​i​a​g​n​o​s​e​ ​t​i​m​e​o​u​t​ ​i​s​s​u​e​s​.
+				 */
+				description: string
+			}
+			run_handshake_status_check: {
+				/**
+				 * R​u​n​ ​h​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​c​h​e​c​k
+				 */
+				title: string
+				/**
+				 * R​e​a​d​s​ ​t​h​e​ ​l​a​t​e​s​t​ ​w​o​r​k​e​r​ ​s​y​n​c​.​s​t​a​t​u​s​ ​p​a​y​l​o​a​d​ ​(​s​t​a​g​e​,​ ​r​e​a​s​o​n​,​ ​a​c​k​n​o​w​l​e​d​g​m​e​n​t​ ​v​e​r​s​i​o​n​)​.
+				 */
+				description: string
+			}
+			run_sync_config_sanity: {
+				/**
+				 * C​h​e​c​k​ ​s​y​n​c​ ​U​R​L​/​c​o​n​f​i​g​ ​s​a​n​i​t​y
+				 */
+				title: string
+				/**
+				 * V​a​l​i​d​a​t​e​s​ ​D​B​ ​I​D​,​ ​s​y​n​c​ ​U​R​L​ ​f​o​r​m​a​t​,​ ​p​r​o​t​o​c​o​l​,​ ​a​n​d​ ​d​e​r​i​v​e​d​ ​m​e​t​a​ ​U​R​L​.
+				 */
+				description: string
+			}
+			/**
+			 * L​a​s​t​ ​c​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e
+			 */
+			last_connection_probe: string
+			/**
+			 * L​a​s​t​ ​h​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​c​h​e​c​k
+			 */
+			last_handshake_status_check: string
+			/**
+			 * L​a​s​t​ ​s​y​n​c​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​c​h​e​c​k
+			 */
+			last_sync_config_sanity_check: string
+			/**
+			 * T​i​m​e
+			 */
+			time: string
+			/**
+			 * S​y​n​c​ ​a​c​t​i​v​e
+			 */
+			sync_active: string
+			/**
+			 * D​B​ ​I​D
+			 */
+			db_id: string
+			/**
+			 * S​y​n​c​ ​U​R​L
+			 */
+			sync_url: string
+			/**
+			 * M​e​t​a
+			 */
+			meta: string
+			/**
+			 * W​e​b​S​o​c​k​e​t
+			 */
+			websocket: string
+			/**
+			 * M​e​t​a​ ​b​o​d​y​ ​s​n​i​p​p​e​t
+			 */
+			meta_body_snippet: string
+			/**
+			 * R​e​s​u​l​t
+			 */
+			result: string
+			/**
+			 * S​t​a​g​e
+			 */
+			stage: string
+			/**
+			 * A​c​k​n​o​w​l​e​d​g​m​e​n​t​ ​D​B​ ​v​e​r​s​i​o​n
+			 */
+			ack_db_version: string
+			/**
+			 * R​e​a​s​o​n
+			 */
+			reason: string
+			/**
+			 * M​e​s​s​a​g​e
+			 */
+			message: string
+			/**
+			 * D​e​r​i​v​e​d​ ​m​e​t​a​ ​U​R​L
+			 */
+			derived_meta_url: string
+			/**
+			 * W​S​ ​p​r​o​t​o​c​o​l​ ​v​a​l​i​d
+			 */
+			ws_protocol_valid: string
+			/**
+			 * I​s​s​u​e​s
+			 */
+			issues: string
+			/**
+			 * O​K
+			 */
+			ok: string
+			/**
+			 * F​A​I​L
+			 */
+			fail: string
+			/**
+			 * t​i​m​e​d​ ​o​u​t
+			 */
+			timed_out: string
+			/**
+			 * n​/​a
+			 */
+			na: string
+		}
+		recovery_actions: {
+			restart_sync_worker: {
+				/**
+				 * R​e​s​t​a​r​t​ ​s​y​n​c​ ​w​o​r​k​e​r
+				 */
+				title: string
+				/**
+				 * S​t​o​p​s​ ​a​n​d​ ​s​t​a​r​t​s​ ​t​h​e​ ​s​y​n​c​ ​w​o​r​k​e​r​ ​t​o​ ​r​e​c​o​v​e​r​ ​f​r​o​m​ ​t​e​m​p​o​r​a​r​y​ ​w​o​r​k​e​r​/​n​e​t​w​o​r​k​ ​i​s​s​u​e​s​.
+				 */
+				description: string
+			}
+			reset_compatibility_identity: {
+				/**
+				 * R​e​s​e​t​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​i​d​e​n​t​i​t​y
+				 */
+				title: string
+				/**
+				 * C​l​e​a​r​s​ ​r​e​m​e​m​b​e​r​e​d​ ​r​e​m​o​t​e​ ​s​i​t​e​ ​I​D​ ​f​o​r​ ​t​h​i​s​ ​D​B​ ​a​n​d​ ​r​e​-​r​u​n​s​ ​s​t​r​i​c​t​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​s​.
+				 */
+				description: string
+			}
+			run_manual_auto_recovery: {
+				/**
+				 * R​u​n​ ​m​a​n​u​a​l​ ​a​u​t​o​-​r​e​c​o​v​e​r​y
+				 */
+				title: string
+				/**
+				 * R​u​n​s​ ​q​u​i​c​k​ ​D​B​ ​c​h​e​c​k​ ​+​ ​s​t​r​i​c​t​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​ ​a​n​d​ ​r​e​s​t​a​r​t​s​ ​s​y​n​c​ ​i​f​ ​s​t​a​l​e​/​b​l​o​c​k​e​d​.
+				 */
+				description: string
+			}
+			nuke_and_resync_now: {
+				/**
+				 * N​u​k​e​ ​a​n​d​ ​r​e​s​y​n​c​ ​n​o​w
+				 */
+				title: string
+				/**
+				 * D​e​s​t​r​u​c​t​i​v​e​:​ ​d​e​l​e​t​e​s​ ​l​o​c​a​l​ ​D​B​ ​a​n​d​ ​r​e​-​d​o​w​n​l​o​a​d​s​ ​s​t​a​t​e​ ​f​r​o​m​ ​r​e​m​o​t​e​.
+				 */
+				description: string
+			}
+		}
+		inject_actions: {
+			inject_sync_transport_failure: {
+				/**
+				 * I​n​j​e​c​t​ ​s​y​n​c​ ​t​r​a​n​s​p​o​r​t​ ​f​a​i​l​u​r​e
+				 */
+				title: string
+				/**
+				 * T​e​m​p​o​r​a​r​i​l​y​ ​p​o​i​n​t​s​ ​s​y​n​c​ ​t​o​ ​a​n​ ​u​n​r​e​a​c​h​a​b​l​e​ ​U​R​L​ ​t​o​ ​f​o​r​c​e​ ​c​o​n​n​e​c​t​i​o​n​ ​e​r​r​o​r​s​.​ ​R​u​n​ ​a​g​a​i​n​ ​t​o​ ​r​e​s​t​o​r​e​.
+				 */
+				description: string
+			}
+			corrupt_local_site_identity: {
+				/**
+				 * C​o​r​r​u​p​t​ ​l​o​c​a​l​ ​s​i​t​e​ ​i​d​e​n​t​i​t​y
+				 */
+				title: string
+				/**
+				 * W​r​i​t​e​s​ ​a​ ​r​a​n​d​o​m​ ​v​a​l​u​e​ ​i​n​t​o​ ​l​o​c​a​l​ ​c​r​s​q​l​_​s​i​t​e​_​i​d​ ​a​n​d​ ​r​e​m​e​m​b​e​r​e​d​ ​i​d​e​n​t​i​t​y​ ​t​o​ ​f​o​r​c​e​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​m​i​s​m​a​t​c​h​.
+				 */
+				description: string
+			}
+			trigger_load_error: {
+				/**
+				 * T​r​i​g​g​e​r​ ​l​o​a​d​ ​e​r​r​o​r
+				 */
+				title: string
+				/**
+				 * N​a​v​i​g​a​t​e​s​ ​t​o​ ​t​h​e​ ​l​o​a​d​ ​e​r​r​o​r​ ​r​o​u​t​e​ ​t​o​ ​t​e​s​t​ ​e​r​r​o​r​-​s​t​a​t​e​ ​h​a​n​d​l​i​n​g​.
+				 */
+				description: string
+			}
+			trigger_runtime_error: {
+				/**
+				 * T​r​i​g​g​e​r​ ​r​u​n​t​i​m​e​ ​e​r​r​o​r
+				 */
+				title: string
+				/**
+				 * T​h​r​o​w​s​ ​a​ ​r​u​n​t​i​m​e​ ​e​x​c​e​p​t​i​o​n​ ​f​o​r​ ​t​e​s​t​i​n​g​ ​c​r​a​s​h​/​e​r​r​o​r​ ​b​o​u​n​d​a​r​i​e​s​.
+				 */
+				description: string
+			}
+		}
+		data_tools: {
+			export_state: {
+				/**
+				 * E​x​p​o​r​t​ ​s​t​a​t​e
+				 */
+				title: string
+				/**
+				 * E​x​p​o​r​t​s​ ​c​u​r​r​e​n​t​ ​l​o​c​a​l​ ​a​p​p​ ​s​t​a​t​e​ ​a​r​c​h​i​v​e​ ​f​o​r​ ​d​e​b​u​g​g​i​n​g​.
+				 */
+				description: string
+			}
+			export_sync_diagnostics: {
+				/**
+				 * E​x​p​o​r​t​ ​s​y​n​c​ ​d​i​a​g​n​o​s​t​i​c​s
+				 */
+				title: string
+				/**
+				 * D​o​w​n​l​o​a​d​s​ ​r​u​n​t​i​m​e​ ​s​y​n​c​ ​d​i​a​g​n​o​s​t​i​c​s​ ​J​S​O​N​ ​(​a​l​s​o​ ​c​o​p​i​e​d​ ​t​o​ ​c​l​i​p​b​o​a​r​d​ ​w​h​e​n​ ​a​l​l​o​w​e​d​)​.
+				 */
+				description: string
+			}
+			populate_database: {
+				/**
+				 * P​o​p​u​l​a​t​e​ ​d​a​t​a​b​a​s​e
+				 */
+				title: string
+				/**
+				 * I​n​s​e​r​t​s​ ​d​e​b​u​g​ ​s​e​e​d​ ​d​a​t​a​ ​f​o​r​ ​q​u​i​c​k​ ​l​o​c​a​l​ ​t​e​s​t​i​n​g​.
+				 */
+				description: string
+			}
+			upsert_100_books: {
+				/**
+				 * U​p​s​e​r​t​ ​1​0​0​ ​b​o​o​k​s
+				 */
+				title: string
+				/**
+				 * A​d​d​s​ ​d​e​t​e​r​m​i​n​i​s​t​i​c​ ​s​a​m​p​l​e​ ​b​o​o​k​s​ ​a​n​d​ ​p​u​b​l​i​s​h​e​r​/​s​u​p​p​l​i​e​r​ ​l​i​n​k​s​.
+				 */
+				description: string
+			}
+			reset_database: {
+				/**
+				 * R​e​s​e​t​ ​d​a​t​a​b​a​s​e
+				 */
+				title: string
+				/**
+				 * D​e​s​t​r​u​c​t​i​v​e​:​ ​d​e​l​e​t​e​s​ ​a​l​l​ ​r​o​w​s​ ​f​r​o​m​ ​c​o​r​e​ ​l​o​c​a​l​ ​b​u​s​i​n​e​s​s​ ​t​a​b​l​e​s​ ​(​b​o​o​k​s​,​ ​c​u​s​t​o​m​e​r​s​,​ ​s​u​p​p​l​i​e​r​s​,​ ​o​r​d​e​r​s​)​.
+				 */
+				description: string
+			}
+			table_explorer: {
+				/**
+				 * T​a​b​l​e​ ​E​x​p​l​o​r​e​r
+				 */
+				title: string
+				/**
+				 * N​o​ ​t​a​b​l​e​s​ ​f​o​u​n​d​.
+				 */
+				no_tables: string
+				/**
+				 * S​e​l​e​c​t​ ​t​a​b​l​e
+				 */
+				select_table: string
+				/**
+				 * {​c​o​u​n​t​}​ ​r​o​w​{​{​s​}​}​ ​t​o​t​a​l​.​ ​S​h​o​w​i​n​g​ ​u​p​ ​t​o​ ​{​l​i​m​i​t​}​.
+				 * @param {number} count
+				 * @param {number} limit
+				 */
+				total_rows: RequiredParams<'count' | 'limit'>
+				/**
+				 * N​o​ ​r​o​w​s​.
+				 */
+				no_rows: string
+			}
+		}
+		timeline_events: {
+			/**
+			 * C​o​n​n​e​c​t​i​o​n​ ​m​a​r​k​e​d​ ​s​t​u​c​k​ ​(​{​r​e​a​s​o​n​}​)
+			 * @param {string} reason
+			 */
+			connection_stuck: RequiredParams<'reason'>
+			/**
+			 * C​o​n​n​e​c​t​i​o​n​ ​r​e​s​t​o​r​e​d
+			 */
+			connection_restored: string
+			/**
+			 * C​o​n​n​e​c​t​i​o​n​ ​l​o​s​t
+			 */
+			connection_lost: string
+			/**
+			 * C​o​m​p​a​t​i​b​i​l​i​t​y​ ​i​s​s​u​e​:​ ​{​r​e​a​s​o​n​}
+			 * @param {string} reason
+			 */
+			compatibility_issue: RequiredParams<'reason'>
+			/**
+			 * C​o​m​p​a​t​i​b​i​l​i​t​y​ ​s​t​a​t​e​:​ ​{​s​t​a​t​u​s​}
+			 * @param {string} status
+			 */
+			compatibility_state: RequiredParams<'status'>
+			/**
+			 * L​o​c​a​l​ ​D​B​ ​h​e​a​l​t​h​ ​c​h​e​c​k​ ​p​a​s​s​e​d
+			 */
+			local_db_health_passed: string
+			/**
+			 * L​o​c​a​l​ ​D​B​ ​h​e​a​l​t​h​:​ ​{​s​t​a​t​u​s​}
+			 * @param {string} status
+			 */
+			local_db_health_status: RequiredParams<'status'>
+			/**
+			 * P​e​n​d​i​n​g​ ​c​h​a​n​g​e​s​:​ ​{​c​o​u​n​t​}
+			 * @param {number} count
+			 */
+			pending_changes: RequiredParams<'count'>
+			/**
+			 * P​e​n​d​i​n​g​ ​q​u​e​u​e​ ​d​r​a​i​n​e​d
+			 */
+			pending_queue_drained: string
+			/**
+			 * A​u​t​o​ ​r​e​c​o​v​e​r​y​:​ ​{​r​e​s​u​l​t​}
+			 * @param {string} result
+			 */
+			auto_recovery: RequiredParams<'result'>
+			/**
+			 * A​u​t​o​ ​r​e​c​o​v​e​r​y​:​ ​{​r​e​s​u​l​t​}​ ​(​{​e​r​r​o​r​}​)
+			 * @param {string} error
+			 * @param {string} result
+			 */
+			auto_recovery_with_error: RequiredParams<'error' | 'result'>
+			/**
+			 * C​h​e​c​k​:​ ​c​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e​ ​p​a​s​s​e​d
+			 */
+			check_connection_probe_passed: string
+			/**
+			 * C​h​e​c​k​:​ ​c​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e​ ​f​o​u​n​d​ ​i​s​s​u​e​s
+			 */
+			check_connection_probe_issues: string
+			/**
+			 * C​h​e​c​k​:​ ​c​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e​ ​f​a​i​l​e​d
+			 */
+			check_connection_probe_failed: string
+			/**
+			 * C​h​e​c​k​:​ ​h​a​n​d​s​h​a​k​e​ ​f​a​i​l​e​d​ ​(​t​r​a​n​s​p​o​r​t​ ​d​i​s​c​o​n​n​e​c​t​e​d​)
+			 */
+			check_handshake_disconnected: string
+			/**
+			 * C​h​e​c​k​:​ ​h​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​p​a​s​s​e​d
+			 */
+			check_handshake_passed: string
+			/**
+			 * C​h​e​c​k​:​ ​h​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​f​a​i​l​e​d
+			 */
+			check_handshake_failed: string
+			/**
+			 * C​h​e​c​k​:​ ​h​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​c​h​e​c​k​ ​f​a​i​l​e​d
+			 */
+			check_handshake_check_failed: string
+			/**
+			 * C​h​e​c​k​:​ ​s​y​n​c​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​p​a​s​s​e​d
+			 */
+			check_config_sanity_passed: string
+			/**
+			 * C​h​e​c​k​:​ ​s​y​n​c​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​f​o​u​n​d​ ​{​c​o​u​n​t​}​ ​i​s​s​u​e​(​s​)
+			 * @param {number} count
+			 */
+			check_config_sanity_issues: RequiredParams<'count'>
+			/**
+			 * C​h​e​c​k​:​ ​s​y​n​c​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​f​a​i​l​e​d
+			 */
+			check_config_sanity_failed: string
+		}
+		dialogs: {
+			/**
+			 * T​h​i​s​ ​d​e​l​e​t​e​s​ ​a​l​l​ ​r​o​w​s​ ​f​r​o​m​ ​c​o​r​e​ ​l​o​c​a​l​ ​t​a​b​l​e​s​ ​u​s​e​d​ ​b​y​ ​t​h​e​ ​a​p​p​.​ ​C​o​n​t​i​n​u​e​?
+			 */
+			confirm_reset_database: string
+			/**
+			 * T​h​i​s​ ​w​i​l​l​ ​d​e​l​e​t​e​ ​t​h​e​ ​l​o​c​a​l​ ​D​B​ ​a​n​d​ ​r​e​-​s​y​n​c​ ​f​r​o​m​ ​r​e​m​o​t​e​.​ ​C​o​n​t​i​n​u​e​?
+			 */
+			confirm_nuke_resync: string
+		}
+		status_messages: {
+			/**
+			 * T​r​a​n​s​p​o​r​t​ ​i​s​ ​c​u​r​r​e​n​t​l​y​ ​d​i​s​c​o​n​n​e​c​t​e​d​.
+			 */
+			transport_disconnected: string
+			/**
+			 * N​o​ ​s​y​n​c​.​s​t​a​t​u​s​ ​e​v​e​n​t​ ​r​e​c​e​i​v​e​d​ ​w​i​t​h​i​n​ ​t​i​m​e​o​u​t​.
+			 */
+			no_sync_status_timeout: string
+			/**
+			 * T​r​a​n​s​p​o​r​t​ ​i​s​ ​d​i​s​c​o​n​n​e​c​t​e​d​ ​(​{​a​g​e​}​)​.
+			 * @param {string} age
+			 */
+			transport_disconnected_age: RequiredParams<'age'>
+			/**
+			 * T​r​a​n​s​p​o​r​t​ ​i​s​ ​d​i​s​c​o​n​n​e​c​t​e​d​.
+			 */
+			transport_disconnected_plain: string
+		}
+		sanity_problems: {
+			/**
+			 * D​B​ ​I​D​ ​i​s​ ​e​m​p​t​y​.
+			 */
+			db_id_empty: string
+			/**
+			 * S​y​n​c​ ​U​R​L​ ​i​s​ ​e​m​p​t​y​.
+			 */
+			sync_url_empty: string
+			/**
+			 * S​y​n​c​ ​U​R​L​ ​p​r​o​t​o​c​o​l​ ​m​u​s​t​ ​b​e​ ​w​s​/​w​s​s​ ​(​g​o​t​ ​{​p​r​o​t​o​c​o​l​}​)​.
+			 * @param {string} protocol
+			 */
+			sync_url_protocol_invalid: RequiredParams<'protocol'>
+			/**
+			 * S​y​n​c​ ​U​R​L​ ​i​s​ ​n​o​t​ ​a​ ​v​a​l​i​d​ ​U​R​L​.
+			 */
+			sync_url_invalid: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​d​e​r​i​v​e​ ​m​e​t​a​ ​U​R​L​ ​f​r​o​m​ ​s​y​n​c​ ​U​R​L​ ​+​ ​D​B​ ​I​D​.
+			 */
+			meta_url_derive_failed: string
+		}
+		notifications: {
+			/**
+			 * C​o​p​y​ ​f​a​i​l​e​d
+			 */
+			copy_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​c​o​p​y​ ​p​r​o​b​e​ ​r​e​s​u​l​t​ ​t​o​ ​c​l​i​p​b​o​a​r​d​.
+			 */
+			copy_failed_probe: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​c​o​p​y​ ​s​y​n​c​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​r​e​s​u​l​t​.
+			 */
+			copy_failed_config: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​c​o​p​y​ ​h​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​c​h​e​c​k​ ​r​e​s​u​l​t​.
+			 */
+			copy_failed_handshake: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​c​o​p​y​ ​s​y​n​c​ ​e​r​r​o​r​s​.
+			 */
+			copy_failed_sync_errors: string
+			/**
+			 * L​o​c​a​l​ ​s​i​t​e​ ​i​d​e​n​t​i​t​y​ ​c​o​r​r​u​p​t​e​d
+			 */
+			local_identity_corrupted_title: string
+			/**
+			 * U​p​d​a​t​e​d​ ​c​r​s​q​l​_​s​i​t​e​_​i​d​ ​a​n​d​ ​r​e​m​e​m​b​e​r​e​d​ ​i​d​e​n​t​i​t​y​.​ ​C​o​m​p​a​t​i​b​i​l​i​t​y​ ​s​h​o​u​l​d​ ​t​u​r​n​ ​i​n​c​o​m​p​a​t​i​b​l​e​.
+			 */
+			local_identity_corrupted_desc: string
+			/**
+			 * C​o​r​r​u​p​t​ ​i​d​e​n​t​i​t​y​ ​f​a​i​l​e​d
+			 */
+			corrupt_identity_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​m​u​t​a​t​e​ ​l​o​c​a​l​ ​s​i​t​e​ ​i​d​e​n​t​i​t​y​.
+			 */
+			corrupt_identity_failed_desc: string
+			/**
+			 * C​o​m​p​a​t​i​b​i​l​i​t​y​ ​i​d​e​n​t​i​t​y​ ​r​e​s​e​t
+			 */
+			compat_identity_reset_title: string
+			/**
+			 * C​l​e​a​r​e​d​ ​r​e​m​e​m​b​e​r​e​d​ ​r​e​m​o​t​e​ ​s​i​t​e​ ​i​d​e​n​t​i​t​y​ ​a​n​d​ ​r​e​-​r​a​n​ ​s​t​r​i​c​t​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​.
+			 */
+			compat_identity_reset_desc: string
+			/**
+			 * R​e​s​e​t​ ​i​d​e​n​t​i​t​y​ ​f​a​i​l​e​d
+			 */
+			reset_identity_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​r​e​s​e​t​ ​r​e​m​e​m​b​e​r​e​d​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​i​d​e​n​t​i​t​y​.
+			 */
+			reset_identity_failed_desc: string
+			/**
+			 * S​y​n​c​ ​d​i​s​a​b​l​e​d
+			 */
+			sync_disabled_title: string
+			/**
+			 * E​n​a​b​l​e​ ​s​y​n​c​ ​f​i​r​s​t​ ​t​o​ ​i​n​j​e​c​t​ ​t​r​a​n​s​p​o​r​t​ ​f​a​i​l​u​r​e​s​.
+			 */
+			sync_disabled_inject_desc: string
+			/**
+			 * E​n​a​b​l​e​ ​s​y​n​c​ ​f​i​r​s​t​ ​t​o​ ​r​u​n​ ​m​a​n​u​a​l​ ​a​u​t​o​-​r​e​c​o​v​e​r​y​.
+			 */
+			sync_disabled_manual_recovery_desc: string
+			/**
+			 * E​n​a​b​l​e​ ​s​y​n​c​ ​f​i​r​s​t​ ​t​o​ ​r​e​s​t​a​r​t​ ​t​h​e​ ​s​y​n​c​ ​w​o​r​k​e​r​.
+			 */
+			sync_disabled_restart_desc: string
+			/**
+			 * S​y​n​c​ ​t​r​a​n​s​p​o​r​t​ ​f​a​i​l​u​r​e​ ​i​n​j​e​c​t​e​d
+			 */
+			sync_transport_failure_injected_title: string
+			/**
+			 * S​y​n​c​ ​U​R​L​ ​s​e​t​ ​t​o​ ​{​u​r​l​}
+			 * @param {string} url
+			 */
+			sync_transport_failure_injected_desc: RequiredParams<'url'>
+			/**
+			 * S​y​n​c​ ​t​r​a​n​s​p​o​r​t​ ​r​e​s​t​o​r​e​d
+			 */
+			sync_transport_restored_title: string
+			/**
+			 * S​y​n​c​ ​U​R​L​ ​r​e​s​t​o​r​e​d​ ​t​o​ ​{​u​r​l​}
+			 * @param {string} url
+			 */
+			sync_transport_restored_desc: RequiredParams<'url'>
+			/**
+			 * S​y​n​c​ ​t​r​a​n​s​p​o​r​t​ ​t​o​g​g​l​e​ ​f​a​i​l​e​d
+			 */
+			sync_transport_toggle_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​i​n​j​e​c​t​/​r​e​s​t​o​r​e​ ​t​r​a​n​s​p​o​r​t​ ​f​a​i​l​u​r​e​.
+			 */
+			sync_transport_toggle_failed_desc: string
+			/**
+			 * D​B​ ​q​u​i​c​k​_​c​h​e​c​k​ ​p​a​s​s​e​d
+			 */
+			db_quick_check_passed_title: string
+			/**
+			 * L​o​c​a​l​ ​D​B​ ​q​u​i​c​k​_​c​h​e​c​k​ ​r​e​t​u​r​n​e​d​ ​o​k​.
+			 */
+			db_quick_check_passed_desc: string
+			/**
+			 * D​B​ ​q​u​i​c​k​_​c​h​e​c​k​ ​f​o​u​n​d​ ​i​s​s​u​e​s
+			 */
+			db_quick_check_issues_title: string
+			/**
+			 * R​u​n​ ​i​n​t​e​g​r​i​t​y​_​c​h​e​c​k​ ​f​o​r​ ​f​u​l​l​ ​d​i​a​g​n​o​s​t​i​c​s​.
+			 */
+			db_quick_check_issues_desc: string
+			/**
+			 * D​B​ ​q​u​i​c​k​_​c​h​e​c​k​ ​f​a​i​l​e​d
+			 */
+			db_quick_check_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​r​u​n​ ​l​o​c​a​l​ ​D​B​ ​q​u​i​c​k​_​c​h​e​c​k​.
+			 */
+			db_quick_check_failed_desc: string
+			/**
+			 * D​B​ ​i​n​t​e​g​r​i​t​y​_​c​h​e​c​k​ ​p​a​s​s​e​d
+			 */
+			db_integrity_check_passed_title: string
+			/**
+			 * D​B​ ​i​n​t​e​g​r​i​t​y​_​c​h​e​c​k​ ​f​a​i​l​e​d
+			 */
+			db_integrity_check_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​r​u​n​ ​l​o​c​a​l​ ​D​B​ ​i​n​t​e​g​r​i​t​y​_​c​h​e​c​k​.
+			 */
+			db_integrity_check_failed_desc: string
+			/**
+			 * C​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​ ​p​a​s​s​e​d
+			 */
+			compat_check_passed_title: string
+			/**
+			 * L​o​c​a​l​ ​a​n​d​ ​r​e​m​o​t​e​ ​s​y​n​c​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​i​s​ ​v​a​l​i​d​.
+			 */
+			compat_check_passed_desc: string
+			/**
+			 * C​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​ ​f​a​i​l​e​d
+			 */
+			compat_check_failed_title: string
+			/**
+			 * L​o​c​a​l​ ​a​n​d​ ​r​e​m​o​t​e​ ​s​y​n​c​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​d​i​d​ ​n​o​t​ ​p​a​s​s​.
+			 */
+			compat_check_failed_desc: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​r​u​n​ ​s​t​r​i​c​t​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​.
+			 */
+			compat_check_failed_run_desc: string
+			/**
+			 * C​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e​ ​p​a​s​s​e​d
+			 */
+			connection_probe_passed_title: string
+			/**
+			 * M​e​t​a​ ​e​n​d​p​o​i​n​t​ ​a​n​d​ ​W​e​b​S​o​c​k​e​t​ ​t​r​a​n​s​p​o​r​t​ ​a​r​e​ ​r​e​a​c​h​a​b​l​e​.
+			 */
+			connection_probe_passed_desc: string
+			/**
+			 * C​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e​ ​f​o​u​n​d​ ​i​s​s​u​e​s
+			 */
+			connection_probe_issues_title: string
+			/**
+			 * C​h​e​c​k​ ​p​r​o​b​e​ ​d​e​t​a​i​l​s​ ​i​n​ ​t​h​e​ ​C​h​e​c​k​s​ ​s​e​c​t​i​o​n​.
+			 */
+			connection_probe_issues_desc: string
+			/**
+			 * C​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e​ ​f​a​i​l​e​d
+			 */
+			connection_probe_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​c​o​m​p​l​e​t​e​ ​c​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e​.
+			 */
+			connection_probe_failed_desc: string
+			/**
+			 * P​r​o​b​e​ ​r​e​s​u​l​t​ ​c​o​p​i​e​d
+			 */
+			probe_copied_title: string
+			/**
+			 * C​o​n​n​e​c​t​i​o​n​ ​p​r​o​b​e​ ​J​S​O​N​ ​c​o​p​i​e​d​ ​t​o​ ​c​l​i​p​b​o​a​r​d​.
+			 */
+			probe_copied_desc: string
+			/**
+			 * S​y​n​c​ ​c​o​n​f​i​g​ ​c​o​p​i​e​d
+			 */
+			sync_config_copied_title: string
+			/**
+			 * S​y​n​c​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​r​e​s​u​l​t​ ​c​o​p​i​e​d​ ​t​o​ ​c​l​i​p​b​o​a​r​d​.
+			 */
+			sync_config_copied_desc: string
+			/**
+			 * H​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​c​o​p​i​e​d
+			 */
+			handshake_status_copied_title: string
+			/**
+			 * H​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​c​h​e​c​k​ ​r​e​s​u​l​t​ ​c​o​p​i​e​d​ ​t​o​ ​c​l​i​p​b​o​a​r​d​.
+			 */
+			handshake_status_copied_desc: string
+			/**
+			 * S​y​n​c​ ​e​r​r​o​r​s​ ​c​o​p​i​e​d
+			 */
+			sync_errors_copied_title: string
+			/**
+			 * R​e​c​e​n​t​ ​s​y​n​c​ ​e​r​r​o​r​s​ ​c​o​p​i​e​d​ ​t​o​ ​c​l​i​p​b​o​a​r​d​.
+			 */
+			sync_errors_copied_desc: string
+			/**
+			 * S​y​n​c​ ​e​r​r​o​r​s​ ​c​l​e​a​r​e​d
+			 */
+			sync_errors_cleared_title: string
+			/**
+			 * R​e​c​e​n​t​ ​s​y​n​c​ ​r​u​n​t​i​m​e​ ​e​r​r​o​r​s​ ​w​e​r​e​ ​c​l​e​a​r​e​d​.
+			 */
+			sync_errors_cleared_desc: string
+			/**
+			 * H​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​u​n​a​v​a​i​l​a​b​l​e
+			 */
+			handshake_status_unavailable_title: string
+			/**
+			 * T​r​a​n​s​p​o​r​t​ ​i​s​ ​d​i​s​c​o​n​n​e​c​t​e​d​.​ ​R​e​c​o​n​n​e​c​t​ ​o​r​ ​r​u​n​ ​a​ ​r​e​c​o​v​e​r​y​ ​a​c​t​i​o​n​ ​f​i​r​s​t​.
+			 */
+			handshake_status_unavailable_desc: string
+			/**
+			 * H​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​r​e​c​e​i​v​e​d
+			 */
+			handshake_status_received_title: string
+			/**
+			 * S​t​a​g​e​:​ ​{​s​t​a​g​e​}​,​ ​a​c​k​n​o​w​l​e​d​g​m​e​n​t​:​ ​{​a​c​k​}
+			 * @param {string} ack
+			 * @param {string} stage
+			 */
+			handshake_status_received_desc: RequiredParams<'ack' | 'stage'>
+			/**
+			 * H​a​n​d​s​h​a​k​e​ ​c​h​e​c​k​ ​t​i​m​e​d​ ​o​u​t
+			 */
+			handshake_check_timed_out_title: string
+			/**
+			 * H​a​n​d​s​h​a​k​e​ ​r​e​p​o​r​t​e​d​ ​i​s​s​u​e​s
+			 */
+			handshake_reported_issues_title: string
+			/**
+			 * s​y​n​c​.​s​t​a​t​u​s​ ​r​e​p​o​r​t​e​d​ ​f​a​i​l​u​r​e
+			 */
+			sync_status_reported_failure: string
+			/**
+			 * H​a​n​d​s​h​a​k​e​ ​s​t​a​t​u​s​ ​c​h​e​c​k​ ​f​a​i​l​e​d
+			 */
+			handshake_status_check_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​r​e​a​d​ ​w​o​r​k​e​r​ ​s​y​n​c​.​s​t​a​t​u​s​ ​p​a​y​l​o​a​d​.
+			 */
+			handshake_status_check_failed_desc: string
+			/**
+			 * S​y​n​c​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​p​a​s​s​e​d
+			 */
+			sync_config_sanity_passed_title: string
+			/**
+			 * S​y​n​c​ ​U​R​L​,​ ​D​B​ ​I​D​,​ ​a​n​d​ ​d​e​r​i​v​e​d​ ​m​e​t​a​ ​U​R​L​ ​l​o​o​k​ ​v​a​l​i​d​.
+			 */
+			sync_config_sanity_passed_desc: string
+			/**
+			 * S​y​n​c​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​f​o​u​n​d​ ​i​s​s​u​e​s
+			 */
+			sync_config_sanity_issues_title: string
+			/**
+			 * {​c​o​u​n​t​}​ ​i​s​s​u​e​(​s​)​ ​f​o​u​n​d​.​ ​S​e​e​ ​d​e​t​a​i​l​s​ ​i​n​ ​C​h​e​c​k​s​ ​s​e​c​t​i​o​n​.
+			 * @param {number} count
+			 */
+			sync_config_sanity_issues_desc: RequiredParams<'count'>
+			/**
+			 * S​y​n​c​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​f​a​i​l​e​d
+			 */
+			sync_config_sanity_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​r​u​n​ ​c​o​n​f​i​g​ ​s​a​n​i​t​y​ ​c​h​e​c​k​s​.
+			 */
+			sync_config_sanity_failed_desc: string
+			/**
+			 * M​a​n​u​a​l​ ​a​u​t​o​-​r​e​c​o​v​e​r​y​ ​a​p​p​l​i​e​d
+			 */
+			manual_auto_recovery_applied_title: string
+			/**
+			 * P​e​r​f​o​r​m​e​d​ ​c​h​e​c​k​s​ ​a​n​d​ ​r​e​s​t​a​r​t​e​d​ ​s​y​n​c​ ​w​o​r​k​e​r​.
+			 */
+			manual_auto_recovery_applied_desc: string
+			/**
+			 * M​a​n​u​a​l​ ​a​u​t​o​-​r​e​c​o​v​e​r​y​ ​n​o​t​ ​n​e​e​d​e​d
+			 */
+			manual_auto_recovery_not_needed_title: string
+			/**
+			 * C​h​e​c​k​s​ ​p​a​s​s​e​d​;​ ​n​o​ ​r​e​s​t​a​r​t​ ​w​a​s​ ​r​e​q​u​i​r​e​d​.
+			 */
+			manual_auto_recovery_not_needed_desc: string
+			/**
+			 * M​a​n​u​a​l​ ​a​u​t​o​-​r​e​c​o​v​e​r​y​ ​f​a​i​l​e​d
+			 */
+			manual_auto_recovery_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​c​o​m​p​l​e​t​e​ ​r​e​c​o​v​e​r​y​ ​s​e​q​u​e​n​c​e​.
+			 */
+			manual_auto_recovery_failed_desc: string
+			/**
+			 * S​y​n​c​ ​w​o​r​k​e​r​ ​r​e​s​t​a​r​t​e​d
+			 */
+			sync_worker_restarted_title: string
+			/**
+			 * S​y​n​c​ ​w​o​r​k​e​r​ ​s​t​o​p​/​s​t​a​r​t​ ​s​e​q​u​e​n​c​e​ ​c​o​m​p​l​e​t​e​d​.
+			 */
+			sync_worker_restarted_desc: string
+			/**
+			 * R​e​s​t​a​r​t​ ​s​y​n​c​ ​w​o​r​k​e​r​ ​f​a​i​l​e​d
+			 */
+			restart_sync_worker_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​r​e​s​t​a​r​t​ ​s​y​n​c​ ​w​o​r​k​e​r​.
+			 */
+			restart_sync_worker_failed_desc: string
+			/**
+			 * D​i​a​g​n​o​s​t​i​c​s​ ​e​x​p​o​r​t​e​d
+			 */
+			diagnostics_exported_title: string
+			/**
+			 * S​y​n​c​ ​d​i​a​g​n​o​s​t​i​c​s​ ​J​S​O​N​ ​d​o​w​n​l​o​a​d​e​d​ ​a​n​d​ ​c​o​p​i​e​d​ ​t​o​ ​c​l​i​p​b​o​a​r​d​ ​w​h​e​n​ ​p​e​r​m​i​t​t​e​d​.
+			 */
+			diagnostics_exported_desc: string
+			/**
+			 * E​x​p​o​r​t​ ​d​i​a​g​n​o​s​t​i​c​s​ ​f​a​i​l​e​d
+			 */
+			export_diagnostics_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​e​x​p​o​r​t​ ​s​y​n​c​ ​d​i​a​g​n​o​s​t​i​c​s​.
+			 */
+			export_diagnostics_failed_desc: string
+			/**
+			 * R​e​s​y​n​c​ ​s​t​a​r​t​e​d
+			 */
+			resync_started_title: string
+			/**
+			 * L​o​c​a​l​ ​D​B​ ​w​a​s​ ​r​e​s​e​t​ ​a​n​d​ ​r​e​m​o​t​e​ ​r​e​s​y​n​c​ ​h​a​s​ ​s​t​a​r​t​e​d​.
+			 */
+			resync_started_desc: string
+			/**
+			 * N​u​k​e​ ​a​n​d​ ​r​e​s​y​n​c​ ​f​a​i​l​e​d
+			 */
+			nuke_resync_failed_title: string
+			/**
+			 * C​o​u​l​d​ ​n​o​t​ ​r​e​s​e​t​ ​l​o​c​a​l​ ​D​B​ ​a​n​d​ ​s​t​a​r​t​ ​r​e​s​y​n​c​.
+			 */
+			nuke_resync_failed_desc: string
 		}
 		query_interface: {
 			/**
@@ -5392,6 +6516,10 @@ export type TranslationFunctions = {
 			 * Kaboom! Runtime error
 			 */
 			runtime_error: () => LocalizedString
+			/**
+			 * Kaboom! Render time error
+			 */
+			render_time_error: () => LocalizedString
 		}
 		actions: {
 			/**
@@ -5423,13 +6551,1099 @@ export type TranslationFunctions = {
 			 */
 			executing: () => LocalizedString
 			/**
-			 * Corrupt Sync State
+			 * Run check
 			 */
-			corrupt_sync_state: () => LocalizedString
+			run_check: () => LocalizedString
 			/**
-			 * Export State
+			 * Run action
 			 */
-			export_state: () => LocalizedString
+			run_action: () => LocalizedString
+			/**
+			 * Running...
+			 */
+			running: () => LocalizedString
+			/**
+			 * Export
+			 */
+			'export': () => LocalizedString
+			/**
+			 * Copy
+			 */
+			copy: () => LocalizedString
+			/**
+			 * Clear
+			 */
+			clear: () => LocalizedString
+			/**
+			 * Restore
+			 */
+			restore: () => LocalizedString
+		}
+		sections: {
+			diagnostics: {
+				/**
+				 * Diagnostics
+				 */
+				title: () => LocalizedString
+				/**
+				 * Visual runtime snapshot for connection, compatibility, queue, and local DB health.
+				 */
+				description: () => LocalizedString
+			}
+			checks: {
+				/**
+				 * Checks
+				 */
+				title: () => LocalizedString
+				/**
+				 * Run explicit diagnostics and export current sync troubleshooting data.
+				 */
+				description: () => LocalizedString
+			}
+			recovery: {
+				/**
+				 * Recovery
+				 */
+				title: () => LocalizedString
+				/**
+				 * Use the least destructive fix first.
+				 */
+				description: () => LocalizedString
+			}
+			inject_problems: {
+				/**
+				 * Inject Problems
+				 */
+				title: () => LocalizedString
+				/**
+				 * Force failures to test resilience and recovery flows.
+				 */
+				description: () => LocalizedString
+			}
+			data_tools: {
+				/**
+				 * Data Tools
+				 */
+				title: () => LocalizedString
+				/**
+				 * Seed/reset/export helpers, table exploration, and custom query execution.
+				 */
+				description: () => LocalizedString
+			}
+		}
+		diagnostics: {
+			health_rail: {
+				/**
+				 * Health Rail
+				 */
+				title: () => LocalizedString
+			}
+			freshness: {
+				/**
+				 * Freshness
+				 */
+				title: () => LocalizedString
+				/**
+				 * Freshness indicates how recent sync signals are. Each metric shows explicit thresholds and a state: Healthy, Warning, Stale, or N/A.
+				 */
+				description: () => LocalizedString
+			}
+			timeline: {
+				/**
+				 * Timeline
+				 */
+				title: () => LocalizedString
+				/**
+				 * latest {count} events
+				 */
+				latest_events: (arg: { count: number }) => LocalizedString
+				/**
+				 * No changes recorded in this session yet.
+				 */
+				no_changes: () => LocalizedString
+				/**
+				 * Recent sync errors
+				 */
+				recent_sync_errors: () => LocalizedString
+			}
+		}
+		health_rail: {
+			/**
+			 * Core sync health metrics. These values summarize transport, compatibility, local DB condition, pending write pressure, and automatic recovery behavior.
+			 */
+			description: () => LocalizedString
+			/**
+			 * Connection
+			 */
+			connection: () => LocalizedString
+			/**
+			 * Compatibility
+			 */
+			compatibility: () => LocalizedString
+			/**
+			 * Local DB
+			 */
+			local_db: () => LocalizedString
+			/**
+			 * Pending queue
+			 */
+			pending_queue: () => LocalizedString
+			/**
+			 * Auto recovery
+			 */
+			auto_recovery: () => LocalizedString
+			/**
+			 * None
+			 */
+			none: () => LocalizedString
+			/**
+			 * Never
+			 */
+			never: () => LocalizedString
+			/**
+			 * Open
+			 */
+			open: () => LocalizedString
+			/**
+			 * Close
+			 */
+			close: () => LocalizedString
+			/**
+			 * Connected (transport open)
+			 */
+			connected_transport_open: () => LocalizedString
+			/**
+			 * Connected (other tab)
+			 */
+			connected_other_tab: () => LocalizedString
+			/**
+			 * Disconnected (transport closed)
+			 */
+			disconnected_transport_closed: () => LocalizedString
+			/**
+			 * Stuck
+			 */
+			stuck: () => LocalizedString
+			/**
+			 * Compatible (schema {schemaVersion})
+			 */
+			compatible_schema: (arg: { schemaVersion: string }) => LocalizedString
+			/**
+			 * Derived from sync transport events and stuck detection.
+			 */
+			derived_transport: () => LocalizedString
+			/**
+			 * Derived from sync transport events and stuck detection; heartbeat currently comes from another tab.
+			 */
+			derived_transport_other_tab: () => LocalizedString
+			/**
+			 * Events: {openCount} Open / {closeCount} Close
+			 */
+			events_line: (arg: { closeCount: number, openCount: number }) => LocalizedString
+			/**
+			 * Disconnected for {age}
+			 */
+			disconnected_for: (arg: { age: string }) => LocalizedString
+			/**
+			 * Derived from local/remote identity and schema checks.
+			 */
+			derived_compatibility: () => LocalizedString
+			/**
+			 * {status} ({check})
+			 */
+			local_db_status: (arg: { check: string, status: string }) => LocalizedString
+			/**
+			 * Quick Check
+			 */
+			quick_check: () => LocalizedString
+			/**
+			 * Integrity Check
+			 */
+			integrity_check: () => LocalizedString
+			/**
+			 * Derived from local database health checks.
+			 */
+			derived_local_db: () => LocalizedString
+			/**
+			 * {count} pending
+			 */
+			pending_count: (arg: { count: number }) => LocalizedString
+			/**
+			 * Derived from unsent local changes.
+			 */
+			derived_pending: () => LocalizedString
+			/**
+			 * {result} ({age})
+			 */
+			auto_recovery_status: (arg: { age: string, result: string }) => LocalizedString
+			/**
+			 * Derived from automatic stale-state recovery attempts.
+			 */
+			derived_auto_recovery: () => LocalizedString
+		}
+		freshness: {
+			/**
+			 * Status heartbeat
+			 */
+			status_heartbeat: () => LocalizedString
+			/**
+			 * Server confirmation
+			 */
+			server_confirmation: () => LocalizedString
+			/**
+			 * Queue age
+			 */
+			queue_age: () => LocalizedString
+			/**
+			 * Healthy
+			 */
+			healthy: () => LocalizedString
+			/**
+			 * Warning
+			 */
+			warning: () => LocalizedString
+			/**
+			 * Stale
+			 */
+			stale: () => LocalizedString
+			/**
+			 * N/A
+			 */
+			na: () => LocalizedString
+			/**
+			 * Connected (live)
+			 */
+			status_connected_live: () => LocalizedString
+			/**
+			 * {seconds}s since last heartbeat
+			 */
+			status_since_last_heartbeat: (arg: { seconds: number }) => LocalizedString
+			/**
+			 * Warn {warn}s, stale {stale}s
+			 */
+			warn_stale: (arg: { stale: number, warn: number }) => LocalizedString
+			/**
+			 * Last at: {time}
+			 */
+			last_at: (arg: { time: string }) => LocalizedString
+			/**
+			 * Transport keepalive liveness (WebSocket ping/pong), independent from pending writes.
+			 */
+			status_description: () => LocalizedString
+			/**
+			 * No pending changes
+			 */
+			no_pending_changes: () => LocalizedString
+			/**
+			 * {seconds}s ago
+			 */
+			seconds_ago: (arg: { seconds: number }) => LocalizedString
+			/**
+			 * Age of last server acknowledgment while queue has pending writes.
+			 */
+			ack_description: () => LocalizedString
+			/**
+			 * Queue empty
+			 */
+			queue_empty: () => LocalizedString
+			/**
+			 * Last queue activity: {time}
+			 */
+			last_queue_activity: (arg: { time: string }) => LocalizedString
+			/**
+			 * Age of oldest unsent local change.
+			 */
+			queue_description: () => LocalizedString
+		}
+		checks: {
+			recheck_sync_compatibility: {
+				/**
+				 * Recheck sync compatibility
+				 */
+				title: () => LocalizedString
+				/**
+				 * Runs the strict local-vs-remote identity check and refreshes compatibility state.
+				 */
+				description: () => LocalizedString
+			}
+			run_db_quick_check: {
+				/**
+				 * Run DB quick check
+				 */
+				title: () => LocalizedString
+				/**
+				 * Fast structural check of local SQLite integrity for routine diagnostics.
+				 */
+				description: () => LocalizedString
+			}
+			run_db_integrity_check: {
+				/**
+				 * Run DB integrity check
+				 */
+				title: () => LocalizedString
+				/**
+				 * Deeper integrity scan. Slower; use when you suspect corruption.
+				 */
+				description: () => LocalizedString
+			}
+			run_connection_probe: {
+				/**
+				 * Run connection probe
+				 */
+				title: () => LocalizedString
+				/**
+				 * Checks sync meta endpoint and a direct WebSocket open to diagnose timeout issues.
+				 */
+				description: () => LocalizedString
+			}
+			run_handshake_status_check: {
+				/**
+				 * Run handshake status check
+				 */
+				title: () => LocalizedString
+				/**
+				 * Reads the latest worker sync.status payload (stage, reason, acknowledgment version).
+				 */
+				description: () => LocalizedString
+			}
+			run_sync_config_sanity: {
+				/**
+				 * Check sync URL/config sanity
+				 */
+				title: () => LocalizedString
+				/**
+				 * Validates DB ID, sync URL format, protocol, and derived meta URL.
+				 */
+				description: () => LocalizedString
+			}
+			/**
+			 * Last connection probe
+			 */
+			last_connection_probe: () => LocalizedString
+			/**
+			 * Last handshake status check
+			 */
+			last_handshake_status_check: () => LocalizedString
+			/**
+			 * Last sync config sanity check
+			 */
+			last_sync_config_sanity_check: () => LocalizedString
+			/**
+			 * Time
+			 */
+			time: () => LocalizedString
+			/**
+			 * Sync active
+			 */
+			sync_active: () => LocalizedString
+			/**
+			 * DB ID
+			 */
+			db_id: () => LocalizedString
+			/**
+			 * Sync URL
+			 */
+			sync_url: () => LocalizedString
+			/**
+			 * Meta
+			 */
+			meta: () => LocalizedString
+			/**
+			 * WebSocket
+			 */
+			websocket: () => LocalizedString
+			/**
+			 * Meta body snippet
+			 */
+			meta_body_snippet: () => LocalizedString
+			/**
+			 * Result
+			 */
+			result: () => LocalizedString
+			/**
+			 * Stage
+			 */
+			stage: () => LocalizedString
+			/**
+			 * Acknowledgment DB version
+			 */
+			ack_db_version: () => LocalizedString
+			/**
+			 * Reason
+			 */
+			reason: () => LocalizedString
+			/**
+			 * Message
+			 */
+			message: () => LocalizedString
+			/**
+			 * Derived meta URL
+			 */
+			derived_meta_url: () => LocalizedString
+			/**
+			 * WS protocol valid
+			 */
+			ws_protocol_valid: () => LocalizedString
+			/**
+			 * Issues
+			 */
+			issues: () => LocalizedString
+			/**
+			 * OK
+			 */
+			ok: () => LocalizedString
+			/**
+			 * FAIL
+			 */
+			fail: () => LocalizedString
+			/**
+			 * timed out
+			 */
+			timed_out: () => LocalizedString
+			/**
+			 * n/a
+			 */
+			na: () => LocalizedString
+		}
+		recovery_actions: {
+			restart_sync_worker: {
+				/**
+				 * Restart sync worker
+				 */
+				title: () => LocalizedString
+				/**
+				 * Stops and starts the sync worker to recover from temporary worker/network issues.
+				 */
+				description: () => LocalizedString
+			}
+			reset_compatibility_identity: {
+				/**
+				 * Reset compatibility identity
+				 */
+				title: () => LocalizedString
+				/**
+				 * Clears remembered remote site ID for this DB and re-runs strict compatibility checks.
+				 */
+				description: () => LocalizedString
+			}
+			run_manual_auto_recovery: {
+				/**
+				 * Run manual auto-recovery
+				 */
+				title: () => LocalizedString
+				/**
+				 * Runs quick DB check + strict compatibility check and restarts sync if stale/blocked.
+				 */
+				description: () => LocalizedString
+			}
+			nuke_and_resync_now: {
+				/**
+				 * Nuke and resync now
+				 */
+				title: () => LocalizedString
+				/**
+				 * Destructive: deletes local DB and re-downloads state from remote.
+				 */
+				description: () => LocalizedString
+			}
+		}
+		inject_actions: {
+			inject_sync_transport_failure: {
+				/**
+				 * Inject sync transport failure
+				 */
+				title: () => LocalizedString
+				/**
+				 * Temporarily points sync to an unreachable URL to force connection errors. Run again to restore.
+				 */
+				description: () => LocalizedString
+			}
+			corrupt_local_site_identity: {
+				/**
+				 * Corrupt local site identity
+				 */
+				title: () => LocalizedString
+				/**
+				 * Writes a random value into local crsql_site_id and remembered identity to force compatibility mismatch.
+				 */
+				description: () => LocalizedString
+			}
+			trigger_load_error: {
+				/**
+				 * Trigger load error
+				 */
+				title: () => LocalizedString
+				/**
+				 * Navigates to the load error route to test error-state handling.
+				 */
+				description: () => LocalizedString
+			}
+			trigger_runtime_error: {
+				/**
+				 * Trigger runtime error
+				 */
+				title: () => LocalizedString
+				/**
+				 * Throws a runtime exception for testing crash/error boundaries.
+				 */
+				description: () => LocalizedString
+			}
+		}
+		data_tools: {
+			export_state: {
+				/**
+				 * Export state
+				 */
+				title: () => LocalizedString
+				/**
+				 * Exports current local app state archive for debugging.
+				 */
+				description: () => LocalizedString
+			}
+			export_sync_diagnostics: {
+				/**
+				 * Export sync diagnostics
+				 */
+				title: () => LocalizedString
+				/**
+				 * Downloads runtime sync diagnostics JSON (also copied to clipboard when allowed).
+				 */
+				description: () => LocalizedString
+			}
+			populate_database: {
+				/**
+				 * Populate database
+				 */
+				title: () => LocalizedString
+				/**
+				 * Inserts debug seed data for quick local testing.
+				 */
+				description: () => LocalizedString
+			}
+			upsert_100_books: {
+				/**
+				 * Upsert 100 books
+				 */
+				title: () => LocalizedString
+				/**
+				 * Adds deterministic sample books and publisher/supplier links.
+				 */
+				description: () => LocalizedString
+			}
+			reset_database: {
+				/**
+				 * Reset database
+				 */
+				title: () => LocalizedString
+				/**
+				 * Destructive: deletes all rows from core local business tables (books, customers, suppliers, orders).
+				 */
+				description: () => LocalizedString
+			}
+			table_explorer: {
+				/**
+				 * Table Explorer
+				 */
+				title: () => LocalizedString
+				/**
+				 * No tables found.
+				 */
+				no_tables: () => LocalizedString
+				/**
+				 * Select table
+				 */
+				select_table: () => LocalizedString
+				/**
+				 * {count} row{{s}} total. Showing up to {limit}.
+				 */
+				total_rows: (arg: { count: number, limit: number }) => LocalizedString
+				/**
+				 * No rows.
+				 */
+				no_rows: () => LocalizedString
+			}
+		}
+		timeline_events: {
+			/**
+			 * Connection marked stuck ({reason})
+			 */
+			connection_stuck: (arg: { reason: string }) => LocalizedString
+			/**
+			 * Connection restored
+			 */
+			connection_restored: () => LocalizedString
+			/**
+			 * Connection lost
+			 */
+			connection_lost: () => LocalizedString
+			/**
+			 * Compatibility issue: {reason}
+			 */
+			compatibility_issue: (arg: { reason: string }) => LocalizedString
+			/**
+			 * Compatibility state: {status}
+			 */
+			compatibility_state: (arg: { status: string }) => LocalizedString
+			/**
+			 * Local DB health check passed
+			 */
+			local_db_health_passed: () => LocalizedString
+			/**
+			 * Local DB health: {status}
+			 */
+			local_db_health_status: (arg: { status: string }) => LocalizedString
+			/**
+			 * Pending changes: {count}
+			 */
+			pending_changes: (arg: { count: number }) => LocalizedString
+			/**
+			 * Pending queue drained
+			 */
+			pending_queue_drained: () => LocalizedString
+			/**
+			 * Auto recovery: {result}
+			 */
+			auto_recovery: (arg: { result: string }) => LocalizedString
+			/**
+			 * Auto recovery: {result} ({error})
+			 */
+			auto_recovery_with_error: (arg: { error: string, result: string }) => LocalizedString
+			/**
+			 * Check: connection probe passed
+			 */
+			check_connection_probe_passed: () => LocalizedString
+			/**
+			 * Check: connection probe found issues
+			 */
+			check_connection_probe_issues: () => LocalizedString
+			/**
+			 * Check: connection probe failed
+			 */
+			check_connection_probe_failed: () => LocalizedString
+			/**
+			 * Check: handshake failed (transport disconnected)
+			 */
+			check_handshake_disconnected: () => LocalizedString
+			/**
+			 * Check: handshake status passed
+			 */
+			check_handshake_passed: () => LocalizedString
+			/**
+			 * Check: handshake status failed
+			 */
+			check_handshake_failed: () => LocalizedString
+			/**
+			 * Check: handshake status check failed
+			 */
+			check_handshake_check_failed: () => LocalizedString
+			/**
+			 * Check: sync config sanity passed
+			 */
+			check_config_sanity_passed: () => LocalizedString
+			/**
+			 * Check: sync config sanity found {count} issue(s)
+			 */
+			check_config_sanity_issues: (arg: { count: number }) => LocalizedString
+			/**
+			 * Check: sync config sanity failed
+			 */
+			check_config_sanity_failed: () => LocalizedString
+		}
+		dialogs: {
+			/**
+			 * This deletes all rows from core local tables used by the app. Continue?
+			 */
+			confirm_reset_database: () => LocalizedString
+			/**
+			 * This will delete the local DB and re-sync from remote. Continue?
+			 */
+			confirm_nuke_resync: () => LocalizedString
+		}
+		status_messages: {
+			/**
+			 * Transport is currently disconnected.
+			 */
+			transport_disconnected: () => LocalizedString
+			/**
+			 * No sync.status event received within timeout.
+			 */
+			no_sync_status_timeout: () => LocalizedString
+			/**
+			 * Transport is disconnected ({age}).
+			 */
+			transport_disconnected_age: (arg: { age: string }) => LocalizedString
+			/**
+			 * Transport is disconnected.
+			 */
+			transport_disconnected_plain: () => LocalizedString
+		}
+		sanity_problems: {
+			/**
+			 * DB ID is empty.
+			 */
+			db_id_empty: () => LocalizedString
+			/**
+			 * Sync URL is empty.
+			 */
+			sync_url_empty: () => LocalizedString
+			/**
+			 * Sync URL protocol must be ws/wss (got {protocol}).
+			 */
+			sync_url_protocol_invalid: (arg: { protocol: string }) => LocalizedString
+			/**
+			 * Sync URL is not a valid URL.
+			 */
+			sync_url_invalid: () => LocalizedString
+			/**
+			 * Could not derive meta URL from sync URL + DB ID.
+			 */
+			meta_url_derive_failed: () => LocalizedString
+		}
+		notifications: {
+			/**
+			 * Copy failed
+			 */
+			copy_failed_title: () => LocalizedString
+			/**
+			 * Could not copy probe result to clipboard.
+			 */
+			copy_failed_probe: () => LocalizedString
+			/**
+			 * Could not copy sync config sanity result.
+			 */
+			copy_failed_config: () => LocalizedString
+			/**
+			 * Could not copy handshake status check result.
+			 */
+			copy_failed_handshake: () => LocalizedString
+			/**
+			 * Could not copy sync errors.
+			 */
+			copy_failed_sync_errors: () => LocalizedString
+			/**
+			 * Local site identity corrupted
+			 */
+			local_identity_corrupted_title: () => LocalizedString
+			/**
+			 * Updated crsql_site_id and remembered identity. Compatibility should turn incompatible.
+			 */
+			local_identity_corrupted_desc: () => LocalizedString
+			/**
+			 * Corrupt identity failed
+			 */
+			corrupt_identity_failed_title: () => LocalizedString
+			/**
+			 * Could not mutate local site identity.
+			 */
+			corrupt_identity_failed_desc: () => LocalizedString
+			/**
+			 * Compatibility identity reset
+			 */
+			compat_identity_reset_title: () => LocalizedString
+			/**
+			 * Cleared remembered remote site identity and re-ran strict compatibility check.
+			 */
+			compat_identity_reset_desc: () => LocalizedString
+			/**
+			 * Reset identity failed
+			 */
+			reset_identity_failed_title: () => LocalizedString
+			/**
+			 * Could not reset remembered compatibility identity.
+			 */
+			reset_identity_failed_desc: () => LocalizedString
+			/**
+			 * Sync disabled
+			 */
+			sync_disabled_title: () => LocalizedString
+			/**
+			 * Enable sync first to inject transport failures.
+			 */
+			sync_disabled_inject_desc: () => LocalizedString
+			/**
+			 * Enable sync first to run manual auto-recovery.
+			 */
+			sync_disabled_manual_recovery_desc: () => LocalizedString
+			/**
+			 * Enable sync first to restart the sync worker.
+			 */
+			sync_disabled_restart_desc: () => LocalizedString
+			/**
+			 * Sync transport failure injected
+			 */
+			sync_transport_failure_injected_title: () => LocalizedString
+			/**
+			 * Sync URL set to {url}
+			 */
+			sync_transport_failure_injected_desc: (arg: { url: string }) => LocalizedString
+			/**
+			 * Sync transport restored
+			 */
+			sync_transport_restored_title: () => LocalizedString
+			/**
+			 * Sync URL restored to {url}
+			 */
+			sync_transport_restored_desc: (arg: { url: string }) => LocalizedString
+			/**
+			 * Sync transport toggle failed
+			 */
+			sync_transport_toggle_failed_title: () => LocalizedString
+			/**
+			 * Could not inject/restore transport failure.
+			 */
+			sync_transport_toggle_failed_desc: () => LocalizedString
+			/**
+			 * DB quick_check passed
+			 */
+			db_quick_check_passed_title: () => LocalizedString
+			/**
+			 * Local DB quick_check returned ok.
+			 */
+			db_quick_check_passed_desc: () => LocalizedString
+			/**
+			 * DB quick_check found issues
+			 */
+			db_quick_check_issues_title: () => LocalizedString
+			/**
+			 * Run integrity_check for full diagnostics.
+			 */
+			db_quick_check_issues_desc: () => LocalizedString
+			/**
+			 * DB quick_check failed
+			 */
+			db_quick_check_failed_title: () => LocalizedString
+			/**
+			 * Could not run local DB quick_check.
+			 */
+			db_quick_check_failed_desc: () => LocalizedString
+			/**
+			 * DB integrity_check passed
+			 */
+			db_integrity_check_passed_title: () => LocalizedString
+			/**
+			 * DB integrity_check failed
+			 */
+			db_integrity_check_failed_title: () => LocalizedString
+			/**
+			 * Could not run local DB integrity_check.
+			 */
+			db_integrity_check_failed_desc: () => LocalizedString
+			/**
+			 * Compatibility check passed
+			 */
+			compat_check_passed_title: () => LocalizedString
+			/**
+			 * Local and remote sync compatibility is valid.
+			 */
+			compat_check_passed_desc: () => LocalizedString
+			/**
+			 * Compatibility check failed
+			 */
+			compat_check_failed_title: () => LocalizedString
+			/**
+			 * Local and remote sync compatibility did not pass.
+			 */
+			compat_check_failed_desc: () => LocalizedString
+			/**
+			 * Could not run strict compatibility check.
+			 */
+			compat_check_failed_run_desc: () => LocalizedString
+			/**
+			 * Connection probe passed
+			 */
+			connection_probe_passed_title: () => LocalizedString
+			/**
+			 * Meta endpoint and WebSocket transport are reachable.
+			 */
+			connection_probe_passed_desc: () => LocalizedString
+			/**
+			 * Connection probe found issues
+			 */
+			connection_probe_issues_title: () => LocalizedString
+			/**
+			 * Check probe details in the Checks section.
+			 */
+			connection_probe_issues_desc: () => LocalizedString
+			/**
+			 * Connection probe failed
+			 */
+			connection_probe_failed_title: () => LocalizedString
+			/**
+			 * Could not complete connection probe.
+			 */
+			connection_probe_failed_desc: () => LocalizedString
+			/**
+			 * Probe result copied
+			 */
+			probe_copied_title: () => LocalizedString
+			/**
+			 * Connection probe JSON copied to clipboard.
+			 */
+			probe_copied_desc: () => LocalizedString
+			/**
+			 * Sync config copied
+			 */
+			sync_config_copied_title: () => LocalizedString
+			/**
+			 * Sync config sanity result copied to clipboard.
+			 */
+			sync_config_copied_desc: () => LocalizedString
+			/**
+			 * Handshake status copied
+			 */
+			handshake_status_copied_title: () => LocalizedString
+			/**
+			 * Handshake status check result copied to clipboard.
+			 */
+			handshake_status_copied_desc: () => LocalizedString
+			/**
+			 * Sync errors copied
+			 */
+			sync_errors_copied_title: () => LocalizedString
+			/**
+			 * Recent sync errors copied to clipboard.
+			 */
+			sync_errors_copied_desc: () => LocalizedString
+			/**
+			 * Sync errors cleared
+			 */
+			sync_errors_cleared_title: () => LocalizedString
+			/**
+			 * Recent sync runtime errors were cleared.
+			 */
+			sync_errors_cleared_desc: () => LocalizedString
+			/**
+			 * Handshake status unavailable
+			 */
+			handshake_status_unavailable_title: () => LocalizedString
+			/**
+			 * Transport is disconnected. Reconnect or run a recovery action first.
+			 */
+			handshake_status_unavailable_desc: () => LocalizedString
+			/**
+			 * Handshake status received
+			 */
+			handshake_status_received_title: () => LocalizedString
+			/**
+			 * Stage: {stage}, acknowledgment: {ack}
+			 */
+			handshake_status_received_desc: (arg: { ack: string, stage: string }) => LocalizedString
+			/**
+			 * Handshake check timed out
+			 */
+			handshake_check_timed_out_title: () => LocalizedString
+			/**
+			 * Handshake reported issues
+			 */
+			handshake_reported_issues_title: () => LocalizedString
+			/**
+			 * sync.status reported failure
+			 */
+			sync_status_reported_failure: () => LocalizedString
+			/**
+			 * Handshake status check failed
+			 */
+			handshake_status_check_failed_title: () => LocalizedString
+			/**
+			 * Could not read worker sync.status payload.
+			 */
+			handshake_status_check_failed_desc: () => LocalizedString
+			/**
+			 * Sync config sanity passed
+			 */
+			sync_config_sanity_passed_title: () => LocalizedString
+			/**
+			 * Sync URL, DB ID, and derived meta URL look valid.
+			 */
+			sync_config_sanity_passed_desc: () => LocalizedString
+			/**
+			 * Sync config sanity found issues
+			 */
+			sync_config_sanity_issues_title: () => LocalizedString
+			/**
+			 * {count} issue(s) found. See details in Checks section.
+			 */
+			sync_config_sanity_issues_desc: (arg: { count: number }) => LocalizedString
+			/**
+			 * Sync config sanity failed
+			 */
+			sync_config_sanity_failed_title: () => LocalizedString
+			/**
+			 * Could not run config sanity checks.
+			 */
+			sync_config_sanity_failed_desc: () => LocalizedString
+			/**
+			 * Manual auto-recovery applied
+			 */
+			manual_auto_recovery_applied_title: () => LocalizedString
+			/**
+			 * Performed checks and restarted sync worker.
+			 */
+			manual_auto_recovery_applied_desc: () => LocalizedString
+			/**
+			 * Manual auto-recovery not needed
+			 */
+			manual_auto_recovery_not_needed_title: () => LocalizedString
+			/**
+			 * Checks passed; no restart was required.
+			 */
+			manual_auto_recovery_not_needed_desc: () => LocalizedString
+			/**
+			 * Manual auto-recovery failed
+			 */
+			manual_auto_recovery_failed_title: () => LocalizedString
+			/**
+			 * Could not complete recovery sequence.
+			 */
+			manual_auto_recovery_failed_desc: () => LocalizedString
+			/**
+			 * Sync worker restarted
+			 */
+			sync_worker_restarted_title: () => LocalizedString
+			/**
+			 * Sync worker stop/start sequence completed.
+			 */
+			sync_worker_restarted_desc: () => LocalizedString
+			/**
+			 * Restart sync worker failed
+			 */
+			restart_sync_worker_failed_title: () => LocalizedString
+			/**
+			 * Could not restart sync worker.
+			 */
+			restart_sync_worker_failed_desc: () => LocalizedString
+			/**
+			 * Diagnostics exported
+			 */
+			diagnostics_exported_title: () => LocalizedString
+			/**
+			 * Sync diagnostics JSON downloaded and copied to clipboard when permitted.
+			 */
+			diagnostics_exported_desc: () => LocalizedString
+			/**
+			 * Export diagnostics failed
+			 */
+			export_diagnostics_failed_title: () => LocalizedString
+			/**
+			 * Could not export sync diagnostics.
+			 */
+			export_diagnostics_failed_desc: () => LocalizedString
+			/**
+			 * Resync started
+			 */
+			resync_started_title: () => LocalizedString
+			/**
+			 * Local DB was reset and remote resync has started.
+			 */
+			resync_started_desc: () => LocalizedString
+			/**
+			 * Nuke and resync failed
+			 */
+			nuke_resync_failed_title: () => LocalizedString
+			/**
+			 * Could not reset local DB and start resync.
+			 */
+			nuke_resync_failed_desc: () => LocalizedString
 		}
 		query_interface: {
 			/**
