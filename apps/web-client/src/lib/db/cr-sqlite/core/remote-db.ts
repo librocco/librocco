@@ -19,8 +19,21 @@ async function rpc<T>(url: string, body: any, token?: string): Promise<T> {
 		body: JSON.stringify(body)
 	});
 
+	const parseResponse = async <R>(): Promise<R> => {
+		const text = await res.text();
+		if (!text.trim()) {
+			return { rows: [] } as unknown as R;
+		}
+
+		try {
+			return JSON.parse(text) as R;
+		} catch {
+			throw new Error(`Invalid JSON response for ${url}: ${text}`);
+		}
+	};
+
 	if (!res.ok) {
-		const json = await res.json();
+		const json = await parseResponse<{ isSQLiteError?: boolean; message?: string; code?: string }>();
 		if (json?.isSQLiteError) {
 			const { message, code } = json;
 			throw new SQLiteError(message, code);
@@ -28,7 +41,7 @@ async function rpc<T>(url: string, body: any, token?: string): Promise<T> {
 		throw new Error(`${res.status}: ${res.statusText}`);
 	}
 
-	return res.json();
+	return parseResponse<T>();
 }
 
 type QueryResp<R extends any[]> = { rows: R };
