@@ -163,6 +163,7 @@
 	onDestroy(() => {
 		// Run all cleanup functions
 		disposer?.();
+		clearSyncDialogTimeout();
 		window.removeEventListener("beforeunload", preventUnloadHandler);
 		window.removeEventListener("pagehide", releaseDbOnUnload);
 		detachPendingMonitor?.();
@@ -208,22 +209,23 @@
 	// we're delaying the showing of the dialog by some timeout (syncShowDebounce),
 	// and cancelling in case the sync finishes before that
 	const syncShowDebounce = 2000;
-	let showSyncDialogTimeout: any = null;
+	let showSyncDialogTimeout: ReturnType<typeof setTimeout> | null = null;
+	const clearSyncDialogTimeout = () => {
+		if (showSyncDialogTimeout) {
+			clearTimeout(showSyncDialogTimeout);
+			showSyncDialogTimeout = null;
+		}
+	};
 	$: {
-		const _clearTimeout = () => {
-			if (showSyncDialogTimeout) {
-				clearTimeout(showSyncDialogTimeout);
-				showSyncDialogTimeout = null;
+		if ($syncProgress.active) {
+			if (!showSyncDialogTimeout && !$syncDialogOpen) {
+				showSyncDialogTimeout = setTimeout(() => {
+					syncDialogOpen.set(true);
+					clearSyncDialogTimeout();
+				}, syncShowDebounce);
 			}
-		};
-
-		if ($syncProgress.active && !showSyncDialogTimeout) {
-			showSyncDialogTimeout = setTimeout(() => {
-				syncDialogOpen.set(true);
-				_clearTimeout();
-			}, syncShowDebounce);
 		} else {
-			_clearTimeout();
+			clearSyncDialogTimeout();
 			syncDialogOpen.set(false);
 		}
 	}
