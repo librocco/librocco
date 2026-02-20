@@ -5,7 +5,7 @@ import type { ProgressState } from "$lib/types";
 
 import WorkerInterface from "$lib/workers/WorkerInterface";
 
-import { isSyncWorkerBridge, type DBAsync, type VFSWhitelist } from "$lib/db/cr-sqlite/core";
+import { isSyncWorkerBridge, type DBAsync } from "$lib/db/cr-sqlite/core";
 import { deleteDBFromOPFS, fetchAndStoreDBFile, wrapFileHandle } from "$lib/db/cr-sqlite/core/utils";
 
 import type { App } from "./index";
@@ -41,6 +41,7 @@ interface IAppSyncExclusive extends IAppSyncCore {
 	initialSyncProgressStore: Writable<ProgressState>;
 
 	active: boolean;
+	addDisposer(dispose: () => void): void;
 	bindDb(db: DBAsync): boolean;
 	start(dbid: string, url: string): Promise<void>;
 	stop(): Promise<void>;
@@ -72,13 +73,17 @@ class AppSyncCore implements IAppSyncExclusive {
 	}
 
 	syncProgressStore = writable<ProgressState>({ active: false, nTotal: 0, nProcessed: 0 });
-	#syncProgressDisposer: () => void = () => {};
+	#disposers: Array<() => void> = [];
 
 	initialSyncProgressStore = writable<ProgressState>({ active: false, nTotal: 0, nProcessed: 0 });
 
 	constructor(worker?: WorkerInterface) {
 		this.worker = worker || new WorkerInterface();
-		this.#syncProgressDisposer = this.worker.onProgress(($progress) => this.syncProgressStore.set($progress));
+		this.#disposers.push(this.worker.onProgress(($progress) => this.syncProgressStore.set($progress)));
+	}
+
+	addDisposer(dispose: () => void) {
+		this.#disposers.push(dispose);
 	}
 
 	bindDb(db: DBAsync): boolean {
@@ -109,8 +114,9 @@ class AppSyncCore implements IAppSyncExclusive {
 
 	async destroy() {
 		await this.stop();
-		this.#syncProgressDisposer?.();
-		this.worker.destroy();
+		for (const dispose of this.#disposers) dispose();
+		this.#disposers = [];
+		await this.worker.destroy();
 	}
 }
 
@@ -134,7 +140,7 @@ export class AppSync implements IAppSync {
 	}
 
 	destroy() {
-		void this.runExclusive(() => this.core.destroy());
+		return this.runExclusive(() => this.core.destroy());
 	}
 
 	/**
@@ -149,7 +155,7 @@ export class AppSync implements IAppSync {
 }
 
 // ---------------------------------- Functions ---------------------------------- //
-export async function initializeSync(app: App, vfs: VFSWhitelist) {
+export async function initializeSync(app: App) {
 	return app.sync.runExclusive(async (sync) => {
 		// If already initialised, just ensure we're bound to the latest DB.
 		if (get(sync.state) >= AppSyncState.Initializing) {
@@ -161,19 +167,19 @@ export async function initializeSync(app: App, vfs: VFSWhitelist) {
 		// Initialise the worker
 		sync.state.set(AppSyncState.Initializing);
 		const db = await getDb(app);
-		sync.worker.start(vfs);
 		sync.bindDb(db);
 		updateSyncConnectivityMonitor(sync.worker);
 
 		// Subscribe to sync changes to notify UI subscribers (debounced to avoid UI thrashing)
 		let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-		sync.worker.onChangesReceived(() => {
+		const disposeChangesListener = sync.worker.onChangesReceived(() => {
 			if (debounceTimer) clearTimeout(debounceTimer);
 			debounceTimer = setTimeout(() => {
 				app.db.rx.notifyAll();
 				debounceTimer = null;
 			}, 100);
 		});
+		sync.addDisposer(disposeChangesListener);
 
 		// Wait for the worker to be initialised
 		await sync.worker.initPromise;

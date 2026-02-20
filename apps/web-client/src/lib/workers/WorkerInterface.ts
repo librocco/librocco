@@ -1,4 +1,4 @@
-import type { DBAsync, SyncTransportOptions, SyncWorkerBridge, VFSWhitelist } from "$lib/db/cr-sqlite/core";
+import type { DBAsync, SyncTransportOptions, SyncWorkerBridge } from "$lib/db/cr-sqlite/core";
 import { isSyncWorkerBridge } from "$lib/db/cr-sqlite/core";
 import type { MsgSyncStatus } from "./types";
 
@@ -7,11 +7,10 @@ import { ConnectionEventEmitter, SyncEventEmitter } from "./sync-transport-contr
 export default class WorkerInterface {
 	#endpoint: SyncWorkerBridge | null = null;
 	#bridgeDisposers: Array<() => void> = [];
+	#disposePromise: Promise<void> = Promise.resolve();
 
 	#syncEmitter: SyncEventEmitter;
 	#connEmitter: ConnectionEventEmitter;
-
-	#vfs: VFSWhitelist | null = null;
 
 	#initPromiseResolver: () => void;
 	#initPromise: Promise<void>;
@@ -73,14 +72,22 @@ export default class WorkerInterface {
 	}
 
 	#disposeBridge() {
-		for (const dispose of this.#bridgeDisposers) {
-			dispose();
-		}
+		const disposers = this.#bridgeDisposers;
 		this.#bridgeDisposers = [];
-	}
-
-	start(vfs: VFSWhitelist) {
-		this.#vfs = vfs;
+		// Disposers from Comlink-proxied endpoints may internally start async
+		// unsubscribe chains. Capture any returned promises so destroy() can wait.
+		const pending: Promise<void>[] = [];
+		for (const dispose of disposers) {
+			try {
+				const result = dispose() as unknown;
+				if (result instanceof Promise) {
+					pending.push(result);
+				}
+			} catch {
+				// best-effort cleanup
+			}
+		}
+		this.#disposePromise = pending.length > 0 ? Promise.allSettled(pending).then(() => {}) : Promise.resolve();
 	}
 
 	startSync(dbid: string, transportOpts: SyncTransportOptions) {
@@ -93,17 +100,14 @@ export default class WorkerInterface {
 
 	stopSync(dbid: string) {
 		if (!this.#endpoint) return;
-		this.#endpoint.stopSync(dbid);
+		return this.#endpoint.stopSync(dbid);
 	}
 
-	destroy() {
+	async destroy() {
 		this.#disposeBridge();
+		await this.#disposePromise;
 		this.#endpoint = null;
 		this.#isConnected = false;
-	}
-
-	vfs() {
-		return this.#vfs;
 	}
 
 	onChangesReceived(cb: (msg: { timestamp: number }) => void) {

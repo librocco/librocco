@@ -214,14 +214,23 @@ export class SyncTransportController implements Transport {
 		this.#transport.onStartStreaming = this._onStartStreaming.bind(this);
 		this.#transport.onResetStream = this._onResetStream.bind(this);
 
-		// Wire up connection event handlers
+		// Wire up connection event handlers.
+		// Raw WebSocket open does not mean the sync protocol is established.
+		// Reset connection state here; the actual "connected" signal is emitted
+		// by _onStartStreaming or _onSyncStatus once the protocol is operational.
 		this.#transport.onConnOpen = () => {
-			this.#isConnected = false;
+			if (this.#isConnected) {
+				this.#isConnected = false;
+				this.#connectionEmitter.notifyConnClose();
+			}
 		};
 
 		this.#transport.onConnClose = () => {
+			const wasConnected = this.#isConnected;
 			this.#isConnected = false;
-			this.#connectionEmitter.notifyConnClose();
+			if (wasConnected) {
+				this.#connectionEmitter.notifyConnClose();
+			}
 		};
 
 		this.#transport.onSyncStatus = this._onSyncStatus.bind(this);

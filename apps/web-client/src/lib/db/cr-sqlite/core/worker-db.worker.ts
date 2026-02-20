@@ -171,6 +171,9 @@ class SharedConnectionSyncDB implements SyncDB {
 	}
 
 	close(closeWrappedDB: boolean): void {
+		// Intentionally ignoring closeWrappedDB: in the shared-connection model the
+		// sync runtime does not own the DB connection — the WrappedDB manages its
+		// lifetime separately.
 		void closeWrappedDB;
 		if (this.#closed) return;
 		this.#closed = true;
@@ -189,42 +192,42 @@ async function createAndStartSyncedDBExclusive(
 	dbname: string,
 	transportOptions: SyncTransportOptions
 ): Promise<SyncRuntimeHandle> {
-	let stopRequested = false;
-	let db: Awaited<ReturnType<typeof createSyncedDB>> | null = null;
 	let releaser: (() => void) | null = null;
 	const hold = new Promise<void>((resolve) => {
 		releaser = resolve;
 	});
 
-	const run = () => {
-		if (stopRequested) return;
-		createSyncedDB(config, dbname, transportOptions)
-			.then((syncedDb) => {
-				if (stopRequested) return;
-				db = syncedDb;
-				void syncedDb.start();
-			})
-			.catch((err) => {
-				console.error("[worker] Failed to create synced DB runtime", err);
-			});
+	const startAndHold = async (): Promise<SyncRuntimeHandle> => {
+		const syncedDb = await createSyncedDB(config, dbname, transportOptions);
+		try {
+			await syncedDb.start();
+		} catch (err) {
+			syncedDb.stop();
+			throw err;
+		}
+		return {
+			stop: () => {
+				syncedDb.stop();
+				releaser?.();
+			}
+		};
 	};
 
 	if (typeof navigator !== "undefined" && navigator?.locks) {
-		navigator.locks.request(dbname, () => {
-			run();
-			return hold;
+		return new Promise<SyncRuntimeHandle>((resolve, reject) => {
+			navigator.locks.request(dbname, async () => {
+				try {
+					const handle = await startAndHold();
+					resolve(handle);
+					await hold;
+				} catch (err) {
+					reject(err);
+				}
+			});
 		});
-	} else {
-		run();
 	}
 
-	return {
-		stop: () => {
-			stopRequested = true;
-			releaser?.();
-			db?.stop();
-		}
-	};
+	return startAndHold();
 }
 
 function wrapTransportProvider(
@@ -277,7 +280,21 @@ class SyncRuntime {
 		const handlePromise = createAndStartSyncedDBExclusive(config, dbid, transportOpts);
 		this.#handlePromise = handlePromise;
 
-		const handle = await handlePromise;
+		let handle: SyncRuntimeHandle;
+		try {
+			handle = await handlePromise;
+		} catch (err) {
+			// Clean up state if this is still the active start attempt
+			if (this.#handlePromise === handlePromise) {
+				this.#handlePromise = null;
+				this.#activeConfig = null;
+			}
+			console.error("[worker] Failed to start sync runtime", err);
+			return;
+		}
+
+		// If another startSync/stopSync superseded this one while we were awaiting,
+		// stop the handle we just created — it's no longer the active one.
 		if (this.#handlePromise !== handlePromise) {
 			handle.stop();
 		}
@@ -292,8 +309,12 @@ class SyncRuntime {
 		this.#activeConfig = null;
 
 		if (handlePromise) {
-			const handle = await handlePromise;
-			handle.stop();
+			try {
+				const handle = await handlePromise;
+				handle.stop();
+			} catch {
+				// Creation failed; nothing to stop
+			}
 		}
 
 		if (this.#isConnected) {
