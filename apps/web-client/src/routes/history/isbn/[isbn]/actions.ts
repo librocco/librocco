@@ -67,7 +67,8 @@ export const createSearchDropdown = ({
 	const reset = () => (open.set(false), value.set(""));
 
 	const closeOnOutsideClick = (e: Event) => {
-		if ([_search, _dropdown].map(get).some((el) => el?.contains(e.target as Node))) return;
+		if ([_search, _dropdown].map(get).some((el: HTMLElement | HTMLInputElement | undefined | null) => el?.contains(e.target as Node)))
+			return;
 		open.set(false);
 	};
 
