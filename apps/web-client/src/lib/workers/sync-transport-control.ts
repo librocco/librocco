@@ -226,8 +226,9 @@ export class SyncTransportController implements Transport {
 
 		// Wire up connection event handlers
 		this.#transport.onConnOpen = () => {
-			this.#isConnected = true;
-			this.#connectionEmitter.notifyConnOpen();
+			// Raw socket-open does not imply sync readiness.
+			// We only promote to "connected" after StartStreaming or a positive sync status.
+			this.#isConnected = false;
 		};
 
 		this.#transport.onConnClose = () => {
