@@ -13,8 +13,10 @@ import {
 } from "@/helpers/circus";
 
 test.setTimeout(45_000);
-const BEFORE_ALL_TIMEOUT_MS = 60_000;
+const SERVER_WAIT_TIMEOUT_MS = 45_000;
 const WARMUP_TIMEOUT_MS = 10_000;
+// Startup budget: server boot wait + warmup + headroom for browser/context setup in slower CI executors.
+const BEFORE_ALL_TIMEOUT_MS = SERVER_WAIT_TIMEOUT_MS + WARMUP_TIMEOUT_MS + 15_000;
 
 const getStableRemoteDbHandle = (page: Page) => retry(() => getRemoteDbHandle(page, remoteDbURL), { attempts: 5, delayMs: 300 });
 
@@ -47,7 +49,7 @@ const retry = async <T>(fn: () => Promise<T>, opts: { attempts?: number; delayMs
 test.beforeAll(async ({ browser }, testInfo) => {
 	testInfo.setTimeout(BEFORE_ALL_TIMEOUT_MS);
 
-	await waitForServer();
+	await waitForServer(SERVER_WAIT_TIMEOUT_MS);
 
 	const context = await browser.newContext({ ignoreHTTPSErrors: true });
 	const page = await context.newPage();
@@ -66,10 +68,19 @@ test.beforeAll(async ({ browser }, testInfo) => {
 });
 
 async function warmupApp(page: Page, timeoutMs: number): Promise<void> {
+	const deadline = Date.now() + timeoutMs;
+	const remainingBudgetMs = (): number => {
+		const remaining = deadline - Date.now();
+		if (remaining <= 0) {
+			throw new Error(`Warmup exceeded total timeout budget (${timeoutMs}ms)`);
+		}
+		return remaining;
+	};
+
 	// Using "domcontentloaded" avoids waiting on background network activity that can block "networkidle" in CI.
-	await page.goto(baseURL, { waitUntil: "domcontentloaded", timeout: timeoutMs });
-	await page.waitForSelector('body[hydrated="true"]', { timeout: timeoutMs });
-	await page.waitForSelector("#app-splash", { state: "detached", timeout: timeoutMs });
+	await page.goto(baseURL, { waitUntil: "domcontentloaded", timeout: remainingBudgetMs() });
+	await page.waitForSelector('body[hydrated="true"]', { timeout: remainingBudgetMs() });
+	await page.waitForSelector("#app-splash", { state: "detached", timeout: remainingBudgetMs() });
 }
 
 async function waitForServer(timeoutMs = 45_000) {

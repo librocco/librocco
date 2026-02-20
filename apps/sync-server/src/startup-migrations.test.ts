@@ -18,6 +18,20 @@ import {
 
 const SCHEMA_FOLDER = fileURLToPath(new URL("../schemas", import.meta.url));
 
+const LEGACY_INIT_SCHEMA = `
+CREATE TABLE IF NOT EXISTS customer (
+	id INTEGER NOT NULL,
+	display_id TEXT,
+	fullname TEXT,
+	email TEXT,
+	phone TEXT,
+	deposit DECIMAL,
+	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+	PRIMARY KEY (id)
+);
+SELECT crsql_as_crr('customer');
+`;
+
 let testDir: string;
 
 function createTmpDir() {
@@ -32,11 +46,24 @@ function cleanupTmpDir() {
 	fs.rmSync(testDir, { recursive: true, force: true });
 }
 
+function getBackupRunDirectories(dbFolder: string): string[] {
+	const backupRoot = getStartupMigrationBackupRoot(dbFolder);
+	if (!fs.existsSync(backupRoot)) {
+		return [];
+	}
+
+	return fs
+		.readdirSync(backupRoot, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => entry.name)
+		.sort((a, b) => a.localeCompare(b));
+}
+
 function getSingleBackupRunDir(dbFolder: string): string {
 	const backupRoot = getStartupMigrationBackupRoot(dbFolder);
-	const entries = fs.readdirSync(backupRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
-	expect(entries).toHaveLength(1);
-	return path.join(backupRoot, entries[0].name);
+	const runDirectories = getBackupRunDirectories(dbFolder);
+	expect(runDirectories).toHaveLength(1);
+	return path.join(backupRoot, runDirectories[0]);
 }
 
 function createMockIdb(): IDB {
@@ -48,6 +75,23 @@ function createMockIdb(): IDB {
 				})
 			}) as ReturnType<IDB["getDB"]>
 	} as IDB;
+}
+
+function createSimpleSqliteDb(dbPath: string): void {
+	const db = new Database(dbPath);
+	db.exec(`
+		CREATE TABLE IF NOT EXISTS sample (id INTEGER PRIMARY KEY, value TEXT NOT NULL);
+		INSERT INTO sample (value) VALUES ('seed');
+	`);
+	db.close();
+}
+
+function createVersionTrackedDatabase(dbPath: string, schemaName: string, schemaVersion: bigint): void {
+	const db = new Database(dbPath);
+	db.exec(`CREATE TABLE IF NOT EXISTS crsql_master (key TEXT PRIMARY KEY NOT NULL, value TEXT);`);
+	db.prepare("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)").run("schema_name", schemaName);
+	db.prepare("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)").run("schema_version", schemaVersion.toString());
+	db.close();
 }
 
 describe("startup migrations", () => {
@@ -86,7 +130,7 @@ describe("startup migrations", () => {
 	});
 
 	it("backs up existing database and sidecar files before migrating", async () => {
-		fs.writeFileSync(path.join(testDir, "orders.sqlite3"), "db");
+		createSimpleSqliteDb(path.join(testDir, "orders.sqlite3"));
 		fs.writeFileSync(path.join(testDir, "orders.sqlite3-wal"), "wal");
 		fs.writeFileSync(path.join(testDir, "orders.sqlite3-shm"), "shm");
 		fs.writeFileSync(path.join(testDir, "orders.sqlite3.meta.json"), '{"schema":"init"}');
@@ -95,27 +139,60 @@ describe("startup migrations", () => {
 		const migratedCount = await migrateDatabasesOnStartup({
 			dbFolder: testDir,
 			schemaName: "init",
+			residentSchemaVersion: 2n,
 			useDatabase
 		});
 
 		expect(migratedCount).toBe(1);
 		const backupRunDir = getSingleBackupRunDir(testDir);
-		expect(fs.readFileSync(path.join(backupRunDir, "orders.sqlite3"), "utf-8")).toBe("db");
-		expect(fs.readFileSync(path.join(backupRunDir, "orders.sqlite3-wal"), "utf-8")).toBe("wal");
-		expect(fs.readFileSync(path.join(backupRunDir, "orders.sqlite3-shm"), "utf-8")).toBe("shm");
+		expect(fs.existsSync(path.join(backupRunDir, "orders.sqlite3-wal"))).toBe(true);
+		expect(fs.existsSync(path.join(backupRunDir, "orders.sqlite3-shm"))).toBe(true);
 		expect(fs.readFileSync(path.join(backupRunDir, "orders.sqlite3.meta.json"), "utf-8")).toBe('{"schema":"init"}');
+
+		const backupDb = new Database(path.join(backupRunDir, "orders.sqlite3"), { readonly: true, fileMustExist: true });
+		const rowCount = backupDb.prepare("SELECT COUNT(*) FROM sample").pluck().get();
+		backupDb.close();
+		expect(rowCount).toBe(1);
 		expect(useDatabase).toHaveBeenCalledWith("orders.sqlite3", "init", expect.any(Function));
+	});
+
+	it("skips backup when schema is already at the resident version", async () => {
+		createVersionTrackedDatabase(path.join(testDir, "current.sqlite3"), "init", 42n);
+
+		const useDatabase = vi.fn(async <T>(_: string, __: string, cb: (idb: IDB) => T | Promise<T>) => cb(createMockIdb()));
+		const migratedCount = await migrateDatabasesOnStartup({
+			dbFolder: testDir,
+			schemaName: "init",
+			residentSchemaVersion: 42n,
+			useDatabase
+		});
+
+		expect(migratedCount).toBe(1);
+		expect(useDatabase).toHaveBeenCalledOnce();
+		expect(fs.existsSync(getStartupMigrationBackupRoot(testDir))).toBe(false);
 	});
 
 	it("migrates stale schema versions before serving requests", async () => {
 		const dbName = "legacy.sqlite3";
 		const dbPath = path.join(testDir, dbName);
 
+		const legacySchemaFolder = path.join(testDir, "legacy-schemas");
+		fs.mkdirSync(legacySchemaFolder, { recursive: true });
+		fs.writeFileSync(path.join(legacySchemaFolder, "init"), LEGACY_INIT_SCHEMA);
+
+		const legacyVersionConfig = {
+			dbFolder: testDir,
+			schemaFolder: legacySchemaFolder,
+			pathPattern: /\/sync/,
+			notifyPolling: true
+		} satisfies Config;
+		const legacySchemaVersion = getResidentSchemaVersion("init", legacyVersionConfig);
+
 		const setupDb = new Database(dbPath);
 		setupDb.loadExtension(extensionPath);
-		setupDb.exec(fs.readFileSync(path.join(SCHEMA_FOLDER, "init"), "utf-8"));
+		setupDb.exec(LEGACY_INIT_SCHEMA);
 		setupDb.prepare("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)").run("schema_name", "init");
-		setupDb.prepare("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)").run("schema_version", 1);
+		setupDb.prepare("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)").run("schema_version", legacySchemaVersion.toString());
 		setupDb.close();
 
 		const wsConfig = {
@@ -124,12 +201,14 @@ describe("startup migrations", () => {
 			pathPattern: /\/sync/,
 			notifyPolling: true
 		} satisfies Config;
+		const residentSchemaVersion = getResidentSchemaVersion("init", wsConfig);
 
 		const dbCache = new internal.DBCache(wsConfig, null, new DBFactory());
 		try {
 			const migratedCount = await migrateDatabasesOnStartup({
 				dbFolder: testDir,
 				schemaName: "init",
+				residentSchemaVersion,
 				useDatabase: (room, schema, cb) => dbCache.use(room, schema, cb)
 			});
 
@@ -149,17 +228,18 @@ describe("startup migrations", () => {
 		db.close();
 
 		const migratedVersion = BigInt(rawVersion);
-		expect(migratedVersion).toBe(getResidentSchemaVersion("init", wsConfig));
-		expect(migratedVersion).not.toBe(1n);
+		expect(migratedVersion).toBe(residentSchemaVersion);
+		expect(migratedVersion).not.toBe(legacySchemaVersion);
 	});
 
 	it("fails startup when a database migration fails", async () => {
-		fs.writeFileSync(path.join(testDir, "broken.sqlite3"), "");
+		createSimpleSqliteDb(path.join(testDir, "broken.sqlite3"));
 
 		await expect(
 			migrateDatabasesOnStartup({
 				dbFolder: testDir,
 				schemaName: "init",
+				residentSchemaVersion: 2n,
 				useDatabase: async () => {
 					throw new Error("broken db");
 				}
@@ -168,5 +248,49 @@ describe("startup migrations", () => {
 
 		const backupRunDir = getSingleBackupRunDir(testDir);
 		expect(fs.existsSync(path.join(backupRunDir, "broken.sqlite3"))).toBe(true);
+	});
+
+	it("reuses the same backup directory across failed startup retries", async () => {
+		createSimpleSqliteDb(path.join(testDir, "broken.sqlite3"));
+
+		const options = {
+			dbFolder: testDir,
+			schemaName: "init",
+			residentSchemaVersion: 2n,
+			useDatabase: async () => {
+				throw new Error("broken db");
+			}
+		};
+
+		await expect(migrateDatabasesOnStartup(options)).rejects.toThrow();
+		await expect(migrateDatabasesOnStartup(options)).rejects.toThrow();
+
+		const runDirectories = getBackupRunDirectories(testDir);
+		expect(runDirectories).toHaveLength(1);
+
+		const backupRunDir = getSingleBackupRunDir(testDir);
+		expect(fs.existsSync(path.join(backupRunDir, "broken.sqlite3"))).toBe(true);
+	});
+
+	it("prunes old backup runs based on maxBackupRuns", async () => {
+		createSimpleSqliteDb(path.join(testDir, "stale.sqlite3"));
+
+		const backupRoot = getStartupMigrationBackupRoot(testDir);
+		fs.mkdirSync(path.join(backupRoot, "old-run-a"), { recursive: true });
+		fs.mkdirSync(path.join(backupRoot, "old-run-b"), { recursive: true });
+		fs.mkdirSync(path.join(backupRoot, "old-run-c"), { recursive: true });
+
+		const useDatabase = vi.fn(async <T>(_: string, __: string, cb: (idb: IDB) => T | Promise<T>) => cb(createMockIdb()));
+		await migrateDatabasesOnStartup({
+			dbFolder: testDir,
+			schemaName: "init",
+			residentSchemaVersion: 5n,
+			maxBackupRuns: 2,
+			useDatabase
+		});
+
+		const runDirectories = getBackupRunDirectories(testDir);
+		expect(runDirectories.length).toBeLessThanOrEqual(2);
+		expect(runDirectories.some((name) => name.startsWith("init-to-5"))).toBe(true);
 	});
 });
