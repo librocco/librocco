@@ -15,9 +15,10 @@ On startup, the server runs these steps in order:
 
 1. Ensure `DB_FOLDER` exists.
 2. Run startup health checks (unless `SKIP_HEALTH_CHECK=true`).
-3. Open every existing `*.sqlite3`, `*.sqlite`, and `*.db` file in `DB_FOLDER`.
-4. Let `@vlcn.io/ws-server` auto-migrate each database to the current schema version.
-5. Start listening for HTTP/WebSocket traffic.
+3. Back up each existing database (and sidecar files) into `DB_FOLDER/.startup-migration-backups/<timestamp>/`.
+4. Open every existing `*.sqlite3`, `*.sqlite`, and `*.db` file in `DB_FOLDER`.
+5. Let `@vlcn.io/ws-server` auto-migrate each database to the current schema version.
+6. Start listening for HTTP/WebSocket traffic.
 
 If a migration fails for any existing database, startup fails and the server does not begin serving requests.
 

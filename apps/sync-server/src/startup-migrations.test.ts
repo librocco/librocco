@@ -10,7 +10,11 @@ import { internal, type Config, type IDB } from "@vlcn.io/ws-server";
 import DBFactory from "@vlcn.io/ws-server/dist/DBFactory.js";
 import { getResidentSchemaVersion } from "@vlcn.io/ws-server/dist/DB.js";
 
-import { getDatabaseFilesForStartupMigration, migrateDatabasesOnStartup } from "./startup-migrations.js";
+import {
+	getDatabaseFilesForStartupMigration,
+	getStartupMigrationBackupRoot,
+	migrateDatabasesOnStartup
+} from "./startup-migrations.js";
 
 const SCHEMA_FOLDER = fileURLToPath(new URL("../schemas", import.meta.url));
 
@@ -26,6 +30,24 @@ function cleanupTmpDir() {
 	}
 
 	fs.rmSync(testDir, { recursive: true, force: true });
+}
+
+function getSingleBackupRunDir(dbFolder: string): string {
+	const backupRoot = getStartupMigrationBackupRoot(dbFolder);
+	const entries = fs.readdirSync(backupRoot, { withFileTypes: true }).filter((entry) => entry.isDirectory());
+	expect(entries).toHaveLength(1);
+	return path.join(backupRoot, entries[0].name);
+}
+
+function createMockIdb(): IDB {
+	return {
+		getDB: () =>
+			({
+				prepare: () => ({
+					get: () => 1
+				})
+			}) as ReturnType<IDB["getDB"]>
+	} as IDB;
 }
 
 describe("startup migrations", () => {
@@ -51,7 +73,7 @@ describe("startup migrations", () => {
 	});
 
 	it("does nothing when no startup migration candidates exist", async () => {
-		const useDatabase = vi.fn(async <T>(_: string, __: string, cb: (idb: IDB) => T | Promise<T>) => cb({} as IDB));
+		const useDatabase = vi.fn(async <T>(_: string, __: string, cb: (idb: IDB) => T | Promise<T>) => cb(createMockIdb()));
 		const migratedCount = await migrateDatabasesOnStartup({
 			dbFolder: testDir,
 			schemaName: "init",
@@ -60,6 +82,29 @@ describe("startup migrations", () => {
 
 		expect(migratedCount).toBe(0);
 		expect(useDatabase).not.toHaveBeenCalled();
+		expect(fs.existsSync(getStartupMigrationBackupRoot(testDir))).toBe(false);
+	});
+
+	it("backs up existing database and sidecar files before migrating", async () => {
+		fs.writeFileSync(path.join(testDir, "orders.sqlite3"), "db");
+		fs.writeFileSync(path.join(testDir, "orders.sqlite3-wal"), "wal");
+		fs.writeFileSync(path.join(testDir, "orders.sqlite3-shm"), "shm");
+		fs.writeFileSync(path.join(testDir, "orders.sqlite3.meta.json"), '{"schema":"init"}');
+
+		const useDatabase = vi.fn(async <T>(_: string, __: string, cb: (idb: IDB) => T | Promise<T>) => cb(createMockIdb()));
+		const migratedCount = await migrateDatabasesOnStartup({
+			dbFolder: testDir,
+			schemaName: "init",
+			useDatabase
+		});
+
+		expect(migratedCount).toBe(1);
+		const backupRunDir = getSingleBackupRunDir(testDir);
+		expect(fs.readFileSync(path.join(backupRunDir, "orders.sqlite3"), "utf-8")).toBe("db");
+		expect(fs.readFileSync(path.join(backupRunDir, "orders.sqlite3-wal"), "utf-8")).toBe("wal");
+		expect(fs.readFileSync(path.join(backupRunDir, "orders.sqlite3-shm"), "utf-8")).toBe("shm");
+		expect(fs.readFileSync(path.join(backupRunDir, "orders.sqlite3.meta.json"), "utf-8")).toBe('{"schema":"init"}');
+		expect(useDatabase).toHaveBeenCalledWith("orders.sqlite3", "init", expect.any(Function));
 	});
 
 	it("migrates stale schema versions before serving requests", async () => {
@@ -93,6 +138,9 @@ describe("startup migrations", () => {
 			await dbCache.destroy();
 		}
 
+		const backupRunDir = getSingleBackupRunDir(testDir);
+		expect(fs.existsSync(path.join(backupRunDir, dbName))).toBe(true);
+
 		const db = new Database(dbPath);
 		const rawVersion = db.prepare("SELECT value FROM crsql_master WHERE key = 'schema_version'").safeIntegers(true).pluck().get() as
 			| bigint
@@ -117,5 +165,8 @@ describe("startup migrations", () => {
 				}
 			})
 		).rejects.toThrow('Failed startup migration for database "broken.sqlite3": broken db');
+
+		const backupRunDir = getSingleBackupRunDir(testDir);
+		expect(fs.existsSync(path.join(backupRunDir, "broken.sqlite3"))).toBe(true);
 	});
 });
