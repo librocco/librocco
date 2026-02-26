@@ -107,6 +107,7 @@ export type Supplier = {
 export type Format = "PBM" | "Standard" | "RCS-3" | "RCS-5" | "Loescher-3" | "Loescher-5";
 export type SupplierExtended = Supplier & {
 	numPublishers: number;
+	hasActiveOrders: number;
 };
 
 /**
@@ -138,6 +139,7 @@ export type PlacedSupplierOrder = {
 	reconciliation_order_id: number | null;
 	reconciliation_last_updated_at: number | null;
 	finalized: number | null;
+	reconciled: number;
 	parent_order_id: number | null;
 } & PossibleSupplierOrder;
 
