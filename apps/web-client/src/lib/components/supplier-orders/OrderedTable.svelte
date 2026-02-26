@@ -12,7 +12,7 @@
 
 	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 
-	export let orders: Array<PlacedSupplierOrder & { reconciled?: boolean }>;
+	export let orders: Array<PlacedSupplierOrder>;
 
 	let selectedOrders: Array<number>;
 	$: selectedOrders = [];
@@ -72,7 +72,7 @@
 				<tr>
 					<td class="text-center align-middle">
 						<input
-							disabled={reconciled}
+							disabled={Boolean(reconciled)}
 							type="checkbox"
 							class="checkbox checkbox-xs"
 							checked={selectedOrders.includes(id)}

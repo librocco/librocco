@@ -414,6 +414,7 @@ async function _getPlacedSupplierOrders(
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
 			ro.id as reconciliation_order_id,
+			ro.id IS NOT NULL AS finalized,
 			ro.updatedAt as reconciliation_last_updated_at,
 			ro.finalized,
 			soc.parent_order_id
