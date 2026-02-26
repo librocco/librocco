@@ -1,16 +1,26 @@
 <script lang="ts">
-	import type { PageData } from "./$types";
-
 	import { Table } from "$lib/components-new/Table";
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import LL from "@librocco/shared/i18n-svelte";
 
+	import type { App } from "$lib/app";
+	import type { SupplierOrdersPageData } from "./dataLoad";
+
 	import { goto as _goto } from "$lib/utils/navigation";
+
+	import { getDb, getDbRx } from "$lib/app/db";
+	import { createDataStore } from "./dataLoad";
+
 	import { appPath } from "$lib/paths";
 
-	export let data: PageData;
+	export let app: App;
+	export let supplierId: number;
+	export let pageData: SupplierOrdersPageData;
 
-	$: ({ placedOrders, reconcilingOrders, completedOrders } = data);
+	const rx = getDbRx(app);
+	const dataStore = createDataStore(rx, () => getDb(app), supplierId, pageData);
+
+	$: ({ placedOrders, reconcilingOrders, completedOrders } = $dataStore.data);
 
 	function formatCreated(timestamp: number): string {
 		return $dateFormatters.dateTime(new Date(timestamp));
@@ -81,8 +91,6 @@
 		</Table>
 	</div>
 
-	<!-- NOTE: this implementation assumes the number of finalized orders won't bloat the view, in practice this is likely the case -->
-	<!-- TODO: add infinite scroll or some other way of handling this -->
 	<div class="mb-8">
 		<h4 class="mb-4 text-[14px]">{tabsT.completed()}</h4>
 		<Table columnWidths={["3", "3", "6"]} showEmptyState={completedOrders.length === 0}>

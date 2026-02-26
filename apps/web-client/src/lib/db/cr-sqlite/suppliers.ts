@@ -600,14 +600,18 @@ async function _deleteSupplier(db: DBAsync, id: number) {
 
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 export const getAllSuppliers = timed(_getAllSuppliers);
+/** @tableDeps "reconciliation_order", "supplier", "supplier_publisher", "supplier_order" */
 export const getSupplierDetails = timed(_getSupplierDetails);
 export const upsertSupplier = timed(_upsertSupplier);
+/** @tableDeps "supplier_publisher" */
 export const getPublishersFor = timed(_getPublishersFor);
+/** @tableDeps "supplier", "supplier_publisher" */
 export const getPublishersWithSuppliers = timed(_getPublishersWithSuppliers);
 export const associatePublisher = timed(_associatePublisher);
 export const removePublisherFromSupplier = timed(_removePublisherFromSupplier);
 export const getPossibleSupplierOrders = timed(_getPossibleSupplierOrders);
 export const getPossibleSupplierOrderLines = timed(_getPossibleSupplierOrderLines);
+/** @tableDeps "reconciliation_order", "supplier_order", "supplier", "supplier_order_line", "book", "supplier_order_continuation" */
 export const getPlacedSupplierOrders = timed(_getPlacedSupplierOrders);
 export const getPlacedSupplierOrderLines = timed(_getPlacedSupplierOrderLines);
 export const createSupplierOrder = timed(_createSupplierOrder);

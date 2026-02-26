@@ -3,7 +3,8 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 
-	import type { PageData } from "./$types";
+	import type { App } from "$lib/app";
+	import type { SupplierPublishersPageData } from "./dataLoad";
 
 	import { defaultDialogConfig } from "$lib/components/Melt";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
@@ -11,14 +12,19 @@
 	import { associatePublisher, removePublisherFromSupplier } from "$lib/db/cr-sqlite/suppliers";
 	import { SupplierPublisherTable, SupplierPublisherTableRow } from "$lib/components-new/SupplierPublisherList";
 
-	import { app } from "$lib/app";
-	import { getDb } from "$lib/app/db";
+	import { getDb, getDbRx } from "$lib/app/db";
+	import { createDataStore } from "./dataLoad";
 
-	export let data: PageData;
+	export let app: App;
+	export let supplierId: number;
+	export let pageData: SupplierPublishersPageData;
+
+	const rx = getDbRx(app);
+	const dataStore = createDataStore(rx, () => getDb(app), supplierId, pageData);
 
 	let searchQuery = "";
 
-	$: ({ supplier, assignedPublishers, availablePublishers } = data);
+	$: ({ supplier, assignedPublishers, availablePublishers } = $dataStore.data);
 
 	$: filteredAssigned = searchQuery
 		? assignedPublishers.filter((p) => p.toLowerCase().includes(searchQuery.toLowerCase()))
