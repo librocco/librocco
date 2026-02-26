@@ -40,6 +40,13 @@ import { timed } from "$lib/utils/timer";
  */
 async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
 	const query = `
+		WITH ro AS (
+			SELECT
+				CAST(value AS INTEGER) as supplier_order_id,
+				ro.finalized
+			FROM reconciliation_order ro
+			CROSS JOIN json_each(ro.supplier_order_ids)
+		)
 		SELECT
 			supplier.id,
 			name,
@@ -48,9 +55,12 @@ async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
 			COALESCE(customerId, 'N/A') as customerId,
 			orderFormat,
 			COALESCE(underdelivery_policy, 0) as underdelivery_policy,
-			COUNT(publisher) as numPublishers
+			COUNT(publisher) as numPublishers,
+			COUNT(DISTINCT CASE WHEN ro.supplier_order_id IS NULL OR ro.finalized = 0 THEN so.id END) > 0 as hasActiveOrders
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+		LEFT JOIN supplier_order so ON supplier.id = so.supplier_id
+		LEFT JOIN ro ON so.id = ro.supplier_order_id
 		GROUP BY supplier.id
 		ORDER BY supplier.id ASC
 	`;
@@ -73,11 +83,14 @@ async function _getSupplierDetails(db: TXAsync, id: number | null): Promise<Supp
 		return createGeneralSupplierMock();
 	}
 
-	const conditions = ["supplier.id = ?"];
-	const params = [id];
-
-	const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 	const query = `
+		WITH ro AS (
+			SELECT
+				CAST(value AS INTEGER) as supplier_order_id,
+				ro.finalized
+			FROM reconciliation_order ro
+			CROSS JOIN json_each(ro.supplier_order_ids)
+		)
 		SELECT
 			supplier.id,
 			name,
@@ -86,14 +99,17 @@ async function _getSupplierDetails(db: TXAsync, id: number | null): Promise<Supp
 			customerId,
 			orderFormat,
 			underdelivery_policy,
-			COUNT(publisher) as numPublishers
+			COUNT(publisher) as numPublishers,
+			COUNT(DISTINCT CASE WHEN ro.supplier_order_id IS NULL OR ro.finalized = 0 THEN so.id END) > 0 as hasActiveOrders
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
-		${whereClause}
+		LEFT JOIN supplier_order so ON supplier.id = so.supplier_id
+		LEFT JOIN ro ON so.id = ro.supplier_order_id
+		WHERE supplier.id = ?
 		GROUP BY supplier.id
 	`;
 
-	const [res] = await db.execO<SupplierExtended>(query, params);
+	const [res] = await db.execO<SupplierExtended>(query, [id]);
 	return res || undefined;
 }
 
@@ -232,7 +248,8 @@ export function createGeneralSupplierMock(): SupplierExtended {
 		customerId: undefined,
 		orderFormat: undefined,
 		underdelivery_policy: 0,
-		numPublishers: 0
+		numPublishers: 0,
+		hasActiveOrders: 0
 	};
 }
 

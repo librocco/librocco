@@ -25,7 +25,8 @@ const supplier1 = {
 	address: "123 Science St",
 	numPublishers: 0,
 	orderFormat: orderFormats.pbm,
-	underdelivery_policy: 0 as const
+	underdelivery_policy: 0 as const,
+	hasActiveOrders: 0 as const
 };
 const supplier2 = {
 	id: 2,
@@ -35,7 +36,8 @@ const supplier2 = {
 	address: "456 Fantasy Ave",
 	numPublishers: 0,
 	orderFormat: orderFormats.pbm,
-	underdelivery_policy: 0 as const
+	underdelivery_policy: 0 as const,
+	hasActiveOrders: 0 as const
 };
 const supplier3 = {
 	id: 3,
@@ -45,7 +47,8 @@ const supplier3 = {
 	address: "789 History Rd",
 	numPublishers: 0,
 	orderFormat: orderFormats.pbm,
-	underdelivery_policy: 0 as const
+	underdelivery_policy: 0 as const,
+	hasActiveOrders: 0 as const
 };
 
 const publisher1 = "AnimalPublisher";
