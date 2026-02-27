@@ -3,7 +3,7 @@ name: Checkout repository and submodules
 uses: actions/checkout@v4
 with:
   submodules: "recursive"
-  lfs: true
+  lfs: false
   #@ if deep!=None:
   fetch-depth: 0  #! Enables full clone, with all history
   #@ end
@@ -15,4 +15,12 @@ with:
   name: built-vlcn-artefacts
   path: 3rd-party/artefacts
 if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+#@ end
+
+#@ def pull_artefacts():
+name: Pull artefacts from R2
+run: ./scripts/artefacts-download.sh
+env:
+  ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+  ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
 #@ end

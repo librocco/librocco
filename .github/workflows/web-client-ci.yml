@@ -18,8 +18,13 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
         fetch-depth: 0
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - name: Test if artefacts are stale
       id: ts
       shell: bash
@@ -69,54 +74,59 @@ jobs:
       id-token: write
       contents: read
       checks: write
-    steps:
-    - name: Checkout repository and submodules
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        lfs: true
-    - uses: actions/setup-node@v4
-      with:
-        node-version: "22"
-    - name: Compute desired compiled artifact version
-      run: ./scripts/compute_artefacts_version.sh
-    - uses: actions/download-artifact@v4
-      with:
-        name: built-vlcn-artefacts
-        path: 3rd-party/artefacts
-      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
-    - name: Load cached cr-sqlite artefacts
-      uses: actions/cache/restore@v4
-      with:
-        path: 3rd-party/artefacts
-        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
-    - name: Cache node modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.rush
-          ~/.pnpm-store
-          common/temp
-          ./common/temp/node_modules/
-        key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
-    - name: Add local rush scripts to PATH
-      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
-    - name: Install packages
-      run: rush install
-    - name: Build packages
-      run: |
-        set +e
-        rush build
-        exit_code=$?
-        if [ $exit_code -eq 0 ] || [ $exit_code -eq 1 ]; then
-          echo "Build completed (exit code: $exit_code)"
-          exit 0
-        else
-          echo "Build failed with exit code: $exit_code"
-          exit $exit_code
-        fi
-    - name: Run tests
-      run: cd plugins/book-data-extension && rushx test:ci
+      steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: false
+      - name: Pull artefacts from R2
+        run: ./scripts/artefacts-download.sh
+        env:
+          ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+          ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Compute desired compiled artefact version
+        run: ./scripts/compute_artefacts_version.sh
+      - uses: actions/download-artifact@v4
+        with:
+          name: built-vlcn-artefacts
+          path: 3rd-party/artefacts
+        if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+      - name: Load cached cr-sqlite artefacts
+        uses: actions/cache/restore@v4
+        with:
+          path: 3rd-party/artefacts
+          key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.rush
+            ~/.pnpm-store
+            common/temp
+            ./common/temp/node_modules/
+          key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Add local rush scripts to PATH
+        run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+      - name: Install packages
+        run: rush install
+      - name: Build packages
+        run: |
+          set +e
+          rush build
+          exit_code=$?
+          if [ $exit_code -eq 0 ] || [ $exit_code -eq 1 ]; then
+            echo "Build completed (exit code: $exit_code)"
+            exit 0
+          else
+            echo "Build failed with exit code: $exit_code"
+            exit $exit_code
+          fi
+      - name: Run tests
+        run: cd plugins/book-data-extension && rushx test:ci
   web-client-test:
     name: Web Client Tests
     runs-on: ubuntu-latest
@@ -126,54 +136,59 @@ jobs:
       id-token: write
       contents: read
       checks: write
-    steps:
-    - name: Checkout repository and submodules
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
-        lfs: true
-    - uses: actions/setup-node@v4
-      with:
-        node-version: "22"
-    - name: Compute desired compiled artifact version
-      run: ./scripts/compute_artefacts_version.sh
-    - uses: actions/download-artifact@v4
-      with:
-        name: built-vlcn-artefacts
-        path: 3rd-party/artefacts
-      if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
-    - name: Load cached cr-sqlite artefacts
-      uses: actions/cache/restore@v4
-      with:
-        path: 3rd-party/artefacts
-        key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
-    - name: Cache node modules
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.rush
-          ~/.pnpm-store
-          common/temp
-          ./common/temp/node_modules/
-        key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
-    - name: Add local rush scripts to PATH
-      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
-    - name: Install packages
-      run: rush install
-    - name: Build packages
-      run: |
-        set +e
-        rush build
-        exit_code=$?
-        if [ $exit_code -eq 0 ] || [ $exit_code -eq 1 ]; then
-          echo "Build completed (exit code: $exit_code)"
-          exit 0
-        else
-          echo "Build failed with exit code: $exit_code"
-          exit $exit_code
-        fi
-    - name: Run tests
-      run: cd apps/web-client && npx playwright install && rushx test:ci
+      steps:
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: false
+      - name: Pull artefacts from R2
+        run: ./scripts/artefacts-download.sh
+        env:
+          ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+          ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Compute desired compiled artefact version
+        run: ./scripts/compute_artefacts_version.sh
+      - uses: actions/download-artifact@v4
+        with:
+          name: built-vlcn-artefacts
+          path: 3rd-party/artefacts
+        if: ${{ !cancelled() && needs.build-cr-sqlite.outputs.rebuild == 'yes' }}
+      - name: Load cached cr-sqlite artefacts
+        uses: actions/cache/restore@v4
+        with:
+          path: 3rd-party/artefacts
+          key: ${{ runner.os }}-cr-sqlite-artefacts-${{ hashFiles('3rd-party/artefacts_version.txt') }}
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.rush
+            ~/.pnpm-store
+            common/temp
+            ./common/temp/node_modules/
+          key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Add local rush scripts to PATH
+        run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+      - name: Install packages
+        run: rush install
+      - name: Build packages
+        run: |
+          set +e
+          rush build
+          exit_code=$?
+          if [ $exit_code -eq 0 ] || [ $exit_code -eq 1 ]; then
+            echo "Build completed (exit code: $exit_code)"
+            exit 0
+          else
+            echo "Build failed with exit code: $exit_code"
+            exit $exit_code
+          fi
+      - name: Run tests
+        run: cd apps/web-client && npx playwright install && rushx test:ci
   e2e-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
@@ -195,7 +210,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -299,7 +314,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -356,7 +371,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -406,7 +421,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -456,7 +471,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -548,7 +563,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -610,7 +625,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
     - uses: actions/setup-node@v4
       with:
         node-version: "22"

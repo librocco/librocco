@@ -1,4 +1,5 @@
 #@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "pull_artefacts")
 #@ load("github.lib.yml", "load_artefacts")
 #@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("cache.lib.yml", "cache_node")
@@ -23,12 +24,13 @@ permissions:
   id-token: write
   contents: read
   checks: write
-steps:
+  steps:
   -  #@ checkout()
+  -  #@ pull_artefacts()
   - uses: actions/setup-node@v4
     with:
       node-version: "22"
-  - name: Compute desired compiled artifact version
+  - name: Compute desired compiled artefact version
     run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
   -  #@ load_artefacts()
   -  #@ load_cached_artefacts()
