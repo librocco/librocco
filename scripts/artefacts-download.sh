@@ -7,11 +7,16 @@ REPO_ROOT="${SCRIPT_DIR}/.."
 ARTEFACTS_DIR="${REPO_ROOT}/3rd-party/artefacts"
 
 WORKER_URL="${ARTEFACT_WORKER_URL:-https://artefacts.libroc.co}"
-
-if [[ -z "${ARTEFACT_API_KEY:-}" ]]; then
-  echo "Error: ARTEFACT_API_KEY environment variable is required" >&2
-  exit 1
-fi
+CURL_COMMON_ARGS=(
+  --silent
+  --show-error
+  --http1.1
+  --retry 5
+  --retry-delay 2
+  --retry-all-errors
+  --connect-timeout 10
+  --max-time 300
+)
 
 if [[ ! -d "$ARTEFACTS_DIR" ]]; then
   echo "Error: Artefacts directory not found: $ARTEFACTS_DIR" >&2
@@ -22,52 +27,67 @@ cd "$REPO_ROOT"
 
 declare -A ARTEFACT_HASHES=()
 
-echo "Discovering expected LFS artefacts..."
-while IFS= read -r line; do
-  path=$(echo "$line" | awk '{print $3}')
+extract_lfs_oid_from_input() {
+  sed -n 's/^oid sha256://p' | tr -d '\r '
+}
 
-  if [[ "$path" == 3rd-party/artefacts/* && "$path" == *.tgz ]]; then
+compute_local_hash() {
+  local local_path="$1"
+  if is_lfs_pointer_file "$local_path"; then
+    extract_lfs_oid_from_input <"$local_path"
+  else
+    sha256sum "$local_path" | awk '{print $1}'
+  fi
+}
+
+is_lfs_pointer_file() {
+  local local_path="$1"
+  grep -q '^version https://git-lfs.github.com/spec/v1' "$local_path" 2>/dev/null
+}
+
+echo "Discovering expected artefacts..."
+while IFS= read -r path; do
+  [[ -z "$path" ]] && continue
+  [[ "$path" != 3rd-party/artefacts/*.tgz ]] && continue
+
+  hash=$(git show "HEAD:${path}" 2>/dev/null | extract_lfs_oid_from_input || true)
+  if [[ -z "$hash" ]]; then
     local_path="${REPO_ROOT}/${path}"
     if [[ -f "$local_path" ]]; then
-      hash=$(sha256sum "$local_path" | awk '{print $1}')
-    else
-      hash=$(git show HEAD:${path} 2>/dev/null | grep "^oid sha256:" | sed 's/oid sha256://' | tr -d '\r ')
+      hash=$(compute_local_hash "$local_path")
     fi
-    [[ -z "$hash" ]] && continue
-    ARTEFACT_HASHES["$path"]=$hash
   fi
-done < <(git lfs ls-files)
+  [[ -z "$hash" ]] && continue
+  ARTEFACT_HASHES["$path"]="$hash"
+done < <(git ls-files '3rd-party/artefacts/*.tgz')
 
-empty=true
-for key in "${!ARTEFACT_HASHES[@]}"; do
-  empty=false
-  break
-done
-if [[ "$empty" == true ]]; then
-  echo "No LFS artefacts found in 3rd-party/artefacts/"
-  echo "Ensuring artefacts directory is not empty..."
-  if [[ -z $(ls -A "$ARTEFACTS_DIR"/*.tgz 2>/dev/null) ]]; then
+if [[ ${#ARTEFACT_HASHES[@]} -eq 0 ]]; then
+  echo "No tracked artefacts found in git index; falling back to local files..."
+  shopt -s nullglob
+  local_files=("$ARTEFACTS_DIR"/*.tgz)
+  shopt -u nullglob
+  if [[ ${#local_files[@]} -eq 0 ]]; then
     echo "Error: No artefact files found in $ARTEFACTS_DIR" >&2
     exit 1
   fi
 
-  echo "Computing hashes from local files..."
-  for file in "$ARTEFACTS_DIR"/*.tgz; do
-    if [[ -f "$file" ]]; then
-      filepath="${file#$REPO_ROOT/}"
-      hash=$(sha256sum "$file" | awk '{print $1}')
-      ARTEFACT_HASHES["$filepath"]=$hash
-    fi
+  for file in "${local_files[@]}"; do
+    filepath="${file#$REPO_ROOT/}"
+    hash=$(compute_local_hash "$file")
+    [[ -z "$hash" ]] && continue
+    ARTEFACT_HASHES["$filepath"]="$hash"
   done
 fi
 
 echo "Found ${#ARTEFACT_HASHES[@]} expected artefact(s)"
 
-if [[ ${#ARTEFACT_HASHES[@]} -gt 0 ]]; then
+mapfile -t SORTED_PATHS < <(printf '%s\n' "${!ARTEFACT_HASHES[@]}" | sort)
+
+batch_check_ready=false
+if [[ -n "${ARTEFACT_API_KEY:-}" ]] && command -v jq >/dev/null 2>&1; then
   CHECK_HASHES=()
-  for path in "${!ARTEFACT_HASHES[@]}"; do
-    hash="${ARTEFACT_HASHES[$path]}"
-    CHECK_HASHES+=("$hash")
+  for path in "${SORTED_PATHS[@]}"; do
+    CHECK_HASHES+=("${ARTEFACT_HASHES[$path]}")
   done
 
   echo "Checking artefact availability via batch-check endpoint..."
@@ -83,26 +103,37 @@ if [[ ${#ARTEFACT_HASHES[@]} -gt 0 ]]; then
   done
   json_array+="]"
 
-  check_response=$(curl -s -X POST \
+  check_tmp=$(mktemp)
+  if check_http_code=$(curl "${CURL_COMMON_ARGS[@]}" -w "%{http_code}" -X POST \
     -H "X-API-Key: ${ARTEFACT_API_KEY}" \
     -H "Content-Type: application/json" \
     -d "$json_array" \
-    "${WORKER_URL}/batch-check")
-
-  check_result=$(echo "$check_response" | jq -r '.')
-
-  if [[ "$check_result" == "null" ]] || [[ -z "$check_result" ]]; then
-    echo "Error: Invalid response from batch-check endpoint" >&2
-    exit 1
+    -o "$check_tmp" \
+    "${WORKER_URL}/batch-check"); then
+    if [[ "$check_http_code" == "200" ]] && jq -e 'type=="object"' "$check_tmp" >/dev/null 2>&1; then
+      check_result=$(cat "$check_tmp")
+      batch_check_ready=true
+    else
+      echo "Warning: batch-check returned HTTP $check_http_code; falling back to direct downloads."
+    fi
+  else
+    echo "Warning: batch-check request failed; falling back to direct downloads."
   fi
+  rm -f "$check_tmp"
+elif [[ -z "${ARTEFACT_API_KEY:-}" ]]; then
+  echo "ARTEFACT_API_KEY is not set; skipping authenticated batch-check."
+else
+  echo "jq is not available; skipping batch-check."
+fi
 
+if [[ "$batch_check_ready" == true ]]; then
   MISSING_HASHES=()
   MISSING_PATHS=()
 
-  for path in "${!ARTEFACT_HASHES[@]}"; do
+  for path in "${SORTED_PATHS[@]}"; do
     hash="${ARTEFACT_HASHES[$path]}"
     filename=$(basename "$path")
-    exists=$(echo "$check_result" | jq -r --arg h "$hash" '.[$h]')
+    exists=$(echo "$check_result" | jq -r --arg h "$hash" '.[$h] // "false"')
 
     if [[ "$exists" != "true" ]]; then
       MISSING_HASHES+=("$hash")
@@ -133,34 +164,47 @@ if [[ ${#ARTEFACT_HASHES[@]} -gt 0 ]]; then
 fi
 
 echo ""
-echo "All expected artefacts are available in R2 storage"
+echo "Downloading/validating artefacts..."
 
-for path in "${!ARTEFACT_HASHES[@]}"; do
+curl_get_headers=()
+if [[ -n "${ARTEFACT_API_KEY:-}" ]]; then
+  curl_get_headers=(-H "X-API-Key: ${ARTEFACT_API_KEY}")
+fi
+
+for path in "${SORTED_PATHS[@]}"; do
   hash="${ARTEFACT_HASHES[$path]}"
   filename=$(basename "$path")
   local_path="${REPO_ROOT}/${path}"
 
   if [[ -f "$local_path" ]]; then
-    local_hash=$(sha256sum "$local_path" | awk '{print $1}')
-    if [[ "$local_hash" == "$hash" ]]; then
-      echo "  ✓ $filename - already present (verified)"
-      continue
+    if is_lfs_pointer_file "$local_path"; then
+      echo "  ↻ $filename - LFS pointer detected, downloading binary artefact..."
+    else
+      local_hash=$(sha256sum "$local_path" | awk '{print $1}')
+      if [[ "$local_hash" == "$hash" ]]; then
+        echo "  ✓ $filename - already present (verified)"
+        continue
+      fi
     fi
   fi
 
   echo "  ↓ $filename (hash: ${hash:0:16}...) - downloading..."
-
   download_url="${WORKER_URL}/artefact/${hash}"
-
   tmp_file=$(mktemp)
-  http_code=$(curl -s -w "%{http_code}" -X GET \
-    -H "X-API-Key: ${ARTEFACT_API_KEY}" \
-    -o "$tmp_file" \
-    "$download_url")
 
-  if [[ $http_code -ne 200 ]]; then
-    echo "  ✗ Failed to download $filename (HTTP $http_code)" >&2
-    rm "$tmp_file"
+  if ! curl "${CURL_COMMON_ARGS[@]}" --fail -X GET \
+    "${curl_get_headers[@]}" \
+    -o "$tmp_file" \
+    "$download_url"; then
+    echo "  ✗ Failed to download $filename" >&2
+    rm -f "$tmp_file"
+    exit 1
+  fi
+
+  downloaded_hash=$(sha256sum "$tmp_file" | awk '{print $1}')
+  if [[ "$downloaded_hash" != "$hash" ]]; then
+    echo "  ✗ Hash mismatch for $filename (expected $hash, got $downloaded_hash)" >&2
+    rm -f "$tmp_file"
     exit 1
   fi
 
