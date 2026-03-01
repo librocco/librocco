@@ -1,4 +1,5 @@
 #@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "pull_artefacts")
 #@ load("cache.lib.yml", "cache_node")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
@@ -58,6 +59,8 @@ jobs:
 
     steps:
       -  #@ checkout()
+
+      -  #@ pull_artefacts()
 
       #! Node.js setup for web-client build
       - uses: actions/setup-node@v4

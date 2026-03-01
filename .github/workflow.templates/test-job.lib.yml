@@ -1,4 +1,5 @@
 #@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "pull_artefacts")
 #@ load("github.lib.yml", "load_artefacts")
 #@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("cache.lib.yml", "cache_node")
@@ -24,27 +25,28 @@ permissions:
   contents: read
   checks: write
 steps:
-  -  #@ checkout()
-  - uses: actions/setup-node@v4
-    with:
-      node-version: "22"
-  - name: Compute desired compiled artifact version
-    run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
-  -  #@ load_artefacts()
-  -  #@ load_cached_artefacts()
-  -  #@ cache_node()
-  -  #@ rush_add_path()
-  -  #@ rush_install()
-  -  #@ rush_build()
-  - name: Run tests
-    run: #@ test_script(workdir, install_playwright)
-  #@ if reporter!=None:
-  - name: Test Report
-    uses: dorny/test-reporter@v1
-    if: success() || failure()
-    with:
-      name: #@ name
-      path: #@ workdir+"/junit.xml"
-      reporter: #@ reporter
-  #@ end
+-  #@ checkout()
+-  #@ pull_artefacts()
+- uses: actions/setup-node@v4
+  with:
+    node-version: "22"
+- name: Compute desired compiled artefact version
+  run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
+-  #@ load_artefacts()
+-  #@ load_cached_artefacts()
+-  #@ cache_node()
+-  #@ rush_add_path()
+-  #@ rush_install()
+-  #@ rush_build()
+- name: Run tests
+  run: #@ test_script(workdir, install_playwright)
+#@ if reporter!=None:
+- name: Test Report
+  uses: dorny/test-reporter@v1
+  if: success() || failure()
+  with:
+    name: #@ name
+    path: #@ workdir+"/junit.xml"
+    reporter: #@ reporter
+#@ end
 #@ end

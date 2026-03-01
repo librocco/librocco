@@ -112,8 +112,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          lfs: true
+          lfs: false
           fetch-depth: 0
+
+      - name: Pull artefacts from R2
+        run: ./scripts/artefacts-download.sh
+        env:
+          ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+          ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
 
       #! ── 3. Setup Node, deps, build, browsers, services ────────────────
       - uses: actions/setup-node@v4

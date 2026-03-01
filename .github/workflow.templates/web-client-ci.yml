@@ -1,4 +1,5 @@
 #@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "pull_artefacts")
 #@ load("github.lib.yml", "load_artefacts")
 #@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("cache.lib.yml", "cache_node")
@@ -39,6 +40,7 @@ jobs:
         shardTotal: [6]
     steps:
       -  #@ checkout()
+      -  #@ pull_artefacts()
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -112,6 +114,7 @@ jobs:
       checks: write
     steps:
       -  #@ checkout()
+      -  #@ pull_artefacts()
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -138,6 +141,7 @@ jobs:
       checks: write
     steps:
       -  #@ checkout()
+      -  #@ pull_artefacts()
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -156,6 +160,7 @@ jobs:
     needs: build-cr-sqlite
     steps:
       -  #@ checkout()
+      -  #@ pull_artefacts()
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -174,6 +179,7 @@ jobs:
     needs: build-cr-sqlite
     steps:
       -  #@ checkout()
+      -  #@ pull_artefacts()
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
@@ -210,6 +216,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       -  #@ checkout()
+      -  #@ pull_artefacts()
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
