@@ -8,6 +8,28 @@ ARTEFACTS_DIR="${REPO_ROOT}/3rd-party/artefacts"
 
 WORKER_URL="${ARTEFACT_WORKER_URL:-https://artefacts.libroc.co}"
 
+IS_MAC=false
+if [[ "${OSTYPE:-}" == darwin* ]]; then
+  IS_MAC=true
+fi
+
+TIMEOUT_CMD=""
+if command -v timeout >/dev/null 2>&1; then
+  TIMEOUT_CMD="timeout"
+elif [[ "$IS_MAC" == true ]] && command -v gtimeout >/dev/null 2>&1; then
+  TIMEOUT_CMD="gtimeout"
+fi
+
+sha256_file() {
+  local local_path="$1"
+
+  if [[ "$IS_MAC" == true ]]; then
+    shasum -a 256 "$local_path" | awk '{print $1}'
+  else
+    sha256sum "$local_path" | awk '{print $1}'
+  fi
+}
+
 if [[ -z "${ARTEFACT_API_KEY:-}" ]]; then
   echo "Error: ARTEFACT_API_KEY environment variable is required" >&2
   echo "Set it with: export ARTEFACT_API_KEY='your-secret-key'" >&2
@@ -53,17 +75,35 @@ for file in "$ARTEFACTS_DIR"/*.tgz; do
     fi
   fi
 
-  hash=$(sha256sum "$file" | awk '{print $1}')
+  hash=$(sha256_file "$file")
 
   echo "Checking $filename (hash: ${hash:0:16}...)..."
 
   upload_url="${WORKER_URL}/artefact/${hash}"
 
-  # Use timeout command to prevent hanging when DNS fails
-  if ! response=$(timeout 30 curl -s -w "\n%{http_code}" --show-error -X PUT \
-    -H "X-API-Key: ${ARTEFACT_API_KEY}" \
-    --data-binary @"$file" \
-    "$upload_url" 2>&1); then
+  if [[ -n "$TIMEOUT_CMD" ]]; then
+    if ! response=$($TIMEOUT_CMD 30 curl -s -w "\n%{http_code}" --show-error -X PUT \
+      -H "X-API-Key: ${ARTEFACT_API_KEY}" \
+      --data-binary @"$file" \
+      "$upload_url" 2>&1); then
+      echo "  ✗ Upload failed (timeout or network error)"
+      ((FAIL_COUNT++))
+      continue
+    fi
+  else
+    if ! response=$(curl -s -w "\n%{http_code}" --show-error -X PUT \
+      --connect-timeout 10 \
+      --max-time 30 \
+      -H "X-API-Key: ${ARTEFACT_API_KEY}" \
+      --data-binary @"$file" \
+      "$upload_url" 2>&1); then
+      echo "  ✗ Upload failed (timeout or network error)"
+      ((FAIL_COUNT++))
+      continue
+    fi
+  fi
+
+  if [[ -z "$response" ]]; then
     echo "  ✗ Upload failed (timeout or network error)"
     ((FAIL_COUNT++))
     continue
