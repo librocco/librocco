@@ -35,6 +35,38 @@ export type MsgInit = MsgInitOk | MsgWkrError;
 
 const MAX_SYNC_CHUNK_SIZE = 1024;
 
+/**
+ * Tuple shape returned by the sync changes query:
+ * `table`, `pk`, `cid`, `val`, `col_version`, `db_version`, `NULL`, `cl`, `seq`.
+ */
+type ChangesetRow = [
+	table: string,
+	pk: Uint8Array,
+	cid: string,
+	val: unknown,
+	colVersion: bigint,
+	dbVersion: bigint,
+	siteId: null,
+	cl: bigint,
+	seq: number
+];
+
+type ChangesetRowRaw = [
+	table: string,
+	pk: Uint8Array,
+	cid: string,
+	val: unknown,
+	colVersion: number | bigint,
+	dbVersion: number | bigint,
+	siteId: null,
+	cl: number | bigint,
+	seq: number
+];
+
+const CHANGESET_COL_VERSION_INDEX = 4;
+const CHANGESET_DB_VERSION_INDEX = 5;
+const CHANGESET_CL_INDEX = 7;
+
 async function start() {
 	try {
 		const [dbname, vfs] = self.name.split("---") as [string, VFSWhitelist];
@@ -131,23 +163,24 @@ class SharedConnectionSyncDB implements SyncDB {
 		);
 	}
 
-	async pullChangeset(since: readonly [bigint, number], excludeSites: readonly Uint8Array[], localOnly: boolean): Promise<any[]> {
+	async pullChangeset(since: readonly [bigint, number], excludeSites: readonly Uint8Array[], localOnly: boolean): Promise<ChangesetRow[]> {
 		void localOnly;
-		const ret = await this.#pullChangesetStmt.all(null, since[0], excludeSites[0]);
-		for (const c of ret) {
-			c[4] = BigInt(c[4]);
-			c[5] = BigInt(c[5]);
-			c[7] = BigInt(c[7]);
+		const rows = (await this.#pullChangesetStmt.all(null, since[0], excludeSites[0])) as ChangesetRowRaw[];
+		for (const row of rows) {
+			row[CHANGESET_COL_VERSION_INDEX] = BigInt(row[CHANGESET_COL_VERSION_INDEX]);
+			row[CHANGESET_DB_VERSION_INDEX] = BigInt(row[CHANGESET_DB_VERSION_INDEX]);
+			row[CHANGESET_CL_INDEX] = BigInt(row[CHANGESET_CL_INDEX]);
 		}
-		return ret;
+		return rows as ChangesetRow[];
 	}
 
-	async applyChangesetAndSetLastSeen(changes: readonly any[], siteId: Uint8Array, end: readonly [bigint, number]): Promise<void> {
+	async applyChangesetAndSetLastSeen(changes: readonly ChangesetRow[], siteId: Uint8Array, end: readonly [bigint, number]): Promise<void> {
 		this.#applyingRemoteChanges = true;
 		try {
 			await this.#db.tx(async (tx) => {
-				for (const c of changes) {
-					await this.#applyChangesetStmt.run(tx, c[0], c[1], c[2], c[3], c[4], c[5], siteId, c[7], c[8]);
+				for (const row of changes) {
+					const [table, pk, cid, val, colVersion, dbVersion, , cl, seq] = row;
+					await this.#applyChangesetStmt.run(tx, table, pk, cid, val, colVersion, dbVersion, siteId, cl, seq);
 				}
 				await this.#updatePeerTrackerStmt.run(tx, siteId, 0, end[0], end[1]);
 			});
@@ -243,12 +276,32 @@ function wrapTransportProvider(
 		new SyncTransportController(provider(...params), progressEmitter, connectionEmitter, config);
 }
 
+function cloneTransportOptions(transportOpts: SyncTransportOptions): SyncTransportOptions {
+	return {
+		url: transportOpts.url,
+		room: transportOpts.room,
+		authToken: transportOpts.authToken,
+		pingInterval: transportOpts.pingInterval,
+		pingTimeout: transportOpts.pingTimeout
+	};
+}
+
+function areTransportOptionsEqual(left: SyncTransportOptions, right: SyncTransportOptions): boolean {
+	return (
+		left.url === right.url &&
+		left.room === right.room &&
+		left.authToken === right.authToken &&
+		left.pingInterval === right.pingInterval &&
+		left.pingTimeout === right.pingTimeout
+	);
+}
+
 class SyncRuntime {
 	readonly #db: DBAsync;
 	readonly #syncEmitter = new SyncEventEmitter();
 	readonly #connEmitter = new ConnectionEventEmitter();
 
-	#activeConfig: { dbid: string; url: string } | null = null;
+	#activeConfig: { dbid: string; transportOpts: SyncTransportOptions } | null = null;
 	#handlePromise: Promise<SyncRuntimeHandle> | null = null;
 	#isConnected = false;
 
@@ -263,7 +316,8 @@ class SyncRuntime {
 	}
 
 	async startSync(dbid: string, transportOpts: SyncTransportOptions): Promise<void> {
-		if (this.#activeConfig?.dbid === dbid && this.#activeConfig?.url === transportOpts.url) {
+		const nextTransportOpts = cloneTransportOptions(transportOpts);
+		if (this.#activeConfig?.dbid === dbid && areTransportOptionsEqual(this.#activeConfig.transportOpts, nextTransportOpts)) {
 			return;
 		}
 
@@ -279,8 +333,8 @@ class SyncRuntime {
 			})
 		};
 
-		this.#activeConfig = { dbid, url: transportOpts.url };
-		const handlePromise = createAndStartSyncedDBExclusive(config, dbid, transportOpts);
+		this.#activeConfig = { dbid, transportOpts: nextTransportOpts };
+		const handlePromise = createAndStartSyncedDBExclusive(config, dbid, nextTransportOpts);
 		this.#handlePromise = handlePromise;
 
 		let handle: SyncRuntimeHandle;
@@ -317,6 +371,7 @@ class SyncRuntime {
 				handle.stop();
 			} catch (err) {
 				console.warn(`[worker] Failed to stop sync runtime for db '${dbid}'`, err);
+				throw err;
 			}
 		}
 
