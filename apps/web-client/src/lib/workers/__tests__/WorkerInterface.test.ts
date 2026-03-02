@@ -1,7 +1,13 @@
 /** @vitest-environment node */
 import { describe, expect, it, vi } from "vitest";
 
-import { isSyncWorkerBridge, type SyncProgressPayload, type SyncStatusPayload, type SyncTransportOptions, type SyncWorkerBridge } from "$lib/db/cr-sqlite/core";
+import {
+	isSyncWorkerBridge,
+	type SyncProgressPayload,
+	type SyncStatusPayload,
+	type SyncTransportOptions,
+	type SyncWorkerBridge
+} from "$lib/db/cr-sqlite/core";
 import WorkerInterface from "../WorkerInterface";
 
 type PendingResolver = () => void;

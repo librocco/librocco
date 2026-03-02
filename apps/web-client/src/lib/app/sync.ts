@@ -258,8 +258,7 @@ export async function startSync(app: App, dbid: string, url: string) {
 		const isEmpty = await isEmptyDB(db);
 		const opfsSupported = vfsSupportsOPFS(getVfs(app));
 		const initialSyncReloadGuardKey = `librocco-initial-sync-reload:${dbid}`;
-		const shouldRunInitialSync =
-			browser && isEmpty && opfsSupported && window.sessionStorage.getItem(initialSyncReloadGuardKey) !== "1";
+		const shouldRunInitialSync = browser && isEmpty && opfsSupported && window.sessionStorage.getItem(initialSyncReloadGuardKey) !== "1";
 
 		if (!isEmpty && browser) {
 			// DB is no longer empty; clear any stale guard from previous initial-sync reload attempt.
