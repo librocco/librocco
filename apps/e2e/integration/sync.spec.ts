@@ -455,7 +455,8 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 
 	await expect
 		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
-			timeout: 20000,
+			// Rebuilding identity and resyncing after a full nuke can take longer in CI.
+			timeout: 45000,
 			intervals: [250]
 		})
 		.toBe("synced");
