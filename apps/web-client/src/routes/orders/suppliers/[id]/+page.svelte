@@ -4,9 +4,10 @@
 	import { zod } from "sveltekit-superforms/adapters";
 
 	import { stripNulls } from "@librocco/shared";
+	import LL from "@librocco/shared/i18n-svelte";
 
+	import type { PageData } from "./$types";
 	import type { Supplier } from "$lib/db/cr-sqlite/types";
-	import type { SupplierLayoutData } from "./dataLoad";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import { Page } from "$lib/controllers";
@@ -16,32 +17,40 @@
 	import SupplierDeleteForm from "$lib/forms/SupplierDeleteForm.svelte";
 	import { appPath } from "$lib/paths";
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
-	import LL from "@librocco/shared/i18n-svelte";
 	import { orderFormats } from "$lib/enums/orders";
 
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	import { SupplierCard } from "$lib/components-new/SupplierCard";
-	import { createDataStore } from "./dataLoad";
+	import { createLayoutDataStore } from "./dataLoad";
 	import { goto } from "$lib/utils/navigation";
-	import { page } from "$app/stores";
-	import type { PluginsInterface } from "$lib/plugins";
-	import type { App } from "$lib/app";
 
-	export let app: App;
-	export let layoutData: SupplierLayoutData;
-	export let supplierId: number;
-	export let plugins: PluginsInterface;
+	import SupplierOrdersView from "./SupplierOrdersView.svelte";
+	import SupplierPublishersView from "./SupplierPublishersView.svelte";
+
+	type Props = {
+		data: PageData;
+	};
+
+	let { data }: Props = $props();
+
+	const app = data.app;
+	const plugins = data.plugins;
+
+	const supplierId = data.supplierId;
+	const layoutData = data.layoutData;
+	const ordersViewData = data.ordersViewData;
+	const publishersViewData = data.publishersViewData;
 
 	const rx = getDbRx(app);
-	const dataStore = createDataStore(rx, () => getDb(app), supplierId, layoutData);
+	const layoutStore = createLayoutDataStore(rx, () => getDb(app), supplierId, layoutData ?? undefined);
 
-	$: ({ supplier } = $dataStore.data);
+	const supplier = $derived($layoutStore.data.supplier);
 
-	$: t = $LL.order_list_page;
-	$: t_suppliers = $LL.suppliers_page;
+	const t = $derived($LL.order_list_page);
+	const tSuppliers = $derived($LL.suppliers_page);
 
-	$: canDelete = !supplier?.hasActiveOrders;
+	const canDelete = $derived(!supplier?.hasActiveOrders);
 
 	const dialog = createDialog(defaultDialogConfig);
 	const {
@@ -53,26 +62,26 @@
 		states: { open: deleteDialogOpen }
 	} = deleteDialog;
 
+	let activeTab = $state<"orders" | "publishers">("orders");
+
 	const handleUpdateSupplier = async (_data: Partial<Supplier> & { underdeliveryPolicy?: string }) => {
+		if (!supplier) return;
+
 		const db = await getDb(app);
 		const data = { ...stripNulls(supplier), ..._data };
 		const underdelivery_policy = _data.underdeliveryPolicy ? (_data.underdeliveryPolicy === "queue" ? 1 : 0) : undefined;
+
 		await upsertSupplier(db, { ...data, underdelivery_policy });
 		dialogOpen.set(false);
 	};
 
 	const handleDeleteSupplier = async () => {
 		if (!supplier?.id) return;
+
 		const db = await getDb(app);
 		await deleteSupplier(db, supplier.id);
 		deleteDialogOpen.set(false);
 		goto(appPath("suppliers"));
-	};
-
-	$: activeTab = $page.url.pathname.match(/orders$/) ? "orders" : "publishers";
-
-	const handleTabClick = (tab: "orders" | "publishers") => {
-		goto(appPath("suppliers", supplierId, tab));
 	};
 </script>
 
@@ -86,15 +95,15 @@
 							{#if supplier}
 								<SupplierCard
 									name={supplier.name}
-									id={`#${supplier?.id}`}
+									id={supplier.id}
 									email={supplier.email || "N/A"}
 									address={supplier.address || "N/A"}
 									orderFormat={supplier.orderFormat || "N/A"}
-									deleteDisabled={!canDelete}
-									deleteDisabledReason={t_suppliers.errors.active_orders()}
 									underdeliveryPolicy={supplier.underdelivery_policy ?? 0}
-									on:edit={() => dialogOpen.set(true)}
-									on:delete={() => deleteDialogOpen.set(true)}
+									deleteDisabled={!canDelete}
+									deleteDisabledReason={tSuppliers.errors.active_orders()}
+									onedit={() => dialogOpen.set(true)}
+									ondelete={() => deleteDialogOpen.set(true)}
 								/>
 							{/if}
 						</div>
@@ -109,7 +118,7 @@
 							class="rounded font-normal transition-colors {activeTab === 'orders'
 								? 'border border-gray-900 bg-gray-900 text-white'
 								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'} px-4 py-2 text-[14px]"
-							on:click={() => handleTabClick("orders")}
+							onclick={() => (activeTab = "orders")}
 						>
 							{t.tabs.orders()}
 						</button>
@@ -117,39 +126,45 @@
 							class="rounded font-normal transition-colors {activeTab === 'publishers'
 								? 'border border-gray-900 bg-gray-900 text-white'
 								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'} px-4 py-2 text-[14px]"
-							on:click={() => handleTabClick("publishers")}
+							onclick={() => (activeTab = "publishers")}
 						>
 							{t.tabs.assigned_publishers()}
 						</button>
 					</nav>
 				</div>
 
-				<slot />
+				{#if activeTab === "orders"}
+					<SupplierOrdersView {app} {supplierId} pageData={ordersViewData} />
+				{:else}
+					<SupplierPublishersView {app} {supplierId} pageData={publishersViewData} />
+				{/if}
 			</div>
 		</div>
 	</div>
 </Page>
 
 <PageCenterDialog {dialog} title="" description="">
-	<SupplierMetaForm
-		heading={t.details.update_supplier_details()}
-		saveLabel={t.labels.save()}
-		data={defaults(
-			{ ...stripNulls(supplier), underdeliveryPolicy: supplier?.underdelivery_policy === 1 ? "queue" : "pending" },
-			zod(supplierSchema($LL))
-		)}
-		options={{
-			SPA: true,
-			validators: zod(supplierSchema($LL)),
-			onUpdate: ({ form }) => {
-				if (form.valid) {
-					handleUpdateSupplier(form.data);
+	{#if supplier}
+		<SupplierMetaForm
+			heading={t.details.update_supplier_details()}
+			saveLabel={t.labels.save()}
+			data={defaults(
+				{ ...stripNulls(supplier), underdeliveryPolicy: supplier.underdelivery_policy === 1 ? "queue" : "pending" },
+				zod(supplierSchema($LL))
+			)}
+			options={{
+				SPA: true,
+				validators: zod(supplierSchema($LL)),
+				onUpdate: ({ form }) => {
+					if (form.valid) {
+						handleUpdateSupplier(form.data);
+					}
 				}
-			}
-		}}
-		formatList={orderFormats}
-		onCancel={() => dialogOpen.set(false)}
-	/>
+			}}
+			formatList={orderFormats}
+			onCancel={() => dialogOpen.set(false)}
+		/>
+	{/if}
 </PageCenterDialog>
 
 <PageCenterDialog dialog={deleteDialog} title="" description={$LL.common.delete_supplier_dialog.description()}>

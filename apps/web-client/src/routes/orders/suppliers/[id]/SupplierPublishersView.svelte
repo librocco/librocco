@@ -4,7 +4,7 @@
 	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { App } from "$lib/app";
-	import type { SupplierPublishersPageData } from "./dataLoad";
+	import type { SupplierPublishersViewData } from "./dataLoad";
 
 	import { defaultDialogConfig } from "$lib/components/Melt";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
@@ -13,41 +13,53 @@
 	import { SupplierPublisherTable, SupplierPublisherTableRow } from "$lib/components-new/SupplierPublisherList";
 
 	import { getDb, getDbRx } from "$lib/app/db";
-	import { createDataStore } from "./dataLoad";
+	import { createPublishersViewStore } from "./dataLoad";
 
-	export let app: App;
-	export let supplierId: number;
-	export let pageData: SupplierPublishersPageData;
+	type Props = {
+		app: App;
+		supplierId: number;
+		pageData?: SupplierPublishersViewData | null;
+	};
+
+	let { app, supplierId, pageData }: Props = $props();
 
 	const rx = getDbRx(app);
-	const dataStore = createDataStore(rx, () => getDb(app), supplierId, pageData);
+	const dataStore = createPublishersViewStore(rx, () => getDb(app), supplierId, pageData ?? undefined);
 
-	let searchQuery = "";
+	let searchQuery = $state("");
 
-	$: ({ supplier, assignedPublishers, availablePublishers } = $dataStore.data);
+	const supplier = $derived($dataStore.data.supplier);
+	const assignedPublishers = $derived($dataStore.data.assignedPublishers ?? []);
+	const availablePublishers = $derived($dataStore.data.availablePublishers ?? []);
 
-	$: filteredAssigned = searchQuery
-		? assignedPublishers.filter((p) => p.toLowerCase().includes(searchQuery.toLowerCase()))
-		: assignedPublishers;
+	const filteredAssigned = $derived(
+		searchQuery ? assignedPublishers.filter((publisher) => publisher.toLowerCase().includes(searchQuery.toLowerCase())) : assignedPublishers
+	);
 
-	$: filteredAvailable = searchQuery
-		? availablePublishers.filter((p) => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-		: availablePublishers;
+	const filteredAvailable = $derived(
+		searchQuery
+			? availablePublishers.filter((publisher) => publisher.name.toLowerCase().includes(searchQuery.toLowerCase()))
+			: availablePublishers
+	);
 
-	$: t = $LL.order_list_page;
+	const t = $derived($LL.order_list_page);
 
-	let confirmationPublisher = "";
+	let confirmationPublisher = $state("");
 	const confirmationDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: confirmationDialogOpen }
 	} = confirmationDialog;
 
 	const handleAssignPublisher = (publisher: string) => async () => {
+		if (!supplier?.id) return;
+
 		const db = await getDb(app);
 		await associatePublisher(db, supplier.id, publisher);
 	};
 
 	const handleUnassignPublisher = (publisher: string) => async () => {
+		if (!supplier?.id) return;
+
 		const db = await getDb(app);
 		await removePublisherFromSupplier(db, supplier.id, publisher);
 	};
@@ -79,7 +91,7 @@
 				/>
 			</div>
 			{#if searchQuery}
-				<button on:click={() => (searchQuery = "")} class="btn-xs btn-circle btn" aria-label={t.aria.clear_search()}>✕</button>
+				<button onclick={() => (searchQuery = "")} class="btn-xs btn-circle btn" aria-label={t.aria.clear_search()}>✕</button>
 			{/if}
 		</div>
 	</div>
@@ -101,7 +113,7 @@
 						<SupplierPublisherTableRow publisherName={publisher}>
 							<button
 								slot="action-button"
-								on:click={handleUnassignPublisher(publisher)}
+								onclick={handleUnassignPublisher(publisher)}
 								class="h-5 whitespace-nowrap rounded border-0 bg-transparent px-1 text-[11px] font-medium text-gray-500 hover:bg-red-50 hover:!text-red-600"
 							>
 								{t.labels.remove()}
@@ -120,20 +132,20 @@
 					{filteredAvailable.length}
 				</span>
 
-				{#each filteredAvailable as pub}
-					{#if pub.supplierName}
-						<SupplierPublisherTableRow publisherName={pub.name}>
+				{#each filteredAvailable as publisher}
+					{#if publisher.supplierName}
+						<SupplierPublisherTableRow publisherName={publisher.name}>
 							<span
 								slot="badge"
 								class="inline-flex truncate rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800"
-								title={t.placeholders.currently_assigned_to({ supplierName: pub.supplierName })}
+								title={t.placeholders.currently_assigned_to({ supplierName: publisher.supplierName })}
 							>
-								{pub.supplierName}
+								{publisher.supplierName}
 							</span>
 							<button
 								slot="action-button"
-								on:click={() => {
-									confirmationPublisher = pub.name;
+								onclick={() => {
+									confirmationPublisher = publisher.name;
 									confirmationDialogOpen.set(true);
 								}}
 								class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
@@ -142,10 +154,10 @@
 							</button>
 						</SupplierPublisherTableRow>
 					{:else}
-						<SupplierPublisherTableRow publisherName={pub.name}>
+						<SupplierPublisherTableRow publisherName={publisher.name}>
 							<button
 								slot="action-button"
-								on:click={handleAssignPublisher(pub.name)}
+								onclick={handleAssignPublisher(publisher.name)}
 								class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
 							>
 								{t.labels.add()}
@@ -161,7 +173,7 @@
 <ConfirmDialog
 	dialog={confirmationDialog}
 	title={t.dialogs.reassign_publisher.title()}
-	description={t.dialogs.reassign_publisher.description({ publisher: confirmationPublisher, supplier: supplier.name })}
+	description={t.dialogs.reassign_publisher.description({ publisher: confirmationPublisher, supplier: supplier?.name || "" })}
 	labels={{
 		confirm: $LL.common.actions.confirm(),
 		cancel: $LL.common.actions.cancel()
