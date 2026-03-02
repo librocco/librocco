@@ -18,7 +18,7 @@
 		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
 		"preview": "vite preview",
 		"story:build": "storybook build",
-		"story:dev": "storybook dev",
+		"story:dev": "storybook dev -p 6006",
 		"story:preview": "storybook preview",
 		"test": "vitest --ui",
 		"test:ci": "CI=True vitest",
