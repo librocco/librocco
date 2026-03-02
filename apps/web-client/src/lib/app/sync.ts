@@ -249,10 +249,9 @@ export async function startSync(app: App, dbid: string, url: string) {
 			return;
 		}
 
-		// If sync is active:
-		// - no need to start (idempotency)
-		// - it's safe to assume the initial sync was already attempted
-		if (sync.active) return;
+		// If sync is already active, AppSyncCore.start() handles idempotent no-op
+		// and safe stop/restart for reconfiguration.
+		const wasActive = sync.active;
 
 		// ---------------------------------- 1. Initial Sync ---------------------------------- //
 		const isEmpty = await isEmptyDB(db);
@@ -265,7 +264,7 @@ export async function startSync(app: App, dbid: string, url: string) {
 			window.sessionStorage.removeItem(initialSyncReloadGuardKey);
 		}
 
-		if (shouldRunInitialSync) {
+		if (!wasActive && shouldRunInitialSync) {
 			sync.state.set(AppSyncState.InitialSync);
 			let shouldReload = false;
 			try {
