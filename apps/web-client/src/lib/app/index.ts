@@ -1,31 +1,15 @@
-import { get, derived } from "svelte/store";
+import { get } from "svelte/store";
 
-import { AppDb, AppDbState, initializeDb } from "./db";
-import { AppSync, startSync, stopSync } from "./sync";
-import { AppConfig } from "./config";
+import { AppDbState, initializeDb } from "./db";
+import { startSync, stopSync } from "./sync";
+import { App } from "./core";
 
-import { IS_DEMO } from "$lib/constants";
 import { clearIDBBatchAtomic, deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
 import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
 import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 import { resetSyncCompatibility } from "$lib/stores/sync-compatibility";
 
-export class App {
-	// TODO: maybe implement App state -- currently we're relying on both:
-	// - db state - as app state
-	// - db error - as app error
-	// Both are good enough considering the current flow, but would be good to
-	// make the state global.
-	get state() {
-		return this.db.state;
-	}
-
-	db = new AppDb();
-	sync = new AppSync();
-	config = IS_DEMO ? AppConfig.demo() : AppConfig.persisted();
-
-	ready = derived([this.db.ready], ([$dbReady]) => $dbReady);
-}
+export { App } from "./core";
 
 export const app = new App();
 
