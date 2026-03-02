@@ -210,9 +210,18 @@ class SharedConnectionSyncDB implements SyncDB {
 		void closeWrappedDB;
 		if (this.#closed) return;
 		this.#closed = true;
-		void this.#pullChangesetStmt.finalize(null);
-		void this.#applyChangesetStmt.finalize(null);
-		void this.#updatePeerTrackerStmt.finalize(null);
+		const finalizers = [
+			["pullChangeset", this.#pullChangesetStmt.finalize(null)],
+			["applyChangeset", this.#applyChangesetStmt.finalize(null)],
+			["updatePeerTracker", this.#updatePeerTrackerStmt.finalize(null)]
+		] as const;
+		void Promise.allSettled(finalizers.map(([, promise]) => promise)).then((results) => {
+			for (const [idx, result] of results.entries()) {
+				if (result.status === "rejected") {
+					console.warn(`[worker] Failed to finalize ${finalizers[idx][0]} statement`, result.reason);
+				}
+			}
+		});
 		this.#onUpdateDisposer();
 		this.#changeListeners.clear();
 	}
@@ -387,35 +396,35 @@ class SyncRuntime {
 		}
 	}
 
-	onChangesReceived(cb: (msg: { timestamp: number }) => void) {
+	onChangesReceived(cb: (msg: { timestamp: number }) => void): ReturnType<SyncEventEmitter["onChangesReceived"]> {
 		return this.#syncEmitter.onChangesReceived(cb);
 	}
 
-	onChangesProcessed(cb: (msg: { timestamp: number }) => void) {
+	onChangesProcessed(cb: (msg: { timestamp: number }) => void): ReturnType<SyncEventEmitter["onChangesProcessed"]> {
 		return this.#syncEmitter.onChangesProcessed(cb);
 	}
 
-	onProgress(cb: (msg: SyncProgressPayload) => void) {
+	onProgress(cb: (msg: SyncProgressPayload) => void): ReturnType<SyncEventEmitter["onProgress"]> {
 		return this.#syncEmitter.onProgress(cb);
 	}
 
-	onOutgoingChanges(cb: (msg: { maxDbVersion: number; changeCount: number }) => void) {
+	onOutgoingChanges(cb: (msg: { maxDbVersion: number; changeCount: number }) => void): ReturnType<SyncEventEmitter["onOutgoingChanges"]> {
 		return this.#syncEmitter.onOutgoingChanges(cb);
 	}
 
-	onSyncStatus(cb: (msg: SyncStatusPayload) => void) {
+	onSyncStatus(cb: (msg: SyncStatusPayload) => void): ReturnType<SyncEventEmitter["onSyncStatus"]> {
 		return this.#syncEmitter.onSyncStatus(cb);
 	}
 
-	onConnOpen(cb: () => void) {
+	onConnOpen(cb: () => void): ReturnType<ConnectionEventEmitter["onConnOpen"]> {
 		return this.#connEmitter.onConnOpen(cb);
 	}
 
-	onConnClose(cb: () => void) {
+	onConnClose(cb: () => void): ReturnType<ConnectionEventEmitter["onConnClose"]> {
 		return this.#connEmitter.onConnClose(cb);
 	}
 
-	get isConnected() {
+	get isConnected(): boolean {
 		return this.#isConnected;
 	}
 }
