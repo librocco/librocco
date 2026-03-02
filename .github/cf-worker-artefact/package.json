@@ -1,0 +1,7 @@
+{
+  "name": "artefact-api-worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Worker for Git LFS artefact API",
+  "private": true,
+  "type": "module"
+}

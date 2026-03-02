@@ -18,8 +18,13 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
         fetch-depth: 0
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - name: Test if artefacts are stale
       id: ts
       shell: bash
@@ -74,11 +79,16 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
-    - name: Compute desired compiled artifact version
+    - name: Compute desired compiled artefact version
       run: ./scripts/compute_artefacts_version.sh
     - uses: actions/download-artifact@v4
       with:
@@ -131,11 +141,16 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
-    - name: Compute desired compiled artifact version
+    - name: Compute desired compiled artefact version
       run: ./scripts/compute_artefacts_version.sh
     - uses: actions/download-artifact@v4
       with:
@@ -195,7 +210,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -299,7 +319,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -356,7 +381,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -406,7 +436,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -456,7 +491,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -548,7 +588,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
+    - name: Pull artefacts from R2
+      run: ./scripts/artefacts-download.sh
+      env:
+        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
@@ -610,7 +655,7 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-        lfs: true
+        lfs: false
     - uses: actions/setup-node@v4
       with:
         node-version: "22"

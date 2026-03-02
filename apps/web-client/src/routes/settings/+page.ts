@@ -19,7 +19,7 @@ const _load: PageLoad = async ({ parent }) => {
 
 	const dbid = get(app.config.dbid);
 	const syncUrl = get(app.config.syncUrl);
-	const syncSettingsData = { dbid, syncUrl };
+	const syncSettingsData = { dbid, url: syncUrl };
 	const syncSettingsForm = await superValidate(syncSettingsData, zod(syncSettingsSchema));
 
 	return { deviceSettingsForm, syncSettingsForm };
