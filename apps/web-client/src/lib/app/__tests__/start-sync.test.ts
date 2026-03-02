@@ -47,12 +47,15 @@ vi.mock("$lib/stores/sync-compatibility", () => ({
 import { getDb, getVfs } from "$lib/app/db";
 import { isEmptyDB } from "$lib/db/cr-sqlite/db";
 import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
-import { AppSyncState, startSync } from "../sync";
+import { AppSyncState, startSync } from "$lib/app/sync";
+
+const mockDb = {} as Awaited<ReturnType<typeof getDb>>;
+const mockVfs = "sync-opfs-coop-sync" as ReturnType<typeof getVfs>;
 
 describe("startSync", () => {
 	it("still calls sync.start when sync is already active", async () => {
-		vi.mocked(getDb).mockResolvedValue({} as never);
-		vi.mocked(getVfs).mockReturnValue({} as never);
+		vi.mocked(getDb).mockResolvedValue(mockDb);
+		vi.mocked(getVfs).mockReturnValue(mockVfs);
 		vi.mocked(isEmptyDB).mockResolvedValue(false);
 		vi.mocked(vfsSupportsOPFS).mockReturnValue(false);
 
@@ -80,8 +83,8 @@ describe("startSync", () => {
 	});
 
 	it("does not call sync.start when bindDb returns false", async () => {
-		vi.mocked(getDb).mockResolvedValue({} as never);
-		vi.mocked(getVfs).mockReturnValue({} as never);
+		vi.mocked(getDb).mockResolvedValue(mockDb);
+		vi.mocked(getVfs).mockReturnValue(mockVfs);
 		vi.mocked(isEmptyDB).mockResolvedValue(false);
 		vi.mocked(vfsSupportsOPFS).mockReturnValue(false);
 
