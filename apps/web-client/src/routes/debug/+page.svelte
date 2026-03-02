@@ -129,19 +129,19 @@
 	const TIMELINE_LIMIT = 5;
 	const TIMELINE_STORAGE_KEY = "librocco-debug-sync-timeline";
 	let diagnosticsTimeline: TimelineEntry[] = [];
-let connectionProbe: ConnectionProbeResult | null = null;
-let isRunningConnectionProbe = false;
-let handshakeStatusCheck: HandshakeStatusCheckResult | null = null;
-let syncConfigSanity: SyncConfigSanityResult | null = null;
-let isRunningHandshakeCheck = false;
-let isRunningSanityCheck = false;
+	let connectionProbe: ConnectionProbeResult | null = null;
+	let isRunningConnectionProbe = false;
+	let handshakeStatusCheck: HandshakeStatusCheckResult | null = null;
+	let syncConfigSanity: SyncConfigSanityResult | null = null;
+	let isRunningHandshakeCheck = false;
+	let isRunningSanityCheck = false;
 	let lastConnectivitySig = "";
 	let lastCompatibilitySig = "";
 	let lastLocalDbSig = "";
 	let lastPendingSig = "";
 	let lastAutoRecoverySig = "";
 
-	const quoteIdentifier = (identifier: string) => `"${identifier.replace(/"/g, "\"\"")}"`;
+	const quoteIdentifier = (identifier: string) => `"${identifier.replace(/"/g, '""')}"`;
 
 	const fmtAge = (ts: number | null, now: number) => {
 		if (!ts) return "never";
@@ -173,9 +173,7 @@ let isRunningSanityCheck = false;
 
 	const formatUiLabel = (value: string | null | undefined) => {
 		if (!value) return "None";
-		return value
-			.replace(/_/g, " ")
-			.replace(/\b\w/g, (char) => char.toUpperCase());
+		return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 	};
 
 	const buildMetaProbeUrl = (syncUrl: string, dbid: string) => {
@@ -236,11 +234,7 @@ let isRunningSanityCheck = false;
 	$: connectionViaOtherTab = !$syncConnected && statusAgeSec != null && statusAgeSec <= 15;
 	$: connectionTone = $syncStuck ? "error" : $syncConnected || connectionViaOtherTab ? "success" : "error";
 	$: compatibilityTone =
-		$syncCompatibility.status === "incompatible"
-			? "error"
-			: $syncCompatibility.status === "compatible"
-				? "success"
-				: "warning";
+		$syncCompatibility.status === "incompatible" ? "error" : $syncCompatibility.status === "compatible" ? "success" : "warning";
 	$: localDbTone = $localDbHealth.status === "error" ? "error" : $localDbHealth.status === "ok" ? "success" : "warning";
 	$: pendingTone = $pendingChangesCount > 0 ? "warning" : "success";
 	$: statusHeartbeatAt = $syncConnected
@@ -315,11 +309,7 @@ let isRunningSanityCheck = false;
 		if (lastAutoRecoverySig && sig !== lastAutoRecoverySig && $syncAutoRecovery.lastAttemptAt) {
 			pushTimeline(
 				`Auto recovery: ${$syncAutoRecovery.lastResult || "unknown"}${$syncAutoRecovery.lastError ? ` (${String($syncAutoRecovery.lastError)})` : ""}`,
-				$syncAutoRecovery.lastResult === "failure"
-					? "error"
-					: $syncAutoRecovery.lastResult === "success"
-						? "success"
-						: "info"
+				$syncAutoRecovery.lastResult === "failure" ? "error" : $syncAutoRecovery.lastResult === "success" ? "success" : "info"
 			);
 		}
 		lastAutoRecoverySig = sig;
@@ -1520,7 +1510,8 @@ let isRunningSanityCheck = false;
 								<div class="text-xs opacity-70">{new Date(nowTs).toLocaleTimeString()}</div>
 							</div>
 							<p class="mb-3 text-xs opacity-70">
-								Core sync health metrics. These values summarize transport, compatibility, local DB condition, pending write pressure, and automatic recovery behavior.
+								Core sync health metrics. These values summarize transport, compatibility, local DB condition, pending write pressure, and
+								automatic recovery behavior.
 							</p>
 							<div class="space-y-3">
 								<div class="text-xs">
@@ -1537,7 +1528,9 @@ let isRunningSanityCheck = false;
 										</span>
 									</div>
 									<div class="opacity-70">
-										Derived from sync transport events and stuck detection{connectionViaOtherTab ? "; heartbeat currently comes from another tab" : "."}
+										Derived from sync transport events and stuck detection{connectionViaOtherTab
+											? "; heartbeat currently comes from another tab"
+											: "."}
 									</div>
 									<div class="opacity-70">
 										Events: {$syncConnDiagnostics.openCount} Open / {$syncConnDiagnostics.closeCount} Close
@@ -1563,7 +1556,11 @@ let isRunningSanityCheck = false;
 									<div class="mb-1 flex items-center justify-between gap-2">
 										<span class="font-semibold">Local DB</span>
 										<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(localDbTone)}`}>
-											{formatUiLabel($localDbHealth.status)} ({$localDbHealth.lastIntegrityCheckAt ? "Integrity Check" : $localDbHealth.lastQuickCheckAt ? "Quick Check" : "None"})
+											{formatUiLabel($localDbHealth.status)} ({$localDbHealth.lastIntegrityCheckAt
+												? "Integrity Check"
+												: $localDbHealth.lastQuickCheckAt
+													? "Quick Check"
+													: "None"})
 										</span>
 									</div>
 									<div class="opacity-70">Derived from local database health checks.</div>
@@ -1589,7 +1586,9 @@ let isRunningSanityCheck = false;
 														: "info"
 											)}`}
 										>
-											{formatUiLabel($syncAutoRecovery.lastResult || "idle")} ({$syncAutoRecovery.lastAttemptAt ? fmtAge($syncAutoRecovery.lastAttemptAt, nowTs) : "Never"})
+											{formatUiLabel($syncAutoRecovery.lastResult || "idle")} ({$syncAutoRecovery.lastAttemptAt
+												? fmtAge($syncAutoRecovery.lastAttemptAt, nowTs)
+												: "Never"})
 										</span>
 									</div>
 									<div class="opacity-70">Derived from automatic stale-state recovery attempts.</div>
@@ -1600,7 +1599,8 @@ let isRunningSanityCheck = false;
 						<div class="rounded-lg border border-base-300 bg-base-200/40 p-3">
 							<div class="mb-2 text-xs font-semibold uppercase tracking-wide opacity-70">Freshness</div>
 							<p class="mb-3 text-xs opacity-70">
-								Freshness indicates how recent sync signals are. Each metric shows explicit thresholds and a state: Healthy, Warning, Stale, or N/A.
+								Freshness indicates how recent sync signals are. Each metric shows explicit thresholds and a state: Healthy, Warning, Stale,
+								or N/A.
 							</p>
 							<div class="grid gap-3 md:grid-cols-3 xl:grid-cols-1">
 								<div class="text-xs">
@@ -1611,11 +1611,18 @@ let isRunningSanityCheck = false;
 										</span>
 									</div>
 									<div class="mb-1 flex justify-between opacity-70">
-										<span>{$syncConnected ? "Connected (live)" : statusAgeSec == null ? "never" : `${statusAgeSec}s since last heartbeat`}</span>
+										<span
+											>{$syncConnected
+												? "Connected (live)"
+												: statusAgeSec == null
+													? "never"
+													: `${statusAgeSec}s since last heartbeat`}</span
+										>
 										<span>Warn {statusWarnSec}s, stale {statusErrorSec}s</span>
 									</div>
 									<div class="mb-1 opacity-70">Last at: {fmtTs(statusHeartbeatAt)}</div>
-									<progress class={`progress w-full ${levelProgressClass(statusFreshnessLevel)}`} value={statusHealthPct} max="100"></progress>
+									<progress class={`progress w-full ${levelProgressClass(statusFreshnessLevel)}`} value={statusHealthPct} max="100"
+									></progress>
 									<div class="mt-1 opacity-70">Transport keepalive liveness (WebSocket ping/pong), independent from pending writes.</div>
 								</div>
 								<div class="text-xs">
@@ -1647,7 +1654,8 @@ let isRunningSanityCheck = false;
 									<div class="mb-1 opacity-70">
 										Last queue activity: {$pendingChangesLastActiveAt ? fmtTs($pendingChangesLastActiveAt) : "never"}
 									</div>
-									<progress class={`progress w-full ${levelProgressClass(queueFreshnessLevel)}`} value={queueHealthPct} max="100"></progress>
+									<progress class={`progress w-full ${levelProgressClass(queueFreshnessLevel)}`} value={queueHealthPct} max="100"
+									></progress>
 									<div class="mt-1 opacity-70">Age of oldest unsent local change.</div>
 								</div>
 							</div>
@@ -1659,11 +1667,11 @@ let isRunningSanityCheck = false;
 								<div class="flex items-center gap-2">
 									<div class="text-xs opacity-70">latest {Math.min(diagnosticsTimeline.length, TIMELINE_LIMIT)} events</div>
 									{#if $syncRuntimeHealth.recentErrors.length > 0}
-										<button class="btn-neutral btn btn-xs" on:click={copyLastSyncErrors}>
+										<button class="btn-neutral btn-xs btn" on:click={copyLastSyncErrors}>
 											<Download size={14} />
 											Copy
 										</button>
-										<button class="btn-outline btn btn-xs" on:click={clearLastSyncErrors}>Clear</button>
+										<button class="btn-outline btn-xs btn" on:click={clearLastSyncErrors}>Clear</button>
 									{/if}
 								</div>
 							</div>
@@ -1676,7 +1684,9 @@ let isRunningSanityCheck = false;
 										{#each diagnosticsTimeline as evt}
 											<li class="rounded border border-base-300 bg-base-100 p-2">
 												<div class="flex items-center justify-between gap-2">
-													<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(evt.severity)}`}>{evt.message}</span>
+													<span class={`inline-flex rounded border px-2 py-0.5 font-semibold ${toneClass(evt.severity)}`}
+														>{evt.message}</span
+													>
 													<span class="shrink-0 opacity-60">{new Date(evt.at).toLocaleTimeString()}</span>
 												</div>
 											</li>
@@ -1717,7 +1727,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Recheck sync compatibility</div>
 								<p class="text-xs opacity-70">Runs the strict local-vs-remote identity check and refreshes compatibility state.</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={recheckSyncCompatibilityNow} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={recheckSyncCompatibilityNow}
+								disabled={isLoading}
+							>
 								<Play size={16} />
 								Run check
 							</button>
@@ -1729,7 +1743,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Run DB quick check</div>
 								<p class="text-xs opacity-70">Fast structural check of local SQLite integrity for routine diagnostics.</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runDbQuickCheck} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runDbQuickCheck}
+								disabled={isLoading}
+							>
 								<Play size={16} />
 								Run check
 							</button>
@@ -1741,7 +1759,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Run DB integrity check</div>
 								<p class="text-xs opacity-70">Deeper integrity scan. Slower; use when you suspect corruption.</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runDbIntegrityCheck} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runDbIntegrityCheck}
+								disabled={isLoading}
+							>
 								<AlertTriangle size={16} />
 								Run check
 							</button>
@@ -1753,7 +1775,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Run connection probe</div>
 								<p class="text-xs opacity-70">Checks sync meta endpoint and a direct WebSocket open to diagnose timeout issues.</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runConnectionProbe} disabled={isLoading || isRunningConnectionProbe}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runConnectionProbe}
+								disabled={isLoading || isRunningConnectionProbe}
+							>
 								<Play size={16} />
 								{isRunningConnectionProbe ? "Running..." : "Run check"}
 							</button>
@@ -1765,7 +1791,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Run handshake status check</div>
 								<p class="text-xs opacity-70">Reads the latest worker `sync.status` payload (stage, reason, acknowledgment version).</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runHandshakeStatusCheck} disabled={isLoading || isRunningHandshakeCheck}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runHandshakeStatusCheck}
+								disabled={isLoading || isRunningHandshakeCheck}
+							>
 								<Play size={16} />
 								{isRunningHandshakeCheck ? "Running..." : "Run check"}
 							</button>
@@ -1777,7 +1807,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Check sync URL/config sanity</div>
 								<p class="text-xs opacity-70">Validates DB ID, sync URL format, protocol, and derived meta URL.</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runSyncConfigSanityCheck} disabled={isLoading || isRunningSanityCheck}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runSyncConfigSanityCheck}
+								disabled={isLoading || isRunningSanityCheck}
+							>
 								<Play size={16} />
 								{isRunningSanityCheck ? "Running..." : "Run check"}
 							</button>
@@ -1789,11 +1823,11 @@ let isRunningSanityCheck = false;
 						<div class="mb-2 flex items-center justify-between gap-2">
 							<div class="font-semibold">Last connection probe</div>
 							<div class="flex items-center gap-1">
-								<button class="btn-neutral btn btn-xs" on:click={copyConnectionProbeResult}>
+								<button class="btn-neutral btn-xs btn" on:click={copyConnectionProbeResult}>
 									<Download size={14} />
 									Copy
 								</button>
-								<button class="btn-outline btn btn-xs" on:click={clearConnectionProbeResult}>Clear</button>
+								<button class="btn-outline btn-xs btn" on:click={clearConnectionProbeResult}>Clear</button>
 							</div>
 						</div>
 						<div class="grid gap-1">
@@ -1802,11 +1836,13 @@ let isRunningSanityCheck = false;
 							<div class="truncate">DB ID: {connectionProbe.dbid}</div>
 							<div class="truncate">Sync URL: {connectionProbe.syncUrl}</div>
 							<div class="truncate">
-								Meta: {connectionProbe.meta.ok ? "OK" : "FAIL"} | status {connectionProbe.meta.status ?? "n/a"} | {connectionProbe.meta.latencyMs} ms
+								Meta: {connectionProbe.meta.ok ? "OK" : "FAIL"} | status {connectionProbe.meta.status ?? "n/a"} | {connectionProbe.meta
+									.latencyMs} ms
 								{connectionProbe.meta.error ? ` | ${connectionProbe.meta.error}` : ""}
 							</div>
 							<div class="truncate">
-								WebSocket: {connectionProbe.ws.ok ? "OK" : "FAIL"} | close {connectionProbe.ws.closeCode ?? "n/a"} | {connectionProbe.ws.latencyMs} ms
+								WebSocket: {connectionProbe.ws.ok ? "OK" : "FAIL"} | close {connectionProbe.ws.closeCode ?? "n/a"} | {connectionProbe.ws
+									.latencyMs} ms
 								{connectionProbe.ws.error ? ` | ${connectionProbe.ws.error}` : ""}
 							</div>
 							{#if connectionProbe.meta.bodySnippet}
@@ -1820,11 +1856,11 @@ let isRunningSanityCheck = false;
 						<div class="mb-2 flex items-center justify-between gap-2">
 							<div class="font-semibold">Last handshake status check</div>
 							<div class="flex items-center gap-1">
-								<button class="btn-neutral btn btn-xs" on:click={copyHandshakeStatusCheckResult}>
+								<button class="btn-neutral btn-xs btn" on:click={copyHandshakeStatusCheckResult}>
 									<Download size={14} />
 									Copy
 								</button>
-								<button class="btn-outline btn btn-xs" on:click={clearHandshakeStatusCheckResult}>Clear</button>
+								<button class="btn-outline btn-xs btn" on:click={clearHandshakeStatusCheckResult}>Clear</button>
 							</div>
 						</div>
 						<div class="grid gap-1">
@@ -1842,11 +1878,11 @@ let isRunningSanityCheck = false;
 						<div class="mb-2 flex items-center justify-between gap-2">
 							<div class="font-semibold">Last sync config sanity check</div>
 							<div class="flex items-center gap-1">
-								<button class="btn-neutral btn btn-xs" on:click={copySyncConfigSanityResult}>
+								<button class="btn-neutral btn-xs btn" on:click={copySyncConfigSanityResult}>
 									<Download size={14} />
 									Copy
 								</button>
-								<button class="btn-outline btn btn-xs" on:click={clearSyncConfigSanityResult}>Clear</button>
+								<button class="btn-outline btn-xs btn" on:click={clearSyncConfigSanityResult}>Clear</button>
 							</div>
 						</div>
 						<div class="grid gap-1">
@@ -1879,7 +1915,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Restart sync worker</div>
 								<p class="text-xs opacity-70">Stops and starts the sync worker to recover from temporary worker/network issues.</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={restartSyncWorker} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={restartSyncWorker}
+								disabled={isLoading}
+							>
 								<RotateCcw size={16} />
 								Run action
 							</button>
@@ -1891,7 +1931,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Reset compatibility identity</div>
 								<p class="text-xs opacity-70">Clears remembered remote site ID for this DB and re-runs strict compatibility checks.</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={fixCorruptSyncState} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={fixCorruptSyncState}
+								disabled={isLoading}
+							>
 								<RotateCcw size={16} />
 								Run action
 							</button>
@@ -1903,7 +1947,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Run manual auto-recovery</div>
 								<p class="text-xs opacity-70">Runs quick DB check + strict compatibility check and restarts sync if stale/blocked.</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={runManualAutoRecovery} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={runManualAutoRecovery}
+								disabled={isLoading}
+							>
 								<RotateCcw size={16} />
 								Run action
 							</button>
@@ -1916,7 +1964,7 @@ let isRunningSanityCheck = false;
 								<p class="text-xs opacity-70">Destructive: deletes local DB and re-downloads state from remote.</p>
 							</div>
 							<button
-								class="btn btn-sm shrink-0 self-start w-36 justify-center border-red-800 bg-red-700 text-white hover:bg-red-800"
+								class="btn-sm btn w-36 shrink-0 justify-center self-start border-red-800 bg-red-700 text-white hover:bg-red-800"
 								on:click={nukeAndResyncNow}
 								disabled={isLoading}
 							>
@@ -1936,9 +1984,15 @@ let isRunningSanityCheck = false;
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
 								<div class="text-sm font-semibold">Inject sync transport failure</div>
-								<p class="text-xs opacity-70">Temporarily points sync to an unreachable URL to force connection errors. Run again to restore.</p>
+								<p class="text-xs opacity-70">
+									Temporarily points sync to an unreachable URL to force connection errors. Run again to restore.
+								</p>
 							</div>
-							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={toggleSyncTransportFailure} disabled={isLoading}>
+							<button
+								class="btn-warning btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={toggleSyncTransportFailure}
+								disabled={isLoading}
+							>
 								<Unplug size={16} />
 								{$syncUrlConfig === INJECTED_SYNC_FAILURE_URL ? "Restore" : "Run action"}
 							</button>
@@ -1948,9 +2002,15 @@ let isRunningSanityCheck = false;
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
 								<div class="text-sm font-semibold">Corrupt local site identity</div>
-								<p class="text-xs opacity-70">Writes a random value into local `crsql_site_id` and remembered identity to force compatibility mismatch.</p>
+								<p class="text-xs opacity-70">
+									Writes a random value into local `crsql_site_id` and remembered identity to force compatibility mismatch.
+								</p>
 							</div>
-							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={corruptSyncState} disabled={isLoading}>
+							<button
+								class="btn-warning btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={corruptSyncState}
+								disabled={isLoading}
+							>
 								<Unplug size={16} />
 								Run action
 							</button>
@@ -1962,7 +2022,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Trigger load error</div>
 								<p class="text-xs opacity-70">Navigates to the load error route to test error-state handling.</p>
 							</div>
-							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={triggerLoadError} disabled={isLoading}>
+							<button
+								class="btn-warning btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={triggerLoadError}
+								disabled={isLoading}
+							>
 								<AlertTriangle size={16} />
 								Run action
 							</button>
@@ -1974,7 +2038,7 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Trigger runtime error</div>
 								<p class="text-xs opacity-70">Throws a runtime exception for testing crash/error boundaries.</p>
 							</div>
-							<button class="btn-warning btn btn-sm shrink-0 self-start w-36 justify-center" on:click={throwError} disabled={isLoading}>
+							<button class="btn-warning btn-sm btn w-36 shrink-0 justify-center self-start" on:click={throwError} disabled={isLoading}>
 								<AlertTriangle size={16} />
 								Run action
 							</button>
@@ -1993,7 +2057,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Export state</div>
 								<p class="text-xs opacity-70">Exports current local app state archive for debugging.</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={handleExportState} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={handleExportState}
+								disabled={isLoading}
+							>
 								<Download size={16} />
 								Export
 							</button>
@@ -2005,7 +2073,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Export sync diagnostics</div>
 								<p class="text-xs opacity-70">Downloads runtime sync diagnostics JSON (also copied to clipboard when allowed).</p>
 							</div>
-							<button class="btn-neutral btn btn-sm shrink-0 self-start w-36 justify-center" on:click={exportSyncDiagnostics} disabled={isLoading}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={exportSyncDiagnostics}
+								disabled={isLoading}
+							>
 								<Download size={16} />
 								Export
 							</button>
@@ -2017,7 +2089,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Populate database</div>
 								<p class="text-xs opacity-70">Inserts debug seed data for quick local testing.</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={() => populateDatabase()} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={() => populateDatabase()}
+								disabled={isLoading}
+							>
 								<Plus size={16} />
 								Run action
 							</button>
@@ -2029,7 +2105,11 @@ let isRunningSanityCheck = false;
 								<div class="text-sm font-semibold">Upsert 100 books</div>
 								<p class="text-xs opacity-70">Adds deterministic sample books and publisher/supplier links.</p>
 							</div>
-							<button class="btn-success btn btn-sm shrink-0 self-start w-36 justify-center" on:click={() => upsert100Books()} disabled={isLoading}>
+							<button
+								class="btn-success btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={() => upsert100Books()}
+								disabled={isLoading}
+							>
 								<BookPlus size={16} />
 								Run action
 							</button>
@@ -2039,10 +2119,12 @@ let isRunningSanityCheck = false;
 						<div class="flex items-start justify-between gap-3">
 							<div class="min-w-0">
 								<div class="text-sm font-semibold">Reset database</div>
-								<p class="text-xs opacity-70">Destructive: deletes all rows from core local business tables (books, customers, suppliers, orders).</p>
+								<p class="text-xs opacity-70">
+									Destructive: deletes all rows from core local business tables (books, customers, suppliers, orders).
+								</p>
 							</div>
 							<button
-								class="btn btn-sm shrink-0 self-start w-36 justify-center border-red-800 bg-red-700 text-white hover:bg-red-800"
+								class="btn-sm btn w-36 shrink-0 justify-center self-start border-red-800 bg-red-700 text-white hover:bg-red-800"
 								on:click={() => resetDatabase()}
 								disabled={isLoading}
 							>
@@ -2061,7 +2143,12 @@ let isRunningSanityCheck = false;
 							{:else if tableExplorerData.length === 0}
 								<p class="text-sm opacity-70">No tables found.</p>
 							{:else}
-								<select class="select select-bordered w-full" value={selectedExplorerTable || ""} on:change={handleExplorerTableChange} disabled={isTableLoading}>
+								<select
+									class="select-bordered select w-full"
+									value={selectedExplorerTable || ""}
+									on:change={handleExplorerTableChange}
+									disabled={isTableLoading}
+								>
 									<option value="">Select table</option>
 									{#each tableExplorerData as table}
 										<option value={table.name}>{table.name}</option>
@@ -2078,7 +2165,7 @@ let isRunningSanityCheck = false;
 									{#if selectedExplorerTableRows.length === 0}
 										<p class="text-sm opacity-70">No rows.</p>
 									{:else}
-										<table class="table table-pin-rows">
+										<table class="table-pin-rows table">
 											<thead>
 												<tr>
 													{#each Object.keys(selectedExplorerTableRows[0]) as column}
@@ -2122,7 +2209,7 @@ let isRunningSanityCheck = false;
 								{:else if queryResult.length === 0}
 									<p>No results found.</p>
 								{:else}
-									<table class="table table-pin-rows">
+									<table class="table-pin-rows table">
 										<thead>
 											<tr>
 												{#each Object.keys(queryResult[0]) as column}
