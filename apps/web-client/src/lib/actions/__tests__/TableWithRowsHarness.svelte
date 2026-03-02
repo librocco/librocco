@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { type createTable } from "../table";
+	import { type createTable } from "$lib/actions/table";
 
 	export let table: ReturnType<typeof createTable<Record<string, unknown>>>;
 

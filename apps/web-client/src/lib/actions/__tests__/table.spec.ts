@@ -8,7 +8,7 @@ import { createTable } from "../table";
 
 import TableRowHarness from "./TableRowHarness.svelte";
 import TableHarness from "./TableHarness.svelte";
-import TableWithRowsHarness from "./TableWithRowsHarness.svelte";
+import TableWithRowsHarness from "$lib/actions/__tests__/TableWithRowsHarness.svelte";
 
 import { rows } from "$lib/__testData__/rowData";
 
@@ -104,7 +104,8 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	const { container } = render(TableWithRowsHarness, { table });
 
 	const tableEl = container.querySelector("table");
-	expect(tableEl?.getAttribute("aria-rowcount")).toBe("4");
+	const expectedInitialRowCount = String(rows.length + 1);
+	expect(tableEl?.getAttribute("aria-rowcount")).toBe(expectedInitialRowCount);
 
 	const initialRows = Array.from(container.querySelectorAll("tbody tr"));
 	expect(initialRows).toHaveLength(3);
@@ -121,7 +122,8 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 
 	// Verify the table element has been updated
 	const updatedTableEl = container.querySelector("table");
-	expect(updatedTableEl?.getAttribute("aria-rowcount")).toBe("3");
+	const expectedUpdatedRowCount = String(rows.length);
+	expect(updatedTableEl?.getAttribute("aria-rowcount")).toBe(expectedUpdatedRowCount);
 	const updatedRows = Array.from(container.querySelectorAll("tbody tr"));
 	expect(updatedRows).toHaveLength(2);
 
