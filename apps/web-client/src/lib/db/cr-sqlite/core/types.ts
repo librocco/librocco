@@ -54,6 +54,12 @@ export interface SyncWorkerBridge {
 
 export type DBAsyncSync = DBAsync & SyncWorkerBridge;
 
+/**
+ * Runtime type guard that narrows unknown values to a sync-capable worker bridge.
+ *
+ * @param value Candidate value to validate.
+ * @returns `true` when value implements the SyncWorkerBridge API surface, otherwise `false`.
+ */
 export function isSyncWorkerBridge(value: unknown): value is SyncWorkerBridge {
 	if (!value || typeof value !== "object") return false;
 	const candidate = value as Partial<SyncWorkerBridge>;

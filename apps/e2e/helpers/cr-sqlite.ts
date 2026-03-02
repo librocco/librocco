@@ -1,6 +1,6 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
 
-import type { Page } from "@playwright/test";
+import type { JSHandle, Page } from "@playwright/test";
 
 import type { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
 
@@ -32,7 +32,7 @@ declare global {
  * await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
  * ```
  */
-export async function getDbHandle(page: Page) {
+export async function getDbHandle(page: Page): Promise<JSHandle<DB>> {
 	const maxAttempts = 5;
 
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {

@@ -155,6 +155,14 @@ export class AppSync implements IAppSync {
 }
 
 // ---------------------------------- Functions ---------------------------------- //
+/**
+ * Initializes sync runtime state and binds the current DB backend to the sync worker bridge.
+ *
+ * This function is idempotent: if sync is already initialized, it re-binds the latest DB and returns.
+ *
+ * @param app The app instance containing DB and sync state.
+ * @returns A promise that resolves when sync initialization is complete.
+ */
 export async function initializeSync(app: App) {
 	return app.sync.runExclusive(async (sync) => {
 		// If already initialised, just ensure we're bound to the latest DB.
@@ -187,6 +195,18 @@ export async function initializeSync(app: App) {
 	});
 }
 
+/**
+ * Starts sync for a database id and sync server URL.
+ *
+ * Performs optional initial-sync optimization for empty OPFS-backed DBs, then starts live sync and
+ * updates compatibility status.
+ *
+ * @param app The app instance containing DB and sync state.
+ * @param dbid The logical DB identifier used by sync.
+ * @param url The sync server URL.
+ * @returns A promise that resolves when sync startup flow completes.
+ * @throws ErrInvalidSyncURL When the provided sync URL is empty.
+ */
 export async function startSync(app: App, dbid: string, url: string) {
 	// ---------------------------------- 0. Checks ---------------------------------- //
 	//
@@ -335,6 +355,12 @@ function getRemoteDbFileUrl(syncUrl: string, dbid: string) {
 	return url.toString();
 }
 
+/**
+ * Stops the active sync session (if any) for the currently bound app DB.
+ *
+ * @param app The app instance containing sync state.
+ * @returns A promise that resolves when stop flow finishes.
+ */
 export async function stopSync(app: App) {
 	return app.sync.runExclusive((sync) => sync.stop());
 }
