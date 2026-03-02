@@ -10,12 +10,11 @@ import { getReconciliationOrder, getReconciliationOrderLines } from "$lib/db/cr-
 
 import { timed } from "$lib/utils/timer";
 
-import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 import { getCustomerOrderLinesCore } from "$lib/db/cr-sqlite/customers";
 
 const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
-	await parent();
+	const { app } = await parent();
 	depends("reconciliationOrder:data");
 
 	if (!browser) {

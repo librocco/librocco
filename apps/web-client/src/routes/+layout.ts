@@ -67,8 +67,8 @@ export const load: LayoutLoad = async ({ url }) => {
 
 		await initApp(app);
 
-		return { plugins };
+		return { app, plugins };
 	}
 
-	return { plugins };
+	return { app, plugins };
 };

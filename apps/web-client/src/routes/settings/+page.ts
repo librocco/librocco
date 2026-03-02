@@ -4,15 +4,13 @@ import { get } from "svelte/store";
 
 import type { PageLoad } from "./$types";
 
-import { app } from "$lib/app";
-
 import { deviceSettingsStore } from "$lib/stores/app";
 import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 
 import { timed } from "$lib/utils/timer";
 
 const _load: PageLoad = async ({ parent }) => {
-	await parent();
+	const { app } = await parent();
 
 	const deviceSettingsData = get(deviceSettingsStore);
 	const deviceSettingsForm = await superValidate(deviceSettingsData, zod(deviceSettingsSchema));
