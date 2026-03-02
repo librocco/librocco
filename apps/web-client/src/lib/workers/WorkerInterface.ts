@@ -1,5 +1,5 @@
-import type { DBAsync, SyncTransportOptions, SyncWorkerBridge } from "$lib/db/cr-sqlite/core";
-import { isSyncWorkerBridge } from "$lib/db/cr-sqlite/core";
+import type { DBAsync, SyncTransportOptions, SyncWorkerBridge } from "$lib/db/cr-sqlite/core/types";
+import { isSyncWorkerBridge } from "$lib/db/cr-sqlite/core/types";
 import type { MsgSyncStatus } from "./types";
 
 import { ConnectionEventEmitter, SyncEventEmitter } from "./sync-transport-control";
