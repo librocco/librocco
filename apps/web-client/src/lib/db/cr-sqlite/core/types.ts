@@ -72,6 +72,7 @@ export function isSyncWorkerBridge(value: unknown): value is SyncWorkerBridge {
 		typeof candidate.onOutgoingChanges === "function" &&
 		typeof candidate.onSyncStatus === "function" &&
 		typeof candidate.onConnOpen === "function" &&
-		typeof candidate.onConnClose === "function"
+		typeof candidate.onConnClose === "function" &&
+		typeof candidate.isConnected === "boolean"
 	);
 }

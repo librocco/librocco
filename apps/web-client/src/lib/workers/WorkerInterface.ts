@@ -95,8 +95,8 @@ export default class WorkerInterface {
 				if (result instanceof Promise) {
 					pending.push(result);
 				}
-			} catch {
-				// best-effort cleanup
+			} catch (err) {
+				console.warn("[worker] Failed to dispose sync bridge listener", err);
 			}
 		}
 		this.#disposePromise = pending.length > 0 ? Promise.allSettled(pending).then(() => {}) : Promise.resolve();

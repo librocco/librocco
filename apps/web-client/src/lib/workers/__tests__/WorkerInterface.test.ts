@@ -1,12 +1,12 @@
 /** @vitest-environment node */
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
-import type { SyncProgressPayload, SyncStatusPayload, SyncTransportOptions, SyncWorkerBridge } from "$lib/db/cr-sqlite/core";
+import { isSyncWorkerBridge, type SyncProgressPayload, type SyncStatusPayload, type SyncTransportOptions, type SyncWorkerBridge } from "$lib/db/cr-sqlite/core";
 import WorkerInterface from "../WorkerInterface";
 
 type PendingResolver = () => void;
 
-function createBridge(options?: { connected?: boolean; asyncDispose?: boolean }) {
+function createBridge(options?: { connected?: boolean; asyncDispose?: boolean; throwOnDispose?: boolean }) {
 	const changesReceivedListeners = new Set<(msg: { timestamp: number }) => void>();
 	const changesProcessedListeners = new Set<(msg: { timestamp: number }) => void>();
 	const progressListeners = new Set<(msg: SyncProgressPayload) => void>();
@@ -19,6 +19,9 @@ function createBridge(options?: { connected?: boolean; asyncDispose?: boolean })
 	const addListener = <T>(listeners: Set<(msg: T) => void>, cb: (msg: T) => void) => {
 		listeners.add(cb);
 		return () => {
+			if (options?.throwOnDispose) {
+				throw new Error("dispose failed");
+			}
 			if (!options?.asyncDispose) {
 				listeners.delete(cb);
 				return;
@@ -35,6 +38,9 @@ function createBridge(options?: { connected?: boolean; asyncDispose?: boolean })
 	const addVoidListener = (listeners: Set<() => void>, cb: () => void) => {
 		listeners.add(cb);
 		return () => {
+			if (options?.throwOnDispose) {
+				throw new Error("dispose failed");
+			}
 			if (!options?.asyncDispose) {
 				listeners.delete(cb);
 				return;
@@ -98,6 +104,16 @@ function createBridge(options?: { connected?: boolean; asyncDispose?: boolean })
 
 const nextTick = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
+describe("isSyncWorkerBridge", () => {
+	it("requires isConnected to be a boolean", () => {
+		const { bridge } = createBridge({ connected: true });
+
+		expect(isSyncWorkerBridge(bridge)).toBe(true);
+		expect(isSyncWorkerBridge({ ...bridge, isConnected: "yes" as unknown as boolean })).toBe(false);
+		expect(isSyncWorkerBridge({ ...bridge, isConnected: undefined as unknown as boolean })).toBe(false);
+	});
+});
+
 describe("WorkerInterface.bind", () => {
 	it("resolves initPromise when binding a non-sync endpoint (null bridge)", async () => {
 		const worker = new WorkerInterface();
@@ -138,5 +154,19 @@ describe("WorkerInterface.bind", () => {
 		oldBridge.emitChangesReceived({ timestamp: 4 });
 		newBridge.emitChangesReceived({ timestamp: 5 });
 		expect(received).toEqual([1, 3, 5]);
+	});
+
+	it("logs disposer failures during endpoint rebind cleanup", async () => {
+		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+		const oldBridge = createBridge({ throwOnDispose: true });
+		const newBridge = createBridge();
+		const worker = new WorkerInterface(oldBridge.bridge);
+
+		await nextTick();
+		worker.bind(newBridge.bridge);
+		await nextTick();
+
+		expect(warnSpy).toHaveBeenCalledWith("[worker] Failed to dispose sync bridge listener", expect.any(Error));
+		warnSpy.mockRestore();
 	});
 });

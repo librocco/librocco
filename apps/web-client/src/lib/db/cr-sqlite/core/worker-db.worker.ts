@@ -118,7 +118,7 @@ class SharedConnectionSyncDB implements SyncDB {
 		}
 
 		const schemaVersionRows = await db.execA<[number | bigint]>(`SELECT value FROM crsql_master WHERE key = 'schema_version'`);
-		const schemaVersion = BigInt(schemaVersionRows[0]?.[0] || -1);
+		const schemaVersion = BigInt(schemaVersionRows[0]?.[0] ?? -1);
 
 		return new SharedConnectionSyncDB(
 			db,
@@ -207,8 +207,11 @@ async function createAndStartSyncedDBExclusive(
 		}
 		return {
 			stop: () => {
-				syncedDb.stop();
-				releaser?.();
+				try {
+					syncedDb.stop();
+				} finally {
+					releaser?.();
+				}
 			}
 		};
 	};

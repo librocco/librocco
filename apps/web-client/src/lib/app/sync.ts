@@ -113,10 +113,31 @@ class AppSyncCore implements IAppSyncExclusive {
 	}
 
 	async destroy() {
-		await this.stop();
-		for (const dispose of this.#disposers) dispose();
+		let firstError: unknown = null;
+		try {
+			await this.stop();
+		} catch (err) {
+			firstError ??= err;
+		}
+
+		for (const dispose of this.#disposers) {
+			try {
+				dispose();
+			} catch (err) {
+				firstError ??= err;
+			}
+		}
 		this.#disposers = [];
-		await this.worker.destroy();
+
+		try {
+			await this.worker.destroy();
+		} catch (err) {
+			firstError ??= err;
+		}
+
+		if (firstError) {
+			throw firstError;
+		}
 	}
 }
 
@@ -237,7 +258,8 @@ export async function startSync(app: App, dbid: string, url: string) {
 		const isEmpty = await isEmptyDB(db);
 		const opfsSupported = vfsSupportsOPFS(getVfs(app));
 		const initialSyncReloadGuardKey = `librocco-initial-sync-reload:${dbid}`;
-		const shouldRunInitialSync = isEmpty && opfsSupported && (!browser || window.sessionStorage.getItem(initialSyncReloadGuardKey) !== "1");
+		const shouldRunInitialSync =
+			browser && isEmpty && opfsSupported && window.sessionStorage.getItem(initialSyncReloadGuardKey) !== "1";
 
 		if (!isEmpty && browser) {
 			// DB is no longer empty; clear any stale guard from previous initial-sync reload attempt.
