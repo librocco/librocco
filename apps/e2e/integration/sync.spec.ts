@@ -455,9 +455,12 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 
 	// After a full nuke, Firefox can stay in "connecting" while compatibility re-verification is pending.
 	// The actual recovery signal we need is: app DB is re-initialized and live sync transport is connected.
-	await page.waitForFunction(() => Boolean((window as any)._app?.db?.db) && Boolean((window as any)._app?.sync?.core?.worker?.isConnected), {
-		timeout: 45000
-	});
+	await page.waitForFunction(
+		() => Boolean((window as any)._app?.db?.db) && Boolean((window as any)._app?.sync?.core?.worker?.isConnected),
+		{
+			timeout: 45000
+		}
+	);
 
 	const refreshedDbHandle = await getDbHandle(page);
 	await refreshedDbHandle.evaluate(upsertCustomer, { id: 2, displayId: "2", fullname: "Post Resync Customer", email: "post@test.com" });
