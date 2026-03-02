@@ -172,6 +172,23 @@ describe("startup migrations", () => {
 		expect(fs.existsSync(getStartupMigrationBackupRoot(testDir))).toBe(false);
 	});
 
+	it("backs up when schema version is newer than the resident version", async () => {
+		createVersionTrackedDatabase(path.join(testDir, "ahead.sqlite3"), "init", 43n);
+
+		const useDatabase = vi.fn(async <T>(_: string, __: string, cb: (idb: IDB) => T | Promise<T>) => cb(createMockIdb()));
+		const migratedCount = await migrateDatabasesOnStartup({
+			dbFolder: testDir,
+			schemaName: "init",
+			residentSchemaVersion: 42n,
+			useDatabase
+		});
+
+		expect(migratedCount).toBe(1);
+		expect(useDatabase).toHaveBeenCalledOnce();
+		expect(fs.existsSync(getStartupMigrationBackupRoot(testDir))).toBe(true);
+		expect(getBackupRunDirectories(testDir)).toHaveLength(1);
+	});
+
 	it("migrates stale schema versions before serving requests", async () => {
 		const dbName = "legacy.sqlite3";
 		const dbPath = path.join(testDir, dbName);

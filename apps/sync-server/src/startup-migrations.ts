@@ -127,7 +127,7 @@ function shouldBackupBeforeOpening(dbPath: string, schemaName: string, residentS
 		return true;
 	}
 
-	return currentSchemaState.schemaVersion < residentSchemaVersion;
+	return currentSchemaState.schemaVersion !== residentSchemaVersion;
 }
 
 function readDatabaseSchemaState(dbPath: string): DatabaseSchemaState {
