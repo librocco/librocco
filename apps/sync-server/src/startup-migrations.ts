@@ -147,6 +147,7 @@ function readDatabaseSchemaState(dbPath: string): DatabaseSchemaState {
 			schemaVersion: coerceToBigInt(schemaVersionRow)
 		};
 	} catch {
+		// Treat schema metadata reads as best-effort: fallback to nulls so callers can safely force backup/open.
 		return {
 			schemaName: null,
 			schemaVersion: null
