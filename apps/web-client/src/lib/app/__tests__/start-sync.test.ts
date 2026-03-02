@@ -78,4 +78,33 @@ describe("startSync", () => {
 		expect(bindDb).toHaveBeenCalledOnce();
 		expect(start).toHaveBeenCalledWith("db-2", "https://sync.example");
 	});
+
+	it("does not call sync.start when bindDb returns false", async () => {
+		vi.mocked(getDb).mockResolvedValue({} as never);
+		vi.mocked(getVfs).mockReturnValue({} as never);
+		vi.mocked(isEmptyDB).mockResolvedValue(false);
+		vi.mocked(vfsSupportsOPFS).mockReturnValue(false);
+
+		const bindDb = vi.fn().mockReturnValue(false);
+		const start = vi.fn().mockResolvedValue(undefined);
+
+		const syncCore = {
+			active: false,
+			bindDb,
+			start,
+			state: writable(AppSyncState.Idle),
+			initialSyncProgressStore: writable({ active: false, nProcessed: 0, nTotal: 0 })
+		};
+		const app = {
+			sync: {
+				state: writable(AppSyncState.Idle),
+				runExclusive: <T>(cb: (sync: typeof syncCore) => T | Promise<T>) => cb(syncCore)
+			}
+		};
+
+		await startSync(app as never, "db-3", "https://sync.example");
+
+		expect(bindDb).toHaveBeenCalledOnce();
+		expect(start).not.toHaveBeenCalled();
+	});
 });
