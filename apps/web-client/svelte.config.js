@@ -53,7 +53,7 @@ function alias_vlcn_dev() {
 const config = {
 	// Consult https://github.com/sveltejs/svelte-preprocess
 	// for more information about preprocessors
-	preprocess: sequence([preprocess(), preprocessMeltUI()]),
+	preprocess: sequence([preprocess({ typescript: { compilerOptions: { verbatimModuleSyntax: true } } }), preprocessMeltUI()]),
 	kit: {
 		alias: {
 			$lucide: "node_modules/lucide-svelte/dist/icons",
@@ -115,7 +115,8 @@ const config = {
 				compilerOptions: {
 					...config.compilerOptions,
 					resolveJsonModule: true,
-					allowSyntheticDefaultImports: true
+					allowSyntheticDefaultImports: true,
+					verbatimModuleSyntax: true
 				}
 			})
 		}
