@@ -36,14 +36,18 @@ export default class WorkerInterface {
 		}
 	}
 
-	bind(endpoint: DBAsync | SyncWorkerBridge | null) {
+	bind(endpoint: DBAsync | SyncWorkerBridge | null): void {
 		const nextEndpoint = endpoint && isSyncWorkerBridge(endpoint) ? endpoint : null;
 		if (nextEndpoint === this.#endpoint) {
+			if (nextEndpoint === null) {
+				this.#initPromiseResolver();
+			}
 			return;
 		}
 
 		const wasConnected = this.#isConnected;
 		this.#disposeBridge();
+		const disposePromise = this.#disposePromise;
 		this.#endpoint = nextEndpoint;
 		this.#isConnected = false;
 		if (wasConnected) {
@@ -55,20 +59,28 @@ export default class WorkerInterface {
 			return;
 		}
 
-		this.#bridgeDisposers = [
-			nextEndpoint.onChangesReceived((msg) => this.#syncEmitter.notifyChangesReceived(msg)),
-			nextEndpoint.onChangesProcessed((msg) => this.#syncEmitter.notifyChangesProcessed(msg)),
-			nextEndpoint.onProgress((msg) => this.#syncEmitter.notifyProgress(msg)),
-			nextEndpoint.onOutgoingChanges((msg) => this.#syncEmitter.notifyOutgoingChanges(msg)),
-			nextEndpoint.onSyncStatus((msg) => this.#syncEmitter.notifySyncStatusWithCache(msg)),
-			nextEndpoint.onConnOpen(() => this.#connEmitter.notifyConnOpen()),
-			nextEndpoint.onConnClose(() => this.#connEmitter.notifyConnClose())
-		];
+		void disposePromise.then(() => {
+			// A newer bind() call may have replaced the endpoint while unsubscribes
+			// from the previous bridge were still settling.
+			if (this.#endpoint !== nextEndpoint) {
+				return;
+			}
 
-		if (nextEndpoint.isConnected) {
-			this.#connEmitter.notifyConnOpen();
-		}
-		this.#initPromiseResolver();
+			this.#bridgeDisposers = [
+				nextEndpoint.onChangesReceived((msg) => this.#syncEmitter.notifyChangesReceived(msg)),
+				nextEndpoint.onChangesProcessed((msg) => this.#syncEmitter.notifyChangesProcessed(msg)),
+				nextEndpoint.onProgress((msg) => this.#syncEmitter.notifyProgress(msg)),
+				nextEndpoint.onOutgoingChanges((msg) => this.#syncEmitter.notifyOutgoingChanges(msg)),
+				nextEndpoint.onSyncStatus((msg) => this.#syncEmitter.notifySyncStatusWithCache(msg)),
+				nextEndpoint.onConnOpen(() => this.#connEmitter.notifyConnOpen()),
+				nextEndpoint.onConnClose(() => this.#connEmitter.notifyConnClose())
+			];
+
+			if (nextEndpoint.isConnected) {
+				this.#connEmitter.notifyConnOpen();
+			}
+			this.#initPromiseResolver();
+		});
 	}
 
 	#disposeBridge() {

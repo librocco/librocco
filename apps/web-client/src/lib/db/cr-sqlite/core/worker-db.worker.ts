@@ -290,7 +290,7 @@ class SyncRuntime {
 				this.#activeConfig = null;
 			}
 			console.error("[worker] Failed to start sync runtime", err);
-			return;
+			throw err;
 		}
 
 		// If another startSync/stopSync superseded this one while we were awaiting,
@@ -312,8 +312,8 @@ class SyncRuntime {
 			try {
 				const handle = await handlePromise;
 				handle.stop();
-			} catch {
-				// Creation failed; nothing to stop
+			} catch (err) {
+				console.warn(`[worker] Failed to stop sync runtime for db '${dbid}'`, err);
 			}
 		}
 
