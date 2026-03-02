@@ -103,6 +103,7 @@ class SharedConnectionSyncDB implements SyncDB {
 
 	#applyingRemoteChanges = false;
 	#closed = false;
+	#closePromise: Promise<void> | null = null;
 
 	constructor(
 		db: DBAsync,
@@ -203,31 +204,43 @@ class SharedConnectionSyncDB implements SyncDB {
 		return () => this.#changeListeners.delete(cb);
 	}
 
-	close(closeWrappedDB: boolean): void {
+	close(closeWrappedDB: boolean): Promise<void> {
 		// Intentionally ignoring closeWrappedDB: in the shared-connection model the
 		// sync runtime does not own the DB connection — the WrappedDB manages its
 		// lifetime separately.
 		void closeWrappedDB;
-		if (this.#closed) return;
+		if (this.#closePromise) return this.#closePromise;
+		if (this.#closed) return Promise.resolve();
 		this.#closed = true;
-		const finalizers = [
-			["pullChangeset", this.#pullChangesetStmt.finalize(null)],
-			["applyChangeset", this.#applyChangesetStmt.finalize(null)],
-			["updatePeerTracker", this.#updatePeerTrackerStmt.finalize(null)]
-		] as const;
-		void Promise.allSettled(finalizers.map(([, promise]) => promise)).then((results) => {
-			for (const [idx, result] of results.entries()) {
-				if (result.status === "rejected") {
-					console.warn(`[worker] Failed to finalize ${finalizers[idx][0]} statement`, result.reason);
+		this.#closePromise = (async () => {
+			const finalizers = [
+				["pullChangeset", this.#pullChangesetStmt.finalize(null)],
+				["applyChangeset", this.#applyChangesetStmt.finalize(null)],
+				["updatePeerTracker", this.#updatePeerTrackerStmt.finalize(null)]
+			] as const;
+			const finalizeErrors: unknown[] = [];
+			try {
+				const results = await Promise.allSettled(finalizers.map(([, promise]) => promise));
+				for (const [idx, result] of results.entries()) {
+					if (result.status === "rejected") {
+						console.warn(`[worker] Failed to finalize ${finalizers[idx][0]} statement`, result.reason);
+						finalizeErrors.push(result.reason);
+					}
 				}
+			} finally {
+				this.#onUpdateDisposer();
+				this.#changeListeners.clear();
 			}
-		});
-		this.#onUpdateDisposer();
-		this.#changeListeners.clear();
+
+			if (finalizeErrors.length > 0) {
+				throw new AggregateError(finalizeErrors, "[worker] Failed to finalize sync statements");
+			}
+		})();
+		return this.#closePromise;
 	}
 }
 
-type SyncRuntimeHandle = { stop: () => void };
+type SyncRuntimeHandle = { stop: () => Promise<void> };
 
 async function createAndStartSyncedDBExclusive(
 	config: Config,
@@ -240,17 +253,53 @@ async function createAndStartSyncedDBExclusive(
 	});
 
 	const startAndHold = async (): Promise<SyncRuntimeHandle> => {
-		const syncedDb = await createSyncedDB(config, dbname, transportOptions);
+		let sharedSyncDb: SharedConnectionSyncDB | null = null;
+		const trackedConfig: Config = {
+			...config,
+			dbProvider: async (name) => {
+				const db = await config.dbProvider(name);
+				if (db instanceof SharedConnectionSyncDB) {
+					sharedSyncDb = db;
+				}
+				return db;
+			}
+		};
+		const syncedDb = await createSyncedDB(trackedConfig, dbname, transportOptions);
+		const stopAndFinalize = async (): Promise<void> => {
+			const stopErrors: unknown[] = [];
+			try {
+				await syncedDb.stop();
+			} catch (err) {
+				stopErrors.push(err);
+			}
+			if (sharedSyncDb) {
+				try {
+					await sharedSyncDb.close(false);
+				} catch (err) {
+					stopErrors.push(err);
+				}
+			}
+			if (stopErrors.length > 1) {
+				throw new AggregateError(stopErrors, "[worker] Failed to stop and finalize sync runtime");
+			}
+			if (stopErrors.length === 1) {
+				throw stopErrors[0];
+			}
+		};
 		try {
 			await syncedDb.start();
 		} catch (err) {
-			syncedDb.stop();
+			try {
+				await stopAndFinalize();
+			} catch (stopErr) {
+				console.warn(`[worker] Failed to stop sync runtime after start error for db '${dbname}'`, stopErr);
+			}
 			throw err;
 		}
 		return {
-			stop: () => {
+			stop: async () => {
 				try {
-					syncedDb.stop();
+					await stopAndFinalize();
 				} finally {
 					releaser?.();
 				}
@@ -362,7 +411,9 @@ class SyncRuntime {
 		// If another startSync/stopSync superseded this one while we were awaiting,
 		// stop the handle we just created — it's no longer the active one.
 		if (this.#handlePromise !== handlePromise) {
-			handle.stop();
+			void handle.stop().catch((err) => {
+				console.warn(`[worker] Failed to stop superseded sync runtime for db '${dbid}'`, err);
+			});
 		}
 	}
 
@@ -377,7 +428,7 @@ class SyncRuntime {
 		if (handlePromise) {
 			try {
 				const handle = await handlePromise;
-				handle.stop();
+				await handle.stop();
 			} catch (err) {
 				console.warn(`[worker] Failed to stop sync runtime for db '${dbid}'`, err);
 				throw err;
