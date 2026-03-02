@@ -5,53 +5,58 @@ permissions:
 outputs:
   rebuild: ${{ steps.ts.outputs.rebuild }}
 steps:
-  - uses: actions/checkout@v4
-    with:
-      submodules: recursive
-      lfs: true
-      fetch-depth: 0 #! We need all the history to check artifact date
-  - name: Test if artefacts are stale
-    id: ts
-    shell: bash
-    run: scripts/compare_artefacts_version.sh >> "$GITHUB_OUTPUT"
-  - uses: actions/setup-node@v4
-    if: steps.ts.outputs.rebuild == 'yes'
-    with:
-      node-version: "22"
-  - name: Install Rust Toolchain
-    if: steps.ts.outputs.rebuild == 'yes'
-    #! I was getting this:
-    #! error: older versions of the `wasm-bindgen` crate are incompatible with current versions of Rust; please update to `wasm-bindgen` v0.2.88
-    #! and for now I decided to downgrade rust instead of upgrading wasm-bindgen
-    uses: actions-rs/toolchain@v1
-    with:
-      toolchain: nightly-2023-10-05
-      override: true
-  - name: install wasm-pack
-    if: steps.ts.outputs.rebuild == 'yes'
-    run: cargo install wasm-pack --version 0.13.1 --locked
-  - name: install pnpm
-    if: steps.ts.outputs.rebuild == 'yes'
-    run: npm install -g 'pnpm@<9'
-  - name: Build cr-sqlite
-    if: steps.ts.outputs.rebuild == 'yes'
-    run: ./scripts/build_vlcn.sh
-  - name: Check that the build went fine
-    #! Let's leave this without an `if`: it won't hurt and might help debugging
-    run: git status; ls -l 3rd-party/artefacts/
-  - name: upload to later jobs
-    if: steps.ts.outputs.rebuild == 'yes'
-    uses: actions/upload-artifact@v4
-    with:
-      name: built-vlcn-artefacts
-      path: 3rd-party/artefacts/
-  - name: Commit updated assets
-    if: github.ref == 'refs/heads/compile-assets'
-    run: bash scripts/commit-artefacts.sh
-  - name: Push changes
-    if: github.ref == 'refs/heads/compile-assets'
-    uses: ad-m/github-push-action@master
-    with:
-      github_token: ${{ secrets.GITHUB_TOKEN }}
-      branch: compile-assets
+- uses: actions/checkout@v4
+  with:
+    submodules: recursive
+    lfs: false
+    fetch-depth: 0 #! We need all the history to check artefact date
+- name: Pull artefacts from R2
+  run: ./scripts/artefacts-download.sh
+  env:
+    ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
+    ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
+- name: Test if artefacts are stale
+  id: ts
+  shell: bash
+  run: scripts/compare_artefacts_version.sh >> "$GITHUB_OUTPUT"
+- uses: actions/setup-node@v4
+  if: steps.ts.outputs.rebuild == 'yes'
+  with:
+    node-version: "22"
+- name: Install Rust Toolchain
+  if: steps.ts.outputs.rebuild == 'yes'
+  #! I was getting this:
+  #! error: older versions of the `wasm-bindgen` crate are incompatible with current versions of Rust; please update to `wasm-bindgen` v0.2.88
+  #! and for now I decided to downgrade rust instead of upgrading wasm-bindgen
+  uses: actions-rs/toolchain@v1
+  with:
+    toolchain: nightly-2023-10-05
+    override: true
+- name: install wasm-pack
+  if: steps.ts.outputs.rebuild == 'yes'
+  run: cargo install wasm-pack --version 0.13.1 --locked
+- name: install pnpm
+  if: steps.ts.outputs.rebuild == 'yes'
+  run: npm install -g 'pnpm@<9'
+- name: Build cr-sqlite
+  if: steps.ts.outputs.rebuild == 'yes'
+  run: ./scripts/build_vlcn.sh
+- name: Check that the build went fine
+  #! Let's leave this without an `if`: it won't hurt and might help debugging
+  run: git status; ls -l 3rd-party/artefacts/
+- name: upload to later jobs
+  if: steps.ts.outputs.rebuild == 'yes'
+  uses: actions/upload-artifact@v4
+  with:
+    name: built-vlcn-artefacts
+    path: 3rd-party/artefacts/
+- name: Commit updated assets
+  if: github.ref == 'refs/heads/compile-assets'
+  run: bash scripts/commit-artefacts.sh
+- name: Push changes
+  if: github.ref == 'refs/heads/compile-assets'
+  uses: ad-m/github-push-action@master
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    branch: compile-assets
 #@ end
