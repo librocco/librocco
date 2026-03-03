@@ -86,7 +86,8 @@ class WorkerDB implements DBAsync {
 			.then((connected) => {
 				this._isConnected = connected;
 			})
-			.catch(() => {
+			.catch((err) => {
+				console.warn("[worker] failed to read remote.isConnected", err);
 				this._isConnected = false;
 			});
 	}
