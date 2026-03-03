@@ -162,6 +162,40 @@ describe("WorkerInterface.bind", () => {
 		expect(received).toEqual([1, 3, 5]);
 	});
 
+	it("chains pending disposals across rapid rebinds before wiring listeners", async () => {
+		const firstBridge = createBridge({ asyncDispose: true });
+		const secondBridge = createBridge();
+		const thirdBridge = createBridge();
+		const worker = new WorkerInterface(firstBridge.bridge);
+		const received: number[] = [];
+
+		worker.onChangesReceived((msg) => {
+			received.push(msg.timestamp);
+		});
+
+		await nextTick();
+		firstBridge.emitChangesReceived({ timestamp: 1 });
+		expect(received).toEqual([1]);
+
+		worker.bind(secondBridge.bridge);
+		worker.bind(thirdBridge.bridge);
+
+		// Third endpoint should still wait for first endpoint async disposal.
+		thirdBridge.emitChangesReceived({ timestamp: 2 });
+		expect(received).toEqual([1]);
+
+		// First endpoint can still emit while disposal is pending.
+		firstBridge.emitChangesReceived({ timestamp: 3 });
+		expect(received).toEqual([1, 3]);
+
+		firstBridge.resolvePendingDisposals();
+		await nextTick();
+
+		firstBridge.emitChangesReceived({ timestamp: 4 });
+		thirdBridge.emitChangesReceived({ timestamp: 5 });
+		expect(received).toEqual([1, 3, 5]);
+	});
+
 	it("logs disposer failures during endpoint rebind cleanup", async () => {
 		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 		try {

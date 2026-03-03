@@ -526,8 +526,32 @@ class WrappedDB implements DBAsync, SyncWorkerBridge {
 	}
 
 	async close() {
-		await this.#syncRuntime.destroy();
-		return this.internal.close();
+		let destroyError: unknown = null;
+		let closeError: unknown = null;
+
+		try {
+			await this.#syncRuntime.destroy();
+		} catch (err) {
+			destroyError = err;
+		}
+
+		try {
+			await this.internal.close();
+		} catch (err) {
+			closeError = err;
+		}
+
+		if (destroyError && closeError) {
+			throw new AggregateError([destroyError, closeError], "Failed to close wrapped DB");
+		}
+
+		if (closeError) {
+			throw closeError;
+		}
+
+		if (destroyError) {
+			throw destroyError;
+		}
 	}
 
 	createFunction(name: string, fn: (...args: any) => unknown, opts?: Record<string, any>) {

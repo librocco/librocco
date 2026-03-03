@@ -6,6 +6,12 @@ import type { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
 
 import type { BookData } from "@librocco/shared";
 
+type DBAsync = {
+	exec(sql: string, bind: unknown[]): Promise<unknown>;
+	execO<O extends Record<string, unknown>>(sql: string, bind: unknown[]): Promise<O[]>;
+	execA<T extends unknown[]>(sql: string, bind: unknown[]): Promise<T[]>;
+};
+
 // Extend the window object with the db
 declare global {
 	interface Window {
@@ -101,7 +107,7 @@ export async function getRemoteDbHandle(page: Page, url: string) {
 		async (db, [url]) => {
 			const dbname = db.filename;
 			type CrSqliteRemoteEvalWindow = Window & {
-				_getRemoteDB?: (url: string, dbname: string) => Promise<DB>;
+				_getRemoteDB?: (url: string, dbname: string) => Promise<DBAsync>;
 			};
 			const w = window as CrSqliteRemoteEvalWindow;
 			const getRemoteDB = w._getRemoteDB;

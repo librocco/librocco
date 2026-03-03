@@ -4,6 +4,9 @@
 	export let table: ReturnType<typeof createTable<Record<string, unknown>>>;
 
 	const { table: tableAction } = table;
+	type TableRow = Record<string, unknown> & { key: string; rowIx: number };
+	let rows: TableRow[] = [];
+	let rowCount: number = 0;
 	$: ({ rows } = $table);
 	$: rowCount = rows.length + 1;
 </script>

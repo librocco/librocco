@@ -99,7 +99,11 @@ export default class WorkerInterface {
 				console.warn("[worker] Failed to dispose sync bridge listener", err);
 			}
 		}
-		this.#disposePromise = pending.length > 0 ? Promise.allSettled(pending).then(() => {}) : Promise.resolve();
+		const disposeWork = pending.length > 0 ? Promise.allSettled(pending).then(() => {}) : Promise.resolve();
+		this.#disposePromise = this.#disposePromise.then(
+			() => disposeWork,
+			() => disposeWork
+		);
 	}
 
 	startSync(dbid: string, transportOpts: SyncTransportOptions) {
