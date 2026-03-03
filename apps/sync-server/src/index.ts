@@ -5,27 +5,37 @@ import cors from "cors";
 import path from "path";
 import fs from "fs";
 
-import { attachWebsocketServer, type IDB } from "@vlcn.io/ws-server";
+import { attachWebsocketServer, internal, type Config, type IDB } from "@vlcn.io/ws-server";
 import touchHack from "@vlcn.io/ws-server/dist/fs/touchHack.js";
+import DBFactory from "@vlcn.io/ws-server/dist/DBFactory.js";
+import { getResidentSchemaVersion } from "@vlcn.io/ws-server/dist/DB.js";
 import { extensionPath } from "@vlcn.io/crsqlite";
 
 import { performStartupHealthCheck, checkDatabaseHealth, checkAllDatabases } from "./db-health.js";
+import { migrateDatabasesOnStartup } from "./startup-migrations.js";
 
 const IS_DEV = process.env.IS_DEV === "true";
 const SKIP_HEALTH_CHECK = process.env.SKIP_HEALTH_CHECK === "true";
 const PORT = process.env.PORT || 3000;
-const DB_FOLDER = process.env.DB_FOLDER || "./test-dbs";
-const SCHEMA_FOLDER = process.env.SCHEMA_FOLDER || "./schemas";
+const DB_FOLDER = path.resolve(process.env.DB_FOLDER || "./test-dbs");
+const SCHEMA_FOLDER = path.resolve(process.env.SCHEMA_FOLDER || "./schemas");
+const SCHEMA_NAME = process.env.SCHEMA_NAME || "init";
+const STARTUP_MIGRATION_BACKUP_FOLDER = process.env.STARTUP_MIGRATION_BACKUP_FOLDER
+	? path.resolve(process.env.STARTUP_MIGRATION_BACKUP_FOLDER)
+	: undefined;
+const STARTUP_MIGRATION_MAX_BACKUP_RUNS = parsePositiveInteger(
+	process.env.STARTUP_MIGRATION_MAX_BACKUP_RUNS
+);
 
 // Create the DB folder if it doesn't exist
-if (!fs.existsSync(path.resolve(DB_FOLDER))) {
+if (!fs.existsSync(DB_FOLDER)) {
 	fs.mkdirSync(DB_FOLDER, { recursive: true });
 }
 
 // Perform database health checks before starting the server
 // This will exit the process if critical errors are found
 if (!SKIP_HEALTH_CHECK) {
-	performStartupHealthCheck(path.resolve(DB_FOLDER), extensionPath);
+	performStartupHealthCheck(DB_FOLDER, extensionPath);
 } else {
 	console.warn("WARNING: Database health checks skipped (SKIP_HEALTH_CHECK=true)");
 }
@@ -46,9 +56,15 @@ const wsConfig = {
 	schemaFolder: SCHEMA_FOLDER,
 	pathPattern: /\/sync/,
 	notifyPolling: true
-};
-
-const schemaName = "init";
+} satisfies Config;
+const residentSchemaVersion = getResidentSchemaVersion(SCHEMA_NAME, wsConfig);
+try {
+	await runStartupMigrations();
+} catch (err) {
+	const message = err instanceof Error ? err.message : String(err);
+	console.error(`Exiting due to startup migration failure: ${message}`);
+	process.exit(1);
+}
 
 const dbCache = attachWebsocketServer(server, wsConfig);
 const dbProvider = {
@@ -70,7 +86,7 @@ app.get("/", (_, res) => {
 
 // Health check endpoint - returns detailed database health status
 app.get("/health", (_, res) => {
-	const results = checkAllDatabases(path.resolve(DB_FOLDER), extensionPath);
+	const results = checkAllDatabases(DB_FOLDER, extensionPath);
 	const allHealthy = Array.from(results.values()).every((r) => r.ok);
 
 	const response: Record<string, unknown> = {
@@ -128,7 +144,7 @@ app.post("/:dbname/exec", async (req, res) => {
 		return res.status(403).json({ message: "Not allowed in production mode" });
 	}
 
-	dbProvider.use(req.params.dbname, schemaName, (idb) => {
+	dbProvider.use(req.params.dbname, SCHEMA_NAME, (idb) => {
 		try {
 			const db = idb.getDB();
 			const { sql, bind = [] } = req.body;
@@ -156,7 +172,7 @@ app.get("/:dbname/meta", async (req, res) => {
 		let meta: { siteId: string; schemaName?: string; schemaVersion?: string } | null = null;
 
 		// Ensure the DB exists on disk before returning metadata
-		await dbCache.use(dbname, schemaName, (idb: IDB) => {
+		await dbCache.use(dbname, SCHEMA_NAME, (idb: IDB) => {
 			meta = {
 				siteId: Buffer.from(idb.siteId).toString("hex"),
 				schemaName: idb.schemaName,
@@ -191,7 +207,7 @@ app.post("/:dbname/reset", async (req, res) => {
 		fs.rmSync(dbPath + ".meta.json", { force: true });
 
 		// Re-initialize the DB so subsequent metadata calls succeed immediately
-		await dbCache.use(dbname, schemaName, (idb) => {
+		await dbCache.use(dbname, SCHEMA_NAME, (idb) => {
 			const db = idb.getDB();
 			db.prepare("SELECT 1").get();
 		});
@@ -213,7 +229,6 @@ app.get("/:dbname/file", async (req, res) => {
 	return res.sendFile(dbPath);
 });
 
-// Bind only to localhost for security (not accessible from network)
 server.listen(Number(PORT), "127.0.0.1", () => {
 	console.log("info", `listening on http://127.0.0.1:${PORT}!`);
 });
@@ -251,3 +266,35 @@ const shutdown = (signal: string) => {
 
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
+
+async function runStartupMigrations(): Promise<void> {
+	const startupDbCache = new internal.DBCache(wsConfig, null, new DBFactory());
+	try {
+		await migrateDatabasesOnStartup({
+			dbFolder: DB_FOLDER,
+			schemaName: SCHEMA_NAME,
+			residentSchemaVersion,
+			backupRootFolder: STARTUP_MIGRATION_BACKUP_FOLDER,
+			maxBackupRuns: STARTUP_MIGRATION_MAX_BACKUP_RUNS,
+			useDatabase: (dbName, schema, cb) => startupDbCache.use(dbName, schema, cb)
+		});
+	} finally {
+		await startupDbCache.destroy();
+	}
+}
+
+function parsePositiveInteger(rawValue: string | undefined): number | undefined {
+	if (rawValue == null || rawValue.trim() === "") {
+		return undefined;
+	}
+
+	const parsed = Number.parseInt(rawValue, 10);
+	if (!Number.isFinite(parsed) || parsed < 1) {
+		console.warn(
+			`Ignoring invalid STARTUP_MIGRATION_MAX_BACKUP_RUNS=${rawValue}. Expected a positive integer.`
+		);
+		return undefined;
+	}
+
+	return parsed;
+}
