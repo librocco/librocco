@@ -29,7 +29,7 @@
 		expanded = $open;
 	}
 
-	const allDelivered = books.every((book) => book.orderedQuantity === book.orderedQuantity) && books.length > 0;
+	const allDelivered = books.every((book) => book.deliveredQuantity === book.orderedQuantity) && books.length > 0;
 	const hasBooks = books.length > 0;
 
 	$: t = $LL.reconcile_page;
