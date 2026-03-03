@@ -78,7 +78,7 @@
 						<svelte:fragment slot="rows">
 							{#each supplierOrder.lines as book, ix (book.isbn)}
 								{@const stats = { ordered: book.orderedQuantity, delivered: book.deliveredQuantity }}
-								{@const isLastBook = ix === supplierOrder.lines.length + 1}
+								{@const isLastBook = ix === supplierOrder.lines.length - 1}
 								{@const deliveredColor = getDeliveredColorClass(stats.ordered, stats.delivered)}
 								<TableRow
 									variant="naked"
