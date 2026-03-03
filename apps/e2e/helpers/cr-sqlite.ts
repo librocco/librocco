@@ -38,11 +38,16 @@ export async function getDbHandle(page: Page): Promise<JSHandle<DB>> {
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 		try {
 			return await page.evaluateHandle(async () => {
-				const w = window as { [key: string]: any };
+				type CrSqliteEvalWindow = Window & {
+					db_ready?: boolean;
+					_app?: unknown;
+					_getDb?: (app: unknown) => Promise<DB> | DB;
+				};
+				const w = window as CrSqliteEvalWindow;
 
 				// Wait for the db to become initialised
 				await new Promise<void>((res) => {
-					if (w["db_ready"]) {
+					if (w.db_ready) {
 						return res();
 					}
 
@@ -54,19 +59,25 @@ export async function getDbHandle(page: Page): Promise<JSHandle<DB>> {
 					window.addEventListener("db_ready", finalise);
 				});
 
-				return (await w["_getDb"](w["_app"])) as DB;
+				if (!w._getDb) {
+					throw new Error("Failed to get DB bridge from window");
+				}
+
+				return await w._getDb(w._app);
 			});
 		} catch (err) {
 			const msg = String(err);
 			const isNavigationReset = msg.includes("Execution context was destroyed");
 
-			if (!isNavigationReset || attempt === maxAttempts) {
+			if (!isNavigationReset) {
 				throw err;
 			}
 
 			// During initial sync the app can reload once after swapping OPFS DB file.
 			// Wait for the next document to settle, then retry the DB handle lookup.
-			await page.waitForLoadState("domcontentloaded");
+			if (attempt < maxAttempts) {
+				await page.waitForLoadState("domcontentloaded");
+			}
 		}
 	}
 
@@ -89,8 +100,14 @@ export async function getRemoteDbHandle(page: Page, url: string) {
 	return browserDbHandle.evaluateHandle(
 		async (db, [url]) => {
 			const dbname = db.filename;
-			const w = window as { [key: string]: any };
-			const getRemoteDB = w["_getRemoteDB"] as (url: string, dbname: string) => Promise<DB>;
+			type CrSqliteRemoteEvalWindow = Window & {
+				_getRemoteDB?: (url: string, dbname: string) => Promise<DB>;
+			};
+			const w = window as CrSqliteRemoteEvalWindow;
+			const getRemoteDB = w._getRemoteDB;
+			if (!getRemoteDB) {
+				throw new Error("Failed to get remote DB bridge from window");
+			}
 			return await getRemoteDB(url, dbname);
 		},
 		[url]
