@@ -410,7 +410,7 @@ class SyncRuntime {
 
 		// If another startSync/stopSync superseded this one while we were awaiting,
 		// stop the handle we just created — it's no longer the active one.
-		if (this.#handlePromise !== handlePromise) {
+		if (this.#handlePromise && this.#handlePromise !== handlePromise) {
 			void handle.stop().catch((err) => {
 				console.warn(`[worker] Failed to stop superseded sync runtime for db '${dbid}'`, err);
 			});
