@@ -76,7 +76,7 @@ describe("startSync", () => {
 			}
 		};
 
-		await startSync(app as never, "db-2", "https://sync.example");
+		await startSync(app as unknown as Parameters<typeof startSync>[0], "db-2", "https://sync.example");
 
 		expect(bindDb).toHaveBeenCalledOnce();
 		expect(start).toHaveBeenCalledWith("db-2", "https://sync.example");
@@ -105,7 +105,7 @@ describe("startSync", () => {
 			}
 		};
 
-		await startSync(app as never, "db-3", "https://sync.example");
+		await startSync(app as unknown as Parameters<typeof startSync>[0], "db-3", "https://sync.example");
 
 		expect(bindDb).toHaveBeenCalledOnce();
 		expect(start).not.toHaveBeenCalled();

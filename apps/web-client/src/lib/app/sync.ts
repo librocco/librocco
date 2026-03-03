@@ -160,7 +160,7 @@ export class AppSync implements IAppSync {
 		return this.core.initialSyncProgressStore as Readable<ProgressState>;
 	}
 
-	destroy() {
+	destroy(): Promise<void> {
 		return this.runExclusive(() => this.core.destroy());
 	}
 
@@ -184,7 +184,7 @@ export class AppSync implements IAppSync {
  * @param app The app instance containing DB and sync state.
  * @returns A promise that resolves when sync initialization is complete.
  */
-export async function initializeSync(app: App) {
+export async function initializeSync(app: App): Promise<void> {
 	return app.sync.runExclusive(async (sync) => {
 		// If already initialised, just ensure we're bound to the latest DB.
 		if (get(sync.state) >= AppSyncState.Initializing) {
@@ -208,7 +208,13 @@ export async function initializeSync(app: App) {
 				debounceTimer = null;
 			}, 100);
 		});
-		sync.addDisposer(disposeChangesListener);
+		sync.addDisposer(() => {
+			if (debounceTimer) {
+				clearTimeout(debounceTimer);
+				debounceTimer = null;
+			}
+			disposeChangesListener();
+		});
 
 		// Wait for the worker to be initialised
 		await sync.worker.initPromise;
@@ -228,7 +234,7 @@ export async function initializeSync(app: App) {
  * @returns A promise that resolves when sync startup flow completes.
  * @throws ErrInvalidSyncURL When the provided sync URL is empty.
  */
-export async function startSync(app: App, dbid: string, url: string) {
+export async function startSync(app: App, dbid: string, url: string): Promise<void> {
 	// ---------------------------------- 0. Checks ---------------------------------- //
 	//
 	// TODO: perhaps implement a more robust URL validation
@@ -381,6 +387,6 @@ function getRemoteDbFileUrl(syncUrl: string, dbid: string) {
  * @param app The app instance containing sync state.
  * @returns A promise that resolves when stop flow finishes.
  */
-export async function stopSync(app: App) {
+export async function stopSync(app: App): Promise<void> {
 	return app.sync.runExclusive((sync) => sync.stop());
 }
