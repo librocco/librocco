@@ -116,6 +116,9 @@ export default class WorkerInterface {
 	}
 
 	async destroy() {
+		if (this.#isConnected) {
+			this.#connEmitter.notifyConnClose();
+		}
 		this.#disposeBridge();
 		await this.#disposePromise;
 		this.#endpoint = null;

@@ -164,15 +164,32 @@ describe("WorkerInterface.bind", () => {
 
 	it("logs disposer failures during endpoint rebind cleanup", async () => {
 		const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-		const oldBridge = createBridge({ throwOnDispose: true });
-		const newBridge = createBridge();
-		const worker = new WorkerInterface(oldBridge.bridge);
+		try {
+			const oldBridge = createBridge({ throwOnDispose: true });
+			const newBridge = createBridge();
+			const worker = new WorkerInterface(oldBridge.bridge);
+
+			await nextTick();
+			worker.bind(newBridge.bridge);
+			await nextTick();
+
+			expect(warnSpy).toHaveBeenCalledWith("[worker] Failed to dispose sync bridge listener", expect.any(Error));
+		} finally {
+			warnSpy.mockRestore();
+		}
+	});
+
+	it("emits connClose when destroying a connected worker", async () => {
+		const connectedBridge = createBridge({ connected: true });
+		const worker = new WorkerInterface(connectedBridge.bridge);
+		const onConnClose = vi.fn();
+		worker.onConnClose(onConnClose);
 
 		await nextTick();
-		worker.bind(newBridge.bridge);
-		await nextTick();
+		expect(worker.isConnected).toBe(true);
 
-		expect(warnSpy).toHaveBeenCalledWith("[worker] Failed to dispose sync bridge listener", expect.any(Error));
-		warnSpy.mockRestore();
+		await worker.destroy();
+		expect(onConnClose).toHaveBeenCalledTimes(1);
+		expect(worker.isConnected).toBe(false);
 	});
 });
