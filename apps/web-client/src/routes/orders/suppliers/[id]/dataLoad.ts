@@ -48,7 +48,12 @@ export const loadLayoutData = async (db: DBAsync, supplierId: number): Promise<S
 	return { supplier };
 };
 
-export const createLayoutDataStore = (rx: IAppDbRx, getDb: () => Promise<DBAsync>, supplierId: number, initialData?: SupplierLayoutData) => {
+export const createLayoutDataStore = (
+	rx: IAppDbRx,
+	getDb: () => Promise<DBAsync>,
+	supplierId: number,
+	initialData?: SupplierLayoutData
+) => {
 	const load = async () => loadLayoutData(await getDb(), supplierId);
 	return reactiveStoreDataSource(rx, load, layoutViewDeps, initialData);
 };

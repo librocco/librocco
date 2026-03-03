@@ -24,7 +24,7 @@
 	<div class="w-80">
 		<SupplierCard
 			name="BooksRUs"
-			id="#1"
+			id={1}
 			email="contact@booksrus.com"
 			address="123 Book St, New York, NY"
 			orderFormat="N/A"
@@ -39,7 +39,7 @@
 	<div class="w-80">
 		<SupplierCard
 			name="Minimal Supplier"
-			id="#2"
+			id={1}
 			email=""
 			address=""
 			orderFormat="Not configured"
@@ -54,7 +54,7 @@
 	<div class="w-80">
 		<SupplierCard
 			name="Very Long Supplier Name That Might Overflow The Container"
-			id="#SUP-2024-001-BRANCH-AUSTIN-TEXAS-UNITED-STATES"
+			id={1}
 			email="very.long.email.address@some-booksupplier-company.com.example.net"
 			address="1234 Long Street Name, Extended Address Line, City, State, Country, ZIP"
 			orderFormat="Available on request via email or call during business hours"
@@ -69,7 +69,7 @@
 	<div class="w-80">
 		<SupplierCard
 			name="Librairie du Marais"
-			id="#FR-003"
+			id={1}
 			email="contact@librairie-marais.fr"
 			address="12 Rue des Étoiles, 75004 Paris, France"
 			orderFormat="Manual"

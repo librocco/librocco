@@ -84,7 +84,8 @@ describe("Supplier management:", () => {
 				email: null,
 				address: null,
 				underdelivery_policy: 0,
-				numPublishers: 0
+				numPublishers: 0,
+				hasActiveOrders: 0
 			});
 		});
 
@@ -181,7 +182,8 @@ describe("Supplier management:", () => {
 			customerId: 111,
 			underdelivery_policy: 0,
 			numPublishers: 2,
-			orderFormat: orderFormats.pbm
+			orderFormat: orderFormats.pbm,
+			hasActiveOrders: 0
 		});
 
 		expect(await getSupplierDetails(db, 2)).toEqual({
@@ -192,7 +194,8 @@ describe("Supplier management:", () => {
 			customerId: 222,
 			underdelivery_policy: 0,
 			numPublishers: 0,
-			orderFormat: orderFormats.rcs3
+			orderFormat: orderFormats.rcs3,
+			hasActiveOrders: 0
 		});
 
 		// Non-existent supplier

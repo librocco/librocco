@@ -102,8 +102,8 @@
 									underdeliveryPolicy={supplier.underdelivery_policy ?? 0}
 									deleteDisabled={!canDelete}
 									deleteDisabledReason={tSuppliers.errors.active_orders()}
-									onedit={() => dialogOpen.set(true)}
-									ondelete={() => deleteDialogOpen.set(true)}
+									on:edit={() => dialogOpen.set(true)}
+									on:delete={() => deleteDialogOpen.set(true)}
 								/>
 							{/if}
 						</div>
