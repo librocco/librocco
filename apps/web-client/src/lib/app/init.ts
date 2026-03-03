@@ -64,7 +64,7 @@ async function initAppImpl(app: App) {
 	// ---------------------------------- Sync ---------------------------------- //
 
 	const { dbid, syncActive, syncUrl } = app.config;
-	await initializeSync(app, vfs);
+	await initializeSync(app);
 	if (get(syncActive)) await startSync(app, get(dbid), get(syncUrl));
 }
 

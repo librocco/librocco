@@ -1,38 +1,16 @@
-import { WorkerInterface as WI } from "@vlcn.io/ws-client";
+import type { DBAsync, SyncTransportOptions, SyncWorkerBridge } from "$lib/db/cr-sqlite/core/types";
+import { isSyncWorkerBridge } from "$lib/db/cr-sqlite/core/types";
+import type { MsgSyncStatus } from "./types";
 
-import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
-import type {
-	MsgChangesProcessed,
-	MsgChangesReceived,
-	MsgConnectionClose,
-	MsgConnectionOpen,
-	MsgSyncStatus,
-	MsgOutgoingChanges,
-	MsgProgress,
-	MsgReady,
-	MsgStart
-} from "./types";
+import { ConnectionEventEmitter, SyncEventEmitter } from "./sync-transport-control";
 
-import { SyncEventEmitter, ConnectionEventEmitter } from "./sync-transport-control";
-
-type OutbounrMessage = MsgStart;
-type InboundMessage =
-	| MsgChangesReceived
-	| MsgChangesProcessed
-	| MsgOutgoingChanges
-	| MsgProgress
-	| MsgReady
-	| MsgConnectionOpen
-	| MsgConnectionClose
-	| MsgSyncStatus;
-
-export default class WorkerInterface extends WI {
-	#worker: Worker;
+export default class WorkerInterface {
+	#endpoint: SyncWorkerBridge | null = null;
+	#bridgeDisposers: Array<() => void> = [];
+	#disposePromise: Promise<void> = Promise.resolve();
 
 	#syncEmitter: SyncEventEmitter;
 	#connEmitter: ConnectionEventEmitter;
-
-	#vfs: VFSWhitelist | null = null;
 
 	#initPromiseResolver: () => void;
 	#initPromise: Promise<void>;
@@ -42,77 +20,113 @@ export default class WorkerInterface extends WI {
 
 	#isConnected = false;
 
-	constructor(worker: Worker) {
-		super(worker);
-		this.#worker = worker;
-
+	constructor(endpoint?: DBAsync | SyncWorkerBridge | null) {
 		this.#syncEmitter = new SyncEventEmitter();
 
 		this.#connEmitter = new ConnectionEventEmitter();
 		this.#connEmitter.onConnOpen(() => (this.#isConnected = true));
 		this.#connEmitter.onConnClose(() => (this.#isConnected = false));
 
-		this.#worker.addEventListener("message", this._handleMessage.bind(this));
-
 		this.#initPromise = new Promise((resolve) => {
 			this.#initPromiseResolver = resolve;
 		});
-	}
 
-	private _sendMessage(msg: OutbounrMessage) {
-		this.#worker.postMessage(msg);
-	}
-
-	private _handleMessage(e: MessageEvent<unknown>) {
-		if (!(e as MessageEvent<InboundMessage>).data._type) return;
-		const { data: msg } = e as MessageEvent<InboundMessage>;
-
-		switch (msg._type) {
-			case "changesReceived":
-				this.#syncEmitter.notifyChangesReceived(msg.payload);
-				break;
-			case "changesProcessed":
-				this.#syncEmitter.notifyChangesProcessed(msg.payload);
-				break;
-			case "progress":
-				this.#syncEmitter.notifyProgress(msg.payload);
-				break;
-			case "outgoingChanges":
-				this.#syncEmitter.notifyOutgoingChanges(msg.payload);
-				break;
-			case "ready":
-				this.#initPromiseResolver();
-				break;
-			case "connection.open":
-				this.#connEmitter.notifyConnOpen();
-				break;
-			case "connection.close":
-				this.#connEmitter.notifyConnClose();
-				break;
-			case "sync.status":
-				this.#syncEmitter.notifySyncStatusWithCache(msg.payload);
-				break;
-			default:
-				break;
+		if (endpoint) {
+			this.bind(endpoint);
 		}
 	}
 
-	start(vfs: VFSWhitelist) {
-		if (!vfs) {
-			console.warn("[worker] No VFS specified, noop -- worker not started");
+	bind(endpoint: DBAsync | SyncWorkerBridge | null): void {
+		const nextEndpoint = endpoint && isSyncWorkerBridge(endpoint) ? endpoint : null;
+		if (nextEndpoint === this.#endpoint) {
+			if (nextEndpoint === null) {
+				this.#initPromiseResolver();
+			}
 			return;
 		}
 
-		this.#vfs = vfs;
+		const wasConnected = this.#isConnected;
+		this.#disposeBridge();
+		const disposePromise = this.#disposePromise;
+		this.#endpoint = nextEndpoint;
+		this.#isConnected = false;
+		if (wasConnected) {
+			this.#connEmitter.notifyConnClose();
+		}
 
-		this._sendMessage({
-			_type: "start",
-			payload: { vfs }
+		if (!nextEndpoint) {
+			this.#initPromiseResolver();
+			return;
+		}
+
+		void disposePromise.then(() => {
+			// A newer bind() call may have replaced the endpoint while unsubscribes
+			// from the previous bridge were still settling.
+			if (this.#endpoint !== nextEndpoint) {
+				return;
+			}
+
+			this.#bridgeDisposers = [
+				nextEndpoint.onChangesReceived((msg) => this.#syncEmitter.notifyChangesReceived(msg)),
+				nextEndpoint.onChangesProcessed((msg) => this.#syncEmitter.notifyChangesProcessed(msg)),
+				nextEndpoint.onProgress((msg) => this.#syncEmitter.notifyProgress(msg)),
+				nextEndpoint.onOutgoingChanges((msg) => this.#syncEmitter.notifyOutgoingChanges(msg)),
+				nextEndpoint.onSyncStatus((msg) => this.#syncEmitter.notifySyncStatusWithCache(msg)),
+				nextEndpoint.onConnOpen(() => this.#connEmitter.notifyConnOpen()),
+				nextEndpoint.onConnClose(() => this.#connEmitter.notifyConnClose())
+			];
+
+			if (nextEndpoint.isConnected) {
+				this.#connEmitter.notifyConnOpen();
+			}
+			this.#initPromiseResolver();
 		});
 	}
 
-	vfs() {
-		return this.#vfs;
+	#disposeBridge() {
+		const disposers = this.#bridgeDisposers;
+		this.#bridgeDisposers = [];
+		// Disposers from Comlink-proxied endpoints may internally start async
+		// unsubscribe chains. Capture any returned promises so destroy() can wait.
+		const pending: Promise<void>[] = [];
+		for (const dispose of disposers) {
+			try {
+				const result = dispose() as unknown;
+				if (result instanceof Promise) {
+					pending.push(result);
+				}
+			} catch (err) {
+				console.warn("[worker] Failed to dispose sync bridge listener", err);
+			}
+		}
+		const disposeWork = pending.length > 0 ? Promise.allSettled(pending).then(() => {}) : Promise.resolve();
+		this.#disposePromise = this.#disposePromise.then(
+			() => disposeWork,
+			() => disposeWork
+		);
+	}
+
+	startSync(dbid: string, transportOpts: SyncTransportOptions) {
+		if (!this.#endpoint) {
+			console.warn("[worker] Sync endpoint is not bound, noop -- sync not started");
+			return;
+		}
+		return this.#endpoint.startSync(dbid, transportOpts);
+	}
+
+	stopSync(dbid: string) {
+		if (!this.#endpoint) return;
+		return this.#endpoint.stopSync(dbid);
+	}
+
+	async destroy() {
+		if (this.#isConnected) {
+			this.#connEmitter.notifyConnClose();
+		}
+		this.#disposeBridge();
+		await this.#disposePromise;
+		this.#endpoint = null;
+		this.#isConnected = false;
 	}
 
 	onChangesReceived(cb: (msg: { timestamp: number }) => void) {

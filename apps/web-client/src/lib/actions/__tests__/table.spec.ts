@@ -6,9 +6,9 @@ import { page } from "@vitest/browser/context";
 
 import { createTable } from "../table";
 
-import { StockTable } from "$lib/components";
 import TableRowHarness from "./TableRowHarness.svelte";
 import TableHarness from "./TableHarness.svelte";
+import TableWithRowsHarness from "$lib/actions/__tests__/TableWithRowsHarness.svelte";
 
 import { rows } from "$lib/__testData__/rowData";
 
@@ -101,19 +101,18 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	});
 	const table = createTable(tableOptions);
 
-	const { container } = render(StockTable, { table });
+	const { container } = render(TableWithRowsHarness, { table });
 
-	const tableEl = page.elementLocator(container).getByRole("table");
-	await expect.element(tableEl).toBeInTheDocument();
-	await expect.element(tableEl).toHaveAttribute("aria-rowcount", "4");
+	const tableEl = container.querySelector("table");
+	const expectedInitialRowCount = String(rows.length + 1);
+	expect(tableEl?.getAttribute("aria-rowcount")).toBe(expectedInitialRowCount);
 
-	const tbody = container.querySelector("tbody");
-	expect(tbody).not.toBeNull();
-	const row = page.elementLocator(tbody!).getByRole("row");
+	const initialRows = Array.from(container.querySelectorAll("tbody tr"));
+	expect(initialRows).toHaveLength(3);
 
 	// Check row 2 (rows[1]):
-	await expect.element(row.nth(1)).toHaveAttribute("aria-rowindex", "2");
-	await expect.element(row.nth(1)).toHaveTextContent(rows[1].isbn);
+	expect(initialRows[1].getAttribute("aria-rowindex")).toBe("2");
+	expect(initialRows[1].textContent).toContain(rows[1].isbn);
 
 	// Remove data row 1
 	tableOptions.update(({ data }) => ({ data: data.slice(1) }));
@@ -122,11 +121,14 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	await tick();
 
 	// Verify the table element has been updated
-	const updatedTableEl = page.elementLocator(container).getByRole("table");
-	await expect.element(updatedTableEl).toHaveAttribute("aria-rowcount", "3");
+	const updatedTableEl = container.querySelector("table");
+	const expectedUpdatedRowCount = String(rows.length);
+	expect(updatedTableEl?.getAttribute("aria-rowcount")).toBe(expectedUpdatedRowCount);
+	const updatedRows = Array.from(container.querySelectorAll("tbody tr"));
+	expect(updatedRows).toHaveLength(2);
 
 	// After removing first row, what was row 2 should now be row 1
 	// Row 1 shows data for rows[1]
-	await expect.element(row.nth(0)).toHaveAttribute("aria-rowindex", "1");
-	await expect.element(row.nth(0)).toHaveTextContent(rows[1].isbn);
+	expect(updatedRows[0].getAttribute("aria-rowindex")).toBe("1");
+	expect(updatedRows[0].textContent).toContain(rows[1].isbn);
 });
