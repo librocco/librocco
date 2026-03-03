@@ -100,8 +100,6 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	);
 	await page.goto(baseURL);
 
-	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 10000 });
-
 	// Create an initial customer so we can verify sync is working
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Initial Customer", email: "initial@test.com" });
@@ -114,7 +112,7 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 
 	// Wait for sync to establish by verifying the customer has been synced to the remote via HTTP API.
 	// This ensures the WebSocket connection is established and data is synced.
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	const remoteDbHandle = await getStableRemoteDbHandle(page);
 	await expect
 		.poll(
 			async () => {
@@ -204,7 +202,7 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 	await expect(customerRow).toHaveCount(baseRowCount);
 
 	const dbHandle = await getDbHandle(page);
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	const remoteDbHandle = await getStableRemoteDbHandle(page);
 
 	// Create
 	//
@@ -242,7 +240,7 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 });
 
 test("initial sync optimization should replace local db from remote snapshot", async ({ page }) => {
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	const remoteDbHandle = await getStableRemoteDbHandle(page);
 
 	await retry(() =>
 		remoteDbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Remote Customer", email: "remote@example.com" })
@@ -286,8 +284,6 @@ test("footer shows pending changes while offline and clears after resync", async
 		[syncUrl, dbName]
 	);
 	await page.goto(baseURL);
-	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
-
 	// Seed local + ensure sync is working
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Baseline Customer", email: "baseline@test.com" });
@@ -320,7 +316,15 @@ test("footer shows pending changes while offline and clears after resync", async
 	});
 
 	const badge = page.getByTestId("remote-db-badge");
-	await expect(badge).toContainText(/pending/i);
+	// With sync explicitly disabled, the badge label is "sync disabled".
+	// Pending is exposed as structured metadata, not as label text.
+	await expect(badge).toHaveAttribute("data-status", "disconnected");
+	await expect
+		.poll(async () => Number((await badge.getAttribute("data-pending")) || "0"), {
+			timeout: 5000,
+			intervals: [250]
+		})
+		.toBeGreaterThan(0);
 
 	// Re-enable sync and wait for the pending change to clear + reach server
 	await page.evaluate(() => window.localStorage.setItem("librocco-sync-active", "true"));
@@ -342,7 +346,12 @@ test("footer shows pending changes while offline and clears after resync", async
 		)
 		.toBe(true);
 
-	await expect(page.getByTestId("remote-db-badge")).not.toContainText(/pending/i);
+	await expect
+		.poll(async () => Number((await page.getByTestId("remote-db-badge").getAttribute("data-pending")) || "0"), {
+			timeout: 10000,
+			intervals: [250]
+		})
+		.toBe(0);
 });
 
 test("remote DB indicator turns red when syncserver stops and recovers after restart", async ({ page }, testInfo) => {
@@ -402,15 +411,13 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 	);
 	await page.route("**/meta", (route) => route.abort());
 	await page.goto(baseURL);
-	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
-
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Compat Baseline", email: "compat@test.com" });
 
 	await expect
 		.poll(
 			async () => {
-				const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+				const remoteDbHandle = await getStableRemoteDbHandle(page);
 				const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
 				return remoteCustomers.some((customer) => customer.fullname === "Compat Baseline");
 			},
@@ -466,7 +473,7 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 	await expect
 		.poll(
 			async () => {
-				const refreshedRemoteHandle = await getRemoteDbHandle(page, remoteDbURL);
+				const refreshedRemoteHandle = await getStableRemoteDbHandle(page);
 				const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
 				return remoteCustomers.some((customer) => customer.fullname === "Post Resync Customer");
 			},
@@ -487,7 +494,6 @@ test("surfaces apply failures after a successful handshake", async ({ page }) =>
 	);
 
 	await page.goto(baseURL);
-	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
 	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "synced", { timeout: 20000 });
 
 	const triggerEndpoint = new URL(`${dbName}/exec`, remoteDbURL).toString();
