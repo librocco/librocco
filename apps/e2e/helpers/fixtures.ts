@@ -274,11 +274,16 @@ export const testBase = test.extend<BaseTestFixture>({
 
 		// Apply E2E runtime config before any app script executes on first load.
 		// This removes the "first boot with old persisted settings" window where sync may still be on.
+		// IMPORTANT: keep explicit per-test overrides intact (sync tests set these keys themselves).
 		await page.addInitScript(
 			([dbid]) => {
 				// NOTE: surrounding quotes are required because svelte-persisted stores JSON values.
-				window.localStorage.setItem("librocco-current-db", `"${dbid}"`);
-				window.localStorage.setItem("librocco-sync-active", "false");
+				if (window.localStorage.getItem("librocco-current-db") == null) {
+					window.localStorage.setItem("librocco-current-db", `"${dbid}"`);
+				}
+				if (window.localStorage.getItem("librocco-sync-active") == null) {
+					window.localStorage.setItem("librocco-sync-active", "false");
+				}
 			},
 			[testDbId]
 		);
