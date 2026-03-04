@@ -8,14 +8,14 @@ usage: generic
 
 ## Props
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `orderId` | `string` | `""` | Display label, e.g. `Order #4`. |
-| `customerName` | `string` | `""` | Display name in header (usually supplier). |
-| `undeliveredCount` | `number` | `0` | Shown in header badge when not complete. |
-| `books` | `ReconciliationProcessedLine[]` | `[]` | Reconciliation rows. |
-| `expanded` | `boolean` | `false` | Initial open state; can be used with `bind:expanded`. |
-| `interactive` | `boolean` | `true` | Disables collapse controls when `false`. |
+| Prop               | Type                            | Default | Notes                                                 |
+| ------------------ | ------------------------------- | ------- | ----------------------------------------------------- |
+| `orderId`          | `string`                        | `""`    | Display label, e.g. `Order #4`.                       |
+| `customerName`     | `string`                        | `""`    | Display name in header (usually supplier).            |
+| `undeliveredCount` | `number`                        | `0`     | Shown in header badge when not complete.              |
+| `books`            | `ReconciliationProcessedLine[]` | `[]`    | Reconciliation rows.                                  |
+| `expanded`         | `boolean`                       | `false` | Initial open state; can be used with `bind:expanded`. |
+| `interactive`      | `boolean`                       | `true`  | Disables collapse controls when `false`.              |
 
 ## Expected book shape
 
@@ -53,7 +53,7 @@ type ReconciliationProcessedLine = {
   ];
 </script>
 
-<ReconciliationOrderSummary orderId="Order #1" customerName="BooksRUS" undeliveredCount={4} books={books}>
+<ReconciliationOrderSummary orderId="Order #1" customerName="BooksRUS" undeliveredCount={4} {books}>
   <svelte:fragment slot="underdelivery_behaviour">
     <UnderdeliveryRadioGroup supplierId={1} defaultValue="pending" />
   </svelte:fragment>

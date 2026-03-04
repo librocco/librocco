@@ -23,11 +23,11 @@ import TableRow from "$lib/components-new/Table/TableRow.svelte";
 
 ### Props
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | `"default" \| "naked"` | `"default"` | Visual style only. |
-| `columnWidths` | `Array<string \| { value: number; unit?: "%" \| "px" \| "rem" }>` | `[]` | Controls generated `<colgroup>`. |
-| `showEmptyState` | `boolean` | `false` | Renders `empty` slot instead of `rows` slot. |
+| Prop             | Type                                                              | Default     | Notes                                        |
+| ---------------- | ----------------------------------------------------------------- | ----------- | -------------------------------------------- |
+| `variant`        | `"default" \| "naked"`                                            | `"default"` | Visual style only.                           |
+| `columnWidths`   | `Array<string \| { value: number; unit?: "%" \| "px" \| "rem" }>` | `[]`        | Controls generated `<colgroup>`.             |
+| `showEmptyState` | `boolean`                                                         | `false`     | Renders `empty` slot instead of `rows` slot. |
 
 ### Slots
 
@@ -45,11 +45,11 @@ import TableRow from "$lib/components-new/Table/TableRow.svelte";
 
 ### Props
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `variant` | `"default" \| "naked"` | `"default"` | Matches table style. |
-| `selected` | `boolean` | `false` | Only affects `default` variant styling. |
-| `className` | `string` | `""` | Extra classes appended to `<tr>`. |
+| Prop        | Type                   | Default     | Notes                                   |
+| ----------- | ---------------------- | ----------- | --------------------------------------- |
+| `variant`   | `"default" \| "naked"` | `"default"` | Matches table style.                    |
+| `selected`  | `boolean`              | `false`     | Only affects `default` variant styling. |
+| `className` | `string`               | `""`        | Extra classes appended to `<tr>`.       |
 
 ### Slot
 
@@ -62,9 +62,7 @@ import TableRow from "$lib/components-new/Table/TableRow.svelte";
   import Table from "$lib/components-new/Table/Table.svelte";
   import TableRow from "$lib/components-new/Table/TableRow.svelte";
 
-  const rows = [
-    { id: "#1", supplier: "BooksRUs", placed: "11/10/2025, 2:15 PM" }
-  ];
+  const rows = [{ id: "#1", supplier: "BooksRUs", placed: "11/10/2025, 2:15 PM" }];
 </script>
 
 <Table columnWidths={["3", "5", "4"]}>

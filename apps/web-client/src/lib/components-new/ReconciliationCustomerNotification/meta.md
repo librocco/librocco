@@ -8,12 +8,12 @@ usage: generic
 
 ## Props
 
-| Prop | Type | Default | Notes |
-| --- | --- | --- | --- |
-| `finalized` | `boolean` | `false` | Switches message text between pending/finalized variants from i18n. |
-| `books` | `DeliveryByISBN[]` | `[]` | Grouped notification payload. |
-| `expanded` | `boolean` | `false` | Initial open state. Can also be bound with `bind:expanded`. |
-| `interactive` | `boolean` | `true` | Disables collapsible behavior and chevron when `false`. |
+| Prop          | Type               | Default | Notes                                                               |
+| ------------- | ------------------ | ------- | ------------------------------------------------------------------- |
+| `finalized`   | `boolean`          | `false` | Switches message text between pending/finalized variants from i18n. |
+| `books`       | `DeliveryByISBN[]` | `[]`    | Grouped notification payload.                                       |
+| `expanded`    | `boolean`          | `false` | Initial open state. Can also be bound with `bind:expanded`.         |
+| `interactive` | `boolean`          | `true`  | Disables collapsible behavior and chevron when `false`.             |
 
 ## Data shape
 
@@ -44,14 +44,12 @@ type DeliveryByISBN = {
       isbn: "123",
       title: "The Great Gatsby",
       total: 2,
-      customers: [
-        { customer_name: "Sarah Johnson", customer_display_id: "1", created: new Date("2024-12-15T10:30:00") }
-      ]
+      customers: [{ customer_name: "Sarah Johnson", customer_display_id: "1", created: new Date("2024-12-15T10:30:00") }]
     }
   ];
 </script>
 
-<ReconciliationCustomerNotification books={books} bind:expanded />
+<ReconciliationCustomerNotification {books} bind:expanded />
 ```
 
 ## Behavior
