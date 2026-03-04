@@ -11,7 +11,7 @@ The `CounterBadge` component displays a label with an associated numeric value i
 ## Import
 
 ```ts
-import { CounterBadge } from "$lib/components-new/CounterBadge";
+import CounterBadge from "$lib/components-new/CounterBadge/CounterBadge.svelte";
 ```
 
 ## Basic Usage
@@ -80,7 +80,7 @@ import { CounterBadge } from "$lib/components-new/CounterBadge";
 
 The component uses these design tokens:
 
-- **Container**: `min-w-[160px] rounded-md border border-neutral-200 bg-background`
+- **Container**: `w-40 rounded-md border border-neutral-200 bg-background`
 - **Padding**: `px-2 py-1`
 - **Layout**: `flex items-center justify-between gap-2`
 - **Label**: `text-xs uppercase tracking-wide text-muted-foreground`
@@ -96,5 +96,5 @@ The component uses these design tokens:
 ## Notes
 
 - The label is always rendered in uppercase using CSS `uppercase`
-- The minimum width of `160px` ensures consistent sizing across different values
+- The component has a fixed width of `160px` (`w-40`)
 - The component does not include click handlers - it's purely for display purposes
