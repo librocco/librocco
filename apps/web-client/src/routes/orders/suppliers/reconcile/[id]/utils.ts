@@ -11,13 +11,14 @@ export function calcStatsBySupplierOrder(data?: PageData) {
 	}
 
 	const { reconciliationOrderLines, placedOrderLines } = data;
-
 	const scannedLineLookup = new Map(reconciliationOrderLines.map(({ isbn, quantity }) => [isbn, quantity]));
 
 	// Map { supplier_order_id => SupplierOrderReconciliationSummary }
 	const orders = new Map<number, SupplierOrderReconciliationSummary>();
 
-	for (const line of placedOrderLines) {
+	// NOTE: we're sorting entries that will already be sorted, but this is here to ensure consistency even if upstream data source changes
+	const sortedPlacedOrderLines = [...placedOrderLines].sort((a, b) => a.created - b.created);
+	for (const line of sortedPlacedOrderLines) {
 		const { supplier_order_id, supplier_name, underdelivery_policy, isbn } = line;
 
 		const remainingScanned = scannedLineLookup.get(isbn) || 0;
@@ -61,10 +62,14 @@ export function calcCustomerOrderDelivery(data: PageData): DeliveryByISBN[] {
 		{ customer_name, customer_display_id, created }
 	]);
 
-	return data.reconciliationOrderLines.map(({ isbn, title, quantity }) => ({
-		isbn,
-		title,
-		total: quantity,
-		customers: [...(customerLineLookup.get(isbn) || [])].slice(0, quantity)
-	}));
+	return data.reconciliationOrderLines.map(({ isbn, title, quantity }) => {
+		// NOTE: we're sorting entries that will already be sorted, but this is here to ensure consistency even if upstream data source changes
+		const customers = [...(customerLineLookup.get(isbn) || [])].sort((a, b) => Number(a.created) - Number(b.created));
+		return {
+			isbn,
+			title,
+			total: quantity,
+			customers: customers.slice(0, quantity)
+		};
+	});
 }

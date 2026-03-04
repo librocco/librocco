@@ -46,10 +46,7 @@
 				<Bell class="text-foreground h-4 w-4 shrink-0" aria-hidden="true" />
 				<p class="text-foreground text-sm">{label}</p>
 			</div>
-			<button
-				class="shrink-0 rounded p-1 transition-colors {interactive ? 'hover:bg-neutral-200' : ''}"
-				on:click={(e) => e.stopPropagation()}
-			>
+			<button class="shrink-0 rounded p-1 transition-colors {interactive ? 'hover:bg-neutral-200' : ''}">
 				{#if interactive}
 					<ChevronDown class={`text-foreground h-5 w-5 transition-transform ${$open ? "rotate-180" : ""}`} aria-hidden="true" />
 				{/if}

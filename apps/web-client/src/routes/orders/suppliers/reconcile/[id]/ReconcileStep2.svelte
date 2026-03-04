@@ -80,7 +80,7 @@
 		</div>
 	{:else}
 		<div class="flex shrink-0 items-center justify-between border-t border-neutral-200 bg-neutral-50 px-6 py-4">
-			<div class="text-sm text-zinc-900">{t.finalized.message({ date: new Date("2026-02-12") })}</div>
+			<div class="text-sm text-zinc-900">{t.finalized.message({ date: new Date(data?.reconciliationOrder.updatedAt) })}</div>
 		</div>
 	{/if}
 </div>

@@ -52,7 +52,7 @@
 						{/if}
 					</div>
 				</div>
-				<button class="rounded p-1 transition-colors {interactive ? 'hover:bg-neutral-200' : ''}" on:click={(e) => e.stopPropagation()}>
+				<button class="rounded p-1 transition-colors {interactive ? 'hover:bg-neutral-200' : ''}">
 					{#if interactive}
 						<ChevronDown
 							class={`lucide lucide-chevron-down h-5 w-5 text-zinc-900 transition-transform ${$open ? "rotate-180" : ""}`}
