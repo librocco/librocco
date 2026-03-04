@@ -301,11 +301,11 @@ export async function getDb(app: App): Promise<DBAsync> {
 	// - before initalised
 	// - errored out (should be reinitialised)
 	const initialState = get(app.db.state);
-	if (initialState < AppDbState.Loading) {
-		throw new ErrDbNotSet();
-	}
 	if (initialState === AppDbState.Error) {
 		throw app.db.error ?? new ErrDbNotInit();
+	}
+	if (initialState < AppDbState.Loading) {
+		throw new ErrDbNotSet();
 	}
 
 	// Wait until DB reaches a terminal init state.

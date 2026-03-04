@@ -100,8 +100,32 @@
 
 	const STALE_RECOVERY_COOLDOWN_MS = 60_000;
 	const DISCONNECT_RECOVERY_MIN_MS = 15_000;
+	const COMPATIBILITY_RECHECK_COOLDOWN_MS = 10_000;
 	let staleRecoveryRunning = false;
 	let staleRecoveryLastAttemptAt = 0;
+	let compatibilityRecheckLastAttemptAt = 0;
+
+	const maybeRecheckCompatibility = () => {
+		const state = get(syncState);
+		if (
+			!get(syncActive) ||
+			!get(syncConnectivityMonitor.connected) ||
+			state.status !== "connecting" ||
+			state.reason !== "checking_compatibility"
+		) {
+			return;
+		}
+
+		if (Date.now() - compatibilityRecheckLastAttemptAt < COMPATIBILITY_RECHECK_COOLDOWN_MS) {
+			return;
+		}
+		compatibilityRecheckLastAttemptAt = Date.now();
+		void checkSyncCompatibility({
+			dbid: get(dbid),
+			syncUrl: get(syncUrl),
+			mode: "background"
+		}).catch((error) => console.warn("Compatibility re-check failed:", error));
+	};
 
 	const attemptStaleRecovery = async () => {
 		if (staleRecoveryRunning) return;
@@ -228,6 +252,7 @@
 			if (disconnectedTooLong) {
 				void attemptStaleRecovery();
 			}
+			maybeRecheckCompatibility();
 		});
 	});
 

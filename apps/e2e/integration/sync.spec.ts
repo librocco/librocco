@@ -62,12 +62,12 @@ test.beforeAll(async ({ browser }, testInfo) => {
 	}
 });
 
-async function waitForServer(timeoutMs = 45_000) {
+async function waitForHttpReady(url: string, timeoutMs = 45_000) {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
 		const ctx = await request.newContext({ ignoreHTTPSErrors: true });
 		try {
-			const resp = await ctx.get(baseURL);
+			const resp = await ctx.get(url);
 			if (resp.ok()) {
 				return;
 			}
@@ -78,7 +78,15 @@ async function waitForServer(timeoutMs = 45_000) {
 		}
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 	}
-	throw new Error(`Server at ${baseURL} not reachable after ${timeoutMs}ms`);
+	throw new Error(`Server at ${url} not reachable after ${timeoutMs}ms`);
+}
+
+async function waitForServer(timeoutMs = 45_000) {
+	await waitForHttpReady(baseURL, timeoutMs);
+}
+
+async function waitForSyncServerHttpReady(timeoutMs = 45_000) {
+	await waitForHttpReady(remoteDbURL, timeoutMs);
 }
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
@@ -595,4 +603,126 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 	await expect
 		.poll(async () => page.evaluate(() => (window as any).__maxProgress ?? 0), { timeout: 20000, intervals: [250] })
 		.toBeGreaterThan(50);
+});
+
+test("sync status stays consistent across two tabs during stop/restart", async ({ page }, testInfo) => {
+	testInfo.setTimeout(90_000);
+
+	const circusControlAvailable = await isSyncServerCircusControlAvailable();
+	if (!circusControlAvailable) {
+		if (IS_CI) {
+			throw new Error("Circus control for syncserver is unavailable in CI. Refusing to skip the multi-tab sync consistency test.");
+		}
+		test.skip(true, "Circus control for syncserver is not available in this environment");
+	}
+
+	const dbName = `sync-multitab-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await startSyncServerViaCircus();
+	await waitForSyncServerCircusStatus("active");
+
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			window.localStorage.setItem("librocco-sync-active", "true");
+			// Use a multi-tab friendly VFS for this scenario to avoid OPFS lock contention.
+			window.localStorage.setItem("vfs", "asyncify-idb-batch-atomic");
+		},
+		[syncUrl, dbName]
+	);
+	await page.goto(baseURL);
+
+	const page2 = await page.context().newPage();
+	await page2.goto(baseURL);
+	await page2.waitForSelector('body[hydrated="true"]', { timeout: 30_000 });
+	await page2.waitForSelector("#app-splash", { state: "detached", timeout: 30_000 });
+
+	const statusOf = async (p: Page) => p.getAttribute('[data-testid="remote-db-badge"]', "data-status");
+	const waitUntilSynced = async (p: Page, timeout = 25_000) => {
+		await expect.poll(() => statusOf(p), { timeout, intervals: [250] }).toBe("synced");
+	};
+	const postRestartSyncTimeout = 60_000;
+	await waitUntilSynced(page);
+	await waitUntilSynced(page2);
+
+	try {
+		await stopSyncServerViaCircus();
+		await waitForSyncServerCircusStatus("stopped");
+
+		// Each tab can compute reconnect-loop diagnostics independently; require both
+		// tabs to be out of "synced", without forcing equal status labels.
+		await expect
+			.poll(
+				async () => {
+					const s = await statusOf(page);
+					return s != null && s !== "synced";
+				},
+				{ timeout: 30_000, intervals: [250] }
+			)
+			.toBe(true);
+		await expect
+			.poll(
+				async () => {
+					const s = await statusOf(page2);
+					return s != null && s !== "synced";
+				},
+				{ timeout: 30_000, intervals: [250] }
+			)
+			.toBe(true);
+	} finally {
+		await startSyncServerViaCircus();
+		await waitForSyncServerCircusStatus("active");
+		await waitForSyncServerHttpReady(60_000);
+	}
+
+	await waitUntilSynced(page, postRestartSyncTimeout);
+	await waitUntilSynced(page2, postRestartSyncTimeout);
+	await page2.close();
+});
+
+test("surfaces pending_stale when queue age is old while pending exists", async ({ page }, testInfo) => {
+	testInfo.setTimeout(90_000);
+
+	const dbName = `pending-stale-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			window.localStorage.setItem("librocco-sync-active", "false");
+		},
+		[syncUrl, dbName]
+	);
+	await page.goto(baseURL);
+
+	const offlineDbHandle = await getDbHandle(page);
+	await offlineDbHandle.evaluate(async (db) => {
+		for (let i = 0; i < 250; i++) {
+			await window.customers.upsertCustomer(db, {
+				id: 30_000 + i,
+				displayId: String(30_000 + i),
+				fullname: `Offline Bulk ${i}`,
+				email: `offline-bulk-${i}@test.com`
+			});
+		}
+	});
+
+	const dbid = await page.evaluate(() => JSON.parse(window.localStorage.getItem("librocco-current-db") || '""'));
+	await page.evaluate(
+		([dbid]) => {
+			const old = Date.now() - 180_000;
+			window.localStorage.setItem(`librocco-sync-pending-since-${dbid}`, JSON.stringify(old));
+			window.localStorage.setItem(`librocco-sync-pending-last-active-${dbid}`, JSON.stringify(old));
+			window.localStorage.setItem("librocco-sync-active", "true");
+		},
+		[dbid]
+	);
+	await page.reload();
+	await page.goto(baseURL);
+
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-reason"), {
+			timeout: 30_000,
+			intervals: [250]
+		})
+		.toBe("pending_stale");
 });
