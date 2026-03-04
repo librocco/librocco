@@ -8,6 +8,7 @@
 import Database from "better-sqlite3";
 import fs from "fs";
 import path from "path";
+import { isSupportedDatabaseFileName } from "./database-files.js";
 
 export interface HealthCheckResult {
 	ok: boolean;
@@ -280,10 +281,7 @@ export function checkAllDatabases(dbFolder: string, extensionPath: string): Map<
 	}
 
 	const files = fs.readdirSync(dbFolder);
-	const dbFiles = files.filter((f) => {
-		const isDbFile = f.endsWith(".sqlite3") || f.endsWith(".sqlite") || f.endsWith(".db");
-		return isDbFile && !f.endsWith("-wal") && !f.endsWith("-shm");
-	});
+	const dbFiles = files.filter((fileName) => isSupportedDatabaseFileName(fileName));
 
 	for (const dbFile of dbFiles) {
 		const dbPath = path.join(dbFolder, dbFile);

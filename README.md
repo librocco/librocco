@@ -88,6 +88,11 @@ This package isn't built with the bulk `build` command (for `build` command effi
 
 Suite of E2E tests (Paywright), stored in `apps` as it doesn't provide any exports used by other packages/apps. [see more](./apps/e2e/README.md)
 
+#### Apps: Sync-server
+
+WebSocket sync server used for CR-SQLite replication, with startup health checks and startup schema migration for
+existing databases. [see more](./apps/sync-server/README.md)
+
 #### Pkg: DB
 
 This package contains the spec and implementations of the db interface (interfacing with cr-sqlite). [see more](./pkg/db/README.md)
