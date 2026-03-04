@@ -52,14 +52,14 @@
 						{/if}
 					</div>
 				</div>
-				<button class="rounded p-1 transition-colors {interactive ? 'hover:bg-neutral-200' : ''}">
-					{#if interactive}
+				{#if interactive}
+					<button class="rounded p-1 transition-colors {interactive ? 'hover:bg-neutral-200' : ''}">
 						<ChevronDown
 							class={`lucide lucide-chevron-down h-5 w-5 text-zinc-900 transition-transform ${$open ? "rotate-180" : ""}`}
 							aria-hidden="true"
 						/>
-					{/if}
-				</button>
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>
