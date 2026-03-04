@@ -107,7 +107,8 @@ async function waitForServer(timeoutMs = 45_000) {
 }
 
 async function waitForSyncServerHttpReady(timeoutMs = 45_000) {
-	await waitForHttpReady(remoteDbURL, timeoutMs);
+	const healthUrl = new URL("health", remoteDbURL).toString();
+	await waitForHttpReady(healthUrl, timeoutMs);
 }
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
