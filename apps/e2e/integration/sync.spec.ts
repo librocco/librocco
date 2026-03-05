@@ -277,6 +277,18 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 });
 
 test("initial sync optimization should replace local db from remote snapshot", async ({ page }) => {
+	const dbName = `initial-sync-opt-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			// Keep sync off while preparing remote-only seed data.
+			window.localStorage.setItem("librocco-sync-active", "false");
+		},
+		[syncUrl, dbName]
+	);
+	await page.goto(baseURL);
+
 	const remoteDbHandle = await getStableRemoteDbHandle(page);
 
 	await retry(() =>
@@ -285,21 +297,10 @@ test("initial sync optimization should replace local db from remote snapshot", a
 	const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList));
 	expect(remoteCustomers.some((customer) => customer.id === 1)).toBe(true);
 
-	const dbid = await page.evaluate(() => JSON.parse(window.localStorage.getItem("librocco-current-db") || '""'));
-	const fileUrl = `${remoteDbURL}${dbid}/file`;
-
-	await page.evaluate(
-		async ({ dbid, fileUrl }) => {
-			const w = window as any;
-			await w._app.sync.runExclusive((sync: any) =>
-				w._performInitialSync(dbid, fileUrl, sync.initialSyncProgressStore, async () => {
-					const db = await w._getDb(w._app);
-					await db.close();
-				})
-			);
-		},
-		{ dbid, fileUrl }
-	);
+	// Trigger public sync startup path; for an empty local DB this exercises initial snapshot optimisation.
+	await page.evaluate(() => {
+		window.localStorage.setItem("librocco-sync-active", "true");
+	});
 
 	await page.reload();
 	await page.waitForSelector('body[hydrated="true"]', { timeout: 10000 });
@@ -717,15 +718,58 @@ test("surfaces pending_stale when queue age is old while pending exists", async 
 		([syncUrl, dbName]) => {
 			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
 			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
-			window.localStorage.setItem("librocco-sync-active", "false");
+			window.localStorage.setItem("librocco-sync-active", "true");
 		},
 		[syncUrl, dbName]
 	);
 	await page.goto(baseURL);
 
-	const offlineDbHandle = await getDbHandle(page);
-	await offlineDbHandle.evaluate(async (db) => {
-		for (let i = 0; i < 250; i++) {
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
+			timeout: 30_000,
+			intervals: [250]
+		})
+		.toBe("synced");
+
+	const dbid = await page.evaluate(() => JSON.parse(window.localStorage.getItem("librocco-current-db") || '""'));
+	await page.evaluate(
+		([dbid]) => {
+			const old = Date.now() - 180_000;
+			const sinceKey = `librocco-sync-pending-since-${dbid}`;
+			const oldJson = JSON.stringify(old);
+			window.localStorage.setItem(sinceKey, oldJson);
+			// Storage events do not fire in the same document by default; dispatch one so
+			// sync-pending store consumes the stale timestamp immediately.
+			window.dispatchEvent(new StorageEvent("storage", { key: sinceKey, newValue: oldJson }));
+		},
+		[dbid]
+	);
+
+	await page.evaluate(() => {
+		const badge = document.querySelector('[data-testid="remote-db-badge"]');
+		const reasonHistory: string[] = [];
+		const pushCurrentReason = () => {
+			if (!badge) return;
+			const reason = badge.getAttribute("data-reason");
+			if (reason) reasonHistory.push(reason);
+		};
+		pushCurrentReason();
+		const observer = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				if (mutation.attributeName === "data-reason") {
+					pushCurrentReason();
+				}
+			}
+		});
+		if (badge) observer.observe(badge, { attributes: true, attributeFilter: ["data-reason"] });
+		(window as any).__pendingReasonHistory = reasonHistory;
+		(window as any).__pendingReasonObserver = observer;
+	});
+
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Pending-since is already stale; first pending transition should surface pending_stale.
+		for (let i = 0; i < 900; i++) {
 			await window.customers.upsertCustomer(db, {
 				id: 30_000 + i,
 				displayId: String(30_000 + i),
@@ -735,23 +779,23 @@ test("surfaces pending_stale when queue age is old while pending exists", async 
 		}
 	});
 
-	const dbid = await page.evaluate(() => JSON.parse(window.localStorage.getItem("librocco-current-db") || '""'));
-	await page.evaluate(
-		([dbid]) => {
-			const old = Date.now() - 180_000;
-			window.localStorage.setItem(`librocco-sync-pending-since-${dbid}`, JSON.stringify(old));
-			window.localStorage.setItem(`librocco-sync-pending-last-active-${dbid}`, JSON.stringify(old));
-			window.localStorage.setItem("librocco-sync-active", "true");
-		},
-		[dbid]
-	);
-	await page.reload();
-	await page.goto(baseURL);
+	await expect
+		.poll(async () => Number((await page.getAttribute('[data-testid="remote-db-badge"]', "data-pending")) || "0"), {
+			timeout: 15_000,
+			intervals: [100]
+		})
+		.toBeGreaterThan(0);
 
 	await expect
-		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-reason"), {
+		.poll(async () => {
+			return page.evaluate(() => ((window as any).__pendingReasonHistory as string[])?.includes("pending_stale") ?? false);
+		}, {
 			timeout: 30_000,
-			intervals: [250]
+			intervals: [100]
 		})
-		.toBe("pending_stale");
+		.toBe(true);
+
+	await page.evaluate(() => {
+		(window as any).__pendingReasonObserver?.disconnect?.();
+	});
 });
