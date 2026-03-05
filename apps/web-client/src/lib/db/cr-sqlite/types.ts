@@ -54,6 +54,8 @@ export type DBCustomerOrderLine = {
 	id: number;
 	isbn: string;
 	customer_id: number;
+	customer_name: string;
+	customer_display_id: string;
 	created: number; // as milliseconds since epoch
 	placed?: number; // as milliseconds since epoch
 	received?: number; // as milliseconds since epoch
@@ -65,6 +67,8 @@ export type CustomerOrderLine = {
 	// A customer order line to be passed around in the application
 	id: number;
 	customer_id: number;
+	customer_name: string;
+	customer_display_id: string;
 	created: Date; // Date when the book order was entered
 	placed?: Date; // Last date when the book order was placed to the supplier
 	received?: Date; // Date when the book order was received from the supplier
@@ -82,6 +86,9 @@ export type CustomerOrderLineHistory = {
 	placed: Date;
 };
 
+export type CustomerDeliveryEntry = Pick<CustomerOrderLine, "customer_name" | "customer_display_id" | "created">;
+export type DeliveryByISBN = { isbn: string; title: string; total: number; customers: CustomerDeliveryEntry[] };
+
 /* Suppliers */
 
 /**
@@ -95,6 +102,7 @@ export type Supplier = {
 	address?: string;
 	customerId?: number;
 	orderFormat?: Format;
+	underdelivery_policy?: 0 | 1;
 };
 export type Format = "PBM" | "Standard" | "RCS-3" | "RCS-5" | "Loescher-3" | "Loescher-5";
 export type SupplierExtended = Supplier & {
@@ -108,6 +116,7 @@ export type SupplierExtended = Supplier & {
 export type SupplierJoinData = {
 	supplier_id: number;
 	supplier_name: string;
+	underdelivery_policy?: 0 | 1;
 };
 
 /**
@@ -129,6 +138,7 @@ export type PlacedSupplierOrder = {
 	reconciliation_order_id: number | null;
 	reconciliation_last_updated_at: number | null;
 	finalized: number | null;
+	parent_order_id: number | null;
 } & PossibleSupplierOrder;
 
 /**

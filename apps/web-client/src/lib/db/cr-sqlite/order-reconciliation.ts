@@ -28,13 +28,13 @@
  * - The `reconciliation_order_lines` table contains the book data lines for a scanned _delivered_ books
  */
 
-import { asc } from "@librocco/shared";
+import { _group, asc, OrderItemStatus } from "@librocco/shared";
 
 import type { DBAsync, TXAsync, ReconciliationOrder, ReconciliationOrderLine, DBReconciliationOrder } from "./types";
 
 import { timed } from "$lib/utils/timer";
 
-import { multiplyString } from "./customers";
+import { getCustomerOrderLinesCore, multiplyString } from "./customers";
 
 /** Thrown from `createReconciliationOrder` when some of the provided supplier order ids don't match any existing supplier orders */
 export class ErrSupplierOrdersNotFound extends Error {
@@ -376,97 +376,164 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 
 	const { supplierOrderIds } = reconOrder;
 
-	const receivedLines = await db
-		.execA<
-			[isbn: string, quantity: number]
-		>("SELECT isbn, quantity FROM reconciliation_order_lines WHERE reconciliation_order_id = ?", [id])
-		.then((res) => new Map(res));
+	const receivedLinesQuery = `
+		SELECT
+			isbn,
+			quantity
+		FROM reconciliation_order_lines
+		WHERE reconciliation_order_id = ?
+	`;
+	/** Running count of 'received' lines (lines scanned in this reconciliation order) */
+	const receivedLineBudget = await db.execA<[isbn: string, quantity: number]>(receivedLinesQuery, [id]).then((res) => new Map(res));
 
-	const orderedLines = await db
-		.execA<
-			[isbn: string, quantity: number]
-		>(`SELECT isbn, SUM(quantity) FROM supplier_order_line WHERE supplier_order_id IN (${multiplyString("?", supplierOrderIds.length)}) GROUP BY isbn ORDER BY isbn ASC`, supplierOrderIds)
-		.then((res) => new Map(res));
+	const supplierOrderLineQuery = `
+		SELECT
+			so.supplier_id,
+			sol.supplier_order_id,
+			sol.isbn,
+			sol.quantity,
+			so.created,
+			COALESCE(s.underdelivery_policy, 0) AS underdelivery_policy
+		FROM supplier_order_line sol
+		LEFT JOIN supplier_order so ON sol.supplier_order_id = so.id
+		LEFT JOIN supplier s ON so.supplier_id = s.id
+		WHERE sol.supplier_order_id IN (${multiplyString("?", supplierOrderIds.length)})
+		ORDER BY so.created ASC
+	`;
+	// Retrieve all supplier order lines associated with the reconciliation order
+	type SupplierOrderLineItem = {
+		supplier_id: number;
+		supplier_order_id: number;
+		isbn: string;
+		quantity: number;
+		underdelivery_policy: 0 | 1;
+		created: number;
+	};
+	const supplierOrderLines = await db.execO<SupplierOrderLineItem>(supplierOrderLineQuery, supplierOrderIds);
 
-	const overdeliveredLines = new Map<string, { ordered: number; delivered: number }>();
+	const isbns = [...new Set(supplierOrderLines.map(({ isbn }) => isbn))];
+	const customerOrderLines = await getCustomerOrderLinesCore(db, { isbns, orderBy: "created ASC", status: { eq: OrderItemStatus.Placed } });
+	/**
+	 * Map { isbn => Array<customer order line id> }
+	 * Map of running counts for placed customer orders (filled / rejected on first-come-first-serve basis)
+	 */
+	const customerOrdersByISBN = new Map<string, number[]>();
+	for (const { isbn, id } of customerOrderLines) {
+		const existing = customerOrdersByISBN.get(isbn) || [];
+		existing.push(id);
+		customerOrdersByISBN.set(isbn, existing);
+	}
+
+	// customer lines (ids) to mark as delivered
+	const linesToDeliver: number[] = [];
+	// customer lines (ids) to "reject" - mark as pending
+	const linesToReject: number[] = [];
+	// supplier order lines for continuation orders (this is groupped by supplier order below for parent <-> child order link)
+	type ContinuationOrderLine = { parent_order_id: number; supplier_id: number; isbn: string; quantity: number };
+	const continuationOrderLines: ContinuationOrderLine[] = [];
+
+	// NOTE: since supplier orders lines are ordered by respective supplier order created timestamp, we're employing
+	// first-come-first served policy to supplier order delivery.
+	// TODO: check this: it's trivial when underdelivery_policy = pending, but might procude inconsistencies with underdelivery_policy = queue
+	//
+	// NOTE: we're not handling the overdelivery case: max number delivered is the total quantity of associated supplier order lines
+	// (overdelivery beyond that is dropped).
+	for (const { isbn, quantity: ordered, supplier_id, supplier_order_id, underdelivery_policy } of supplierOrderLines) {
+		const budget = receivedLineBudget.get(isbn) || 0;
+		const delivered = Math.min(ordered, budget);
+		const remainingBudget = budget - delivered;
+		const underdelivered = ordered - delivered;
+
+		// Update the running received budget for isbn
+		receivedLineBudget.set(isbn, remainingBudget);
+
+		// Mark customer order lines for delivery
+		if (delivered > 0) {
+			const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
+
+			// Really unexpected scenario
+			if (customerOrderLines.length < delivered) {
+				const msg = [
+					"unexpected state: remaining placed customer order lines < delivered lines",
+					`  isbn: ${isbn}`,
+					`  delivered: ${delivered}`,
+					`  remining customer orders: ${customerOrderLines.length}`
+				].join("\n");
+				throw new Error(msg);
+			}
+
+			const idsToDeliver = customerOrderLines.splice(0, delivered);
+
+			linesToDeliver.push(...idsToDeliver);
+			customerOrdersByISBN.set(isbn, customerOrderLines);
+		}
+
+		// Underdelivered - reject
+		if (underdelivered > 0 && underdelivery_policy === 0) {
+			const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
+
+			// Really unexpected scenario
+			if (customerOrderLines.length < underdelivered) {
+				const msg = [
+					"unexpected state: remaining placed customer order lines < underdelivered lines",
+					`  isbn: ${isbn}`,
+					`  underdelivered: ${underdelivered}`,
+					`  remaining customer orders: ${customerOrderLines.length}`
+				].join("\n");
+				throw new Error(msg);
+			}
+
+			// NOTE: rejecting from the back (first-come-first-served -- last ordered first rejected)
+			const idsToReject = customerOrderLines.splice(-underdelivered, underdelivered);
+
+			linesToReject.push(...idsToReject);
+			customerOrdersByISBN.set(isbn, customerOrderLines);
+		}
+
+		// Underdelivered - queue
+		if (underdelivered > 0 && underdelivery_policy === 1) {
+			continuationOrderLines.push({ isbn, quantity: underdelivered, supplier_id, parent_order_id: supplier_order_id });
+		}
+	}
 
 	return db.tx(async (txDb) => {
 		const timestamp = Date.now();
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1, updatedAt = ? WHERE id = ?;`, [timestamp, id]);
 
-		const allISBNS = new Set([...orderedLines.keys(), ...receivedLines.keys()]);
-
-		for (const isbn of allISBNS) {
-			const orderedQuantity = orderedLines.get(isbn) || 0;
-			const receivedQuantity = receivedLines.get(isbn) || 0;
-			// The number of order lines that were ordered, but weren't delivered
-			const rejectQuantity = orderedQuantity - receivedQuantity;
-
-			// Check if some books were overdelivered
-			if (rejectQuantity < 0) {
-				overdeliveredLines.set(isbn, { ordered: orderedQuantity, delivered: receivedQuantity });
-			}
-
-			// Get all in-progress customer order lines for the isbn
-			const customerOrderLines = await txDb.execO<{ id: number; placed: number | null }>(
-				"SELECT id, placed FROM customer_order_lines WHERE isbn = ? AND received IS NULL ORDER BY created ASC",
-				[isbn]
-			);
-
-			// Let n be the number of lines recevied
-			// Let m be the number of lines to reject - difference of lines ordered and received
-			//
-			// We take the first n lines from the in-progress customer orders (and we do so by mutating the array - using splice).
-			// Afterwards we take at most the last m lines from the leftover in-progress lines.
-			//
-			// The reason we do this is that, while there should always be at least n + m in-progress lines in the DB, the difference might happen,
-			// so we're making sure we're resistant to that scenario.
-			const receivedIds = customerOrderLines.splice(0, receivedQuantity).map(({ id }) => id);
-			const rejectedIds = customerOrderLines
-				.reverse()
-				.filter(({ placed }) => Boolean(placed)) // here we're rejecting placed orders - make sure we're not rejecting non-placed orders (unwanted noop)
-				.slice(0, Math.max(rejectQuantity, 0)) // min 0 to handle the case where rejectQuantity is negative (overdelivered)
-				.map(({ id }) => id);
-
-			// Mark the received books
-			await txDb.exec(
-				`
-					UPDATE customer_order_lines
-					SET received = ?
-					WHERE id IN (${multiplyString("?", receivedIds.length)})
-				`,
-				[timestamp, ...receivedIds]
-			);
-
-			// Mark the rejected books
-			await txDb.exec(
-				`
-					UPDATE customer_order_lines
-					SET placed = NULL
-					WHERE id IN (${multiplyString("?", rejectedIds.length)})
-				`,
-				rejectedIds
-			);
+		if (linesToDeliver.length > 0) {
+			await txDb.exec(`UPDATE customer_order_lines SET received = ? WHERE id IN (${multiplyString("?", linesToDeliver.length)})`, [
+				timestamp,
+				...linesToDeliver
+			]);
 		}
 
-		// NOTE: It might happen that the number of books delivered is greater than the number of books ordered IN THIS SUPPLIER ORDER
-		// With the current implementation we're merely warning the user of this fact, but might want to refactor so as to return the number of something
-		//
-		// NOTE: Currently, if the number delivered is greater for this supplier order, but there are additional customer order lines for a particular book,
-		// they will be reconcile early and extra stock will happen only after there are no more customer order lines to receive, but the books keep coming in.
-		if (overdeliveredLines.size > 0) {
-			const msg = [
-				"Number of books delivered is greater than the number of books ordered:",
-				`  supplier order ids: ${supplierOrderIds.join(", ")}`
-			];
-			for (const [isbn, { ordered, delivered }] of overdeliveredLines) {
-				msg.push(`  isbn: ${isbn},  ordered: ${ordered},  delivered: ${delivered}`);
-			}
+		if (linesToReject.length > 0) {
+			await txDb.exec(`UPDATE customer_order_lines SET placed = NULL WHERE id IN (${multiplyString("?", linesToReject.length)})`, [
+				...linesToReject
+			]);
+		}
 
-			console.warn(msg.join("\n"));
+		// Place continuation orders
+		const continuationOrders = _group(continuationOrderLines, (line) => [line.parent_order_id, line]);
+		for (const [parent_order_id, _lines] of continuationOrders) {
+			const lines = [..._lines];
+
+			const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+			const supplierId = lines[0].supplier_id;
+
+			await txDb.exec("INSERT INTO supplier_order (id, supplier_id, created) VALUES (?, ?, ?)", [id, supplierId, timestamp]);
+			await txDb.exec("INSERT INTO supplier_order_continuation (parent_order_id, continuation_order_id) VALUES (?, ?)", [
+				parent_order_id,
+				id
+			]);
+
+			const placeholders = Array(lines.length).fill("(?, ?, ?)").join(",\n");
+			const params = lines.flatMap(({ isbn, quantity }) => [id, isbn, quantity]);
+			await txDb.exec(`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES ${placeholders}`, params);
 		}
 	});
 }
+
 export const createReconciliationOrder = timed(_createReconciliationOrder);
 export const getAllReconciliationOrders = timed(_getAllReconciliationOrders);
 export const getReconciliationOrder = timed(_getReconciliationOrder);

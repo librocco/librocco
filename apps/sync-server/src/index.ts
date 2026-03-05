@@ -67,6 +67,20 @@ try {
 }
 
 const dbCache = attachWebsocketServer(server, wsConfig);
+const originalUnref = dbCache.unref.bind(dbCache) as (roomId: string) => Promise<void>;
+dbCache.unref = async (roomId: string) => {
+	try {
+		await originalUnref(roomId);
+	} catch (err) {
+		if (err instanceof Error && err.message.includes("illegal state -- cannot find db cache entry")) {
+			console.warn(`warn`, `Ignored duplicate unref for db cache entry ${roomId}`);
+			return;
+		}
+
+		throw err;
+	}
+};
+
 const dbProvider = {
 	use: (dbname: string, schema: string, cb: (idb: IDB) => void) => {
 		dbCache.use(dbname, schema, (idb) => {

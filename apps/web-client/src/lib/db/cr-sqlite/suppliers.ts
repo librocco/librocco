@@ -47,6 +47,7 @@ async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
 			COALESCE(address, 'N/A') as address,
 			COALESCE(customerId, 'N/A') as customerId,
 			orderFormat,
+			COALESCE(underdelivery_policy, 0) as underdelivery_policy,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -84,6 +85,7 @@ async function _getSupplierDetails(db: TXAsync, id: number | null): Promise<Supp
 			address,
 			customerId,
 			orderFormat,
+			underdelivery_policy,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -108,14 +110,15 @@ async function _upsertSupplier(db: TXAsync, supplier: Supplier) {
 	}
 
 	await db.exec(
-		`INSERT INTO supplier (id, name, email, address, customerId, orderFormat)
-        VALUES (?, ?, ?, ?, ?, ?)
+		`INSERT INTO supplier (id, name, email, address, customerId, orderFormat, underdelivery_policy)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET
         	name = COALESCE(?, name),
             email = COALESCE(?, email),
             address = COALESCE(?, address),
             customerId = COALESCE(?, customerId),
-            orderFormat = COALESCE(?, orderFormat)
+            orderFormat = COALESCE(?, orderFormat),
+            underdelivery_policy = COALESCE(?, underdelivery_policy)
             ;`,
 		[
 			supplier.id,
@@ -124,11 +127,13 @@ async function _upsertSupplier(db: TXAsync, supplier: Supplier) {
 			supplier.address ?? null,
 			supplier.customerId ?? null,
 			supplier.orderFormat ?? null,
+			supplier.underdelivery_policy ?? 0,
 			supplier.name ?? null,
 			supplier.email ?? null,
 			supplier.address ?? null,
 			supplier.customerId ?? null,
-			supplier.orderFormat ?? null
+			supplier.orderFormat ?? null,
+			supplier.underdelivery_policy ?? 0
 		]
 	);
 }
@@ -226,6 +231,7 @@ export function createGeneralSupplierMock(): SupplierExtended {
 		address: undefined,
 		customerId: undefined,
 		orderFormat: undefined,
+		underdelivery_policy: 0,
 		numPublishers: 0
 	};
 }
@@ -253,6 +259,7 @@ async function _getPossibleSupplierOrders(db: TXAsync): Promise<PossibleSupplier
 				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
+			COALESCE(supplier.underdelivery_policy, 0) as underdelivery_policy,
             COUNT(*) as total_book_number,
             SUM(COALESCE(book.price, 0)) as total_book_price
         FROM supplier
@@ -305,19 +312,20 @@ async function _getPossibleSupplierOrderLines(db: TXAsync, supplierId: number | 
 				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
+			COALESCE(supplier.underdelivery_policy, 0) as underdelivery_policy,
 			col.isbn,
-    		COALESCE(book.title, 'N/A') AS title,
-    		COALESCE(book.authors, 'N/A') AS authors,
+     		COALESCE(book.title, 'N/A') AS title,
+     		COALESCE(book.authors, 'N/A') AS authors,
 			COUNT(*) as quantity,
 			COALESCE(book.price, 0) as price,
 			SUM(COALESCE(book.price, 0)) as line_price
-       	FROM supplier
+		FROM supplier
         RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
         RIGHT JOIN book ON sp.publisher = book.publisher COLLATE NOCASE
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
 		${whereClause}
-      	GROUP BY book.isbn
-      	ORDER BY book.isbn ASC
+       	GROUP BY book.isbn
+       	ORDER BY book.isbn ASC
 	`;
 
 	// We need to build a query that will yield all books we can order, grouped by supplier
@@ -384,19 +392,22 @@ async function _getPlacedSupplierOrders(
 				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE s.name
 			END as supplier_name,
+			COALESCE(s.underdelivery_policy, 0) as underdelivery_policy,
             so.created,
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
 			ro.id as reconciliation_order_id,
 			ro.updatedAt as reconciliation_last_updated_at,
-			ro.finalized
+			ro.finalized,
+			soc.parent_order_id
         FROM supplier_order so
 		LEFT JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
 		LEFT JOIN book ON sol.isbn = book.isbn
 		LEFT JOIN ro ON so.id = ro.supplier_order_id
+		LEFT JOIN supplier_order_continuation soc ON so.id = soc.continuation_order_id
 		${whereClause}
-        GROUP BY so.id, so.supplier_id, s.name, so.created, ro.id
+        GROUP BY so.id, so.supplier_id, s.name, so.created, ro.id, soc.parent_order_id
         ORDER BY so.created DESC
 	`;
 
@@ -443,6 +454,7 @@ async function _getPlacedSupplierOrderLines(db: TXAsync, supplier_order_ids: num
 				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE s.name
 			END as supplier_name,
+			COALESCE(s.underdelivery_policy, 0) as underdelivery_policy,
             so.created
 
 		FROM supplier_order_line AS sol

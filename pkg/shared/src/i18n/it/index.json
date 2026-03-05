@@ -1,4 +1,7 @@
 {
+	"table": {
+		"empty_message": "Niente da vedere qui"
+	},
 	"nav": {
 		"search": "Ricerca magazzino",
 		"books": "Dati dei libri",
@@ -271,6 +274,7 @@
 			"email": "Email",
 			"address": "Indirizzo",
 			"order_format": "Formato ordine",
+			"underdelivery_policy": "",
 			"edit_details": "Modifica dettagli",
 			"delete_supplier": "Elimina fornitore"
 		},
@@ -634,7 +638,6 @@
 			"no_matching_assigned_publishers": "Nessun editore assegnato corrispondente",
 			"no_available_publishers": "Nessun editore disponibile",
 			"no_matching_available_publishers": "Nessun editore disponibile corrispondente",
-			"nothing_to_see_here": "Niente da vedere qui",
 			"currently_assigned_to": "Attualmente assegnato a {supplierName}"
 		},
 		"aria": {
@@ -926,7 +929,8 @@
 				"customer_id": "ID Cliente",
 				"cancel_button": "Annulla",
 				"order_format": "Formato Ordine",
-				"order_format_message": "Seleziona un formato ordine"
+				"order_format_message": "Seleziona un formato ordine",
+				"underdelivery_policy": ""
 			},
 			"aria": {
 				"form": "Modifica nome, email o acconto dell'ordine cliente"

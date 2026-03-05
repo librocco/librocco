@@ -767,6 +767,10 @@ type RootTranslation = {
 			 */
 			order_format: string
 			/**
+			 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+			 */
+			underdelivery_policy: string
+			/**
 			 * E​d​i​t​ ​d​e​t​a​i​l​s
 			 */
 			edit_details: string
@@ -1623,6 +1627,176 @@ type RootTranslation = {
 				description: string
 			}
 		}
+		step1: {
+			stats: {
+				/**
+				 * T​o​t​a​l​ ​O​r​d​e​r​e​d
+				 */
+				total_ordered: string
+				/**
+				 * T​o​t​a​l​ ​D​e​l​i​v​e​r​e​d
+				 */
+				total_delivered: string
+			}
+			table: {
+				/**
+				 * I​S​B​N
+				 */
+				isbn: string
+				/**
+				 * T​i​t​l​e
+				 */
+				title: string
+				/**
+				 * A​u​t​h​o​r​s
+				 */
+				authors: string
+				/**
+				 * O​r​d​e​r​ ​Q​u​a​n​t​i​t​y
+				 */
+				order_quantity: string
+				/**
+				 * D​e​l​i​v​e​r​e​d
+				 */
+				delivered: string
+				/**
+				 * D​e​l​i​v​e​r​e​d​ ​Q​u​a​n​t​i​t​y​ ​C​o​n​t​r​o​l​s
+				 */
+				controls: string
+			}
+			aria_labels: {
+				/**
+				 * D​e​c​r​e​a​s​e​ ​d​e​l​i​v​e​r​e​d​ ​q​u​a​n​t​i​t​y​ ​f​o​r​ ​{​t​i​t​l​e​}​,​ ​c​u​r​r​e​n​t​l​y​ ​{​c​o​u​n​t​}
+				 * @param {unknown} count
+				 * @param {unknown} title
+				 */
+				decrease_quantity: RequiredParams<'count' | 'title'>
+				/**
+				 * I​n​c​r​e​a​s​e​ ​d​e​l​i​v​e​r​e​d​ ​q​u​a​n​t​i​t​y​ ​f​o​r​ ​{​t​i​t​l​e​}​,​ ​c​u​r​r​e​n​t​l​y​ ​{​c​o​u​n​t​}
+				 * @param {unknown} count
+				 * @param {unknown} title
+				 */
+				increase_quantity: RequiredParams<'count' | 'title'>
+			}
+			footer: {
+				/**
+				 * T​o​t​a​l​ ​b​o​o​k​s​ ​s​c​a​n​n​e​d​:​ ​{​c​o​u​n​t​}
+				 * @param {unknown} count
+				 */
+				total_scanned: RequiredParams<'count'>
+				/**
+				 * C​o​n​t​i​n​u​e
+				 */
+				'continue': string
+			}
+		}
+		step2: {
+			stats: {
+				/**
+				 * T​o​t​a​l​ ​O​r​d​e​r​e​d
+				 */
+				total_ordered: string
+				/**
+				 * T​o​t​a​l​ ​D​e​l​i​v​e​r​e​d
+				 */
+				total_delivered: string
+			}
+			order_summary: {
+				/**
+				 * O​r​d​e​r​ ​#​{​i​d​}
+				 * @param {unknown} id
+				 */
+				order_id: RequiredParams<'id'>
+				/**
+				 * {​c​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}​ ​u​n​d​e​l​i​v​e​r​e​d
+				 * @param {string | number | boolean} count
+				 */
+				books_undelivered: RequiredParams<'count'>
+				/**
+				 * C​o​m​p​l​e​t​e
+				 */
+				complete: string
+				/**
+				 * S​t​a​t​u​s
+				 */
+				status: string
+				/**
+				 * {​c​o​u​n​t​}​ ​m​i​s​s​i​n​g
+				 * @param {unknown} count
+				 */
+				missing: RequiredParams<'count'>
+			}
+			underdelivery: {
+				/**
+				 * A​c​t​i​o​n​ ​f​o​r​ ​m​i​s​s​i​n​g​ ​b​o​o​k​s
+				 */
+				title: string
+				options: {
+					/**
+					 * M​a​r​k​ ​o​r​d​e​r​ ​a​s​ ​p​e​n​d​i​n​g​ ​d​e​l​i​v​e​r​y
+					 */
+					pending: string
+					/**
+					 * M​a​r​k​ ​o​r​d​e​r​ ​a​s​ ​q​u​e​u​e​ ​d​e​l​i​v​e​r​y
+					 */
+					queue: string
+				}
+				/**
+				 * C​u​r​r​e​n​t​ ​c​h​o​i​c​e​ ​d​o​e​s​n​'​t​ ​m​a​t​c​h​ ​t​h​e​ ​d​e​f​a​u​l​t​ ​c​o​n​f​i​g​u​r​a​t​i​o​n​ ​f​o​r​ ​t​h​i​s​ ​s​u​p​p​l​i​e​r​.
+				 */
+				warning: string
+				/**
+				 * P​e​r​s​i​s​t​ ​c​h​a​n​g​e​s
+				 */
+				persist_button: string
+			}
+			customer_notification: {
+				/**
+				 * C​u​s​t​o​m​e​r​s​ ​w​i​l​l​ ​b​e​ ​n​o​t​i​f​i​e​d​ ​t​h​a​t​ ​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​a​r​e​ ​r​e​a​d​y​ ​f​o​r​ ​c​o​l​l​e​c​t​i​o​n
+				 */
+				message_pending: string
+				/**
+				 * T​h​e​s​e​ ​c​u​s​t​o​m​e​r​s​ ​w​e​r​e​ ​n​o​t​i​f​i​e​d​ ​t​h​a​t​ ​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​a​r​e​ ​r​e​a​d​y​ ​f​o​r​ ​c​o​l​l​e​c​t​i​o​n
+				 */
+				message_finalized: string
+				table: {
+					/**
+					 * C​u​s​t​o​m​e​r
+					 */
+					customer: string
+					/**
+					 * I​D
+					 */
+					id: string
+					/**
+					 * O​r​d​e​r​ ​D​a​t​e
+					 */
+					order_date: string
+				}
+				/**
+				 * (​{​c​o​u​n​t​}​ ​c​o​p​{​{​y​|​i​e​s​}​}​)
+				 * @param {string | number | boolean} count
+				 */
+				copy_label: RequiredParams<'count'>
+			}
+			actions: {
+				/**
+				 * ←​ ​B​a​c​k
+				 */
+				back: string
+				/**
+				 * F​i​n​a​l​i​z​e​ ​D​e​l​i​v​e​r​y
+				 */
+				finalize: string
+			}
+			finalized: {
+				/**
+				 * D​e​l​i​v​e​r​y​ ​f​i​n​a​l​i​z​e​d​ ​o​n​ ​{​d​a​t​e​|​d​a​t​e​S​h​o​r​t​}
+				 * @param {Date} date
+				 */
+				message: RequiredParams<'date|dateShort'>
+			}
+		}
 	}
 	order_page: {
 		/**
@@ -1756,10 +1930,6 @@ type RootTranslation = {
 			 * N​o​ ​m​a​t​c​h​i​n​g​ ​a​v​a​i​l​a​b​l​e​ ​p​u​b​l​i​s​h​e​r​s
 			 */
 			no_matching_available_publishers: string
-			/**
-			 * N​o​t​h​i​n​g​ ​t​o​ ​s​e​e​ ​h​e​r​e
-			 */
-			nothing_to_see_here: string
 			/**
 			 * C​u​r​r​e​n​t​l​y​ ​a​s​s​i​g​n​e​d​ ​t​o​ ​{​s​u​p​p​l​i​e​r​N​a​m​e​}
 			 * @param {unknown} supplierName
@@ -2598,6 +2768,10 @@ type RootTranslation = {
 				 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​n​ ​o​r​d​e​r​ ​f​o​r​m​a​t
 				 */
 				order_format_message: string
+				/**
+				 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+				 */
+				underdelivery_policy: string
 			}
 			aria: {
 				/**
@@ -2900,6 +3074,12 @@ type RootTranslation = {
 				form: string
 			}
 		}
+	}
+	table: {
+		/**
+		 * N​o​t​h​i​n​g​ ​t​o​ ​s​e​e​ ​h​e​r​e
+		 */
+		empty_message: string
 	}
 }
 
@@ -3650,6 +3830,10 @@ export type TranslationFunctions = {
 			 * Order format
 			 */
 			order_format: () => LocalizedString
+			/**
+			 * Underdelivery policy
+			 */
+			underdelivery_policy: () => LocalizedString
 			/**
 			 * Edit details
 			 */
@@ -4489,6 +4673,166 @@ export type TranslationFunctions = {
 				description: () => LocalizedString
 			}
 		}
+		step1: {
+			stats: {
+				/**
+				 * Total Ordered
+				 */
+				total_ordered: () => LocalizedString
+				/**
+				 * Total Delivered
+				 */
+				total_delivered: () => LocalizedString
+			}
+			table: {
+				/**
+				 * ISBN
+				 */
+				isbn: () => LocalizedString
+				/**
+				 * Title
+				 */
+				title: () => LocalizedString
+				/**
+				 * Authors
+				 */
+				authors: () => LocalizedString
+				/**
+				 * Order Quantity
+				 */
+				order_quantity: () => LocalizedString
+				/**
+				 * Delivered
+				 */
+				delivered: () => LocalizedString
+				/**
+				 * Delivered Quantity Controls
+				 */
+				controls: () => LocalizedString
+			}
+			aria_labels: {
+				/**
+				 * Decrease delivered quantity for {title}, currently {count}
+				 */
+				decrease_quantity: (arg: { count: unknown, title: unknown }) => LocalizedString
+				/**
+				 * Increase delivered quantity for {title}, currently {count}
+				 */
+				increase_quantity: (arg: { count: unknown, title: unknown }) => LocalizedString
+			}
+			footer: {
+				/**
+				 * Total books scanned: {count}
+				 */
+				total_scanned: (arg: { count: unknown }) => LocalizedString
+				/**
+				 * Continue
+				 */
+				'continue': () => LocalizedString
+			}
+		}
+		step2: {
+			stats: {
+				/**
+				 * Total Ordered
+				 */
+				total_ordered: () => LocalizedString
+				/**
+				 * Total Delivered
+				 */
+				total_delivered: () => LocalizedString
+			}
+			order_summary: {
+				/**
+				 * Order #{id}
+				 */
+				order_id: (arg: { id: unknown }) => LocalizedString
+				/**
+				 * {count} book{{s}} undelivered
+				 */
+				books_undelivered: (arg: { count: string | number | boolean }) => LocalizedString
+				/**
+				 * Complete
+				 */
+				complete: () => LocalizedString
+				/**
+				 * Status
+				 */
+				status: () => LocalizedString
+				/**
+				 * {count} missing
+				 */
+				missing: (arg: { count: unknown }) => LocalizedString
+			}
+			underdelivery: {
+				/**
+				 * Action for missing books
+				 */
+				title: () => LocalizedString
+				options: {
+					/**
+					 * Mark order as pending delivery
+					 */
+					pending: () => LocalizedString
+					/**
+					 * Mark order as queue delivery
+					 */
+					queue: () => LocalizedString
+				}
+				/**
+				 * Current choice doesn't match the default configuration for this supplier.
+				 */
+				warning: () => LocalizedString
+				/**
+				 * Persist changes
+				 */
+				persist_button: () => LocalizedString
+			}
+			customer_notification: {
+				/**
+				 * Customers will be notified that delivered books are ready for collection
+				 */
+				message_pending: () => LocalizedString
+				/**
+				 * These customers were notified that delivered books are ready for collection
+				 */
+				message_finalized: () => LocalizedString
+				table: {
+					/**
+					 * Customer
+					 */
+					customer: () => LocalizedString
+					/**
+					 * ID
+					 */
+					id: () => LocalizedString
+					/**
+					 * Order Date
+					 */
+					order_date: () => LocalizedString
+				}
+				/**
+				 * ({count} cop{{y|ies}})
+				 */
+				copy_label: (arg: { count: string | number | boolean }) => LocalizedString
+			}
+			actions: {
+				/**
+				 * ← Back
+				 */
+				back: () => LocalizedString
+				/**
+				 * Finalize Delivery
+				 */
+				finalize: () => LocalizedString
+			}
+			finalized: {
+				/**
+				 * Delivery finalized on {date|dateShort}
+				 */
+				message: (arg: { date: Date }) => LocalizedString
+			}
+		}
 	}
 	order_page: {
 		/**
@@ -4622,10 +4966,6 @@ export type TranslationFunctions = {
 			 * No matching available publishers
 			 */
 			no_matching_available_publishers: () => LocalizedString
-			/**
-			 * Nothing to see here
-			 */
-			nothing_to_see_here: () => LocalizedString
 			/**
 			 * Currently assigned to {supplierName}
 			 */
@@ -5449,6 +5789,10 @@ export type TranslationFunctions = {
 				 * Please select an order format
 				 */
 				order_format_message: () => LocalizedString
+				/**
+				 * Underdelivery policy
+				 */
+				underdelivery_policy: () => LocalizedString
 			}
 			aria: {
 				/**
@@ -5749,6 +6093,12 @@ export type TranslationFunctions = {
 				form: () => LocalizedString
 			}
 		}
+	}
+	table: {
+		/**
+		 * Nothing to see here
+		 */
+		empty_message: () => LocalizedString
 	}
 }
 
