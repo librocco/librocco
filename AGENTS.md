@@ -14,6 +14,7 @@
 
 ## Code Style
 - **Imports**: Use `$lib/` aliases in SvelteKit, no restricted imports (e.g., use `$lib/utils/navigation` for goto, not `$app/navigation`)
+- **Svelte syntax**: Use Svelte 4 syntax throughout (not runes)
 - **Formatting**: Tabs (width 2), double quotes, 140 char line width, no trailing commas (see `.prettierrc.cjs`)
 - **Types**: Strict TypeScript enabled, use explicit types for function params/returns, avoid `any` where possible (`@typescript-eslint/no-explicit-any` is off but use sparingly)
 - **Naming**: camelCase for functions/vars, PascalCase for types/components, descriptive names preferred

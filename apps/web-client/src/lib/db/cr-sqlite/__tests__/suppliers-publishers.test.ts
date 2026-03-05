@@ -25,7 +25,8 @@ const supplier1 = {
 	address: "123 Science St",
 	numPublishers: 0,
 	orderFormat: orderFormats.pbm,
-	underdelivery_policy: 0 as const
+	underdelivery_policy: 0 as const,
+	hasActiveOrders: 0 as const
 };
 const supplier2 = {
 	id: 2,
@@ -35,7 +36,8 @@ const supplier2 = {
 	address: "456 Fantasy Ave",
 	numPublishers: 0,
 	orderFormat: orderFormats.pbm,
-	underdelivery_policy: 0 as const
+	underdelivery_policy: 0 as const,
+	hasActiveOrders: 0 as const
 };
 const supplier3 = {
 	id: 3,
@@ -45,7 +47,8 @@ const supplier3 = {
 	address: "789 History Rd",
 	numPublishers: 0,
 	orderFormat: orderFormats.pbm,
-	underdelivery_policy: 0 as const
+	underdelivery_policy: 0 as const,
+	hasActiveOrders: 0 as const
 };
 
 const publisher1 = "AnimalPublisher";
@@ -81,7 +84,8 @@ describe("Supplier management:", () => {
 				email: null,
 				address: null,
 				underdelivery_policy: 0,
-				numPublishers: 0
+				numPublishers: 0,
+				hasActiveOrders: 0
 			});
 		});
 
@@ -178,7 +182,8 @@ describe("Supplier management:", () => {
 			customerId: 111,
 			underdelivery_policy: 0,
 			numPublishers: 2,
-			orderFormat: orderFormats.pbm
+			orderFormat: orderFormats.pbm,
+			hasActiveOrders: 0
 		});
 
 		expect(await getSupplierDetails(db, 2)).toEqual({
@@ -189,7 +194,8 @@ describe("Supplier management:", () => {
 			customerId: 222,
 			underdelivery_policy: 0,
 			numPublishers: 0,
-			orderFormat: orderFormats.rcs3
+			orderFormat: orderFormats.rcs3,
+			hasActiveOrders: 0
 		});
 
 		// Non-existent supplier

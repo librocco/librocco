@@ -2,7 +2,8 @@
 	"extends": "../.svelte-kit/tsconfig.json",
 	"compilerOptions": {
 		"module": "ESNext",
-		"types": ["node"]
+		"types": ["node"],
+		"verbatimModuleSyntax": true
 	},
 	"include": ["**/*.ts", "**/*.js", "**/*.svelte"]
 }

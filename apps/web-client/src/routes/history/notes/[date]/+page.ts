@@ -11,11 +11,10 @@ import { getPastNotes } from "$lib/db/cr-sqlite/history";
 
 import { timed } from "$lib/utils/timer";
 
-import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 
 const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>[0]) => {
-	await parent();
+	const { app } = await parent();
 	depends("history:notes");
 
 	// Validate the date - if not valid, redirect to default

@@ -18,7 +18,7 @@ import { app } from "$lib/app";
 import { DEFAULT_LOCALE, IS_DEMO, IS_E2E } from "$lib/constants";
 
 import { appPath } from "$lib/paths";
-import { newPluginsInterface } from "$lib/plugins";
+import { newPluginsInterface, type PluginsInterface } from "$lib/plugins";
 import { getDB } from "$lib/db/cr-sqlite";
 
 import { updateTranslationOverrides } from "$lib/i18n-overrides";
@@ -46,7 +46,7 @@ export const load: LayoutLoad = async ({ url }) => {
 	await updateTranslationOverrides();
 	setLocale(locale);
 
-	const plugins = newPluginsInterface();
+	const plugins: PluginsInterface = newPluginsInterface();
 	// Register plugins
 	// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
 	if (browser && !IS_E2E) {
@@ -67,8 +67,8 @@ export const load: LayoutLoad = async ({ url }) => {
 
 		await initApp(app);
 
-		return { plugins };
+		return { app, plugins };
 	}
 
-	return { plugins };
+	return { app, plugins };
 };

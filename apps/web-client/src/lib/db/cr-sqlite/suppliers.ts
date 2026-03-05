@@ -40,6 +40,13 @@ import { timed } from "$lib/utils/timer";
  */
 async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
 	const query = `
+		WITH ro AS (
+			SELECT
+				CAST(value AS INTEGER) as supplier_order_id,
+				ro.finalized
+			FROM reconciliation_order ro
+			CROSS JOIN json_each(ro.supplier_order_ids)
+		)
 		SELECT
 			supplier.id,
 			name,
@@ -48,9 +55,12 @@ async function _getAllSuppliers(db: TXAsync): Promise<SupplierExtended[]> {
 			COALESCE(customerId, 'N/A') as customerId,
 			orderFormat,
 			COALESCE(underdelivery_policy, 0) as underdelivery_policy,
-			COUNT(publisher) as numPublishers
+			COUNT(publisher) as numPublishers,
+			COUNT(DISTINCT CASE WHEN ro.supplier_order_id IS NULL OR ro.finalized = 0 THEN so.id END) > 0 as hasActiveOrders
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+		LEFT JOIN supplier_order so ON supplier.id = so.supplier_id
+		LEFT JOIN ro ON so.id = ro.supplier_order_id
 		GROUP BY supplier.id
 		ORDER BY supplier.id ASC
 	`;
@@ -73,11 +83,14 @@ async function _getSupplierDetails(db: TXAsync, id: number | null): Promise<Supp
 		return createGeneralSupplierMock();
 	}
 
-	const conditions = ["supplier.id = ?"];
-	const params = [id];
-
-	const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 	const query = `
+		WITH ro AS (
+			SELECT
+				CAST(value AS INTEGER) as supplier_order_id,
+				ro.finalized
+			FROM reconciliation_order ro
+			CROSS JOIN json_each(ro.supplier_order_ids)
+		)
 		SELECT
 			supplier.id,
 			name,
@@ -86,14 +99,17 @@ async function _getSupplierDetails(db: TXAsync, id: number | null): Promise<Supp
 			customerId,
 			orderFormat,
 			underdelivery_policy,
-			COUNT(publisher) as numPublishers
+			COUNT(publisher) as numPublishers,
+			COUNT(DISTINCT CASE WHEN ro.supplier_order_id IS NULL OR ro.finalized = 0 THEN so.id END) > 0 as hasActiveOrders
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
-		${whereClause}
+		LEFT JOIN supplier_order so ON supplier.id = so.supplier_id
+		LEFT JOIN ro ON so.id = ro.supplier_order_id
+		WHERE supplier.id = ?
 		GROUP BY supplier.id
 	`;
 
-	const [res] = await db.execO<SupplierExtended>(query, params);
+	const [res] = await db.execO<SupplierExtended>(query, [id]);
 	return res || undefined;
 }
 
@@ -232,7 +248,8 @@ export function createGeneralSupplierMock(): SupplierExtended {
 		customerId: undefined,
 		orderFormat: undefined,
 		underdelivery_policy: 0,
-		numPublishers: 0
+		numPublishers: 0,
+		hasActiveOrders: 0
 	};
 }
 
@@ -397,6 +414,7 @@ async function _getPlacedSupplierOrders(
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
 			ro.id as reconciliation_order_id,
+			ro.id IS NOT NULL AS finalized,
 			ro.updatedAt as reconciliation_last_updated_at,
 			ro.finalized,
 			soc.parent_order_id
@@ -582,14 +600,18 @@ async function _deleteSupplier(db: DBAsync, id: number) {
 
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 export const getAllSuppliers = timed(_getAllSuppliers);
+/** @tableDeps "reconciliation_order", "supplier", "supplier_publisher", "supplier_order" */
 export const getSupplierDetails = timed(_getSupplierDetails);
 export const upsertSupplier = timed(_upsertSupplier);
+/** @tableDeps "supplier_publisher" */
 export const getPublishersFor = timed(_getPublishersFor);
+/** @tableDeps "supplier", "supplier_publisher" */
 export const getPublishersWithSuppliers = timed(_getPublishersWithSuppliers);
 export const associatePublisher = timed(_associatePublisher);
 export const removePublisherFromSupplier = timed(_removePublisherFromSupplier);
 export const getPossibleSupplierOrders = timed(_getPossibleSupplierOrders);
 export const getPossibleSupplierOrderLines = timed(_getPossibleSupplierOrderLines);
+/** @tableDeps "reconciliation_order", "supplier_order", "supplier", "supplier_order_line", "book", "supplier_order_continuation" */
 export const getPlacedSupplierOrders = timed(_getPlacedSupplierOrders);
 export const getPlacedSupplierOrderLines = timed(_getPlacedSupplierOrderLines);
 export const createSupplierOrder = timed(_createSupplierOrder);

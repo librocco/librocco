@@ -115,7 +115,8 @@ const config = {
 				compilerOptions: {
 					...config.compilerOptions,
 					resolveJsonModule: true,
-					allowSyntheticDefaultImports: true
+					allowSyntheticDefaultImports: true,
+					verbatimModuleSyntax: true
 				}
 			})
 		}
