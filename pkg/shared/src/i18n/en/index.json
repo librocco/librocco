@@ -1,7 +1,4 @@
 {
-	"table": {
-		"empty_message": "Nothing to see here"
-	},
 	"nav": {
 		"search": "Search stock",
 		"books": "View known books",
@@ -274,9 +271,9 @@
 			"email": "Email",
 			"address": "Address",
 			"order_format": "Order format",
+			"underdelivery_policy": "Underdelivery policy",
 			"edit_details": "Edit details",
-			"delete_supplier": "Delete supplier",
-			"underdelivery_policy": "Underdelivery policy"
+			"delete_supplier": "Delete supplier"
 		},
 		"errors": {
 			"active_orders": "Cannot delete: supplier has active orders or unfinalized reconciliations"
@@ -1112,5 +1109,8 @@
 				"form": "Edit book details"
 			}
 		}
+	},
+	"table": {
+		"empty_message": "Nothing to see here"
 	}
 }

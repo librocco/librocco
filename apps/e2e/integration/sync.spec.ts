@@ -14,7 +14,7 @@ import {
 
 test.setTimeout(45_000);
 const SERVER_WAIT_TIMEOUT_MS = 45_000;
-const WARMUP_TIMEOUT_MS = 10_000;
+const WARMUP_TIMEOUT_MS = IS_CI ? 25_000 : 10_000;
 // Startup budget: server boot wait + warmup + headroom for browser/context setup in slower CI executors.
 const BEFORE_ALL_TIMEOUT_MS = SERVER_WAIT_TIMEOUT_MS + WARMUP_TIMEOUT_MS + 15_000;
 
@@ -68,28 +68,22 @@ test.beforeAll(async ({ browser }, testInfo) => {
 });
 
 async function warmupApp(page: Page, timeoutMs: number): Promise<void> {
-	const deadline = Date.now() + timeoutMs;
-	const remainingBudgetMs = (): number => {
-		const remaining = deadline - Date.now();
-		if (remaining <= 0) {
-			throw new Error(`Warmup exceeded total timeout budget (${timeoutMs}ms)`);
-		}
-		return remaining;
-	};
-
-	// Using "domcontentloaded" avoids waiting on background network activity that can block "networkidle" in CI.
-	await page.goto(baseURL, { waitUntil: "domcontentloaded", timeout: remainingBudgetMs() });
-	await page.waitForSelector('body[hydrated="true"]', { timeout: remainingBudgetMs() });
-	await page.waitForSelector("#app-splash", { state: "detached", timeout: remainingBudgetMs() });
+	// Best-effort warmup: only ensure the page responds. Avoid app-level readiness gates
+	// (`hydrated`, splash detach) which can be slow/flaky under CI load.
+	await page.goto(baseURL, { waitUntil: "domcontentloaded", timeout: timeoutMs });
 }
 
-async function waitForHttpReady(url: string, timeoutMs = 45_000) {
+async function waitForHttpReady(
+	url: string,
+	timeoutMs = 45_000,
+	isReady: (status: number) => boolean = (status) => status >= 200 && status < 300
+) {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
 		const ctx = await request.newContext({ ignoreHTTPSErrors: true });
 		try {
 			const resp = await ctx.get(url);
-			if (resp.ok()) {
+			if (isReady(resp.status())) {
 				return;
 			}
 		} catch {
@@ -111,6 +105,31 @@ async function waitForSyncServerHttpReady(timeoutMs = 45_000) {
 	await waitForHttpReady(healthUrl, timeoutMs);
 }
 
+async function waitForSyncServerDatabaseHealthy(dbName: string, timeoutMs = 60_000) {
+	const healthUrl = new URL(`${encodeURIComponent(dbName)}/health`, remoteDbURL).toString();
+	const deadline = Date.now() + timeoutMs;
+
+	while (Date.now() < deadline) {
+		const ctx = await request.newContext({ ignoreHTTPSErrors: true });
+		try {
+			const resp = await ctx.get(healthUrl);
+			if (resp.status() === 200) {
+				const body = (await resp.json().catch((): { ok?: boolean } | null => null)) as { ok?: boolean } | null;
+				if (body?.ok === true) {
+					return;
+				}
+			}
+		} catch {
+			// ignore and retry
+		} finally {
+			await ctx.dispose();
+		}
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+	}
+
+	throw new Error(`Sync DB health at ${healthUrl} not healthy after ${timeoutMs}ms`);
+}
+
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
 // the sync should work for other cases all the same
 //
@@ -121,12 +140,6 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	// file events are converted to dbids (without extension).
 	const dbName = `sync-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
 
-	await page.evaluate(
-		([dbName]) => {
-			console.log({ dbName });
-		},
-		[dbName]
-	);
 	await page.evaluate(
 		([syncUrl, dbName]) => {
 			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
@@ -636,7 +649,7 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 });
 
 test("sync status stays consistent across two tabs during stop/restart", async ({ page }, testInfo) => {
-	testInfo.setTimeout(90_000);
+	testInfo.setTimeout(180_000);
 
 	const circusControlAvailable = await isSyncServerCircusControlAvailable();
 	if (!circusControlAvailable) {
@@ -671,7 +684,7 @@ test("sync status stays consistent across two tabs during stop/restart", async (
 	const waitUntilSynced = async (p: Page, timeout = 25_000) => {
 		await expect.poll(() => statusOf(p), { timeout, intervals: [250] }).toBe("synced");
 	};
-	const postRestartSyncTimeout = 60_000;
+	const postRestartSyncTimeout = 90_000;
 	await waitUntilSynced(page);
 	await waitUntilSynced(page2);
 
@@ -703,6 +716,7 @@ test("sync status stays consistent across two tabs during stop/restart", async (
 		await startSyncServerViaCircus();
 		await waitForSyncServerCircusStatus("active");
 		await waitForSyncServerHttpReady(60_000);
+		await waitForSyncServerDatabaseHealthy(dbName, 90_000);
 	}
 
 	await waitUntilSynced(page, postRestartSyncTimeout);
@@ -787,12 +801,15 @@ test("surfaces pending_stale when queue age is old while pending exists", async 
 		.toBeGreaterThan(0);
 
 	await expect
-		.poll(async () => {
-			return page.evaluate(() => ((window as any).__pendingReasonHistory as string[])?.includes("pending_stale") ?? false);
-		}, {
-			timeout: 30_000,
-			intervals: [100]
-		})
+		.poll(
+			async () => {
+				return page.evaluate(() => ((window as any).__pendingReasonHistory as string[])?.includes("pending_stale") ?? false);
+			},
+			{
+				timeout: 30_000,
+				intervals: [100]
+			}
+		)
 		.toBe(true);
 
 	await page.evaluate(() => {

@@ -1,7 +1,4 @@
 {
-	"table": {
-		"empty_message": "Nichts zu sehen"
-	},
 	"nav": {
 		"search": "Bestände suchen",
 		"books": "",
@@ -1114,5 +1111,8 @@
 				"form": ""
 			}
 		}
+	},
+	"table": {
+		"empty_message": "Nichts zu sehen"
 	}
 }

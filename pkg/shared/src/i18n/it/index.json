@@ -1,7 +1,4 @@
 {
-	"table": {
-		"empty_message": "Niente da vedere qui"
-	},
 	"nav": {
 		"search": "Ricerca magazzino",
 		"books": "Dati dei libri",
@@ -588,6 +585,67 @@
 				"title": "Conferma",
 				"description": "Notifica clienti"
 			}
+		},
+		"step1": {
+			"stats": {
+				"total_ordered": "",
+				"total_delivered": ""
+			},
+			"table": {
+				"isbn": "",
+				"title": "",
+				"authors": "",
+				"order_quantity": "",
+				"delivered": "",
+				"controls": ""
+			},
+			"aria_labels": {
+				"decrease_quantity": "",
+				"increase_quantity": ""
+			},
+			"footer": {
+				"total_scanned": "",
+				"continue": ""
+			}
+		},
+		"step2": {
+			"stats": {
+				"total_ordered": "",
+				"total_delivered": ""
+			},
+			"order_summary": {
+				"order_id": "",
+				"books_undelivered": "",
+				"complete": "",
+				"status": "",
+				"missing": ""
+			},
+			"underdelivery": {
+				"title": "",
+				"options": {
+					"pending": "",
+					"queue": ""
+				},
+				"warning": "",
+				"persist_button": ""
+			},
+			"customer_notification": {
+				"message_pending": "",
+				"message_finalized": "",
+				"table": {
+					"customer": "",
+					"id": "",
+					"order_date": ""
+				},
+				"copy_label": ""
+			},
+			"actions": {
+				"back": "",
+				"finalize": ""
+			},
+			"finalized": {
+				"message": ""
+			}
 		}
 	},
 	"order_page": {
@@ -1051,5 +1109,8 @@
 				"form": "Modifica dettagli libro"
 			}
 		}
+	},
+	"table": {
+		"empty_message": "Niente da vedere qui"
 	}
 }
