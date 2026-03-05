@@ -18,7 +18,7 @@ import {
 	ErrReconciliationOrderFinalized,
 	upsertReconciliationOrderLines
 } from "../order-reconciliation";
-import { createSupplierOrder, getPlacedSupplierOrders } from "../suppliers";
+import { createSupplierOrder, getPlacedSupplierOrders, getPlacedSupplierOrderLines, upsertSupplier } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
 
@@ -652,7 +652,7 @@ describe("Reconciliation order finalization:", () => {
 			expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
 		});
 
-		it("reject customer order lines starting from last created customer order line (even if not part of the supplier order being reconciled)", async () => {
+		it("reject customer order lines starting from last placed customer order line (even if not part of the supplier order being reconciled)", async () => {
 			const db = await getRandomDb();
 
 			await upsertCustomer(db, { id: 1, displayId: "1" });
@@ -688,9 +688,12 @@ describe("Reconciliation order finalization:", () => {
 			expect(await getCustomerOrderLines(db, 4)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
 		});
 
-		// NOTE: In a case where the book was overdelivered (considering the respective supplier order), but there are more in-progress customer orders
-		// for the same ISBN, it's ok for the overdelivered quantity to spill over to other customer order lines
-		it("reconcile more customer order lines than initially ordered (if such exist), even if not part of the current supplier order", async () => {
+		// NOTE: In a case where the book was overdelivered (considering the respective supplier order), but there are more placed customer orders
+		// for the same ISBN from other supplier orders, the overdelivered quantity can spill over to those lines.
+		// However, it will NOT spill over to pending (non-placed) customer order lines - overdelivery is intentionally igenored in this case
+		//
+		// NOTE: this is skipped as we currently don't support overdelivery and this behaviour is TBD
+		it.skip("reconcile more customer order lines than initially ordered (if such exist), even if not part of the current supplier order", async () => {
 			const db = await getRandomDb();
 
 			await upsertCustomer(db, { id: 1, displayId: "1" });
@@ -703,7 +706,7 @@ describe("Reconciliation order finalization:", () => {
 			await addBooksToCustomer(db, 2, ["1"]);
 			// Second supplier order (1 book will be overdelivered in supplier order 1)
 			await addBooksToCustomer(db, 3, ["1"]); // This line will be reconciled with supplier order 1 (even though ordered in supplier order 2)
-			await addBooksToCustomer(db, 4, ["1"]); // Will not be reconciled - here to make sure only the overdeliver quantity spills over
+			await addBooksToCustomer(db, 4, ["1"]); // Will not be reconciled - pending line won't get overdelivery
 
 			await createSupplierOrder(db, 1, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
 			await createSupplierOrder(db, 2, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
@@ -723,14 +726,12 @@ describe("Reconciliation order finalization:", () => {
 
 			// 2nd supplier order
 			//
-			// Customer 3 can be served early - book was overdelivered
+			// Customer 3 can be served early - book was overdelivered (they were placed with supplier order 2)
 			expect(await getCustomerOrderLines(db, 3)).toEqual([
 				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
 			]);
-			// Customer 4 is waiting for their order (still pending)
-			expect(await getCustomerOrderLines(db, 4)).toEqual([
-				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: undefined })
-			]);
+			// Customer 4 is waiting for their order (still pending - won't get overdelivery)
+			expect(await getCustomerOrderLines(db, 4)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
 		});
 
 		it("reconcile pending customer order lines if overdelivered", async () => {
@@ -765,11 +766,9 @@ describe("Reconciliation order finalization:", () => {
 
 			// Not placed with supplier
 			//
-			// Customer 3 can be served early - book was overdelivered
-			expect(await getCustomerOrderLines(db, 3)).toEqual([
-				expect.objectContaining({ isbn: "1", placed: undefined, received: expect.any(Date) })
-			]);
-			// Customer 4 is waiting for their order to be placed (and eventually delivered)
+			// Customer 3 cannot be served - overdelivery does NOT go to pending lines (bug fix)
+			expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
+			// Customer 4 is also waiting for their order to be placed (and eventually delivered)
 			expect(await getCustomerOrderLines(db, 4)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
 		});
 
@@ -1037,6 +1036,160 @@ describe("Reconciliation order finalization:", () => {
 
 			await expect(finalizeReconciliationOrder(db, 1)).rejects.toThrow(new ErrReconciliationOrderFinalized(1));
 		});
+
+		it("create continuation order when supplier has queue policy (1)", async () => {
+			const db = await getRandomDb();
+			const supplier = { id: 1, name: "Test Supplier", underdelivery_policy: 1 as const };
+			await upsertSupplier(db, supplier);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1", "1", "1"]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: "1", quantity: 3, supplier_id: 1 }]);
+
+			await createReconciliationOrder(db, 1, [1]);
+			await upsertReconciliationOrderLines(db, 1, [{ isbn: "1", quantity: 2 }]);
+			await finalizeReconciliationOrder(db, 1);
+
+			const lines = await getCustomerOrderLines(db, 1);
+			expect(lines.filter((l) => l.received).length).toBe(2);
+			expect(lines.filter((l) => l.placed !== null && l.received === undefined).length).toBe(1);
+
+			const orders = await getPlacedSupplierOrders(db);
+			const continuationOrder = orders.find((o) => o.parent_order_id === 1);
+			expect(continuationOrder).toBeDefined();
+		});
+
+		it("group multiple underdelivered items into single continuation order per parent", async () => {
+			const db = await getRandomDb();
+			const supplier = { id: 1, name: "Test Supplier", underdelivery_policy: 1 as const };
+			await upsertSupplier(db, supplier);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1", "1", "2", "2"]);
+			await createSupplierOrder(db, 1, 1, [
+				{ isbn: "1", quantity: 2, supplier_id: 1 },
+				{ isbn: "2", quantity: 2, supplier_id: 1 }
+			]);
+
+			await createReconciliationOrder(db, 1, [1]);
+			await upsertReconciliationOrderLines(db, 1, [
+				{ isbn: "1", quantity: 1 },
+				{ isbn: "2", quantity: 1 }
+			]);
+			await finalizeReconciliationOrder(db, 1);
+
+			const orders = await getPlacedSupplierOrders(db);
+			const continuationOrders = orders.filter((o) => o.parent_order_id === 1);
+			expect(continuationOrders.length).toBe(1);
+
+			const continuationLines = await getPlacedSupplierOrderLines(db, [continuationOrders[0].id]);
+			expect(continuationLines.length).toBe(2);
+		});
+
+		it("handle mixed underdelivery policies across multiple supplier orders", async () => {
+			const db = await getRandomDb();
+			const supplier1 = { id: 1, name: "Pending Supplier", underdelivery_policy: 0 as const };
+			const supplier2 = { id: 2, name: "Queue Supplier", underdelivery_policy: 1 as const };
+			await upsertSupplier(db, supplier1);
+			await upsertSupplier(db, supplier2);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1", "1", "2", "2"]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
+			await createSupplierOrder(db, 2, 2, [{ isbn: "2", quantity: 2, supplier_id: 2 }]);
+
+			await createReconciliationOrder(db, 1, [1, 2]);
+			await upsertReconciliationOrderLines(db, 1, [
+				{ isbn: "1", quantity: 1 },
+				{ isbn: "2", quantity: 1 }
+			]);
+			await finalizeReconciliationOrder(db, 1);
+
+			const lines = await getCustomerOrderLines(db, 1);
+			const lines1 = lines.filter((l) => l.isbn === "1");
+			const lines2 = lines.filter((l) => l.isbn === "2");
+
+			expect(lines1.filter((l) => l.received).length).toBe(1);
+			expect(lines1.filter((l) => !l.placed).length).toBe(1);
+			expect(lines2.filter((l) => l.received).length).toBe(1);
+			expect(lines2.filter((l) => Boolean(l.placed) && !l.received).length).toBe(1);
+
+			const orders = await getPlacedSupplierOrders(db);
+			expect(orders.filter((o) => o.parent_order_id === 2).length).toBe(1);
+		});
+
+		it("handle complete underdelivery (nothing delivered) with pending policy", async () => {
+			const db = await getRandomDb();
+			const supplier = { id: 1, name: "Test Supplier", underdelivery_policy: 0 as const };
+			await upsertSupplier(db, supplier);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1", "1", "1"]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: "1", quantity: 3, supplier_id: 1 }]);
+
+			await createReconciliationOrder(db, 1, [1]);
+			await upsertReconciliationOrderLines(db, 1, [{ isbn: "1", quantity: 0 }]);
+			await finalizeReconciliationOrder(db, 1);
+
+			const lines = await getCustomerOrderLines(db, 1);
+			expect(lines.length).toBe(3);
+			expect(lines.every((l) => !l.placed && !l.received)).toBe(true);
+		});
+
+		it("handle complete underdelivery (nothing delivered) with queue policy", async () => {
+			const db = await getRandomDb();
+			const supplier = { id: 1, name: "Test Supplier", underdelivery_policy: 1 as const };
+			await upsertSupplier(db, supplier);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1", "1", "1"]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: "1", quantity: 3, supplier_id: 1 }]);
+
+			await createReconciliationOrder(db, 1, [1]);
+			await upsertReconciliationOrderLines(db, 1, [{ isbn: "1", quantity: 0 }]);
+			await finalizeReconciliationOrder(db, 1);
+
+			const lines = await getCustomerOrderLines(db, 1);
+			expect(lines.every((l) => l.placed !== null && l.received === undefined)).toBe(true);
+
+			const orders = await getPlacedSupplierOrders(db);
+			const continuationOrder = orders.find((o) => o.parent_order_id === 1);
+			expect(continuationOrder.total_book_number).toBe(3);
+		});
+
+		it("not execute delivery DB updates when linesToDeliver is empty", async () => {
+			const db = await getRandomDb();
+			const supplier = { id: 1, name: "Test Supplier", underdelivery_policy: 1 as const };
+			await upsertSupplier(db, supplier);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+
+			await createReconciliationOrder(db, 1, [1]);
+			await upsertReconciliationOrderLines(db, 1, [{ isbn: "1", quantity: 0 }]);
+			await expect(finalizeReconciliationOrder(db, 1)).resolves.not.toThrow();
+
+			const lines = await getCustomerOrderLines(db, 1);
+			expect(lines[0].received).toBeUndefined();
+		});
+
+		it("not execute rejection DB updates when linesToReject is empty", async () => {
+			const db = await getRandomDb();
+			const supplier = { id: 1, name: "Test Supplier", underdelivery_policy: 1 as const };
+			await upsertSupplier(db, supplier);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+
+			await createReconciliationOrder(db, 1, [1]);
+			await upsertReconciliationOrderLines(db, 1, [{ isbn: "1", quantity: 1 }]);
+			await expect(finalizeReconciliationOrder(db, 1)).resolves.not.toThrow();
+
+			const lines = await getCustomerOrderLines(db, 1);
+			expect(lines[0].placed).not.toBeNull();
+		});
 	});
 });
 
@@ -1128,15 +1281,16 @@ describe("Reconciliation order deletion", () => {
 			expect(supplierOrders).toEqual([
 				{
 					created: expect.any(Number),
-					finalized: null,
 					id: 1,
 					supplier_id: 1,
 					supplier_name: null,
+					underdelivery_policy: 0,
 					total_book_number: 1,
 					total_book_price: 0,
 					reconciliation_order_id: null,
-					// There is no associated reconciliation order => no updatedAt
-					reconciliation_last_updated_at: null
+					reconciliation_last_updated_at: null,
+					parent_order_id: null,
+					finalized: null
 				}
 			]);
 

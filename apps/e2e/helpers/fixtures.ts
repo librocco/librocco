@@ -120,10 +120,10 @@ const supplierOrders: FixtureSupplierOrder[] = [
 		]
 	},
 	{
-		order: { id: 2, supplier_id: 1, supplier_name: "sup1", totalBooks: 6 },
+		order: { id: 2, supplier_id: 1, supplier_name: "sup1", totalBooks: 3 },
 		lines: [
-			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 3 },
-			{ isbn: "9999", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
+			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 1 },
+			{ isbn: "9999", supplier_id: 1, supplier_name: "sup1", quantity: 1 },
 			{ isbn: "7777", supplier_id: 1, supplier_name: "sup1", quantity: 1 }
 		]
 	},
@@ -252,7 +252,8 @@ type OrderTestFixture = {
 	 *
 	 * ID: 2, supplier id: 1
 	 *  isbn: "5678", quantity: 3
-	 *  isbn: "9999", quantity: 2
+	 *  isbn: "5678", quantity: 1
+	 *  isbn: "9999", quantity: 1
 	 *  isbn: "7777", quantity: 1
 	 *
 	 * ID: 3, supplier id: 2

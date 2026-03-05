@@ -82,6 +82,22 @@
 					</label>
 				</FormFieldProxy>
 			</div>
+			<div class="form-control gap-y-2">
+				<FormFieldProxy {form} let:errors let:errAttrs let:errAction name="underdeliveryPolicy">
+					<label class="form-control w-full">
+						<div class="label">{$LL.forms.supplier_meta.labels.underdelivery_policy()}</div>
+						<select bind:value={$formStore.underdeliveryPolicy} class="select-bordered select w-full">
+							<option value="pending">pending</option>
+							<option value="queue">queue</option>
+						</select>
+						<span class="font-regular pt-2 text-red-500" {...errAttrs} use:errAction>
+							{#each errors as error}
+								{error}
+							{/each}
+						</span>
+					</label>
+				</FormFieldProxy>
+			</div>
 		</div>
 	</div>
 

@@ -67,14 +67,16 @@
 		states: { open: dialogOpen }
 	} = dialog;
 
-	const createSupplier = async (supplier: Omit<Supplier, "id">) => {
+	const createSupplier = async (supplier: Omit<Supplier, "id"> & { underdeliveryPolicy?: string }) => {
 		const db = await getDb(app);
 
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 
-		await upsertSupplier(db, { ...supplier, id });
+		const underdelivery_policy = supplier.underdeliveryPolicy === "queue" ? 1 : 0;
+
+		await upsertSupplier(db, { ...supplier, id, underdelivery_policy });
 
 		dialogOpen.set(false);
 

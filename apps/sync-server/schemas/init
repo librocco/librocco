@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS supplier (
 	address TEXT,
 	customerId INTEGER,
 	orderFormat TEXT,
+	underdelivery_policy INTEGER NOT NULL DEFAULT 0 CHECK (underdelivery_policy IN (0, 1)),
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('supplier');
@@ -83,6 +84,15 @@ CREATE TABLE IF NOT EXISTS supplier_order (
 );
 CREATE INDEX IF NOT EXISTS idx_supplier_order_supplier_id ON supplier_order(supplier_id);
 SELECT crsql_as_crr('supplier_order');
+
+CREATE TABLE IF NOT EXISTS supplier_order_continuation (
+	-- NOTE: we're allowing single continuation order per parent order,
+	-- hence parent_order_id PRIMARY KEY to enforce schema level validation.
+	parent_order_id INTEGER NOT NULL,
+	continuation_order_id INTEGER,
+	PRIMARY KEY (parent_order_id)
+);
+SELECT crsql_as_crr('supplier_order_continuation');
 
 CREATE TABLE IF NOT EXISTS supplier_order_line (
 	supplier_order_id INTEGER NOT NULL,

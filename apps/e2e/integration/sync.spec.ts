@@ -111,6 +111,13 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	// causing a mismatch between how listeners register (with extension) and how
 	// file events are converted to dbids (without extension).
 	const dbName = `sync-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+
+	await page.evaluate(
+		([dbName]) => {
+			console.log({ dbName });
+		},
+		[dbName]
+	);
 	await page.evaluate(
 		([syncUrl, dbName]) => {
 			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
