@@ -1,7 +1,4 @@
 {
-	"table": {
-		"empty_message": "Nichts zu sehen"
-	},
 	"nav": {
 		"search": "Bestände suchen",
 		"books": "",
@@ -936,30 +933,6 @@
 			"manually_edit_book_details": ""
 		}
 	},
-	"debug_page": {
-		"title": "",
-		"labels": {
-			"runtime_error": ""
-		},
-		"actions": {
-			"trigger_load_error": "",
-			"trigger_runtime_error": "",
-			"populate_database": "",
-			"reset_database": "",
-			"upsert_100_books": "",
-			"run_query": "",
-			"executing": ""
-		},
-		"query_interface": {
-			"title": "",
-			"results_title": "",
-			"no_results": ""
-		},
-		"table": {
-			"title": "",
-			"number_of_objects": ""
-		}
-	},
 	"forms": {
 		"sync_settings": {
 			"labels": {
@@ -1138,5 +1111,8 @@
 				"form": ""
 			}
 		}
+	},
+	"table": {
+		"empty_message": "Nichts zu sehen"
 	}
 }

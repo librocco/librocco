@@ -27,7 +27,7 @@ vi.mock("@vlcn.io/rx-tbl", () => ({
 	})
 }));
 
-import { AppDb, AppDbState, initializeDb } from "../db";
+import { AppDb, AppDbState, getDb, initializeDb } from "../db";
 import { ErrDBOpenTransient } from "../errors";
 import { getDB } from "$lib/db/cr-sqlite/db";
 
@@ -90,5 +90,46 @@ describe("initializeDb", () => {
 		expect(err).toBe(permissionError);
 		expect(get(app.db.state)).toBe(AppDbState.Error);
 		expect(app.db.error).toBe(permissionError);
+	});
+});
+
+describe("getDb", () => {
+	it("throws immediately when DB is in Error state", async () => {
+		const app = { db: new AppDb() } as App;
+		const dbid = "test-db";
+		const dbError = new Error("init failed");
+
+		app.db.dbid = dbid;
+		app.db.setState(dbid, AppDbState.Error, dbError);
+
+		await expect(getDb(app)).rejects.toBe(dbError);
+	});
+
+	it("throws when DB transitions to Error while waiting", async () => {
+		const app = { db: new AppDb() } as App;
+		const dbid = "test-db";
+		const dbError = new Error("failed while loading");
+
+		app.db.dbid = dbid;
+		app.db.setState(dbid, AppDbState.Loading);
+
+		const getDbPromise = getDb(app);
+		app.db.setState(dbid, AppDbState.Error, dbError);
+
+		await expect(getDbPromise).rejects.toBe(dbError);
+	});
+
+	it("returns the DB when state becomes Ready", async () => {
+		const app = { db: new AppDb() } as App;
+		const dbid = "test-db";
+		const dbMock = {} as any;
+
+		app.db.dbid = dbid;
+		app.db.setState(dbid, AppDbState.Loading);
+
+		const getDbPromise = getDb(app);
+		app.db.setState(dbid, AppDbState.Ready, { db: dbMock, vfs: "asyncify-idb-batch-atomic" });
+
+		await expect(getDbPromise).resolves.toBe(dbMock);
 	});
 });

@@ -1,7 +1,4 @@
 {
-	"table": {
-		"empty_message": "Niente da vedere qui"
-	},
 	"nav": {
 		"search": "Ricerca magazzino",
 		"books": "Dati dei libri",
@@ -588,6 +585,67 @@
 				"title": "Conferma",
 				"description": "Notifica clienti"
 			}
+		},
+		"step1": {
+			"stats": {
+				"total_ordered": "",
+				"total_delivered": ""
+			},
+			"table": {
+				"isbn": "",
+				"title": "",
+				"authors": "",
+				"order_quantity": "",
+				"delivered": "",
+				"controls": ""
+			},
+			"aria_labels": {
+				"decrease_quantity": "",
+				"increase_quantity": ""
+			},
+			"footer": {
+				"total_scanned": "",
+				"continue": ""
+			}
+		},
+		"step2": {
+			"stats": {
+				"total_ordered": "",
+				"total_delivered": ""
+			},
+			"order_summary": {
+				"order_id": "",
+				"books_undelivered": "",
+				"complete": "",
+				"status": "",
+				"missing": ""
+			},
+			"underdelivery": {
+				"title": "",
+				"options": {
+					"pending": "",
+					"queue": ""
+				},
+				"warning": "",
+				"persist_button": ""
+			},
+			"customer_notification": {
+				"message_pending": "",
+				"message_finalized": "",
+				"table": {
+					"customer": "",
+					"id": "",
+					"order_date": ""
+				},
+				"copy_label": ""
+			},
+			"actions": {
+				"back": "",
+				"finalize": ""
+			},
+			"finalized": {
+				"message": ""
+			}
 		}
 	},
 	"order_page": {
@@ -873,30 +931,6 @@
 			"manually_edit_book_details": "Modifica manualmente dettagli libro"
 		}
 	},
-	"debug_page": {
-		"title": "Debug",
-		"labels": {
-			"runtime_error": ""
-		},
-		"actions": {
-			"trigger_load_error": "",
-			"trigger_runtime_error": "",
-			"populate_database": "Popola Database",
-			"reset_database": "Ripristina Database",
-			"upsert_100_books": "Inserisci 100 Libri",
-			"run_query": "Esegui Query",
-			"executing": "Esecuzione in corso..."
-		},
-		"query_interface": {
-			"title": "Interfaccia Query Database",
-			"results_title": "Risultati Query:",
-			"no_results": "Nessun risultato trovato."
-		},
-		"table": {
-			"title": "Tabella",
-			"number_of_objects": "Numero di oggetti"
-		}
-	},
 	"forms": {
 		"sync_settings": {
 			"labels": {
@@ -1075,5 +1109,8 @@
 				"form": "Modifica dettagli libro"
 			}
 		}
+	},
+	"table": {
+		"empty_message": "Niente da vedere qui"
 	}
 }

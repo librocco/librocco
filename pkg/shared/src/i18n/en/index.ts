@@ -599,31 +599,6 @@ const books_page = {
 	}
 };
 
-const debug_page = {
-	title: "Debug",
-	labels: {
-		runtime_error: "Kaboom! Runtime error"
-	},
-	actions: {
-		trigger_load_error: "Trigger Load Error",
-		trigger_runtime_error: "Trigger Runtime Error",
-		populate_database: "Populate Database",
-		reset_database: "Reset Database",
-		upsert_100_books: "Upsert 100 Books",
-		run_query: "Run Query",
-		executing: "Executing..."
-	},
-	query_interface: {
-		title: "Database Query Interface",
-		results_title: "Query Results:",
-		no_results: "No results found."
-	},
-	table: {
-		title: "Table",
-		number_of_objects: "Number of objects"
-	}
-};
-
 const common = {
 	delete_dialog: {
 		title: `Permenantly delete {entity}?`,
@@ -1206,7 +1181,6 @@ const en = {
 	layout,
 	error_page,
 	books_page,
-	debug_page,
 	forms,
 	table
 } satisfies BaseTranslation;
