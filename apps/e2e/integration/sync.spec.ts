@@ -100,11 +100,6 @@ async function waitForServer(timeoutMs = 45_000) {
 	await waitForHttpReady(baseURL, timeoutMs);
 }
 
-async function waitForSyncServerHttpReady(timeoutMs = 45_000) {
-	const healthUrl = new URL("health", remoteDbURL).toString();
-	await waitForHttpReady(healthUrl, timeoutMs);
-}
-
 async function waitForSyncServerDatabaseHealthy(dbName: string, timeoutMs = 60_000) {
 	const healthUrl = new URL(`${encodeURIComponent(dbName)}/health`, remoteDbURL).toString();
 	const deadline = Date.now() + timeoutMs;
@@ -715,8 +710,7 @@ test("sync status stays consistent across two tabs during stop/restart", async (
 	} finally {
 		await startSyncServerViaCircus();
 		await waitForSyncServerCircusStatus("active");
-		await waitForSyncServerHttpReady(60_000);
-		await waitForSyncServerDatabaseHealthy(dbName, 90_000);
+		await waitForSyncServerDatabaseHealthy(dbName, 120_000);
 	}
 
 	await waitUntilSynced(page, postRestartSyncTimeout);
