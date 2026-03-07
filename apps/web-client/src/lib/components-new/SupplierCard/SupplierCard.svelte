@@ -4,7 +4,7 @@
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let name = "";
-	export let id = "";
+	export let id: number;
 	export let email = "";
 	export let address = "";
 	export let orderFormat = "";
@@ -35,7 +35,7 @@
 			<dt class="sr-only">{$LL.suppliers_page.card.supplier_id()}</dt>
 			<dd class="flex flex-1 items-start gap-3 text-sm">
 				<Hash aria-hidden="true" class="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
-				<span class="flex-1">{id.replace(/^#/, "")}</span>
+				<span class="flex-1">{id}</span>
 			</dd>
 		</div>
 

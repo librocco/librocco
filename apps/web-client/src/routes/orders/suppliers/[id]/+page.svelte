@@ -122,7 +122,7 @@
 							{#if supplier}
 								<SupplierCard
 									name={supplier.name}
-									id={`#${supplier?.id}`}
+									id={supplier.id}
 									email={supplier.email || "N/A"}
 									address={supplier.address || "N/A"}
 									orderFormat={supplier.orderFormat || "N/A"}
