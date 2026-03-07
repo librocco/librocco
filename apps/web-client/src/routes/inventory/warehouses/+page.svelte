@@ -37,10 +37,11 @@
 
 	import type { PageData } from "./$types";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ warehouses, plugins } = data);
 

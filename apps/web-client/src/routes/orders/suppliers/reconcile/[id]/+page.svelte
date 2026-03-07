@@ -29,11 +29,12 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import { appPath } from "$lib/paths";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	// implement order reactivity/sync
 	export let data: PageData;
+	const app = data.app;
 
 	let disposer: () => void;
 	onMount(() => {

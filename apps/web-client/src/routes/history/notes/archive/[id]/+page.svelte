@@ -20,10 +20,11 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 
-	import { app } from "$lib/app";
+
 	import { getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ plugins, displayName, updatedAt } = data);
 

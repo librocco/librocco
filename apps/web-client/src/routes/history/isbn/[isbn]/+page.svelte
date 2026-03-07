@@ -9,7 +9,7 @@
 	import { invalidate } from "$app/navigation";
 	import { page } from "$app/stores";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	import Search from "$lucide/search";
@@ -30,6 +30,7 @@
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ plugins, bookData, transactions, stock } = data);
 

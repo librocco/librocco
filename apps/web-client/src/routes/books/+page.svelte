@@ -9,7 +9,7 @@
 
 	import { invalidate } from "$app/navigation";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	import type { PageData } from "./$types";
@@ -37,6 +37,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ publisherList, plugins } = data);
 

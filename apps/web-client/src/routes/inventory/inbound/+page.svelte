@@ -27,10 +27,12 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
+
 	interface DialogContent {
 		onConfirm: (closeDialog: () => void) => void;
 		title: string;

@@ -1,6 +1,5 @@
 import { browser } from "$app/environment";
 
-import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 
 import type { PageLoad } from "./$types";
@@ -13,7 +12,7 @@ import { getBookData } from "$lib/db/cr-sqlite/books";
 import { timed } from "$lib/utils/timer";
 
 const _load = async ({ params: { isbn }, parent, depends }: Parameters<PageLoad>[0]) => {
-	await parent();
+	const { app } = await parent();
 	depends("history:transactions");
 
 	if (!browser) {

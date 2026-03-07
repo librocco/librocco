@@ -2,7 +2,6 @@ import { browser } from "$app/environment";
 import { redirect } from "@sveltejs/kit";
 import { fromDate, getLocalTimeZone } from "@internationalized/date";
 
-import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 
 import type { PageLoad } from "./$types";
@@ -14,7 +13,7 @@ import { getPastTransactions } from "$lib/db/cr-sqlite/history";
 import { timed } from "$lib/utils/timer";
 
 const _load = async ({ params: { date }, depends, parent }: Parameters<PageLoad>[0]) => {
-	await parent();
+	const { app } = await parent();
 	depends("history:transactions");
 
 	// Validate the date - if not valid, redirect to default

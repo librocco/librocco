@@ -16,11 +16,10 @@ import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 import { map, wrapIter } from "@librocco/shared";
 
-import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 
 const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
-	await parent();
+	const { app } = await parent();
 	const id = Number(params.id);
 
 	depends("warehouse:data");

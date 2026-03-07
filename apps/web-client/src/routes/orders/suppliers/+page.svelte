@@ -28,10 +28,11 @@
 	import type { PageData } from "./$types";
 	import { orderFormats } from "$lib/enums/orders";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	// #region reactivity
 	let disposer: () => void;

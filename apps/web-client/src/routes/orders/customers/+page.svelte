@@ -37,10 +37,11 @@
 
 	import { matchesName } from "$lib/utils/misc";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ customerOrders, plugins } = data);
 

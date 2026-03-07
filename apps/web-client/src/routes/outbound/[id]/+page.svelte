@@ -81,10 +81,11 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ id: noteId, displayName, defaultWarehouse, warehouses, updatedAt, plugins } = data);
 

@@ -5,7 +5,7 @@
 	import { entityListView, testId, type BookData } from "@librocco/shared";
 	import LL from "@librocco/shared/i18n-svelte";
 
-	import { app } from "$lib/app";
+
 	import { getDb } from "$lib/app/db";
 
 	import type { PageData } from "./$types";
@@ -21,6 +21,7 @@
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ plugins } = data);
 

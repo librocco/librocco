@@ -8,7 +8,7 @@
 
 	import { invalidate } from "$app/navigation";
 
-	import { app } from "$lib/app";
+
 	import { getDbRx } from "$lib/app/db";
 
 	import Library from "$lucide/library";
@@ -26,6 +26,7 @@
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ stats, bookList, dateValue, plugins } = data);
 

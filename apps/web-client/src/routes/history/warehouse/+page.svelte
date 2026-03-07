@@ -16,10 +16,11 @@
 	import { appPath } from "$lib/paths";
 	import { PlaceholderDots } from "$lib/components";
 
-	import { app } from "$lib/app";
+
 	import { getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	// #region reactivity
 	let disposer: () => void;

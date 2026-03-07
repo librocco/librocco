@@ -25,10 +25,11 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import type { LocalizedString } from "typesafe-i18n";
 
-	import { app } from "$lib/app";
+
 	import { getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ plugins, displayName, transactions, noteType: filter } = data);
 

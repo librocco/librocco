@@ -28,10 +28,11 @@
 	import { retry } from "$lib/utils/misc";
 	import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
 
-	import { app, deleteCurrentDb, nukeAndResyncDb, selectDb } from "$lib/app";
+	import { deleteCurrentDb, nukeAndResyncDb, selectDb } from "$lib/app";
 	import { getVfs } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ plugins } = data);
 

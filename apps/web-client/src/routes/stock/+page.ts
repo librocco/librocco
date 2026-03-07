@@ -6,11 +6,10 @@ import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { timed } from "$lib/utils/timer";
 
-import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 
 const _load: PageLoad = async ({ depends, parent }) => {
-	await parent();
+	const { app } = await parent();
 	depends("book:data");
 
 	if (!browser) {

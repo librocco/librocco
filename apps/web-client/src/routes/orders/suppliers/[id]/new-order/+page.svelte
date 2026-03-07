@@ -17,10 +17,11 @@
 	import { testId } from "@librocco/shared";
 	import { SquareArrowUpRight } from "$lucide";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	let disposer: () => void;
 	onMount(() => {

@@ -60,10 +60,11 @@
 	import type { NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ plugins, id: noteId, warehouseId, warehouseName, displayName, updatedAt, publisherList } = data);
 

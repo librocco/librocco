@@ -18,7 +18,6 @@ import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { timed } from "$lib/utils/timer";
 
-import { app } from "$lib/app";
 import { getDb } from "$lib/app/db";
 
 type PublisherInfo = {
@@ -29,7 +28,8 @@ type PublisherInfo = {
 type OrderWithReconciled = PlacedSupplierOrder & { reconciled: boolean };
 
 const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
-	await parent();
+	const { app } = await parent();
+
 	depends("supplier:data");
 	depends("supplier:orders");
 

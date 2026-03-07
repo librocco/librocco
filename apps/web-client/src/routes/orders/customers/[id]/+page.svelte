@@ -47,10 +47,11 @@
 
 	import type { PageData } from "./$types";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ customer, customerOrderLines, publisherList, plugins } = data);
 	$: phone1 = customer?.phone?.split(",").length > 0 ? customer?.phone?.split(",")[0] : "";

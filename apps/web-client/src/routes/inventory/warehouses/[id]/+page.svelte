@@ -39,10 +39,11 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
-	import { app } from "$lib/app";
+
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
+	const app = data.app;
 
 	$: ({ plugins, displayName, publisherList, id } = data);
 
