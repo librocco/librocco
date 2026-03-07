@@ -213,5 +213,6 @@ const processRawBookRes = (res: RawBookRes): Required<BookData> & { updatedAt: D
 export const upsertBook = timed(_upsertBook);
 export const getBookData = timed(_getBookData);
 export const getMultipleBookData = timed(_getMultipleBookData);
+/** @tableDeps "publisher" */
 export const getPublisherList = timed(_getPublisherList);
 export const searchBooks = timed(_searchBooks);

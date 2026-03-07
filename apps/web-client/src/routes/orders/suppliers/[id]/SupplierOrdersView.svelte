@@ -1,25 +1,43 @@
 <script lang="ts">
-	import type { PageData } from "./$types";
-
-	import { Table } from "$lib/components-new/Table";
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 	import LL from "@librocco/shared/i18n-svelte";
 
+	import type { App } from "$lib/app";
+	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
+	import type { SupplierOrdersViewData } from "./dataLoad";
+
+	import { Table } from "$lib/components-new/Table";
+
 	import { goto as _goto } from "$lib/utils/navigation";
+
+	import { getDb, getDbRx } from "$lib/app/db";
+	import { createOrdersViewDataSource } from "./dataLoad";
+
 	import { appPath } from "$lib/paths";
 
-	export let data: PageData;
+	type Props = {
+		app: App;
+		supplierId: number;
+		pageData?: SupplierOrdersViewData | null;
+	};
 
-	$: ({ placedOrders, reconcilingOrders, completedOrders } = data);
+	let { app, supplierId, pageData }: Props = $props();
+
+	const rx = getDbRx(app);
+	const dataSource = createOrdersViewDataSource(rx, () => getDb(app), supplierId, pageData ?? undefined);
+
+	const placedOrders = $derived((dataSource.data.placedOrders ?? []) as PlacedSupplierOrder[]);
+	const reconcilingOrders = $derived((dataSource.data.reconcilingOrders ?? []) as PlacedSupplierOrder[]);
+	const completedOrders = $derived((dataSource.data.completedOrders ?? []) as PlacedSupplierOrder[]);
+	const orderedTableT = $derived($LL.supplier_orders_component.ordered_table);
+	const reconcilingTableT = $derived($LL.supplier_orders_component.reconciling_table);
+	const completedTableT = $derived($LL.supplier_orders_component.completed_table);
+	const tabsT = $derived($LL.supplier_orders_page.tabs);
+	const dateTimeFormatter = $derived($dateFormatters.dateTime);
 
 	function formatCreated(timestamp: number): string {
-		return $dateFormatters.dateTime(new Date(timestamp));
+		return dateTimeFormatter(new Date(timestamp));
 	}
-
-	$: orderedTableT = $LL.supplier_orders_component.ordered_table;
-	$: reconcilingTableT = $LL.supplier_orders_component.reconciling_table;
-	$: completedTableT = $LL.supplier_orders_component.completed_table;
-	$: tabsT = $LL.supplier_orders_page.tabs;
 </script>
 
 <div class="px-5">
@@ -38,8 +56,8 @@
 						tabindex="0"
 						role="button"
 						class="cursor-pointer border-b border-[#E5E5E5] px-[16px] py-[8px] transition-colors last:border-b-0 hover:cursor-pointer hover:bg-[#FAFAFA]"
-						on:click={() => _goto(appPath("supplier_orders", id))}
-						on:keydown={(e) => e.key === "Enter" && _goto(appPath("supplier_orders", id))}
+						onclick={() => _goto(appPath("supplier_orders", id))}
+						onkeydown={(e) => e.key === "Enter" && _goto(appPath("supplier_orders", id))}
 					>
 						<td class="px-4 py-2 text-sm">#{id}</td>
 						<td class="px-4 py-2 text-sm">{supplier_name}</td>
@@ -67,8 +85,8 @@
 						tabindex="0"
 						role="button"
 						class="cursor-pointer border-b border-[#E5E5E5] px-[16px] py-[8px] transition-colors last:border-b-0 hover:cursor-pointer hover:bg-[#FAFAFA]"
-						on:click={() => _goto(appPath("supplier_orders", id))}
-						on:keydown={(e) => e.key === "Enter" && _goto(appPath("supplier_orders", id))}
+						onclick={() => _goto(appPath("supplier_orders", id))}
+						onkeydown={(e) => e.key === "Enter" && _goto(appPath("supplier_orders", id))}
 					>
 						<td class="px-4 py-2 text-sm">#{id}</td>
 						<td class="px-4 py-2 text-sm">{supplier_name}</td>
@@ -81,8 +99,6 @@
 		</Table>
 	</div>
 
-	<!-- NOTE: this implementation assumes the number of finalized orders won't bloat the view, in practice this is likely the case -->
-	<!-- TODO: add infinite scroll or some other way of handling this -->
 	<div class="mb-8">
 		<h4 class="mb-4 text-[14px]">{tabsT.completed()}</h4>
 		<Table columnWidths={["3", "3", "6"]} showEmptyState={completedOrders.length === 0}>
@@ -98,8 +114,8 @@
 						tabindex="0"
 						role="button"
 						class="cursor-pointer border-b border-[#E5E5E5] px-[16px] py-[8px] transition-colors last:border-b-0 hover:cursor-pointer hover:bg-[#FAFAFA]"
-						on:click={() => _goto(appPath("supplier_orders", id))}
-						on:keydown={(e) => e.key === "Enter" && _goto(appPath("supplier_orders", id))}
+						onclick={() => _goto(appPath("supplier_orders", id))}
+						onkeydown={(e) => e.key === "Enter" && _goto(appPath("supplier_orders", id))}
 					>
 						<td class="px-4 py-2 text-sm">#{id}</td>
 						<td class="px-4 py-2 text-sm">{supplier_name}</td>
