@@ -16,7 +16,8 @@
 		reconciliationOrder: {
 			id: 1,
 			supplierOrderIds: [1, 2],
-			receivedAt: new Date()
+			receivedAt: new Date(),
+			updatedAt: new Date()
 		} as any,
 		placedOrderLines: [
 			{

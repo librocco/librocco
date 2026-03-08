@@ -22,6 +22,8 @@
 		"story:preview": "storybook preview",
 		"test": "vitest --ui",
 		"test:ci": "CI=True vitest",
+		"test:storybook": "vitest --config vitest.storybook.config.ts --project=storybook --ui",
+		"test:storybook:ci": "vitest --config vitest.storybook.config.ts --project=storybook",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold error",
 		"typesafe-i18n": "echo please run this in ../../pkg/shared ; exit 1",
 		"typesafe-i18n-check": "echo please run this in ../../pkg/shared ; exit 1"
@@ -63,7 +65,7 @@
 		"@types/testing-library__jest-dom": "~6.0.0",
 		"@typescript-eslint/eslint-plugin": "^8.22.0",
 		"@typescript-eslint/parser": "^8.22.0",
-		"@vitest/ui": "3.0.9",
+		"@vitest/ui": "3.2.4",
 		"autoprefixer": "~10.4.13",
 		"eslint": "^8.13.0",
 		"eslint-config-prettier": "^8.6.0",
@@ -85,7 +87,7 @@
 		"tailwindcss": "~3.2.4",
 		"typescript": "~5.9.3",
 		"vite": "~6.0.11",
-		"vitest": "3.0.9",
+		"vitest": "3.2.4",
 		"workbox-window": "~6.5.4",
 		"zod": "3.25.76",
 		"@internationalized/date": "~3.7.0",
@@ -94,12 +96,13 @@
 		"@storybook/svelte": "~9.1.19",
 		"@storybook/addon-svelte-csf": "~5.0.11",
 		"@storybook/addon-a11y": "~9.1.19",
-		"@vitest/browser": "3.0.9",
+		"@vitest/browser": "3.2.4",
 		"playwright": "~1.50.0",
 		"react": "~18.3.1",
 		"react-dom": "~18.3.1",
 		"daisyui": "~4.12.13",
 		"@tailwindcss/typography": "~0.5.15",
-		"tsx": "~4.19.1"
+		"tsx": "~4.19.1",
+		"@storybook/addon-vitest": "~9.1.19"
 	}
 }
