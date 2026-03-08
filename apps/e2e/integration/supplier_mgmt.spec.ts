@@ -46,6 +46,7 @@ testOrders.describe("The supplier list view", () => {
 	});
 });
 
+// TODO: remove, tested in ../../web-client/src/routes/orders/suppliers/[id]/page.stories.ts
 testOrders.describe("Supplier publisher config", () => {
 	testOrders("displays split column layout with search functionality", async ({ page, suppliers, books, suppliersWithPublishers }) => {
 		depends(books);
