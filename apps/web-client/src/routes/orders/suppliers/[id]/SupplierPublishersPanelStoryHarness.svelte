@@ -13,8 +13,18 @@
 	let localAssignedPublishers: string[] = [];
 	let localAvailablePublishers: AvailablePublisher[] = [];
 
-	$: localAssignedPublishers = [...assignedPublishers];
-	$: localAvailablePublishers = availablePublishers.map((publisher) => ({ ...publisher }));
+	let previousAssignedPublishers: string[] | undefined;
+	let previousAvailablePublishers: AvailablePublisher[] | undefined;
+
+	const cloneAvailablePublishers = (publishers: AvailablePublisher[]) => publishers.map((publisher) => ({ ...publisher }));
+
+	// Reset the local harness state only when Storybook args change.
+	$: if (assignedPublishers !== previousAssignedPublishers || availablePublishers !== previousAvailablePublishers) {
+		previousAssignedPublishers = assignedPublishers;
+		previousAvailablePublishers = availablePublishers;
+		localAssignedPublishers = [...assignedPublishers];
+		localAvailablePublishers = cloneAvailablePublishers(availablePublishers);
+	}
 
 	const sortPublishers = (publishers: string[]) => [...publishers].sort((left, right) => left.localeCompare(right));
 

@@ -76,14 +76,18 @@
 
 	<div class="flex min-h-0 flex-1 overflow-hidden px-5 pb-5">
 		<div class="grid flex-1 grid-cols-2 gap-4 overflow-hidden">
-			<div class="flex min-w-0 flex-1 flex-col border-gray-200">
+			<div data-testid="publisher-panel-assigned" class="flex min-w-0 flex-1 flex-col border-gray-200">
 				<SupplierPublisherTable
 					showEmptyState={filteredAssigned.length === 0}
 					emptyStateMessage={searchQuery ? t.placeholders.no_matching_assigned_publishers() : t.placeholders.no_assigned_publishers()}
 				>
 					<svelte:fragment slot="title">{t.tabs.assigned_publishers()}</svelte:fragment>
 
-					<span slot="badge" class="inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white">
+					<span
+						slot="badge"
+						data-testid="publisher-count-assigned"
+						class="inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white"
+					>
 						{filteredAssigned.length}
 					</span>
 
@@ -101,49 +105,55 @@
 				</SupplierPublisherTable>
 			</div>
 
-			<SupplierPublisherTable
-				showEmptyState={filteredAvailable.length === 0}
-				emptyStateMessage={searchQuery ? t.placeholders.no_matching_available_publishers() : t.placeholders.no_available_publishers()}
-			>
-				<svelte:fragment slot="title">{t.table.unassigned_publishers()}</svelte:fragment>
-				<span slot="badge" class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
-					{filteredAvailable.length}
-				</span>
+			<div data-testid="publisher-panel-available" class="flex min-w-0 flex-1 flex-col">
+				<SupplierPublisherTable
+					showEmptyState={filteredAvailable.length === 0}
+					emptyStateMessage={searchQuery ? t.placeholders.no_matching_available_publishers() : t.placeholders.no_available_publishers()}
+				>
+					<svelte:fragment slot="title">{t.table.unassigned_publishers()}</svelte:fragment>
+					<span
+						slot="badge"
+						data-testid="publisher-count-available"
+						class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600"
+					>
+						{filteredAvailable.length}
+					</span>
 
-				{#each filteredAvailable as publisher}
-					{#if publisher.supplierName}
-						<SupplierPublisherTableRow publisherName={publisher.name} testId={publisherRowTestId("available", publisher.name)}>
-							<span
-								slot="badge"
-								class="inline-flex truncate rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800"
-								title={t.placeholders.currently_assigned_to({ supplierName: publisher.supplierName })}
-							>
-								{publisher.supplierName}
-							</span>
-							<button
-								slot="action-button"
-								on:click={() => {
-									confirmationPublisher = publisher.name;
-									confirmationDialogOpen.set(true);
-								}}
-								class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
-							>
-								{t.labels.reassign()}
-							</button>
-						</SupplierPublisherTableRow>
-					{:else}
-						<SupplierPublisherTableRow publisherName={publisher.name} testId={publisherRowTestId("available", publisher.name)}>
-							<button
-								slot="action-button"
-								on:click={() => onAssignPublisher(publisher.name)}
-								class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
-							>
-								{t.labels.add()}
-							</button>
-						</SupplierPublisherTableRow>
-					{/if}
-				{/each}
-			</SupplierPublisherTable>
+					{#each filteredAvailable as publisher}
+						{#if publisher.supplierName}
+							<SupplierPublisherTableRow publisherName={publisher.name} testId={publisherRowTestId("available", publisher.name)}>
+								<span
+									slot="badge"
+									class="inline-flex truncate rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800"
+									title={t.placeholders.currently_assigned_to({ supplierName: publisher.supplierName })}
+								>
+									{publisher.supplierName}
+								</span>
+								<button
+									slot="action-button"
+									on:click={() => {
+										confirmationPublisher = publisher.name;
+										confirmationDialogOpen.set(true);
+									}}
+									class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
+								>
+									{t.labels.reassign()}
+								</button>
+							</SupplierPublisherTableRow>
+						{:else}
+							<SupplierPublisherTableRow publisherName={publisher.name} testId={publisherRowTestId("available", publisher.name)}>
+								<button
+									slot="action-button"
+									on:click={() => onAssignPublisher(publisher.name)}
+									class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
+								>
+									{t.labels.add()}
+								</button>
+							</SupplierPublisherTableRow>
+						{/if}
+					{/each}
+				</SupplierPublisherTable>
+			</div>
 		</div>
 	</div>
 </div>
