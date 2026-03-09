@@ -9,6 +9,7 @@ export default defineWorkspace([
 		defineConfig({
 			test: {
 				name: "browser-backed",
+				// These specs need a real browser runtime rather than Node-only Vitest.
 				include: browserBackedTests,
 				browser: {
 					enabled: true,
