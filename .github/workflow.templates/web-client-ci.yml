@@ -29,6 +29,8 @@ jobs:
 
   web-client-test: #@ test_job("Web Client Tests", "apps/web-client", install_playwright=True)
 
+  web-client-storybook-test: #@ test_job("Web Client Storybook Tests", "apps/web-client", install_playwright=True, test_command="test:storybook:ci")
+
   e2e-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
@@ -253,6 +255,7 @@ jobs:
         build-cr-sqlite,
         book-data-extension-test,
         web-client-test,
+        web-client-storybook-test,
         e2e-test,
         lint-and-typecheck,
         check-i18n-sync,
