@@ -290,24 +290,34 @@ export async function initializeDemoDb(app: App, vfs: VFSWhitelist) {
 }
 
 /**
- * Retrieve the DB in an async manner - this waits for DB initialisation, thus
- * ensuring we won't retrieve the DB before initialised.
+ * Waits for the application's database to finish initialization and returns the DB handle.
  *
- * NOTE: this is **the preferred** way of retrieving the DB for queries/inserts/updates
- * as it ensures we're interacting with the correct DB instante at every point in time.
+ * @returns The application's `DBAsync` instance.
+ * @throws ErrDbNotSet if database initialization has not started for this app.
+ * @throws ErrDbNotInit if initialization failed or the DB handle is unavailable.
  */
 export async function getDb(app: App): Promise<DBAsync> {
 	// Throw if trying to access the DB either:
 	// - before initalised
 	// - errored out (should be reinitialised)
-	if (get(app.db.state) < AppDbState.Loading) {
+	const initialState = get(app.db.state);
+	if (initialState === AppDbState.Error) {
+		throw app.db.error ?? new ErrDbNotInit();
+	}
+	if (initialState < AppDbState.Loading) {
 		throw new ErrDbNotSet();
 	}
-	// Wait for initialisation
-	//
-	// NOTE: we're not handling the case when DB errors out while
-	// we're waiting, but it's probably ok to rely on initialisation (updating) process
-	await waitForStore(app.ready, ($ready) => $ready);
+
+	// Wait until DB reaches a terminal init state.
+	// This avoids hanging forever when init transitions to Error.
+	await waitForStore(app.db.state, ($state) => $state === AppDbState.Ready || $state === AppDbState.Error);
+
+	if (get(app.db.state) === AppDbState.Error) {
+		throw app.db.error ?? new ErrDbNotInit();
+	}
+	if (!app.db.db) {
+		throw new ErrDbNotInit();
+	}
 	return app.db.db;
 }
 

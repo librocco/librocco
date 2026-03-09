@@ -174,6 +174,16 @@ export async function initializeSync(app: App, vfs: VFSWhitelist) {
 	});
 }
 
+/**
+ * Starts synchronization for the specified database using the provided sync URL.
+ *
+ * If the database is empty and the environment supports OPFS, performs an initial download and replacement of the local DB file (which may cause the page to reload to reopen the swapped file). The function waits for the sync subsystem to become ready, is idempotent when sync is already active, and initiates live sync and post-start compatibility checks.
+ *
+ * @param app - The application instance containing sync and database subsystems
+ * @param dbid - The identifier of the database to synchronize
+ * @param url - The sync endpoint URL; must be a non-empty string
+ * @throws ErrInvalidSyncURL when `url` is empty or otherwise invalid
+ */
 export async function startSync(app: App, dbid: string, url: string) {
 	// ---------------------------------- 0. Checks ---------------------------------- //
 	//
@@ -189,7 +199,7 @@ export async function startSync(app: App, dbid: string, url: string) {
 	await waitForStore(app.sync.state, ($s) => $s > AppSyncState.Initializing);
 
 	// TODO: this should also be run exclusively with respect to the DB
-	app.sync.runExclusive(async (sync) => {
+	await app.sync.runExclusive(async (sync) => {
 		// If sync is active:
 		// - no need to start (idempotency)
 		// - it's safe to assume the initial sync was already attempted
@@ -297,6 +307,13 @@ export async function _performInitialSync(
 	return true;
 }
 
+/**
+ * Build the HTTP(s) URL that points to the remote database file for a given sync endpoint and database id.
+ *
+ * @param syncUrl - The sync endpoint URL (may use ws/wss or http/https).
+ * @param dbid - The database identifier to place into the path segment.
+ * @returns The constructed URL string using `http`/`https` scheme, with path `/{dbid}/file` and no query or fragment.
+ */
 function getRemoteDbFileUrl(syncUrl: string, dbid: string) {
 	// Convert ws(s) to http(s) and point to the snapshot file endpoint.
 	const url = new URL(syncUrl);
@@ -308,6 +325,11 @@ function getRemoteDbFileUrl(syncUrl: string, dbid: string) {
 	return url.toString();
 }
 
+/**
+ * Stops any active synchronization for the provided app, performing the stop operation inside the sync exclusivity lock.
+ *
+ * @param app - The application instance whose sync should be stopped
+ */
 export async function stopSync(app: App) {
-	app.sync.runExclusive((sync) => sync.stop());
+	await app.sync.runExclusive((sync) => sync.stop());
 }

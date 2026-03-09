@@ -3,6 +3,7 @@ import { of } from "rxjs";
 import { defaults } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
 import { type Writable, type Readable, writable } from "svelte/store";
+import { browser } from "$app/environment";
 
 import type { PluginsInterface } from "$lib/plugins";
 
@@ -42,9 +43,13 @@ export const createExtensionAvailabilityStore = (plugins: PluginsInterface) => {
 };
 
 export type SyncStuckDiagnostics = {
-	reason: "rapid_closes" | "timeout" | null;
+	reason: "rapid_closes" | null;
 	rapidCloseCount: number;
+	openCount: number;
+	closeCount: number;
 	lastOpenTime: number | null;
+	lastCloseTime: number | null;
+	disconnectedSince: number | null;
 	detectedAt: number | null;
 };
 
@@ -60,108 +65,226 @@ const _syncConnectivityMonitor: SyncConnectivityMonitor = {
 	diagnostics: writable<SyncStuckDiagnostics>({
 		reason: null,
 		rapidCloseCount: 0,
+		openCount: 0,
+		closeCount: 0,
 		lastOpenTime: null,
+		lastCloseTime: null,
+		disconnectedSince: null,
 		detectedAt: null
 	}),
 	unsubscribe: writable<() => void>(() => {})
 };
 
-// Sync stuck detection: track rapid connection close patterns
-const SYNC_STUCK_THRESHOLD_MS = 10000; // Consider stuck after 10 seconds of failed connections
+// Sync stuck detection: track rapid reconnect loops.
+// For local-first/offline-friendly behavior we do not mark "stuck" on plain disconnect timeout.
 const RAPID_CLOSE_THRESHOLD_MS = 2000; // Connection closes less than 2s apart are considered rapid retries
 const RAPID_CLOSE_COUNT_TO_STUCK = 3; // Number of rapid closes before marking sync as stuck
+const SHARED_SYNC_TRANSPORT_KEY = "librocco-sync-shared-transport";
 
-/** Update sync connectivity monitor event source (worker) */
+/**
+ * Configure the global sync connectivity monitor to use the provided worker as its event source.
+ *
+ * Subscribes to the worker's connection and sync events (open, close, sync status) and updates
+ * the public monitor's connected, stuck, and diagnostics state; also manages shared transport state
+ * persisted to localStorage and storage-event synchronization between tabs.
+ *
+ * @param worker - The WorkerInterface whose connection and sync events will drive the monitor. If omitted, existing subscriptions are removed and the monitor will rely only on any shared transport state.
+ */
 export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 	let lastOpenTime: number | null = null;
 	let lastCloseTime: number | null = null;
 	let rapidCloseCount = 0;
+	let openCount = 0;
+	let closeCount = 0;
 	let disconnectedSince: number | null = null;
-	let stuckTimeout: ReturnType<typeof setTimeout> | null = null;
+	let isConnected = Boolean(worker?.isConnected);
+	let sharedConnected = false;
+	let sharedLastEventAt: number | null = null;
 
-	const clearStuckTimeout = () => {
-		if (stuckTimeout) {
-			clearTimeout(stuckTimeout);
-			stuckTimeout = null;
+	const updateConnectedState = () => {
+		_syncConnectivityMonitor.connected.set(isConnected || sharedConnected);
+	};
+
+	const persistSharedTransport = (connected: boolean) => {
+		if (!browser) return;
+		try {
+			localStorage.setItem(
+				SHARED_SYNC_TRANSPORT_KEY,
+				JSON.stringify({
+					connected,
+					at: Date.now()
+				})
+			);
+		} catch {
+			// ignore storage failures
 		}
 	};
 
-	const armStuckTimeout = () => {
-		clearStuckTimeout();
-		if (disconnectedSince == null) {
-			return;
-		}
-
-		const elapsed = Date.now() - disconnectedSince;
-		const remaining = Math.max(0, SYNC_STUCK_THRESHOLD_MS - elapsed);
-		stuckTimeout = setTimeout(() => {
-			if (disconnectedSince != null && !worker?.isConnected) {
-				markStuck("timeout");
+	if (browser) {
+		try {
+			const raw = localStorage.getItem(SHARED_SYNC_TRANSPORT_KEY);
+			if (raw) {
+				const parsed = JSON.parse(raw) as { connected?: boolean; at?: number };
+				sharedConnected = Boolean(parsed.connected);
+				sharedLastEventAt = typeof parsed.at === "number" ? parsed.at : null;
 			}
-		}, remaining);
-	};
+		} catch {
+			sharedConnected = false;
+			sharedLastEventAt = null;
+		}
+	}
 
 	const resetStuckState = () => {
 		lastOpenTime = null;
 		lastCloseTime = null;
 		rapidCloseCount = 0;
+		openCount = 0;
+		closeCount = 0;
 		disconnectedSince = null;
 		_syncConnectivityMonitor.stuck.set(false);
 		_syncConnectivityMonitor.diagnostics.set({
 			reason: null,
 			rapidCloseCount: 0,
+			openCount: 0,
+			closeCount: 0,
 			lastOpenTime: null,
+			lastCloseTime: null,
+			disconnectedSince: null,
 			detectedAt: null
 		});
-		clearStuckTimeout();
 	};
 
-	const markStuck = (reason: "rapid_closes" | "timeout") => {
+	const markStuck = (reason: "rapid_closes") => {
 		_syncConnectivityMonitor.stuck.set(true);
 		_syncConnectivityMonitor.diagnostics.set({
 			reason,
 			rapidCloseCount,
+			openCount,
+			closeCount,
 			lastOpenTime,
+			lastCloseTime,
+			disconnectedSince,
 			detectedAt: Date.now()
 		});
 	};
 
-	const unsubscribeOpen = worker?.onConnOpen(() => {
-		resetStuckState();
+	const markConnected = () => {
+		if (!isConnected) {
+			openCount += 1;
+		}
+		isConnected = true;
 		lastOpenTime = Date.now();
-		_syncConnectivityMonitor.connected.set(true);
-	});
+		disconnectedSince = null;
+		rapidCloseCount = 0;
+		updateConnectedState();
+		persistSharedTransport(true);
+		_syncConnectivityMonitor.stuck.set(false);
+		_syncConnectivityMonitor.diagnostics.set({
+			reason: null,
+			rapidCloseCount,
+			openCount,
+			closeCount,
+			lastOpenTime,
+			lastCloseTime,
+			disconnectedSince,
+			detectedAt: null
+		});
+	};
 
-	const unsubscribeClose = worker?.onConnClose(() => {
-		_syncConnectivityMonitor.connected.set(false);
+	const markDisconnected = (trackRapidClose: boolean) => {
+		if (trackRapidClose) {
+			closeCount += 1;
+		}
+		isConnected = false;
+		updateConnectedState();
+		persistSharedTransport(false);
 
-		// Track rapid reconnect loops even when no successful "open" happened.
 		const now = Date.now();
 		if (disconnectedSince == null) {
 			disconnectedSince = now;
 		}
-		if (lastCloseTime && now - lastCloseTime < RAPID_CLOSE_THRESHOLD_MS) {
-			rapidCloseCount++;
-		} else {
-			rapidCloseCount = 1;
-		}
-		lastCloseTime = now;
 
-		if (rapidCloseCount >= RAPID_CLOSE_COUNT_TO_STUCK) {
+		if (trackRapidClose) {
+			if (lastCloseTime && now - lastCloseTime < RAPID_CLOSE_THRESHOLD_MS) {
+				rapidCloseCount++;
+			} else {
+				rapidCloseCount = 1;
+			}
+			lastCloseTime = now;
+		}
+
+		if (trackRapidClose && rapidCloseCount >= RAPID_CLOSE_COUNT_TO_STUCK) {
 			markStuck("rapid_closes");
 		} else {
-			armStuckTimeout();
+			// If we are not in a rapid-close stuck condition, ensure stale "stuck"
+			// state is cleared so UI reports plain disconnected/reconnecting.
+			_syncConnectivityMonitor.stuck.set(false);
+			_syncConnectivityMonitor.diagnostics.set({
+				reason: null,
+				rapidCloseCount,
+				openCount,
+				closeCount,
+				lastOpenTime,
+				lastCloseTime,
+				disconnectedSince,
+				detectedAt: null
+			});
 		}
+	};
 
-		lastOpenTime = null;
+	const unsubscribeOpen = worker?.onConnOpen(() => {
+		markConnected();
 	});
 
-	_syncConnectivityMonitor.connected.set(worker?.isConnected || false);
-	resetStuckState();
-	if (!worker?.isConnected) {
-		disconnectedSince = Date.now();
-		armStuckTimeout();
+	const unsubscribeClose = worker?.onConnClose(() => {
+		markDisconnected(true);
+	});
+
+	const unsubscribeSyncStatus = worker?.onSyncStatus?.((payload) => {
+		// Fallback signal path: some failure modes can miss explicit conn open/close events.
+		// Sync status still provides enough liveness to clear stale timeout states.
+		if (payload.ok) {
+			markConnected();
+			return;
+		}
+		markDisconnected(false);
+	});
+
+	const onStorage = (event: StorageEvent) => {
+		if (event.key !== SHARED_SYNC_TRANSPORT_KEY || !event.newValue) return;
+		try {
+			const parsed = JSON.parse(event.newValue) as { connected?: boolean; at?: number };
+			sharedConnected = Boolean(parsed.connected);
+			sharedLastEventAt = typeof parsed.at === "number" ? parsed.at : null;
+			updateConnectedState();
+		} catch {
+			// ignore malformed payloads
+		}
+	};
+
+	if (browser) {
+		window.addEventListener("storage", onStorage);
 	}
+
+	updateConnectedState();
+	resetStuckState();
+	if (worker?.isConnected || sharedConnected) {
+		lastOpenTime = sharedLastEventAt ?? Date.now();
+		disconnectedSince = null;
+	} else {
+		disconnectedSince = sharedLastEventAt ?? Date.now();
+		lastCloseTime = sharedLastEventAt;
+	}
+	_syncConnectivityMonitor.diagnostics.set({
+		reason: null,
+		rapidCloseCount,
+		openCount,
+		closeCount,
+		lastOpenTime,
+		lastCloseTime,
+		disconnectedSince,
+		detectedAt: null
+	});
 
 	_syncConnectivityMonitor.unsubscribe.update((unsubscribeOld) => {
 		unsubscribeOld(); // Unsubscribe previous connection
@@ -169,18 +292,30 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 		return () => {
 			unsubscribeOpen?.();
 			unsubscribeClose?.();
-			clearStuckTimeout();
+			unsubscribeSyncStatus?.();
+			if (browser) {
+				window.removeEventListener("storage", onStorage);
+			}
 		};
 	});
 }
 
-/** Reset the sync stuck state (call after successful nuke and resync) */
+/**
+ * Reset the synchronization stuck flag and diagnostics to their initial default values.
+ *
+ * Clears the `stuck` flag and resets all fields in the diagnostics payload (counters and timestamps).
+ * Call this after a successful data wipe and resynchronization to clear historical connectivity state.
+ */
 export function resetSyncStuckState() {
 	_syncConnectivityMonitor.stuck.set(false);
 	_syncConnectivityMonitor.diagnostics.set({
 		reason: null,
 		rapidCloseCount: 0,
+		openCount: 0,
+		closeCount: 0,
 		lastOpenTime: null,
+		lastCloseTime: null,
+		disconnectedSince: null,
 		detectedAt: null
 	});
 }

@@ -6,34 +6,59 @@ import type { DBAsync } from "$lib/db/cr-sqlite/core/types";
 import { markLocalDbError } from "./sync-compatibility";
 
 export const pendingChangesCount = writable(0);
+export const pendingChangesSince = writable<number | null>(null);
+export const pendingChangesLastActiveAt = writable<number | null>(null);
 
 let currentDb: DBAsync | null = null;
 let currentDbid: string | null = null;
 let lastAckVersion = 0;
 let unsubscribeAny: (() => void) | null = null;
+let unsubscribeStorage: (() => void) | null = null;
 let refreshPromise: Promise<void> | null = null;
 
 const getAckStorageKey = (dbid: string) => `librocco-sync-last-ack-${dbid}`;
 const getLegacyStorageKey = (dbid: string) => `librocco-sync-last-sent-${dbid}`;
+const getPendingSinceStorageKey = (dbid: string) => `librocco-sync-pending-since-${dbid}`;
+const getPendingLastActiveStorageKey = (dbid: string) => `librocco-sync-pending-last-active-${dbid}`;
 
 const persistLastAckVersion = () => {
 	if (!browser || !currentDbid) return;
 	localStorage.setItem(getAckStorageKey(currentDbid), JSON.stringify(lastAckVersion));
 };
 
+const persistPendingTimestamps = (since: number | null, lastActiveAt: number | null) => {
+	if (!browser || !currentDbid) return;
+	localStorage.setItem(getPendingSinceStorageKey(currentDbid), JSON.stringify(since));
+	localStorage.setItem(getPendingLastActiveStorageKey(currentDbid), JSON.stringify(lastActiveAt));
+};
+
 const loadLastAckVersion = async (dbid: string) => {
 	currentDbid = dbid;
+	lastAckVersion = 0;
 
 	if (browser) {
 		const stored = localStorage.getItem(getAckStorageKey(dbid)) ?? localStorage.getItem(getLegacyStorageKey(dbid));
 		if (stored != null) {
 			lastAckVersion = Number(JSON.parse(stored)) || 0;
 			persistLastAckVersion();
-			return;
 		}
-	}
 
-	lastAckVersion = 0;
+		try {
+			const storedSince = localStorage.getItem(getPendingSinceStorageKey(dbid));
+			const parsedSince = storedSince != null ? (JSON.parse(storedSince) as number | null) : null;
+			pendingChangesSince.set(typeof parsedSince === "number" ? parsedSince : null);
+		} catch {
+			pendingChangesSince.set(null);
+		}
+		try {
+			const storedLastActive = localStorage.getItem(getPendingLastActiveStorageKey(dbid));
+			const parsedLastActive = storedLastActive != null ? (JSON.parse(storedLastActive) as number | null) : null;
+			pendingChangesLastActiveAt.set(typeof parsedLastActive === "number" ? parsedLastActive : null);
+		} catch {
+			pendingChangesLastActiveAt.set(null);
+		}
+		return;
+	}
 };
 
 // Error patterns that indicate permanent database corruption (nuke required)
@@ -76,7 +101,25 @@ const refreshPendingCount = async () => {
 						"SELECT COUNT(*) as count FROM crsql_changes WHERE site_id = crsql_site_id() AND db_version > ?",
 						[lastAckVersion]
 					);
-					pendingChangesCount.set(Number(result?.count ?? 0));
+					const pending = Number(result?.count ?? 0);
+					pendingChangesCount.set(pending);
+					let nextSince: number | null = null;
+					pendingChangesSince.update((since) => {
+						if (pending <= 0) {
+							nextSince = null;
+							return null;
+						}
+						nextSince = since ?? Date.now();
+						return nextSince;
+					});
+					let nextLastActiveAt: number | null = null;
+					if (pending > 0) {
+						nextLastActiveAt = Date.now();
+						pendingChangesLastActiveAt.set(nextLastActiveAt);
+					} else {
+						nextLastActiveAt = null;
+					}
+					persistPendingTimestamps(nextSince, nextLastActiveAt);
 					return;
 				} catch (err) {
 					lastError = err;
@@ -91,6 +134,8 @@ const refreshPendingCount = async () => {
 					if (errKind === "none") {
 						console.error("[sync-pending] Error refreshing pending count:", err);
 						pendingChangesCount.set(0);
+						pendingChangesSince.set(null);
+						persistPendingTimestamps(null, null);
 						return;
 					}
 
@@ -118,6 +163,8 @@ const refreshPendingCount = async () => {
 			}
 
 			pendingChangesCount.set(0);
+			pendingChangesSince.set(null);
+			persistPendingTimestamps(null, null);
 		} finally {
 			refreshPromise = null;
 		}
@@ -126,6 +173,16 @@ const refreshPendingCount = async () => {
 	return refreshPromise;
 };
 
+/**
+ * Attach monitoring for pending local changes for a database and provide a cleanup function.
+ *
+ * Initializes last-ack state for the given `dbid`, subscribes to `rx` events and (in browser environments) cross-tab storage events to keep pending-change counts and timestamps synchronized, performs an initial refresh of pending counts, and keeps internal state updated for the attached `db`.
+ *
+ * @param db - The database instance to monitor
+ * @param rx - The application's reactive event source used to trigger refreshes
+ * @param dbid - The identifier for the database instance (used for persisted keys and cross-tab synchronization)
+ * @returns A function that detaches all listeners and clears the monitor state for the attached database
+ */
 export async function attachPendingMonitor(db: DBAsync, rx: IAppDbRx, dbid: string) {
 	currentDb = db;
 	await loadLastAckVersion(dbid);
@@ -135,11 +192,61 @@ export async function attachPendingMonitor(db: DBAsync, rx: IAppDbRx, dbid: stri
 		void refreshPendingCount();
 	});
 
+	unsubscribeStorage?.();
+	if (browser) {
+		const onStorage = (event: StorageEvent) => {
+			if (!currentDbid) return;
+			const ackKey = getAckStorageKey(currentDbid);
+			const legacyKey = getLegacyStorageKey(currentDbid);
+			const sinceKey = getPendingSinceStorageKey(currentDbid);
+			const lastActiveKey = getPendingLastActiveStorageKey(currentDbid);
+			if (event.key !== ackKey && event.key !== legacyKey && event.key !== sinceKey && event.key !== lastActiveKey) return;
+			if (event.newValue == null) return;
+
+			if (event.key === sinceKey) {
+				try {
+					const parsedSince = JSON.parse(event.newValue) as number | null;
+					pendingChangesSince.set(typeof parsedSince === "number" ? parsedSince : null);
+				} catch {
+					// ignore malformed payload
+				}
+				return;
+			}
+
+			if (event.key === lastActiveKey) {
+				try {
+					const parsedLastActive = JSON.parse(event.newValue) as number | null;
+					pendingChangesLastActiveAt.set(typeof parsedLastActive === "number" ? parsedLastActive : null);
+				} catch {
+					// ignore malformed payload
+				}
+				return;
+			}
+
+			let parsed = 0;
+			try {
+				parsed = Number(JSON.parse(event.newValue)) || 0;
+			} catch {
+				return;
+			}
+
+			if (parsed > lastAckVersion) {
+				lastAckVersion = parsed;
+				void refreshPendingCount();
+			}
+		};
+
+		window.addEventListener("storage", onStorage);
+		unsubscribeStorage = () => window.removeEventListener("storage", onStorage);
+	}
+
 	await refreshPendingCount();
 
 	return () => {
 		unsubscribeAny?.();
 		unsubscribeAny = null;
+		unsubscribeStorage?.();
+		unsubscribeStorage = null;
 		if (currentDb === db) {
 			currentDb = null;
 		}
@@ -156,12 +263,21 @@ export async function setLastAckedVersion(version: number, dbid?: string) {
 	}
 }
 
+/**
+ * Stops monitoring pending changes and restores the tracker to its default state.
+ *
+ * Clears any active subscriptions, forgets the current database and database id, resets the last-acknowledged version and any in-flight refresh, and sets `pendingChangesCount` to 0 and `pendingChangesSince` / `pendingChangesLastActiveAt` to `null`.
+ */
 export function resetPendingTracker() {
 	unsubscribeAny?.();
 	unsubscribeAny = null;
+	unsubscribeStorage?.();
+	unsubscribeStorage = null;
 	currentDb = null;
 	currentDbid = null;
 	lastAckVersion = 0;
 	refreshPromise = null;
 	pendingChangesCount.set(0);
+	pendingChangesSince.set(null);
+	pendingChangesLastActiveAt.set(null);
 }
