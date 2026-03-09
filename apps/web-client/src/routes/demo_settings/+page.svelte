@@ -7,7 +7,6 @@
 
 	import type { PageData } from "./$types";
 
-
 	import { getVfs } from "$lib/app/db";
 
 	import { DEMO_DB_NAME, DEMO_DB_URL, VERSION } from "$lib/constants";

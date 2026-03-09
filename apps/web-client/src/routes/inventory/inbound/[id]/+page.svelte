@@ -60,7 +60,6 @@
 	import type { NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 	import LL from "@librocco/shared/i18n-svelte";
 
-
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;

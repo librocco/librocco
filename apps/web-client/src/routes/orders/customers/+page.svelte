@@ -37,7 +37,6 @@
 
 	import { matchesName } from "$lib/utils/misc";
 
-
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;

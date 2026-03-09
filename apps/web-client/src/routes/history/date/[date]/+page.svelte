@@ -8,7 +8,6 @@
 
 	import { invalidate } from "$app/navigation";
 
-
 	import { getDbRx } from "$lib/app/db";
 
 	import Library from "$lucide/library";

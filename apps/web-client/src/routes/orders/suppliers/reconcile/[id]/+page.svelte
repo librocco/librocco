@@ -29,7 +29,6 @@
 	import LL from "@librocco/shared/i18n-svelte";
 	import { appPath } from "$lib/paths";
 
-
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	// implement order reactivity/sync

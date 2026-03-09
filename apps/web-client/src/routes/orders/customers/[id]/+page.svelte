@@ -47,7 +47,6 @@
 
 	import type { PageData } from "./$types";
 
-
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;

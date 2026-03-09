@@ -9,7 +9,6 @@
 
 	import { invalidate } from "$app/navigation";
 
-
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	import type { PageData } from "./$types";

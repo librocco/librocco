@@ -39,7 +39,6 @@
 
 	import { page } from "$app/stores";
 
-
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;

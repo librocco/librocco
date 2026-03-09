@@ -28,7 +28,6 @@
 	import type { PageData } from "./$types";
 	import { orderFormats } from "$lib/enums/orders";
 
-
 	import { getDb, getDbRx } from "$lib/app/db";
 
 	export let data: PageData;
