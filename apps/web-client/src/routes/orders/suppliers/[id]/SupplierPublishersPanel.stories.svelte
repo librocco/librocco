@@ -23,15 +23,17 @@
 	};
 </script>
 
-<Template let:args={{ supplierName, assignedPublishers, availablePublishers }}>
-	<SupplierPublishersPanelStoryHarness {supplierName} {assignedPublishers} {availablePublishers} />
+<Template let:args>
+	<SupplierPublishersPanelStoryHarness {...args} />
 </Template>
 
 <Story
 	name="Interactive"
 	args={baseArgs}
+	tags={["test-only"]}
 	play={async ({ canvasElement, step, userEvent }) => {
 		const canvas = within(canvasElement);
+		const documentBody = within(canvasElement.ownerDocument.body);
 
 		const getRow = (column: "assigned" | "available", publisherName: string) =>
 			canvas.getByTestId(
@@ -80,16 +82,18 @@
 		await step("reassigns a publisher after confirmation", async () => {
 			await userEvent.click(within(getRow("available", "pub2")).getByRole("button", { name: "Re-assign" }));
 
-			const dialog = canvas.getByRole("dialog");
-			await expect(dialog).toBeVisible();
-			await expect(dialog).toHaveTextContent(
-				"Are you sure you want to remove pub2 from its previous supplier and assign it to Story Supplier?"
-			);
+			await waitFor(() => {
+				expect(documentBody.getByRole("dialog")).toHaveTextContent(
+					"Are you sure you want to remove pub2 from its previous supplier and assign it to Story Supplier?"
+				);
+			});
+
+			const dialog = documentBody.getByRole("dialog");
 
 			await userEvent.click(within(dialog).getByRole("button", { name: "Confirm" }));
 
 			await waitFor(() => {
-				expect(canvas.queryByRole("dialog")).not.toBeInTheDocument();
+				expect(documentBody.queryByRole("dialog")).not.toBeInTheDocument();
 				expect(canvas.queryByTestId("publisher-row-available-pub2")).not.toBeInTheDocument();
 				expect(within(getRow("assigned", "pub2")).getByRole("button", { name: "Remove" })).toBeVisible();
 			});
