@@ -613,6 +613,8 @@ jobs:
         SENTRY_URL: https://sentry.libroc.co
         SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
+    - name: Build Storybook preview
+      run: cd apps/web-client && npx storybook build --output-dir /tmp/librocco-web-client-storybook-preview
     - name: Install and configure rclone for R2
       run: |
         wget -q https://downloads.rclone.org/v1.71.1/rclone-v1.71.1-linux-amd64.zip
@@ -638,8 +640,12 @@ jobs:
         CLOUDFLARE_BUCKET_URL: ${{ secrets.CLOUDFLARE_BUCKET_URL }}
     - name: 'Upload to R2: apps/web-client/build/ -> ${{ github.head_ref || github.ref_name }}/'
       run: rclone copy apps/web-client/build/ r2:librocco-ci/${{ github.head_ref || github.ref_name }}/
-    - name: Output link to deployed app
-      run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
+    - name: 'Upload to R2: /tmp/librocco-web-client-storybook-preview/ -> ${{ github.head_ref || github.ref_name }}/storybook/'
+      run: rclone copy /tmp/librocco-web-client-storybook-preview/ r2:librocco-ci/${{ github.head_ref || github.ref_name }}/storybook/
+    - name: Output links to deployed previews
+      run: |
+        echo "You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html" | tee -a $GITHUB_STEP_SUMMARY
+        echo "You can view Storybook on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/storybook/" | tee -a $GITHUB_STEP_SUMMARY
   e2e-merge-report:
     if: ${{ !cancelled() }}
     needs:

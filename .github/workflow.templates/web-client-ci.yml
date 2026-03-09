@@ -208,10 +208,15 @@ jobs:
           SENTRY_URL: https://sentry.libroc.co
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
+      - name: Build Storybook preview
+        run: cd apps/web-client && npx storybook build --output-dir /tmp/librocco-web-client-storybook-preview
       -  #@ install_and_configure_rclone()
       -  #@ upload_to_r2("apps/web-client/build/", "${{ github.head_ref || github.ref_name }}/")
-      - name: Output link to deployed app
-        run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
+      -  #@ upload_to_r2("/tmp/librocco-web-client-storybook-preview/", "${{ github.head_ref || github.ref_name }}/storybook/")
+      - name: Output links to deployed previews
+        run: |
+          echo "You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html" | tee -a $GITHUB_STEP_SUMMARY
+          echo "You can view Storybook on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/storybook/" | tee -a $GITHUB_STEP_SUMMARY
   e2e-merge-report:
     if: ${{ !cancelled() }}
     needs: [e2e-test]
