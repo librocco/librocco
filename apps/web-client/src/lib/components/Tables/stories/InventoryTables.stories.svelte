@@ -37,7 +37,10 @@
 <Story name="Stock">
 	<StockTable table={stockTable}>
 		<div slot="row-actions" let:row let:rowIx>
-			<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+			<button
+				on:click={() => console.log(row)}
+				class="rounded p-3 text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
+			>
 				<span class="sr-only">Edit row {rowIx}</span>
 				<span class="aria-hidden">
 					<FileEdit />
@@ -50,7 +53,10 @@
 <Story name="Inbound">
 	<InboundTable table={inboundTable} on:edit-row-quantity={({ detail }) => console.log("Edit Quantity", detail)}>
 		<div slot="row-actions" let:row let:rowIx>
-			<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+			<button
+				on:click={() => console.log(row)}
+				class="rounded p-3 text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
+			>
 				<span class="sr-only">Edit row {rowIx}</span>
 				<span class="aria-hidden">
 					<FileEdit />
@@ -67,7 +73,10 @@
 		on:edit-row-quantity={({ detail }) => console.log("Edit Quantity", detail)}
 	>
 		<div slot="row-actions" let:row let:rowIx>
-			<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+			<button
+				on:click={() => console.log(row)}
+				class="rounded p-3 text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
+			>
 				<span class="sr-only">Edit row {rowIx}</span>
 				<span class="aria-hidden">
 					<FileEdit />

@@ -27,37 +27,40 @@
 	export let inputRef = null;
 	export let inputAction: Action<HTMLElement, any> = () => {};
 
-	const labelBaseClasses = ["block", "text-base", "font-medium", "text-gray-800"];
-	const helpTextBaseClasses = ["mt-2", "text-sm", "min-h-[20px]", "text-gray-500"];
+	const labelBaseClasses = ["block", "text-base", "font-medium", "text-base-content"];
+	const helpTextBaseClasses = ["mt-2", "text-sm", "min-h-[20px]", "text-base-content/70"];
 	const inputBaseClasses = [
 		"block",
 		"w-full",
 		"border-0",
+		"bg-base-100",
 		"text-base",
-		"placeholder-oyster-500",
+		"text-base-content",
+		"placeholder:text-base-content/50",
 		"focus:outline-0",
 		"focus:ring-0",
 		"disabled:cursor-not-allowed",
-		"disabled:bg-oyster-100"
+		"disabled:bg-base-200",
+		"disabled:text-base-content/50"
 	];
 
 	const containerBaseClasses = [
 		"flex",
 		"mx-[2px]",
 		"outline",
-		"outline-gray-900",
 		"rounded-md",
+		"bg-base-100",
 		"focus-within:outline-none",
 		"focus-within:ring-2",
 		"focus-within:ring-teal-500",
 		"focus-within:ring-offset-2",
-		"focus-within:ring-offset-white"
+		"focus-within:ring-offset-base-100"
 	];
 
 	const helpTextColour = "text-oyster-500 font-regular";
 	const errorTextColour = "text-red-500 font-regular";
 	const containerBorderWidth = "outline-1";
-	const containerBorderColour = "outline-oyster-300";
+	const containerBorderColour = "outline-base-300";
 	const errorBorderColour = "outline-red-500";
 
 	const labelClasses = labelBaseClasses.join(" ");
@@ -91,7 +94,7 @@
 	</label>
 	<div class={containerClasses}>
 		{#if $$slots["start-adornment"]}
-			<div class="flex items-center bg-white pl-3 pr-0 text-gray-400">
+			<div class="flex items-center bg-base-100 pl-3 pr-0 text-base-content/50">
 				<slot name="start-adornment" />
 			</div>
 		{/if}
@@ -103,7 +106,7 @@
 			<input bind:value {...inputProps} bind:this={inputRef} use:inputAction on:select />
 		{/if}
 		{#if $$slots["end-adornment"]}
-			<div class="flex items-center bg-white pl-1 pr-3 text-gray-400">
+			<div class="flex items-center bg-base-100 pl-1 pr-3 text-base-content/50">
 				<slot name="end-adornment" />
 			</div>
 		{/if}

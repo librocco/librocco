@@ -7,8 +7,8 @@
 </script>
 
 <div class="p-4 pt-3">
-	<p class="border-t border-neutral-200 pt-3">
+	<p class="border-t border-base-300 pt-3">
 		<span class="text-muted-foreground text-xs uppercase tracking-wide">ACTION:</span>
-		<span class="rounded bg-neutral-100 px-2 py-1 text-xs text-zinc-900">{label}</span>
+		<span class="rounded bg-base-200 px-2 py-1 text-xs text-base-content">{label}</span>
 	</p>
 </div>
