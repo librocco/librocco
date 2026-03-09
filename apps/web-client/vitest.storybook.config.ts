@@ -11,7 +11,7 @@ const storybookPlugins = await storybookTest({
 	configDir: path.join(dirname, ".storybook"),
 	storybookScript: "rushx story:dev --ci --no-open",
 	tags: {
-		include: ["test"],
+		include: ["play-fn"],
 		exclude: [],
 		skip: ["skip-test"]
 	}

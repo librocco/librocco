@@ -108,7 +108,7 @@ export const PublishersInitialAssignedAndUnassignedLists: Story = {
 		const pub1Row = within(getPublisherRow(canvas, "pub1"));
 		await expect(pub1Row.getByRole("button", { name: "Remove" })).toBeVisible();
 
-		const publisherARow = within(getPublisherRow(canvas, "Publisher A"));
+		const publisherARow = within(getPublisherRow(canvas, "pub3"));
 		await expect(publisherARow.getByRole("button", { name: "Add" })).toBeVisible();
 
 		const pub2Row = within(getPublisherRow(canvas, "pub2"));
@@ -167,7 +167,7 @@ export const PublishersRemoveUnassignsPublisher: Story = {
 	}
 };
 
-export const PublishersRemoveUnassignsPublisher: Story = {
+export const PublishersAddAssignsPublisher: Story = {
 	name: "Publishers - add assigns publisher",
 	loaders: [setupPublishersView],
 	play: async ({ canvas, userEvent }) => {
