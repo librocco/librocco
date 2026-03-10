@@ -1,0 +1,33 @@
+name: Devcontainer Build
+"on":
+  push:
+    branches:
+    - main
+    - '**'
+    paths:
+    - .devcontainer/**
+    - common/config/rush/pnpm-lock.yaml
+  workflow_dispatch: null
+permissions:
+  contents: read
+  packages: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, '[build-devcontainer]')
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: true
+    - name: Build and Run Dev Container Task
+      uses: devcontainers/ci@v0.3
+      with:
+        imageName: ghcr.io/${{ github.repository }}/devcontainer
+        cacheFrom: ghcr.io/${{ github.repository }}/devcontainer
+        push: filter
+        runCmd: |
+          rush build --to @librocco/web-client && \
+          rush typecheck && \
+          echo "Build and typecheck passed!"
