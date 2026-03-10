@@ -36,8 +36,10 @@ testOrders("supplier list: shows all suppliers when there are more than ten", as
 	await page.goto(appHash("suppliers"));
 
 	const supplierRows = page.locator("#supplier-orders tbody tr");
+	const supplierNames = page.locator('[data-property="supplier"]');
+
 	await expect(supplierRows).toHaveCount(supplierCount);
-	await expect(page.getByRole("cell", { name: "Supplier 12" })).toBeVisible();
+	await expect(supplierNames.filter({ hasText: "Supplier 12" })).toBeVisible();
 });
 testOrders("supplier list: new: submits the form with all fields", async ({ page }) => {
 	await page.goto(appHash("suppliers"));
