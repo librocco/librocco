@@ -2,6 +2,7 @@ import { expect } from "@playwright/test";
 
 import { appHash } from "@/constants";
 
+import { upsertSupplier } from "@/helpers/cr-sqlite";
 import { testOrders } from "@/helpers/fixtures";
 
 testOrders("general: closes the form 'Cancel' click or 'Esc' press", async ({ page }) => {
@@ -20,6 +21,24 @@ testOrders("general: closes the form 'Cancel' click or 'Esc' press", async ({ pa
 	await dialog.waitFor({ state: "detached" });
 });
 
+testOrders("supplier list: shows all suppliers when there are more than ten", async ({ page, dbHandle }) => {
+	const supplierCount = 12;
+
+	for (let id = 1; id <= supplierCount; id += 1) {
+		await dbHandle.evaluate(upsertSupplier, {
+			id,
+			name: `Supplier ${id}`,
+			orderFormat: "PBM",
+			underdelivery_policy: 0
+		});
+	}
+
+	await page.goto(appHash("suppliers"));
+
+	const supplierRows = page.locator("#supplier-orders tbody tr");
+	await expect(supplierRows).toHaveCount(supplierCount);
+	await expect(page.getByRole("cell", { name: "Supplier 12" })).toBeVisible();
+});
 testOrders("supplier list: new: submits the form with all fields", async ({ page }) => {
 	await page.goto(appHash("suppliers"));
 
