@@ -472,8 +472,8 @@ const reconcile_page = {
 		underdelivery: {
 			title: "Action for missing books",
 			options: {
-				pending: "Mark order as pending delivery",
-				queue: "Mark order as queue delivery"
+				keep_open: "Supplier keeps the order open",
+				reorder: "Undelivered books must be reordered"
 			},
 			warning: "Current choice doesn't match the default configuration for this supplier.",
 			persist_button: "Persist changes"
@@ -524,7 +524,7 @@ const suppliers_page = {
 		email: "Email",
 		address: "Address",
 		order_format: "Order format",
-		underdelivery_policy: "Underdelivery policy",
+		underdelivery_policy: "Handling of undelivered books",
 		edit_details: "Edit details",
 		delete_supplier: "Delete supplier"
 	},
@@ -1054,7 +1054,7 @@ const forms = {
 			cancel_button: "Cancel",
 			order_format: "Order Format",
 			order_format_message: "Please select an order format",
-			underdelivery_policy: "Underdelivery policy"
+			underdelivery_policy: "Handling of undelivered books"
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"

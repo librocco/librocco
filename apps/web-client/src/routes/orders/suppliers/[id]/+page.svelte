@@ -78,7 +78,7 @@
 	const handleUpdateSupplier = async (_data: Partial<Supplier> & { underdeliveryPolicy?: string }) => {
 		const db = await getDb(app);
 		const data = { ...stripNulls(supplier), ..._data };
-		const underdelivery_policy = _data.underdeliveryPolicy ? (_data.underdeliveryPolicy === "queue" ? 1 : 0) : undefined;
+		const underdelivery_policy = _data.underdeliveryPolicy ? (_data.underdeliveryPolicy === "reorder" ? 1 : 0) : undefined;
 		await upsertSupplier(db, { ...data, underdelivery_policy });
 		dialogOpen.set(false);
 	};
@@ -180,7 +180,7 @@
 		heading={t.details.update_supplier_details()}
 		saveLabel={t.labels.save()}
 		data={defaults(
-			{ ...stripNulls(supplier), underdeliveryPolicy: supplier?.underdelivery_policy === 1 ? "queue" : "pending" },
+			{ ...stripNulls(supplier), underdeliveryPolicy: supplier?.underdelivery_policy === 1 ? "reorder" : "keep_open" },
 			zod(supplierSchema($LL))
 		)}
 		options={{

@@ -276,7 +276,7 @@
 			"email": "",
 			"address": "",
 			"order_format": "",
-			"underdelivery_policy": "",
+			"underdelivery_policy": "Umgang mit nicht gelieferten Büchern",
 			"edit_details": "",
 			"delete_supplier": "Lieferant löschen"
 		},
@@ -628,8 +628,8 @@
 			"underdelivery": {
 				"title": "Aktion für fehlende Bücher",
 				"options": {
-					"pending": "Bestellung als ausstehende Lieferung markieren",
-					"queue": "Bestellung als Warteschlangenlieferung markieren"
+					"keep_open": "Der Lieferant hält die Bestellung offen",
+					"reorder": "Nicht gelieferte Bücher müssen neu bestellt werden"
 				},
 				"warning": "Die aktuelle Wahl entspricht nicht der Standardkonfiguration für diesen Lieferanten.",
 				"persist_button": "Änderungen speichern"
@@ -1017,7 +1017,7 @@
 				"cancel_button": "",
 				"order_format": "",
 				"order_format_message": "",
-				"underdelivery_policy": ""
+				"underdelivery_policy": "Umgang mit nicht gelieferten Büchern"
 			},
 			"aria": {
 				"form": ""

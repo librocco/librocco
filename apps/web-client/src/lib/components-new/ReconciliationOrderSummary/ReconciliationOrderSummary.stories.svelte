@@ -125,10 +125,10 @@
 		}
 	];
 
-	const underdeliveryBehaviourStore = writable<"pending" | "queue">("pending");
+	const underdeliveryBehaviourStore = writable<"keep_open" | "reorder">("keep_open");
 
 	// For underdelivery config mismatch warning
-	const controlledPendingStore = writable<"pending" | "queue">("pending");
+	const controlledPendingStore = writable<"keep_open" | "reorder">("keep_open");
 </script>
 
 <Story name="Completed Order">
@@ -149,7 +149,7 @@
 			<svelte:fragment slot="underdelivery_behaviour">
 				<UnderdeliveryRadioGroup
 					supplierId={1}
-					defaultValue="pending"
+					defaultValue="keep_open"
 					on:change={({ detail }) => underdeliveryBehaviourStore.set(detail)}
 				/>
 			</svelte:fragment>
@@ -169,7 +169,7 @@
 			books={largeOrderData}
 		>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryActionBadge value="pending" />
+				<UnderdeliveryActionBadge value="keep_open" />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 	</div>
@@ -179,17 +179,17 @@
 	<div class="max-w-5xl space-y-4">
 		<ReconciliationOrderSummary orderId="Order #1" customerName="BooksRUS" undeliveredCount={7} books={booksData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="pending" supplierId={1} />
+				<UnderdeliveryRadioGroup defaultValue="keep_open" supplierId={1} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 		<ReconciliationOrderSummary orderId="Order #3" customerName="Local Books" undeliveredCount={0} books={allDeliveredData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="queue" value={controlledPendingStore} supplierId={3} />
+				<UnderdeliveryRadioGroup defaultValue="reorder" value={controlledPendingStore} supplierId={3} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 		<ReconciliationOrderSummary orderId="Order #2" customerName="Academic Press" undeliveredCount={6} books={singleBookData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="queue" supplierId={2} />
+				<UnderdeliveryRadioGroup defaultValue="reorder" supplierId={2} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 	</div>
@@ -199,12 +199,12 @@
 	<div class="max-w-5xl space-y-4">
 		<ReconciliationOrderSummary expanded={true} orderId="Order #1" customerName="BooksRUS" undeliveredCount={7} books={booksData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="pending" supplierId={1} />
+				<UnderdeliveryRadioGroup defaultValue="keep_open" supplierId={1} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 		<ReconciliationOrderSummary expanded={true} orderId="Order #3" customerName="Local Books" undeliveredCount={0} books={allDeliveredData}>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="queue" value={controlledPendingStore} supplierId={3} />
+				<UnderdeliveryRadioGroup defaultValue="reorder" value={controlledPendingStore} supplierId={3} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 		<ReconciliationOrderSummary
@@ -215,7 +215,7 @@
 			books={singleBookData}
 		>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryRadioGroup defaultValue="queue" supplierId={2} />
+				<UnderdeliveryRadioGroup defaultValue="reorder" supplierId={2} />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 	</div>
@@ -232,7 +232,7 @@
 			books={booksData}
 		>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryActionBadge value="pending" />
+				<UnderdeliveryActionBadge value="keep_open" />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 
@@ -245,7 +245,7 @@
 			books={singleBookData}
 		>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryActionBadge value="queue" />
+				<UnderdeliveryActionBadge value="reorder" />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 
@@ -258,7 +258,7 @@
 			books={allDeliveredData}
 		>
 			<svelte:fragment slot="underdelivery_behaviour">
-				<UnderdeliveryActionBadge value="pending" />
+				<UnderdeliveryActionBadge value="keep_open" />
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 	</div>

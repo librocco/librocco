@@ -14,8 +14,6 @@
 
 	const dispatch = createEventDispatcher();
 
-	const policyLabel = ["pending", "queue"][underdeliveryPolicy];
-
 	function handleEdit() {
 		dispatch("edit");
 	}
@@ -67,7 +65,11 @@
 			<dt class="sr-only">{$LL.suppliers_page.card.underdelivery_policy()}</dt>
 			<dd class="flex flex-1 items-start gap-3 text-sm">
 				<History aria-hidden="true" class="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
-				<span class="flex-1 justify-start">{policyLabel}</span>
+				<span class="flex-1 justify-start"
+					>{underdeliveryPolicy === 1
+						? $LL.reconcile_page.step2.underdelivery.options.reorder()
+						: $LL.reconcile_page.step2.underdelivery.options.keep_open()}</span
+				>
 			</dd>
 		</div>
 	</dl>

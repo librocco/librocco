@@ -55,7 +55,7 @@ type ReconciliationProcessedLine = {
 
 <ReconciliationOrderSummary orderId="Order #1" customerName="BooksRUS" undeliveredCount={4} {books}>
   <svelte:fragment slot="underdelivery_behaviour">
-    <UnderdeliveryRadioGroup supplierId={1} defaultValue="pending" />
+    <UnderdeliveryRadioGroup supplierId={1} defaultValue="keep_open" />
   </svelte:fragment>
 </ReconciliationOrderSummary>
 ```
