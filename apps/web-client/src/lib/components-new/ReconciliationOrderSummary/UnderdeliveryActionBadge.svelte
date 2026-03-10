@@ -1,8 +1,8 @@
 <script lang="ts">
-	export let value: "pending" | "queue";
+	export let value: "keep_open" | "reorder";
 	let label = {
-		pending: "Order marked as pending delivery",
-		queue: "Missing books added to order queue"
+		keep_open: "Order remains open at supplier",
+		reorder: "Missing books must be reordered"
 	}[value];
 </script>
 

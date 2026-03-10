@@ -276,7 +276,7 @@
 			"order_format": "Order format",
 			"edit_details": "Edit details",
 			"delete_supplier": "Delete supplier",
-			"underdelivery_policy": "Underdelivery policy"
+			"underdelivery_policy": "Handling of undelivered books"
 		},
 		"errors": {
 			"active_orders": "Cannot delete: supplier has active orders or unfinalized reconciliations"
@@ -626,8 +626,8 @@
 			"underdelivery": {
 				"title": "Action for missing books",
 				"options": {
-					"pending": "Mark order as pending delivery",
-					"queue": "Mark order as queue delivery"
+					"keep_open": "Supplier keeps the order open",
+					"reorder": "Undelivered books must be reordered"
 				},
 				"warning": "Current choice doesn't match the default configuration for this supplier.",
 				"persist_button": "Persist changes"
@@ -1015,7 +1015,7 @@
 				"cancel_button": "Cancel",
 				"order_format": "Order Format",
 				"order_format_message": "Please select an order format",
-				"underdelivery_policy": "Underdelivery policy"
+				"underdelivery_policy": "Handling of undelivered books"
 			},
 			"aria": {
 				"form": "Edit customer order name, email or deposit"

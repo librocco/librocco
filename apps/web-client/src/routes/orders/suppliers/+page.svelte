@@ -74,7 +74,7 @@
 		// get latest/biggest id and increment by 1
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 
-		const underdelivery_policy = supplier.underdeliveryPolicy === "queue" ? 1 : 0;
+		const underdelivery_policy = supplier.underdeliveryPolicy === "reorder" ? 1 : 0;
 
 		await upsertSupplier(db, { ...supplier, id, underdelivery_policy });
 
