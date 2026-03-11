@@ -495,7 +495,7 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 		}
 	});
 
-	await page.getByText("Remote DB incompatible").waitFor({ timeout: 5000 });
+	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "incompatible", { timeout: 5000 });
 
 	// The badge should never have shown "synced" before becoming "incompatible"
 	const statusHistory = await page.evaluate(() => (window as any).__statusHistory as string[]);
@@ -564,7 +564,7 @@ test("surfaces apply failures after a successful handshake", async ({ page }) =>
 		email: "applyfail@test.com"
 	});
 
-	await page.getByText("Remote DB incompatible").waitFor({ timeout: 15000 });
+	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "incompatible", { timeout: 15000 });
 	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "incompatible");
 	await expect
 		.poll(async () => Number((await page.getAttribute('[data-testid="remote-db-badge"]', "data-pending")) || "0"), {
