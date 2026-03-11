@@ -20,8 +20,9 @@
 		"story:build": "storybook build",
 		"story:dev": "storybook dev -p 6006",
 		"story:preview": "storybook preview",
-		"test": "vitest --ui",
-		"test:ci": "CI=True vitest",
+		"test": "vitest --config vitest.config.ts --ui",
+		"test:browser": "vitest --workspace vitest.projects.ts --project=browser-backed",
+		"test:ci": "CI=True vitest --workspace vitest.projects.ts --project=unit --project=browser-backed",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold error",
 		"typesafe-i18n": "echo please run this in ../../pkg/shared ; exit 1",
 		"typesafe-i18n-check": "echo please run this in ../../pkg/shared ; exit 1"
