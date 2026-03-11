@@ -247,8 +247,10 @@
 			"supplier_publisher",
 			"customer",
 			"customer_order_lines",
+			"customer_order_line_supplier_order",
 			"supplier_order",
 			"supplier_order_line",
+			"supplier_order_continuation",
 			"reconciliation_order",
 			"reconciliation_order_lines"
 		];
