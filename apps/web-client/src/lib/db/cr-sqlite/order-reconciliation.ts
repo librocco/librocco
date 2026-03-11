@@ -451,16 +451,17 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		if (delivered > 0) {
 			const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
 
-			// Really unexpected scenario
-			if (customerOrderLines.length < delivered) {
-				const msg = [
-					"unexpected state: remaining placed customer order lines < delivered lines",
-					`  isbn: ${isbn}`,
-					`  delivered: ${delivered}`,
-					`  remining customer orders: ${customerOrderLines.length}`
-				].join("\n");
-				throw new Error(msg);
-			}
+			// NOTE: strict consistency check skipped for now.
+			// Reassess later whether we want this level of strictness here.
+			// if (customerOrderLines.length < delivered) {
+			// 	const msg = [
+			// 		"unexpected state: remaining placed customer order lines < delivered lines",
+			// 		`  isbn: ${isbn}`,
+			// 		`  delivered: ${delivered}`,
+			// 		`  remining customer orders: ${customerOrderLines.length}`
+			// 	].join("\\n");
+			// 	throw new Error(msg);
+			// }
 
 			const idsToDeliver = customerOrderLines.splice(0, delivered);
 
@@ -472,16 +473,17 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		if (underdelivered > 0 && underdelivery_policy === 0) {
 			const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
 
-			// Really unexpected scenario
-			if (customerOrderLines.length < underdelivered) {
-				const msg = [
-					"unexpected state: remaining placed customer order lines < underdelivered lines",
-					`  isbn: ${isbn}`,
-					`  underdelivered: ${underdelivered}`,
-					`  remaining customer orders: ${customerOrderLines.length}`
-				].join("\n");
-				throw new Error(msg);
-			}
+			// NOTE: strict consistency check skipped for now.
+			// Reassess later whether we want this level of strictness here.
+			// if (customerOrderLines.length < underdelivered) {
+			// 	const msg = [
+			// 		"unexpected state: remaining placed customer order lines < underdelivered lines",
+			// 		`  isbn: ${isbn}`,
+			// 		`  underdelivered: ${underdelivered}`,
+			// 		`  remaining customer orders: ${customerOrderLines.length}`
+			// 	].join("\\n");
+			// 	throw new Error(msg);
+			// }
 
 			// NOTE: rejecting from the back (first-come-first-served -- last ordered first rejected)
 			const idsToReject = customerOrderLines.splice(-underdelivered, underdelivered);

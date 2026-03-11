@@ -31,6 +31,7 @@
 
 	import { app } from "$lib/app";
 	import { getDb, getDbRx } from "$lib/app/db";
+	import { calcAcceptedDeliveredTotal, calcOverdeliveryLines, calcReconciliationBreakdown } from "./utils";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -85,8 +86,9 @@
 			.subscribe((b) => upsertBook(db, b));
 	}
 
-	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
-	$: totalDelivered = data?.reconciliationOrderLines.reduce((acc, { quantity }) => acc + quantity, 0);
+	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0) ?? 0;
+	$: reconciliationBreakdown = calcReconciliationBreakdown(data);
+	$: totalDelivered = calcAcceptedDeliveredTotal(data, reconciliationBreakdown);
 
 	// Supports only incdement / decrement by 1
 	const handleEditQuantity = (quantity: -1 | 1) => async (isbn: string) => {
@@ -106,14 +108,21 @@
 	} = deleteDialog;
 
 	$: t = $LL.reconcile_page;
+	$: overdeliveryLines = calcOverdeliveryLines(data, reconciliationBreakdown).map(({ isbn, title, overdeliveredQuantity }) => ({
+		isbn,
+		title,
+		overdeliveredQuantity
+	}));
 
-	async function handleCommit() {
-		// TODO: Implement actual commit logic
-		commitDialogOpen.set(false);
-
+	async function finalizeAndNavigate() {
 		const db = await getDb(app);
 		await finalizeReconciliationOrder(db, parseInt($page.params.id));
 		await goto(appPath("supplier_orders"));
+	}
+
+	async function handleCommit() {
+		commitDialogOpen.set(false);
+		await finalizeAndNavigate();
 	}
 
 	async function handleDelete() {
@@ -134,6 +143,7 @@
 					{#if currentStep === 1}
 						<ReconcileStep1
 							{data}
+							{reconciliationBreakdown}
 							onScan={handleIsbnSubmit}
 							onDecrement={handleEditQuantity(-1)}
 							onIncrement={handleEditQuantity(1)}
@@ -142,6 +152,7 @@
 					{:else if currentStep > 1}
 						<ReconcileStep2
 							{data}
+							{reconciliationBreakdown}
 							finalized={data?.reconciliationOrder.finalized}
 							onBack={() => (currentStep = 1)}
 							onFinalize={() => commitDialogOpen.set(true)}
@@ -156,7 +167,8 @@
 <PageCenterDialog dialog={commitDialog} title="" description="">
 	<CommitDialog
 		deliveredBookCount={totalDelivered}
-		rejectedBookCount={totalOrdered - totalDelivered}
+		rejectedBookCount={Math.max(totalOrdered - totalDelivered, 0)}
+		{overdeliveryLines}
 		on:cancel={() => commitDialogOpen.set(false)}
 		on:confirm={handleCommit}
 	/>

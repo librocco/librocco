@@ -589,12 +589,78 @@
 				"description": "Notifica clienti"
 			}
 		},
+		"step1": {
+			"stats": {
+				"total_ordered": "Totale Ordinato",
+				"total_delivered": "Totale Consegnato",
+				"overdelivered": "Eccedenza consegnata"
+			},
+			"overdelivery": {
+				"title": "Eccedenza consegnata",
+				"ordered": "Ordinato",
+				"scanned": "Scansionato",
+				"extra": "Eccedenza"
+			},
+			"table": {
+				"isbn": "ISBN",
+				"title": "Titolo",
+				"authors": "Autori",
+				"order_quantity": "Quantità ordinata",
+				"delivered": "Consegnato",
+				"controls": "Controlli quantità consegnata"
+			},
+			"aria_labels": {
+				"decrease_quantity": "Riduci quantità consegnata per {title}, attualmente {count}",
+				"increase_quantity": "Aumenta quantità consegnata per {title}, attualmente {count}"
+			},
+			"footer": {
+				"total_scanned": "Totale libri scansionati: {count}",
+				"continue": "Continua"
+			}
+		},
 		"step2": {
+			"stats": {
+				"total_ordered": "Totale Ordinato",
+				"total_delivered": "Totale Consegnato",
+				"overdelivered": "Eccedenza consegnata"
+			},
+			"overdelivery": {
+				"title": "Eccedenza consegnata ({count})",
+				"show_details": "Mostra dettagli",
+				"hide_details": "Nascondi dettagli"
+			},
+			"order_summary": {
+				"order_id": "Ordine #{id}",
+				"books_undelivered": "{count} libr{{o|i}} non consegnat{{o|i}}",
+				"complete": "Completo",
+				"status": "Stato",
+				"missing": "{count} mancanti"
+			},
 			"underdelivery": {
+				"title": "Azione per libri mancanti",
 				"options": {
 					"keep_open": "Il fornitore tiene aperto l’ordine",
 					"reorder": "I libri non consegnati vanno riordinati"
-				}
+				},
+				"warning": "La scelta corrente non corrisponde alla configurazione predefinita per questo fornitore.",
+				"persist_button": "Salva modifiche"
+			},
+			"customer_notification": {
+				"message_pending": "I clienti saranno notificati che i libri consegnati sono pronti per il ritiro",
+				"message_finalized": "Questi clienti sono stati notificati che i libri consegnati sono pronti per il ritiro",
+				"table": {
+					"customer": "Cliente",
+					"id": "ID",
+					"order_date": "Data ordine"
+				},
+				"copy_label": "({count} copi{{a|e}})"
+			},
+			"actions": {
+				"back": "← Indietro",
+				"finalize": "Finalizza consegna"
+			},
+			"finalized": {
+				"message": "Consegna finalizzata il {date:Date|dateShort}"
 			}
 		}
 	},
@@ -663,6 +729,12 @@
 			"heading": "Finalizza ordine di riconciliazione",
 			"delivered_book_count": "{ deliveredBookCount } libri verranno contrassegnati come consegnati (e pronti per il ritiro)",
 			"rejected_book_count": "{ rejectedBookCount } libri verranno contrassegnati come rifiutati (in attesa di riordino)",
+			"overdelivery_description": "I seguenti libri consegnati in eccedenza saranno ignorati durante la finalizzazione:",
+			"overdelivery_table": {
+				"isbn": "ISBN",
+				"title": "Titolo",
+				"extra": "Eccedenza"
+			},
 			"cancel": "Annulla",
 			"confirm": "Conferma"
 		},

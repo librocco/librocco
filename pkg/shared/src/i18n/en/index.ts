@@ -438,7 +438,14 @@ const reconcile_page = {
 	step1: {
 		stats: {
 			total_ordered: "Total Ordered",
-			total_delivered: "Total Delivered"
+			total_delivered: "Total Delivered",
+			overdelivered: "Overdelivered"
+		},
+		overdelivery: {
+			title: "Overdelivery",
+			ordered: "Ordered",
+			scanned: "Scanned",
+			extra: "Extra"
 		},
 		table: {
 			isbn: "ISBN",
@@ -460,7 +467,13 @@ const reconcile_page = {
 	step2: {
 		stats: {
 			total_ordered: "Total Ordered",
-			total_delivered: "Total Delivered"
+			total_delivered: "Total Delivered",
+			overdelivered: "Overdelivered"
+		},
+		overdelivery: {
+			title: "Overdelivery ({count})",
+			show_details: "Show details",
+			hide_details: "Hide details"
 		},
 		order_summary: {
 			order_id: "Order #{id}",
@@ -792,6 +805,12 @@ const supplier_orders_component = {
 		heading: "Finalize reconciliation order",
 		delivered_book_count: "{ deliveredBookCount } books will be marked as delivered (and ready to be collected)",
 		rejected_book_count: "{ rejectedBookCount } books will be marked as rejected (waiting for reordering)",
+		overdelivery_description: "The following overdelivered books will be ignored on finalization:",
+		overdelivery_table: {
+			isbn: "ISBN",
+			title: "Title",
+			extra: "Extra"
+		},
 		cancel: "Cancel",
 		confirm: "Confirm"
 	},
