@@ -138,5 +138,5 @@ export const supplierSchema = (LL: TranslationFunctions) =>
 			 * and when it is displayed, it's a generic "Input invalid" message
 			 *  */
 			.refine((orderFormat) => orderFormat !== "", { error: LL.forms.supplier_meta.labels.order_format_message() } as any),
-		underdeliveryPolicy: z.enum(["pending", "queue"]).default("pending")
+		underdeliveryPolicy: z.enum(["keep_open", "reorder"]).default("keep_open")
 	});

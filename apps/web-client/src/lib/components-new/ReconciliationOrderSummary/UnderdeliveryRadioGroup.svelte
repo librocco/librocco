@@ -5,9 +5,9 @@
 
 	import LL from "@librocco/shared/i18n-svelte";
 
-	type UnderdeliveryOption = "pending" | "queue";
+	type UnderdeliveryOption = "keep_open" | "reorder";
 
-	export let defaultValue: UnderdeliveryOption | null = "pending";
+	export let defaultValue: UnderdeliveryOption | null = "keep_open";
 	export let supplierId: number;
 
 	type Events = {
@@ -18,7 +18,7 @@
 
 	export let value = writable<UnderdeliveryOption>(defaultValue);
 
-	const underdeliveryOptions: UnderdeliveryOption[] = ["pending", "queue"];
+	const underdeliveryOptions: UnderdeliveryOption[] = ["keep_open", "reorder"];
 
 	const {
 		elements: { root: radioRoot, item },

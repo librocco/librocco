@@ -87,8 +87,8 @@
 					<label class="form-control w-full">
 						<div class="label">{$LL.forms.supplier_meta.labels.underdelivery_policy()}</div>
 						<select bind:value={$formStore.underdeliveryPolicy} class="select-bordered select w-full">
-							<option value="pending">pending</option>
-							<option value="queue">queue</option>
+							<option value="keep_open">{$LL.reconcile_page.step2.underdelivery.options.keep_open()}</option>
+							<option value="reorder">{$LL.reconcile_page.step2.underdelivery.options.reorder()}</option>
 						</select>
 						<span class="font-regular pt-2 text-red-500" {...errAttrs} use:errAction>
 							{#each errors as error}

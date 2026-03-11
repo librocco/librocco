@@ -767,7 +767,7 @@ type RootTranslation = {
 			 */
 			order_format: string
 			/**
-			 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+			 * H​a​n​d​l​i​n​g​ ​o​f​ ​u​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s
 			 */
 			underdelivery_policy: string
 			/**
@@ -1733,13 +1733,13 @@ type RootTranslation = {
 				title: string
 				options: {
 					/**
-					 * M​a​r​k​ ​o​r​d​e​r​ ​a​s​ ​p​e​n​d​i​n​g​ ​d​e​l​i​v​e​r​y
+					 * S​u​p​p​l​i​e​r​ ​k​e​e​p​s​ ​t​h​e​ ​o​r​d​e​r​ ​o​p​e​n
 					 */
-					pending: string
+					keep_open: string
 					/**
-					 * M​a​r​k​ ​o​r​d​e​r​ ​a​s​ ​q​u​e​u​e​ ​d​e​l​i​v​e​r​y
+					 * U​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​m​u​s​t​ ​b​e​ ​r​e​o​r​d​e​r​e​d
 					 */
-					queue: string
+					reorder: string
 				}
 				/**
 				 * C​u​r​r​e​n​t​ ​c​h​o​i​c​e​ ​d​o​e​s​n​'​t​ ​m​a​t​c​h​ ​t​h​e​ ​d​e​f​a​u​l​t​ ​c​o​n​f​i​g​u​r​a​t​i​o​n​ ​f​o​r​ ​t​h​i​s​ ​s​u​p​p​l​i​e​r​.
@@ -2769,7 +2769,7 @@ type RootTranslation = {
 				 */
 				order_format_message: string
 				/**
-				 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+				 * H​a​n​d​l​i​n​g​ ​o​f​ ​u​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s
 				 */
 				underdelivery_policy: string
 			}
@@ -3831,7 +3831,7 @@ export type TranslationFunctions = {
 			 */
 			order_format: () => LocalizedString
 			/**
-			 * Underdelivery policy
+			 * Handling of undelivered books
 			 */
 			underdelivery_policy: () => LocalizedString
 			/**
@@ -4771,13 +4771,13 @@ export type TranslationFunctions = {
 				title: () => LocalizedString
 				options: {
 					/**
-					 * Mark order as pending delivery
+					 * Supplier keeps the order open
 					 */
-					pending: () => LocalizedString
+					keep_open: () => LocalizedString
 					/**
-					 * Mark order as queue delivery
+					 * Undelivered books must be reordered
 					 */
-					queue: () => LocalizedString
+					reorder: () => LocalizedString
 				}
 				/**
 				 * Current choice doesn't match the default configuration for this supplier.
@@ -5790,7 +5790,7 @@ export type TranslationFunctions = {
 				 */
 				order_format_message: () => LocalizedString
 				/**
-				 * Underdelivery policy
+				 * Handling of undelivered books
 				 */
 				underdelivery_policy: () => LocalizedString
 			}

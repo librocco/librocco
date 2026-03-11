@@ -39,7 +39,7 @@
 	<div class="flex flex-1 flex-col overflow-y-auto bg-white px-6 pb-6">
 		<div class="mb-4 space-y-4">
 			{#each orderStats as { supplier_order_id, supplier_name, underdelivery_policy, totalUnderdelivered, lines }}
-				{@const underdeliveryAction = underdelivery_policy === 0 ? "pending" : "queue"}
+				{@const underdeliveryAction = underdelivery_policy === 0 ? "keep_open" : "reorder"}
 				<ReconciliationOrderSummary
 					orderId={t.order_summary.order_id({ id: supplier_order_id })}
 					customerName={supplier_name}

@@ -271,7 +271,7 @@
 			"email": "Email",
 			"address": "Indirizzo",
 			"order_format": "Formato ordine",
-			"underdelivery_policy": "",
+			"underdelivery_policy": "Gestione dei libri non consegnati",
 			"edit_details": "Modifica dettagli",
 			"delete_supplier": "Elimina fornitore"
 		},
@@ -623,8 +623,8 @@
 			"underdelivery": {
 				"title": "",
 				"options": {
-					"pending": "",
-					"queue": ""
+					"keep_open": "Il fornitore tiene aperto l’ordine",
+					"reorder": "I libri non consegnati vanno riordinati"
 				},
 				"warning": "",
 				"persist_button": ""
@@ -988,7 +988,7 @@
 				"cancel_button": "Annulla",
 				"order_format": "Formato Ordine",
 				"order_format_message": "Seleziona un formato ordine",
-				"underdelivery_policy": ""
+				"underdelivery_policy": "Gestione dei libri non consegnati"
 			},
 			"aria": {
 				"form": "Modifica nome, email o acconto dell'ordine cliente"
