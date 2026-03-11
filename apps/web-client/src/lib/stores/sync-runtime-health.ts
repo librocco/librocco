@@ -87,6 +87,13 @@ export function resetSyncRuntimeHealth() {
 	syncRuntimeHealth.set(initialState);
 }
 
+export function clearSyncRecentErrors() {
+	syncRuntimeHealth.update((state) => ({
+		...state,
+		recentErrors: []
+	}));
+}
+
 const storageGuardKey = "__libroccoSyncRuntimeHealthStorageListener";
 
 if (browser && !(globalThis as Record<string, unknown>)[storageGuardKey]) {

@@ -46,7 +46,7 @@
 		markAutoRecoverySuccess,
 		syncAutoRecovery
 	} from "$lib/stores/sync-auto-recovery";
-	import { resetSyncRuntimeHealth, syncRuntimeHealth } from "$lib/stores/sync-runtime-health";
+	import { clearSyncRecentErrors, resetSyncRuntimeHealth, syncRuntimeHealth } from "$lib/stores/sync-runtime-health";
 	import { checkSyncCompatibility, resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
 
 	export let data: LayoutData;
@@ -630,6 +630,7 @@
 
 	const REMOTE_SITE_IDS_KEY = "librocco-remote-site-ids";
 	const INJECTED_SYNC_FAILURE_URL = "ws://127.0.0.1:1/sync";
+	const INJECTED_SYNC_FAILURE_PREVIOUS_URL_KEY = "librocco-debug-sync-failure-previous-url";
 	let savedSyncUrlBeforeInjection: string | null = null;
 
 	/**
@@ -738,6 +739,9 @@
 
 			if (currentSyncUrl !== INJECTED_SYNC_FAILURE_URL) {
 				savedSyncUrlBeforeInjection = currentSyncUrl;
+				if (browser) {
+					localStorage.setItem(INJECTED_SYNC_FAILURE_PREVIOUS_URL_KEY, JSON.stringify(currentSyncUrl));
+				}
 				app.config.syncUrl.set(INJECTED_SYNC_FAILURE_URL);
 				await stopSync(app);
 				await startSync(app, dbid, INJECTED_SYNC_FAILURE_URL);
@@ -746,11 +750,25 @@
 					description: `Sync URL set to ${INJECTED_SYNC_FAILURE_URL}`
 				});
 			} else {
-				const restoreUrl = savedSyncUrlBeforeInjection || "ws://localhost:3000/sync";
+				const persistedRestoreUrl = (() => {
+					if (!browser) return null;
+					try {
+						const raw = localStorage.getItem(INJECTED_SYNC_FAILURE_PREVIOUS_URL_KEY);
+						if (raw == null) return null;
+						const parsed = JSON.parse(raw) as string | null;
+						return typeof parsed === "string" ? parsed : null;
+					} catch {
+						return null;
+					}
+				})();
+				const restoreUrl = persistedRestoreUrl ?? savedSyncUrlBeforeInjection ?? "ws://localhost:3000/sync";
 				app.config.syncUrl.set(restoreUrl);
 				await stopSync(app);
 				await startSync(app, dbid, restoreUrl);
 				savedSyncUrlBeforeInjection = null;
+				if (browser) {
+					localStorage.removeItem(INJECTED_SYNC_FAILURE_PREVIOUS_URL_KEY);
+				}
 				toastSuccess({
 					title: "Sync transport restored",
 					description: `Sync URL restored to ${restoreUrl}`
@@ -887,8 +905,10 @@
 
 			const metaStart = performance.now();
 			let metaResult: MetaProbeResult;
+			const metaController = new AbortController();
+			const metaTimeout = setTimeout(() => metaController.abort(), 5000);
 			try {
-				const resp = await fetch(metaUrl, { method: "GET" });
+				const resp = await fetch(metaUrl, { method: "GET", signal: metaController.signal });
 				let bodySnippet = "";
 				try {
 					const txt = await resp.text();
@@ -905,12 +925,15 @@
 					error: resp.ok ? undefined : `HTTP ${resp.status}`
 				};
 			} catch (err) {
+				const isAbort = (err instanceof DOMException && err.name === "AbortError") || (err instanceof Error && err.name === "AbortError");
 				metaResult = {
 					ok: false,
 					url: metaUrl,
 					latencyMs: Math.round(performance.now() - metaStart),
-					error: err instanceof Error ? err.message : String(err)
+					error: isAbort ? "Request timed out after 5000ms" : err instanceof Error ? err.message : String(err)
 				};
+			} finally {
+				clearTimeout(metaTimeout);
 			}
 
 			const wsResult: WsProbeResult = await new Promise((resolve) => {
@@ -1117,7 +1140,7 @@
 	};
 
 	const clearLastSyncErrors = () => {
-		resetSyncRuntimeHealth();
+		clearSyncRecentErrors();
 		toastSuccess({
 			title: "Sync errors cleared",
 			description: "Recent sync runtime errors were cleared."
@@ -1150,15 +1173,28 @@
 			const result = await app.sync.runExclusive(async (sync) => {
 				return await new Promise<HandshakeStatusCheckResult>((resolve) => {
 					let settled = false;
-					let unsubscribe = () => {};
+					let timeout: ReturnType<typeof setTimeout> | null = null;
+					let unsubscribe: (() => void) | undefined;
+
+					const cleanup = () => {
+						if (timeout) {
+							clearTimeout(timeout);
+							timeout = null;
+						}
+						if (unsubscribe) {
+							unsubscribe();
+							unsubscribe = undefined;
+						}
+					};
 
 					const finish = (value: HandshakeStatusCheckResult) => {
 						if (settled) return;
 						settled = true;
+						cleanup();
 						resolve(value);
 					};
 
-					const timeout = setTimeout(() => {
+					timeout = setTimeout(() => {
 						const connected = get(syncConnected);
 						const diag = get(syncConnDiagnostics);
 						const latestErr = get(syncRuntimeHealth).recentErrors[0];
@@ -1184,7 +1220,6 @@
 						reason?: string;
 						message?: string;
 					}) => {
-						clearTimeout(timeout);
 						finish({
 							at: Date.now(),
 							ok: payload.ok,
@@ -1196,12 +1231,11 @@
 							schemaVersion: payload.schemaVersion ?? payload.schemaHash,
 							timedOut: false
 						});
-						unsubscribe();
 					};
 
 					unsubscribe = sync.worker.onSyncStatus(onSyncStatus);
 					if (settled) {
-						unsubscribe();
+						cleanup();
 					}
 				});
 			});

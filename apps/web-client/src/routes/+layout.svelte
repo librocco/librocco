@@ -155,6 +155,10 @@
 			const disconnectedTooLong = isDisconnected && disconnectedForMs >= DISCONNECT_RECOVERY_MIN_MS;
 			const hasPending = get(pendingChangesCount) > 0;
 			if (!compatibilityResult.ok || disconnectedTooLong || (isDisconnected && hasPending)) {
+				if (!get(syncActive)) {
+					markAutoRecoveryNoop();
+					return;
+				}
 				await stopSync(app);
 				await startSync(app, currentDbid, currentSyncUrl);
 				markAutoRecoverySuccess();
