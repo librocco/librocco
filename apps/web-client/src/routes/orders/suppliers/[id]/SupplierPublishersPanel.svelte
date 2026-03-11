@@ -44,7 +44,7 @@
 </script>
 
 <div class="mb-4 flex min-h-0 w-full flex-1 flex-col pb-4">
-	<div class="sticky top-0 z-20 mb-4 bg-white px-5 pb-4">
+	<div class="sticky top-0 z-20 mb-4 bg-base-100 px-5 pb-4">
 		<div class="relative flex items-center gap-2">
 			<div class="relative w-full">
 				<svg
@@ -53,7 +53,7 @@
 					viewBox="0 0 24 24"
 					stroke-width="1.5"
 					stroke="currentColor"
-					class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
+					class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-base-content/50"
 				>
 					<path
 						stroke-linecap="round"
@@ -65,7 +65,7 @@
 					type="text"
 					placeholder={t.placeholders.search_publishers()}
 					bind:value={searchQuery}
-					class="h-9 w-full rounded border border-none border-gray-300 bg-white py-1 pl-9 pr-3 text-sm placeholder-gray-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+					class="h-9 w-full rounded border border-base-300 bg-base-100 py-1 pl-9 pr-3 text-sm text-base-content placeholder:text-base-content/50 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
 				/>
 			</div>
 			{#if searchQuery}
@@ -76,14 +76,18 @@
 
 	<div class="flex min-h-0 flex-1 overflow-hidden px-5 pb-5">
 		<div class="grid flex-1 grid-cols-2 gap-4 overflow-hidden">
-			<div class="flex min-w-0 flex-1 flex-col border-gray-200">
+			<div data-testid="publisher-panel-assigned" class="flex min-w-0 flex-1 flex-col border-gray-200">
 				<SupplierPublisherTable
 					showEmptyState={filteredAssigned.length === 0}
 					emptyStateMessage={searchQuery ? t.placeholders.no_matching_assigned_publishers() : t.placeholders.no_assigned_publishers()}
 				>
 					<svelte:fragment slot="title">{t.tabs.assigned_publishers()}</svelte:fragment>
 
-					<span slot="badge" class="inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white">
+					<span
+						slot="badge"
+						data-testid="publisher-count-assigned"
+						class="inline-flex items-center rounded-full bg-base-content px-2 py-0.5 text-[10px] font-medium text-base-100"
+					>
 						{filteredAssigned.length}
 					</span>
 
@@ -92,7 +96,7 @@
 							<button
 								slot="action-button"
 								on:click={() => onUnassignPublisher(publisher)}
-								class="h-5 whitespace-nowrap rounded border-0 bg-transparent px-1 text-[11px] font-medium text-gray-500 hover:bg-red-50 hover:!text-red-600"
+								class="h-5 whitespace-nowrap rounded border-0 bg-transparent px-1 text-[11px] font-medium text-base-content/60 transition-colors hover:bg-error/10 hover:!text-error"
 							>
 								{t.labels.remove()}
 							</button>
@@ -101,49 +105,55 @@
 				</SupplierPublisherTable>
 			</div>
 
-			<SupplierPublisherTable
-				showEmptyState={filteredAvailable.length === 0}
-				emptyStateMessage={searchQuery ? t.placeholders.no_matching_available_publishers() : t.placeholders.no_available_publishers()}
-			>
-				<svelte:fragment slot="title">{t.table.unassigned_publishers()}</svelte:fragment>
-				<span slot="badge" class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
-					{filteredAvailable.length}
-				</span>
+			<div data-testid="publisher-panel-available" class="flex min-w-0 flex-1 flex-col">
+				<SupplierPublisherTable
+					showEmptyState={filteredAvailable.length === 0}
+					emptyStateMessage={searchQuery ? t.placeholders.no_matching_available_publishers() : t.placeholders.no_available_publishers()}
+				>
+					<svelte:fragment slot="title">{t.table.unassigned_publishers()}</svelte:fragment>
+					<span
+						slot="badge"
+						data-testid="publisher-count-available"
+						class="inline-flex items-center rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-medium text-base-content/70"
+					>
+						{filteredAvailable.length}
+					</span>
 
-				{#each filteredAvailable as publisher}
-					{#if publisher.supplierName}
-						<SupplierPublisherTableRow publisherName={publisher.name} testId={publisherRowTestId("available", publisher.name)}>
-							<span
-								slot="badge"
-								class="inline-flex truncate rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800"
-								title={t.placeholders.currently_assigned_to({ supplierName: publisher.supplierName })}
-							>
-								{publisher.supplierName}
-							</span>
-							<button
-								slot="action-button"
-								on:click={() => {
-									confirmationPublisher = publisher.name;
-									confirmationDialogOpen.set(true);
-								}}
-								class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
-							>
-								{t.labels.reassign()}
-							</button>
-						</SupplierPublisherTableRow>
-					{:else}
-						<SupplierPublisherTableRow publisherName={publisher.name} testId={publisherRowTestId("available", publisher.name)}>
-							<button
-								slot="action-button"
-								on:click={() => onAssignPublisher(publisher.name)}
-								class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
-							>
-								{t.labels.add()}
-							</button>
-						</SupplierPublisherTableRow>
-					{/if}
-				{/each}
-			</SupplierPublisherTable>
+					{#each filteredAvailable as publisher}
+						{#if publisher.supplierName}
+							<SupplierPublisherTableRow publisherName={publisher.name} testId={publisherRowTestId("available", publisher.name)}>
+								<span
+									slot="badge"
+									class="inline-flex truncate rounded bg-amber-100 px-1.5 text-[10px] font-medium text-amber-800"
+									title={t.placeholders.currently_assigned_to({ supplierName: publisher.supplierName })}
+								>
+									{publisher.supplierName}
+								</span>
+								<button
+									slot="action-button"
+									on:click={() => {
+										confirmationPublisher = publisher.name;
+										confirmationDialogOpen.set(true);
+									}}
+									class="h-5 whitespace-nowrap rounded border border-base-content/50 bg-base-100 px-1 text-[11px] font-medium text-base-content transition-colors hover:bg-accent hover:text-accent-content"
+								>
+									{t.labels.reassign()}
+								</button>
+							</SupplierPublisherTableRow>
+						{:else}
+							<SupplierPublisherTableRow publisherName={publisher.name} testId={publisherRowTestId("available", publisher.name)}>
+								<button
+									slot="action-button"
+									on:click={() => onAssignPublisher(publisher.name)}
+									class="h-5 whitespace-nowrap rounded border border-base-content/50 bg-base-100 px-1 text-[11px] font-medium text-base-content transition-colors hover:bg-accent hover:text-accent-content"
+								>
+									{t.labels.add()}
+								</button>
+							</SupplierPublisherTableRow>
+						{/if}
+					{/each}
+				</SupplierPublisherTable>
+			</div>
 		</div>
 	</div>
 </div>

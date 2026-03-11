@@ -15,10 +15,16 @@
 </script>
 
 <Story name="Default">
-	{#each values as value}
-		<h1>{value * 100}%</h1>
-		<ProgressBar class="my-8 mx-2" {value} />
-	{/each}
-	<h1>Unknown</h1>
-	<ProgressBar class="my-8 mx-2" />
+	<div class="space-y-6 text-base-content">
+		{#each values as value}
+			<div>
+				<h1>{value * 100}%</h1>
+				<ProgressBar class="my-8 mx-2" {value} />
+			</div>
+		{/each}
+		<div>
+			<h1>Unknown</h1>
+			<ProgressBar class="my-8 mx-2" />
+		</div>
+	</div>
 </Story>

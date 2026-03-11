@@ -22,7 +22,7 @@
 	$: tabsT = $LL.supplier_orders_page.tabs;
 </script>
 
-<div class="px-5">
+<div class="px-5 text-base-content">
 	<div class="mb-8">
 		<h4 class="mb-4 text-[14px]">{tabsT.ordered()}</h4>
 		<Table columnWidths={["3", "3", "6"]} showEmptyState={placedOrders.length === 0}>
@@ -37,7 +37,7 @@
 					<tr
 						tabindex="0"
 						role="button"
-						class="cursor-pointer border-b border-[#E5E5E5] px-[16px] py-[8px] transition-colors last:border-b-0 hover:cursor-pointer hover:bg-[#FAFAFA]"
+						class="cursor-pointer border-b border-base-300 px-[16px] py-[8px] transition-colors last:border-b-0 hover:bg-base-200/60"
 						on:click={() => _goto(appPath("supplier_orders", id))}
 						on:keydown={(e) => e.key === "Enter" && _goto(appPath("supplier_orders", id))}
 					>
@@ -66,7 +66,7 @@
 					<tr
 						tabindex="0"
 						role="button"
-						class="cursor-pointer border-b border-[#E5E5E5] px-[16px] py-[8px] transition-colors last:border-b-0 hover:cursor-pointer hover:bg-[#FAFAFA]"
+						class="cursor-pointer border-b border-base-300 px-[16px] py-[8px] transition-colors last:border-b-0 hover:bg-base-200/60"
 						on:click={() => _goto(appPath("supplier_orders", id))}
 						on:keydown={(e) => e.key === "Enter" && _goto(appPath("supplier_orders", id))}
 					>
@@ -97,7 +97,7 @@
 					<tr
 						tabindex="0"
 						role="button"
-						class="cursor-pointer border-b border-[#E5E5E5] px-[16px] py-[8px] transition-colors last:border-b-0 hover:cursor-pointer hover:bg-[#FAFAFA]"
+						class="cursor-pointer border-b border-base-300 px-[16px] py-[8px] transition-colors last:border-b-0 hover:bg-base-200/60"
 						on:click={() => _goto(appPath("supplier_orders", id))}
 						on:keydown={(e) => e.key === "Enter" && _goto(appPath("supplier_orders", id))}
 					>

@@ -10,18 +10,31 @@
 
 <script lang="ts">
 	import { Story, Template } from "@storybook/addon-svelte-csf";
-	import { createDialog } from "@melt-ui/svelte";
+	import { createDialog, melt } from "@melt-ui/svelte";
 
 	const dialog = createDialog({
 		forceVisible: true
 	});
+	const {
+		elements: { portalled, overlay },
+		states: { open }
+	} = dialog;
+
+	open.set(true);
 </script>
 
-<Template let:args={{ type, title, description }}>
-	<Dialog {dialog} {type}>
-		<svelte:fragment slot="title">{title}</svelte:fragment>
-		<svelte:fragment slot="description">{@html description}</svelte:fragment>
-	</Dialog>
+<Template let:args>
+	{#if $open}
+		<div use:melt={$portalled}>
+			<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50"></div>
+			<div class="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2">
+				<Dialog {dialog} type={args.type}>
+					<svelte:fragment slot="title">{args.title}</svelte:fragment>
+					<svelte:fragment slot="description">{@html args.description}</svelte:fragment>
+				</Dialog>
+			</div>
+		</div>
+	{/if}
 </Template>
 
 <Story
