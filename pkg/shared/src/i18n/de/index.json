@@ -594,7 +594,14 @@
 		"step1": {
 			"stats": {
 				"total_ordered": "Insgesamt bestellt",
-				"total_delivered": "Insgesamt geliefert"
+				"total_delivered": "Insgesamt geliefert",
+				"overdelivered": "Uberliefert"
+			},
+			"overdelivery": {
+				"title": "Uberlieferung",
+				"ordered": "Bestellt",
+				"scanned": "Gescannt",
+				"extra": "Extra"
 			},
 			"table": {
 				"isbn": "ISBN",
@@ -616,7 +623,13 @@
 		"step2": {
 			"stats": {
 				"total_ordered": "Insgesamt bestellt",
-				"total_delivered": "Insgesamt geliefert"
+				"total_delivered": "Insgesamt geliefert",
+				"overdelivered": "Uberliefert"
+			},
+			"overdelivery": {
+				"title": "Uberlieferung ({count})",
+				"show_details": "Details anzeigen",
+				"hide_details": "Details ausblenden"
 			},
 			"order_summary": {
 				"order_id": "Bestellung #{id}",
@@ -718,6 +731,12 @@
 			"heading": "",
 			"delivered_book_count": "",
 			"rejected_book_count": "",
+			"overdelivery_description": "Die folgenden uberlieferten Bucher werden beim Abschluss ignoriert:",
+			"overdelivery_table": {
+				"isbn": "ISBN",
+				"title": "Titel",
+				"extra": "Extra"
+			},
 			"cancel": "",
 			"confirm": ""
 		},

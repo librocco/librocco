@@ -767,7 +767,7 @@ type RootTranslation = {
 			 */
 			order_format: string
 			/**
-			 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+			 * H​a​n​d​l​i​n​g​ ​o​f​ ​u​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s
 			 */
 			underdelivery_policy: string
 			/**
@@ -1637,6 +1637,28 @@ type RootTranslation = {
 				 * T​o​t​a​l​ ​D​e​l​i​v​e​r​e​d
 				 */
 				total_delivered: string
+				/**
+				 * O​v​e​r​d​e​l​i​v​e​r​e​d
+				 */
+				overdelivered: string
+			}
+			overdelivery: {
+				/**
+				 * O​v​e​r​d​e​l​i​v​e​r​y
+				 */
+				title: string
+				/**
+				 * O​r​d​e​r​e​d
+				 */
+				ordered: string
+				/**
+				 * S​c​a​n​n​e​d
+				 */
+				scanned: string
+				/**
+				 * E​x​t​r​a
+				 */
+				extra: string
 			}
 			table: {
 				/**
@@ -1700,6 +1722,25 @@ type RootTranslation = {
 				 * T​o​t​a​l​ ​D​e​l​i​v​e​r​e​d
 				 */
 				total_delivered: string
+				/**
+				 * O​v​e​r​d​e​l​i​v​e​r​e​d
+				 */
+				overdelivered: string
+			}
+			overdelivery: {
+				/**
+				 * O​v​e​r​d​e​l​i​v​e​r​y​ ​(​{​c​o​u​n​t​}​)
+				 * @param {unknown} count
+				 */
+				title: RequiredParams<'count'>
+				/**
+				 * S​h​o​w​ ​d​e​t​a​i​l​s
+				 */
+				show_details: string
+				/**
+				 * H​i​d​e​ ​d​e​t​a​i​l​s
+				 */
+				hide_details: string
 			}
 			order_summary: {
 				/**
@@ -1733,13 +1774,13 @@ type RootTranslation = {
 				title: string
 				options: {
 					/**
-					 * M​a​r​k​ ​o​r​d​e​r​ ​a​s​ ​p​e​n​d​i​n​g​ ​d​e​l​i​v​e​r​y
+					 * S​u​p​p​l​i​e​r​ ​k​e​e​p​s​ ​t​h​e​ ​o​r​d​e​r​ ​o​p​e​n
 					 */
-					pending: string
+					keep_open: string
 					/**
-					 * M​a​r​k​ ​o​r​d​e​r​ ​a​s​ ​q​u​e​u​e​ ​d​e​l​i​v​e​r​y
+					 * U​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​m​u​s​t​ ​b​e​ ​r​e​o​r​d​e​r​e​d
 					 */
-					queue: string
+					reorder: string
 				}
 				/**
 				 * C​u​r​r​e​n​t​ ​c​h​o​i​c​e​ ​d​o​e​s​n​'​t​ ​m​a​t​c​h​ ​t​h​e​ ​d​e​f​a​u​l​t​ ​c​o​n​f​i​g​u​r​a​t​i​o​n​ ​f​o​r​ ​t​h​i​s​ ​s​u​p​p​l​i​e​r​.
@@ -1973,6 +2014,24 @@ type RootTranslation = {
 			 * @param {unknown} rejectedBookCount
 			 */
 			rejected_book_count: RequiredParams<'rejectedBookCount'>
+			/**
+			 * T​h​e​ ​f​o​l​l​o​w​i​n​g​ ​o​v​e​r​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​w​i​l​l​ ​b​e​ ​i​g​n​o​r​e​d​ ​o​n​ ​f​i​n​a​l​i​z​a​t​i​o​n​:
+			 */
+			overdelivery_description: string
+			overdelivery_table: {
+				/**
+				 * I​S​B​N
+				 */
+				isbn: string
+				/**
+				 * T​i​t​l​e
+				 */
+				title: string
+				/**
+				 * E​x​t​r​a
+				 */
+				extra: string
+			}
 			/**
 			 * C​a​n​c​e​l
 			 */
@@ -2835,7 +2894,7 @@ type RootTranslation = {
 				 */
 				order_format_message: string
 				/**
-				 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+				 * H​a​n​d​l​i​n​g​ ​o​f​ ​u​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s
 				 */
 				underdelivery_policy: string
 			}
@@ -3897,7 +3956,7 @@ export type TranslationFunctions = {
 			 */
 			order_format: () => LocalizedString
 			/**
-			 * Underdelivery policy
+			 * Handling of undelivered books
 			 */
 			underdelivery_policy: () => LocalizedString
 			/**
@@ -4749,6 +4808,28 @@ export type TranslationFunctions = {
 				 * Total Delivered
 				 */
 				total_delivered: () => LocalizedString
+				/**
+				 * Overdelivered
+				 */
+				overdelivered: () => LocalizedString
+			}
+			overdelivery: {
+				/**
+				 * Overdelivery
+				 */
+				title: () => LocalizedString
+				/**
+				 * Ordered
+				 */
+				ordered: () => LocalizedString
+				/**
+				 * Scanned
+				 */
+				scanned: () => LocalizedString
+				/**
+				 * Extra
+				 */
+				extra: () => LocalizedString
 			}
 			table: {
 				/**
@@ -4807,6 +4888,24 @@ export type TranslationFunctions = {
 				 * Total Delivered
 				 */
 				total_delivered: () => LocalizedString
+				/**
+				 * Overdelivered
+				 */
+				overdelivered: () => LocalizedString
+			}
+			overdelivery: {
+				/**
+				 * Overdelivery ({count})
+				 */
+				title: (arg: { count: unknown }) => LocalizedString
+				/**
+				 * Show details
+				 */
+				show_details: () => LocalizedString
+				/**
+				 * Hide details
+				 */
+				hide_details: () => LocalizedString
 			}
 			order_summary: {
 				/**
@@ -4837,13 +4936,13 @@ export type TranslationFunctions = {
 				title: () => LocalizedString
 				options: {
 					/**
-					 * Mark order as pending delivery
+					 * Supplier keeps the order open
 					 */
-					pending: () => LocalizedString
+					keep_open: () => LocalizedString
 					/**
-					 * Mark order as queue delivery
+					 * Undelivered books must be reordered
 					 */
-					queue: () => LocalizedString
+					reorder: () => LocalizedString
 				}
 				/**
 				 * Current choice doesn't match the default configuration for this supplier.
@@ -5070,6 +5169,24 @@ export type TranslationFunctions = {
 			 * {rejectedBookCount} books will be marked as rejected (waiting for reordering)
 			 */
 			rejected_book_count: (arg: { rejectedBookCount: unknown }) => LocalizedString
+			/**
+			 * The following overdelivered books will be ignored on finalization:
+			 */
+			overdelivery_description: () => LocalizedString
+			overdelivery_table: {
+				/**
+				 * ISBN
+				 */
+				isbn: () => LocalizedString
+				/**
+				 * Title
+				 */
+				title: () => LocalizedString
+				/**
+				 * Extra
+				 */
+				extra: () => LocalizedString
+			}
 			/**
 			 * Cancel
 			 */
@@ -5922,7 +6039,7 @@ export type TranslationFunctions = {
 				 */
 				order_format_message: () => LocalizedString
 				/**
-				 * Underdelivery policy
+				 * Handling of undelivered books
 				 */
 				underdelivery_policy: () => LocalizedString
 			}

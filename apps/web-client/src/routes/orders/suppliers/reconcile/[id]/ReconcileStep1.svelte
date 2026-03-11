@@ -8,18 +8,23 @@
 	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";
-	import { calcStatsBySupplierOrder } from "./utils";
+	import type { ReconciliationBreakdown } from "./utils";
+	import { calcAcceptedDeliveredTotal, calcOverdeliveryLines, calcOverdeliveredTotal, calcStatsBySupplierOrder } from "./utils";
 
 	export let data: PageData;
+	export let reconciliationBreakdown: ReconciliationBreakdown;
 
 	export let onScan: (isbn: string) => Promise<void> | void;
 	export let onDecrement: (isbn: string) => Promise<void> | void;
 	export let onIncrement: (isbn: string) => Promise<void> | void;
 	export let onContinue: () => void;
 
-	$: orderStats = calcStatsBySupplierOrder(data);
+	$: orderStats = calcStatsBySupplierOrder(data, reconciliationBreakdown);
+	$: overdeliveryLines = calcOverdeliveryLines(data, reconciliationBreakdown);
 	$: totalOrdered = data.placedOrderLines.reduce((sum, line) => sum + line.quantity, 0);
-	$: totalDelivered = data.reconciliationOrderLines.reduce((sum, line) => sum + line.quantity, 0);
+	$: totalDelivered = calcAcceptedDeliveredTotal(data, reconciliationBreakdown);
+	$: totalOverdelivered = calcOverdeliveredTotal(data, reconciliationBreakdown);
+	$: totalScanned = totalDelivered + totalOverdelivered;
 
 	$: t = $LL.reconcile_page;
 
@@ -49,9 +54,48 @@
 		<div class="flex gap-3">
 			<CounterBadge label={t.step1.stats.total_ordered()} value={totalOrdered} />
 			<CounterBadge label={t.step1.stats.total_delivered()} value={totalDelivered} />
+			{#if totalOverdelivered > 0}
+				<CounterBadge label={t.step1.stats.overdelivered()} value={totalOverdelivered} />
+			{/if}
 		</div>
 
 		<div class="h-full overflow-y-auto">
+			{#if overdeliveryLines.length > 0}
+				<div class="mb-4 overflow-hidden rounded-lg border border-orange-200">
+					<div class="bg-orange-50/30 px-3 py-2">
+						<span class="text-sm font-medium text-orange-900">{t.step1.overdelivery.title()}</span>
+					</div>
+					<div class="bg-orange-50/30 px-2 py-2">
+						<Table variant="naked" columnWidths={["2", "4", "2", "2", "2"]}>
+							<svelte:fragment slot="head-cells">
+								<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.isbn()}</th>
+								<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.title()}</th>
+								<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide"
+									>{t.step1.overdelivery.ordered()}</th
+								>
+								<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide"
+									>{t.step1.overdelivery.scanned()}</th
+								>
+								<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide"
+									>{t.step1.overdelivery.extra()}</th
+								>
+							</svelte:fragment>
+							<svelte:fragment slot="rows">
+								{#each overdeliveryLines as line (line.isbn)}
+									<TableRow variant="naked" className="border-b border-neutral-100 last:border-b-0">
+										<td class="text-foreground px-2 py-1.5 align-middle text-sm font-medium">{line.isbn}</td>
+										<td class="text-foreground truncate px-2 py-1.5 align-middle text-sm">{line.title}</td>
+										<td class="text-foreground px-2 py-1.5 align-middle text-sm">{line.orderedQuantity}</td>
+										<td class="text-foreground px-2 py-1.5 align-middle text-sm">{line.scannedQuantity}</td>
+										<td class="px-2 py-1.5 align-middle text-sm font-semibold text-orange-700">{line.overdeliveredQuantity}</td>
+									</TableRow>
+								{/each}
+							</svelte:fragment>
+						</Table>
+					</div>
+				</div>
+			{/if}
+
 			{#each orderStats as supplierOrder (supplierOrder.supplier_order_id)}
 				<div class="mb-4">
 					<div class="-mb-6">
@@ -111,7 +155,8 @@
 											</button>
 											<button
 												on:click={() => onIncrement(book.isbn)}
-												class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 transition-colors hover:bg-neutral-200"
+												disabled={stats.delivered >= stats.ordered}
+												class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
 												aria-label={t.step1.aria_labels.increase_quantity({ title: book.title, count: stats.delivered })}
 											>
 												+
@@ -127,11 +172,11 @@
 		</div>
 	</div>
 
-	{#if totalDelivered > 0}
+	{#if totalScanned > 0}
 		<div class="shrink-0 border-t border-neutral-200 bg-neutral-50 px-6 py-4">
 			<div class="flex items-center justify-between">
 				<div class="text-sm text-zinc-900">
-					{t.step1.footer.total_scanned({ count: totalDelivered })}
+					{t.step1.footer.total_scanned({ count: totalScanned })}
 				</div>
 				<button
 					on:click={onContinue}
