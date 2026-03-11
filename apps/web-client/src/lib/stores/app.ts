@@ -79,7 +79,9 @@ const _syncConnectivityMonitor: SyncConnectivityMonitor = {
 // For local-first/offline-friendly behavior we do not mark "stuck" on plain disconnect timeout.
 const RAPID_CLOSE_THRESHOLD_MS = 2000; // Connection closes less than 2s apart are considered rapid retries
 const RAPID_CLOSE_COUNT_TO_STUCK = 3; // Number of rapid closes before marking sync as stuck
-const SHARED_SYNC_TRANSPORT_KEY = "librocco-sync-shared-transport";
+const SHARED_SYNC_TRANSPORT_KEY_PREFIX = "librocco-sync-shared-transport";
+const SHARED_SYNC_TRANSPORT_HEARTBEAT_MS = 5000;
+const SHARED_SYNC_TRANSPORT_STALE_MS = 15_000;
 
 /** Update sync connectivity monitor event source (worker) */
 export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
@@ -92,38 +94,97 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 	let isConnected = Boolean(worker?.isConnected);
 	let sharedConnected = false;
 	let sharedLastEventAt: number | null = null;
+	const tabId = browser ? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`) : "server";
+	const tabTransportKey = `${SHARED_SYNC_TRANSPORT_KEY_PREFIX}:${tabId}`;
+	let sharedHeartbeatInterval: ReturnType<typeof setInterval> | null = null;
 
 	const updateConnectedState = () => {
 		_syncConnectivityMonitor.connected.set(isConnected || sharedConnected);
+	};
+
+	const refreshSharedTransportState = () => {
+		if (!browser) return;
+		const now = Date.now();
+		let nextSharedConnected = false;
+		let nextSharedLastEventAt: number | null = null;
+		const prefix = `${SHARED_SYNC_TRANSPORT_KEY_PREFIX}:`;
+		const keysToDelete: string[] = [];
+
+		for (let i = 0; i < localStorage.length; i++) {
+			const key = localStorage.key(i);
+			if (!key || !key.startsWith(prefix)) continue;
+			try {
+				const raw = localStorage.getItem(key);
+				if (!raw) {
+					keysToDelete.push(key);
+					continue;
+				}
+				const parsed = JSON.parse(raw) as { connected?: boolean; at?: number };
+				const at = typeof parsed.at === "number" ? parsed.at : null;
+				if (at == null) {
+					keysToDelete.push(key);
+					continue;
+				}
+				if (now - at > SHARED_SYNC_TRANSPORT_STALE_MS) {
+					keysToDelete.push(key);
+					continue;
+				}
+				if (parsed.connected) {
+					nextSharedConnected = true;
+				}
+				if (nextSharedLastEventAt == null || at > nextSharedLastEventAt) {
+					nextSharedLastEventAt = at;
+				}
+			} catch {
+				keysToDelete.push(key);
+			}
+		}
+
+		for (const key of keysToDelete) {
+			try {
+				localStorage.removeItem(key);
+			} catch {
+				// ignore storage failures
+			}
+		}
+
+		sharedConnected = nextSharedConnected;
+		sharedLastEventAt = nextSharedLastEventAt;
+		updateConnectedState();
 	};
 
 	const persistSharedTransport = (connected: boolean) => {
 		if (!browser) return;
 		try {
 			localStorage.setItem(
-				SHARED_SYNC_TRANSPORT_KEY,
+				tabTransportKey,
 				JSON.stringify({
 					connected,
 					at: Date.now()
 				})
 			);
+			refreshSharedTransportState();
 		} catch {
 			// ignore storage failures
 		}
 	};
 
-	if (browser) {
+	const removeOwnSharedTransport = () => {
+		if (!browser) return;
 		try {
-			const raw = localStorage.getItem(SHARED_SYNC_TRANSPORT_KEY);
-			if (raw) {
-				const parsed = JSON.parse(raw) as { connected?: boolean; at?: number };
-				sharedConnected = Boolean(parsed.connected);
-				sharedLastEventAt = typeof parsed.at === "number" ? parsed.at : null;
-			}
+			localStorage.removeItem(tabTransportKey);
 		} catch {
-			sharedConnected = false;
-			sharedLastEventAt = null;
+			// ignore storage failures
 		}
+		refreshSharedTransportState();
+	};
+
+	if (browser) {
+		refreshSharedTransportState();
+		persistSharedTransport(isConnected);
+		sharedHeartbeatInterval = setInterval(() => {
+			persistSharedTransport(isConnected);
+		}, SHARED_SYNC_TRANSPORT_HEARTBEAT_MS);
 	}
 
 	const resetStuckState = () => {
@@ -243,19 +304,19 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 	});
 
 	const onStorage = (event: StorageEvent) => {
-		if (event.key !== SHARED_SYNC_TRANSPORT_KEY || !event.newValue) return;
-		try {
-			const parsed = JSON.parse(event.newValue) as { connected?: boolean; at?: number };
-			sharedConnected = Boolean(parsed.connected);
-			sharedLastEventAt = typeof parsed.at === "number" ? parsed.at : null;
-			updateConnectedState();
-		} catch {
-			// ignore malformed payloads
-		}
+		const prefix = `${SHARED_SYNC_TRANSPORT_KEY_PREFIX}:`;
+		if (event.key != null && !event.key.startsWith(prefix)) return;
+		refreshSharedTransportState();
+	};
+
+	const onWindowUnload = () => {
+		removeOwnSharedTransport();
 	};
 
 	if (browser) {
 		window.addEventListener("storage", onStorage);
+		window.addEventListener("pagehide", onWindowUnload);
+		window.addEventListener("beforeunload", onWindowUnload);
 	}
 
 	updateConnectedState();
@@ -286,7 +347,14 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 			unsubscribeClose?.();
 			unsubscribeSyncStatus?.();
 			if (browser) {
+				if (sharedHeartbeatInterval) {
+					clearInterval(sharedHeartbeatInterval);
+					sharedHeartbeatInterval = null;
+				}
 				window.removeEventListener("storage", onStorage);
+				window.removeEventListener("pagehide", onWindowUnload);
+				window.removeEventListener("beforeunload", onWindowUnload);
+				removeOwnSharedTransport();
 			}
 		};
 	});

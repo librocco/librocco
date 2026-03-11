@@ -46,6 +46,16 @@ const markCompatible = (verified = true) => {
 };
 
 describe("createSyncState", () => {
+	const clearSharedTransportKeys = () => {
+		localStorage.removeItem("librocco-sync-shared-transport");
+		for (let i = localStorage.length - 1; i >= 0; i--) {
+			const key = localStorage.key(i);
+			if (key?.startsWith("librocco-sync-shared-transport:")) {
+				localStorage.removeItem(key);
+			}
+		}
+	};
+
 	beforeEach(() => {
 		vi.useFakeTimers();
 
@@ -53,6 +63,7 @@ describe("createSyncState", () => {
 		resetPendingTracker();
 		resetSyncRuntimeHealth();
 		resetLocalDbHealth();
+		clearSharedTransportKeys();
 		syncCompatibility.set({ status: "unknown" });
 	});
 
@@ -64,6 +75,7 @@ describe("createSyncState", () => {
 		resetPendingTracker();
 		resetSyncRuntimeHealth();
 		resetLocalDbHealth();
+		clearSharedTransportKeys();
 		syncCompatibility.set({ status: "unknown" });
 	});
 

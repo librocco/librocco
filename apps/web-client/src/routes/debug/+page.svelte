@@ -391,53 +391,53 @@
 
 			// Insert each book
 			for (const book of books) {
-				await db.exec(`
-                     INSERT INTO book (isbn, title, authors, publisher, price, year)
-                     VALUES (
-                         '${book.isbn}',
-                         '${book.title}',
-                         '${book.authors}',
-                         '${book.publisher}',
-                         ${book.price},
-                         ${book.year}
-                     )
-                     ON CONFLICT(isbn) DO UPDATE SET
-                         title = '${book.title}',
-                         authors = '${book.authors}',
-                         publisher = '${book.publisher}',
-                         price = ${book.price},
-                         year = ${book.year}
-                 `);
+				await db.exec(
+					`
+						INSERT INTO book (isbn, title, authors, publisher, price, year)
+						VALUES (?, ?, ?, ?, ?, ?)
+						ON CONFLICT(isbn) DO UPDATE SET
+							title = excluded.title,
+							authors = excluded.authors,
+							publisher = excluded.publisher,
+							price = excluded.price,
+							year = excluded.year
+					`,
+					[book.isbn, book.title, book.authors, book.publisher, Number(book.price), book.year]
+				);
 			}
 
 			// Also create supplier entries for each publisher with deterministic ID
 			for (let i = 1; i <= 100; i++) {
 				const supplierId = i;
 				const publisherName = `Publisher ${i}`;
+				const supplierName = `${publisherName} Distribution`;
+				const email = `contact@${publisherName.toLowerCase().replace(/\s+/g, "")}.com`;
+				const address = `${i} Publisher Street, Book City`;
+				const customerId = Number(`${supplierId}${i}`);
 
 				// Insert supplier
-				await db.exec(`
-                     INSERT INTO supplier (id, name, email, address, customerId)
-                     VALUES (
-                         ${supplierId},
-                         '${publisherName} Distribution',
-                         'contact@${publisherName.toLowerCase().replace(/\s+/g, "")}.com',
-                         '${i} Publisher Street, Book City',
-                         ${supplierId}${i}
-                     )
-                     ON CONFLICT(id) DO UPDATE SET
-                         name = '${publisherName} Distribution',
-                         email = 'contact@${publisherName.toLowerCase().replace(/\s+/g, "")}.com',
-                         address = '${i} Publisher Street, Book City',
-                         customerId = ${supplierId}${i}
-                 `);
+				await db.exec(
+					`
+						INSERT INTO supplier (id, name, email, address, customerId)
+						VALUES (?, ?, ?, ?, ?)
+						ON CONFLICT(id) DO UPDATE SET
+							name = excluded.name,
+							email = excluded.email,
+							address = excluded.address,
+							customerId = excluded.customerId
+					`,
+					[supplierId, supplierName, email, address, customerId]
+				);
 
 				// Link publisher to supplier
-				await db.exec(`
-                     INSERT INTO supplier_publisher (supplier_id, publisher)
-                     VALUES (${supplierId}, '${publisherName}')
-                     ON CONFLICT(publisher) DO NOTHING
-                 `);
+				await db.exec(
+					`
+						INSERT INTO supplier_publisher (supplier_id, publisher)
+						VALUES (?, ?)
+						ON CONFLICT(publisher) DO NOTHING
+					`,
+					[supplierId, publisherName]
+				);
 			}
 
 			console.log("Successfully upserted 100 books with different publishers");

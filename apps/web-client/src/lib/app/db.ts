@@ -308,11 +308,15 @@ export async function getDb(app: App): Promise<DBAsync> {
 		throw new ErrDbNotSet();
 	}
 
-	// Wait until DB reaches a terminal init state.
-	// This avoids hanging forever when init transitions to Error.
-	await waitForStore(app.db.state, ($state) => $state === AppDbState.Ready || $state === AppDbState.Error);
+	// Wait until DB reaches a terminal init state. We re-check in a loop so we never
+	// return a stale handle while init may still be transitioning.
+	let state = get(app.db.state);
+	while (state !== AppDbState.Ready && state !== AppDbState.Error) {
+		await waitForStore(app.db.state, ($state) => $state === AppDbState.Ready || $state === AppDbState.Error);
+		state = get(app.db.state);
+	}
 
-	if (get(app.db.state) === AppDbState.Error) {
+	if (state === AppDbState.Error) {
 		throw app.db.error ?? new ErrDbNotInit();
 	}
 	if (!app.db.db) {

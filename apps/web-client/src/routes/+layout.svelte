@@ -159,8 +159,15 @@
 					markAutoRecoveryNoop();
 					return;
 				}
+				// Re-read live config before restarting to avoid restarting with stale targets.
+				const liveDbid = get(dbid);
+				const liveSyncUrl = get(syncUrl);
+				if (liveDbid !== currentDbid || liveSyncUrl !== currentSyncUrl) {
+					markAutoRecoveryNoop();
+					return;
+				}
 				await stopSync(app);
-				await startSync(app, currentDbid, currentSyncUrl);
+				await startSync(app, liveDbid, liveSyncUrl);
 				markAutoRecoverySuccess();
 			} else {
 				markAutoRecoveryNoop();

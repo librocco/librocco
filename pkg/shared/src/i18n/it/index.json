@@ -844,6 +844,21 @@
 		"extension_banner": {
 			"book_data_extension": "Estensione Dati Libro",
 			"remote_db": "DB Remoto",
+			"remote_db_incompatible": "DB Remoto (incompatibile)",
+			"remote_db_sync_disabled": "DB Remoto (sincronizzazione disabilitata)",
+			"remote_db_connecting_checking_compatibility": "DB Remoto (verifica compatibilità)",
+			"remote_db_connecting_reconnecting": "DB Remoto (riconnessione)",
+			"remote_db_stuck": "DB Remoto (loop di riconnessione)",
+			"remote_db_warning_local_db_warning": "DB Remoto (avviso DB locale)",
+			"remote_db_warning_ack_stale": "DB Remoto (conferma server obsoleta)",
+			"remote_db_warning_pending_stale": "DB Remoto (coda in attesa obsoleta)",
+			"remote_db_warning": "DB Remoto (avviso sincronizzazione)",
+			"remote_db_pending": "DB Remoto ({pending:number} in coda)",
+			"remote_db_title_disconnected": "La sincronizzazione è disabilitata nelle impostazioni",
+			"remote_db_title_incompatible": "I database locale e remoto non sono compatibili",
+			"remote_db_title_connecting_checking_compatibility": "Connesso, in attesa del completamento del controllo compatibilità",
+			"remote_db_title_connecting_reconnecting": "La connessione sync non è attiva. Riconnessione…",
+			"remote_db_title_default": "Stato sincronizzazione DB remoto",
 			"reload_translations_override": "Ricarica override traduzioni"
 		},
 		"page_layout": {

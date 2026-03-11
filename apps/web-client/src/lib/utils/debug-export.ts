@@ -11,10 +11,19 @@ import { VERSION, GIT_SHA } from "$lib/constants";
  */
 export async function exportStateArchive(dbid: string): Promise<void> {
 	// 1. Read the DB file from OPFS
-	const dir = await navigator.storage.getDirectory();
-	const fileHandle = await dir.getFileHandle(dbid);
-	const file = await fileHandle.getFile();
-	const dbBytes = new Uint8Array(await file.arrayBuffer());
+	let dbBytes: Uint8Array;
+	try {
+		if (typeof navigator === "undefined" || !navigator.storage?.getDirectory) {
+			throw new Error("OPFS storage API is not available in this browser context");
+		}
+		const dir = await navigator.storage.getDirectory();
+		const fileHandle = await dir.getFileHandle(dbid);
+		const file = await fileHandle.getFile();
+		dbBytes = new Uint8Array(await file.arrayBuffer());
+	} catch (error) {
+		const detail = error instanceof Error ? error.message : String(error);
+		throw new Error(`exportStateArchive failed for db "${dbid}": ${detail}`);
+	}
 
 	// 2. Collect localStorage config
 	const config: Record<string, string> = {};
@@ -45,11 +54,7 @@ export async function exportStateArchive(dbid: string): Promise<void> {
 	// 5. Download via blob URL + anchor click
 	const date = new Date().toISOString().slice(0, 10);
 	const filename = `librocco-export-${dbid}-${date}.zip`;
-
-	// Copy into a plain ArrayBuffer so BlobPart typing stays strict and we keep only zipped bytes.
-	const zipBuffer = new ArrayBuffer(zipped.byteLength);
-	new Uint8Array(zipBuffer).set(zipped);
-	const blob = new Blob([zipBuffer], { type: "application/zip" });
+	const blob = new Blob([zipped as unknown as Uint8Array<ArrayBuffer>], { type: "application/zip" });
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;

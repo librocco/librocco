@@ -118,6 +118,7 @@ const refreshPendingCount = async () => {
 						pendingChangesLastActiveAt.set(nextLastActiveAt);
 					} else {
 						nextLastActiveAt = null;
+						pendingChangesLastActiveAt.set(null);
 					}
 					persistPendingTimestamps(nextSince, nextLastActiveAt);
 					return;

@@ -2403,6 +2403,67 @@ type RootTranslation = {
 			 */
 			remote_db: string
 			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​i​n​c​o​m​p​a​t​i​b​l​e​)
+			 */
+			remote_db_incompatible: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​s​y​n​c​ ​d​i​s​a​b​l​e​d​)
+			 */
+			remote_db_sync_disabled: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​c​h​e​c​k​i​n​g​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​)
+			 */
+			remote_db_connecting_checking_compatibility: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​r​e​c​o​n​n​e​c​t​i​n​g​)
+			 */
+			remote_db_connecting_reconnecting: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​r​e​c​o​n​n​e​c​t​ ​l​o​o​p​)
+			 */
+			remote_db_stuck: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​l​o​c​a​l​ ​d​b​ ​w​a​r​n​i​n​g​)
+			 */
+			remote_db_warning_local_db_warning: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​a​c​k​ ​s​t​a​l​e​)
+			 */
+			remote_db_warning_ack_stale: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​p​e​n​d​i​n​g​ ​s​t​a​l​e​)
+			 */
+			remote_db_warning_pending_stale: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​s​y​n​c​ ​w​a​r​n​i​n​g​)
+			 */
+			remote_db_warning: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​{​p​e​n​d​i​n​g​}​ ​p​e​n​d​i​n​g​)
+			 * @param {number} pending
+			 */
+			remote_db_pending: RequiredParams<'pending'>
+			/**
+			 * S​y​n​c​ ​i​s​ ​d​i​s​a​b​l​e​d​ ​i​n​ ​s​e​t​t​i​n​g​s
+			 */
+			remote_db_title_disconnected: string
+			/**
+			 * L​o​c​a​l​ ​a​n​d​ ​r​e​m​o​t​e​ ​d​a​t​a​b​a​s​e​s​ ​a​r​e​ ​n​o​t​ ​c​o​m​p​a​t​i​b​l​e
+			 */
+			remote_db_title_incompatible: string
+			/**
+			 * C​o​n​n​e​c​t​e​d​,​ ​w​a​i​t​i​n​g​ ​f​o​r​ ​s​y​n​c​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​ ​t​o​ ​c​o​m​p​l​e​t​e
+			 */
+			remote_db_title_connecting_checking_compatibility: string
+			/**
+			 * S​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​i​s​ ​n​o​t​ ​a​c​t​i​v​e​.​ ​R​e​c​o​n​n​e​c​t​i​n​g​…
+			 */
+			remote_db_title_connecting_reconnecting: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​s​y​n​c​ ​s​t​a​t​u​s
+			 */
+			remote_db_title_default: string
+			/**
 			 * R​e​l​o​a​d​ ​t​r​a​n​s​l​a​t​i​o​n​s​ ​o​v​e​r​r​i​d​e​s
 			 */
 			reload_translations_override: string
@@ -5432,6 +5493,66 @@ export type TranslationFunctions = {
 			 * Remote DB
 			 */
 			remote_db: () => LocalizedString
+			/**
+			 * Remote DB (incompatible)
+			 */
+			remote_db_incompatible: () => LocalizedString
+			/**
+			 * Remote DB (sync disabled)
+			 */
+			remote_db_sync_disabled: () => LocalizedString
+			/**
+			 * Remote DB (checking compatibility)
+			 */
+			remote_db_connecting_checking_compatibility: () => LocalizedString
+			/**
+			 * Remote DB (reconnecting)
+			 */
+			remote_db_connecting_reconnecting: () => LocalizedString
+			/**
+			 * Remote DB (reconnect loop)
+			 */
+			remote_db_stuck: () => LocalizedString
+			/**
+			 * Remote DB (local db warning)
+			 */
+			remote_db_warning_local_db_warning: () => LocalizedString
+			/**
+			 * Remote DB (ack stale)
+			 */
+			remote_db_warning_ack_stale: () => LocalizedString
+			/**
+			 * Remote DB (pending stale)
+			 */
+			remote_db_warning_pending_stale: () => LocalizedString
+			/**
+			 * Remote DB (sync warning)
+			 */
+			remote_db_warning: () => LocalizedString
+			/**
+			 * Remote DB ({pending} pending)
+			 */
+			remote_db_pending: (arg: { pending: number }) => LocalizedString
+			/**
+			 * Sync is disabled in settings
+			 */
+			remote_db_title_disconnected: () => LocalizedString
+			/**
+			 * Local and remote databases are not compatible
+			 */
+			remote_db_title_incompatible: () => LocalizedString
+			/**
+			 * Connected, waiting for sync compatibility check to complete
+			 */
+			remote_db_title_connecting_checking_compatibility: () => LocalizedString
+			/**
+			 * Sync connection is not active. Reconnecting…
+			 */
+			remote_db_title_connecting_reconnecting: () => LocalizedString
+			/**
+			 * Remote DB sync status
+			 */
+			remote_db_title_default: () => LocalizedString
 			/**
 			 * Reload translations overrides
 			 */
