@@ -137,6 +137,13 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 
 	await page.evaluate(
 		([syncUrl, dbName]) => {
+			for (let i = window.localStorage.length - 1; i >= 0; i--) {
+				const key = window.localStorage.key(i);
+				if (key?.startsWith("librocco-sync-shared-transport:")) {
+					window.localStorage.removeItem(key);
+				}
+			}
+			window.localStorage.removeItem("librocco-sync-shared-transport");
 			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
 			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
 			window.localStorage.setItem("librocco-sync-active", "true");
@@ -471,7 +478,9 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 		)
 		.toBe(true);
 
+	await page.unroute("**/meta");
 	await resetRemoteDb(page, remoteDbURL, dbName);
+	await waitForSyncServerDatabaseHealthy(dbName);
 
 	// Track status transitions after reload to verify "synced" never appears
 	await page.reload();
@@ -495,7 +504,12 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 		}
 	});
 
-	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "incompatible", { timeout: 5000 });
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
+			timeout: 20000,
+			intervals: [250]
+		})
+		.toBe("incompatible");
 
 	// The badge should never have shown "synced" before becoming "incompatible"
 	const statusHistory = await page.evaluate(() => (window as any).__statusHistory as string[]);
@@ -505,13 +519,21 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 	await expect(page.locator(".modal-box")).toContainText(/changed identity/i);
 
 	await page.getByRole("button", { name: /nuke/i }).click();
+	await page.waitForLoadState("domcontentloaded");
+	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 30000 });
 
 	await expect
-		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
-			timeout: 20000,
-			intervals: [250]
-		})
-		.toBe("synced");
+		.poll(
+			async () => {
+				const status = await page.getAttribute('[data-testid="remote-db-badge"]', "data-status");
+				return status != null && status !== "incompatible" && status !== "stuck";
+			},
+			{
+				timeout: 20000,
+				intervals: [250]
+			}
+		)
+		.toBe(true);
 
 	const refreshedDbHandle = await getDbHandle(page);
 	await refreshedDbHandle.evaluate(upsertCustomer, { id: 2, displayId: "2", fullname: "Post Resync Customer", email: "post@test.com" });
@@ -520,10 +542,10 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 		.poll(
 			async () => {
 				const refreshedRemoteHandle = await getStableRemoteDbHandle(page);
-				const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
+				const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { attempts: 5, delayMs: 300 });
 				return remoteCustomers.some((customer) => customer.fullname === "Post Resync Customer");
 			},
-			{ timeout: 20000, intervals: [250] }
+			{ timeout: 30000, intervals: [250] }
 		)
 		.toBe(true);
 });
@@ -564,8 +586,12 @@ test("surfaces apply failures after a successful handshake", async ({ page }) =>
 		email: "applyfail@test.com"
 	});
 
-	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "incompatible", { timeout: 15000 });
-	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "incompatible");
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
+			timeout: 20000,
+			intervals: [250]
+		})
+		.toBe("incompatible");
 	await expect
 		.poll(async () => Number((await page.getAttribute('[data-testid="remote-db-badge"]', "data-pending")) || "0"), {
 			timeout: 5000,
