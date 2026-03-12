@@ -777,13 +777,30 @@ test("surfaces pending_stale when queue age is old while pending exists", async 
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(async (db) => {
 		// Pending-since is already stale; first pending transition should surface pending_stale.
+		let lastSuccessfulId: number | null = null;
 		for (let i = 0; i < 900; i++) {
-			await window.customers.upsertCustomer(db, {
-				id: 30_000 + i,
-				displayId: String(30_000 + i),
-				fullname: `Offline Bulk ${i}`,
-				email: `offline-bulk-${i}@test.com`
-			});
+			const id = 30_000 + i;
+			try {
+				await window.customers.upsertCustomer(db, {
+					id,
+					displayId: String(id),
+					fullname: `Offline Bulk ${i}`,
+					email: `offline-bulk-${i}@test.com`
+				});
+				lastSuccessfulId = id;
+			} catch (error) {
+				console.error("[pending_stale test] bulk upsert failed", {
+					index: i,
+					id,
+					lastSuccessfulId,
+					error: error instanceof Error ? error.message : String(error)
+				});
+				throw new Error(
+					`bulk upsert failed at index=${i}, id=${id}, lastSuccessfulId=${lastSuccessfulId}, error=${
+						error instanceof Error ? error.message : String(error)
+					}`
+				);
+			}
 		}
 	});
 

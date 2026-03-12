@@ -856,6 +856,8 @@
 			"remote_db_pending": "DB Remoto ({pending:number} in coda)",
 			"remote_db_title_disconnected": "La sincronizzazione è disabilitata nelle impostazioni",
 			"remote_db_title_incompatible": "I database locale e remoto non sono compatibili",
+			"remote_db_title_warning": "La sincronizzazione presenta avvisi",
+			"remote_db_title_stuck": "La connessione di sincronizzazione sembra bloccata",
 			"remote_db_title_connecting_checking_compatibility": "Connesso, in attesa del completamento del controllo compatibilità",
 			"remote_db_title_connecting_reconnecting": "La connessione sync non è attiva. Riconnessione…",
 			"remote_db_title_default": "Stato sincronizzazione DB remoto",

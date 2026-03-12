@@ -19,6 +19,19 @@
 		invalidateAll();
 	}
 
+	const preferLocalized = (localized: string, fallback?: string) => {
+		const localizedTrimmed = localized?.trim();
+		if (localizedTrimmed) return localizedTrimmed;
+		const fallbackTrimmed = fallback?.trim();
+		return fallbackTrimmed ?? "";
+	};
+
+	const getOptionalBannerLocalized = (key: string) => {
+		const banner = $LL.misc_components.extension_banner as unknown as Record<string, (() => string) | undefined>;
+		const keyFn = banner[key];
+		return typeof keyFn === "function" ? keyFn() : "";
+	};
+
 	$: remoteDbLabel = (() => {
 		if ($syncState.status === "incompatible") {
 			return $LL.misc_components.extension_banner.remote_db_incompatible();
@@ -68,13 +81,13 @@
 				: $LL.misc_components.extension_banner.remote_db_title_connecting_reconnecting();
 		}
 		if ($syncState.status === "warning") {
-			return $syncState.message;
+			return preferLocalized(getOptionalBannerLocalized("remote_db_title_warning"), $syncState.message);
 		}
 		if ($syncState.status === "incompatible") {
-			return $syncState.message || $LL.misc_components.extension_banner.remote_db_title_incompatible();
+			return preferLocalized($LL.misc_components.extension_banner.remote_db_title_incompatible(), $syncState.message);
 		}
 		if ($syncState.status === "stuck") {
-			return $syncState.message;
+			return preferLocalized(getOptionalBannerLocalized("remote_db_title_stuck"), $syncState.message);
 		}
 		return $LL.misc_components.extension_banner.remote_db_title_default();
 	})();

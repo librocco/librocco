@@ -550,7 +550,7 @@
 		await Promise.all(
 			tables.map(async (table) => {
 				console.log(`Clearing ${table}`);
-				await db.exec(`DELETE FROM ${table}`);
+				await db.exec(`DELETE FROM ${quoteIdentifier(table)}`);
 			})
 		);
 		await loadData();

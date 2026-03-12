@@ -54,7 +54,7 @@ export async function exportStateArchive(dbid: string): Promise<void> {
 	// 5. Download via blob URL + anchor click
 	const date = new Date().toISOString().slice(0, 10);
 	const filename = `librocco-export-${dbid}-${date}.zip`;
-	const blob = new Blob([zipped as unknown as Uint8Array<ArrayBuffer>], { type: "application/zip" });
+	const blob = new Blob([zipped.slice()], { type: "application/zip" });
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement("a");
 	a.href = url;

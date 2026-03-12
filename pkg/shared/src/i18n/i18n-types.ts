@@ -2452,6 +2452,14 @@ type RootTranslation = {
 			 */
 			remote_db_title_incompatible: string
 			/**
+			 * S​y​n​c​ ​h​a​s​ ​w​a​r​n​i​n​g​s
+			 */
+			remote_db_title_warning: string
+			/**
+			 * S​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​a​p​p​e​a​r​s​ ​s​t​u​c​k
+			 */
+			remote_db_title_stuck: string
+			/**
 			 * C​o​n​n​e​c​t​e​d​,​ ​w​a​i​t​i​n​g​ ​f​o​r​ ​s​y​n​c​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​ ​t​o​ ​c​o​m​p​l​e​t​e
 			 */
 			remote_db_title_connecting_checking_compatibility: string
@@ -5541,6 +5549,14 @@ export type TranslationFunctions = {
 			 * Local and remote databases are not compatible
 			 */
 			remote_db_title_incompatible: () => LocalizedString
+			/**
+			 * Sync has warnings
+			 */
+			remote_db_title_warning: () => LocalizedString
+			/**
+			 * Sync connection appears stuck
+			 */
+			remote_db_title_stuck: () => LocalizedString
 			/**
 			 * Connected, waiting for sync compatibility check to complete
 			 */

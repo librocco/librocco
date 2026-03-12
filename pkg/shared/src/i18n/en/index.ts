@@ -913,6 +913,8 @@ const misc_components = {
 		remote_db_pending: "Remote DB ({pending:number} pending)",
 		remote_db_title_disconnected: "Sync is disabled in settings",
 		remote_db_title_incompatible: "Local and remote databases are not compatible",
+		remote_db_title_warning: "Sync has warnings",
+		remote_db_title_stuck: "Sync connection appears stuck",
 		remote_db_title_connecting_checking_compatibility: "Connected, waiting for sync compatibility check to complete",
 		remote_db_title_connecting_reconnecting: "Sync connection is not active. Reconnecting…",
 		remote_db_title_default: "Remote DB sync status",

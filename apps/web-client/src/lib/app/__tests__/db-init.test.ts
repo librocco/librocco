@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { get } from "svelte/store";
 import type { App } from "../index";
+import type { DBAsync } from "$lib/db/cr-sqlite/core/types";
 
 vi.mock("$lib/db/cr-sqlite/db", () => {
 	const db = {
@@ -122,7 +123,7 @@ describe("getDb", () => {
 	it("returns the DB when state becomes Ready", async () => {
 		const app = { db: new AppDb() } as App;
 		const dbid = "test-db";
-		const dbMock = {} as any;
+		const dbMock = {} as unknown as DBAsync;
 
 		app.db.dbid = dbid;
 		app.db.setState(dbid, AppDbState.Loading);
@@ -131,5 +132,23 @@ describe("getDb", () => {
 		app.db.setState(dbid, AppDbState.Ready, { db: dbMock, vfs: "asyncify-idb-batch-atomic" });
 
 		await expect(getDbPromise).resolves.toBe(dbMock);
+	});
+
+	it("returns the newest DB handle when state flips Ready -> Loading -> Ready", async () => {
+		const app = { db: new AppDb() } as App;
+		const dbid = "test-db";
+		const firstDbMock = { first: true } as unknown as DBAsync;
+		const secondDbMock = { second: true } as unknown as DBAsync;
+
+		app.db.dbid = dbid;
+		app.db.setState(dbid, AppDbState.Loading);
+
+		const getDbPromise = getDb(app);
+
+		app.db.setState(dbid, AppDbState.Ready, { db: firstDbMock, vfs: "asyncify-idb-batch-atomic" });
+		app.db.setState(dbid, AppDbState.Migrating);
+		app.db.setState(dbid, AppDbState.Ready, { db: secondDbMock, vfs: "asyncify-idb-batch-atomic" });
+
+		await expect(getDbPromise).resolves.toBe(secondDbMock);
 	});
 });

@@ -104,22 +104,19 @@ const refreshPendingCount = async () => {
 					const pending = Number(result?.count ?? 0);
 					pendingChangesCount.set(pending);
 					let nextSince: number | null = null;
+					let nextLastActiveAt: number | null = null;
 					pendingChangesSince.update((since) => {
 						if (pending <= 0) {
 							nextSince = null;
+							nextLastActiveAt = null;
 							return null;
 						}
-						nextSince = since ?? Date.now();
+						const now = Date.now();
+						nextSince = since ?? now;
+						nextLastActiveAt = now;
 						return nextSince;
 					});
-					let nextLastActiveAt: number | null = null;
-					if (pending > 0) {
-						nextLastActiveAt = Date.now();
-						pendingChangesLastActiveAt.set(nextLastActiveAt);
-					} else {
-						nextLastActiveAt = null;
-						pendingChangesLastActiveAt.set(null);
-					}
+					pendingChangesLastActiveAt.set(nextLastActiveAt);
 					persistPendingTimestamps(nextSince, nextLastActiveAt);
 					return;
 				} catch (err) {
