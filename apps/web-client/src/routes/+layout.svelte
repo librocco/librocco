@@ -146,6 +146,10 @@
 				syncUrl: currentSyncUrl,
 				mode: "strict"
 			});
+			if (!compatibilityResult.ok) {
+				markAutoRecoveryNoop();
+				return;
+			}
 
 			const isDisconnected = !get(syncConnectivityMonitor.connected);
 			const disconnectedForMs = (() => {
@@ -154,7 +158,7 @@
 			})();
 			const disconnectedTooLong = isDisconnected && disconnectedForMs >= DISCONNECT_RECOVERY_MIN_MS;
 			const hasPending = get(pendingChangesCount) > 0;
-			if (!compatibilityResult.ok || disconnectedTooLong || (isDisconnected && hasPending)) {
+			if (disconnectedTooLong || (isDisconnected && hasPending)) {
 				if (!get(syncActive)) {
 					markAutoRecoveryNoop();
 					return;

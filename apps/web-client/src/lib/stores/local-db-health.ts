@@ -31,6 +31,7 @@ export const localDbHealth = writable<LocalDbHealthState>(initialState);
 let currentDb: DBAsync | null = null;
 let quickCheckTimer: ReturnType<typeof setInterval> | null = null;
 let runningQuickCheck: Promise<void> | null = null;
+let runningQuickCheckDb: DBAsync | null = null;
 
 function setQuickCheckResult(ok: boolean, message: string) {
 	const now = Date.now();
@@ -45,11 +46,14 @@ function setQuickCheckResult(ok: boolean, message: string) {
 
 export async function runLocalDbQuickCheck(db: DBAsync): Promise<boolean> {
 	if (runningQuickCheck) {
-		await runningQuickCheck;
-		return get(localDbHealth).status === "ok";
+		if (runningQuickCheckDb === db) {
+			await runningQuickCheck;
+			return get(localDbHealth).status === "ok";
+		}
 	}
 
-	runningQuickCheck = (async () => {
+	runningQuickCheckDb = db;
+	const quickCheckPromise = (async () => {
 		try {
 			localDbHealth.update((state) => ({ ...state, status: state.status === "unknown" ? "checking" : state.status }));
 			const rows = await db.execA<[string]>("PRAGMA quick_check");
@@ -61,12 +65,16 @@ export async function runLocalDbQuickCheck(db: DBAsync): Promise<boolean> {
 			setQuickCheckResult(false, `Local DB quick check error: ${message}`);
 		}
 	})();
+	runningQuickCheck = quickCheckPromise;
 
 	try {
-		await runningQuickCheck;
+		await quickCheckPromise;
 		return get(localDbHealth).status === "ok";
 	} finally {
-		runningQuickCheck = null;
+		if (runningQuickCheck === quickCheckPromise) {
+			runningQuickCheck = null;
+			runningQuickCheckDb = null;
+		}
 	}
 }
 

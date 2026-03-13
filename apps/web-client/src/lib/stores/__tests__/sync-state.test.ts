@@ -134,7 +134,7 @@ describe("createSyncState", () => {
 		localDbHealth.set({ status: "ok", lastQuickCheckAt: now, lastIntegrityCheckAt: null, suspected: false });
 		pendingChangesCount.set(2);
 		pendingChangesSince.set(now - 121_000);
-		syncRuntimeHealth.set({ lastStatusAt: now, lastHandshakeAt: now, lastAckAt: now, recentErrors: [] });
+		syncRuntimeHealth.set({ lastStatusAt: now, connectedAt: now, lastHandshakeAt: now, lastAckAt: now, recentErrors: [] });
 
 		const syncActive = writable(true);
 		const state = createSyncState(syncActive);
@@ -155,7 +155,7 @@ describe("createSyncState", () => {
 		localDbHealth.set({ status: "ok", lastQuickCheckAt: now, lastIntegrityCheckAt: null, suspected: false });
 		pendingChangesCount.set(1);
 		pendingChangesSince.set(now - 5_000);
-		syncRuntimeHealth.set({ lastStatusAt: now, lastHandshakeAt: now, lastAckAt: null, recentErrors: [] });
+		syncRuntimeHealth.set({ lastStatusAt: now, connectedAt: now - 46_000, lastHandshakeAt: now, lastAckAt: null, recentErrors: [] });
 
 		const syncActive = writable(true);
 		const state = createSyncState(syncActive);
@@ -176,7 +176,7 @@ describe("createSyncState", () => {
 		localDbHealth.set({ status: "ok", lastQuickCheckAt: now, lastIntegrityCheckAt: null, suspected: false });
 		pendingChangesCount.set(3);
 		pendingChangesSince.set(now - 1_000);
-		syncRuntimeHealth.set({ lastStatusAt: now, lastHandshakeAt: now, lastAckAt: now, recentErrors: [] });
+		syncRuntimeHealth.set({ lastStatusAt: now, connectedAt: now, lastHandshakeAt: now, lastAckAt: now, recentErrors: [] });
 
 		const syncActive = writable(true);
 		const state = createSyncState(syncActive);
@@ -192,7 +192,7 @@ describe("createSyncState", () => {
 		localDbHealth.set({ status: "ok", lastQuickCheckAt: now, lastIntegrityCheckAt: null, suspected: false });
 		pendingChangesCount.set(0);
 		pendingChangesSince.set(null);
-		syncRuntimeHealth.set({ lastStatusAt: now, lastHandshakeAt: now, lastAckAt: now, recentErrors: [] });
+		syncRuntimeHealth.set({ lastStatusAt: now, connectedAt: now, lastHandshakeAt: now, lastAckAt: now, recentErrors: [] });
 
 		const syncActive = writable(true);
 		const state = createSyncState(syncActive);

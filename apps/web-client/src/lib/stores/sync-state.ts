@@ -91,7 +91,12 @@ export const createSyncState = (syncActive: Readable<boolean>) =>
 				};
 			}
 
-			if (pending > 0 && (!runtime.lastAckAt || now - runtime.lastAckAt > ACK_STALE_MS)) {
+			const ackIsStale =
+				pending > 0 &&
+				((runtime.lastAckAt != null && now - runtime.lastAckAt > ACK_STALE_MS) ||
+					(runtime.lastAckAt == null && runtime.connectedAt != null && now - runtime.connectedAt > ACK_STALE_MS));
+
+			if (ackIsStale) {
 				return {
 					status: "warning",
 					pending,

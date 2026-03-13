@@ -17,27 +17,18 @@
 
 	export const addToast = helpers.addToast;
 
-	export const toastError = ({ title, description, detail }: Omit<ToastData, "style">) => {
+	const toastWithStyle = (style: ToastData["style"], payload: Omit<ToastData, "style">): void => {
 		addToast({
 			data: {
-				title,
-				description,
-				style: "error",
-				detail
+				...payload,
+				style
 			}
 		});
 	};
 
-	export const toastSuccess = ({ title, description, detail }: Omit<ToastData, "style">) => {
-		addToast({
-			data: {
-				title,
-				description,
-				style: "success",
-				detail
-			}
-		});
-	};
+	export const toastError = (payload: Omit<ToastData, "style">) => toastWithStyle("error", payload);
+
+	export const toastSuccess = (payload: Omit<ToastData, "style">) => toastWithStyle("success", payload);
 
 	const styleMap = {
 		error: "bg-error text-error-content",

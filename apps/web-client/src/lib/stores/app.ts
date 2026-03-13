@@ -82,9 +82,11 @@ const RAPID_CLOSE_COUNT_TO_STUCK = 3; // Number of rapid closes before marking s
 const SHARED_SYNC_TRANSPORT_KEY_PREFIX = "librocco-sync-shared-transport";
 const SHARED_SYNC_TRANSPORT_HEARTBEAT_MS = 5000;
 const SHARED_SYNC_TRANSPORT_STALE_MS = 15_000;
+let activeSyncConnectivityMonitorInstance = 0;
 
 /** Update sync connectivity monitor event source (worker) */
 export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
+	const monitorInstanceId = ++activeSyncConnectivityMonitorInstance;
 	let lastOpenTime: number | null = null;
 	let lastCloseTime: number | null = null;
 	let rapidCloseCount = 0;
@@ -170,6 +172,7 @@ export function updateSyncConnectivityMonitor(worker?: WorkerInterface) {
 	};
 
 	const removeOwnSharedTransport = () => {
+		if (monitorInstanceId !== activeSyncConnectivityMonitorInstance) return;
 		if (!browser) return;
 		try {
 			localStorage.removeItem(tabTransportKey);

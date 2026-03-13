@@ -14,6 +14,7 @@ export type SyncRuntimeErrorEntry = {
 
 export type SyncRuntimeHealthState = {
 	lastStatusAt: number | null;
+	connectedAt: number | null;
 	lastHandshakeAt: number | null;
 	lastAckAt: number | null;
 	recentErrors: SyncRuntimeErrorEntry[];
@@ -21,6 +22,7 @@ export type SyncRuntimeHealthState = {
 
 const initialState: SyncRuntimeHealthState = {
 	lastStatusAt: null,
+	connectedAt: null,
 	lastHandshakeAt: null,
 	lastAckAt: null,
 	recentErrors: []
@@ -33,6 +35,55 @@ export const syncHealthTick = readable(Date.now(), (set) => {
 	return () => clearInterval(interval);
 });
 
+type PersistedRuntimeHealth = {
+	lastStatusAt?: number | null;
+	connectedAt?: number | null;
+	lastHandshakeAt?: number | null;
+	lastAckAt?: number | null;
+};
+
+const maxTimestamp = (a: number | null | undefined, b: number | null | undefined): number | null => {
+	if (typeof a === "number" && typeof b === "number") return Math.max(a, b);
+	if (typeof a === "number") return a;
+	if (typeof b === "number") return b;
+	return null;
+};
+
+const readStoredRuntimeHealth = (): PersistedRuntimeHealth => {
+	if (!browser) return {};
+	try {
+		const raw = localStorage.getItem(SHARED_RUNTIME_HEALTH_KEY);
+		if (!raw) return {};
+		return JSON.parse(raw) as PersistedRuntimeHealth;
+	} catch {
+		return {};
+	}
+};
+
+const mergeRuntimeHealth = (base: SyncRuntimeHealthState, incoming: PersistedRuntimeHealth): SyncRuntimeHealthState => ({
+	...base,
+	lastStatusAt: maxTimestamp(base.lastStatusAt, incoming.lastStatusAt),
+	connectedAt: maxTimestamp(base.connectedAt, incoming.connectedAt),
+	lastHandshakeAt: maxTimestamp(base.lastHandshakeAt, incoming.lastHandshakeAt),
+	lastAckAt: maxTimestamp(base.lastAckAt, incoming.lastAckAt)
+});
+
+const persistRuntimeHealth = (candidate: PersistedRuntimeHealth) => {
+	if (!browser) return;
+	try {
+		const current = readStoredRuntimeHealth();
+		const merged = {
+			lastStatusAt: maxTimestamp(current.lastStatusAt, candidate.lastStatusAt),
+			connectedAt: maxTimestamp(current.connectedAt, candidate.connectedAt),
+			lastHandshakeAt: maxTimestamp(current.lastHandshakeAt, candidate.lastHandshakeAt),
+			lastAckAt: maxTimestamp(current.lastAckAt, candidate.lastAckAt)
+		};
+		localStorage.setItem(SHARED_RUNTIME_HEALTH_KEY, JSON.stringify(merged));
+	} catch {
+		// ignore storage failures
+	}
+};
+
 export function recordSyncStatus(payload: MsgSyncStatus["payload"]) {
 	const now = Date.now();
 	syncRuntimeHealth.update((state) => {
@@ -42,29 +93,30 @@ export function recordSyncStatus(payload: MsgSyncStatus["payload"]) {
 		};
 
 		if (payload.ok) {
+			if (next.connectedAt == null) {
+				next.connectedAt = now;
+			}
 			next.lastHandshakeAt = now;
 			if (payload.ackDbVersion != null) {
 				next.lastAckAt = now;
 			}
-			if (browser) {
-				try {
-					localStorage.setItem(SHARED_RUNTIME_HEALTH_KEY, JSON.stringify({ lastStatusAt: now, lastAckAt: next.lastAckAt }));
-				} catch {
-					// ignore storage failures
-				}
-			}
+			persistRuntimeHealth({
+				lastStatusAt: now,
+				connectedAt: next.connectedAt,
+				lastHandshakeAt: now,
+				lastAckAt: next.lastAckAt
+			});
 			return next;
 		}
 
+		next.connectedAt = null;
 		const reason = payload.reason || "unknown";
 		next.recentErrors = [{ at: now, reason, message: payload.message }, ...state.recentErrors].slice(0, SYNC_ERRORS_HISTORY_LIMIT);
-		if (browser) {
-			try {
-				localStorage.setItem(SHARED_RUNTIME_HEALTH_KEY, JSON.stringify({ lastStatusAt: now, lastAckAt: state.lastAckAt }));
-			} catch {
-				// ignore storage failures
-			}
-		}
+		persistRuntimeHealth({
+			lastStatusAt: now,
+			lastHandshakeAt: state.lastHandshakeAt,
+			lastAckAt: state.lastAckAt
+		});
 		return next;
 	});
 }
@@ -72,19 +124,25 @@ export function recordSyncStatus(payload: MsgSyncStatus["payload"]) {
 export function recordSyncAck() {
 	const now = Date.now();
 	syncRuntimeHealth.update((state) => {
-		if (browser) {
-			try {
-				localStorage.setItem(SHARED_RUNTIME_HEALTH_KEY, JSON.stringify({ lastStatusAt: state.lastStatusAt, lastAckAt: now }));
-			} catch {
-				// ignore storage failures
-			}
-		}
+		persistRuntimeHealth({
+			lastStatusAt: state.lastStatusAt,
+			connectedAt: state.connectedAt,
+			lastHandshakeAt: state.lastHandshakeAt,
+			lastAckAt: now
+		});
 		return { ...state, lastAckAt: now };
 	});
 }
 
 export function resetSyncRuntimeHealth() {
 	syncRuntimeHealth.set(initialState);
+	if (browser) {
+		try {
+			localStorage.removeItem(SHARED_RUNTIME_HEALTH_KEY);
+		} catch {
+			// ignore storage failures
+		}
+	}
 }
 
 export function clearSyncRecentErrors() {
@@ -98,29 +156,17 @@ const storageGuardKey = "__libroccoSyncRuntimeHealthStorageListener";
 
 if (browser && !(globalThis as Record<string, unknown>)[storageGuardKey]) {
 	(globalThis as Record<string, unknown>)[storageGuardKey] = true;
-	try {
-		const raw = localStorage.getItem(SHARED_RUNTIME_HEALTH_KEY);
-		if (raw) {
-			const parsed = JSON.parse(raw) as { lastStatusAt?: number | null; lastAckAt?: number | null };
-			syncRuntimeHealth.update((state) => ({
-				...state,
-				lastStatusAt: typeof parsed.lastStatusAt === "number" ? parsed.lastStatusAt : state.lastStatusAt,
-				lastAckAt: typeof parsed.lastAckAt === "number" ? parsed.lastAckAt : state.lastAckAt
-			}));
-		}
-	} catch {
-		// ignore malformed storage payloads
-	}
+	syncRuntimeHealth.update((state) => mergeRuntimeHealth(state, readStoredRuntimeHealth()));
 
 	window.addEventListener("storage", (event) => {
-		if (event.key !== SHARED_RUNTIME_HEALTH_KEY || !event.newValue) return;
+		if (event.key !== SHARED_RUNTIME_HEALTH_KEY) return;
+		if (event.newValue == null) {
+			syncRuntimeHealth.set(initialState);
+			return;
+		}
 		try {
-			const parsed = JSON.parse(event.newValue) as { lastStatusAt?: number | null; lastAckAt?: number | null };
-			syncRuntimeHealth.update((state) => ({
-				...state,
-				lastStatusAt: typeof parsed.lastStatusAt === "number" ? Math.max(state.lastStatusAt ?? 0, parsed.lastStatusAt) : state.lastStatusAt,
-				lastAckAt: typeof parsed.lastAckAt === "number" ? Math.max(state.lastAckAt ?? 0, parsed.lastAckAt) : state.lastAckAt
-			}));
+			const parsed = JSON.parse(event.newValue) as PersistedRuntimeHealth;
+			syncRuntimeHealth.update((state) => mergeRuntimeHealth(state, parsed));
 		} catch {
 			// ignore malformed storage payloads
 		}

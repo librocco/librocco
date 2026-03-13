@@ -761,7 +761,14 @@
 						return null;
 					}
 				})();
-				const restoreUrl = persistedRestoreUrl ?? savedSyncUrlBeforeInjection ?? "ws://localhost:3000/sync";
+				const restoreUrl = persistedRestoreUrl ?? savedSyncUrlBeforeInjection;
+				if (!restoreUrl) {
+					toastError({
+						title: "Sync transport restore skipped",
+						description: "No previously saved sync URL found."
+					});
+					return;
+				}
 				app.config.syncUrl.set(restoreUrl);
 				await stopSync(app);
 				await startSync(app, dbid, restoreUrl);
@@ -1351,21 +1358,12 @@
 		errorMessage = null;
 		markAutoRecoveryAttempt();
 		try {
-			const dbid = get(app.config.dbid);
-			const syncUrl = get(app.config.syncUrl);
 			const db = await getDb(app);
-			const syncActive = get(app.config.syncActive);
-			if (!syncActive) {
-				markAutoRecoveryNoop();
-				toastError({
-					title: "Sync disabled",
-					description: "Enable sync first to run manual auto-recovery."
-				});
-				return;
-			}
+			const initialDbid = get(app.config.dbid);
+			const initialSyncUrl = get(app.config.syncUrl);
 
 			await runLocalDbQuickCheck(db);
-			const compatibilityResult = await checkSyncCompatibility({ dbid, syncUrl, mode: "strict" });
+			const compatibilityResult = await checkSyncCompatibility({ dbid: initialDbid, syncUrl: initialSyncUrl, mode: "strict" });
 
 			const isDisconnected = !get(syncConnected);
 			const disconnectedForMs = (() => {
@@ -1376,8 +1374,19 @@
 			const hasPending = get(pendingChangesCount) > 0;
 
 			if (!compatibilityResult.ok || disconnectedTooLong || (isDisconnected && hasPending)) {
+				const liveSyncActive = get(app.config.syncActive);
+				const liveDbid = get(app.config.dbid);
+				const liveSyncUrl = get(app.config.syncUrl);
+				if (!liveSyncActive) {
+					markAutoRecoveryNoop();
+					toastError({
+						title: "Sync disabled",
+						description: "Enable sync first to run manual auto-recovery."
+					});
+					return;
+				}
 				await stopSync(app);
-				await startSync(app, dbid, syncUrl);
+				await startSync(app, liveDbid, liveSyncUrl);
 				markAutoRecoverySuccess();
 				toastSuccess({
 					title: "Manual auto-recovery applied",
