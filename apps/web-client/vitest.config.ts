@@ -8,13 +8,13 @@ import { USE_SUBMODULES } from "./build_constants";
 /**
  * A helper used to provide aliases for vlcn.io packages in dev mode:
  * - if in local test mode, we're aliasing vlcn.io imports to submoduled packages (under '3rd-party/js')
- * - if in CI, no aliases are provided: installed dependencies built from tarballs ('3rd-party/artefacts') are used
+ * - if in CI, no aliases are provided: installed dependencies from the configured registry are used
  */
 function alias_vlcn_dev() {
 	console.log("\n");
 
 	if (!USE_SUBMODULES) {
-		console.log("testing using vlcn.io packages installed from '3rd-party/artefacts'");
+		console.log("testing using vlcn.io packages installed from the configured registry");
 		console.log("\n");
 		return {};
 	}
