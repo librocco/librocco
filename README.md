@@ -38,14 +38,18 @@ npm install -g @microsoft/rush pnpm
 After cloning the repo, from anywhere in the project run:
 
 ```bash
-rush update && rush build
+rush install && rush build
 ```
 
-This will install the packages, link the dependencies and `build` all of the packages (found in `/pkg/` folder).
+This installs the workspace from the committed lockfile and then builds the repo packages.
+
+Use `rush update` only when you intentionally changed dependency specs or need to refresh the lockfile. If an install seems stale or broken, use `rush update --purge`.
 
 ### 2.2. Day to day commands
 
-To add a dependency, navigate to a package in the `pkg` or `apps` directory (i.e. `cd pkg/db`) and run `rush add -p <package-name>`.To save the dependency in `devDependencies`, add `--dev` option to the `rush add` command.Additionally, the dependency can be installed by adding it manually to `package.json` and running `rush update`.To remove a dependency, remove it from `package.json` and run rush update.
+To add a dependency, navigate to a package in the `pkg` or `apps` directory (i.e. `cd pkg/db`) and run `rush add -p <package-name>`. To save the dependency in `devDependencies`, add `--dev`. You can also edit `package.json` manually and then run `rush update`. To remove a dependency, delete it from `package.json` and run `rush update`.
+
+For normal branch switches and day-to-day work, prefer `rush install`. Use `rush update` only for deliberate dependency changes. If you suspect a bad install state, run `rush update --purge`.
 
 To run a script, specified in `package.json`, from anywhere in the given package (containing the script), run `rushx <script>` (similar to running `npm run <script>`).
 
@@ -74,7 +78,9 @@ For example, `@librocco/web-client` depends on `@librocco/db`, so `apps/web-clie
 
 This makes rush link the package depended upon (`@librocco/db` in this case) in the the depending package's (`@librocco/web-client` in this case) `node_modules`.
 
-After adding a new local dependency `rush update` needs to be ran to apply the changes.
+After adding a new local dependency, run `rush update` to apply the manifest change.
+
+For the ongoing migration away from committed vendor tarballs, see [docs/vendor-registry-migration.md](./docs/vendor-registry-migration.md).
 
 #### Apps: Web-client
 
