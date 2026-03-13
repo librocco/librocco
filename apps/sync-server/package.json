@@ -5,10 +5,10 @@
 	"description": "WebSocket sync server for Librocco using CR-SQLite",
 	"scripts": {
 		"build": "node esbuild.config.js",
-		"start": "tsx src/index.ts",
-		"start:dev": "IS_DEV=true tsx src/index.ts",
-		"test": "vitest",
-		"test:ci": "vitest run"
+		"start": "node ../../scripts/run_with_vendor_source.mjs tsx src/index.ts",
+		"start:dev": "IS_DEV=true node ../../scripts/run_with_vendor_source.mjs tsx src/index.ts",
+		"test": "node ../../scripts/run_with_vendor_source.mjs vitest",
+		"test:ci": "node ../../scripts/run_with_vendor_source.mjs vitest run"
 	},
 	"dependencies": {
 		"@vlcn.io/ws-server": "0.2.2-dev.20260313223404.c7ddf79f",

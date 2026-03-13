@@ -45,6 +45,14 @@ This installs the workspace from the committed lockfile and then builds the repo
 
 Use `rush update` only when you intentionally changed dependency specs or need to refresh the lockfile. If an install seems stale or broken, use `rush update --purge`.
 
+Normal installs should use the versions published to `npm.codemyriad.io`.
+If you need to test unpublished `@vlcn.io/*` changes locally, use local source mode instead of editing manifests:
+
+```bash
+./scripts/prepare_vlcn_source.sh
+VLCN_ROOT=3rd-party/js cd apps/web-client && rushx start
+```
+
 ### 2.2. Day to day commands
 
 To add a dependency, navigate to a package in the `pkg` or `apps` directory (i.e. `cd pkg/db`) and run `rush add -p <package-name>`. To save the dependency in `devDependencies`, add `--dev`. You can also edit `package.json` manually and then run `rush update`. To remove a dependency, delete it from `package.json` and run `rush update`.
