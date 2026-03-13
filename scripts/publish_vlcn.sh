@@ -157,6 +157,30 @@ prepare_crsqlite_publish_payload() {
 	echo "  bundled crsqlite ${host_os}-${host_arch} binary from ${source_binary}"
 }
 
+prepare_crsqlite_prebuilt_install() {
+	local pkg_dir="$VLCN_ROOT/deps/cr-sqlite/core"
+	local dist_dir="$pkg_dir/dist"
+	local host_os
+	local host_arch
+	local binary_ext
+	local dist_binary
+	local dist_zip
+
+	read -r host_os host_arch binary_ext < <(resolve_crsqlite_host_platform)
+
+	dist_binary="$dist_dir/crsqlite.${binary_ext}"
+	dist_zip="$dist_dir/crsqlite.zip"
+
+	for target in "$dist_binary" "$dist_zip"; do
+		if [[ -e "$target" ]]; then
+			backup_file "$target"
+			rm -f "$target"
+		else
+			track_created_path "$target"
+		fi
+	done
+}
+
 pnpm_install_cmd() {
 	local install_args=(install --frozen-lockfile --link-workspace-packages=true)
 
@@ -200,10 +224,12 @@ prepare_checkout() {
 
 	(
 		cd "$VLCN_ROOT"
-		export CRSQLITE_NOPREBUILD=1
 		cd "$VLCN_TYPED_SQL_ROOT/packages/type-gen"
 		./build.sh
 		cd "$VLCN_ROOT"
+		# Force crsqlite's install helper to refresh the host binary from the
+		# release asset path instead of reusing a stale locally built dist file.
+		prepare_crsqlite_prebuilt_install
 		pnpm_install_cmd
 		./build-wasm.sh
 		cd tsbuild-all
