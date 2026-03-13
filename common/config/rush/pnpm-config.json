@@ -145,15 +145,15 @@
    * PNPM documentation: https://pnpm.io/package_json#pnpmoverrides
    */
   "globalOverrides": {
-    "@vlcn.io/crsqlite": "0.16.3-dev.20260313160124.c7ddf79f",
-    "@vlcn.io/crsqlite-wasm": "0.16.0-dev.20260313160124.c7ddf79f",
-    "@vlcn.io/rx-tbl": "0.15.0-dev.20260313160124.c7ddf79f",
-    "@vlcn.io/wa-sqlite": "0.22.0-dev.20260313160124.c7ddf79f",
-    "@vlcn.io/ws-browserdb": "0.2.0-dev.20260313160124.c7ddf79f",
-    "@vlcn.io/ws-client": "0.2.0-dev.20260313160124.c7ddf79f",
-    "@vlcn.io/ws-common": "0.2.0-dev.20260313160124.c7ddf79f",
-    "@vlcn.io/ws-server": "0.2.2-dev.20260313160124.c7ddf79f",
-    "@vlcn.io/xplat-api": "0.15.0-dev.20260313160124.c7ddf79f"
+    "@vlcn.io/crsqlite": "0.16.3-dev.20260313223404.c7ddf79f",
+    "@vlcn.io/crsqlite-wasm": "0.16.0-dev.20260313223404.c7ddf79f",
+    "@vlcn.io/rx-tbl": "0.15.0-dev.20260313223404.c7ddf79f",
+    "@vlcn.io/wa-sqlite": "0.22.0-dev.20260313223404.c7ddf79f",
+    "@vlcn.io/ws-browserdb": "0.2.0-dev.20260313223404.c7ddf79f",
+    "@vlcn.io/ws-client": "0.2.0-dev.20260313223404.c7ddf79f",
+    "@vlcn.io/ws-common": "0.2.0-dev.20260313223404.c7ddf79f",
+    "@vlcn.io/ws-server": "0.2.2-dev.20260313223404.c7ddf79f",
+    "@vlcn.io/xplat-api": "0.15.0-dev.20260313223404.c7ddf79f"
   },
   /**
    * The `globalPeerDependencyRules` setting provides various settings for suppressing validation errors
