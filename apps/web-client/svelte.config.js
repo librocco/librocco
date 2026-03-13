@@ -15,13 +15,13 @@ if (IS_DEMO && !DEMO_DB_URL) {
 /**
  * A helper used to provide aliases for vlcn.io packages in dev mode:
  * - if `USE_SUBMODULES` env var is truthy, we're aliasing vlcn.io imports to submoduled packages (under '3rd-party/js')
- * - if `USE_SUBMODULES` env var is undefined or falsy, no aliases are provided: installed dependencies built from tarballs ('3rd-party/artefacts') are used
+ * - if `USE_SUBMODULES` env var is undefined or falsy, no aliases are provided: installed dependencies from the configured registry are used
  */
 function alias_vlcn_dev() {
 	console.log("\n");
 
 	if (!USE_SUBMODULES) {
-		console.log("using vlcn.io packages installed from '3rd-party/artefacts'");
+		console.log("using vlcn.io packages installed from the configured registry");
 		console.log("\n");
 		return {};
 	}
