@@ -2,6 +2,8 @@
 
 This directory contains forked/modified third-party packages that are used by the librocco project. The packages are from the [vlcn.io](https://vlcn.io/) ecosystem (cr-sqlite, sync infrastructure, etc.).
 
+This document describes the current tarball-based delivery path. It is a legacy workflow that the repo intends to replace with published package versions from `npm.codemyriad.io`; see [docs/vendor-registry-migration.md](../docs/vendor-registry-migration.md) for the target end state and migration sequence.
+
 ## Directory Structure
 
 ```text
