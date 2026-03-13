@@ -1,0 +1,58 @@
+#@ load("github.lib.yml", "checkout")
+#@ load("cache.lib.yml", "cache_node")
+#@ load("rush.lib.yml", "rush_add_path")
+#@ load("rush.lib.yml", "rush_install")
+#@ load("rush.lib.yml", "rush_build")
+
+name: Vendor Source CI
+
+"on":
+  push:
+    paths:
+      - ".gitmodules"
+      - "3rd-party/**"
+      - "apps/e2e/package.json"
+      - "apps/sync-server/package.json"
+      - "apps/sync-server/vitest.config.ts"
+      - "apps/web-client/svelte.config.js"
+      - "apps/web-client/vitest.config.ts"
+      - "python-apps/launcher/launcher/daemon_manager.py"
+      - "scripts/prepare_vlcn_source.sh"
+      - "scripts/register_vendor_source.mjs"
+      - "scripts/run_with_vendor_source.mjs"
+      - "scripts/vendor_source_config.mjs"
+      - ".github/workflow.templates/vendor-source-ci.yml"
+  workflow_dispatch:
+
+jobs:
+  vendor-source-validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      -  #@ checkout()
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Rust Toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly-2023-10-05
+          override: true
+      - name: Install wasm-pack
+        run: cargo install wasm-pack --version 0.13.1 --locked
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      - name: Prepare local vendor sources
+        run: ./scripts/prepare_vlcn_source.sh
+      -  #@ rush_install()
+      -  #@ rush_build()
+      - name: Web client typecheck in source mode
+        run: cd apps/web-client && VLCN_ROOT=3rd-party/js rushx typecheck
+      - name: E2E typecheck in source mode
+        run: cd apps/e2e && VLCN_ROOT=3rd-party/js rushx typecheck
+      - name: Sync server build in source mode
+        run: cd apps/sync-server && VLCN_ROOT=3rd-party/js rushx build
+      - name: Sync server tests in source mode
+        run: cd apps/sync-server && VLCN_ROOT=3rd-party/js rushx test:ci
