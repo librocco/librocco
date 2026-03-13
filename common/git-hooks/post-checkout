@@ -1,0 +1,54 @@
+#!/bin/sh
+#
+# Called by "git checkout", "git switch", and similar operations after the worktree
+# is updated. Warn when dependency metadata changed and the repo likely needs a fresh
+# Rush install before build or test commands run.
+
+set -eu
+
+OLD_REF="${1:-}"
+NEW_REF="${2:-}"
+
+if [ -z "$NEW_REF" ] || ! git rev-parse --verify "$NEW_REF^{commit}" >/dev/null 2>&1; then
+	exit 0
+fi
+
+if [ -n "$OLD_REF" ] && [ "$OLD_REF" != "0000000000000000000000000000000000000000" ] && git rev-parse --verify "$OLD_REF^{commit}" >/dev/null 2>&1; then
+	changed_files=$(
+		git diff --name-only "$OLD_REF" "$NEW_REF" -- \
+			"package.json" \
+			"apps/**/package.json" \
+			"pkg/**/package.json" \
+			"plugins/**/package.json" \
+			"common/config/rush/pnpm-lock.yaml" \
+			"common/config/rush/common-versions.json" \
+			"common/config/rush/pnpm-config.json" \
+			"common/config/rush/.pnpmfile.cjs" \
+			"rush.json" || true
+	)
+else
+	changed_files=$(
+		git diff-tree --no-commit-id --name-only -r "$NEW_REF" -- \
+			"package.json" \
+			"apps/**/package.json" \
+			"pkg/**/package.json" \
+			"plugins/**/package.json" \
+			"common/config/rush/pnpm-lock.yaml" \
+			"common/config/rush/common-versions.json" \
+			"common/config/rush/pnpm-config.json" \
+			"common/config/rush/.pnpmfile.cjs" \
+			"rush.json" || true
+	)
+fi
+
+if [ -z "$changed_files" ]; then
+	exit 0
+fi
+
+echo ""
+echo "Dependency metadata changed in this checkout:"
+printf '%s\n' "$changed_files" | sed 's/^/  - /'
+echo ""
+echo "Run 'rush install' before building or testing."
+echo "If you intentionally changed dependency versions or manifests, use 'rush update'."
+echo ""
