@@ -365,6 +365,8 @@ if [[ -n "$SOURCE_WORKTREE_STATE" && "$ALLOW_DIRTY" != "true" ]]; then
 	exit 1
 fi
 
+BACKUP_DIR="$(mktemp -d)"
+
 if [[ "$PREPARE" == "true" ]]; then
 	prepare_checkout
 elif [[ "$INSTALL" == "true" ]]; then
@@ -401,8 +403,6 @@ echo "==> pnpm version: $EFFECTIVE_PNPM_VERSION"
 echo "==> pnpm install args: ${PNPM_INSTALL_ARGS:-<none>}"
 echo "==> Dry run: $DRY_RUN"
 echo ""
-
-BACKUP_DIR="$(mktemp -d)"
 
 declare -A VERSION_MAP
 
