@@ -17,16 +17,18 @@
 
 	export const addToast = helpers.addToast;
 
-	export const toastError = ({ title, description, detail }: Omit<ToastData, "style">) => {
+	const toastWithStyle = (style: ToastData["style"], payload: Omit<ToastData, "style">): void => {
 		addToast({
 			data: {
-				title,
-				description,
-				style: "error",
-				detail
+				...payload,
+				style
 			}
 		});
 	};
+
+	export const toastError = (payload: Omit<ToastData, "style">) => toastWithStyle("error", payload);
+
+	export const toastSuccess = (payload: Omit<ToastData, "style">) => toastWithStyle("success", payload);
 
 	const styleMap = {
 		error: "bg-error text-error-content",
@@ -76,7 +78,7 @@
 					use:melt={$close(id)}
 					aria-label="close notification"
 				>
-					<span aria-hidden>
+					<span aria-hidden="true">
 						<X />
 					</span>
 				</button>

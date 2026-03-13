@@ -300,14 +300,28 @@ export async function getDb(app: App): Promise<DBAsync> {
 	// Throw if trying to access the DB either:
 	// - before initalised
 	// - errored out (should be reinitialised)
-	if (get(app.db.state) < AppDbState.Loading) {
+	const initialState = get(app.db.state);
+	if (initialState === AppDbState.Error) {
+		throw app.db.error ?? new ErrDbNotInit();
+	}
+	if (initialState < AppDbState.Loading) {
 		throw new ErrDbNotSet();
 	}
-	// Wait for initialisation
-	//
-	// NOTE: we're not handling the case when DB errors out while
-	// we're waiting, but it's probably ok to rely on initialisation (updating) process
-	await waitForStore(app.ready, ($ready) => $ready);
+
+	// Wait until DB reaches a terminal init state. We re-check in a loop so we never
+	// return a stale handle while init may still be transitioning.
+	let state = get(app.db.state);
+	while (state !== AppDbState.Ready && state !== AppDbState.Error) {
+		await waitForStore(app.db.state, ($state) => $state === AppDbState.Ready || $state === AppDbState.Error);
+		state = get(app.db.state);
+	}
+
+	if (state === AppDbState.Error) {
+		throw app.db.error ?? new ErrDbNotInit();
+	}
+	if (!app.db.db) {
+		throw new ErrDbNotInit();
+	}
 	return app.db.db;
 }
 

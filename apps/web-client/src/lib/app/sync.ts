@@ -114,7 +114,7 @@ class AppSyncCore implements IAppSyncExclusive {
 export class AppSync implements IAppSync {
 	#mutex = new Mutex();
 
-	// NOTE: In most use cases, an empty constructor call is file,
+	// NOTE: In most use cases, an empty constructor call is fine,
 	// we're allowing for dependency injection here mostly for testing purposes
 	constructor(private readonly core = new AppSyncCore()) {}
 
@@ -130,8 +130,8 @@ export class AppSync implements IAppSync {
 		return this.core.initialSyncProgressStore as Readable<ProgressState>;
 	}
 
-	destroy() {
-		this.runExclusive(() => {
+	async destroy(): Promise<void> {
+		await this.runExclusive(() => {
 			this.core.destroy();
 		});
 	}
@@ -189,7 +189,7 @@ export async function startSync(app: App, dbid: string, url: string) {
 	await waitForStore(app.sync.state, ($s) => $s > AppSyncState.Initializing);
 
 	// TODO: this should also be run exclusively with respect to the DB
-	app.sync.runExclusive(async (sync) => {
+	await app.sync.runExclusive(async (sync) => {
 		// If sync is active:
 		// - no need to start (idempotency)
 		// - it's safe to assume the initial sync was already attempted
@@ -234,7 +234,13 @@ export async function startSync(app: App, dbid: string, url: string) {
 }
 
 /**
+ * Performs the initial sync optimization by downloading and swapping in a remote DB snapshot.
  *
+ * @param dbid The local database identifier/filename.
+ * @param remoteUrl The HTTP(S) URL of the remote DB snapshot endpoint.
+ * @param progressStore Writable store receiving download progress updates.
+ * @param beforeReplace Optional hook invoked before replacing the local DB file.
+ * @returns `true` when snapshot replacement succeeds, `false` when optimization fails and caller should continue with live sync.
  */
 export async function _performInitialSync(
 	dbid: string,
@@ -309,5 +315,5 @@ function getRemoteDbFileUrl(syncUrl: string, dbid: string) {
 }
 
 export async function stopSync(app: App) {
-	app.sync.runExclusive((sync) => sync.stop());
+	await app.sync.runExclusive((sync) => sync.stop());
 }

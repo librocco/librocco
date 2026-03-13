@@ -1,7 +1,4 @@
 {
-	"table": {
-		"empty_message": "Nichts zu sehen"
-	},
 	"nav": {
 		"search": "Bestände suchen",
 		"books": "",
@@ -847,9 +844,26 @@
 	},
 	"misc_components": {
 		"extension_banner": {
-			"book_data_extension": "",
-			"remote_db": "",
-			"reload_translations_override": ""
+			"book_data_extension": "Buchdaten-Erweiterung",
+			"remote_db": "Remote-Datenbank",
+			"remote_db_incompatible": "Remote-Datenbank (inkompatibel)",
+			"remote_db_sync_disabled": "Remote-Datenbank (Synchronisierung deaktiviert)",
+			"remote_db_connecting_checking_compatibility": "Remote-Datenbank (Kompatibilität wird geprüft)",
+			"remote_db_connecting_reconnecting": "Remote-Datenbank (erneutes Verbinden)",
+			"remote_db_stuck": "Remote-Datenbank (Verbindungs-Loop)",
+			"remote_db_warning_local_db_warning": "Remote-Datenbank (lokale DB-Warnung)",
+			"remote_db_warning_ack_stale": "Remote-Datenbank (veraltete Server-Bestätigung)",
+			"remote_db_warning_pending_stale": "Remote-Datenbank (wartende Änderungen veraltet)",
+			"remote_db_warning": "Remote-Datenbank (Synchronisierungswarnung)",
+			"remote_db_pending": "Remote-Datenbank ({pending:number} ausstehend)",
+			"remote_db_title_disconnected": "Die Synchronisierung ist in den Einstellungen deaktiviert",
+			"remote_db_title_incompatible": "Lokale und entfernte Datenbanken sind nicht kompatibel",
+			"remote_db_title_warning": "Die Synchronisierung hat Warnungen",
+			"remote_db_title_stuck": "Die Synchronisierungsverbindung scheint festzuhängen",
+			"remote_db_title_connecting_checking_compatibility": "Verbunden, warte auf Abschluss der Kompatibilitätsprüfung",
+			"remote_db_title_connecting_reconnecting": "Die Sync-Verbindung ist nicht aktiv. Erneuter Verbindungsaufbau…",
+			"remote_db_title_default": "Status der Remote-Datenbank-Synchronisierung",
+			"reload_translations_override": "Übersetzungs-Overrides neu laden"
 		},
 		"page_layout": {
 			"stock": "",
@@ -934,30 +948,6 @@
 			"print_book_label": "",
 			"edit_book_details": "",
 			"manually_edit_book_details": ""
-		}
-	},
-	"debug_page": {
-		"title": "",
-		"labels": {
-			"runtime_error": ""
-		},
-		"actions": {
-			"trigger_load_error": "",
-			"trigger_runtime_error": "",
-			"populate_database": "",
-			"reset_database": "",
-			"upsert_100_books": "",
-			"run_query": "",
-			"executing": ""
-		},
-		"query_interface": {
-			"title": "",
-			"results_title": "",
-			"no_results": ""
-		},
-		"table": {
-			"title": "",
-			"number_of_objects": ""
 		}
 	},
 	"forms": {
@@ -1138,5 +1128,8 @@
 				"form": ""
 			}
 		}
+	},
+	"table": {
+		"empty_message": "Nichts zu sehen"
 	}
 }
