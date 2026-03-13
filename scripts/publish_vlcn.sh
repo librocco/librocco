@@ -48,6 +48,115 @@ pnpm_cmd() {
 	npx --yes "pnpm@${EFFECTIVE_PNPM_VERSION}" "$@"
 }
 
+backup_file() {
+	local target="$1"
+	local backup_path="$BACKUP_DIR/$(printf '%03d-%s' "${#RESTORE_TARGETS[@]}" "$(basename "$target")")"
+
+	cp "$target" "$backup_path"
+	RESTORE_TARGETS+=("$target")
+	RESTORE_BACKUPS+=("$backup_path")
+}
+
+track_created_path() {
+	local target="$1"
+	CREATED_PATHS+=("$target")
+}
+
+resolve_crsqlite_host_platform() {
+	local host_os
+	local host_arch
+	local binary_ext
+
+	host_os="$(uname -s)"
+	host_arch="$(uname -m)"
+
+	case "$host_os" in
+		Linux)
+			host_os="linux"
+			binary_ext="so"
+			;;
+		Darwin)
+			host_os="darwin"
+			binary_ext="dylib"
+			;;
+		MINGW* | MSYS* | CYGWIN*)
+			host_os="win"
+			binary_ext="dll"
+			;;
+		*)
+			echo "Error: unsupported crsqlite publish host OS: $host_os" >&2
+			exit 1
+			;;
+	esac
+
+	case "$host_arch" in
+		x86_64 | amd64)
+			host_arch="x86_64"
+			;;
+		arm64 | aarch64)
+			host_arch="aarch64"
+			;;
+		*)
+			echo "Error: unsupported crsqlite publish host architecture: $host_arch" >&2
+			exit 1
+			;;
+	esac
+
+	echo "$host_os $host_arch $binary_ext"
+}
+
+append_json_array_value() {
+	local json_path="$1"
+	local value="$2"
+
+	jq --arg value "$value" '
+		.files = (((.files // []) + [$value]) | unique)
+	' "$json_path" > "${json_path}.tmp"
+	mv "${json_path}.tmp" "$json_path"
+}
+
+prepare_crsqlite_publish_payload() {
+	local pkg_dir="$1"
+	local pkg_json="$2"
+	local helper_path="$pkg_dir/nodejs-install-helper.js"
+	local host_os
+	local host_arch
+	local binary_ext
+	local source_binary
+	local binaries_root
+	local platform_dir
+	local packaged_binary
+
+	read -r host_os host_arch binary_ext < <(resolve_crsqlite_host_platform)
+
+	source_binary="$pkg_dir/dist/crsqlite.${binary_ext}"
+	if [[ ! -f "$source_binary" ]]; then
+		echo "Error: missing crsqlite binary at $source_binary" >&2
+		echo "Run with PREPARE=true on a supported host before publishing." >&2
+		exit 1
+	fi
+
+	binaries_root="$pkg_dir/binaries"
+	platform_dir="$binaries_root/${host_os}-${host_arch}"
+	packaged_binary="$platform_dir/crsqlite.${binary_ext}"
+
+	if [[ ! -d "$binaries_root" ]]; then
+		track_created_path "$binaries_root"
+	elif [[ ! -d "$platform_dir" ]]; then
+		track_created_path "$platform_dir"
+	fi
+
+	mkdir -p "$platform_dir"
+	cp "$source_binary" "$packaged_binary"
+	track_created_path "$packaged_binary"
+
+	backup_file "$helper_path"
+	cp "$SCRIPT_DIR/publish_vlcn_crsqlite_nodejs_install_helper.js" "$helper_path"
+	append_json_array_value "$pkg_json" "binaries/**/*"
+
+	echo "  bundled crsqlite ${host_os}-${host_arch} binary from ${source_binary}"
+}
+
 pnpm_install_cmd() {
 	local install_args=(install --frozen-lockfile --link-workspace-packages=true)
 
@@ -113,6 +222,8 @@ install_workspace() {
 verify_publish_outputs() {
 	local required_paths=(
 		"$VLCN_ROOT/deps/cr-sqlite/core/package.json"
+		"$VLCN_ROOT/deps/cr-sqlite/core/nodejs-install-helper.js"
+		"$VLCN_ROOT/deps/cr-sqlite/core/nodejs-helper.js"
 		"$VLCN_ROOT/deps/wa-sqlite/package.json"
 		"$VLCN_ROOT/packages/xplat-api/dist/xplat-api.js"
 		"$VLCN_ROOT/packages/xplat-api/dist/xplat-api.d.ts"
@@ -155,14 +266,22 @@ check_registry() {
 }
 
 restore_files() {
-	if [[ ${#STAMPED_FILES[@]} -eq 0 ]]; then
+	if [[ ${#CREATED_PATHS[@]} -gt 0 ]]; then
+		echo ""
+		echo "==> Removing temporary publish payloads..."
+		for ((i=${#CREATED_PATHS[@]} - 1; i>=0; --i)); do
+			rm -rf "${CREATED_PATHS[$i]}"
+		done
+	fi
+
+	if [[ ${#RESTORE_TARGETS[@]} -eq 0 ]]; then
 		return
 	fi
 
 	echo ""
-	echo "==> Restoring package.json files..."
-	for i in "${!STAMPED_FILES[@]}"; do
-		cp "${BACKUP_FILES[$i]}" "${STAMPED_FILES[$i]}"
+	echo "==> Restoring publish files..."
+	for i in "${!RESTORE_TARGETS[@]}"; do
+		cp "${RESTORE_BACKUPS[$i]}" "${RESTORE_TARGETS[$i]}"
 	done
 }
 
@@ -174,8 +293,9 @@ cleanup() {
 	fi
 }
 
-STAMPED_FILES=()
-BACKUP_FILES=()
+RESTORE_TARGETS=()
+RESTORE_BACKUPS=()
+CREATED_PATHS=()
 BACKUP_DIR=""
 trap cleanup EXIT
 
@@ -271,15 +391,16 @@ for entry in "${PUBLISH_PACKAGES[@]}"; do
 		exit 1
 	fi
 
-	backup_path="$BACKUP_DIR/$(printf '%03d.json' "${#STAMPED_FILES[@]}")"
-	cp "$pkg_json" "$backup_path"
+	backup_file "$pkg_json"
 
 	new_version="$(stamp_version "$pkg_json")"
 	VERSION_MAP["$name"]="$new_version"
-	STAMPED_FILES+=("$pkg_json")
-	BACKUP_FILES+=("$backup_path")
 
 	echo "  ${name}@${new_version}"
+
+	if [[ "$name" == "@vlcn.io/crsqlite" ]]; then
+		prepare_crsqlite_publish_payload "$dir" "$pkg_json"
+	fi
 done
 
 echo ""
