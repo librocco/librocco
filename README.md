@@ -43,6 +43,14 @@ rush update && rush build
 
 This will install the packages, link the dependencies and `build` all of the packages (found in `/pkg/` folder).
 
+Normal installs should use the versions published to `npm.codemyriad.io`.
+If you need to test unpublished `@vlcn.io/*` changes locally, use local source mode instead of editing manifests:
+
+```bash
+./scripts/prepare_vlcn_source.sh
+VLCN_ROOT=3rd-party/js cd apps/web-client && rushx start
+```
+
 ### 2.2. Day to day commands
 
 To add a dependency, navigate to a package in the `pkg` or `apps` directory (i.e. `cd pkg/db`) and run `rush add -p <package-name>`.To save the dependency in `devDependencies`, add `--dev` option to the `rush add` command.Additionally, the dependency can be installed by adding it manually to `package.json` and running `rush update`.To remove a dependency, remove it from `package.json` and run rush update.

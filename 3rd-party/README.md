@@ -2,6 +2,29 @@
 
 This directory contains forked/modified third-party packages that are used by the librocco project. The packages are from the [vlcn.io](https://vlcn.io/) ecosystem (cr-sqlite, sync infrastructure, etc.).
 
+This document mostly describes the legacy tarball-based delivery path. The new preferred escape hatch for unpublished vendor work is local source mode via `VLCN_ROOT`, while normal installs should continue to use the registry-backed versions.
+
+## Local Source Mode
+
+Use local source mode when Librocco needs to run against unpublished `@vlcn.io/*` changes:
+
+1. Prepare the vendor checkout:
+   ```bash
+   ./scripts/prepare_vlcn_source.sh
+   ```
+2. Run Librocco with `VLCN_ROOT` pointing at the checkout you want:
+   ```bash
+   VLCN_ROOT=3rd-party/js cd apps/web-client && rushx start
+   VLCN_ROOT=3rd-party/js cd apps/sync-server && rushx test:ci
+   VLCN_ROOT=3rd-party/js cd apps/e2e && rushx test:ci
+   ```
+
+Notes:
+- `VLCN_ROOT` is the preferred switch and can point at either the in-repo submodule or an external checkout.
+- Source mode uses the exact checkout you point at. If `3rd-party/js` is behind the current `vlcn-js` source of truth, update that checkout first or point `VLCN_ROOT` at an external worktree.
+- `USE_SUBMODULES=1` still works as a legacy shortcut for `VLCN_ROOT=3rd-party/js`.
+- This mode is developer-only and should not require committed manifest or lockfile changes.
+
 ## Directory Structure
 
 ```text

@@ -3,41 +3,11 @@ import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 import { defineConfig } from "vitest/config";
 
-import { USE_SUBMODULES } from "./build_constants";
+import { getViteVendorAliasEntries, logVendorSourceMode } from "../../scripts/vendor_source_config.mjs";
 
-/**
- * A helper used to provide aliases for vlcn.io packages in dev mode:
- * - if in local test mode, we're aliasing vlcn.io imports to submoduled packages (under '3rd-party/js')
- * - if in CI, no aliases are provided: installed dependencies from the configured registry are used
- */
 function alias_vlcn_dev() {
-	console.log("\n");
-
-	if (!USE_SUBMODULES) {
-		console.log("testing using vlcn.io packages installed from the configured registry");
-		console.log("\n");
-		return {};
-	}
-
-	const aliases = {
-		"@vlcn.io/crsqlite": path.resolve(__dirname, "../../3rd-party/js/deps/cr-sqlite/core/nodejs-helper.js"),
-		"@vlcn.io/crsqlite-wasm": path.resolve(__dirname, "../../3rd-party/js/packages/crsqlite-wasm/dist"),
-		"@vlcn.io/rx-tbl": path.resolve(__dirname, "../../3rd-party/js/packages/rx-tbl/dist"),
-		"@vlcn.io/wa-sqlite": path.resolve(__dirname, "../../3rd-party/js/deps/wa-sqlite"),
-		"@vlcn.io/ws-browserdb": path.resolve(__dirname, "../../3rd-party/js/packages/ws-browserdb/dist"),
-		"@vlcn.io/ws-client/worker.js": path.resolve(__dirname, "../../3rd-party/js/packages/ws-client/dist/worker/worker.js"),
-		"@vlcn.io/ws-client": path.resolve(__dirname, "../../3rd-party/js/packages/ws-client/dist"),
-		"@vlcn.io/ws-common": path.resolve(__dirname, "../../3rd-party/js/packages/ws-common/dist"),
-		"@vlcn.io/ws-server": path.resolve(__dirname, "../../3rd-party/js/packages/ws-server/dist"),
-		"@vlcn.io/xplat-api": path.resolve(__dirname, "../../3rd-party/js/packages/xplat-api/dist/xplat-api.js")
-	};
-
-	console.log("submodule test: aliasing vlcn.io packages to respective submodules:");
-	for (const [pkg, path] of Object.entries(aliases)) {
-		console.log(`  ${pkg} -> ${path}`);
-	}
-	console.log("\n");
-
+	logVendorSourceMode("web-client tests");
+	const aliases = getViteVendorAliasEntries();
 	return aliases;
 }
 
@@ -46,27 +16,27 @@ export default defineConfig({
 	publicDir: "static",
 
 	resolve: {
-		alias: {
-			$lib: path.resolve(__dirname, "src/lib"),
+		alias: [
+			{ find: "$lib", replacement: path.resolve(__dirname, "src/lib") },
 
-			// (conditionally) alias the vlcn-io submodules
+			// (conditionally) alias local vlcn sources
 			...alias_vlcn_dev(),
 
 			// some mocks used to not break the tests while testing components using them
-			$lucide: path.resolve(__dirname, "node_modules/lucide-svelte/dist/icons"),
+			{ find: "$lucide", replacement: path.resolve(__dirname, "node_modules/lucide-svelte/dist/icons") },
 
 			// sveltekit module mocks for test environment
 			//
 			// NOTE: these defaults shouldn't be terribly relevant for testing usage,
 			// but do check them out in case some tested functionality DOES depend on correct values
-			"$app/paths": path.resolve(__dirname, "src/__mocks__/$app-paths.ts"),
-			"$app/navigation": path.resolve(__dirname, "src/__mocks__/$app-navigation.ts"),
-			"$app/stores": path.resolve(__dirname, "src/__mocks__/$app-stores.ts"),
-			"$app/environment": path.resolve(__dirname, "src/__mocks__/$app-environment.ts"),
-			"$app/forms": path.resolve(__dirname, "src/__mocks__/$app-forms.ts"),
-			"$env/static/public": path.resolve(__dirname, "src/__mocks__/$env-static-public.ts"),
-			"$env/dynamic/public": path.resolve(__dirname, "src/__mocks__/$env-dynamic-public.ts")
-		}
+			{ find: "$app/paths", replacement: path.resolve(__dirname, "src/__mocks__/$app-paths.ts") },
+			{ find: "$app/navigation", replacement: path.resolve(__dirname, "src/__mocks__/$app-navigation.ts") },
+			{ find: "$app/stores", replacement: path.resolve(__dirname, "src/__mocks__/$app-stores.ts") },
+			{ find: "$app/environment", replacement: path.resolve(__dirname, "src/__mocks__/$app-environment.ts") },
+			{ find: "$app/forms", replacement: path.resolve(__dirname, "src/__mocks__/$app-forms.ts") },
+			{ find: "$env/static/public", replacement: path.resolve(__dirname, "src/__mocks__/$env-static-public.ts") },
+			{ find: "$env/dynamic/public", replacement: path.resolve(__dirname, "src/__mocks__/$env-dynamic-public.ts") }
+		]
 	},
 
 	optimizeDeps: {
