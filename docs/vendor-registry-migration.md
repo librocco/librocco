@@ -73,9 +73,19 @@ All 10 `@vlcn.io/*` packages published to `npm.codemyriad.io` under dev snapshot
 
 After Rush installs resolve the correct published fork versions:
 
-1. Update [`python-apps/launcher/scripts/package_syncserver_for_build.py`](../python-apps/launcher/scripts/package_syncserver_for_build.py) to install exact registry versions instead of `file:` tarballs.
-2. Remove the R2 artefact transport path from CI and delete the tarball build/download/upload scripts when they are no longer needed.
-3. Delete `3rd-party/artefacts/` and retire submodules as a delivery mechanism.
+1. Update [`python-apps/launcher/scripts/package_syncserver_for_build.py`](../python-apps/launcher/scripts/package_syncserver_for_build.py) to install exact registry versions instead of `file:` tarballs. Currently it generates `file:` overrides pointing at 9 tarballs in `3rd-party/artefacts/` (lines 83-102). Replace with registry version pins. The Windows-specific tarball repack workaround in the PyInstaller CI workflow can also be removed.
+2. Remove `./scripts/artefacts-download.sh` calls from all CI workflows. Affected files:
+   - `.github/workflows/web-client-ci.yml` (10 references)
+   - `.github/workflows/pyinstaller-build.yml`
+   - `.github/workflows/vfs-benchmark.yml`
+   - `.github/workflows/fix-playwright.yml`
+   - `.github/workflows/playwright-matrix.yml`
+   - `.github/workflow.templates/build-crsqlite.lib.yml`
+   - `.github/workflow.templates/github.lib.yml`
+   - `.github/workflow.templates/pyinstaller-build.yml`
+3. Remove R2 artefact caching from `.github/workflow.templates/cache.lib.yml`.
+4. Delete `3rd-party/artefacts/`, `scripts/artefacts-download.sh`, and `scripts/build_vlcn.sh` once no workflow depends on them.
+5. Update cosmetic log messages in `apps/web-client/svelte.config.js` and `apps/web-client/vitest.config.ts` (currently say "using vlcn.io packages installed from '3rd-party/artefacts'").
 
 ### Phase 4: keep one narrow local escape hatch
 
