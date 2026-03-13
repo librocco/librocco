@@ -9,10 +9,12 @@
 #
 # Environment variables:
 #   DRY_RUN=true      Stamp and check versions, then run pnpm publish --dry-run
-#   PREPARE=true      Initialize submodules and build the vlcn-js checkout first
-#   INSTALL=true      Install vlcn-js workspace dependencies before publishing
+#   PREPARE=true      Initialize submodules and run the vlcn-js build pipeline first
+#   INSTALL=true      Install vlcn-js workspace dependencies when PREPARE=false
 #   ALLOW_DIRTY=true  Allow publishing from a dirty vlcn-js worktree
 #   MYRIAD_N=1        Required for the "myriad" track
+#   PNPM_INSTALL_ARGS Pass extra arguments to pnpm install (for example "--force")
+#   PNPM_VERSION=...  Override the pnpm version used for the target checkout
 #   VLCN_ROOT=...     Override the vlcn-js checkout path
 
 set -euo pipefail
@@ -43,15 +45,60 @@ pkg_dir() {
 }
 
 pnpm_cmd() {
-	npx --yes "pnpm@${PNPM_VERSION}" "$@"
+	npx --yes "pnpm@${EFFECTIVE_PNPM_VERSION}" "$@"
+}
+
+pnpm_install_cmd() {
+	local install_args=(install --frozen-lockfile --link-workspace-packages=true)
+
+	if [[ -n "${PNPM_INSTALL_ARGS:-}" ]]; then
+		local extra_install_args
+		# shellcheck disable=SC2206
+		extra_install_args=($PNPM_INSTALL_ARGS)
+		install_args+=("${extra_install_args[@]}")
+	fi
+
+	pnpm_cmd "${install_args[@]}"
+}
+
+resolve_pnpm_version() {
+	if [[ -n "${PNPM_VERSION:-}" ]]; then
+		echo "$PNPM_VERSION"
+		return
+	fi
+
+	if [[ -f "$VLCN_ROOT/package.json" ]]; then
+		local package_manager
+		package_manager="$(jq -r '.packageManager // empty' "$VLCN_ROOT/package.json")"
+		if [[ "$package_manager" == pnpm@* ]]; then
+			echo "${package_manager#pnpm@}"
+			return
+		fi
+	fi
+
+	echo "$DEFAULT_PNPM_VERSION"
 }
 
 prepare_checkout() {
 	echo "==> Preparing vlcn-js checkout at $VLCN_ROOT"
 	git -C "$VLCN_ROOT" submodule update --init --recursive
+
+	if [[ ! -x "$VLCN_TYPED_SQL_ROOT/packages/type-gen/build.sh" ]]; then
+		echo "Error: typed-sql build script not found at $VLCN_TYPED_SQL_ROOT/packages/type-gen/build.sh" >&2
+		echo "Create a sibling typed-sql checkout or override VLCN_TYPED_SQL_ROOT." >&2
+		exit 1
+	fi
+
 	(
 		cd "$VLCN_ROOT"
-		make
+		export CRSQLITE_NOPREBUILD=1
+		cd "$VLCN_TYPED_SQL_ROOT/packages/type-gen"
+		./build.sh
+		cd "$VLCN_ROOT"
+		pnpm_install_cmd
+		./build-wasm.sh
+		cd tsbuild-all
+		pnpm_cmd run build
 	)
 }
 
@@ -59,8 +106,30 @@ install_workspace() {
 	echo "==> Installing vlcn-js workspace dependencies..."
 	(
 		cd "$VLCN_ROOT"
-		pnpm_cmd install --frozen-lockfile
+		pnpm_install_cmd
 	)
+}
+
+verify_publish_outputs() {
+	local required_paths=(
+		"$VLCN_ROOT/deps/cr-sqlite/core/package.json"
+		"$VLCN_ROOT/deps/wa-sqlite/package.json"
+		"$VLCN_ROOT/packages/xplat-api/dist/xplat-api.js"
+		"$VLCN_ROOT/packages/xplat-api/dist/xplat-api.d.ts"
+		"$VLCN_ROOT/packages/ws-common/dist/index.js"
+		"$VLCN_ROOT/packages/ws-client/dist/index.js"
+		"$VLCN_ROOT/packages/ws-server/dist/index.js"
+		"$VLCN_ROOT/packages/crsqlite-wasm/dist/index.js"
+		"$VLCN_ROOT/packages/crsqlite-wasm/dist/crsqlite.wasm"
+	)
+
+	for path in "${required_paths[@]}"; do
+		if [[ ! -f "$path" ]]; then
+			echo "Error: missing publish output $path" >&2
+			echo "Run with PREPARE=true or prepare the vlcn-js checkout before publishing." >&2
+			exit 1
+		fi
+	done
 }
 
 stamp_version() {
@@ -100,10 +169,14 @@ restore_files() {
 cleanup() {
 	restore_files
 
-	if [[ -d "$BACKUP_DIR" ]]; then
+	if [[ -n "$BACKUP_DIR" && -d "$BACKUP_DIR" ]]; then
 		rm -rf "$BACKUP_DIR"
 	fi
 }
+
+STAMPED_FILES=()
+BACKUP_FILES=()
+BACKUP_DIR=""
 trap cleanup EXIT
 
 require_cmd git
@@ -132,17 +205,19 @@ if [[ ! -d "$VLCN_ROOT/.git" && ! -f "$VLCN_ROOT/.git" ]]; then
 	exit 1
 fi
 
-for required_pkg in "$VLCN_ROOT/deps/cr-sqlite/core/package.json" "$VLCN_ROOT/deps/wa-sqlite/package.json"; do
-	if [[ ! -f "$required_pkg" ]]; then
-		echo "Error: missing $required_pkg. Run with PREPARE=true or initialize submodules first." >&2
-		exit 1
-	fi
-done
+EFFECTIVE_PNPM_VERSION="$(resolve_pnpm_version)"
 
-PREPARE="${PREPARE:-false}"
+PREPARE="${PREPARE:-true}"
 INSTALL="${INSTALL:-true}"
 ALLOW_DIRTY="${ALLOW_DIRTY:-false}"
 DRY_RUN="${DRY_RUN:-false}"
+
+SOURCE_WORKTREE_STATE="$(git -C "$VLCN_ROOT" status --short --ignore-submodules=none)"
+if [[ -n "$SOURCE_WORKTREE_STATE" && "$ALLOW_DIRTY" != "true" ]]; then
+	echo "Error: vlcn-js worktree is dirty. Commit the fork state before publishing." >&2
+	echo "$SOURCE_WORKTREE_STATE" >&2
+	exit 1
+fi
 
 if [[ "$PREPARE" == "true" ]]; then
 	prepare_checkout
@@ -150,19 +225,14 @@ elif [[ "$INSTALL" == "true" ]]; then
 	install_workspace
 fi
 
-WORKTREE_STATE="$(git -C "$VLCN_ROOT" status --short --ignore-submodules=none)"
-if [[ -n "$WORKTREE_STATE" && "$ALLOW_DIRTY" != "true" ]]; then
-	echo "Error: vlcn-js worktree is dirty. Commit the fork state before publishing." >&2
-	echo "$WORKTREE_STATE" >&2
-	exit 1
-fi
+verify_publish_outputs
 
 SHORT_SHA="$(git -C "$VLCN_ROOT" rev-parse --short=8 HEAD)"
 
 case "$TRACK" in
 	dev)
-		DATE_STAMP="$(date -u +%Y%m%d)"
-		VERSION_SUFFIX="dev.${DATE_STAMP}.${SHORT_SHA}"
+		TIMESTAMP_UTC="$(date -u +%Y%m%d%H%M%S)"
+		VERSION_SUFFIX="dev.${TIMESTAMP_UTC}.${SHORT_SHA}"
 		DIST_TAG="$DEV_DIST_TAG"
 		;;
 	myriad)
@@ -181,11 +251,11 @@ echo "==> Source SHA: $SHORT_SHA"
 echo "==> Version suffix: $VERSION_SUFFIX"
 echo "==> Registry: $REGISTRY_URL"
 echo "==> Dist tag: $DIST_TAG"
+echo "==> pnpm version: $EFFECTIVE_PNPM_VERSION"
+echo "==> pnpm install args: ${PNPM_INSTALL_ARGS:-<none>}"
 echo "==> Dry run: $DRY_RUN"
 echo ""
 
-STAMPED_FILES=()
-BACKUP_FILES=()
 BACKUP_DIR="$(mktemp -d)"
 
 declare -A VERSION_MAP

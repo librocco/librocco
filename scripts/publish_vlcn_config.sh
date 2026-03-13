@@ -6,7 +6,8 @@ REGISTRY_URL="${REGISTRY_URL:-https://npm.codemyriad.io/}"
 DEV_DIST_TAG="${DEV_DIST_TAG:-dev}"
 MYRIAD_DIST_TAG="${MYRIAD_DIST_TAG:-myriad}"
 VLCN_ROOT="${VLCN_ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../3rd-party/js" && pwd)}"
-PNPM_VERSION="${PNPM_VERSION:-9.15.9}"
+VLCN_TYPED_SQL_ROOT="${VLCN_TYPED_SQL_ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../../typed-sql" 2>/dev/null && pwd)}"
+DEFAULT_PNPM_VERSION="${DEFAULT_PNPM_VERSION:-9.15.9}"
 
 # Packages are ordered topologically so workspace dependencies resolve to
 # already-published versions within the same publish run.
