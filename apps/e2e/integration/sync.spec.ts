@@ -80,9 +80,11 @@ async function waitForHttpReady(
 ) {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
+		const remainingMs = deadline - Date.now();
+		if (remainingMs <= 0) break;
 		const ctx = await request.newContext({ ignoreHTTPSErrors: true });
 		try {
-			const resp = await ctx.get(url);
+			const resp = await ctx.get(url, { timeout: Math.max(1, remainingMs) });
 			if (isReady(resp.status())) {
 				return;
 			}
@@ -91,7 +93,7 @@ async function waitForHttpReady(
 		} finally {
 			await ctx.dispose();
 		}
-		await new Promise((resolve) => setTimeout(resolve, 1000));
+		await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.min(1000, deadline - Date.now()))));
 	}
 	throw new Error(`Server at ${url} not reachable after ${timeoutMs}ms`);
 }
@@ -105,9 +107,11 @@ async function waitForSyncServerDatabaseHealthy(dbName: string, timeoutMs = 60_0
 	const deadline = Date.now() + timeoutMs;
 
 	while (Date.now() < deadline) {
+		const remainingMs = deadline - Date.now();
+		if (remainingMs <= 0) break;
 		const ctx = await request.newContext({ ignoreHTTPSErrors: true });
 		try {
-			const resp = await ctx.get(healthUrl);
+			const resp = await ctx.get(healthUrl, { timeout: Math.max(1, remainingMs) });
 			if (resp.status() === 200) {
 				const body = (await resp.json().catch((): { ok?: boolean } | null => null)) as { ok?: boolean } | null;
 				if (body?.ok === true) {
@@ -119,7 +123,7 @@ async function waitForSyncServerDatabaseHealthy(dbName: string, timeoutMs = 60_0
 		} finally {
 			await ctx.dispose();
 		}
-		await new Promise((resolve) => setTimeout(resolve, 1000));
+		await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.min(1000, deadline - Date.now()))));
 	}
 
 	throw new Error(`Sync DB health at ${healthUrl} not healthy after ${timeoutMs}ms`);
@@ -520,7 +524,6 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 
 	await page.getByRole("button", { name: /nuke/i }).click();
 	await page.waitForLoadState("domcontentloaded");
-	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 30000 });
 
 	await expect
 		.poll(
@@ -534,6 +537,15 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 			}
 		)
 		.toBe(true);
+
+	// After nuke+resync, wait for full steady state before asserting propagation.
+	// The app can transiently stay in "connecting/checking_compatibility" during re-init.
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
+			timeout: 45_000,
+			intervals: [250]
+		})
+		.toBe("synced");
 
 	const refreshedDbHandle = await getDbHandle(page);
 	await refreshedDbHandle.evaluate(upsertCustomer, { id: 2, displayId: "2", fullname: "Post Resync Customer", email: "post@test.com" });

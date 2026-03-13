@@ -11,16 +11,19 @@ const initialState: SyncAutoRecoveryState = {
 	lastResult: null
 };
 
+/** Writable store tracking sync auto-recovery attempts and their latest outcome. */
 export const syncAutoRecovery = writable<SyncAutoRecoveryState>(initialState);
 
-export function markAutoRecoveryAttempt() {
+/** Record that an auto-recovery attempt has started. */
+export function markAutoRecoveryAttempt(): void {
 	syncAutoRecovery.update((state) => ({
 		...state,
 		lastAttemptAt: Date.now()
 	}));
 }
 
-export function markAutoRecoverySuccess() {
+/** Record a successful auto-recovery run. */
+export function markAutoRecoverySuccess(): void {
 	syncAutoRecovery.update((state) => ({
 		...state,
 		lastResult: "success",
@@ -28,7 +31,8 @@ export function markAutoRecoverySuccess() {
 	}));
 }
 
-export function markAutoRecoveryNoop() {
+/** Record that auto-recovery ran but no action was needed. */
+export function markAutoRecoveryNoop(): void {
 	syncAutoRecovery.update((state) => ({
 		...state,
 		lastResult: "noop",
@@ -36,7 +40,8 @@ export function markAutoRecoveryNoop() {
 	}));
 }
 
-export function markAutoRecoveryFailure(error: unknown) {
+/** Record a failed auto-recovery attempt with an error message. */
+export function markAutoRecoveryFailure(error: unknown): void {
 	const message = error instanceof Error ? error.message : String(error);
 	syncAutoRecovery.update((state) => ({
 		...state,
@@ -45,6 +50,7 @@ export function markAutoRecoveryFailure(error: unknown) {
 	}));
 }
 
-export function resetAutoRecoveryState() {
+/** Reset auto-recovery state to initial values. */
+export function resetAutoRecoveryState(): void {
 	syncAutoRecovery.set(initialState);
 }

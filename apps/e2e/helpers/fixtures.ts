@@ -37,6 +37,15 @@ const warmupOnce = (async () => {
 	}
 })();
 
+const createUniqueTestDbId = () => {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+		return `sync-test-db-${crypto.randomUUID()}`;
+	}
+	const time = Date.now().toString(36);
+	const rand = Math.random().toString(16).slice(2, 14);
+	return `sync-test-db-${time}-${rand}`;
+};
+
 const books = [
 	{ isbn: "1234", authors: "author1", title: "title1", publisher: "pub1", price: 10 },
 	{ isbn: "4321", authors: "author2", title: "title2", publisher: "pub2", price: 20 },
@@ -271,7 +280,7 @@ export const testBase = test.extend<BaseTestFixture>({
 		await warmupOnce;
 
 		const hydrationTimeout = 45_000;
-		const testDbId = `sync-test-db-${Math.floor(Math.random() * 1000000)}`;
+		const testDbId = createUniqueTestDbId();
 
 		// Apply E2E runtime config before any app script executes on first load.
 		// This removes the "first boot with old persisted settings" window where sync may still be on.
