@@ -1,9 +1,11 @@
 # 3rd-Party Dependencies
 
-This directory contains forked/modified third-party packages that are used by the librocco project. The packages are from the [vlcn.io](https://vlcn.io/) ecosystem (cr-sqlite, sync infrastructure, etc.).
+This directory contains forked/modified third-party packages used by Librocco, mainly from the [vlcn.io](https://vlcn.io/) ecosystem (cr-sqlite, sync infrastructure, etc.).
 
-This document describes the current tarball-based delivery path. It is a legacy workflow that the repo intends to replace with published package versions from `npm.codemyriad.io`; see [docs/vendor-registry-migration.md](../docs/vendor-registry-migration.md) for the target end state and migration sequence.
-The new preferred escape hatch for unpublished vendor work is local source mode via `VLCN_ROOT`, while normal installs should continue to use the registry-backed versions.
+Normal dependency delivery is registry-backed via `npm.codemyriad.io`.  
+This repo still documents source-mode workflows for unpublished `@vlcn.io/*` changes and for legacy R2 artefact CI paths.
+
+For normal work, use the registry path and the published versions declared in package manifests and `globalOverrides`.
 
 ## Local Source Mode
 
@@ -30,116 +32,74 @@ Notes:
 
 ```text
 3rd-party/
-├── artefacts/                    # Pre-built .tgz packages (committed to git)
-│   ├── vlcn.io-crsqlite-*.tgz
-│   ├── vlcn.io-ws-server-*.tgz
-│   ├── ... other packages
-│   └── version-cached.txt        # Hash marker for CI cache validation
-├── artefacts_version.txt         # Current submodule hashes (for cache invalidation)
+├── artefacts/                    # Legacy pre-built .tgz artefacts (legacy path only)
+│   ├── vlcn.io-*.tgz
+│   ├── version-cached.txt
+│   └── ...
+├── artefacts_version.txt         # Legacy hash marker for legacy R2 workflows
 ├── js/                           # Git submodule: vlcn.io/js monorepo
 │   ├── packages/
-│   │   ├── ws-server/            # WebSocket sync server
-│   │   ├── ws-client/            # WebSocket sync client
+│   │   ├── ws-server/
+│   │   ├── ws-client/
 │   │   └── ...
 │   └── deps/
-│       ├── cr-sqlite/            # CRSQLite extension
-│       └── wa-sqlite/            # WebAssembly SQLite
+│       ├── cr-sqlite/
+│       └── wa-sqlite/
 └── typed-sql/                    # Git submodule: typed-sql package
 ```
 
 ## How It Works
 
-### Package Resolution
+### Registry Delivery Path
 
-Rush/pnpm uses `globalOverrides` in `common/config/rush/pnpm-config.json` to redirect all `@vlcn.io/*` package requests to the pre-built `.tgz` files in `artefacts/`:
+The default path is registry-based and uses published `@vlcn.io/*` versions from `npm.codemyriad.io`:
 
-```json
-"globalOverrides": {
-  "@vlcn.io/ws-server": "file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz",
-  ...
-}
-```
+- `apps/web-client/package.json`
+- `apps/sync-server/package.json`
+- `apps/e2e/package.json`
+- `common/config/rush/pnpm-config.json`
 
-This means:
-- All projects in the monorepo use the same version of vlcn packages
-- The packages are installed from local tarballs, not from npm registry
-- Changes to the source require rebuilding the tarballs
-
-### CI/CD Workflow
-
-1. **Cache Check**: CI runs `scripts/compare_artefacts_version.sh` to check if artefacts need rebuilding
-2. **Version Tracking**: `artefacts_version.txt` contains git hashes of the submodules
-3. **Rebuild Trigger**: If submodule hashes change, `scripts/build_vlcn.sh` rebuilds all packages
-4. **Cache Storage**: Built artefacts are cached and shared across CI jobs
+Do not commit changes to `3rd-party/artefacts` for normal dependency updates.
 
 ## Making Changes to 3rd-Party Packages
 
 ### Quick Development Workflow
 
-For temporary changes during development:
+For temporary local validation against unpublished `@vlcn.io/*` changes:
 
 1. **Edit the source** in `3rd-party/js/packages/<package>/src/`
-
-2. **Build the package**:
+2. Prepare the vendor checkout:
    ```bash
-   cd 3rd-party/js/packages/ws-server  # or whichever package
-   pnpm install
-   pnpm build
+   ./scripts/prepare_vlcn_source.sh
    ```
-
-3. **Rebuild the tarball**:
+3. Run Librocco apps/tests with `VLCN_ROOT`:
    ```bash
-   # From repo root
-   ./scripts/build_vlcn.sh
-   ```
-
-   Or manually for a single package:
-   ```bash
-   cd 3rd-party/js/packages/ws-server
-   pnpm pack
-   cp *.tgz ../../artefacts/
-   rm *.tgz
-   ```
-
-4. **Reinstall dependencies**:
-   ```bash
-   rush update --purge
+   VLCN_ROOT=3rd-party/js cd apps/web-client && rushx start
+   VLCN_ROOT=3rd-party/js cd apps/sync-server && rushx test:ci
+   VLCN_ROOT=3rd-party/js cd apps/e2e && rushx test:ci
    ```
 
 ### Permanent Changes
 
-For changes that should persist:
+For changes that should be shipped to every clone of Librocco, publish from the vlcn-js source of truth with
+`./scripts/publish_vlcn.sh dev` and then retarget Librocco dependencies to the published versions.
 
-1. Make changes in the submodule (`3rd-party/js/`)
-2. Commit those changes in the submodule
-3. Run `./scripts/build_vlcn.sh` to rebuild artefacts
-4. Commit both the submodule reference and the new `.tgz` files
+### Legacy Artefact Path
 
-**Note**: The submodule points to a fork. If you need to update the upstream vlcn.io code:
-1. Update the submodule to the desired commit
-2. Rebuild artefacts
-3. Commit the submodule reference change
+The files in `3rd-party/artefacts`, plus scripts like:
+
+- `scripts/build_vlcn.sh`
+- `scripts/compare_artefacts_version.sh`
+- `scripts/artefacts-download.sh`
+
+are legacy and retained for backward compatibility in some CI jobs. Prefer registry/source-mode workflows for new work.
 
 ### Troubleshooting
 
-### "workspace:* dependency not found" errors during rush update
+### Hash mismatch errors in legacy CI
 
-This happens when `npm pack` is run without first resolving workspace dependencies. The `build_vlcn.sh` script handles this by running `pnpm install` in the vlcn.io monorepo before packing.
-
-### Changes not picked up after editing source
-
-1. Make sure you ran `pnpm build` in the package directory
-2. Make sure you regenerated the `.tgz` file
-3. Run `rush update --purge` to force reinstall
-
-### Hash mismatch errors in CI
-
-This indicates the `artefacts_version.txt` doesn't match `artefacts/version-cached.txt`. This can happen if:
-- Submodules were updated without rebuilding artefacts
-- Artefacts were rebuilt without updating the version file
-- CI cache is stale
-
-Resolution: Run `./scripts/build_vlcn.sh` locally and commit both the new tarballs and updated version files.
+If an old CI job fails on missing or mismatched artefacts, see
+[`docs/developer-workflow-artefacts.md`](./../docs/developer-workflow-artefacts.md).
 
 ## Package List
 
@@ -159,6 +119,6 @@ Resolution: Run `./scripts/build_vlcn.sh` locally and commit both the new tarbal
 
 - `common/config/rush/pnpm-config.json` - Contains `globalOverrides` for package resolution
 - `common/config/rush/.pnpmfile.cjs` - Normalizes lockfile paths for consistent specifiers
-- `scripts/build_vlcn.sh` - Builds all packages and updates artefacts
-- `scripts/compute_artefacts_version.sh` - Computes version hash from submodule state
-- `scripts/compare_artefacts_version.sh` - CI script to check if rebuild is needed
+- `scripts/prepare_vlcn_source.sh` - Prepares local source-mode checkouts
+- `scripts/publish_vlcn.sh` - Publishes forked packages from vlcn-js source
+- `docs/developer-workflow-artefacts.md` - Legacy R2 artefact workflow reference
