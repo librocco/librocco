@@ -50,16 +50,16 @@ All 10 `@vlcn.io/*` packages published to `npm.codemyriad.io` under dev snapshot
 
 | Package | Version |
 |---------|---------|
-| `@vlcn.io/xplat-api` | `0.15.0-dev.20260313.f95a20ad` |
-| `@vlcn.io/ws-common` | `0.2.0-dev.20260313.f95a20ad` |
-| `@vlcn.io/wa-sqlite` | `0.22.0-dev.20260313.f95a20ad` |
-| `@vlcn.io/crsqlite` | `0.16.3-dev.20260313.f95a20ad` |
-| `@vlcn.io/logger-provider` | `0.2.0-dev.20260313.f95a20ad` |
-| `@vlcn.io/rx-tbl` | `0.15.0-dev.20260313.f95a20ad` |
-| `@vlcn.io/ws-client` | `0.2.0-dev.20260313.f95a20ad` |
-| `@vlcn.io/crsqlite-wasm` | `0.16.0-dev.20260313.f95a20ad` |
-| `@vlcn.io/ws-server` | `0.2.2-dev.20260313.f95a20ad` |
-| `@vlcn.io/ws-browserdb` | `0.2.0-dev.20260313.f95a20ad` |
+| `@vlcn.io/xplat-api` | `0.15.0-dev.20260313223404.c7ddf79f` |
+| `@vlcn.io/ws-common` | `0.2.0-dev.20260313223404.c7ddf79f` |
+| `@vlcn.io/wa-sqlite` | `0.22.0-dev.20260313223404.c7ddf79f` |
+| `@vlcn.io/crsqlite` | `0.16.3-dev.20260313223404.c7ddf79f` |
+| `@vlcn.io/logger-provider` | `0.2.0-dev.20260313223404.c7ddf79f` |
+| `@vlcn.io/rx-tbl` | `0.15.0-dev.20260313223404.c7ddf79f` |
+| `@vlcn.io/ws-client` | `0.2.0-dev.20260313223404.c7ddf79f` |
+| `@vlcn.io/crsqlite-wasm` | `0.16.0-dev.20260313223404.c7ddf79f` |
+| `@vlcn.io/ws-server` | `0.2.2-dev.20260313223404.c7ddf79f` |
+| `@vlcn.io/ws-browserdb` | `0.2.0-dev.20260313223404.c7ddf79f` |
 
 ### Phase 2: switch Rush installs to the registry — DONE
 
