@@ -53,6 +53,8 @@ jobs:
       run: ./scripts/prepare_vlcn_source.sh
     - name: Install packages
       run: rush install
+    - name: Build web-client workspace dependencies
+      run: rush build --to @librocco/web-client
     - name: Web client typecheck in source mode
       run: cd apps/web-client && rushx typecheck
     - name: Sync server source-mode smoke
