@@ -32,47 +32,9 @@ jobs:
       with:
         submodules: recursive
         lfs: false
-    - name: Pull artefacts from R2
-      run: ./scripts/artefacts-download.sh
-      env:
-        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
-        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
-    - name: Download Windows crsqlite.dll (workaround)
-      if: runner.os == 'Windows'
-      continue-on-error: true
-      id: download-windows-dll
-      uses: actions/download-artifact@v4
-      with:
-        name: crsqlite-windows-dll
-        path: temp-crsqlite-dll
-    - name: Inject Windows crsqlite.dll into tarball (workaround)
-      if: runner.os == 'Windows' && steps.download-windows-dll.outcome == 'success'
-      shell: pwsh
-      run: |
-        # Extract the tarball
-        $tarball = "3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz"
-        $tempDir = "temp-crsqlite-inject"
-
-        New-Item -ItemType Directory -Force -Path $tempDir
-        tar -xzf $tarball -C $tempDir
-
-        # Create dist directory in the package
-        New-Item -ItemType Directory -Force -Path "$tempDir/package/dist"
-
-        # Copy our pre-built dll
-        Copy-Item "temp-crsqlite-dll/crsqlite.dll" "$tempDir/package/dist/crsqlite.dll"
-
-        # Repack the tarball with the dll included
-        tar -czf $tarball -C $tempDir package
-
-        Write-Host "Injected crsqlite.dll into tarball"
-
-        # Cleanup
-        Remove-Item -Recurse -Force $tempDir
-        Remove-Item -Recurse -Force temp-crsqlite-dll
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
@@ -80,6 +42,8 @@ jobs:
         python-version: "3.13"
         cache-python: true
         working-directory: python-apps/launcher
+    - name: Configure private npm registry
+      run: echo "LIBROCCO_NPM_REGISTRY=https://npm.codemyriad.io/" >> "$GITHUB_ENV"
     - name: Cache node modules
       uses: actions/cache@v4
       with:
