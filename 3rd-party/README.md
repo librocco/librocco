@@ -1,129 +1,83 @@
 # 3rd-Party Dependencies
 
-This directory contains forked/modified third-party packages that are used by the librocco project. The packages are from the [vlcn.io](https://vlcn.io/) ecosystem (cr-sqlite, sync infrastructure, etc.).
+Librocco uses `@vlcn.io/*` packages from `npm.codemyriad.io` by default.  
+Source mode is only for unpublished local changes and is never meant to be committed in manifests or lockfiles.
+This document is the source of truth for that workflow. [`README.md`](../README.md) points here for the workflow; [`docs/vendor-registry-migration.md`](../docs/vendor-registry-migration.md) is migration/design background.
 
-## Directory Structure
+## Quick Start (Source Mode)
 
-```text
-3rd-party/
-├── artefacts/                    # Pre-built .tgz packages (committed to git)
-│   ├── vlcn.io-crsqlite-*.tgz
-│   ├── vlcn.io-ws-server-*.tgz
-│   ├── ... other packages
-│   └── version-cached.txt        # Hash marker for CI cache validation
-├── artefacts_version.txt         # Current submodule hashes (for cache invalidation)
-├── js/                           # Git submodule: vlcn.io/js monorepo
-│   ├── packages/
-│   │   ├── ws-server/            # WebSocket sync server
-│   │   ├── ws-client/            # WebSocket sync client
-│   │   └── ...
-│   └── deps/
-│       ├── cr-sqlite/            # CRSQLite extension
-│       └── wa-sqlite/            # WebAssembly SQLite
-└── typed-sql/                    # Git submodule: typed-sql package
+```bash
+cd /path/to/librocco
+./scripts/prepare_vlcn_source.sh
+cd apps/web-client && rushx start
 ```
 
-## How It Works
+After `prepare_vlcn_source.sh` succeeds, Librocco commands auto-detect local vendor sources.
+To go back to the registry-published packages:
 
-### Package Resolution
-
-Rush/pnpm uses `globalOverrides` in `common/config/rush/pnpm-config.json` to redirect all `@vlcn.io/*` package requests to the pre-built `.tgz` files in `artefacts/`:
-
-```json
-"globalOverrides": {
-  "@vlcn.io/ws-server": "file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz",
-  ...
-}
+```bash
+./scripts/prepare_vlcn_source.sh --disable
 ```
 
-This means:
-- All projects in the monorepo use the same version of vlcn packages
-- The packages are installed from local tarballs, not from npm registry
-- Changes to the source require rebuilding the tarballs
+For a non-standard local layout, use the escape hatch once during preparation:
 
-### CI/CD Workflow
+```bash
+./scripts/prepare_vlcn_source.sh --vlcn-root /absolute/path/to/vlcn-js
+```
 
-1. **Cache Check**: CI runs `scripts/compare_artefacts_version.sh` to check if artefacts need rebuilding
-2. **Version Tracking**: `artefacts_version.txt` contains git hashes of the submodules
-3. **Rebuild Trigger**: If submodule hashes change, `scripts/build_vlcn.sh` rebuilds all packages
-4. **Cache Storage**: Built artefacts are cached and shared across CI jobs
+If `typed-sql` is not a sibling of that checkout, also pass `--typed-sql-root /absolute/path/to/typed-sql`.
 
-## Making Changes to 3rd-Party Packages
+## Edit-Test Loop (important)
 
-### Quick Development Workflow
+1. Edit one of the Librocco-wired vendor packages listed in [Forked Package Inventory](#forked-package-inventory).
+2. Rebuild the `vlcn-js` TypeScript outputs.
 
-For temporary changes during development:
+```bash
+cd 3rd-party/js/tsbuild-all
+pnpm build
+```
 
-1. **Edit the source** in `3rd-party/js/packages/<package>/src/`
+3. Re-run the normal Librocco command you are working with:
 
-2. **Build the package**:
-   ```bash
-   cd 3rd-party/js/packages/ws-server  # or whichever package
-   pnpm install
-   pnpm build
-   ```
+```bash
+cd apps/web-client && rushx start
+cd apps/sync-server && rushx test:ci
+cd apps/e2e && rushx test:ci
+```
 
-3. **Rebuild the tarball**:
-   ```bash
-   # From repo root
-   ./scripts/build_vlcn.sh
-   ```
+`prepare_vlcn_source.sh` is required when you first enter source mode, when switching to a different `vlcn-js` checkout, or after dependency/WASM changes.
+For ordinary TypeScript edits inside `vlcn-js`, use `cd 3rd-party/js/tsbuild-all && pnpm build` instead of re-running the full prepare step.
 
-   Or manually for a single package:
-   ```bash
-   cd 3rd-party/js/packages/ws-server
-   pnpm pack
-   cp *.tgz ../../artefacts/
-   rm *.tgz
-   ```
+Rush policy still applies to Librocco itself: use `rush` / `rushx` for Librocco commands.
+`pnpm` is only for the upstream `vlcn-js` workspace because that repo is not Rush-managed.
 
-4. **Reinstall dependencies**:
-   ```bash
-   rush update --purge
-   ```
+## Resolution Paths by App
 
-### Permanent Changes
+- `apps/web-client` (Vite config + vitest): local vendor resolution is applied by `scripts/vendor_source_config.mjs` during config loading.
+- `apps/sync-server` and `apps/e2e`: their existing package scripts already wrap Node through `scripts/run_with_vendor_source.mjs`.
+- Normal app commands stay the same; you do not manually wrap them yourself.
 
-For changes that should persist:
+## Publishing and Roll-forward
 
-1. Make changes in the submodule (`3rd-party/js/`)
-2. Commit those changes in the submodule
-3. Run `./scripts/build_vlcn.sh` to rebuild artefacts
-4. Commit both the submodule reference and the new `.tgz` files
+For changes that should be available to everyone:
+1. publish from the vlcn-js fork with `./scripts/publish_vlcn.sh <dev|myriad> [--dry-run]`;
+2. repoint Librocco to the published exact versions:
+   - `apps/web-client/package.json`
+   - `apps/sync-server/package.json`
+   - `apps/e2e/package.json`
+   - `common/config/rush/pnpm-config.json`
 
-**Note**: The submodule points to a fork. If you need to update the upstream vlcn.io code:
-1. Update the submodule to the desired commit
-2. Rebuild artefacts
-3. Commit the submodule reference change
+## Forked Package Inventory
 
-### Troubleshooting
-
-### "workspace:* dependency not found" errors during rush update
-
-This happens when `npm pack` is run without first resolving workspace dependencies. The `build_vlcn.sh` script handles this by running `pnpm install` in the vlcn.io monorepo before packing.
-
-### Changes not picked up after editing source
-
-1. Make sure you ran `pnpm build` in the package directory
-2. Make sure you regenerated the `.tgz` file
-3. Run `rush update --purge` to force reinstall
-
-### Hash mismatch errors in CI
-
-This indicates the `artefacts_version.txt` doesn't match `artefacts/version-cached.txt`. This can happen if:
-- Submodules were updated without rebuilding artefacts
-- Artefacts were rebuilt without updating the version file
-- CI cache is stale
-
-Resolution: Run `./scripts/build_vlcn.sh` locally and commit both the new tarballs and updated version files.
-
-## Package List
+Only the 10 packages below are overridden in source mode.
+`3rd-party/js/packages/` contains more directories than Librocco actually consumes; editing other packages will not affect Librocco unless Librocco starts importing them.
 
 | Package | Description |
-|---------|-------------|
+| --- | --- |
 | `@vlcn.io/crsqlite` | CRSQLite native Node.js bindings |
 | `@vlcn.io/crsqlite-wasm` | CRSQLite WebAssembly build |
 | `@vlcn.io/wa-sqlite` | WebAssembly SQLite |
+| `@vlcn.io/logger-provider` | Shared logger bridge |
 | `@vlcn.io/ws-server` | WebSocket sync server |
 | `@vlcn.io/ws-client` | WebSocket sync client |
 | `@vlcn.io/ws-browserdb` | Browser database with sync |
@@ -133,8 +87,7 @@ Resolution: Run `./scripts/build_vlcn.sh` locally and commit both the new tarbal
 
 ## Related Files
 
-- `common/config/rush/pnpm-config.json` - Contains `globalOverrides` for package resolution
-- `common/config/rush/.pnpmfile.cjs` - Normalizes lockfile paths for consistent specifiers
-- `scripts/build_vlcn.sh` - Builds all packages and updates artefacts
-- `scripts/compute_artefacts_version.sh` - Computes version hash from submodule state
-- `scripts/compare_artefacts_version.sh` - CI script to check if rebuild is needed
+- `common/config/rush/pnpm-config.json` – default overrides for registry-only installs
+- `common/config/rush/.pnpmfile.cjs` – install-time peer dependency normalization
+- `scripts/prepare_vlcn_source.sh` – enables/disables local source mode and prepares builds
+- `scripts/publish_vlcn.sh` – publishes forked packages from vlcn-js source

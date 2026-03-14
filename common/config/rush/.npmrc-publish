@@ -18,3 +18,5 @@
 #
 #   //registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}
 #
+registry=https://npm.codemyriad.io/
+//npm.codemyriad.io/:_authToken=${VERDACCIO_TOKEN}
