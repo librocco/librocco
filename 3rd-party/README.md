@@ -67,11 +67,6 @@ For changes that should be available to everyone:
    - `apps/e2e/package.json`
    - `common/config/rush/pnpm-config.json`
 
-## Legacy Artefact Path (Legacy / CI-only)
-
-`3rd-party/artefacts` and scripts under `scripts/` (`build_vlcn.sh`, `compare_artefacts_version.sh`, `artefacts-download.sh`, `artefacts-upload.sh`) remain for legacy R2 lanes only and are not part of normal developer flow.
-If one of those lanes is failing, use [`docs/developer-workflow-artefacts.md`](../docs/developer-workflow-artefacts.md).
-
 ## Forked Package Inventory
 
 Only the 10 packages below are overridden in source mode.
@@ -93,7 +88,6 @@ Only the 10 packages below are overridden in source mode.
 ## Related Files
 
 - `common/config/rush/pnpm-config.json` – default overrides for registry-only installs
-- `common/config/rush/.pnpmfile.cjs` – lockfile specifier normalization
+- `common/config/rush/.pnpmfile.cjs` – install-time peer dependency normalization
 - `scripts/prepare_vlcn_source.sh` – enables/disables local source mode and prepares builds
 - `scripts/publish_vlcn.sh` – publishes forked packages from vlcn-js source
-- `docs/developer-workflow-artefacts.md` – legacy R2 workflow reference
