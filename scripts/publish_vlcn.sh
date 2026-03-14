@@ -6,6 +6,7 @@
 # Usage:
 #   ./scripts/publish_vlcn.sh dev
 #   MYRIAD_N=1 ./scripts/publish_vlcn.sh myriad
+#   ./scripts/publish_vlcn.sh dev --dry-run
 #
 # Environment variables:
 #   DRY_RUN=true      Stamp and check versions, then run pnpm publish --dry-run
@@ -23,7 +24,41 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 source "$SCRIPT_DIR/publish_vlcn_config.sh"
 
 usage() {
-	echo "Usage: $0 <dev|myriad>" >&2
+	echo "Usage: $0 <dev|myriad> [--dry-run]" >&2
+	echo "  --dry-run    Publish with --dry-run" >&2
+}
+
+parse_args() {
+	local track=""
+	DRY_RUN="${DRY_RUN:-false}"
+
+	while [[ $# -gt 0 ]]; do
+		case "$1" in
+			dev | myriad)
+				if [[ -n "$track" ]]; then
+					echo "Error: track specified more than once" >&2
+					usage
+					exit 1
+				fi
+				track="$1"
+				;;
+			--dry-run | -n)
+				DRY_RUN="true"
+				;;
+			--help | -h)
+				usage
+				exit 0
+				;;
+			*)
+				echo "Error: unknown argument '$1'" >&2
+				usage
+				exit 1
+				;;
+			esac
+			shift
+		done
+
+	TRACK="$track"
 }
 
 require_cmd() {
@@ -104,6 +139,11 @@ cleanup() {
 		rm -rf "$BACKUP_DIR"
 	fi
 }
+
+STAMPED_FILES=()
+BACKUP_FILES=()
+BACKUP_DIR=""
+
 trap cleanup EXIT
 
 require_cmd git
@@ -111,7 +151,9 @@ require_cmd jq
 require_cmd npm
 require_cmd npx
 
-TRACK="${1:-}"
+
+parse_args "$@"
+
 if [[ -z "$TRACK" ]]; then
 	usage
 	exit 1
