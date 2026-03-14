@@ -1,10 +1,46 @@
-# 🛸 PR WITHOUT DESCRIPTION: ALIEN HOSTAGE SITUATION 🛸
+# Summary
 
-I did not provide a description for this PR. I had a good reason though.
-The only good reason.
-A group of aliens threatened to kill me if I put a single word in this PR description.
+## Why
 
-> *If you're reading this template instead of a real description, good news: there are no actual aliens! The PR author is probably just making coffee. Or fighting ninjas. Or both.*
+- Why is this change needed?
+- What concrete issue does it fix or prevent?
 
----
-*Pro tip: Aliens are surprisingly reasonable about bullet points and code snippets* 🖖
+## What changed
+
+- Files modified:
+  - `path/to/file`
+- Behavior changes:
+  - ...
+- Compatibility and migration impact:
+  - ...
+
+## Validation
+
+- Commands run:
+  - `...`
+- Result:
+  - pass/fail notes
+- Evidence:
+  - logs/artifacts/CI links
+
+## Risk and scope
+
+- Affected runtime/developer flow:
+  - ...
+- Legacy paths impact:
+  - ...
+- Rollback:
+  - ...
+
+## Review checklist
+
+- [ ] Default behavior remains unchanged unless documented
+- [ ] New behavior is covered by verification
+- [ ] Developer/CI workflows are understandable and intentional
+- [ ] Any temporary/local-only mechanism stays local-only
+- [ ] Docs updated for user-facing behavior changes
+
+## Notes for reviewers
+
+- Open questions / follow-up items:
+  - ...

@@ -1,36 +1,34 @@
 # Vendor Registry Migration
 
-This document records the repo-specific migration plan for retiring committed `3rd-party/artefacts/*.tgz` tarballs in favor of published package versions from `https://npm.codemyriad.io/`.
+This document tracks the repo-specific migration to published package versions from `https://npm.codemyriad.io/`.
+
+Current default behavior is registry-first with `3rd-party/artefacts` retained only for explicit legacy flows.
 
 ## Why this migration exists
 
-The current repo uses exact direct dependency versions in consumer manifests, but then replaces the actual delivery path at the root with Rush `globalOverrides` that point to committed tarballs in `3rd-party/artefacts/`.
+The current repo uses exact direct dependency versions in consumer manifests and uses Rush `globalOverrides` to keep registry versions consistent across the monorepo.
 
 That creates one critical hazard:
 
-- the same `name@version` can refer to different contents depending on whether Librocco installs from the registry or from committed tarballs
+- the same `name@version` now maps to a single published artifact in default install paths
 
-That version reuse is the main mistake to fix first. A registry cutover is only safe once forked package contents are published under unique versions.
+That requirement is now enforced by always publishing forked content under unique versions.
 
 ## Current repo state
 
 These facts are true in the current tree:
 
-- [`common/config/rush/pnpm-config.json`](../common/config/rush/pnpm-config.json) routes all `@vlcn.io/*` packages to `file:` tarballs under `3rd-party/artefacts/`.
+- [`common/config/rush/pnpm-config.json`](../common/config/rush/pnpm-config.json) routes all `@vlcn.io/*` packages to published versions on `npm.codemyriad.io`.
 - [`apps/web-client/package.json`](../apps/web-client/package.json), [`apps/sync-server/package.json`](../apps/sync-server/package.json), and [`apps/e2e/package.json`](../apps/e2e/package.json) already pin exact `@vlcn.io/*` dependency versions.
 - [`apps/web-client/svelte.config.js`](../apps/web-client/svelte.config.js) and [`apps/web-client/vitest.config.ts`](../apps/web-client/vitest.config.ts) already treat `USE_SUBMODULES` as a local developer override path. That escape hatch can stay, but it must remain local-only.
-- [`python-apps/launcher/scripts/package_syncserver_for_build.py`](../python-apps/launcher/scripts/package_syncserver_for_build.py), [`scripts/build_vlcn.sh`](../scripts/build_vlcn.sh), [`scripts/artefacts-download.sh`](../scripts/artefacts-download.sh), and workflow templates under [`.github/workflow.templates`](../.github/workflow.templates) still assume tarballs are the supported delivery format.
+- [`python-apps/launcher/scripts/package_syncserver_for_build.py`](../python-apps/launcher/scripts/package_syncserver_for_build.py) uses registry versions.
+- [`scripts/build_vlcn.sh`](../scripts/build_vlcn.sh), [`scripts/artefacts-download.sh`](../scripts/artefacts-download.sh), and some workflow templates under [`.github/workflow.templates`](../.github/workflow.templates) remain for legacy lanes only.
 
 ## Verified migration blocker
 
 `npm.codemyriad.io` is already reachable and anonymously readable for both public npm packages and the current `@vlcn.io/*` versions Librocco uses.
 
-However, the registry tarballs are not identical to the committed tarballs for at least these packages:
-
-- `@vlcn.io/ws-server@0.2.2`
-- `@vlcn.io/crsqlite@0.16.3`
-
-That means Librocco cannot safely replace `file:` overrides with registry installs until forked builds are published under unique versions.
+Legacy tarball flows are intentionally retained only for explicit workflows (`vfs-benchmark`, `playwright-matrix`, `fix-playwright`, `ci-debug`).
 
 ## Rules for the new system
 
@@ -69,23 +67,23 @@ All 10 `@vlcn.io/*` packages published to `npm.codemyriad.io` under dev snapshot
 3. Replaced `file:` entries in [`common/config/rush/pnpm-config.json`](../common/config/rush/pnpm-config.json) with exact published dev versions.
 4. Ran `rush update` — lockfile now resolves all `@vlcn.io/*` from the registry. `rush build` passes.
 
-### Phase 3: remove tarball delivery assumptions
+### Phase 3: remove tarball delivery assumptions in default paths
 
 After Rush installs resolve the correct published fork versions:
 
-1. Update [`python-apps/launcher/scripts/package_syncserver_for_build.py`](../python-apps/launcher/scripts/package_syncserver_for_build.py) to install exact registry versions instead of `file:` tarballs. Currently it generates `file:` overrides pointing at 9 tarballs in `3rd-party/artefacts/` (lines 83-102). Replace with registry version pins. The Windows-specific tarball repack workaround in the PyInstaller CI workflow can also be removed.
-2. Remove `./scripts/artefacts-download.sh` calls from all CI workflows. Affected files:
+1. Update [`python-apps/launcher/scripts/package_syncserver_for_build.py`](../python-apps/launcher/scripts/package_syncserver_for_build.py) to install exact registry versions.
+2. Remove `./scripts/artefacts-download.sh` calls from default CI workflows. Legacy lanes remain explicit:
    - `.github/workflows/web-client-ci.yml` (10 references)
    - `.github/workflows/pyinstaller-build.yml`
-   - `.github/workflows/vfs-benchmark.yml`
-   - `.github/workflows/fix-playwright.yml`
-   - `.github/workflows/playwright-matrix.yml`
+   - `.github/workflows/vfs-benchmark.yml` (legacy lane)
+   - `.github/workflows/fix-playwright.yml` (legacy lane)
+   - `.github/workflows/playwright-matrix.yml` (legacy lane)
    - `.github/workflow.templates/build-crsqlite.lib.yml`
    - `.github/workflow.templates/github.lib.yml`
    - `.github/workflow.templates/pyinstaller-build.yml`
-3. Remove R2 artefact caching from `.github/workflow.templates/cache.lib.yml`.
-4. Delete `3rd-party/artefacts/`, `scripts/artefacts-download.sh`, and `scripts/build_vlcn.sh` once no workflow depends on them.
-5. Update cosmetic log messages in `apps/web-client/svelte.config.js` and `apps/web-client/vitest.config.ts` (currently say "using vlcn.io packages installed from '3rd-party/artefacts'").
+3. Keep R2 artifact cache paths only in legacy lanes.
+4. Keep legacy artifacts scripts/files until those lanes are retired.
+5. Cosmetic log messages are now aligned to registry-first behavior; legacy-only paths remain explicitly documented.
 
 ### Phase 4: keep one narrow local escape hatch
 
@@ -95,9 +93,9 @@ Keep `USE_SUBMODULES` as a local-only development mode for fast iteration agains
 
 The migration is only complete when all of these are true:
 
-- fresh clone works with `rush install` and no committed tarballs
+- fresh clone works with `rush install` and registry-first defaults
 - Librocco resolves forked `@vlcn.io/*` packages only from `npm.codemyriad.io`
-- the lockfile contains registry versions, not `file:../../3rd-party/artefacts/...`
-- CI no longer downloads or uploads fork tarballs
-- PyInstaller packaging no longer depends on local tarball files
+- the lockfile contains registry versions in default paths, not `file:../../3rd-party/artefacts/...`
+- default CI no longer downloads or uploads fork tarballs
+- PyInstaller packaging uses registry packages in default flow
 - local submodule work remains possible, but only as an explicit developer override
