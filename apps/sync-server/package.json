@@ -11,8 +11,8 @@
 		"test:ci": "node ../../scripts/run_with_vendor_source.mjs vitest run"
 	},
 	"dependencies": {
-		"@vlcn.io/ws-server": "0.2.2-dev.20260313223404.c7ddf79f",
-		"@vlcn.io/crsqlite": "0.16.3-dev.20260313223404.c7ddf79f",
+		"@vlcn.io/ws-server": "0.2.2-dev.20260313.f95a20ad",
+		"@vlcn.io/crsqlite": "0.16.3-dev.20260313.f95a20ad",
 		"express": "^4.18.2",
 		"cors": "~2.8.5",
 		"better-sqlite3": "~11.4.0"

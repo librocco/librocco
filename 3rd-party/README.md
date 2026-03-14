@@ -82,7 +82,7 @@ For temporary local validation against unpublished `@vlcn.io/*` changes:
 ### Permanent Changes
 
 For changes that should be shipped to every clone of Librocco, publish from the vlcn-js source of truth with
-`./scripts/publish_vlcn.sh dev` and then retarget Librocco dependencies to the published versions.
+`./scripts/publish_vlcn.sh dev` (or `./scripts/publish_vlcn.sh dev --dry-run`) and then retarget Librocco dependencies to the published versions.
 
 ### Legacy Artefact Path
 

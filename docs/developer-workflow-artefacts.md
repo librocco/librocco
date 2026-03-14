@@ -28,4 +28,6 @@ For unpublished vendor testing, use source mode instead:
 VLCN_ROOT=3rd-party/js cd apps/web-client && rushx typecheck
 ```
 
+Use `./scripts/publish_vlcn.sh --help` to verify publish flags including `--dry-run`.
+
 CI jobs and scripts that still depend on this artefact flow should be audited before removal.

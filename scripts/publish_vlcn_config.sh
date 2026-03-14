@@ -5,7 +5,10 @@
 REGISTRY_URL="${REGISTRY_URL:-https://npm.codemyriad.io/}"
 DEV_DIST_TAG="${DEV_DIST_TAG:-dev}"
 MYRIAD_DIST_TAG="${MYRIAD_DIST_TAG:-myriad}"
-VLCN_ROOT="${VLCN_ROOT:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../3rd-party/js" && pwd)}"
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(git -C "$SCRIPT_DIR" rev-parse --show-toplevel 2>/dev/null || pwd)"
+
+VLCN_ROOT="${VLCN_ROOT:-${REPO_ROOT}/3rd-party/js}"
 PNPM_VERSION="${PNPM_VERSION:-9.15.9}"
 
 # Packages are ordered topologically so workspace dependencies resolve to
