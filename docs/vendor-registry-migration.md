@@ -3,7 +3,7 @@
 This document tracks the repo-specific migration to published package versions from `https://npm.codemyriad.io/`.
 
 Current default behavior is registry-first with `3rd-party/artefacts` retained only for explicit legacy flows.
-Source-mode workflow details for local unpublished edits live in [`3rd-party/README.md`](../3rd-party/README.md).
+The local unpublished-vendor workflow lives in [`3rd-party/README.md`](../3rd-party/README.md); this document is migration/design background, not the step-by-step workflow.
 
 ## Why this migration exists
 
@@ -21,7 +21,7 @@ These facts are true in the current tree:
 
 - [`common/config/rush/pnpm-config.json`](../common/config/rush/pnpm-config.json) routes all `@vlcn.io/*` packages to published versions on `npm.codemyriad.io`.
 - [`apps/web-client/package.json`](../apps/web-client/package.json), [`apps/sync-server/package.json`](../apps/sync-server/package.json), and [`apps/e2e/package.json`](../apps/e2e/package.json) already pin exact `@vlcn.io/*` dependency versions.
-- [`apps/web-client/svelte.config.js`](../apps/web-client/svelte.config.js) and [`apps/web-client/vitest.config.ts`](../apps/web-client/vitest.config.ts) keep `USE_SUBMODULES` as a local-only legacy shortcut.
+- [`apps/web-client/svelte.config.js`](../apps/web-client/svelte.config.js) and [`apps/web-client/vitest.config.ts`](../apps/web-client/vitest.config.ts) consume the shared source-mode config; `USE_SUBMODULES` remains only as a legacy shortcut.
 - [`python-apps/launcher/scripts/package_syncserver_for_build.py`](../python-apps/launcher/scripts/package_syncserver_for_build.py) uses registry versions.
 - [`scripts/build_vlcn.sh`](../scripts/build_vlcn.sh), [`scripts/artefacts-download.sh`](../scripts/artefacts-download.sh), and some workflow templates under [`.github/workflow.templates`](../.github/workflow.templates) remain for legacy lanes only.
 
@@ -88,7 +88,7 @@ After Rush installs resolve the correct published fork versions:
 
 ### Phase 4: keep one narrow local escape hatch
 
-Keep `USE_SUBMODULES` as a local-only development mode for fast iteration against sibling checkouts, but do not commit any manifest, lockfile, or Rush override that depends on it.
+Keep `USE_SUBMODULES` only as a legacy local shortcut. Normal local vendor work should go through `./scripts/prepare_vlcn_source.sh`, which enables source mode without changing normal `rush` / `rushx` commands.
 
 ## Acceptance checklist
 

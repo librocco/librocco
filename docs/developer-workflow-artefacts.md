@@ -5,7 +5,7 @@ This document describes the legacy `3rd-party/artefacts` flow that is still pres
 The current supported dependency path for Librocco is registry-based:
 
 - Install dependencies from `npm.codemyriad.io` by default.
-- Use local source mode (`VLCN_ROOT`) when validating unpublished vendor changes.
+- Use local source mode via `./scripts/prepare_vlcn_source.sh` when validating unpublished vendor changes.
 
 Use source mode from [`3rd-party/README.md`](../3rd-party/README.md) for local unpublished vendor testing.
 This document is a compatibility reference only when running legacy workflows that still call:

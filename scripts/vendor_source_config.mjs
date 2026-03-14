@@ -56,6 +56,19 @@ const packageMetadata = {
 	}
 };
 
+const requiredBuildOutputs = [
+	"deps/cr-sqlite/core/nodejs-helper.js",
+	"packages/crsqlite-wasm/dist/index.js",
+	"packages/rx-tbl/dist/index.js",
+	"packages/logger-provider/dist/index.js",
+	"packages/ws-browserdb/dist/index.js",
+	"packages/ws-client/dist/index.js",
+	"packages/ws-client/dist/worker/worker.js",
+	"packages/ws-common/dist/index.js",
+	"packages/ws-server/dist/index.js",
+	"packages/xplat-api/dist/xplat-api.js"
+];
+
 function normalizePathForResolver(value) {
 	return value.split(path.sep).join("/");
 }
@@ -70,9 +83,58 @@ export function asBool(value) {
 	return truthy.has(String(value).trim().toLowerCase());
 }
 
-function resolveAgainstRepo(repoRoot, targetPath) {
+function resolveConfiguredPath(repoRoot, targetPath) {
 	if (path.isAbsolute(targetPath)) return path.resolve(targetPath);
+
+	const cwdResolved = path.resolve(process.cwd(), targetPath);
+	if (fs.existsSync(cwdResolved)) {
+		return cwdResolved;
+	}
+
 	return path.resolve(repoRoot, targetPath);
+}
+
+function getVendorSourceStateFile(repoRoot) {
+	return path.join(repoRoot, ".librocco", "vendor-source.json");
+}
+
+function readPreparedVendorSourceState(repoRoot) {
+	const stateFile = getVendorSourceStateFile(repoRoot);
+
+	if (!fs.existsSync(stateFile)) {
+		return null;
+	}
+
+	const content = fs.readFileSync(stateFile, "utf8");
+	const parsed = JSON.parse(content);
+	if (typeof parsed.vlcnRoot !== "string" || !parsed.vlcnRoot.trim()) {
+		throw new Error(`Invalid vendor source config in ${stateFile}. Re-run ./scripts/prepare_vlcn_source.sh.`);
+	}
+
+	return {
+		vlcnRoot: path.resolve(parsed.vlcnRoot)
+	};
+}
+
+function findMissingBuildOutputs(vlcnRoot) {
+	return requiredBuildOutputs.filter((relativePath) => !fs.existsSync(path.join(vlcnRoot, relativePath)));
+}
+
+function assertVendorSourceReady(vlcnRoot) {
+	const missingOutputs = findMissingBuildOutputs(vlcnRoot);
+	if (missingOutputs.length === 0) {
+		return;
+	}
+
+	const lines = [
+		`VLCN source mode is enabled, but required build outputs are missing under ${vlcnRoot}.`,
+		"Run ./scripts/prepare_vlcn_source.sh first, or disable source mode with ./scripts/prepare_vlcn_source.sh --disable.",
+		"Missing outputs:"
+	];
+	for (const relativePath of missingOutputs) {
+		lines.push(`- ${relativePath}`);
+	}
+	throw new Error(lines.join("\n"));
 }
 
 function getPackageResolutionTable(vlcnRoot) {
@@ -100,15 +162,22 @@ export function getVendorSourceState(options = {}) {
 	const repoRoot = path.resolve(options.repoRoot ?? REPO_ROOT);
 	const explicitVlcnRoot = process.env.VLCN_ROOT?.trim();
 	const useSubmodules = asBool(process.env.USE_SUBMODULES);
+	const preparedState = readPreparedVendorSourceState(repoRoot);
 
 	let vlcnRoot = null;
 	let legacyMode = false;
+	let source = null;
 
 	if (explicitVlcnRoot) {
-		vlcnRoot = resolveAgainstRepo(repoRoot, explicitVlcnRoot);
+		vlcnRoot = resolveConfiguredPath(repoRoot, explicitVlcnRoot);
+		source = "env";
+	} else if (preparedState) {
+		vlcnRoot = preparedState.vlcnRoot;
+		source = "prepared";
 	} else if (useSubmodules) {
 		vlcnRoot = path.join(repoRoot, "3rd-party", "js");
 		legacyMode = true;
+		source = "legacy";
 	}
 
 	if (!vlcnRoot) {
@@ -116,7 +185,8 @@ export function getVendorSourceState(options = {}) {
 			enabled: false,
 			repoRoot,
 			vlcnRoot: null,
-			legacyMode: false
+			legacyMode: false,
+			source: null
 		};
 	}
 
@@ -124,11 +194,14 @@ export function getVendorSourceState(options = {}) {
 		throw new Error(`VLCN source mode requested, but ${vlcnRoot} does not exist.`);
 	}
 
+	assertVendorSourceReady(vlcnRoot);
+
 	return {
 		enabled: true,
 		repoRoot,
 		vlcnRoot,
-		legacyMode
+		legacyMode,
+		source
 	};
 }
 
@@ -141,7 +214,10 @@ export function logVendorSourceMode(scope = "vendor-source", logger = console.lo
 	} else {
 		logger(`${scope}: using local @vlcn.io sources from ${state.vlcnRoot}`);
 		if (state.legacyMode) {
-			logger(`${scope}: USE_SUBMODULES is legacy; prefer VLCN_ROOT for explicit source mode`);
+			logger(`${scope}: USE_SUBMODULES is legacy; prefer ./scripts/prepare_vlcn_source.sh`);
+		}
+		if (state.source === "env") {
+			logger(`${scope}: VLCN_ROOT is an escape hatch; prefer ./scripts/prepare_vlcn_source.sh for normal source mode`);
 		}
 	}
 	logger("");

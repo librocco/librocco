@@ -30,8 +30,6 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
-    env:
-      VLCN_ROOT: 3rd-party/js
     steps:
       -  #@ checkout()
       - uses: actions/setup-node@v4

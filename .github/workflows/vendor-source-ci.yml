@@ -22,8 +22,6 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
-    env:
-      VLCN_ROOT: 3rd-party/js
     steps:
     - name: Checkout repository and submodules
       uses: actions/checkout@v4

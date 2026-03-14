@@ -47,7 +47,7 @@ Use `rush update` only when you intentionally changed dependency specs or need t
 
 Normal installs should use the versions published to `npm.codemyriad.io`.
 If you need to test unpublished `@vlcn.io/*` changes locally, use local source mode instead of editing manifests:
-Follow the source-mode workflow in [`3rd-party/README.md`](./3rd-party/README.md), then run the target app/test with `VLCN_ROOT` set.
+follow the source-mode workflow in [`3rd-party/README.md`](./3rd-party/README.md), which is the source of truth for local vendor development.
 
 ### 2.2. Day to day commands
 
@@ -84,7 +84,7 @@ This makes rush link the package depended upon (`@librocco/db` in this case) in 
 
 After adding a new local dependency, run `rush update` to apply the manifest change.
 
-For the ongoing migration away from committed vendor tarballs, see [docs/vendor-registry-migration.md](./docs/vendor-registry-migration.md).
+For the ongoing migration away from committed vendor tarballs, see [docs/vendor-registry-migration.md](./docs/vendor-registry-migration.md) for design/background only.
 
 #### Apps: Web-client
 

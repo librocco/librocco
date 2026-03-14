@@ -3,7 +3,7 @@
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import { getVendorSourceState } from "./vendor_source_config.mjs";
+import { getVendorSourceState, logVendorSourceMode } from "./vendor_source_config.mjs";
 
 const [command, ...args] = process.argv.slice(2);
 
@@ -24,7 +24,7 @@ if (state.enabled) {
 		env.NODE_OPTIONS = nodeOptions ? `${nodeOptions} ${importFlag}` : importFlag;
 	}
 
-	console.log(`[vendor-source] ${command}: using local @vlcn.io sources from ${state.vlcnRoot}`);
+	logVendorSourceMode(`[vendor-source] ${command}`);
 }
 
 const child = spawn(command, args, {

@@ -4,18 +4,98 @@ set -euo pipefail
 
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd -- "${SCRIPT_DIR}/.." && pwd)
+VENDOR_SOURCE_STATE_DIR="${REPO_ROOT}/.librocco"
+VENDOR_SOURCE_STATE_FILE="${VENDOR_SOURCE_STATE_DIR}/vendor-source.json"
 
 VLCN_ROOT="${VLCN_ROOT:-${REPO_ROOT}/3rd-party/js}"
-TYPED_SQL_ROOT="${TYPED_SQL_ROOT:-$(cd -- "${VLCN_ROOT}/.." && pwd)/typed-sql}"
+TYPED_SQL_ROOT="${TYPED_SQL_ROOT:-}"
 PNPM_INSTALL_ARGS="${PNPM_INSTALL_ARGS:---force --no-frozen-lockfile}"
+DISABLE_SOURCE_MODE=0
 
-if ! command -v npx >/dev/null 2>&1; then
-	echo "Error: npx is required but was not found in PATH." >&2
+usage() {
+	cat <<'EOF'
+Usage:
+  ./scripts/prepare_vlcn_source.sh
+  ./scripts/prepare_vlcn_source.sh --vlcn-root /path/to/vlcn-js
+  ./scripts/prepare_vlcn_source.sh --typed-sql-root /path/to/typed-sql
+  ./scripts/prepare_vlcn_source.sh --disable
+
+Notes:
+  - Normal Librocco commands stay the same after preparation: use `rush` / `rushx`.
+  - `VLCN_ROOT` remains supported as an escape hatch, but `--vlcn-root` is preferred.
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+	case "$1" in
+		--vlcn-root)
+			VLCN_ROOT="$2"
+			shift 2
+			;;
+		--typed-sql-root)
+			TYPED_SQL_ROOT="$2"
+			shift 2
+			;;
+		--disable)
+			DISABLE_SOURCE_MODE=1
+			shift
+			;;
+		-h|--help)
+			usage
+			exit 0
+			;;
+		*)
+			echo "Error: unknown argument: $1" >&2
+			usage >&2
+			exit 1
+			;;
+	esac
+done
+
+resolve_path_or_empty() {
+	local input_path="$1"
+	if [[ "${input_path}" == /* ]]; then
+		printf '%s\n' "${input_path}"
+		return 0
+	fi
+	if cd -- "${input_path}" 2>/dev/null; then
+		pwd
+		return 0
+	fi
+	return 1
+}
+
+if [[ -n "${VLCN_ROOT:-}" && "${VLCN_ROOT}" != /* ]]; then
+	VLCN_ROOT="$(resolve_path_or_empty "${VLCN_ROOT}" || true)"
+fi
+
+if [[ -z "${VLCN_ROOT}" ]]; then
+	echo "Error: could not resolve vlcn-js root" >&2
 	exit 1
 fi
 
+if [[ ${DISABLE_SOURCE_MODE} -eq 1 ]]; then
+	rm -f "${VENDOR_SOURCE_STATE_FILE}"
+	rmdir "${VENDOR_SOURCE_STATE_DIR}" 2>/dev/null || true
+	echo "==> Source mode disabled; Librocco will use @vlcn.io packages from npm.codemyriad.io"
+	exit 0
+fi
+
 if [[ ! -d "${VLCN_ROOT}" ]]; then
-	echo "Error: VLCN_ROOT does not exist: ${VLCN_ROOT}" >&2
+	echo "Error: vlcn-js checkout does not exist: ${VLCN_ROOT}" >&2
+	exit 1
+fi
+
+if [[ -n "${TYPED_SQL_ROOT}" && "${TYPED_SQL_ROOT}" != /* ]]; then
+	TYPED_SQL_ROOT="$(resolve_path_or_empty "${TYPED_SQL_ROOT}" || true)"
+fi
+
+if [[ -z "${TYPED_SQL_ROOT}" ]]; then
+	TYPED_SQL_ROOT="$(cd -- "${VLCN_ROOT}/.." && pwd)/typed-sql"
+fi
+
+if ! command -v npx >/dev/null 2>&1; then
+	echo "Error: npx is required but was not found in PATH." >&2
 	exit 1
 fi
 
@@ -118,5 +198,21 @@ for relative_path in "${required_outputs[@]}"; do
 done
 
 echo
+mkdir -p "${VENDOR_SOURCE_STATE_DIR}"
+node - "${VENDOR_SOURCE_STATE_FILE}" "${VLCN_ROOT}" "${TYPED_SQL_ROOT}" <<'EOF'
+const fs = require("fs");
+const [stateFile, vlcnRoot, typedSqlRoot] = process.argv.slice(2);
+fs.writeFileSync(
+	stateFile,
+	`${JSON.stringify({ vlcnRoot, typedSqlRoot }, null, 2)}\n`
+);
+EOF
+
+echo "==> Source mode enabled"
+echo "==> Stored source-mode config at ${VENDOR_SOURCE_STATE_FILE}"
+echo
 echo "==> Local vlcn source mode is ready"
-echo "   Example: VLCN_ROOT=${VLCN_ROOT} rushx start"
+echo "   Librocco commands now auto-detect local vendor sources."
+echo "   Example: cd apps/web-client && rushx start"
+echo "   Fast TS rebuilds: cd ${VLCN_ROOT}/tsbuild-all && pnpm build"
+echo "   Disable source mode: ./scripts/prepare_vlcn_source.sh --disable"

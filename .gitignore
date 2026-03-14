@@ -68,3 +68,4 @@ common/autoinstallers/*/.npmrc
 caddy-data
 .llm-utils/
 .claude
+.librocco/
