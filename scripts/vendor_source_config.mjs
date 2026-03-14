@@ -23,6 +23,10 @@ const packageMetadata = {
 		root: "packages/rx-tbl",
 		main: "dist/index.js"
 	},
+	"@vlcn.io/logger-provider": {
+		root: "packages/logger-provider",
+		main: "dist/index.js"
+	},
 	"@vlcn.io/wa-sqlite": {
 		root: "deps/wa-sqlite",
 		main: "src/sqlite-api.js"
@@ -157,6 +161,7 @@ export function getWebClientVendorAliasMap(options = {}) {
 		"@vlcn.io/rx-tbl": table["@vlcn.io/rx-tbl"].packageRoot,
 		"@vlcn.io/wa-sqlite": table["@vlcn.io/wa-sqlite"].packageRoot,
 		"@vlcn.io/ws-browserdb": table["@vlcn.io/ws-browserdb"].packageRoot,
+		"@vlcn.io/logger-provider": table["@vlcn.io/logger-provider"].packageRoot,
 		"@vlcn.io/ws-client/worker.js": table["@vlcn.io/ws-client"].specialSubpaths["worker.js"],
 		"@vlcn.io/ws-client": table["@vlcn.io/ws-client"].packageRoot,
 		"@vlcn.io/ws-common": table["@vlcn.io/ws-common"].packageRoot,

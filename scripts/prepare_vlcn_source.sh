@@ -99,6 +99,7 @@ required_outputs=(
 	"deps/cr-sqlite/core/nodejs-helper.js"
 	"packages/crsqlite-wasm/dist/index.js"
 	"packages/rx-tbl/dist/index.js"
+	"packages/logger-provider/dist/index.js"
 	"packages/ws-browserdb/dist/index.js"
 	"packages/ws-client/dist/index.js"
 	"packages/ws-client/dist/worker/worker.js"

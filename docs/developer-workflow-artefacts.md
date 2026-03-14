@@ -7,7 +7,8 @@ The current supported dependency path for Librocco is registry-based:
 - Install dependencies from `npm.codemyriad.io` by default.
 - Use local source mode (`VLCN_ROOT`) when validating unpublished vendor changes.
 
-Keep this document as a reference only when running workflows that still call:
+Use source mode from [`3rd-party/README.md`](../3rd-party/README.md) for local unpublished vendor testing.
+This document is a compatibility reference only when running legacy workflows that still call:
 
 - `scripts/build_vlcn.sh`
 - `scripts/compare_artefacts_version.sh`
@@ -18,16 +19,6 @@ If your goal is normal Librocco work, prefer:
 
 ```bash
 rush install
-./scripts/publish_vlcn.sh --help
 ```
-
-For unpublished vendor testing, use source mode instead:
-
-```bash
-./scripts/prepare_vlcn_source.sh
-VLCN_ROOT=3rd-party/js cd apps/web-client && rushx typecheck
-```
-
-Use `./scripts/publish_vlcn.sh --help` to verify publish flags including `--dry-run`.
 
 CI jobs and scripts that still depend on this artefact flow should be audited before removal.

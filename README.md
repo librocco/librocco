@@ -47,11 +47,7 @@ Use `rush update` only when you intentionally changed dependency specs or need t
 
 Normal installs should use the versions published to `npm.codemyriad.io`.
 If you need to test unpublished `@vlcn.io/*` changes locally, use local source mode instead of editing manifests:
-
-```bash
-./scripts/prepare_vlcn_source.sh
-VLCN_ROOT=3rd-party/js cd apps/web-client && rushx start
-```
+Follow the source-mode workflow in [`3rd-party/README.md`](./3rd-party/README.md), then run the target app/test with `VLCN_ROOT` set.
 
 ### 2.2. Day to day commands
 

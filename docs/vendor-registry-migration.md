@@ -3,6 +3,7 @@
 This document tracks the repo-specific migration to published package versions from `https://npm.codemyriad.io/`.
 
 Current default behavior is registry-first with `3rd-party/artefacts` retained only for explicit legacy flows.
+Source-mode workflow details for local unpublished edits live in [`3rd-party/README.md`](../3rd-party/README.md).
 
 ## Why this migration exists
 
@@ -20,7 +21,7 @@ These facts are true in the current tree:
 
 - [`common/config/rush/pnpm-config.json`](../common/config/rush/pnpm-config.json) routes all `@vlcn.io/*` packages to published versions on `npm.codemyriad.io`.
 - [`apps/web-client/package.json`](../apps/web-client/package.json), [`apps/sync-server/package.json`](../apps/sync-server/package.json), and [`apps/e2e/package.json`](../apps/e2e/package.json) already pin exact `@vlcn.io/*` dependency versions.
-- [`apps/web-client/svelte.config.js`](../apps/web-client/svelte.config.js) and [`apps/web-client/vitest.config.ts`](../apps/web-client/vitest.config.ts) already treat `USE_SUBMODULES` as a local developer override path. That escape hatch can stay, but it must remain local-only.
+- [`apps/web-client/svelte.config.js`](../apps/web-client/svelte.config.js) and [`apps/web-client/vitest.config.ts`](../apps/web-client/vitest.config.ts) keep `USE_SUBMODULES` as a local-only legacy shortcut.
 - [`python-apps/launcher/scripts/package_syncserver_for_build.py`](../python-apps/launcher/scripts/package_syncserver_for_build.py) uses registry versions.
 - [`scripts/build_vlcn.sh`](../scripts/build_vlcn.sh), [`scripts/artefacts-download.sh`](../scripts/artefacts-download.sh), and some workflow templates under [`.github/workflow.templates`](../.github/workflow.templates) remain for legacy lanes only.
 
@@ -37,8 +38,8 @@ Legacy tarball flows are intentionally retained only for explicit workflows (`vf
 3. Snapshot and integration builds should include the source commit in the prerelease version, for example `0.2.2-dev.20260313.abcd123`, and should publish under a non-`latest` dist-tag such as `dev` or `next`.
 4. Do not rely on SemVer build metadata alone for this, for example `0.2.2+abcd123`, because that is too easy to treat as equivalent to `0.2.2` during resolution and review.
 5. Publish automation should fail fast if the target version already exists in the registry.
-6. Consumer projects should pin exact fork versions in their own `package.json`.
-7. Root overrides should be reserved for transitive hotfixes, not for delivering first-class libraries.
+6. Consumer projects should pin exact fork versions in their own `package.json` where practical.
+7. For this migration, `globalOverrides` is the short-lived delivery mechanism for the `@vlcn.io/*` set while we finish that full dependency migration; it is not intended to stay a long-term steady-state.
 8. Any local source alias or patch workflow must stay uncommitted and developer-only.
 
 ## Ordered migration

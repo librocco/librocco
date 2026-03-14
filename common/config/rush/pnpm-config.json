@@ -148,6 +148,7 @@
     "@vlcn.io/crsqlite": "0.16.3-dev.20260313.f95a20ad",
     "@vlcn.io/crsqlite-wasm": "0.16.0-dev.20260313.f95a20ad",
     "@vlcn.io/rx-tbl": "0.15.0-dev.20260313.f95a20ad",
+    "@vlcn.io/logger-provider": "0.2.0-dev.20260313.f95a20ad",
     "@vlcn.io/wa-sqlite": "0.22.0-dev.20260313.f95a20ad",
     "@vlcn.io/ws-browserdb": "0.2.0-dev.20260313.f95a20ad",
     "@vlcn.io/ws-client": "0.2.0-dev.20260313.f95a20ad",
