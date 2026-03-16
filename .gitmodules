@@ -1,8 +1,8 @@
 [submodule "3rd-party/js"]
 	path = 3rd-party/js
-	url = git@github.com:vlcn-io/js
-	branch = wa-sqlite-updates
+	url = https://github.com/codemyriad/vlcn-js.git
+	branch = librocco/main
 [submodule "3rd-party/typed-sql"]
 	path = 3rd-party/typed-sql
-	url = git@github.com:vlcn-io/typed-sql
+	url = https://github.com/vlcn-io/typed-sql
 	branch = main
