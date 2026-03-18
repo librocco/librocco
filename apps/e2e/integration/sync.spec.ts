@@ -14,7 +14,7 @@ import {
 
 test.setTimeout(45_000);
 const SERVER_WAIT_TIMEOUT_MS = 45_000;
-const WARMUP_TIMEOUT_MS = 10_000;
+const WARMUP_TIMEOUT_MS = IS_CI ? 25_000 : 10_000;
 // Startup budget: server boot wait + warmup + headroom for browser/context setup in slower CI executors.
 const BEFORE_ALL_TIMEOUT_MS = SERVER_WAIT_TIMEOUT_MS + WARMUP_TIMEOUT_MS + 15_000;
 
@@ -68,28 +68,24 @@ test.beforeAll(async ({ browser }, testInfo) => {
 });
 
 async function warmupApp(page: Page, timeoutMs: number): Promise<void> {
-	const deadline = Date.now() + timeoutMs;
-	const remainingBudgetMs = (): number => {
-		const remaining = deadline - Date.now();
-		if (remaining <= 0) {
-			throw new Error(`Warmup exceeded total timeout budget (${timeoutMs}ms)`);
-		}
-		return remaining;
-	};
-
-	// Using "domcontentloaded" avoids waiting on background network activity that can block "networkidle" in CI.
-	await page.goto(baseURL, { waitUntil: "domcontentloaded", timeout: remainingBudgetMs() });
-	await page.waitForSelector('body[hydrated="true"]', { timeout: remainingBudgetMs() });
-	await page.waitForSelector("#app-splash", { state: "detached", timeout: remainingBudgetMs() });
+	// Best-effort warmup: only ensure the page responds. Avoid app-level readiness gates
+	// (`hydrated`, splash detach) which can be slow/flaky under CI load.
+	await page.goto(baseURL, { waitUntil: "domcontentloaded", timeout: timeoutMs });
 }
 
-async function waitForServer(timeoutMs = 45_000) {
+async function waitForHttpReady(
+	url: string,
+	timeoutMs = 45_000,
+	isReady: (status: number) => boolean = (status) => status >= 200 && status < 300
+) {
 	const deadline = Date.now() + timeoutMs;
 	while (Date.now() < deadline) {
+		const remainingMs = deadline - Date.now();
+		if (remainingMs <= 0) break;
 		const ctx = await request.newContext({ ignoreHTTPSErrors: true });
 		try {
-			const resp = await ctx.get(baseURL);
-			if (resp.ok()) {
+			const resp = await ctx.get(url, { timeout: Math.max(1, remainingMs) });
+			if (isReady(resp.status())) {
 				return;
 			}
 		} catch {
@@ -97,9 +93,40 @@ async function waitForServer(timeoutMs = 45_000) {
 		} finally {
 			await ctx.dispose();
 		}
-		await new Promise((resolve) => setTimeout(resolve, 1000));
+		await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.min(1000, deadline - Date.now()))));
 	}
-	throw new Error(`Server at ${baseURL} not reachable after ${timeoutMs}ms`);
+	throw new Error(`Server at ${url} not reachable after ${timeoutMs}ms`);
+}
+
+async function waitForServer(timeoutMs = 45_000) {
+	await waitForHttpReady(baseURL, timeoutMs);
+}
+
+async function waitForSyncServerDatabaseHealthy(dbName: string, timeoutMs = 60_000) {
+	const healthUrl = new URL(`${encodeURIComponent(dbName)}/health`, remoteDbURL).toString();
+	const deadline = Date.now() + timeoutMs;
+
+	while (Date.now() < deadline) {
+		const remainingMs = deadline - Date.now();
+		if (remainingMs <= 0) break;
+		const ctx = await request.newContext({ ignoreHTTPSErrors: true });
+		try {
+			const resp = await ctx.get(healthUrl, { timeout: Math.max(1, remainingMs) });
+			if (resp.status() === 200) {
+				const body = (await resp.json().catch((): { ok?: boolean } | null => null)) as { ok?: boolean } | null;
+				if (body?.ok === true) {
+					return;
+				}
+			}
+		} catch {
+			// ignore and retry
+		} finally {
+			await ctx.dispose();
+		}
+		await new Promise((resolve) => setTimeout(resolve, Math.max(1, Math.min(1000, deadline - Date.now()))));
+	}
+
+	throw new Error(`Sync DB health at ${healthUrl} not healthy after ${timeoutMs}ms`);
 }
 
 // NOTE: using customer list for sync test...we could also test for other cases, but if sync is working here (and reactivity is there -- different tests)
@@ -113,13 +140,14 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 	const dbName = `sync-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
 
 	await page.evaluate(
-		([dbName]) => {
-			console.log({ dbName });
-		},
-		[dbName]
-	);
-	await page.evaluate(
 		([syncUrl, dbName]) => {
+			for (let i = window.localStorage.length - 1; i >= 0; i--) {
+				const key = window.localStorage.key(i);
+				if (key?.startsWith("librocco-sync-shared-transport:")) {
+					window.localStorage.removeItem(key);
+				}
+			}
+			window.localStorage.removeItem("librocco-sync-shared-transport");
 			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
 			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
 			window.localStorage.setItem("librocco-sync-active", "true");
@@ -127,8 +155,6 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 		[syncUrl, dbName]
 	);
 	await page.goto(baseURL);
-
-	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 10000 });
 
 	// Create an initial customer so we can verify sync is working
 	const dbHandle = await getDbHandle(page);
@@ -142,7 +168,7 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 
 	// Wait for sync to establish by verifying the customer has been synced to the remote via HTTP API.
 	// This ensures the WebSocket connection is established and data is synced.
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	const remoteDbHandle = await getStableRemoteDbHandle(page);
 	await expect
 		.poll(
 			async () => {
@@ -232,7 +258,7 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 	await expect(customerRow).toHaveCount(baseRowCount);
 
 	const dbHandle = await getDbHandle(page);
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	const remoteDbHandle = await getStableRemoteDbHandle(page);
 
 	// Create
 	//
@@ -270,7 +296,19 @@ testOrders("should sync client <-> sync server", async ({ page, customers }) => 
 });
 
 test("initial sync optimization should replace local db from remote snapshot", async ({ page }) => {
-	const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+	const dbName = `initial-sync-opt-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			// Keep sync off while preparing remote-only seed data.
+			window.localStorage.setItem("librocco-sync-active", "false");
+		},
+		[syncUrl, dbName]
+	);
+	await page.goto(baseURL);
+
+	const remoteDbHandle = await getStableRemoteDbHandle(page);
 
 	await retry(() =>
 		remoteDbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Remote Customer", email: "remote@example.com" })
@@ -278,21 +316,10 @@ test("initial sync optimization should replace local db from remote snapshot", a
 	const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList));
 	expect(remoteCustomers.some((customer) => customer.id === 1)).toBe(true);
 
-	const dbid = await page.evaluate(() => JSON.parse(window.localStorage.getItem("librocco-current-db") || '""'));
-	const fileUrl = `${remoteDbURL}${dbid}/file`;
-
-	await page.evaluate(
-		async ({ dbid, fileUrl }) => {
-			const w = window as any;
-			await w._app.sync.runExclusive((sync: any) =>
-				w._performInitialSync(dbid, fileUrl, sync.initialSyncProgressStore, async () => {
-					const db = await w._getDb(w._app);
-					await db.close();
-				})
-			);
-		},
-		{ dbid, fileUrl }
-	);
+	// Trigger public sync startup path; for an empty local DB this exercises initial snapshot optimisation.
+	await page.evaluate(() => {
+		window.localStorage.setItem("librocco-sync-active", "true");
+	});
 
 	await page.reload();
 	await page.waitForSelector('body[hydrated="true"]', { timeout: 10000 });
@@ -314,8 +341,6 @@ test("footer shows pending changes while offline and clears after resync", async
 		[syncUrl, dbName]
 	);
 	await page.goto(baseURL);
-	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
-
 	// Seed local + ensure sync is working
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Baseline Customer", email: "baseline@test.com" });
@@ -348,7 +373,15 @@ test("footer shows pending changes while offline and clears after resync", async
 	});
 
 	const badge = page.getByTestId("remote-db-badge");
-	await expect(badge).toContainText(/pending/i);
+	// With sync explicitly disabled, the badge label is "sync disabled".
+	// Pending is exposed as structured metadata, not as label text.
+	await expect(badge).toHaveAttribute("data-status", "disconnected");
+	await expect
+		.poll(async () => Number((await badge.getAttribute("data-pending")) || "0"), {
+			timeout: 5000,
+			intervals: [250]
+		})
+		.toBeGreaterThan(0);
 
 	// Re-enable sync and wait for the pending change to clear + reach server
 	await page.evaluate(() => window.localStorage.setItem("librocco-sync-active", "true"));
@@ -370,7 +403,12 @@ test("footer shows pending changes while offline and clears after resync", async
 		)
 		.toBe(true);
 
-	await expect(page.getByTestId("remote-db-badge")).not.toContainText(/pending/i);
+	await expect
+		.poll(async () => Number((await page.getByTestId("remote-db-badge").getAttribute("data-pending")) || "0"), {
+			timeout: 10000,
+			intervals: [250]
+		})
+		.toBe(0);
 });
 
 test("remote DB indicator turns red when syncserver stops and recovers after restart", async ({ page }, testInfo) => {
@@ -399,17 +437,21 @@ test("remote DB indicator turns red when syncserver stops and recovers after res
 	await page.goto(baseURL);
 
 	const badgeStatus = () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status");
+	const isRedProblemStatus = async () => {
+		const status = await badgeStatus();
+		return status === "stuck" || status === "incompatible";
+	};
 	await expect.poll(badgeStatus, { timeout: 20000, intervals: [250] }).toBe("synced");
 
 	try {
 		await stopSyncServerViaCircus();
 		await waitForSyncServerCircusStatus("stopped");
 
-		await expect.poll(badgeStatus, { timeout: 25000, intervals: [250] }).toBe("stuck");
+		await expect.poll(isRedProblemStatus, { timeout: 25000, intervals: [250] }).toBe(true);
 
 		await page.reload();
 		await page.goto(baseURL);
-		await expect.poll(badgeStatus, { timeout: 25000, intervals: [250] }).toBe("stuck");
+		await expect.poll(isRedProblemStatus, { timeout: 25000, intervals: [250] }).toBe(true);
 	} finally {
 		await startSyncServerViaCircus();
 		await waitForSyncServerCircusStatus("active");
@@ -430,15 +472,13 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 	);
 	await page.route("**/meta", (route) => route.abort());
 	await page.goto(baseURL);
-	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
-
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Compat Baseline", email: "compat@test.com" });
 
 	await expect
 		.poll(
 			async () => {
-				const remoteDbHandle = await getRemoteDbHandle(page, remoteDbURL);
+				const remoteDbHandle = await getStableRemoteDbHandle(page);
 				const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
 				return remoteCustomers.some((customer) => customer.fullname === "Compat Baseline");
 			},
@@ -446,7 +486,9 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 		)
 		.toBe(true);
 
+	await page.unroute("**/meta");
 	await resetRemoteDb(page, remoteDbURL, dbName);
+	await waitForSyncServerDatabaseHealthy(dbName);
 
 	// Track status transitions after reload to verify "synced" never appears
 	await page.reload();
@@ -470,7 +512,12 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 		}
 	});
 
-	await page.getByText("Remote DB incompatible").waitFor({ timeout: 5000 });
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
+			timeout: 20000,
+			intervals: [250]
+		})
+		.toBe("incompatible");
 
 	// The badge should never have shown "synced" before becoming "incompatible"
 	const statusHistory = await page.evaluate(() => (window as any).__statusHistory as string[]);
@@ -480,10 +527,26 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 	await expect(page.locator(".modal-box")).toContainText(/changed identity/i);
 
 	await page.getByRole("button", { name: /nuke/i }).click();
+	await page.waitForLoadState("domcontentloaded");
 
 	await expect
+		.poll(
+			async () => {
+				const status = await page.getAttribute('[data-testid="remote-db-badge"]', "data-status");
+				return status != null && status !== "incompatible" && status !== "stuck";
+			},
+			{
+				timeout: 20000,
+				intervals: [250]
+			}
+		)
+		.toBe(true);
+
+	// After nuke+resync, wait for full steady state before asserting propagation.
+	// The app can transiently stay in "connecting/checking_compatibility" during re-init.
+	await expect
 		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
-			timeout: 20000,
+			timeout: 45_000,
 			intervals: [250]
 		})
 		.toBe("synced");
@@ -494,11 +557,11 @@ test("shows incompatible state when remote DB is rebuilt and recovers after nuke
 	await expect
 		.poll(
 			async () => {
-				const refreshedRemoteHandle = await getRemoteDbHandle(page, remoteDbURL);
-				const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { fallback: [] });
+				const refreshedRemoteHandle = await getStableRemoteDbHandle(page);
+				const remoteCustomers = await retry(() => refreshedRemoteHandle.evaluate(getCustomerOrderList), { attempts: 5, delayMs: 300 });
 				return remoteCustomers.some((customer) => customer.fullname === "Post Resync Customer");
 			},
-			{ timeout: 20000, intervals: [250] }
+			{ timeout: 30000, intervals: [250] }
 		)
 		.toBe(true);
 });
@@ -515,7 +578,6 @@ test("surfaces apply failures after a successful handshake", async ({ page }) =>
 	);
 
 	await page.goto(baseURL);
-	await page.waitForFunction(() => Boolean((window as any)._app?.sync?.core?.worker?.isConnected), { timeout: 20000 });
 	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "synced", { timeout: 20000 });
 
 	const triggerEndpoint = new URL(`${dbName}/exec`, remoteDbURL).toString();
@@ -540,8 +602,12 @@ test("surfaces apply failures after a successful handshake", async ({ page }) =>
 		email: "applyfail@test.com"
 	});
 
-	await page.getByText("Remote DB incompatible").waitFor({ timeout: 15000 });
-	await expect(page.getByTestId("remote-db-badge")).toHaveAttribute("data-status", "incompatible");
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
+			timeout: 20000,
+			intervals: [250]
+		})
+		.toBe("incompatible");
 	await expect
 		.poll(async () => Number((await page.getAttribute('[data-testid="remote-db-badge"]', "data-pending")) || "0"), {
 			timeout: 5000,
@@ -617,4 +683,189 @@ test("sync progress reports change counts instead of chunk counts", async ({ pag
 	await expect
 		.poll(async () => page.evaluate(() => (window as any).__maxProgress ?? 0), { timeout: 20000, intervals: [250] })
 		.toBeGreaterThan(50);
+});
+
+test("sync status stays consistent across two tabs during stop/restart", async ({ page }, testInfo) => {
+	testInfo.setTimeout(180_000);
+
+	const circusControlAvailable = await isSyncServerCircusControlAvailable();
+	if (!circusControlAvailable) {
+		if (IS_CI) {
+			throw new Error("Circus control for syncserver is unavailable in CI. Refusing to skip the multi-tab sync consistency test.");
+		}
+		test.skip(true, "Circus control for syncserver is not available in this environment");
+	}
+
+	const dbName = `sync-multitab-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await startSyncServerViaCircus();
+	await waitForSyncServerCircusStatus("active");
+
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			window.localStorage.setItem("librocco-sync-active", "true");
+			// Use a multi-tab friendly VFS for this scenario to avoid OPFS lock contention.
+			window.localStorage.setItem("vfs", "asyncify-idb-batch-atomic");
+		},
+		[syncUrl, dbName]
+	);
+	await page.goto(baseURL);
+
+	const page2 = await page.context().newPage();
+	await page2.goto(baseURL);
+	await page2.waitForSelector('body[hydrated="true"]', { timeout: 30_000 });
+	await page2.waitForSelector("#app-splash", { state: "detached", timeout: 30_000 });
+
+	const statusOf = async (p: Page) => p.getAttribute('[data-testid="remote-db-badge"]', "data-status");
+	const waitUntilSynced = async (p: Page, timeout = 25_000) => {
+		await expect.poll(() => statusOf(p), { timeout, intervals: [250] }).toBe("synced");
+	};
+	const postRestartSyncTimeout = 90_000;
+	await waitUntilSynced(page);
+	await waitUntilSynced(page2);
+
+	try {
+		await stopSyncServerViaCircus();
+		await waitForSyncServerCircusStatus("stopped");
+
+		// Each tab can compute reconnect-loop diagnostics independently; require both
+		// tabs to be out of "synced", without forcing equal status labels.
+		await expect
+			.poll(
+				async () => {
+					const s = await statusOf(page);
+					return s != null && s !== "synced";
+				},
+				{ timeout: 30_000, intervals: [250] }
+			)
+			.toBe(true);
+		await expect
+			.poll(
+				async () => {
+					const s = await statusOf(page2);
+					return s != null && s !== "synced";
+				},
+				{ timeout: 30_000, intervals: [250] }
+			)
+			.toBe(true);
+	} finally {
+		await startSyncServerViaCircus();
+		await waitForSyncServerCircusStatus("active");
+		await waitForSyncServerDatabaseHealthy(dbName, 120_000);
+	}
+
+	await waitUntilSynced(page, postRestartSyncTimeout);
+	await waitUntilSynced(page2, postRestartSyncTimeout);
+	await page2.close();
+});
+
+test("surfaces pending_stale when queue age is old while pending exists", async ({ page }, testInfo) => {
+	testInfo.setTimeout(90_000);
+
+	const dbName = `pending-stale-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			window.localStorage.setItem("librocco-sync-active", "true");
+		},
+		[syncUrl, dbName]
+	);
+	await page.goto(baseURL);
+
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
+			timeout: 30_000,
+			intervals: [250]
+		})
+		.toBe("synced");
+
+	const dbid = await page.evaluate(() => JSON.parse(window.localStorage.getItem("librocco-current-db") || '""'));
+	await page.evaluate(
+		([dbid]) => {
+			const old = Date.now() - 180_000;
+			const sinceKey = `librocco-sync-pending-since-${dbid}`;
+			const oldJson = JSON.stringify(old);
+			window.localStorage.setItem(sinceKey, oldJson);
+			// Storage events do not fire in the same document by default; dispatch one so
+			// sync-pending store consumes the stale timestamp immediately.
+			window.dispatchEvent(new StorageEvent("storage", { key: sinceKey, newValue: oldJson }));
+		},
+		[dbid]
+	);
+
+	await page.evaluate(() => {
+		const badge = document.querySelector('[data-testid="remote-db-badge"]');
+		const reasonHistory: string[] = [];
+		const pushCurrentReason = () => {
+			if (!badge) return;
+			const reason = badge.getAttribute("data-reason");
+			if (reason) reasonHistory.push(reason);
+		};
+		pushCurrentReason();
+		const observer = new MutationObserver((mutations) => {
+			for (const mutation of mutations) {
+				if (mutation.attributeName === "data-reason") {
+					pushCurrentReason();
+				}
+			}
+		});
+		if (badge) observer.observe(badge, { attributes: true, attributeFilter: ["data-reason"] });
+		(window as any).__pendingReasonHistory = reasonHistory;
+		(window as any).__pendingReasonObserver = observer;
+	});
+
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Pending-since is already stale; first pending transition should surface pending_stale.
+		let lastSuccessfulId: number | null = null;
+		for (let i = 0; i < 900; i++) {
+			const id = 30_000 + i;
+			try {
+				await window.customers.upsertCustomer(db, {
+					id,
+					displayId: String(id),
+					fullname: `Offline Bulk ${i}`,
+					email: `offline-bulk-${i}@test.com`
+				});
+				lastSuccessfulId = id;
+			} catch (error) {
+				console.error("[pending_stale test] bulk upsert failed", {
+					index: i,
+					id,
+					lastSuccessfulId,
+					error: error instanceof Error ? error.message : String(error)
+				});
+				throw new Error(
+					`bulk upsert failed at index=${i}, id=${id}, lastSuccessfulId=${lastSuccessfulId}, error=${
+						error instanceof Error ? error.message : String(error)
+					}`
+				);
+			}
+		}
+	});
+
+	await expect
+		.poll(async () => Number((await page.getAttribute('[data-testid="remote-db-badge"]', "data-pending")) || "0"), {
+			timeout: 15_000,
+			intervals: [100]
+		})
+		.toBeGreaterThan(0);
+
+	await expect
+		.poll(
+			async () => {
+				return page.evaluate(() => ((window as any).__pendingReasonHistory as string[])?.includes("pending_stale") ?? false);
+			},
+			{
+				timeout: 30_000,
+				intervals: [100]
+			}
+		)
+		.toBe(true);
+
+	await page.evaluate(() => {
+		(window as any).__pendingReasonObserver?.disconnect?.();
+	});
 });

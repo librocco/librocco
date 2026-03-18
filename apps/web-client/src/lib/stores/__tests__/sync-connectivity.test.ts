@@ -61,18 +61,18 @@ describe("updateSyncConnectivityMonitor", () => {
 		expect(get(syncConnectivityMonitor.diagnostics).reason).toBe("rapid_closes");
 	});
 
-	it("marks sync as stuck after timeout while continuously disconnected", () => {
+	it("does not mark sync as stuck after timeout while continuously disconnected", () => {
 		const worker = new FakeWorker();
 		updateSyncConnectivityMonitor(worker as any);
 
 		vi.advanceTimersByTime(10_000);
 
-		expect(get(syncConnectivityMonitor.stuck)).toBe(true);
+		expect(get(syncConnectivityMonitor.stuck)).toBe(false);
 		expect(get(syncConnectivityMonitor.connected)).toBe(false);
-		expect(get(syncConnectivityMonitor.diagnostics).reason).toBe("timeout");
+		expect(get(syncConnectivityMonitor.diagnostics).reason).toBe(null);
 	});
 
-	it("marks sync as stuck after prolonged disconnect despite periodic close events", () => {
+	it("does not mark sync as stuck after prolonged disconnect despite periodic close events", () => {
 		const worker = new FakeWorker();
 		updateSyncConnectivityMonitor(worker as any);
 
@@ -84,18 +84,19 @@ describe("updateSyncConnectivityMonitor", () => {
 		worker.emitClose();
 		vi.advanceTimersByTime(900);
 		expect(get(syncConnectivityMonitor.stuck)).toBe(false);
-
-		vi.advanceTimersByTime(200);
-		expect(get(syncConnectivityMonitor.stuck)).toBe(true);
 		expect(get(syncConnectivityMonitor.connected)).toBe(false);
-		expect(get(syncConnectivityMonitor.diagnostics).reason).toBe("timeout");
+		expect(get(syncConnectivityMonitor.diagnostics).reason).toBe(null);
 	});
 
 	it("clears stuck state when connection opens again", () => {
 		const worker = new FakeWorker();
 		updateSyncConnectivityMonitor(worker as any);
 
-		vi.advanceTimersByTime(10_000);
+		worker.emitClose();
+		vi.advanceTimersByTime(200);
+		worker.emitClose();
+		vi.advanceTimersByTime(200);
+		worker.emitClose();
 		expect(get(syncConnectivityMonitor.stuck)).toBe(true);
 
 		worker.emitOpen();

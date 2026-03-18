@@ -767,7 +767,7 @@ type RootTranslation = {
 			 */
 			order_format: string
 			/**
-			 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+			 * H​a​n​d​l​i​n​g​ ​o​f​ ​u​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s
 			 */
 			underdelivery_policy: string
 			/**
@@ -1733,13 +1733,13 @@ type RootTranslation = {
 				title: string
 				options: {
 					/**
-					 * M​a​r​k​ ​o​r​d​e​r​ ​a​s​ ​p​e​n​d​i​n​g​ ​d​e​l​i​v​e​r​y
+					 * S​u​p​p​l​i​e​r​ ​k​e​e​p​s​ ​t​h​e​ ​o​r​d​e​r​ ​o​p​e​n
 					 */
-					pending: string
+					keep_open: string
 					/**
-					 * M​a​r​k​ ​o​r​d​e​r​ ​a​s​ ​q​u​e​u​e​ ​d​e​l​i​v​e​r​y
+					 * U​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​m​u​s​t​ ​b​e​ ​r​e​o​r​d​e​r​e​d
 					 */
-					queue: string
+					reorder: string
 				}
 				/**
 				 * C​u​r​r​e​n​t​ ​c​h​o​i​c​e​ ​d​o​e​s​n​'​t​ ​m​a​t​c​h​ ​t​h​e​ ​d​e​f​a​u​l​t​ ​c​o​n​f​i​g​u​r​a​t​i​o​n​ ​f​o​r​ ​t​h​i​s​ ​s​u​p​p​l​i​e​r​.
@@ -2403,6 +2403,75 @@ type RootTranslation = {
 			 */
 			remote_db: string
 			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​i​n​c​o​m​p​a​t​i​b​l​e​)
+			 */
+			remote_db_incompatible: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​s​y​n​c​ ​d​i​s​a​b​l​e​d​)
+			 */
+			remote_db_sync_disabled: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​c​h​e​c​k​i​n​g​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​)
+			 */
+			remote_db_connecting_checking_compatibility: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​r​e​c​o​n​n​e​c​t​i​n​g​)
+			 */
+			remote_db_connecting_reconnecting: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​r​e​c​o​n​n​e​c​t​ ​l​o​o​p​)
+			 */
+			remote_db_stuck: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​l​o​c​a​l​ ​d​b​ ​w​a​r​n​i​n​g​)
+			 */
+			remote_db_warning_local_db_warning: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​a​c​k​ ​s​t​a​l​e​)
+			 */
+			remote_db_warning_ack_stale: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​p​e​n​d​i​n​g​ ​s​t​a​l​e​)
+			 */
+			remote_db_warning_pending_stale: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​s​y​n​c​ ​w​a​r​n​i​n​g​)
+			 */
+			remote_db_warning: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​{​p​e​n​d​i​n​g​}​ ​p​e​n​d​i​n​g​)
+			 * @param {number} pending
+			 */
+			remote_db_pending: RequiredParams<'pending'>
+			/**
+			 * S​y​n​c​ ​i​s​ ​d​i​s​a​b​l​e​d​ ​i​n​ ​s​e​t​t​i​n​g​s
+			 */
+			remote_db_title_disconnected: string
+			/**
+			 * L​o​c​a​l​ ​a​n​d​ ​r​e​m​o​t​e​ ​d​a​t​a​b​a​s​e​s​ ​a​r​e​ ​n​o​t​ ​c​o​m​p​a​t​i​b​l​e
+			 */
+			remote_db_title_incompatible: string
+			/**
+			 * S​y​n​c​ ​h​a​s​ ​w​a​r​n​i​n​g​s
+			 */
+			remote_db_title_warning: string
+			/**
+			 * S​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​a​p​p​e​a​r​s​ ​s​t​u​c​k
+			 */
+			remote_db_title_stuck: string
+			/**
+			 * C​o​n​n​e​c​t​e​d​,​ ​w​a​i​t​i​n​g​ ​f​o​r​ ​s​y​n​c​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​ ​t​o​ ​c​o​m​p​l​e​t​e
+			 */
+			remote_db_title_connecting_checking_compatibility: string
+			/**
+			 * S​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​i​s​ ​n​o​t​ ​a​c​t​i​v​e​.​ ​R​e​c​o​n​n​e​c​t​i​n​g​…
+			 */
+			remote_db_title_connecting_reconnecting: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​s​y​n​c​ ​s​t​a​t​u​s
+			 */
+			remote_db_title_default: string
+			/**
 			 * R​e​l​o​a​d​ ​t​r​a​n​s​l​a​t​i​o​n​s​ ​o​v​e​r​r​i​d​e​s
 			 */
 			reload_translations_override: string
@@ -2624,72 +2693,6 @@ type RootTranslation = {
 			manually_edit_book_details: string
 		}
 	}
-	debug_page: {
-		/**
-		 * D​e​b​u​g
-		 */
-		title: string
-		labels: {
-			/**
-			 * K​a​b​o​o​m​!​ ​R​u​n​t​i​m​e​ ​e​r​r​o​r
-			 */
-			runtime_error: string
-		}
-		actions: {
-			/**
-			 * T​r​i​g​g​e​r​ ​L​o​a​d​ ​E​r​r​o​r
-			 */
-			trigger_load_error: string
-			/**
-			 * T​r​i​g​g​e​r​ ​R​u​n​t​i​m​e​ ​E​r​r​o​r
-			 */
-			trigger_runtime_error: string
-			/**
-			 * P​o​p​u​l​a​t​e​ ​D​a​t​a​b​a​s​e
-			 */
-			populate_database: string
-			/**
-			 * R​e​s​e​t​ ​D​a​t​a​b​a​s​e
-			 */
-			reset_database: string
-			/**
-			 * U​p​s​e​r​t​ ​1​0​0​ ​B​o​o​k​s
-			 */
-			upsert_100_books: string
-			/**
-			 * R​u​n​ ​Q​u​e​r​y
-			 */
-			run_query: string
-			/**
-			 * E​x​e​c​u​t​i​n​g​.​.​.
-			 */
-			executing: string
-		}
-		query_interface: {
-			/**
-			 * D​a​t​a​b​a​s​e​ ​Q​u​e​r​y​ ​I​n​t​e​r​f​a​c​e
-			 */
-			title: string
-			/**
-			 * Q​u​e​r​y​ ​R​e​s​u​l​t​s​:
-			 */
-			results_title: string
-			/**
-			 * N​o​ ​r​e​s​u​l​t​s​ ​f​o​u​n​d​.
-			 */
-			no_results: string
-		}
-		table: {
-			/**
-			 * T​a​b​l​e
-			 */
-			title: string
-			/**
-			 * N​u​m​b​e​r​ ​o​f​ ​o​b​j​e​c​t​s
-			 */
-			number_of_objects: string
-		}
-	}
 	forms: {
 		sync_settings: {
 			labels: {
@@ -2835,7 +2838,7 @@ type RootTranslation = {
 				 */
 				order_format_message: string
 				/**
-				 * U​n​d​e​r​d​e​l​i​v​e​r​y​ ​p​o​l​i​c​y
+				 * H​a​n​d​l​i​n​g​ ​o​f​ ​u​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s
 				 */
 				underdelivery_policy: string
 			}
@@ -3897,7 +3900,7 @@ export type TranslationFunctions = {
 			 */
 			order_format: () => LocalizedString
 			/**
-			 * Underdelivery policy
+			 * Handling of undelivered books
 			 */
 			underdelivery_policy: () => LocalizedString
 			/**
@@ -4837,13 +4840,13 @@ export type TranslationFunctions = {
 				title: () => LocalizedString
 				options: {
 					/**
-					 * Mark order as pending delivery
+					 * Supplier keeps the order open
 					 */
-					pending: () => LocalizedString
+					keep_open: () => LocalizedString
 					/**
-					 * Mark order as queue delivery
+					 * Undelivered books must be reordered
 					 */
-					queue: () => LocalizedString
+					reorder: () => LocalizedString
 				}
 				/**
 				 * Current choice doesn't match the default configuration for this supplier.
@@ -5499,6 +5502,74 @@ export type TranslationFunctions = {
 			 */
 			remote_db: () => LocalizedString
 			/**
+			 * Remote DB (incompatible)
+			 */
+			remote_db_incompatible: () => LocalizedString
+			/**
+			 * Remote DB (sync disabled)
+			 */
+			remote_db_sync_disabled: () => LocalizedString
+			/**
+			 * Remote DB (checking compatibility)
+			 */
+			remote_db_connecting_checking_compatibility: () => LocalizedString
+			/**
+			 * Remote DB (reconnecting)
+			 */
+			remote_db_connecting_reconnecting: () => LocalizedString
+			/**
+			 * Remote DB (reconnect loop)
+			 */
+			remote_db_stuck: () => LocalizedString
+			/**
+			 * Remote DB (local db warning)
+			 */
+			remote_db_warning_local_db_warning: () => LocalizedString
+			/**
+			 * Remote DB (ack stale)
+			 */
+			remote_db_warning_ack_stale: () => LocalizedString
+			/**
+			 * Remote DB (pending stale)
+			 */
+			remote_db_warning_pending_stale: () => LocalizedString
+			/**
+			 * Remote DB (sync warning)
+			 */
+			remote_db_warning: () => LocalizedString
+			/**
+			 * Remote DB ({pending} pending)
+			 */
+			remote_db_pending: (arg: { pending: number }) => LocalizedString
+			/**
+			 * Sync is disabled in settings
+			 */
+			remote_db_title_disconnected: () => LocalizedString
+			/**
+			 * Local and remote databases are not compatible
+			 */
+			remote_db_title_incompatible: () => LocalizedString
+			/**
+			 * Sync has warnings
+			 */
+			remote_db_title_warning: () => LocalizedString
+			/**
+			 * Sync connection appears stuck
+			 */
+			remote_db_title_stuck: () => LocalizedString
+			/**
+			 * Connected, waiting for sync compatibility check to complete
+			 */
+			remote_db_title_connecting_checking_compatibility: () => LocalizedString
+			/**
+			 * Sync connection is not active. Reconnecting…
+			 */
+			remote_db_title_connecting_reconnecting: () => LocalizedString
+			/**
+			 * Remote DB sync status
+			 */
+			remote_db_title_default: () => LocalizedString
+			/**
 			 * Reload translations overrides
 			 */
 			reload_translations_override: () => LocalizedString
@@ -5714,72 +5785,6 @@ export type TranslationFunctions = {
 			manually_edit_book_details: () => LocalizedString
 		}
 	}
-	debug_page: {
-		/**
-		 * Debug
-		 */
-		title: () => LocalizedString
-		labels: {
-			/**
-			 * Kaboom! Runtime error
-			 */
-			runtime_error: () => LocalizedString
-		}
-		actions: {
-			/**
-			 * Trigger Load Error
-			 */
-			trigger_load_error: () => LocalizedString
-			/**
-			 * Trigger Runtime Error
-			 */
-			trigger_runtime_error: () => LocalizedString
-			/**
-			 * Populate Database
-			 */
-			populate_database: () => LocalizedString
-			/**
-			 * Reset Database
-			 */
-			reset_database: () => LocalizedString
-			/**
-			 * Upsert 100 Books
-			 */
-			upsert_100_books: () => LocalizedString
-			/**
-			 * Run Query
-			 */
-			run_query: () => LocalizedString
-			/**
-			 * Executing...
-			 */
-			executing: () => LocalizedString
-		}
-		query_interface: {
-			/**
-			 * Database Query Interface
-			 */
-			title: () => LocalizedString
-			/**
-			 * Query Results:
-			 */
-			results_title: () => LocalizedString
-			/**
-			 * No results found.
-			 */
-			no_results: () => LocalizedString
-		}
-		table: {
-			/**
-			 * Table
-			 */
-			title: () => LocalizedString
-			/**
-			 * Number of objects
-			 */
-			number_of_objects: () => LocalizedString
-		}
-	}
 	forms: {
 		sync_settings: {
 			labels: {
@@ -5922,7 +5927,7 @@ export type TranslationFunctions = {
 				 */
 				order_format_message: () => LocalizedString
 				/**
-				 * Underdelivery policy
+				 * Handling of undelivered books
 				 */
 				underdelivery_policy: () => LocalizedString
 			}
