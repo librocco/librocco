@@ -242,11 +242,25 @@ export async function attachPendingMonitor(db: DBAsync, rx: IAppDbRx, dbid: stri
 }
 
 export async function setLastAckedVersion(version: number, dbid?: string) {
-	if (!currentDbid || (dbid && dbid !== currentDbid)) return;
+	const targetDbid = dbid ?? currentDbid;
+	if (!targetDbid) return;
+
+	if (browser) {
+		try {
+			const stored = localStorage.getItem(getAckStorageKey(targetDbid)) ?? localStorage.getItem(getLegacyStorageKey(targetDbid));
+			const persistedAck = stored != null ? Number(JSON.parse(stored)) || 0 : 0;
+			if (version > persistedAck) {
+				localStorage.setItem(getAckStorageKey(targetDbid), JSON.stringify(version));
+			}
+		} catch {
+			// ignore storage failures
+		}
+	}
+
+	if (targetDbid !== currentDbid) return;
 
 	if (version > lastAckVersion) {
 		lastAckVersion = version;
-		persistLastAckVersion();
 		await refreshPendingCount();
 	}
 }

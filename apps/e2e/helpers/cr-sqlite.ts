@@ -44,6 +44,7 @@ export async function getDbHandle(page: Page): Promise<JSHandle<DB>> {
 	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
 		try {
 			return await page.evaluateHandle(async () => {
+				const dbReadyTimeoutMs = 30_000;
 				type CrSqliteEvalWindow = Window & {
 					db_ready?: boolean;
 					_app?: unknown;
@@ -52,16 +53,21 @@ export async function getDbHandle(page: Page): Promise<JSHandle<DB>> {
 				const w = window as CrSqliteEvalWindow;
 
 				// Wait for the db to become initialised
-				await new Promise<void>((res) => {
+				await new Promise<void>((res, rej) => {
 					if (w.db_ready) {
 						return res();
 					}
 
 					// Creating a separate function, as we want to run the listener only once and then remove it
 					const finalise = () => {
+						clearTimeout(timeout);
 						window.removeEventListener("db_ready", finalise);
 						res();
 					};
+					const timeout = window.setTimeout(() => {
+						window.removeEventListener("db_ready", finalise);
+						rej(new Error(`Timed out waiting for db_ready after ${dbReadyTimeoutMs}ms`));
+					}, dbReadyTimeoutMs);
 					window.addEventListener("db_ready", finalise);
 				});
 

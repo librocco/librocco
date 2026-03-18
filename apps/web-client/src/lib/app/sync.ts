@@ -161,9 +161,7 @@ export class AppSync implements IAppSync {
 	}
 
 	async destroy(): Promise<void> {
-		await this.runExclusive(() => {
-			this.core.destroy();
-		});
+		await this.runExclusive(() => this.core.destroy());
 	}
 
 	/**
@@ -188,39 +186,56 @@ export class AppSync implements IAppSync {
  */
 export async function initializeSync(app: App): Promise<void> {
 	return app.sync.runExclusive(async (sync) => {
+		const previousState = get(sync.state);
+
 		// If already initialised, just ensure we're bound to the latest DB.
 		if (get(sync.state) >= AppSyncState.Initializing) {
-			const db = await getDb(app);
-			sync.bindDb(db);
-			return;
+			try {
+				const db = await getDb(app);
+				sync.bindDb(db);
+				return;
+			} catch (err) {
+				sync.state.set(previousState);
+				throw err;
+			}
 		}
 
 		// Initialise the worker
 		sync.state.set(AppSyncState.Initializing);
-		const db = await getDb(app);
-		sync.bindDb(db);
-		updateSyncConnectivityMonitor(sync.worker);
-
-		// Subscribe to sync changes to notify UI subscribers (debounced to avoid UI thrashing)
 		let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-		const disposeChangesListener = sync.worker.onChangesReceived(() => {
-			if (debounceTimer) clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(() => {
-				app.db.rx.notifyAll();
-				debounceTimer = null;
-			}, 100);
-		});
-		sync.addDisposer(() => {
+		let disposeChangesListener: (() => void) | null = null;
+		const cleanupInitListener = () => {
 			if (debounceTimer) {
 				clearTimeout(debounceTimer);
 				debounceTimer = null;
 			}
-			disposeChangesListener();
-		});
+			disposeChangesListener?.();
+			disposeChangesListener = null;
+		};
 
-		// Wait for the worker to be initialised
-		await sync.worker.initPromise;
-		sync.state.set(AppSyncState.Idle);
+		try {
+			const db = await getDb(app);
+			sync.bindDb(db);
+			updateSyncConnectivityMonitor(sync.worker);
+
+			// Subscribe to sync changes to notify UI subscribers (debounced to avoid UI thrashing)
+			disposeChangesListener = sync.worker.onChangesReceived(() => {
+				if (debounceTimer) clearTimeout(debounceTimer);
+				debounceTimer = setTimeout(() => {
+					app.db.rx.notifyAll();
+					debounceTimer = null;
+				}, 100);
+			});
+
+			// Wait for the worker to be initialised
+			await sync.worker.initPromise;
+			sync.addDisposer(cleanupInitListener);
+			sync.state.set(AppSyncState.Idle);
+		} catch (err) {
+			cleanupInitListener();
+			sync.state.set(previousState);
+			throw err;
+		}
 	});
 }
 

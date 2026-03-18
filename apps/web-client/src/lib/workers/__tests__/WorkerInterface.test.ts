@@ -21,6 +21,7 @@ function createBridge(options?: { connected?: boolean; asyncDispose?: boolean; t
 	const connOpenListeners = new Set<() => void>();
 	const connCloseListeners = new Set<() => void>();
 	const pendingResolvers: PendingResolver[] = [];
+	let lastSyncStatus: SyncStatusPayload | null = null;
 
 	const addListener = <T>(listeners: Set<(msg: T) => void>, cb: (msg: T) => void) => {
 		listeners.add(cb);
@@ -82,7 +83,11 @@ function createBridge(options?: { connected?: boolean; asyncDispose?: boolean; t
 			return addListener(outgoingChangesListeners, cb);
 		},
 		onSyncStatus(cb) {
-			return addListener(syncStatusListeners, cb);
+			const dispose = addListener(syncStatusListeners, cb);
+			if (lastSyncStatus != null) {
+				cb(lastSyncStatus);
+			}
+			return dispose;
 		},
 		onConnOpen(cb) {
 			return addVoidListener(connOpenListeners, cb);
@@ -96,6 +101,12 @@ function createBridge(options?: { connected?: boolean; asyncDispose?: boolean; t
 		bridge,
 		emitChangesReceived(msg: { timestamp: number }) {
 			for (const listener of changesReceivedListeners) {
+				listener(msg);
+			}
+		},
+		emitSyncStatus(msg: SyncStatusPayload) {
+			lastSyncStatus = msg;
+			for (const listener of syncStatusListeners) {
 				listener(msg);
 			}
 		},
@@ -225,5 +236,47 @@ describe("WorkerInterface.bind", () => {
 		await worker.destroy();
 		expect(onConnClose).toHaveBeenCalledTimes(1);
 		expect(worker.isConnected).toBe(false);
+	});
+
+	it("reconciles connection state from sync status when connOpen was missed before bind listeners attached", async () => {
+		const bridge = createBridge();
+		bridge.emitSyncStatus({ ok: true, stage: "ready" });
+
+		const worker = new WorkerInterface(bridge.bridge);
+		await nextTick();
+
+		expect(worker.isConnected).toBe(true);
+	});
+
+	it("updates connection state from sync status transitions without connOpen/connClose events", async () => {
+		const bridge = createBridge();
+		const worker = new WorkerInterface(bridge.bridge);
+		await nextTick();
+
+		bridge.emitSyncStatus({ ok: true, stage: "ready" });
+		expect(worker.isConnected).toBe(true);
+
+		bridge.emitSyncStatus({ ok: false, reason: "remote_unreachable" });
+		expect(worker.isConnected).toBe(false);
+	});
+
+	it("replays the latest ackDbVersion to late sync-status subscribers even after a later ack-less ok status", async () => {
+		const bridge = createBridge();
+		const worker = new WorkerInterface(bridge.bridge);
+		await nextTick();
+
+		bridge.emitSyncStatus({ ok: true, stage: "apply_ack", ackDbVersion: 6 });
+		bridge.emitSyncStatus({ ok: true, stage: "steady" });
+
+		const listener = vi.fn();
+		worker.onSyncStatus(listener);
+
+		expect(listener).toHaveBeenCalledWith(
+			expect.objectContaining({
+				ok: true,
+				stage: "steady",
+				ackDbVersion: 6
+			})
+		);
 	});
 });

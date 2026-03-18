@@ -8,6 +8,8 @@ export default class WorkerInterface {
 	#endpoint: SyncWorkerBridge | null = null;
 	#bridgeDisposers: Array<() => void> = [];
 	#disposePromise: Promise<void> = Promise.resolve();
+	#destroyed = false;
+	#lifecycleVersion = 0;
 
 	#syncEmitter: SyncEventEmitter;
 	#connEmitter: ConnectionEventEmitter;
@@ -19,6 +21,16 @@ export default class WorkerInterface {
 	}
 
 	#isConnected = false;
+
+	#markConnected() {
+		if (this.#isConnected) return;
+		this.#connEmitter.notifyConnOpen();
+	}
+
+	#markDisconnected() {
+		if (!this.#isConnected) return;
+		this.#connEmitter.notifyConnClose();
+	}
 
 	constructor(endpoint?: DBAsync | SyncWorkerBridge | null) {
 		this.#syncEmitter = new SyncEventEmitter();
@@ -37,6 +49,8 @@ export default class WorkerInterface {
 	}
 
 	bind(endpoint: DBAsync | SyncWorkerBridge | null): void {
+		this.#destroyed = false;
+		const lifecycleVersion = ++this.#lifecycleVersion;
 		const nextEndpoint = endpoint && isSyncWorkerBridge(endpoint) ? endpoint : null;
 		if (nextEndpoint === this.#endpoint) {
 			if (nextEndpoint === null) {
@@ -62,7 +76,7 @@ export default class WorkerInterface {
 		void disposePromise.then(() => {
 			// A newer bind() call may have replaced the endpoint while unsubscribes
 			// from the previous bridge were still settling.
-			if (this.#endpoint !== nextEndpoint) {
+			if (this.#destroyed || this.#lifecycleVersion !== lifecycleVersion || this.#endpoint !== nextEndpoint) {
 				return;
 			}
 
@@ -71,13 +85,23 @@ export default class WorkerInterface {
 				nextEndpoint.onChangesProcessed((msg) => this.#syncEmitter.notifyChangesProcessed(msg)),
 				nextEndpoint.onProgress((msg) => this.#syncEmitter.notifyProgress(msg)),
 				nextEndpoint.onOutgoingChanges((msg) => this.#syncEmitter.notifyOutgoingChanges(msg)),
-				nextEndpoint.onSyncStatus((msg) => this.#syncEmitter.notifySyncStatusWithCache(msg)),
-				nextEndpoint.onConnOpen(() => this.#connEmitter.notifyConnOpen()),
-				nextEndpoint.onConnClose(() => this.#connEmitter.notifyConnClose())
+				nextEndpoint.onSyncStatus((msg) => {
+					this.#syncEmitter.notifySyncStatusWithCache(msg);
+					// Sync status is cached and replayed by the bridge. Reconcile connection
+					// state from it as well so bind() cannot permanently miss a connection
+					// that became ready before the connOpen listener was attached.
+					if (msg.ok) {
+						this.#markConnected();
+					} else {
+						this.#markDisconnected();
+					}
+				}),
+				nextEndpoint.onConnOpen(() => this.#markConnected()),
+				nextEndpoint.onConnClose(() => this.#markDisconnected())
 			];
 
 			if (nextEndpoint.isConnected) {
-				this.#connEmitter.notifyConnOpen();
+				this.#markConnected();
 			}
 			this.#initPromiseResolver();
 		});
@@ -120,11 +144,16 @@ export default class WorkerInterface {
 	}
 
 	async destroy() {
+		const lifecycleVersion = ++this.#lifecycleVersion;
+		this.#destroyed = true;
 		if (this.#isConnected) {
 			this.#connEmitter.notifyConnClose();
 		}
 		this.#disposeBridge();
 		await this.#disposePromise;
+		if (this.#lifecycleVersion !== lifecycleVersion) {
+			return;
+		}
 		this.#endpoint = null;
 		this.#isConnected = false;
 	}

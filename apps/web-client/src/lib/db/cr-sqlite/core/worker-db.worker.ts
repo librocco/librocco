@@ -133,7 +133,9 @@ class SharedConnectionSyncDB implements SyncDB {
 	static async create(db: DBAsync): Promise<SharedConnectionSyncDB> {
 		const [pullChangesetStmt, applyChangesetStmt, updatePeerTrackerStmt] = await Promise.all([
 			db.prepare(
-				`SELECT "table", "pk", "cid", "val", "col_version", "db_version", NULL, "cl", seq FROM crsql_changes WHERE db_version > ? AND site_id IS NOT ?`
+				`SELECT "table", "pk", "cid", "val", "col_version", "db_version", NULL, "cl", seq
+					FROM crsql_changes
+					WHERE (db_version > ? OR (? != 0 AND db_version = ? AND seq > ?)) AND site_id IS NOT ?`
 			),
 			db.prepare(
 				`INSERT INTO crsql_changes ("table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
@@ -166,7 +168,7 @@ class SharedConnectionSyncDB implements SyncDB {
 
 	async pullChangeset(since: readonly [bigint, number], excludeSites: readonly Uint8Array[], localOnly: boolean): Promise<ChangesetRow[]> {
 		void localOnly;
-		const rows = (await this.#pullChangesetStmt.all(null, since[0], excludeSites[0])) as ChangesetRowRaw[];
+		const rows = (await this.#pullChangesetStmt.all(null, since[0], since[1], since[0], since[1], excludeSites[0])) as ChangesetRowRaw[];
 		for (const row of rows) {
 			row[CHANGESET_COL_VERSION_INDEX] = BigInt(row[CHANGESET_COL_VERSION_INDEX]);
 			row[CHANGESET_DB_VERSION_INDEX] = BigInt(row[CHANGESET_DB_VERSION_INDEX]);
@@ -264,13 +266,15 @@ async function createAndStartSyncedDBExclusive(
 				return db;
 			}
 		};
-		const syncedDb = await createSyncedDB(trackedConfig, dbname, transportOptions);
+		let syncedDb: Awaited<ReturnType<typeof createSyncedDB>> | null = null;
 		const stopAndFinalize = async (): Promise<void> => {
 			const stopErrors: unknown[] = [];
-			try {
-				await syncedDb.stop();
-			} catch (err) {
-				stopErrors.push(err);
+			if (syncedDb) {
+				try {
+					await syncedDb.stop();
+				} catch (err) {
+					stopErrors.push(err);
+				}
 			}
 			if (sharedSyncDb) {
 				try {
@@ -286,6 +290,18 @@ async function createAndStartSyncedDBExclusive(
 				throw stopErrors[0];
 			}
 		};
+		try {
+			syncedDb = await createSyncedDB(trackedConfig, dbname, transportOptions);
+		} catch (err) {
+			if (sharedSyncDb) {
+				try {
+					await sharedSyncDb.close(false);
+				} catch (closeErr) {
+					console.warn(`[worker] Failed to close shared sync DB after create error for db '${dbname}'`, closeErr);
+				}
+			}
+			throw err;
+		}
 		try {
 			await syncedDb.start();
 		} catch (err) {
@@ -376,6 +392,9 @@ class SyncRuntime {
 	async startSync(dbid: string, transportOpts: SyncTransportOptions): Promise<void> {
 		const nextTransportOpts = cloneTransportOptions(transportOpts);
 		if (this.#activeConfig?.dbid === dbid && areTransportOptionsEqual(this.#activeConfig.transportOpts, nextTransportOpts)) {
+			if (this.#handlePromise) {
+				await this.#handlePromise;
+			}
 			return;
 		}
 

@@ -75,8 +75,10 @@ export class SyncEventEmitter {
 		reason?: string;
 		message?: string;
 	}) {
-		this.#lastSyncStatus = msg;
-		this.notifySyncStatus(msg);
+		const ackDbVersion = msg.ackDbVersion ?? this.#lastSyncStatus?.ackDbVersion;
+		const nextMsg = ackDbVersion == null ? msg : { ...msg, ackDbVersion };
+		this.#lastSyncStatus = nextMsg;
+		this.notifySyncStatus(nextMsg);
 	}
 }
 

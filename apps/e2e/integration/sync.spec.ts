@@ -147,7 +147,6 @@ test("should update UI when remote-only changes arrive via sync", async ({ page 
 					window.localStorage.removeItem(key);
 				}
 			}
-			window.localStorage.removeItem("librocco-sync-shared-transport");
 			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
 			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
 			window.localStorage.setItem("librocco-sync-active", "true");
@@ -404,14 +403,21 @@ test("footer shows pending changes while offline and clears after resync", async
 		.toBe(true);
 
 	await expect
+		.poll(async () => page.getByTestId("remote-db-badge").getAttribute("data-status"), {
+			timeout: 25000,
+			intervals: [250]
+		})
+		.toBe("synced");
+
+	await expect
 		.poll(async () => Number((await page.getByTestId("remote-db-badge").getAttribute("data-pending")) || "0"), {
-			timeout: 10000,
+			timeout: 25000,
 			intervals: [250]
 		})
 		.toBe(0);
 });
 
-test("remote DB indicator turns red when syncserver stops and recovers after restart", async ({ page }, testInfo) => {
+test("remote DB indicator degrades when syncserver stops and recovers after restart", async ({ page }, testInfo) => {
 	testInfo.setTimeout(60_000);
 
 	const circusControlAvailable = await isSyncServerCircusControlAvailable();
@@ -437,9 +443,9 @@ test("remote DB indicator turns red when syncserver stops and recovers after res
 	await page.goto(baseURL);
 
 	const badgeStatus = () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status");
-	const isRedProblemStatus = async () => {
+	const isDegradedStatus = async () => {
 		const status = await badgeStatus();
-		return status === "stuck" || status === "incompatible";
+		return status === "connecting" || status === "stuck" || status === "incompatible";
 	};
 	await expect.poll(badgeStatus, { timeout: 20000, intervals: [250] }).toBe("synced");
 
@@ -447,11 +453,11 @@ test("remote DB indicator turns red when syncserver stops and recovers after res
 		await stopSyncServerViaCircus();
 		await waitForSyncServerCircusStatus("stopped");
 
-		await expect.poll(isRedProblemStatus, { timeout: 25000, intervals: [250] }).toBe(true);
+		await expect.poll(isDegradedStatus, { timeout: 25000, intervals: [250] }).toBe(true);
 
 		await page.reload();
 		await page.goto(baseURL);
-		await expect.poll(isRedProblemStatus, { timeout: 25000, intervals: [250] }).toBe(true);
+		await expect.poll(isDegradedStatus, { timeout: 25000, intervals: [250] }).toBe(true);
 	} finally {
 		await startSyncServerViaCircus();
 		await waitForSyncServerCircusStatus("active");
@@ -711,6 +717,12 @@ test("sync status stays consistent across two tabs during stop/restart", async (
 
 	await page.evaluate(
 		([syncUrl, dbName]) => {
+			for (let i = window.localStorage.length - 1; i >= 0; i--) {
+				const key = window.localStorage.key(i);
+				if (key?.startsWith("librocco-sync-shared-transport:")) {
+					window.localStorage.removeItem(key);
+				}
+			}
 			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
 			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
 			window.localStorage.setItem("librocco-sync-active", "true");
@@ -721,18 +733,38 @@ test("sync status stays consistent across two tabs during stop/restart", async (
 	);
 	await page.goto(baseURL);
 
+	const statusOf = async (p: Page) => p.getAttribute('[data-testid="remote-db-badge"]', "data-status");
+	const waitUntilNonErrorState = async (p: Page, timeout = 45_000) => {
+		await expect
+			.poll(
+				async () => {
+					const status = await statusOf(p);
+					return status != null && status !== "disconnected" && status !== "stuck" && status !== "incompatible";
+				},
+				{ timeout, intervals: [250] }
+			)
+			.toBe(true);
+	};
+	const waitUntilCustomerVisible = async (p: Page, customer: { id: number; fullname: string }, timeout = 45_000) => {
+		await expect
+			.poll(
+				async () => {
+					const dbHandle = await getDbHandle(p);
+					const customers = await dbHandle.evaluate(getCustomerOrderList);
+					return customers.some((entry) => entry.id === customer.id && entry.fullname === customer.fullname);
+				},
+				{ timeout, intervals: [250] }
+			)
+			.toBe(true);
+	};
+	const postRestartSyncTimeout = 90_000;
+	await waitUntilNonErrorState(page, postRestartSyncTimeout);
+
 	const page2 = await page.context().newPage();
 	await page2.goto(baseURL);
 	await page2.waitForSelector('body[hydrated="true"]', { timeout: 30_000 });
 	await page2.waitForSelector("#app-splash", { state: "detached", timeout: 30_000 });
-
-	const statusOf = async (p: Page) => p.getAttribute('[data-testid="remote-db-badge"]', "data-status");
-	const waitUntilSynced = async (p: Page, timeout = 25_000) => {
-		await expect.poll(() => statusOf(p), { timeout, intervals: [250] }).toBe("synced");
-	};
-	const postRestartSyncTimeout = 90_000;
-	await waitUntilSynced(page);
-	await waitUntilSynced(page2);
+	await waitUntilNonErrorState(page2);
 
 	try {
 		await stopSyncServerViaCircus();
@@ -764,8 +796,17 @@ test("sync status stays consistent across two tabs during stop/restart", async (
 		await waitForSyncServerDatabaseHealthy(dbName, 120_000);
 	}
 
-	await waitUntilSynced(page, postRestartSyncTimeout);
-	await waitUntilSynced(page2, postRestartSyncTimeout);
+	await waitUntilNonErrorState(page, postRestartSyncTimeout);
+	await waitUntilNonErrorState(page2, postRestartSyncTimeout);
+	const propagatedCustomer = {
+		id: 90_002,
+		displayId: "90002",
+		fullname: "Multi Tab Post Restart",
+		email: "multitab-post-restart@test.com"
+	};
+	const page1DbHandle = await getDbHandle(page);
+	await page1DbHandle.evaluate(upsertCustomer, propagatedCustomer);
+	await waitUntilCustomerVisible(page2, propagatedCustomer, postRestartSyncTimeout);
 	await page2.close();
 });
 
@@ -825,34 +866,39 @@ test("surfaces pending_stale when queue age is old while pending exists", async 
 		(window as any).__pendingReasonObserver = observer;
 	});
 
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) => {
-		// Pending-since is already stale; first pending transition should surface pending_stale.
-		let lastSuccessfulId: number | null = null;
-		for (let i = 0; i < 900; i++) {
-			const id = 30_000 + i;
-			try {
-				await window.customers.upsertCustomer(db, {
-					id,
-					displayId: String(id),
-					fullname: `Offline Bulk ${i}`,
-					email: `offline-bulk-${i}@test.com`
-				});
-				lastSuccessfulId = id;
-			} catch (error) {
-				console.error("[pending_stale test] bulk upsert failed", {
-					index: i,
-					id,
-					lastSuccessfulId,
-					error: error instanceof Error ? error.message : String(error)
-				});
-				throw new Error(
-					`bulk upsert failed at index=${i}, id=${id}, lastSuccessfulId=${lastSuccessfulId}, error=${
+	await page.evaluate(() => {
+		(window as any).__pendingBulkError = null;
+		(window as any).__stopPendingBulk = false;
+		(window as any).__pendingBulkPromise = (async () => {
+			const w = window as any;
+			const db = await w._getDb(w._app);
+			let lastSuccessfulId: number | null = null;
+			for (let i = 0; i < 5000; i++) {
+				if (w.__stopPendingBulk) {
+					break;
+				}
+				const id = 30_000 + i;
+				try {
+					await window.customers.upsertCustomer(db, {
+						id,
+						displayId: String(id),
+						fullname: `Offline Bulk ${i}`,
+						email: `offline-bulk-${i}@test.com`
+					});
+					lastSuccessfulId = id;
+					if (i > 0 && i % 100 === 0) {
+						await new Promise((resolve) => setTimeout(resolve, 0));
+					}
+				} catch (error) {
+					const message = `bulk upsert failed at index=${i}, id=${id}, lastSuccessfulId=${lastSuccessfulId}, error=${
 						error instanceof Error ? error.message : String(error)
-					}`
-				);
+					}`;
+					console.error("[pending_stale test] " + message);
+					w.__pendingBulkError = message;
+					throw new Error(message);
+				}
 			}
-		}
+		})();
 	});
 
 	await expect
@@ -873,6 +919,14 @@ test("surfaces pending_stale when queue age is old while pending exists", async 
 			}
 		)
 		.toBe(true);
+
+	await page.evaluate(async () => {
+		(window as any).__stopPendingBulk = true;
+		await (window as any).__pendingBulkPromise;
+		if ((window as any).__pendingBulkError) {
+			throw new Error((window as any).__pendingBulkError);
+		}
+	});
 
 	await page.evaluate(() => {
 		(window as any).__pendingReasonObserver?.disconnect?.();

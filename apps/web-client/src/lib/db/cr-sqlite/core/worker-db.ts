@@ -136,7 +136,7 @@ class WorkerDB implements DBAsync {
 		// NOTE: everything done over the wire is a Promise, whereas 'onUpdate' signature expects the unsubscribe function
 		// to be returned immediately, so we create a function that (internally) waits for the unsubscribe and calls it
 		const res = this.remote.onUpdate(Comlink.proxy(cb));
-		return () => res.then((unsubscribe) => unsubscribe()); // Everything done over the wire is a Promise
+		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {}); // Everything done over the wire is a Promise
 	}
 
 	tx(cb: TXCallback): Promise<void> {
@@ -161,27 +161,27 @@ class WorkerDB implements DBAsync {
 
 	onChangesReceived(cb: (msg: { timestamp: number }) => void): () => void {
 		const res = this.remote.onChangesReceived(Comlink.proxy(cb));
-		return () => res.then((unsubscribe) => unsubscribe());
+		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
 	}
 
 	onChangesProcessed(cb: (msg: { timestamp: number }) => void): () => void {
 		const res = this.remote.onChangesProcessed(Comlink.proxy(cb));
-		return () => res.then((unsubscribe) => unsubscribe());
+		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
 	}
 
 	onProgress(cb: (msg: { active: boolean; nProcessed: number; nTotal: number }) => void): () => void {
 		const res = this.remote.onProgress(Comlink.proxy(cb));
-		return () => res.then((unsubscribe) => unsubscribe());
+		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
 	}
 
 	onOutgoingChanges(cb: (msg: { maxDbVersion: number; changeCount: number }) => void): () => void {
 		const res = this.remote.onOutgoingChanges(Comlink.proxy(cb));
-		return () => res.then((unsubscribe) => unsubscribe());
+		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
 	}
 
 	onSyncStatus(cb: (msg: SyncStatusPayload) => void): () => void {
 		const res = this.remote.onSyncStatus(Comlink.proxy(cb));
-		return () => res.then((unsubscribe) => unsubscribe());
+		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
 	}
 
 	onConnOpen(cb: () => void): () => void {
@@ -191,7 +191,7 @@ class WorkerDB implements DBAsync {
 				cb();
 			})
 		);
-		return () => res.then((unsubscribe) => unsubscribe());
+		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
 	}
 
 	onConnClose(cb: () => void): () => void {
@@ -201,7 +201,7 @@ class WorkerDB implements DBAsync {
 				cb();
 			})
 		);
-		return () => res.then((unsubscribe) => unsubscribe());
+		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
 	}
 
 	get isConnected(): boolean {
