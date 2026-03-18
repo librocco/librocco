@@ -326,6 +326,10 @@ const new_order_page = {
 	}
 };
 
+const table = {
+	empty_message: "Nothing to see here"
+};
+
 const order_list_page = {
 	labels: {
 		save: "Save",
@@ -350,7 +354,6 @@ const order_list_page = {
 		no_matching_assigned_publishers: "No matching assigned publishers",
 		no_available_publishers: "No available publishers",
 		no_matching_available_publishers: "No matching available publishers",
-		nothing_to_see_here: "Nothing to see here",
 		currently_assigned_to: "Currently assigned to {supplierName}"
 	},
 	aria: {
@@ -431,6 +434,67 @@ const reconcile_page = {
 			title: "Commit",
 			description: "Notify customers"
 		}
+	},
+	step1: {
+		stats: {
+			total_ordered: "Total Ordered",
+			total_delivered: "Total Delivered"
+		},
+		table: {
+			isbn: "ISBN",
+			title: "Title",
+			authors: "Authors",
+			order_quantity: "Order Quantity",
+			delivered: "Delivered",
+			controls: "Delivered Quantity Controls"
+		},
+		aria_labels: {
+			decrease_quantity: "Decrease delivered quantity for {title}, currently {count}",
+			increase_quantity: "Increase delivered quantity for {title}, currently {count}"
+		},
+		footer: {
+			total_scanned: "Total books scanned: {count}",
+			continue: "Continue"
+		}
+	},
+	step2: {
+		stats: {
+			total_ordered: "Total Ordered",
+			total_delivered: "Total Delivered"
+		},
+		order_summary: {
+			order_id: "Order #{id}",
+			books_undelivered: "{count} book{{s}} undelivered",
+			complete: "Complete",
+			status: "Status",
+			missing: "{count} missing"
+		},
+		underdelivery: {
+			title: "Action for missing books",
+			options: {
+				keep_open: "Supplier keeps the order open",
+				reorder: "Undelivered books must be reordered"
+			},
+			warning: "Current choice doesn't match the default configuration for this supplier.",
+			persist_button: "Persist changes"
+		},
+		customer_notification: {
+			message_pending: "Customers will be notified that delivered books are ready for collection",
+			message_finalized: "These customers were notified that delivered books are ready for collection",
+			table: {
+				customer: "Customer",
+				id: "ID",
+				order_date: "Order Date"
+			},
+			copy_label: "({count} cop{{y|ies}})"
+		},
+		actions: {
+			back: "← Back",
+			finalize: "Finalize Delivery"
+		},
+		finalized: {
+			message: "Delivery finalized on {date:Date|dateShort}"
+		}
 	}
 };
 const suppliers_page = {
@@ -460,6 +524,7 @@ const suppliers_page = {
 		email: "Email",
 		address: "Address",
 		order_format: "Order format",
+		underdelivery_policy: "Handling of undelivered books",
 		edit_details: "Edit details",
 		delete_supplier: "Delete supplier"
 	},
@@ -531,31 +596,6 @@ const books_page = {
 		print_book_label: "Print book label",
 		edit_book_details: "Edit book details",
 		manually_edit_book_details: "Manually edit book details"
-	}
-};
-
-const debug_page = {
-	title: "Debug",
-	labels: {
-		runtime_error: "Kaboom! Runtime error"
-	},
-	actions: {
-		trigger_load_error: "Trigger Load Error",
-		trigger_runtime_error: "Trigger Runtime Error",
-		populate_database: "Populate Database",
-		reset_database: "Reset Database",
-		upsert_100_books: "Upsert 100 Books",
-		run_query: "Run Query",
-		executing: "Executing..."
-	},
-	query_interface: {
-		title: "Database Query Interface",
-		results_title: "Query Results:",
-		no_results: "No results found."
-	},
-	table: {
-		title: "Table",
-		number_of_objects: "Number of objects"
 	}
 };
 
@@ -861,6 +901,23 @@ const misc_components = {
 	extension_banner: {
 		book_data_extension: "Book Data Extension",
 		remote_db: "Remote DB",
+		remote_db_incompatible: "Remote DB (incompatible)",
+		remote_db_sync_disabled: "Remote DB (sync disabled)",
+		remote_db_connecting_checking_compatibility: "Remote DB (checking compatibility)",
+		remote_db_connecting_reconnecting: "Remote DB (reconnecting)",
+		remote_db_stuck: "Remote DB (reconnect loop)",
+		remote_db_warning_local_db_warning: "Remote DB (local db warning)",
+		remote_db_warning_ack_stale: "Remote DB (ack stale)",
+		remote_db_warning_pending_stale: "Remote DB (pending stale)",
+		remote_db_warning: "Remote DB (sync warning)",
+		remote_db_pending: "Remote DB ({pending:number} pending)",
+		remote_db_title_disconnected: "Sync is disabled in settings",
+		remote_db_title_incompatible: "Local and remote databases are not compatible",
+		remote_db_title_warning: "Sync has warnings",
+		remote_db_title_stuck: "Sync connection appears stuck",
+		remote_db_title_connecting_checking_compatibility: "Connected, waiting for sync compatibility check to complete",
+		remote_db_title_connecting_reconnecting: "Sync connection is not active. Reconnecting…",
+		remote_db_title_default: "Remote DB sync status",
 		reload_translations_override: "Reload translations overrides"
 	},
 	page_layout: {
@@ -988,7 +1045,8 @@ const forms = {
 			customer_id: "Customer ID",
 			cancel_button: "Cancel",
 			order_format: "Order Format",
-			order_format_message: "Please select an order format"
+			order_format_message: "Please select an order format",
+			underdelivery_policy: "Handling of undelivered books"
 		},
 		aria: {
 			form: "Edit customer order name, email or deposit"
@@ -1140,8 +1198,8 @@ const en = {
 	layout,
 	error_page,
 	books_page,
-	debug_page,
-	forms
+	forms,
+	table
 } satisfies BaseTranslation;
 
 export default en;

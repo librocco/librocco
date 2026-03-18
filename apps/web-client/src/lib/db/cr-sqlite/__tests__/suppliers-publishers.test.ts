@@ -14,6 +14,7 @@ import {
 import { createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 import { upsertBook } from "../books";
 import { orderFormats } from "$lib/enums/orders";
+import { addBooksToCustomer, upsertCustomer } from "../customers";
 
 // Test fixtures
 const supplier1 = {
@@ -23,7 +24,8 @@ const supplier1 = {
 	email: "contact@science.books",
 	address: "123 Science St",
 	numPublishers: 0,
-	orderFormat: orderFormats.pbm
+	orderFormat: orderFormats.pbm,
+	underdelivery_policy: 0 as const
 };
 const supplier2 = {
 	id: 2,
@@ -32,7 +34,8 @@ const supplier2 = {
 	email: "info@fantasy.books",
 	address: "456 Fantasy Ave",
 	numPublishers: 0,
-	orderFormat: orderFormats.pbm
+	orderFormat: orderFormats.pbm,
+	underdelivery_policy: 0 as const
 };
 const supplier3 = {
 	id: 3,
@@ -41,7 +44,8 @@ const supplier3 = {
 	email: "hello@history.books",
 	address: "789 History Rd",
 	numPublishers: 0,
-	orderFormat: orderFormats.pbm
+	orderFormat: orderFormats.pbm,
+	underdelivery_policy: 0 as const
 };
 
 const publisher1 = "AnimalPublisher";
@@ -68,14 +72,15 @@ describe("Supplier management:", () => {
 			const partialSupplier = { id: 1, name: "Partial Books" };
 			await upsertSupplier(db, partialSupplier);
 
-			const suppliers = await getSupplierDetails(db, supplier1.id);
-			expect(suppliers).toEqual({
+			const supplier = await getSupplierDetails(db, supplier1.id);
+			expect(supplier).toEqual({
 				id: 1,
 				name: "Partial Books",
 				orderFormat: null,
 				customerId: null,
 				email: null,
 				address: null,
+				underdelivery_policy: 0,
 				numPublishers: 0
 			});
 		});
@@ -91,7 +96,8 @@ describe("Supplier management:", () => {
 				id: supplier1.id,
 				name: "Updated Science Books",
 				email: "new@science.books",
-				orderFormat: orderFormats.rcs5
+				orderFormat: orderFormats.rcs5,
+				underdelivery_policy: 1 as const
 			};
 			await upsertSupplier(db, updates);
 
@@ -101,7 +107,8 @@ describe("Supplier management:", () => {
 					...supplier1,
 					name: updates.name,
 					email: updates.email,
-					orderFormat: updates.orderFormat
+					orderFormat: updates.orderFormat,
+					underdelivery_policy: updates.underdelivery_policy
 				}
 			]);
 		});
@@ -169,6 +176,7 @@ describe("Supplier management:", () => {
 			address: null,
 			email: null,
 			customerId: 111,
+			underdelivery_policy: 0,
 			numPublishers: 2,
 			orderFormat: orderFormats.pbm
 		});
@@ -179,6 +187,7 @@ describe("Supplier management:", () => {
 			address: "123 Yellow Brick Rd",
 			email: "info@fantasy.com",
 			customerId: 222,
+			underdelivery_policy: 0,
 			numPublishers: 0,
 			orderFormat: orderFormats.rcs3
 		});
@@ -362,6 +371,10 @@ describe("deleteSupplier:", () => {
 		await associatePublisher(db, supplier1.id, "TestPub");
 		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
 
+		// Add customer order line to not affect the finalization (throws if not enough customer order lines to deliver/reject)
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["test-1"]);
+
 		await createSupplierOrder(db, 100, supplier1.id, [{ isbn: "test-1", quantity: 1, supplier_id: supplier1.id }]);
 		await createReconciliationOrder(db, 200, [100]);
 		await finalizeReconciliationOrder(db, 200);
@@ -377,6 +390,10 @@ describe("deleteSupplier:", () => {
 		await upsertSupplier(db, supplier1);
 		await associatePublisher(db, supplier1.id, "TestPub");
 		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
+
+		// Add customer order line to not affect the finalization (throws if not enough customer order lines to deliver/reject)
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["test-1"]);
 
 		await createSupplierOrder(db, 100, supplier1.id, [{ isbn: "test-1", quantity: 1, supplier_id: supplier1.id }]);
 		await createReconciliationOrder(db, 200, [100]);

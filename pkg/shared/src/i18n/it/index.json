@@ -271,6 +271,7 @@
 			"email": "Email",
 			"address": "Indirizzo",
 			"order_format": "Formato ordine",
+			"underdelivery_policy": "Gestione dei libri non consegnati",
 			"edit_details": "Modifica dettagli",
 			"delete_supplier": "Elimina fornitore"
 		},
@@ -584,6 +585,67 @@
 				"title": "Conferma",
 				"description": "Notifica clienti"
 			}
+		},
+		"step1": {
+			"stats": {
+				"total_ordered": "",
+				"total_delivered": ""
+			},
+			"table": {
+				"isbn": "",
+				"title": "",
+				"authors": "",
+				"order_quantity": "",
+				"delivered": "",
+				"controls": ""
+			},
+			"aria_labels": {
+				"decrease_quantity": "",
+				"increase_quantity": ""
+			},
+			"footer": {
+				"total_scanned": "",
+				"continue": ""
+			}
+		},
+		"step2": {
+			"stats": {
+				"total_ordered": "",
+				"total_delivered": ""
+			},
+			"order_summary": {
+				"order_id": "",
+				"books_undelivered": "",
+				"complete": "",
+				"status": "",
+				"missing": ""
+			},
+			"underdelivery": {
+				"title": "",
+				"options": {
+					"keep_open": "Il fornitore tiene aperto l’ordine",
+					"reorder": "I libri non consegnati vanno riordinati"
+				},
+				"warning": "",
+				"persist_button": ""
+			},
+			"customer_notification": {
+				"message_pending": "",
+				"message_finalized": "",
+				"table": {
+					"customer": "",
+					"id": "",
+					"order_date": ""
+				},
+				"copy_label": ""
+			},
+			"actions": {
+				"back": "",
+				"finalize": ""
+			},
+			"finalized": {
+				"message": ""
+			}
 		}
 	},
 	"order_page": {
@@ -634,7 +696,6 @@
 			"no_matching_assigned_publishers": "Nessun editore assegnato corrispondente",
 			"no_available_publishers": "Nessun editore disponibile",
 			"no_matching_available_publishers": "Nessun editore disponibile corrispondente",
-			"nothing_to_see_here": "Niente da vedere qui",
 			"currently_assigned_to": "Attualmente assegnato a {supplierName}"
 		},
 		"aria": {
@@ -783,6 +844,23 @@
 		"extension_banner": {
 			"book_data_extension": "Estensione Dati Libro",
 			"remote_db": "DB Remoto",
+			"remote_db_incompatible": "DB Remoto (incompatibile)",
+			"remote_db_sync_disabled": "DB Remoto (sincronizzazione disabilitata)",
+			"remote_db_connecting_checking_compatibility": "DB Remoto (verifica compatibilità)",
+			"remote_db_connecting_reconnecting": "DB Remoto (riconnessione)",
+			"remote_db_stuck": "DB Remoto (loop di riconnessione)",
+			"remote_db_warning_local_db_warning": "DB Remoto (avviso DB locale)",
+			"remote_db_warning_ack_stale": "DB Remoto (conferma server obsoleta)",
+			"remote_db_warning_pending_stale": "DB Remoto (coda in attesa obsoleta)",
+			"remote_db_warning": "DB Remoto (avviso sincronizzazione)",
+			"remote_db_pending": "DB Remoto ({pending:number} in coda)",
+			"remote_db_title_disconnected": "La sincronizzazione è disabilitata nelle impostazioni",
+			"remote_db_title_incompatible": "I database locale e remoto non sono compatibili",
+			"remote_db_title_warning": "La sincronizzazione presenta avvisi",
+			"remote_db_title_stuck": "La connessione di sincronizzazione sembra bloccata",
+			"remote_db_title_connecting_checking_compatibility": "Connesso, in attesa del completamento del controllo compatibilità",
+			"remote_db_title_connecting_reconnecting": "La connessione sync non è attiva. Riconnessione…",
+			"remote_db_title_default": "Stato sincronizzazione DB remoto",
 			"reload_translations_override": "Ricarica override traduzioni"
 		},
 		"page_layout": {
@@ -870,30 +948,6 @@
 			"manually_edit_book_details": "Modifica manualmente dettagli libro"
 		}
 	},
-	"debug_page": {
-		"title": "Debug",
-		"labels": {
-			"runtime_error": ""
-		},
-		"actions": {
-			"trigger_load_error": "",
-			"trigger_runtime_error": "",
-			"populate_database": "Popola Database",
-			"reset_database": "Ripristina Database",
-			"upsert_100_books": "Inserisci 100 Libri",
-			"run_query": "Esegui Query",
-			"executing": "Esecuzione in corso..."
-		},
-		"query_interface": {
-			"title": "Interfaccia Query Database",
-			"results_title": "Risultati Query:",
-			"no_results": "Nessun risultato trovato."
-		},
-		"table": {
-			"title": "Tabella",
-			"number_of_objects": "Numero di oggetti"
-		}
-	},
 	"forms": {
 		"sync_settings": {
 			"labels": {
@@ -950,7 +1004,8 @@
 				"customer_id": "ID Cliente",
 				"cancel_button": "Annulla",
 				"order_format": "Formato Ordine",
-				"order_format_message": "Seleziona un formato ordine"
+				"order_format_message": "Seleziona un formato ordine",
+				"underdelivery_policy": "Gestione dei libri non consegnati"
 			},
 			"aria": {
 				"form": "Modifica nome, email o acconto dell'ordine cliente"
@@ -1071,5 +1126,8 @@
 				"form": "Modifica dettagli libro"
 			}
 		}
+	},
+	"table": {
+		"empty_message": "Niente da vedere qui"
 	}
 }

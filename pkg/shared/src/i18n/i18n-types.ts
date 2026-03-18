@@ -767,6 +767,10 @@ type RootTranslation = {
 			 */
 			order_format: string
 			/**
+			 * H​a​n​d​l​i​n​g​ ​o​f​ ​u​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s
+			 */
+			underdelivery_policy: string
+			/**
 			 * E​d​i​t​ ​d​e​t​a​i​l​s
 			 */
 			edit_details: string
@@ -1623,6 +1627,176 @@ type RootTranslation = {
 				description: string
 			}
 		}
+		step1: {
+			stats: {
+				/**
+				 * T​o​t​a​l​ ​O​r​d​e​r​e​d
+				 */
+				total_ordered: string
+				/**
+				 * T​o​t​a​l​ ​D​e​l​i​v​e​r​e​d
+				 */
+				total_delivered: string
+			}
+			table: {
+				/**
+				 * I​S​B​N
+				 */
+				isbn: string
+				/**
+				 * T​i​t​l​e
+				 */
+				title: string
+				/**
+				 * A​u​t​h​o​r​s
+				 */
+				authors: string
+				/**
+				 * O​r​d​e​r​ ​Q​u​a​n​t​i​t​y
+				 */
+				order_quantity: string
+				/**
+				 * D​e​l​i​v​e​r​e​d
+				 */
+				delivered: string
+				/**
+				 * D​e​l​i​v​e​r​e​d​ ​Q​u​a​n​t​i​t​y​ ​C​o​n​t​r​o​l​s
+				 */
+				controls: string
+			}
+			aria_labels: {
+				/**
+				 * D​e​c​r​e​a​s​e​ ​d​e​l​i​v​e​r​e​d​ ​q​u​a​n​t​i​t​y​ ​f​o​r​ ​{​t​i​t​l​e​}​,​ ​c​u​r​r​e​n​t​l​y​ ​{​c​o​u​n​t​}
+				 * @param {unknown} count
+				 * @param {unknown} title
+				 */
+				decrease_quantity: RequiredParams<'count' | 'title'>
+				/**
+				 * I​n​c​r​e​a​s​e​ ​d​e​l​i​v​e​r​e​d​ ​q​u​a​n​t​i​t​y​ ​f​o​r​ ​{​t​i​t​l​e​}​,​ ​c​u​r​r​e​n​t​l​y​ ​{​c​o​u​n​t​}
+				 * @param {unknown} count
+				 * @param {unknown} title
+				 */
+				increase_quantity: RequiredParams<'count' | 'title'>
+			}
+			footer: {
+				/**
+				 * T​o​t​a​l​ ​b​o​o​k​s​ ​s​c​a​n​n​e​d​:​ ​{​c​o​u​n​t​}
+				 * @param {unknown} count
+				 */
+				total_scanned: RequiredParams<'count'>
+				/**
+				 * C​o​n​t​i​n​u​e
+				 */
+				'continue': string
+			}
+		}
+		step2: {
+			stats: {
+				/**
+				 * T​o​t​a​l​ ​O​r​d​e​r​e​d
+				 */
+				total_ordered: string
+				/**
+				 * T​o​t​a​l​ ​D​e​l​i​v​e​r​e​d
+				 */
+				total_delivered: string
+			}
+			order_summary: {
+				/**
+				 * O​r​d​e​r​ ​#​{​i​d​}
+				 * @param {unknown} id
+				 */
+				order_id: RequiredParams<'id'>
+				/**
+				 * {​c​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}​ ​u​n​d​e​l​i​v​e​r​e​d
+				 * @param {string | number | boolean} count
+				 */
+				books_undelivered: RequiredParams<'count'>
+				/**
+				 * C​o​m​p​l​e​t​e
+				 */
+				complete: string
+				/**
+				 * S​t​a​t​u​s
+				 */
+				status: string
+				/**
+				 * {​c​o​u​n​t​}​ ​m​i​s​s​i​n​g
+				 * @param {unknown} count
+				 */
+				missing: RequiredParams<'count'>
+			}
+			underdelivery: {
+				/**
+				 * A​c​t​i​o​n​ ​f​o​r​ ​m​i​s​s​i​n​g​ ​b​o​o​k​s
+				 */
+				title: string
+				options: {
+					/**
+					 * S​u​p​p​l​i​e​r​ ​k​e​e​p​s​ ​t​h​e​ ​o​r​d​e​r​ ​o​p​e​n
+					 */
+					keep_open: string
+					/**
+					 * U​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​m​u​s​t​ ​b​e​ ​r​e​o​r​d​e​r​e​d
+					 */
+					reorder: string
+				}
+				/**
+				 * C​u​r​r​e​n​t​ ​c​h​o​i​c​e​ ​d​o​e​s​n​'​t​ ​m​a​t​c​h​ ​t​h​e​ ​d​e​f​a​u​l​t​ ​c​o​n​f​i​g​u​r​a​t​i​o​n​ ​f​o​r​ ​t​h​i​s​ ​s​u​p​p​l​i​e​r​.
+				 */
+				warning: string
+				/**
+				 * P​e​r​s​i​s​t​ ​c​h​a​n​g​e​s
+				 */
+				persist_button: string
+			}
+			customer_notification: {
+				/**
+				 * C​u​s​t​o​m​e​r​s​ ​w​i​l​l​ ​b​e​ ​n​o​t​i​f​i​e​d​ ​t​h​a​t​ ​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​a​r​e​ ​r​e​a​d​y​ ​f​o​r​ ​c​o​l​l​e​c​t​i​o​n
+				 */
+				message_pending: string
+				/**
+				 * T​h​e​s​e​ ​c​u​s​t​o​m​e​r​s​ ​w​e​r​e​ ​n​o​t​i​f​i​e​d​ ​t​h​a​t​ ​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s​ ​a​r​e​ ​r​e​a​d​y​ ​f​o​r​ ​c​o​l​l​e​c​t​i​o​n
+				 */
+				message_finalized: string
+				table: {
+					/**
+					 * C​u​s​t​o​m​e​r
+					 */
+					customer: string
+					/**
+					 * I​D
+					 */
+					id: string
+					/**
+					 * O​r​d​e​r​ ​D​a​t​e
+					 */
+					order_date: string
+				}
+				/**
+				 * (​{​c​o​u​n​t​}​ ​c​o​p​{​{​y​|​i​e​s​}​}​)
+				 * @param {string | number | boolean} count
+				 */
+				copy_label: RequiredParams<'count'>
+			}
+			actions: {
+				/**
+				 * ←​ ​B​a​c​k
+				 */
+				back: string
+				/**
+				 * F​i​n​a​l​i​z​e​ ​D​e​l​i​v​e​r​y
+				 */
+				finalize: string
+			}
+			finalized: {
+				/**
+				 * D​e​l​i​v​e​r​y​ ​f​i​n​a​l​i​z​e​d​ ​o​n​ ​{​d​a​t​e​|​d​a​t​e​S​h​o​r​t​}
+				 * @param {Date} date
+				 */
+				message: RequiredParams<'date|dateShort'>
+			}
+		}
 	}
 	order_page: {
 		/**
@@ -1756,10 +1930,6 @@ type RootTranslation = {
 			 * N​o​ ​m​a​t​c​h​i​n​g​ ​a​v​a​i​l​a​b​l​e​ ​p​u​b​l​i​s​h​e​r​s
 			 */
 			no_matching_available_publishers: string
-			/**
-			 * N​o​t​h​i​n​g​ ​t​o​ ​s​e​e​ ​h​e​r​e
-			 */
-			nothing_to_see_here: string
 			/**
 			 * C​u​r​r​e​n​t​l​y​ ​a​s​s​i​g​n​e​d​ ​t​o​ ​{​s​u​p​p​l​i​e​r​N​a​m​e​}
 			 * @param {unknown} supplierName
@@ -2233,6 +2403,75 @@ type RootTranslation = {
 			 */
 			remote_db: string
 			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​i​n​c​o​m​p​a​t​i​b​l​e​)
+			 */
+			remote_db_incompatible: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​s​y​n​c​ ​d​i​s​a​b​l​e​d​)
+			 */
+			remote_db_sync_disabled: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​c​h​e​c​k​i​n​g​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​)
+			 */
+			remote_db_connecting_checking_compatibility: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​r​e​c​o​n​n​e​c​t​i​n​g​)
+			 */
+			remote_db_connecting_reconnecting: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​r​e​c​o​n​n​e​c​t​ ​l​o​o​p​)
+			 */
+			remote_db_stuck: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​l​o​c​a​l​ ​d​b​ ​w​a​r​n​i​n​g​)
+			 */
+			remote_db_warning_local_db_warning: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​a​c​k​ ​s​t​a​l​e​)
+			 */
+			remote_db_warning_ack_stale: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​p​e​n​d​i​n​g​ ​s​t​a​l​e​)
+			 */
+			remote_db_warning_pending_stale: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​s​y​n​c​ ​w​a​r​n​i​n​g​)
+			 */
+			remote_db_warning: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​(​{​p​e​n​d​i​n​g​}​ ​p​e​n​d​i​n​g​)
+			 * @param {number} pending
+			 */
+			remote_db_pending: RequiredParams<'pending'>
+			/**
+			 * S​y​n​c​ ​i​s​ ​d​i​s​a​b​l​e​d​ ​i​n​ ​s​e​t​t​i​n​g​s
+			 */
+			remote_db_title_disconnected: string
+			/**
+			 * L​o​c​a​l​ ​a​n​d​ ​r​e​m​o​t​e​ ​d​a​t​a​b​a​s​e​s​ ​a​r​e​ ​n​o​t​ ​c​o​m​p​a​t​i​b​l​e
+			 */
+			remote_db_title_incompatible: string
+			/**
+			 * S​y​n​c​ ​h​a​s​ ​w​a​r​n​i​n​g​s
+			 */
+			remote_db_title_warning: string
+			/**
+			 * S​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​a​p​p​e​a​r​s​ ​s​t​u​c​k
+			 */
+			remote_db_title_stuck: string
+			/**
+			 * C​o​n​n​e​c​t​e​d​,​ ​w​a​i​t​i​n​g​ ​f​o​r​ ​s​y​n​c​ ​c​o​m​p​a​t​i​b​i​l​i​t​y​ ​c​h​e​c​k​ ​t​o​ ​c​o​m​p​l​e​t​e
+			 */
+			remote_db_title_connecting_checking_compatibility: string
+			/**
+			 * S​y​n​c​ ​c​o​n​n​e​c​t​i​o​n​ ​i​s​ ​n​o​t​ ​a​c​t​i​v​e​.​ ​R​e​c​o​n​n​e​c​t​i​n​g​…
+			 */
+			remote_db_title_connecting_reconnecting: string
+			/**
+			 * R​e​m​o​t​e​ ​D​B​ ​s​y​n​c​ ​s​t​a​t​u​s
+			 */
+			remote_db_title_default: string
+			/**
 			 * R​e​l​o​a​d​ ​t​r​a​n​s​l​a​t​i​o​n​s​ ​o​v​e​r​r​i​d​e​s
 			 */
 			reload_translations_override: string
@@ -2454,72 +2693,6 @@ type RootTranslation = {
 			manually_edit_book_details: string
 		}
 	}
-	debug_page: {
-		/**
-		 * D​e​b​u​g
-		 */
-		title: string
-		labels: {
-			/**
-			 * K​a​b​o​o​m​!​ ​R​u​n​t​i​m​e​ ​e​r​r​o​r
-			 */
-			runtime_error: string
-		}
-		actions: {
-			/**
-			 * T​r​i​g​g​e​r​ ​L​o​a​d​ ​E​r​r​o​r
-			 */
-			trigger_load_error: string
-			/**
-			 * T​r​i​g​g​e​r​ ​R​u​n​t​i​m​e​ ​E​r​r​o​r
-			 */
-			trigger_runtime_error: string
-			/**
-			 * P​o​p​u​l​a​t​e​ ​D​a​t​a​b​a​s​e
-			 */
-			populate_database: string
-			/**
-			 * R​e​s​e​t​ ​D​a​t​a​b​a​s​e
-			 */
-			reset_database: string
-			/**
-			 * U​p​s​e​r​t​ ​1​0​0​ ​B​o​o​k​s
-			 */
-			upsert_100_books: string
-			/**
-			 * R​u​n​ ​Q​u​e​r​y
-			 */
-			run_query: string
-			/**
-			 * E​x​e​c​u​t​i​n​g​.​.​.
-			 */
-			executing: string
-		}
-		query_interface: {
-			/**
-			 * D​a​t​a​b​a​s​e​ ​Q​u​e​r​y​ ​I​n​t​e​r​f​a​c​e
-			 */
-			title: string
-			/**
-			 * Q​u​e​r​y​ ​R​e​s​u​l​t​s​:
-			 */
-			results_title: string
-			/**
-			 * N​o​ ​r​e​s​u​l​t​s​ ​f​o​u​n​d​.
-			 */
-			no_results: string
-		}
-		table: {
-			/**
-			 * T​a​b​l​e
-			 */
-			title: string
-			/**
-			 * N​u​m​b​e​r​ ​o​f​ ​o​b​j​e​c​t​s
-			 */
-			number_of_objects: string
-		}
-	}
 	forms: {
 		sync_settings: {
 			labels: {
@@ -2664,6 +2837,10 @@ type RootTranslation = {
 				 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​n​ ​o​r​d​e​r​ ​f​o​r​m​a​t
 				 */
 				order_format_message: string
+				/**
+				 * H​a​n​d​l​i​n​g​ ​o​f​ ​u​n​d​e​l​i​v​e​r​e​d​ ​b​o​o​k​s
+				 */
+				underdelivery_policy: string
 			}
 			aria: {
 				/**
@@ -2966,6 +3143,12 @@ type RootTranslation = {
 				form: string
 			}
 		}
+	}
+	table: {
+		/**
+		 * N​o​t​h​i​n​g​ ​t​o​ ​s​e​e​ ​h​e​r​e
+		 */
+		empty_message: string
 	}
 }
 
@@ -3716,6 +3899,10 @@ export type TranslationFunctions = {
 			 * Order format
 			 */
 			order_format: () => LocalizedString
+			/**
+			 * Handling of undelivered books
+			 */
+			underdelivery_policy: () => LocalizedString
 			/**
 			 * Edit details
 			 */
@@ -4555,6 +4742,166 @@ export type TranslationFunctions = {
 				description: () => LocalizedString
 			}
 		}
+		step1: {
+			stats: {
+				/**
+				 * Total Ordered
+				 */
+				total_ordered: () => LocalizedString
+				/**
+				 * Total Delivered
+				 */
+				total_delivered: () => LocalizedString
+			}
+			table: {
+				/**
+				 * ISBN
+				 */
+				isbn: () => LocalizedString
+				/**
+				 * Title
+				 */
+				title: () => LocalizedString
+				/**
+				 * Authors
+				 */
+				authors: () => LocalizedString
+				/**
+				 * Order Quantity
+				 */
+				order_quantity: () => LocalizedString
+				/**
+				 * Delivered
+				 */
+				delivered: () => LocalizedString
+				/**
+				 * Delivered Quantity Controls
+				 */
+				controls: () => LocalizedString
+			}
+			aria_labels: {
+				/**
+				 * Decrease delivered quantity for {title}, currently {count}
+				 */
+				decrease_quantity: (arg: { count: unknown, title: unknown }) => LocalizedString
+				/**
+				 * Increase delivered quantity for {title}, currently {count}
+				 */
+				increase_quantity: (arg: { count: unknown, title: unknown }) => LocalizedString
+			}
+			footer: {
+				/**
+				 * Total books scanned: {count}
+				 */
+				total_scanned: (arg: { count: unknown }) => LocalizedString
+				/**
+				 * Continue
+				 */
+				'continue': () => LocalizedString
+			}
+		}
+		step2: {
+			stats: {
+				/**
+				 * Total Ordered
+				 */
+				total_ordered: () => LocalizedString
+				/**
+				 * Total Delivered
+				 */
+				total_delivered: () => LocalizedString
+			}
+			order_summary: {
+				/**
+				 * Order #{id}
+				 */
+				order_id: (arg: { id: unknown }) => LocalizedString
+				/**
+				 * {count} book{{s}} undelivered
+				 */
+				books_undelivered: (arg: { count: string | number | boolean }) => LocalizedString
+				/**
+				 * Complete
+				 */
+				complete: () => LocalizedString
+				/**
+				 * Status
+				 */
+				status: () => LocalizedString
+				/**
+				 * {count} missing
+				 */
+				missing: (arg: { count: unknown }) => LocalizedString
+			}
+			underdelivery: {
+				/**
+				 * Action for missing books
+				 */
+				title: () => LocalizedString
+				options: {
+					/**
+					 * Supplier keeps the order open
+					 */
+					keep_open: () => LocalizedString
+					/**
+					 * Undelivered books must be reordered
+					 */
+					reorder: () => LocalizedString
+				}
+				/**
+				 * Current choice doesn't match the default configuration for this supplier.
+				 */
+				warning: () => LocalizedString
+				/**
+				 * Persist changes
+				 */
+				persist_button: () => LocalizedString
+			}
+			customer_notification: {
+				/**
+				 * Customers will be notified that delivered books are ready for collection
+				 */
+				message_pending: () => LocalizedString
+				/**
+				 * These customers were notified that delivered books are ready for collection
+				 */
+				message_finalized: () => LocalizedString
+				table: {
+					/**
+					 * Customer
+					 */
+					customer: () => LocalizedString
+					/**
+					 * ID
+					 */
+					id: () => LocalizedString
+					/**
+					 * Order Date
+					 */
+					order_date: () => LocalizedString
+				}
+				/**
+				 * ({count} cop{{y|ies}})
+				 */
+				copy_label: (arg: { count: string | number | boolean }) => LocalizedString
+			}
+			actions: {
+				/**
+				 * ← Back
+				 */
+				back: () => LocalizedString
+				/**
+				 * Finalize Delivery
+				 */
+				finalize: () => LocalizedString
+			}
+			finalized: {
+				/**
+				 * Delivery finalized on {date|dateShort}
+				 */
+				message: (arg: { date: Date }) => LocalizedString
+			}
+		}
 	}
 	order_page: {
 		/**
@@ -4688,10 +5035,6 @@ export type TranslationFunctions = {
 			 * No matching available publishers
 			 */
 			no_matching_available_publishers: () => LocalizedString
-			/**
-			 * Nothing to see here
-			 */
-			nothing_to_see_here: () => LocalizedString
 			/**
 			 * Currently assigned to {supplierName}
 			 */
@@ -5159,6 +5502,74 @@ export type TranslationFunctions = {
 			 */
 			remote_db: () => LocalizedString
 			/**
+			 * Remote DB (incompatible)
+			 */
+			remote_db_incompatible: () => LocalizedString
+			/**
+			 * Remote DB (sync disabled)
+			 */
+			remote_db_sync_disabled: () => LocalizedString
+			/**
+			 * Remote DB (checking compatibility)
+			 */
+			remote_db_connecting_checking_compatibility: () => LocalizedString
+			/**
+			 * Remote DB (reconnecting)
+			 */
+			remote_db_connecting_reconnecting: () => LocalizedString
+			/**
+			 * Remote DB (reconnect loop)
+			 */
+			remote_db_stuck: () => LocalizedString
+			/**
+			 * Remote DB (local db warning)
+			 */
+			remote_db_warning_local_db_warning: () => LocalizedString
+			/**
+			 * Remote DB (ack stale)
+			 */
+			remote_db_warning_ack_stale: () => LocalizedString
+			/**
+			 * Remote DB (pending stale)
+			 */
+			remote_db_warning_pending_stale: () => LocalizedString
+			/**
+			 * Remote DB (sync warning)
+			 */
+			remote_db_warning: () => LocalizedString
+			/**
+			 * Remote DB ({pending} pending)
+			 */
+			remote_db_pending: (arg: { pending: number }) => LocalizedString
+			/**
+			 * Sync is disabled in settings
+			 */
+			remote_db_title_disconnected: () => LocalizedString
+			/**
+			 * Local and remote databases are not compatible
+			 */
+			remote_db_title_incompatible: () => LocalizedString
+			/**
+			 * Sync has warnings
+			 */
+			remote_db_title_warning: () => LocalizedString
+			/**
+			 * Sync connection appears stuck
+			 */
+			remote_db_title_stuck: () => LocalizedString
+			/**
+			 * Connected, waiting for sync compatibility check to complete
+			 */
+			remote_db_title_connecting_checking_compatibility: () => LocalizedString
+			/**
+			 * Sync connection is not active. Reconnecting…
+			 */
+			remote_db_title_connecting_reconnecting: () => LocalizedString
+			/**
+			 * Remote DB sync status
+			 */
+			remote_db_title_default: () => LocalizedString
+			/**
 			 * Reload translations overrides
 			 */
 			reload_translations_override: () => LocalizedString
@@ -5374,72 +5785,6 @@ export type TranslationFunctions = {
 			manually_edit_book_details: () => LocalizedString
 		}
 	}
-	debug_page: {
-		/**
-		 * Debug
-		 */
-		title: () => LocalizedString
-		labels: {
-			/**
-			 * Kaboom! Runtime error
-			 */
-			runtime_error: () => LocalizedString
-		}
-		actions: {
-			/**
-			 * Trigger Load Error
-			 */
-			trigger_load_error: () => LocalizedString
-			/**
-			 * Trigger Runtime Error
-			 */
-			trigger_runtime_error: () => LocalizedString
-			/**
-			 * Populate Database
-			 */
-			populate_database: () => LocalizedString
-			/**
-			 * Reset Database
-			 */
-			reset_database: () => LocalizedString
-			/**
-			 * Upsert 100 Books
-			 */
-			upsert_100_books: () => LocalizedString
-			/**
-			 * Run Query
-			 */
-			run_query: () => LocalizedString
-			/**
-			 * Executing...
-			 */
-			executing: () => LocalizedString
-		}
-		query_interface: {
-			/**
-			 * Database Query Interface
-			 */
-			title: () => LocalizedString
-			/**
-			 * Query Results:
-			 */
-			results_title: () => LocalizedString
-			/**
-			 * No results found.
-			 */
-			no_results: () => LocalizedString
-		}
-		table: {
-			/**
-			 * Table
-			 */
-			title: () => LocalizedString
-			/**
-			 * Number of objects
-			 */
-			number_of_objects: () => LocalizedString
-		}
-	}
 	forms: {
 		sync_settings: {
 			labels: {
@@ -5581,6 +5926,10 @@ export type TranslationFunctions = {
 				 * Please select an order format
 				 */
 				order_format_message: () => LocalizedString
+				/**
+				 * Handling of undelivered books
+				 */
+				underdelivery_policy: () => LocalizedString
 			}
 			aria: {
 				/**
@@ -5881,6 +6230,12 @@ export type TranslationFunctions = {
 				form: () => LocalizedString
 			}
 		}
+	}
+	table: {
+		/**
+		 * Nothing to see here
+		 */
+		empty_message: () => LocalizedString
 	}
 }
 

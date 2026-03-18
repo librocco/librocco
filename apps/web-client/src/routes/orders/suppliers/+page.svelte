@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { writable } from "svelte/store";
 
 	import Plus from "$lucide/plus";
 	import Truck from "$lucide/truck";
@@ -18,7 +17,6 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import PlaceholderBox from "$lib/components/Placeholders/PlaceholderBox.svelte";
 	import { Page } from "$lib/controllers";
-	import { createIntersectionObserver } from "$lib/actions";
 
 	import { upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
 
@@ -49,17 +47,6 @@
 
 	$: ({ plugins, suppliers } = data);
 
-	const seeMore = () => {
-		maxResults += 10;
-	};
-	const scroll = createIntersectionObserver(seeMore);
-	let maxResults = 10;
-
-	// #region table
-	const suppliersStore = writable(suppliers);
-	$: suppliersStore.set(suppliers.slice(0, maxResults));
-	// #endregion table
-
 	$: t = $LL.suppliers_page;
 
 	const dialog = createDialog(defaultDialogConfig);
@@ -67,14 +54,16 @@
 		states: { open: dialogOpen }
 	} = dialog;
 
-	const createSupplier = async (supplier: Omit<Supplier, "id">) => {
+	const createSupplier = async (supplier: Omit<Supplier, "id"> & { underdeliveryPolicy?: string }) => {
 		const db = await getDb(app);
 
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 
-		await upsertSupplier(db, { ...supplier, id });
+		const underdelivery_policy = supplier.underdeliveryPolicy === "reorder" ? 1 : 0;
+
+		await upsertSupplier(db, { ...supplier, id, underdelivery_policy });
 
 		dialogOpen.set(false);
 
@@ -103,7 +92,7 @@
 					</PlaceholderBox>
 				</div>
 			{:else}
-				<div use:scroll.container={{ rootMargin: "50px" }} class="h-full overflow-auto" style="scrollbar-width: thin">
+				<div class="h-full overflow-auto" style="scrollbar-width: thin">
 					<table class="table-sm table" id="supplier-orders">
 						<thead>
 							<tr>
@@ -119,7 +108,7 @@
 						</thead>
 
 						<tbody>
-							{#each $suppliersStore as row (row.id)}
+							{#each suppliers as row (row.id)}
 								{@const { id, name, email, address, numPublishers, orderFormat } = row}
 								<tr class="hover focus-within:bg-base-200 hover:cursor-pointer" on:click={() => goto(appPath("suppliers", id))}>
 									<th scope="row" data-property="supplier">

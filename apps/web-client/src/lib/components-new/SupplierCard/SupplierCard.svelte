@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
-	import { Hash, Mail, MapPin, Download, Trash2 } from "lucide-svelte";
+	import { Hash, Mail, MapPin, Download, Trash2, History } from "lucide-svelte";
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let name = "";
@@ -10,6 +10,7 @@
 	export let orderFormat = "";
 	export let deleteDisabled = false;
 	export let deleteDisabledReason = "";
+	export let underdeliveryPolicy: number;
 
 	const dispatch = createEventDispatcher();
 
@@ -57,6 +58,18 @@
 			<dd class="flex flex-1 items-start gap-3 text-sm">
 				<Download aria-hidden="true" class="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
 				<span class="flex-1">{orderFormat}</span>
+			</dd>
+		</div>
+
+		<div class="flex items-start gap-3 py-1">
+			<dt class="sr-only">{$LL.suppliers_page.card.underdelivery_policy()}</dt>
+			<dd class="flex flex-1 items-start gap-3 text-sm">
+				<History aria-hidden="true" class="text-muted-foreground mt-0.5 h-4 w-4 flex-shrink-0" />
+				<span class="flex-1 justify-start"
+					>{underdeliveryPolicy === 1
+						? $LL.reconcile_page.step2.underdelivery.options.reorder()
+						: $LL.reconcile_page.step2.underdelivery.options.keep_open()}</span
+				>
 			</dd>
 		</div>
 	</dl>
