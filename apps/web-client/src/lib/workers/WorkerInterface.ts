@@ -43,7 +43,7 @@ export default class WorkerInterface {
 			this.#initPromiseResolver = resolve;
 		});
 
-		if (endpoint) {
+		if (endpoint !== undefined) {
 			this.bind(endpoint);
 		}
 	}

@@ -80,6 +80,10 @@ export class SyncEventEmitter {
 		this.#lastSyncStatus = nextMsg;
 		this.notifySyncStatus(nextMsg);
 	}
+
+	resetSyncStatusCache() {
+		this.#lastSyncStatus = null;
+	}
 }
 
 export class ConnectionEventEmitter {

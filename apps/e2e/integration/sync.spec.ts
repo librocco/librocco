@@ -869,6 +869,12 @@ test("surfaces pending_stale when queue age is old while pending exists", async 
 	await page.evaluate(() => {
 		(window as any).__pendingBulkError = null;
 		(window as any).__stopPendingBulk = false;
+		const reportBulkError = (error: unknown) => {
+			const message = error instanceof Error ? error.message : String(error);
+			console.error("[pending_stale test] " + message);
+			(window as any).__pendingBulkError = message;
+			return message;
+		};
 		(window as any).__pendingBulkPromise = (async () => {
 			const w = window as any;
 			const db = await w._getDb(w._app);
@@ -893,12 +899,13 @@ test("surfaces pending_stale when queue age is old while pending exists", async 
 					const message = `bulk upsert failed at index=${i}, id=${id}, lastSuccessfulId=${lastSuccessfulId}, error=${
 						error instanceof Error ? error.message : String(error)
 					}`;
-					console.error("[pending_stale test] " + message);
-					w.__pendingBulkError = message;
 					throw new Error(message);
 				}
 			}
-		})();
+		})().catch((error) => {
+			reportBulkError(error);
+			throw error;
+		});
 	});
 
 	await expect

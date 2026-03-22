@@ -167,6 +167,8 @@ class SharedConnectionSyncDB implements SyncDB {
 	}
 
 	async pullChangeset(since: readonly [bigint, number], excludeSites: readonly Uint8Array[], localOnly: boolean): Promise<ChangesetRow[]> {
+		// ws-client passes `localOnly`, but this shared-connection backend does not
+		// support a local-only changeset view, so the flag is intentionally ignored.
 		void localOnly;
 		const rows = (await this.#pullChangesetStmt.all(null, since[0], since[1], since[0], since[1], excludeSites[0])) as ChangesetRowRaw[];
 		for (const row of rows) {
@@ -441,29 +443,35 @@ class SyncRuntime {
 		if (this.#activeConfig.dbid !== dbid) return;
 
 		const handlePromise = this.#handlePromise;
-		this.#handlePromise = null;
-		this.#activeConfig = null;
-
-		if (handlePromise) {
-			try {
+		let stopError: unknown = null;
+		try {
+			if (handlePromise) {
 				const handle = await handlePromise;
 				await handle.stop();
-			} catch (err) {
-				console.warn(`[worker] Failed to stop sync runtime for db '${dbid}'`, err);
-				throw err;
 			}
+		} catch (err) {
+			stopError = err;
+			console.warn(`[worker] Failed to stop sync runtime for db '${dbid}'`, err);
+		} finally {
+			this.#handlePromise = null;
+			this.#activeConfig = null;
+			if (this.#isConnected) {
+				this.#isConnected = false;
+				this.#connEmitter.notifyConnClose();
+			}
+			this.#syncEmitter.resetSyncStatusCache();
 		}
-
-		if (this.#isConnected) {
-			this.#isConnected = false;
-			this.#connEmitter.notifyConnClose();
+		if (stopError) {
+			throw stopError;
 		}
 	}
 
 	async destroy(): Promise<void> {
 		if (this.#activeConfig) {
 			await this.stopSync(this.#activeConfig.dbid);
+			return;
 		}
+		this.#syncEmitter.resetSyncStatusCache();
 	}
 
 	onChangesReceived(cb: (msg: { timestamp: number }) => void): ReturnType<SyncEventEmitter["onChangesReceived"]> {

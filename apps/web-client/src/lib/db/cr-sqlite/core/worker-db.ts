@@ -136,7 +136,15 @@ class WorkerDB implements DBAsync {
 		// NOTE: everything done over the wire is a Promise, whereas 'onUpdate' signature expects the unsubscribe function
 		// to be returned immediately, so we create a function that (internally) waits for the unsubscribe and calls it
 		const res = this.remote.onUpdate(Comlink.proxy(cb));
-		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {}); // Everything done over the wire is a Promise
+		void res.catch((error) => {
+			console.warn("[worker] Failed to subscribe onUpdate listener", error);
+		});
+		return () =>
+			res
+				.then((unsubscribe) => unsubscribe())
+				.catch((error) => {
+					console.warn("[worker] Failed to unsubscribe onUpdate listener", error);
+				}); // Everything done over the wire is a Promise
 	}
 
 	tx(cb: TXCallback): Promise<void> {
@@ -161,27 +169,67 @@ class WorkerDB implements DBAsync {
 
 	onChangesReceived(cb: (msg: { timestamp: number }) => void): () => void {
 		const res = this.remote.onChangesReceived(Comlink.proxy(cb));
-		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
+		void res.catch((error) => {
+			console.warn("[worker] Failed to subscribe onChangesReceived listener", error);
+		});
+		return () =>
+			res
+				.then((unsubscribe) => unsubscribe())
+				.catch((error) => {
+					console.warn("[worker] Failed to unsubscribe onChangesReceived listener", error);
+				});
 	}
 
 	onChangesProcessed(cb: (msg: { timestamp: number }) => void): () => void {
 		const res = this.remote.onChangesProcessed(Comlink.proxy(cb));
-		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
+		void res.catch((error) => {
+			console.warn("[worker] Failed to subscribe onChangesProcessed listener", error);
+		});
+		return () =>
+			res
+				.then((unsubscribe) => unsubscribe())
+				.catch((error) => {
+					console.warn("[worker] Failed to unsubscribe onChangesProcessed listener", error);
+				});
 	}
 
 	onProgress(cb: (msg: { active: boolean; nProcessed: number; nTotal: number }) => void): () => void {
 		const res = this.remote.onProgress(Comlink.proxy(cb));
-		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
+		void res.catch((error) => {
+			console.warn("[worker] Failed to subscribe onProgress listener", error);
+		});
+		return () =>
+			res
+				.then((unsubscribe) => unsubscribe())
+				.catch((error) => {
+					console.warn("[worker] Failed to unsubscribe onProgress listener", error);
+				});
 	}
 
 	onOutgoingChanges(cb: (msg: { maxDbVersion: number; changeCount: number }) => void): () => void {
 		const res = this.remote.onOutgoingChanges(Comlink.proxy(cb));
-		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
+		void res.catch((error) => {
+			console.warn("[worker] Failed to subscribe onOutgoingChanges listener", error);
+		});
+		return () =>
+			res
+				.then((unsubscribe) => unsubscribe())
+				.catch((error) => {
+					console.warn("[worker] Failed to unsubscribe onOutgoingChanges listener", error);
+				});
 	}
 
 	onSyncStatus(cb: (msg: SyncStatusPayload) => void): () => void {
 		const res = this.remote.onSyncStatus(Comlink.proxy(cb));
-		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
+		void res.catch((error) => {
+			console.warn("[worker] Failed to subscribe onSyncStatus listener", error);
+		});
+		return () =>
+			res
+				.then((unsubscribe) => unsubscribe())
+				.catch((error) => {
+					console.warn("[worker] Failed to unsubscribe onSyncStatus listener", error);
+				});
 	}
 
 	onConnOpen(cb: () => void): () => void {
@@ -191,7 +239,15 @@ class WorkerDB implements DBAsync {
 				cb();
 			})
 		);
-		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
+		void res.catch((error) => {
+			console.warn("[worker] Failed to subscribe onConnOpen listener", error);
+		});
+		return () =>
+			res
+				.then((unsubscribe) => unsubscribe())
+				.catch((error) => {
+					console.warn("[worker] Failed to unsubscribe onConnOpen listener", error);
+				});
 	}
 
 	onConnClose(cb: () => void): () => void {
@@ -201,7 +257,15 @@ class WorkerDB implements DBAsync {
 				cb();
 			})
 		);
-		return () => void res.then((unsubscribe) => unsubscribe()).catch(() => {});
+		void res.catch((error) => {
+			console.warn("[worker] Failed to subscribe onConnClose listener", error);
+		});
+		return () =>
+			res
+				.then((unsubscribe) => unsubscribe())
+				.catch((error) => {
+					console.warn("[worker] Failed to unsubscribe onConnClose listener", error);
+				});
 	}
 
 	get isConnected(): boolean {

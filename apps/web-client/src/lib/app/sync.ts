@@ -268,7 +268,10 @@ export async function startSync(app: App, dbid: string, url: string): Promise<vo
 	// TODO: this should also be run exclusively with respect to the DB
 	await app.sync.runExclusive(async (sync) => {
 		if (!sync.bindDb(db)) {
-			console.warn("[sync] Current DB backend does not support integrated sync runtime; skipping sync start");
+			const backendName = (db as { type?: string }).type ?? db.constructor?.name ?? typeof db;
+			console.warn(
+				`[sync] Current DB backend does not support integrated sync runtime; skipping sync start (backend=${backendName}, expected methods=startSync, stopSync, onSyncStatus, onConnOpen, onConnClose)`
+			);
 			return;
 		}
 

@@ -245,10 +245,14 @@ export async function setLastAckedVersion(version: number, dbid?: string) {
 	const targetDbid = dbid ?? currentDbid;
 	if (!targetDbid) return;
 
+	let persistedAck = 0;
 	if (browser) {
 		try {
-			const stored = localStorage.getItem(getAckStorageKey(targetDbid)) ?? localStorage.getItem(getLegacyStorageKey(targetDbid));
-			const persistedAck = stored != null ? Number(JSON.parse(stored)) || 0 : 0;
+			const storedAck = localStorage.getItem(getAckStorageKey(targetDbid));
+			const storedLegacy = localStorage.getItem(getLegacyStorageKey(targetDbid));
+			const parsedAck = storedAck != null ? Number(JSON.parse(storedAck)) || 0 : 0;
+			const parsedLegacy = storedLegacy != null ? Number(JSON.parse(storedLegacy)) || 0 : 0;
+			persistedAck = Math.max(parsedAck, parsedLegacy);
 			if (version > persistedAck) {
 				localStorage.setItem(getAckStorageKey(targetDbid), JSON.stringify(version));
 			}
@@ -257,10 +261,12 @@ export async function setLastAckedVersion(version: number, dbid?: string) {
 		}
 	}
 
+	const nextAck = Math.max(lastAckVersion, persistedAck, version);
+
 	if (targetDbid !== currentDbid) return;
 
-	if (version > lastAckVersion) {
-		lastAckVersion = version;
+	if (nextAck > lastAckVersion) {
+		lastAckVersion = nextAck;
 		await refreshPendingCount();
 	}
 }
