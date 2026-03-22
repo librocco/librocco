@@ -104,7 +104,7 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	const { container } = render(TableWithRowsHarness, { table });
 
 	const tableEl = container.querySelector("table");
-	const expectedInitialRowCount = String(rows.length + 1);
+	const expectedInitialRowCount = String(rows.length);
 	expect(tableEl?.getAttribute("aria-rowcount")).toBe(expectedInitialRowCount);
 
 	const initialRows = Array.from(container.querySelectorAll("tbody tr"));
@@ -122,7 +122,7 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 
 	// Verify the table element has been updated
 	const updatedTableEl = container.querySelector("table");
-	const expectedUpdatedRowCount = String(rows.length);
+	const expectedUpdatedRowCount = String(rows.length - 1);
 	expect(updatedTableEl?.getAttribute("aria-rowcount")).toBe(expectedUpdatedRowCount);
 	const updatedRows = Array.from(container.querySelectorAll("tbody tr"));
 	expect(updatedRows).toHaveLength(2);

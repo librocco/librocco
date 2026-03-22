@@ -8,7 +8,7 @@
 	let rows: TableRow[] = [];
 	let rowCount: number = 0;
 	$: ({ rows } = $table);
-	$: rowCount = rows.length + 1;
+	$: rowCount = rows.length;
 </script>
 
 <table use:tableAction={{ rowCount }}>
