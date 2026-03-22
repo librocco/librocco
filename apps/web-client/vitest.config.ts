@@ -70,6 +70,7 @@ export default defineConfig({
 	},
 
 	optimizeDeps: {
+		include: ["@vlcn.io/ws-client"],
 		exclude: ["sveltekit-superforms"],
 		esbuildOptions: {
 			alias: {

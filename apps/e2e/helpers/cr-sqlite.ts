@@ -1,10 +1,16 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
 
-import type { Page } from "@playwright/test";
+import type { JSHandle, Page } from "@playwright/test";
 
 import type { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
 
 import type { BookData } from "@librocco/shared";
+
+type DBAsync = {
+	exec(sql: string, bind: unknown[]): Promise<unknown>;
+	execO<O extends Record<string, unknown>>(sql: string, bind: unknown[]): Promise<O[]>;
+	execA<T extends unknown[]>(sql: string, bind: unknown[]): Promise<T[]>;
+};
 
 // Extend the window object with the db
 declare global {
@@ -32,26 +38,62 @@ declare global {
  * await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
  * ```
  */
-export function getDbHandle(page: Page) {
-	return page.evaluateHandle(async () => {
-		const w = window as { [key: string]: any };
+export async function getDbHandle(page: Page): Promise<JSHandle<DB>> {
+	const maxAttempts = 5;
 
-		// Wait for the db to become initialised
-		await new Promise<void>((res) => {
-			if (w["db_ready"]) {
-				return res();
-			} else {
-				// Creating a separate function, as we want to run the listener only once and then remove it
-				const finalise = () => {
-					window.removeEventListener("db_ready", finalise);
-					res();
+	for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+		try {
+			return await page.evaluateHandle(async () => {
+				const dbReadyTimeoutMs = 30_000;
+				type CrSqliteEvalWindow = Window & {
+					db_ready?: boolean;
+					_app?: unknown;
+					_getDb?: (app: unknown) => Promise<DB> | DB;
 				};
-				window.addEventListener("db_ready", finalise);
-			}
-		});
+				const w = window as CrSqliteEvalWindow;
 
-		return (await w["_getDb"](w["_app"])) as DB;
-	});
+				// Wait for the db to become initialised
+				await new Promise<void>((res, rej) => {
+					if (w.db_ready) {
+						return res();
+					}
+
+					// Creating a separate function, as we want to run the listener only once and then remove it
+					const finalise = () => {
+						clearTimeout(timeout);
+						window.removeEventListener("db_ready", finalise);
+						res();
+					};
+					const timeout = window.setTimeout(() => {
+						window.removeEventListener("db_ready", finalise);
+						rej(new Error(`Timed out waiting for db_ready after ${dbReadyTimeoutMs}ms`));
+					}, dbReadyTimeoutMs);
+					window.addEventListener("db_ready", finalise);
+				});
+
+				if (!w._getDb) {
+					throw new Error("Failed to get DB bridge from window");
+				}
+
+				return await w._getDb(w._app);
+			});
+		} catch (err) {
+			const msg = String(err);
+			const isNavigationReset = msg.includes("Execution context was destroyed");
+
+			if (!isNavigationReset) {
+				throw err;
+			}
+
+			// During initial sync the app can reload once after swapping OPFS DB file.
+			// Wait for the next document to settle, then retry the DB handle lookup.
+			if (attempt < maxAttempts) {
+				await page.waitForLoadState("domcontentloaded");
+			}
+		}
+	}
+
+	throw new Error("Failed to acquire DB handle");
 }
 
 /**
@@ -70,8 +112,14 @@ export async function getRemoteDbHandle(page: Page, url: string) {
 	return browserDbHandle.evaluateHandle(
 		async (db, [url]) => {
 			const dbname = db.filename;
-			const w = window as { [key: string]: any };
-			const getRemoteDB = w["_getRemoteDB"] as (url: string, dbname: string) => Promise<DB>;
+			type CrSqliteRemoteEvalWindow = Window & {
+				_getRemoteDB?: (url: string, dbname: string) => Promise<DBAsync>;
+			};
+			const w = window as CrSqliteRemoteEvalWindow;
+			const getRemoteDB = w._getRemoteDB;
+			if (!getRemoteDB) {
+				throw new Error("Failed to get remote DB bridge from window");
+			}
 			return await getRemoteDB(url, dbname);
 		},
 		[url]

@@ -3,10 +3,9 @@ import { Mutex } from "async-mutex";
 
 import type { ProgressState } from "$lib/types";
 
-import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 import WorkerInterface from "$lib/workers/WorkerInterface";
 
-import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
+import { isSyncWorkerBridge, type DBAsync } from "$lib/db/cr-sqlite/core";
 import { deleteDBFromOPFS, fetchAndStoreDBFile, wrapFileHandle } from "$lib/db/cr-sqlite/core/utils";
 
 import type { App } from "./index";
@@ -30,7 +29,7 @@ export enum AppSyncState {
 }
 
 interface IAppSyncCore {
-	destroy(): void;
+	destroy(): Promise<void>;
 }
 
 interface IAppSyncExclusive extends IAppSyncCore {
@@ -42,8 +41,10 @@ interface IAppSyncExclusive extends IAppSyncCore {
 	initialSyncProgressStore: Writable<ProgressState>;
 
 	active: boolean;
-	start(dbid: string, url: string): void;
-	stop(): void;
+	addDisposer(dispose: () => void): void;
+	bindDb(db: DBAsync): boolean;
+	start(dbid: string, url: string): Promise<void>;
+	stop(): Promise<void>;
 }
 
 export interface IAppSync {
@@ -72,42 +73,71 @@ class AppSyncCore implements IAppSyncExclusive {
 	}
 
 	syncProgressStore = writable<ProgressState>({ active: false, nTotal: 0, nProcessed: 0 });
-	#syncProgressDisposer: () => void;
+	#disposers: Array<() => void> = [];
 
 	initialSyncProgressStore = writable<ProgressState>({ active: false, nTotal: 0, nProcessed: 0 });
 
 	constructor(worker?: WorkerInterface) {
-		// Worker is only accessible from browser
-		// TODO: This is a quick fix -- handle this in a nicer way
-		if (browser) {
-			this.worker = worker || new WorkerInterface(new SyncWorker());
-			this.#syncProgressDisposer = this.worker.onProgress(($progress) => this.syncProgressStore.set($progress));
-		}
+		this.worker = worker || new WorkerInterface();
+		this.#disposers.push(this.worker.onProgress(($progress) => this.syncProgressStore.set($progress)));
+	}
+
+	addDisposer(dispose: () => void) {
+		this.#disposers.push(dispose);
+	}
+
+	bindDb(db: DBAsync): boolean {
+		const supported = isSyncWorkerBridge(db);
+		this.worker.bind(supported ? db : null);
+		return supported;
 	}
 
 	// TODO: listen to DB invalidations and reset the sync (if active) when DB invalidated
-	start(dbid: string, url: string) {
+	async start(dbid: string, url: string) {
 		const cfg = this.#activeConfig;
 
 		// NOOP -- nothing to do here
 		if (cfg && cfg.dbid == dbid && cfg.url == url) return;
 
 		// Stop sync if active with different setup (noop otherwise)
-		this.stop();
+		await this.stop();
 
-		this.worker.startSync(dbid, { url, room: dbid });
+		await this.worker.startSync(dbid, { url, room: dbid });
 		this.#activeConfig = { dbid, url };
 	}
 
-	stop() {
+	async stop() {
 		if (!this.active) return;
-		this.worker.stopSync(this.#activeConfig.dbid);
+		await this.worker.stopSync(this.#activeConfig.dbid);
 		this.#activeConfig = null;
 	}
 
-	destroy() {
-		this.stop();
-		this.#syncProgressDisposer?.();
+	async destroy() {
+		let firstError: unknown = null;
+		try {
+			await this.stop();
+		} catch (err) {
+			firstError ??= err;
+		}
+
+		for (const dispose of this.#disposers) {
+			try {
+				dispose();
+			} catch (err) {
+				firstError ??= err;
+			}
+		}
+		this.#disposers = [];
+
+		try {
+			await this.worker.destroy();
+		} catch (err) {
+			firstError ??= err;
+		}
+
+		if (firstError) {
+			throw firstError;
+		}
 	}
 }
 
@@ -131,9 +161,7 @@ export class AppSync implements IAppSync {
 	}
 
 	async destroy(): Promise<void> {
-		await this.runExclusive(() => {
-			this.core.destroy();
-		});
+		await this.runExclusive(() => this.core.destroy());
 	}
 
 	/**
@@ -148,33 +176,82 @@ export class AppSync implements IAppSync {
 }
 
 // ---------------------------------- Functions ---------------------------------- //
-export async function initializeSync(app: App, vfs: VFSWhitelist) {
+/**
+ * Initializes sync runtime state and binds the current DB backend to the sync worker bridge.
+ *
+ * This function is idempotent: if sync is already initialized, it re-binds the latest DB and returns.
+ *
+ * @param app The app instance containing DB and sync state.
+ * @returns A promise that resolves when sync initialization is complete.
+ */
+export async function initializeSync(app: App): Promise<void> {
 	return app.sync.runExclusive(async (sync) => {
-		// noop if already initialised
-		if (get(sync.state) >= AppSyncState.Initializing) return;
+		const previousState = get(sync.state);
+
+		// If already initialised, just ensure we're bound to the latest DB.
+		if (get(sync.state) >= AppSyncState.Initializing) {
+			try {
+				const db = await getDb(app);
+				sync.bindDb(db);
+				return;
+			} catch (err) {
+				sync.state.set(previousState);
+				throw err;
+			}
+		}
 
 		// Initialise the worker
 		sync.state.set(AppSyncState.Initializing);
-		sync.worker.start(vfs);
-		updateSyncConnectivityMonitor(sync.worker);
-
-		// Subscribe to sync changes to notify UI subscribers (debounced to avoid UI thrashing)
 		let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-		sync.worker.onChangesReceived(() => {
-			if (debounceTimer) clearTimeout(debounceTimer);
-			debounceTimer = setTimeout(() => {
-				app.db.rx.notifyAll();
+		let disposeChangesListener: (() => void) | null = null;
+		const cleanupInitListener = () => {
+			if (debounceTimer) {
+				clearTimeout(debounceTimer);
 				debounceTimer = null;
-			}, 100);
-		});
+			}
+			disposeChangesListener?.();
+			disposeChangesListener = null;
+		};
 
-		// Wait for the worker to be initialised
-		await sync.worker.initPromise;
-		sync.state.set(AppSyncState.Idle);
+		try {
+			const db = await getDb(app);
+			sync.bindDb(db);
+			updateSyncConnectivityMonitor(sync.worker);
+
+			// Subscribe to sync changes to notify UI subscribers (debounced to avoid UI thrashing)
+			disposeChangesListener = sync.worker.onChangesReceived(() => {
+				if (debounceTimer) clearTimeout(debounceTimer);
+				debounceTimer = setTimeout(() => {
+					app.db.rx.notifyAll();
+					debounceTimer = null;
+				}, 100);
+			});
+
+			// Wait for the worker to be initialised
+			await sync.worker.initPromise;
+			sync.addDisposer(cleanupInitListener);
+			sync.state.set(AppSyncState.Idle);
+		} catch (err) {
+			cleanupInitListener();
+			sync.state.set(previousState);
+			throw err;
+		}
 	});
 }
 
-export async function startSync(app: App, dbid: string, url: string) {
+/**
+ * Starts sync for a database id and sync server URL.
+ *
+ * Performs optional initial-sync optimization for empty OPFS-backed DBs, then starts live sync and
+ * updates compatibility status.
+ *
+ * @param app The app instance containing DB and sync state.
+ * @param dbid The logical DB identifier used by sync.
+ * @param url The sync server URL.
+ * @returns A promise that resolves when sync startup flow completes.
+ * @throws ErrInvalidSyncURL When the provided sync URL is empty.
+ */
+export async function startSync(app: App, dbid: string, url: string): Promise<void> {
 	// ---------------------------------- 0. Checks ---------------------------------- //
 	//
 	// TODO: perhaps implement a more robust URL validation
@@ -190,16 +267,30 @@ export async function startSync(app: App, dbid: string, url: string) {
 
 	// TODO: this should also be run exclusively with respect to the DB
 	await app.sync.runExclusive(async (sync) => {
-		// If sync is active:
-		// - no need to start (idempotency)
-		// - it's safe to assume the initial sync was already attempted
-		if (sync.active) return;
+		if (!sync.bindDb(db)) {
+			const backendName = (db as { type?: string }).type ?? db.constructor?.name ?? typeof db;
+			console.warn(
+				`[sync] Current DB backend does not support integrated sync runtime; skipping sync start (backend=${backendName}, expected methods=startSync, stopSync, onSyncStatus, onConnOpen, onConnClose)`
+			);
+			return;
+		}
+
+		// If sync is already active, AppSyncCore.start() handles idempotent no-op
+		// and safe stop/restart for reconfiguration.
+		const wasActive = sync.active;
 
 		// ---------------------------------- 1. Initial Sync ---------------------------------- //
 		const isEmpty = await isEmptyDB(db);
 		const opfsSupported = vfsSupportsOPFS(getVfs(app));
+		const initialSyncReloadGuardKey = `librocco-initial-sync-reload:${dbid}`;
+		const shouldRunInitialSync = browser && isEmpty && opfsSupported && window.sessionStorage.getItem(initialSyncReloadGuardKey) !== "1";
 
-		if (isEmpty && opfsSupported) {
+		if (!isEmpty && browser) {
+			// DB is no longer empty; clear any stale guard from previous initial-sync reload attempt.
+			window.sessionStorage.removeItem(initialSyncReloadGuardKey);
+		}
+
+		if (!wasActive && shouldRunInitialSync) {
 			sync.state.set(AppSyncState.InitialSync);
 			let shouldReload = false;
 			try {
@@ -216,6 +307,8 @@ export async function startSync(app: App, dbid: string, url: string) {
 			}
 
 			if (shouldReload && browser) {
+				// Guard against repeated reload loops (e.g. remote DB is also empty).
+				window.sessionStorage.setItem(initialSyncReloadGuardKey, "1");
 				// Re-initialize the app against the swapped-in DB file.
 				window.location.reload();
 				return;
@@ -224,7 +317,7 @@ export async function startSync(app: App, dbid: string, url: string) {
 
 		// ---------------------------------- 2. Live Sync ---------------------------------- //
 		markCompatibilityChecking();
-		sync.start(dbid, url);
+		await sync.start(dbid, url);
 
 		// Once sync is running, re-run compatibility check to capture remote metadata that may have been missing on first pass
 		checkSyncCompatibility({ dbid, syncUrl: url, mode: "background" }).catch((err) =>
@@ -314,6 +407,12 @@ function getRemoteDbFileUrl(syncUrl: string, dbid: string) {
 	return url.toString();
 }
 
-export async function stopSync(app: App) {
+/**
+ * Stops the active sync session (if any) for the currently bound app DB.
+ *
+ * @param app The app instance containing sync state.
+ * @returns A promise that resolves when stop flow finishes.
+ */
+export async function stopSync(app: App): Promise<void> {
 	await app.sync.runExclusive((sync) => sync.stop());
 }

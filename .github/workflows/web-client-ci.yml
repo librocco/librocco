@@ -269,6 +269,7 @@ jobs:
     - name: Install uv (Python package manager)
       uses: astral-sh/setup-uv@v7
       with:
+        version: 0.10.7
         enable-cache: true
         working-directory: python-apps/launcher
     - name: Clean stale test DBs (fix schema mismatch)
