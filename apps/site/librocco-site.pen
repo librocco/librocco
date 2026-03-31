@@ -7,11 +7,1118 @@
       "x": 0,
       "y": 0,
       "name": "Frame",
-      "clip": true,
-      "width": 800,
-      "height": 600,
-      "fill": "#FFFFFF",
-      "layout": "none"
+      "width": 1200,
+      "fill": "#F8FAFF",
+      "layout": "vertical",
+      "children": [
+        {
+          "type": "frame",
+          "id": "bt3tg",
+          "name": "Nav Section",
+          "width": "fill_container",
+          "fill": "#FFFFFF",
+          "stroke": {
+            "thickness": {
+              "bottom": 1
+            },
+            "fill": "$--color-base-300"
+          },
+          "padding": [
+            "$--space-3",
+            "$--space-5"
+          ],
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "x1zEZ",
+              "type": "ref",
+              "ref": "g39hH",
+              "x": 20,
+              "y": 17.547619047619047
+            },
+            {
+              "type": "frame",
+              "id": "qZZXh",
+              "name": "navLinks",
+              "gap": "$--space-6",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "6WPxR",
+                  "name": "lnk1",
+                  "fill": "$--color-base-content",
+                  "content": "Features",
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-sm",
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "AkrK5",
+                  "name": "lnk2",
+                  "fill": "$--color-base-content",
+                  "content": "Changelog",
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-sm",
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "text",
+                  "id": "1fan2",
+                  "name": "lnk3",
+                  "fill": "$--color-base-content",
+                  "content": "GitHub",
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-sm",
+                  "fontWeight": "500"
+                },
+                {
+                  "id": "Hyiqj",
+                  "type": "ref",
+                  "ref": "hX60E",
+                  "x": 251,
+                  "y": 0,
+                  "descendants": {
+                    "hYpzv": {
+                      "content": "Docs"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "kzJtD",
+          "name": "Hero Section",
+          "width": "fill_container",
+          "fill": {
+            "type": "mesh_gradient",
+            "enabled": true,
+            "columns": 3,
+            "rows": 3,
+            "colors": [
+              "$--color-base-200",
+              "#00b7ff14",
+              "$--color-base-200",
+              "$--color-base-200",
+              "#a166ff08",
+              "$--color-base-200",
+              "$--color-base-200",
+              "#00b7ff1f",
+              "$--color-base-200"
+            ],
+            "points": [
+              [
+                0,
+                0
+              ],
+              [
+                0.5,
+                0
+              ],
+              [
+                1,
+                0
+              ],
+              [
+                0,
+                0.5
+              ],
+              {
+                "position": [
+                  0.4806,
+                  0.4952
+                ],
+                "leftHandle": [
+                  -0.2355,
+                  -0.027
+                ],
+                "rightHandle": [
+                  0.2355,
+                  0.027
+                ],
+                "topHandle": [
+                  -0.0034,
+                  -0.1936
+                ],
+                "bottomHandle": [
+                  0.0034,
+                  0.1936
+                ]
+              },
+              {
+                "position": [
+                  1,
+                  0.4154
+                ],
+                "leftHandle": [
+                  -0.2489,
+                  -0.1782
+                ],
+                "rightHandle": [
+                  0.2489,
+                  0.1782
+                ]
+              },
+              {
+                "position": [
+                  0,
+                  1
+                ],
+                "leftHandle": [
+                  -0.114,
+                  -0.1316
+                ],
+                "rightHandle": [
+                  0.114,
+                  0.1316
+                ]
+              },
+              {
+                "position": [
+                  0.4996,
+                  1
+                ],
+                "topHandle": [
+                  -0.3263,
+                  0.2325
+                ],
+                "bottomHandle": [
+                  0.3263,
+                  -0.2325
+                ]
+              },
+              [
+                1,
+                1
+              ]
+            ]
+          },
+          "layout": "vertical",
+          "gap": "$--space-8",
+          "padding": 80,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "amY0u",
+              "name": "badge",
+              "reusable": true,
+              "fill": "$--color-info",
+              "cornerRadius": "$--radius-full",
+              "gap": "$--space-1",
+              "padding": [
+                6,
+                12
+              ],
+              "justifyContent": "center",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "M8MXJ",
+                  "name": "badgeText",
+                  "fill": "$--color-base-content",
+                  "content": "zap",
+                  "fontFamily": "lucide",
+                  "fontSize": "$--text-sm",
+                  "fontWeight": "600"
+                },
+                {
+                  "type": "text",
+                  "id": "JT8Eu",
+                  "name": "badgeText",
+                  "fill": "$--color-base-content",
+                  "content": "Powered by cr-sqlite",
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-sm",
+                  "fontWeight": "600"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "laKwP",
+              "name": "Frame 1",
+              "width": "fit_content(720)",
+              "layout": "vertical",
+              "gap": "$--space-5",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "lYdY3",
+                  "name": "headline",
+                  "fill": "#0B132B",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Local-first,\nlightning fast,\ninventory management",
+                  "lineHeight": 1.05,
+                  "textAlign": "center",
+                  "fontFamily": "$--typeface-sans",
+                  "fontSize": "$--text-6xl",
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "MIBV1",
+                  "name": "sub",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Accurate stock tracking that never stops. Sync effortlessly across multiple terminals, even when the internet goes dark.",
+                  "lineHeight": 1.4,
+                  "textAlign": "center",
+                  "fontFamily": "$--typeface-sans",
+                  "fontSize": "$--text-lg",
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "M88dm",
+              "name": "heroCtas",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "9fRPn",
+                  "name": "primaryBtn",
+                  "fill": "#4F46E5",
+                  "cornerRadius": 16,
+                  "padding": [
+                    14,
+                    30
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Zn75A",
+                      "name": "primaryTxt",
+                      "fill": "#FFFFFF",
+                      "content": "Deploy Now →",
+                      "fontFamily": "Inter",
+                      "fontSize": 28,
+                      "fontWeight": "700"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "glmUe",
+                  "name": "secondaryBtn",
+                  "fill": "#FFFFFF",
+                  "cornerRadius": 16,
+                  "stroke": {
+                    "thickness": 1,
+                    "fill": "#E2E8F0"
+                  },
+                  "padding": [
+                    14,
+                    30
+                  ],
+                  "justifyContent": "center",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "Y6YNR",
+                      "name": "secondaryTxt",
+                      "fill": "#0F172A",
+                      "content": "☆  Star on GitHub",
+                      "fontFamily": "Inter",
+                      "fontSize": 28,
+                      "fontWeight": "700"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "U0rvv",
+          "name": "Features Placeholder",
+          "width": "fill_container",
+          "fill": "#FFFFFF",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": [
+            72,
+            80,
+            96,
+            80
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "6qZuV",
+              "name": "headingBlock",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 14,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "CyehY",
+                  "name": "heading",
+                  "fill": "#0F172A",
+                  "textGrowth": "fixed-width",
+                  "width": 720,
+                  "content": "Built for resiliancy",
+                  "lineHeight": 1.08,
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": 28,
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "e0SCQ",
+                  "name": "subheading",
+                  "fill": "#475569",
+                  "textGrowth": "fixed-width",
+                  "width": 720,
+                  "content": "Everything you need to manage massive catalogs across distributed locations without fear of data loss.",
+                  "lineHeight": 1.45,
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": 18,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "B8F39",
+              "name": "cardsRow",
+              "width": "fill_container",
+              "gap": 24,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "Xz7MO",
+                  "name": "card1",
+                  "width": "fill_container",
+                  "fill": "#F8FAFC",
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E2E8F0"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 28,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "UWx7Z",
+                      "name": "iconWrap1",
+                      "width": 56,
+                      "height": 56,
+                      "fill": "#DBEAFE",
+                      "cornerRadius": 14,
+                      "layout": "none"
+                    },
+                    {
+                      "type": "text",
+                      "id": "vr67q",
+                      "name": "title1",
+                      "fill": "#0F172A",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Live Stock Visibility",
+                      "lineHeight": 1.2,
+                      "fontFamily": "Inter",
+                      "fontSize": 22,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "kJKLD",
+                      "name": "desc1",
+                      "fill": "#475569",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Monitor inventory across channels in one dashboard and prevent costly stockouts before they happen.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "YuU6U",
+                  "name": "card2",
+                  "width": "fill_container",
+                  "fill": "#F8FAFC",
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E2E8F0"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 28,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "ugh92",
+                      "name": "iconWrap2",
+                      "width": 56,
+                      "height": 56,
+                      "fill": "#E0E7FF",
+                      "cornerRadius": 14,
+                      "layout": "none"
+                    },
+                    {
+                      "type": "text",
+                      "id": "1UZcb",
+                      "name": "title2",
+                      "fill": "#0F172A",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Smart Reorder Forecasts",
+                      "lineHeight": 1.2,
+                      "fontFamily": "Inter",
+                      "fontSize": 22,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "uJxZO",
+                      "name": "desc2",
+                      "fill": "#475569",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Predict demand with AI-powered recommendations so you reorder at the right time and protect cash flow.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "KkNgp",
+                  "name": "card3",
+                  "width": "fill_container",
+                  "fill": "#F8FAFC",
+                  "cornerRadius": 20,
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "#E2E8F0"
+                  },
+                  "layout": "vertical",
+                  "gap": 16,
+                  "padding": 28,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "cqG8O",
+                      "name": "iconWrap3",
+                      "width": 56,
+                      "height": 56,
+                      "fill": "#DCFCE7",
+                      "cornerRadius": 14,
+                      "layout": "none"
+                    },
+                    {
+                      "type": "text",
+                      "id": "CMROR",
+                      "name": "title3",
+                      "fill": "#0F172A",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Profit & Turnover Insights",
+                      "lineHeight": 1.2,
+                      "fontFamily": "Inter",
+                      "fontSize": 22,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "mRaBO",
+                      "name": "desc3",
+                      "fill": "#475569",
+                      "textGrowth": "fixed-width",
+                      "width": "fill_container",
+                      "content": "Spot slow-moving SKUs, improve sell-through, and prioritize the products that grow your margins.",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Inter",
+                      "fontSize": 16,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "66Ymh",
+          "name": "Closing Placeholder",
+          "width": "fill_container",
+          "fill": "#0B1226",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": [
+            88,
+            80,
+            40,
+            80
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "jDE3S",
+              "name": "CTA Card",
+              "width": "fill_container",
+              "fill": "#111A33",
+              "cornerRadius": 24,
+              "stroke": {
+                "thickness": 1,
+                "fill": "#24314F"
+              },
+              "layout": "vertical",
+              "gap": 24,
+              "padding": [
+                48,
+                56
+              ],
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "eCNDn",
+                  "name": "ctaEyebrow",
+                  "fill": "#93C5FD",
+                  "content": "READY TO MODERNIZE YOUR INVENTORY?",
+                  "fontFamily": "Inter",
+                  "fontSize": 13,
+                  "fontWeight": "700",
+                  "letterSpacing": 1.1
+                },
+                {
+                  "type": "text",
+                  "id": "1Vk2u",
+                  "name": "ctaTitle",
+                  "fill": "#F8FAFF",
+                  "textGrowth": "fixed-width",
+                  "width": 760,
+                  "content": "Start shipping with confidence\n—even when the network fails.",
+                  "lineHeight": 1.1,
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": 56,
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "lFt0G",
+                  "name": "ctaSub",
+                  "fill": "#94A3B8",
+                  "textGrowth": "fixed-width",
+                  "width": 700,
+                  "content": "Deploy in minutes, keep every terminal in sync, and never lose track of stock again.",
+                  "lineHeight": 1.4,
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": 22,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "G69ev",
+                  "name": "ctaBtns",
+                  "gap": 14,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gBY0h",
+                      "name": "ctaPrimary",
+                      "fill": "#4F46E5",
+                      "cornerRadius": 14,
+                      "padding": [
+                        14,
+                        26
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "bh3vw",
+                          "name": "ctaPrimaryTxt",
+                          "fill": "#FFFFFF",
+                          "content": "Deploy Now",
+                          "fontFamily": "Inter",
+                          "fontSize": 22,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FGH9D",
+                      "name": "ctaGhost",
+                      "fill": "#1E293B",
+                      "cornerRadius": 14,
+                      "stroke": {
+                        "thickness": 1,
+                        "fill": "#334155"
+                      },
+                      "padding": [
+                        14,
+                        26
+                      ],
+                      "justifyContent": "center",
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "uNROk",
+                          "name": "ctaGhostTxt",
+                          "fill": "#E2E8F0",
+                          "content": "View Docs",
+                          "fontFamily": "Inter",
+                          "fontSize": 22,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "0bOlf",
+                  "name": "trust",
+                  "fill": "#64748B",
+                  "content": "No credit card required · MIT licensed · Self-hosted",
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ZvRum",
+              "name": "footerDivider",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "#1E293B"
+            },
+            {
+              "type": "frame",
+              "id": "YOzCF",
+              "name": "footerRow",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "luJm0",
+                  "name": "footBrand",
+                  "fill": "#94A3B8",
+                  "content": "© 2026 LibreStock",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "kK84D",
+                  "name": "footLinks",
+                  "gap": 22,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "7D6WH",
+                      "name": "footL1",
+                      "fill": "#CBD5E1",
+                      "content": "Docs",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "efpBX",
+                      "name": "footL2",
+                      "fill": "#CBD5E1",
+                      "content": "Privacy",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "uq5no",
+                      "name": "footL3",
+                      "fill": "#CBD5E1",
+                      "content": "Terms",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "group",
+      "id": "g39hH",
+      "x": -555,
+      "y": 89,
+      "name": "Librocco-logo",
+      "reusable": true,
+      "children": [
+        {
+          "type": "path",
+          "id": "7plHm",
+          "x": 0,
+          "y": 0,
+          "geometry": "M639.68402 113.297q-10.125 0-17.672-4.641-7.54602-4.641-11.71899-12.984-4.17102-8.345-4.17102-19.5 0-11.203 4.17102-19.594 4.17297-8.39 11.71899-13.031 7.547-4.64 17.672-4.64 10.125 0 17.672 4.64 7.547 4.64 11.71899 13.031 4.172 8.39 4.172 19.594 0 11.155-4.172 19.5-4.17297 8.343-11.71899 12.984-7.547 4.641-17.672 4.641m0.047-11.766q6.56299 0 10.875-3.469 4.31201-3.469 6.375-9.234 2.10901-5.766 2.10901-12.70301 0-6.89-2.10901-12.656-2.06201-5.813-6.375-9.32799-4.31201-3.516-10.875-3.516-6.60999 0-10.969 3.516-4.31201 3.515-6.42199 9.32799-2.06201 5.765-2.06201 12.656 0 6.938 2.06201 12.70301 2.10998 5.766 6.42199 9.234 4.35999 3.47 10.969 3.469m-72.302 11.766q-10.45203 0-18-4.735-7.5-4.781-11.53101-13.171-4.03003-8.39-4.03101-19.22 0-10.968 4.125-19.359 4.125-8.437 11.625-13.171 7.5-4.735 17.672-4.735 8.20398 0 14.625 3.047 6.42102 3 10.35901 8.438 3.98401 5.437 4.73499 12.703l-13.641 0q-1.125-5.063-5.156-8.719-3.98499-3.656-10.68799-3.656-5.85999 0-10.26501 3.093-4.35999 3.048-6.797 8.72-2.43799 5.625-2.43799 13.312 0 7.875 2.39099 13.594 2.39099 5.719 6.75 8.85901 4.40503 3.141 10.35901 3.14099 3.98401 0 7.21899-1.454 3.28101-1.5 5.48401-4.265 2.25-2.766 3.14099-6.656l13.641 0q-0.75 6.984-4.547 12.46801-3.79798 5.485-10.172 8.625-6.328 3.14099-14.85998 3.14099m-72.254 0q-10.45401 0-18-4.735-7.5-4.78099-11.53101-13.17099-4.031-8.39-4.031-19.22001 0-10.968 4.125-19.359 4.125-8.437 11.625-13.17099 7.5-4.735 17.67099-4.735 8.20401 0 14.625 3.047 6.42297 3 10.35998 8.438 3.98401 5.437 4.73401 12.703l-13.64001 0q-1.125-5.063-5.15702-8.719-3.98401-3.656-10.68701-3.656-5.85901 0-10.26599 3.093-4.35999 3.048-6.797 8.72-2.43701 5.625-2.43701 13.312 0 7.875 2.39002 13.594 2.39001 5.719 6.75 8.859 4.40701 3.141 10.35998 3.141 3.98401 0 7.219-1.454 3.27999-1.5 5.484-4.265 2.25-2.766 3.141-6.656l13.63998 0q-0.75 6.984-4.547 12.468-3.79699 5.485-10.17199 8.625-6.327 3.141-14.85901 3.141m-76.89499 0q-10.125 0-17.672-4.641-7.547-4.641-11.71899-12.984-4.172-8.345-4.172-19.5 0-11.203 4.172-19.594 4.17199-8.39 11.71899-13.031 7.547-4.64 17.672-4.64 10.125 0 17.67199 4.64 7.54599 4.64 11.71799 13.031 4.172 8.39 4.172 19.594 0 11.155-4.172 19.5-4.172 8.343-11.71799 12.984-7.548 4.641-17.67199 4.641m0.04699-11.766q6.56299 0 10.875-3.469 4.31202-3.469 6.375-9.234 2.10901-5.766 2.10901-12.703 0-6.89-2.10901-12.656-2.06201-5.813-6.375-9.328-4.31201-3.516-10.875-3.516-6.60998 0-10.96899 3.516-4.31299 3.515-6.422 9.328-2.06201 5.765-2.06201 12.656 0 6.938 2.06201 12.703 2.10999 5.766 6.422 9.234 4.35901 3.47 10.96899 3.469m-75.81698 10.313l0-72 13.547 0 0 11.43599 0.75 0q1.96798-5.813 6.93701-9.14 5.01599-3.375 11.34399-3.375 1.31201 0 3.094 0.093 1.828 0.094 2.859 0.235l0 13.407q-0.84298-0.234-3-0.516c-1.42694-0.218-2.8684-0.32764-4.31195-0.328q-4.97 0-8.85998 2.11-3.844 2.063-6.094 5.765-2.25 3.657-2.25 8.344l0 43.969-14.01507 0.00001z m-77.86401 0l0-96 14.01501 0 0 35.672 0.84399 0q1.22001-2.25 3.516-5.203 2.29599-2.953 6.375-5.157 4.078-2.25 10.781-2.25 8.719 0 15.56299 4.407 6.84299 4.405 10.73401 12.703 3.93701 8.296 3.93701 19.968 0 11.672-3.88995 20.01599-3.891 8.297-10.68799 12.797-6.797 4.453-15.51502 4.453-6.56201 0-10.73498-2.203-4.125-2.20401-6.46799-5.156-2.34399-2.954-3.60998-5.25l-1.172 0 0 11.203-13.6871 0.00001z m13.734-36q0 7.594 2.20301 13.312 2.20401 5.72 6.375 8.953 4.173 3.188 10.21899 3.188 6.28201 0 10.5-3.328 4.22-3.375 6.375-9.14 2.203-5.767 2.203-12.985 0-7.125-2.156-12.797-2.10901-5.672-6.375-8.953-4.219-3.282-10.547-3.282-6.09399 0-10.31201 3.141-4.173 3.141-6.32901 8.766-2.15601 5.625-2.15601 13.125m-43.08999 36l0-72 14.015 0 0 72-14.015 0z m7.078-83.11q-3.65601 0-6.28101-2.437-2.578-2.484-2.578-5.906 0-3.47 2.578-5.907 2.6251-2.48401 6.28109-2.48401 3.65599 0 6.23399 2.484 2.625 2.438 2.625 5.907 0 3.421-2.625 5.906-2.578 2.437-6.23399 2.437m-77.821 83.11l0-96 14.48399 0 0 83.531 43.5 0 0 12.469-57.98399 0z m-113.618-92.491c0-3.411-2.759-6.177-6.161-6.177-3.403 0-6.16 2.766-6.16 6.177l0 67.94101 57.088 0c10.661 0 19.304 8.665 19.304 19.35299 0 10.688-8.643 19.353-19.304 19.353l-95.696 0 0-119.412c0-3.638 2.942-6.588 6.571-6.588 3.63 0 6.572 2.95 6.572 6.588l0 106.236 82.553 0c3.403 0 6.161-2.766 6.161-6.177 0-3.41101-2.758-6.17601-6.15999-6.17601l-70.23401 0 0-81.11799c0.001-10.688 8.644-19.353 19.305-19.353 10.661 0 19.302 8.665 19.302 19.353l0 42.412 44.358 0c3.629 0 6.571 2.95 6.571 6.588 0 3.638-2.942 6.588-6.571 6.58799l-57.5 0 0.001-55.58799z",
+          "fill": "#000",
+          "width": 115,
+          "height": 21.904761904761905
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "hX60E",
+      "x": -555,
+      "y": 179,
+      "name": "btn-sm",
+      "reusable": true,
+      "fill": "$--color-base-content",
+      "cornerRadius": "$--radius-md",
+      "gap": "$--space-1",
+      "padding": [
+        "$--space-2",
+        "$--space-3"
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "text",
+          "id": "hYpzv",
+          "name": "ctaTxt",
+          "fill": "#FFFFFF",
+          "content": "Get Started",
+          "textAlignVertical": "middle",
+          "fontFamily": "$--typeface-sans",
+          "fontSize": "$--text-sm",
+          "fontWeight": "700"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "HvYDv",
+      "x": -437,
+      "y": 179,
+      "name": "btn-sm-icon",
+      "reusable": true,
+      "fill": "$--color-base-content",
+      "cornerRadius": "$--radius-md",
+      "gap": "$--space-1",
+      "padding": [
+        "$--space-2",
+        "$--space-3"
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "text",
+          "id": "VJtp9",
+          "name": "ctaTxt",
+          "fill": "#FFFFFF",
+          "content": "lightninspsparklebobo",
+          "textAlignVertical": "middle",
+          "fontFamily": "lucide",
+          "fontSize": "$--text-sm",
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "4jEbz",
+          "name": "ctaTxt",
+          "fill": "#FFFFFF",
+          "content": "Get Started",
+          "textAlignVertical": "middle",
+          "fontFamily": "$--typeface-sans",
+          "fontSize": "$--text-sm",
+          "fontWeight": "700"
+        }
+      ]
     }
-  ]
+  ],
+  "variables": {
+    "--font-bold": {
+      "type": "number",
+      "value": 700
+    },
+    "--font-medium": {
+      "type": "number",
+      "value": 500
+    },
+    "--font-normal": {
+      "type": "number",
+      "value": 400
+    },
+    "--font-semibold": {
+      "type": "number",
+      "value": 600
+    },
+    "--leading-normal": {
+      "type": "number",
+      "value": 1.5
+    },
+    "--leading-relaxed": {
+      "type": "number",
+      "value": 1.625
+    },
+    "--leading-snug": {
+      "type": "number",
+      "value": 1.375
+    },
+    "--leading-tight": {
+      "type": "number",
+      "value": 1.25
+    },
+    "--radius-2xl": {
+      "type": "number",
+      "value": 16
+    },
+    "--radius-base": {
+      "type": "number",
+      "value": 4
+    },
+    "--radius-full": {
+      "type": "number",
+      "value": 9999
+    },
+    "--radius-lg": {
+      "type": "number",
+      "value": 8
+    },
+    "--radius-md": {
+      "type": "number",
+      "value": 6
+    },
+    "--radius-sm": {
+      "type": "number",
+      "value": 2
+    },
+    "--radius-xl": {
+      "type": "number",
+      "value": 12
+    },
+    "--text-2xl": {
+      "type": "number",
+      "value": 24
+    },
+    "--text-3xl": {
+      "type": "number",
+      "value": 30
+    },
+    "--text-4xl": {
+      "type": "number",
+      "value": 36
+    },
+    "--text-5xl": {
+      "type": "number",
+      "value": 48
+    },
+    "--text-6xl": {
+      "type": "number",
+      "value": 60
+    },
+    "--text-base": {
+      "type": "number",
+      "value": 16
+    },
+    "--text-lg": {
+      "type": "number",
+      "value": 18
+    },
+    "--text-sm": {
+      "type": "number",
+      "value": 14
+    },
+    "--text-xl": {
+      "type": "number",
+      "value": 20
+    },
+    "--text-xs": {
+      "type": "number",
+      "value": 12
+    },
+    "--color-accent": {
+      "type": "color",
+      "value": "#1DCDBC"
+    },
+    "--color-accent-content": {
+      "type": "color",
+      "value": "#07302E"
+    },
+    "--color-base-100": {
+      "type": "color",
+      "value": "#FFFFFF"
+    },
+    "--color-base-200": {
+      "type": "color",
+      "value": "#F2F2F2"
+    },
+    "--color-base-300": {
+      "type": "color",
+      "value": "#E5E6E6"
+    },
+    "--color-base-content": {
+      "type": "color",
+      "value": "#1F2937"
+    },
+    "--color-error": {
+      "type": "color",
+      "value": "#FF5861"
+    },
+    "--color-error-content": {
+      "type": "color",
+      "value": "#1A0003"
+    },
+    "--color-info": {
+      "type": "color",
+      "value": "#00B5FF"
+    },
+    "--color-info-content": {
+      "type": "color",
+      "value": "#001A23"
+    },
+    "--color-neutral": {
+      "type": "color",
+      "value": "#2B3440"
+    },
+    "--color-neutral-content": {
+      "type": "color",
+      "value": "#D7DDE4"
+    },
+    "--color-primary": {
+      "type": "color",
+      "value": "#570DF8"
+    },
+    "--color-primary-content": {
+      "type": "color",
+      "value": "#E0D2FE"
+    },
+    "--color-secondary": {
+      "type": "color",
+      "value": "#F000B8"
+    },
+    "--color-secondary-content": {
+      "type": "color",
+      "value": "#FFD1F4"
+    },
+    "--color-success": {
+      "type": "color",
+      "value": "#00A96E"
+    },
+    "--color-success-content": {
+      "type": "color",
+      "value": "#001F14"
+    },
+    "--color-warning": {
+      "type": "color",
+      "value": "#FFBE00"
+    },
+    "--color-warning-content": {
+      "type": "color",
+      "value": "#1A1200"
+    },
+    "--space-1": {
+      "type": "number",
+      "value": 4
+    },
+    "--space-10": {
+      "type": "number",
+      "value": 40
+    },
+    "--space-12": {
+      "type": "number",
+      "value": 48
+    },
+    "--space-16": {
+      "type": "number",
+      "value": 64
+    },
+    "--space-2": {
+      "type": "number",
+      "value": 8
+    },
+    "--space-20": {
+      "type": "number",
+      "value": 80
+    },
+    "--space-24": {
+      "type": "number",
+      "value": 96
+    },
+    "--space-3": {
+      "type": "number",
+      "value": 12
+    },
+    "--space-4": {
+      "type": "number",
+      "value": 16
+    },
+    "--space-5": {
+      "type": "number",
+      "value": 20
+    },
+    "--space-6": {
+      "type": "number",
+      "value": 24
+    },
+    "--space-8": {
+      "type": "number",
+      "value": 32
+    },
+    "--typeface-mono": {
+      "type": "string",
+      "value": "JetBrains Mono"
+    },
+    "--typeface-sans": {
+      "type": "string",
+      "value": "Inter"
+    }
+  }
 }
