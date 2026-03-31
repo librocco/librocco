@@ -8,7 +8,12 @@ export default defineConfig({
   site: "https://codemyriad.io",
   integrations: [
     starlight({
-      title: "Librocco Docs",
+      title: "",
+      logo: {
+        light: "./src/assets/logo-light.svg",
+        dark: "./src/assets/logo-dark.svg",
+        replacesTitle: true,
+      },
       components: {
         Head: "./src/components/Head.astro",
       },

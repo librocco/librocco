@@ -1,6 +1,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Logo size in header */
+.site-title img {
+  height: 1.75rem;
+  width: auto;
+}
+
 /* Sidebar link hover states */
 .sidebar-content a {
   border-radius: 0.25rem;
