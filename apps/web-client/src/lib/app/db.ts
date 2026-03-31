@@ -173,7 +173,6 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 		throw lastOpenError;
 	}
 
-
 	// Check if DB initialized (internally)
 	console.time("[db] schema_check");
 	const schemaRes = await getSchemaNameAndVersion(db);
