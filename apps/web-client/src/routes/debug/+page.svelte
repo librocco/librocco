@@ -2132,10 +2132,7 @@
 								<div class="text-sm font-semibold">Import state</div>
 								<p class="text-xs opacity-70">Replace local database with a .sqlite3 file for debugging. Reloads the page.</p>
 							</div>
-							<button
-								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
-								on:click={handleImportState}
-							>
+							<button class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start" on:click={handleImportState}>
 								<Upload size={16} />
 								Import
 							</button>
