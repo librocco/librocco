@@ -173,18 +173,6 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 		throw lastOpenError;
 	}
 
-	// Integrity check - if this fails, DB needs to be nuked
-	// Using quick_check instead of integrity_check: same structural validation
-	// but skips expensive cross-reference of every index entry, which on a 64MB
-	// DB through WASM+OPFS can add several seconds to every cold start.
-	console.time("[db] integrity_check");
-	const [[res]] = await db.execA<[string]>("PRAGMA quick_check");
-	console.timeEnd("[db] integrity_check");
-	if (res !== "ok") {
-		const err = new ErrDBCorrupted(res);
-		app.db.setState(dbid, AppDbState.Error, err);
-		throw err;
-	}
 
 	// Check if DB initialized (internally)
 	console.time("[db] schema_check");
@@ -268,12 +256,6 @@ export async function initializeDemoDb(app: App, vfs: VFSWhitelist) {
 
 	// Initialising
 	const db = await getDBCore(dbid, vfs);
-
-	// Integrity check - if this fails, DB needs to be nuked
-	const [[res]] = await db.execA<[string]>("PRAGMA quick_check");
-	if (res !== "ok") {
-		throwDemoDBError();
-	}
 
 	// Check if DB initialized (internally)
 	const schemaRes = await getSchemaNameAndVersion(db);
