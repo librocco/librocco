@@ -7,6 +7,7 @@
 	import AlertTriangle from "$lucide/alert-triangle";
 	import Unplug from "$lucide/unplug";
 	import Download from "$lucide/download";
+	import Upload from "$lucide/upload";
 
 	import { onMount } from "svelte";
 
@@ -27,7 +28,7 @@
 	import { schemaVersion } from "$lib/db/cr-sqlite/db";
 
 	import { goto } from "$lib/utils/navigation";
-	import { exportStateArchive } from "$lib/utils/debug-export";
+	import { exportStateArchive, importStateArchive } from "$lib/utils/debug-export";
 	import { toastError, toastSuccess } from "$lib/components/Melt/Toaster.svelte";
 
 	import { debugData as dd } from "$lib/__testData__/debugData";
@@ -792,6 +793,21 @@
 		} finally {
 			isLoading = false;
 		}
+	};
+
+	const handleImportState = () => {
+		const dbid = get(app.config.dbid);
+		const input = Object.assign(document.createElement("input"), { type: "file", accept: ".sqlite3,.sqlite,.db" });
+		input.onchange = async () => {
+			if (!input.files?.[0]) return;
+			try {
+				await importStateArchive(input.files[0], dbid);
+			} catch (error) {
+				console.error("Error importing state:", error);
+				errorMessage = error;
+			}
+		};
+		input.click();
 	};
 
 	const handleExportState = async () => {
@@ -2107,6 +2123,21 @@
 							>
 								<Download size={16} />
 								Export
+							</button>
+						</div>
+					</div>
+					<div class="rounded border border-base-300 bg-base-100 p-3">
+						<div class="flex items-start justify-between gap-3">
+							<div class="min-w-0">
+								<div class="text-sm font-semibold">Import state</div>
+								<p class="text-xs opacity-70">Replace local database with a .sqlite3 file for debugging. Reloads the page.</p>
+							</div>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={handleImportState}
+							>
+								<Upload size={16} />
+								Import
 							</button>
 						</div>
 					</div>

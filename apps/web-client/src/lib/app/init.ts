@@ -11,10 +11,13 @@ import { DEMO_VFS } from "$lib/db/cr-sqlite/core/constants";
 
 import { type App } from ".";
 import { AppDbState, getDb, initializeDb, initializeDemoDb } from "./db";
+import { ErrDBInitTimeout } from "./errors";
+import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
 import { _performInitialSync, initializeSync, startSync } from "./sync";
 
 import { updateTranslationOverrides } from "$lib/i18n-overrides";
 import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
+import { importStateArchive, importStateArchiveFromUrl } from "$lib/utils/debug-export";
 import { validateVFS, vfsSupportsOPFS, type VFSWhitelist } from "$lib/db/cr-sqlite/core/vfs";
 import { getRemoteDB } from "$lib/db/cr-sqlite/core/remote-db";
 
@@ -30,19 +33,37 @@ import { timeLogger } from "$lib/utils/timer";
 
 // ---------------------------------- Init functions ---------------------------------- //
 
+const DB_INIT_TIMEOUT_MS = 30_000;
+
 export async function initApp(app: App) {
 	if (get(app.state) >= AppDbState.Loading) {
 		console.log("init app ran while the app was either initialising, or already initialised skipping...");
 		return;
 	}
 
+	let timeoutId: ReturnType<typeof setTimeout> | undefined;
+	const timeoutPromise = new Promise<never>((_, reject) => {
+		timeoutId = setTimeout(() => {
+			terminateAllWorkers();
+			const dbid = app.db.dbid ?? get(app.config.dbid);
+			const err = new ErrDBInitTimeout();
+			const currentState = get(app.db.state);
+			if (currentState !== AppDbState.Ready && currentState !== AppDbState.Error) {
+				app.db.setState(dbid, AppDbState.Error, err);
+			}
+			reject(err);
+		}, DB_INIT_TIMEOUT_MS);
+	});
+
 	try {
 		attachWindowHelpers(app);
-		await initAppImpl(app);
+		await Promise.race([initAppImpl(app), timeoutPromise]);
 	} catch (err) {
 		// NOTE: we're currently only catching here as the error (if any)
 		// is already set internally (both the error object as well as state = AppDbState.Error)
 		console.error(err);
+	} finally {
+		clearTimeout(timeoutId);
 	}
 }
 
@@ -54,18 +75,24 @@ export async function initApp(app: App) {
 async function initAppImpl(app: App) {
 	// ---------------------------------- I18N ---------------------------------- //
 
+	console.time("[init] i18n");
 	await initializeI18n();
+	console.timeEnd("[init] i18n");
 
 	// ---------------------------------- DB ---------------------------------- //
 
 	const vfs = getVFSFromLocalStorage(DEFAULT_VFS);
+	console.time("[init] db");
 	await initializeDb(app, get(app.config.dbid), vfs);
+	console.timeEnd("[init] db");
 
 	// ---------------------------------- Sync ---------------------------------- //
 
 	const { dbid, syncActive, syncUrl } = app.config;
+	console.time("[init] sync");
 	await initializeSync(app);
 	if (get(syncActive)) await startSync(app, get(dbid), get(syncUrl));
+	console.timeEnd("[init] sync");
 }
 
 export async function initDemoApp(app: App) {
@@ -167,6 +194,22 @@ function attachWindowHelpers(app: App) {
 
 	window["migrations"] = migrations;
 	window["deleteDBFromOPFS"] = deleteDBFromOPFS;
+
+	// DB import helpers — usable from the console even when the splash screen is blocking
+	window["importStateArchive"] = (dbidOverride?: string) => {
+		const dbid = dbidOverride ?? app.db.dbid ?? get(app.config.dbid);
+		const input = Object.assign(document.createElement("input"), { type: "file", accept: ".sqlite3,.sqlite,.db" });
+		input.onchange = async () => {
+			if (input.files?.[0]) await importStateArchive(input.files[0], dbid);
+		};
+		document.body.appendChild(input);
+		input.click();
+		document.body.removeChild(input);
+	};
+	window["importStateArchiveFromUrl"] = (url: string, dbidOverride?: string) => {
+		const dbid = dbidOverride ?? app.db.dbid ?? get(app.config.dbid);
+		return importStateArchiveFromUrl(url, dbid);
+	};
 
 	if (IS_E2E || IS_DEBUG) {
 		window["timeLogger"] = timeLogger;

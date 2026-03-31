@@ -148,10 +148,13 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	let lastOpenError: Error | null = null;
 	for (let attempt = 0; attempt < DB_OPEN_RETRIES; attempt++) {
 		try {
+			console.time(`[db] open (attempt ${attempt + 1})`);
 			db = await getDBCore(dbid, vfs);
+			console.timeEnd(`[db] open (attempt ${attempt + 1})`);
 			lastOpenError = null;
 			break;
 		} catch (e) {
+			console.timeEnd(`[db] open (attempt ${attempt + 1})`);
 			lastOpenError = e as Error;
 			if (attempt < DB_OPEN_RETRIES - 1) {
 				console.warn(`[db] Failed to open database (attempt ${attempt + 1}/${DB_OPEN_RETRIES}), retrying...`, e);
@@ -171,7 +174,9 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	}
 
 	// Integrity check - if this fails, DB needs to be nuked
+	console.time("[db] integrity_check");
 	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
+	console.timeEnd("[db] integrity_check");
 	if (res !== "ok") {
 		const err = new ErrDBCorrupted(res);
 		app.db.setState(dbid, AppDbState.Error, err);
@@ -179,14 +184,18 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	}
 
 	// Check if DB initialized (internally)
+	console.time("[db] schema_check");
 	const schemaRes = await getSchemaNameAndVersion(db);
+	console.timeEnd("[db] schema_check");
 	if (!schemaRes) {
 		// Apply the schema (initialise the db)
+		console.time("[db] schema_apply");
 		await db.exec(schemaContent);
 
 		// Store schema info in crsql_master
 		await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
 		await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
+		console.timeEnd("[db] schema_apply");
 
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
@@ -216,7 +225,9 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	}
 
 	try {
+		console.time("[db] automigrate");
 		const result = await db.automigrateTo(schemaName, schemaContent);
+		console.timeEnd("[db] automigrate");
 		console.log(`Auto-migration completed: ${result}`);
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it

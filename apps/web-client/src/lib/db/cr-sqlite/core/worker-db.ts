@@ -31,10 +31,14 @@ export function terminateAllWorkers(): void {
 }
 
 export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync> {
+	console.time("[worker-db] worker init");
 	const wkr = await initWorker(dbname, vfs);
+	console.timeEnd("[worker-db] worker init");
 
+	console.time("[worker-db] comlink setup");
 	const ifc = Comlink.wrap<DBAsyncRemote>(wkr);
 	const [__mutex, siteid, filename, tablesUsedStmt] = await Promise.all([ifc.__mutex, ifc.siteid, ifc.filename, ifc.tablesUsedStmt]);
+	console.timeEnd("[worker-db] comlink setup");
 
 	return new WorkerDB(wkr, ifc, __mutex, siteid, filename, tablesUsedStmt);
 }
