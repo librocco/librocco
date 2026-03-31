@@ -1,0 +1,22 @@
+@tailwind components;
+@tailwind utilities;
+
+/* Sidebar link hover states */
+.sidebar-content a {
+  border-radius: 0.25rem;
+  transition: background-color 150ms ease;
+}
+
+.sidebar-content a:hover:not([aria-current="page"]) {
+  background-color: rgb(0 0 0 / 0.03);
+}
+
+/* Sidebar group summary hover */
+.sidebar-content summary {
+  border-radius: 0.25rem;
+  transition: background-color 150ms ease;
+}
+
+.sidebar-content summary:hover {
+  background-color: rgb(0 0 0 / 0.03);
+}
