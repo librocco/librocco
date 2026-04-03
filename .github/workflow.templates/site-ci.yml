@@ -1,5 +1,7 @@
 #@ load("github.lib.yml", "checkout")
+#@ load("github.lib.yml", "pull_artefacts")
 #@ load("cache.lib.yml", "cache_node")
+#@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("r2.lib.yml", "install_and_configure_rclone")
@@ -22,9 +24,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       -  #@ checkout()
+      -  #@ pull_artefacts()
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Compute desired compiled artifact version
+        run: ./scripts/compute_artefacts_version.sh
+      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
