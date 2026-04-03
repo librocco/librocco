@@ -190,6 +190,7 @@ const {
     }
 
     function updateSize() {
+      if (!canvas || !ctx) return;
       const rect = container.getBoundingClientRect();
       const w = rect.width + borderOffset * 2;
       const h = rect.height + borderOffset * 2;
@@ -206,6 +207,7 @@ const {
     updateSize();
 
     function draw(currentTime: number) {
+      if (!canvas || !ctx) return;
       const delta = (currentTime - lastFrameTime) / 1000;
       timeRef += delta * speed;
       lastFrameTime = currentTime;
@@ -235,7 +237,6 @@ const {
         else ctx.lineTo(pt.x + dx, pt.y + dy);
       }
       ctx.closePath();
-      ctx.stroke();
       ctx.stroke();
 
       animationId = requestAnimationFrame(draw);
