@@ -1,28 +1,192 @@
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Logo size in header */
+html,
+body {
+	overflow-x: clip;
+}
+
+/* Design tokens — mirrored from Pencil variables */
+:root {
+	/* Colors */
+	--color-primary: #6788ff;
+	--color-primary-content: #e0d2fe;
+	--color-secondary: #f000b8;
+	--color-secondary-content: #ffd1f4;
+	--color-accent: #b19eef;
+	--color-accent-content: #0b1226;
+	--color-neutral: #2b3440;
+	--color-neutral-content: #d7dde4;
+	--color-base-100: #0b1226;
+	--color-base-200: #111a33;
+	--color-base-300: #24314f;
+	--color-base-content: #f5f6f8;
+	--color-info: #00b5ff;
+	--color-info-content: #001a23;
+	--color-success: #00a96e;
+	--color-success-content: #001f14;
+	--color-warning: #ffbe00;
+	--color-warning-content: #1a1200;
+	--color-error: #ff5861;
+	--color-error-content: #1a0003;
+
+	/* Border radius */
+	--radius-sm: 2px;
+	--radius-base: 4px;
+	--radius-md: 6px;
+	--radius-lg: 8px;
+	--radius-xl: 12px;
+	--radius-2xl: 16px;
+}
+
+/* Restore Starlight theme-select padding (reset by Tailwind Preflight) */
+starlight-theme-select select {
+	padding-inline: calc(0.875rem + 0.5rem + 0.25rem) calc(1.25rem + 0.5rem + 0.25rem);
+}
+
+/* Logo — match marketing nav size and position */
 .site-title img {
-  height: 1.4rem;
-  width: auto;
+	height: 1.3rem;
+	width: auto;
+}
+:root {
+	--sl-nav-pad-x: 1.25rem;
+	--sl-nav-height: 3.75rem;
+}
+
+/* Right sidebar border */
+[data-theme="dark"] .right-sidebar-container {
+	border-left: 1px solid #24314f;
+}
+
+/* Docs dark mode — match marketing site palette */
+[data-theme="dark"] {
+	--sl-color-bg: #0b1226;
+	--sl-color-bg-nav: #0b1226;
+	--sl-color-bg-sidebar: #0b1226;
+	--sl-color-black: #0b1226;
+	--sl-color-gray-6: #111a33;
+	--sl-color-gray-5: #24314f;
+	--sl-color-gray-4: #3d4f72;
+	--sl-color-gray-3: #7a8aaa;
+	--sl-color-gray-2: #c0c8d8;
+	--sl-color-gray-1: #f5f6f8;
+	--sl-color-white: #ffffff;
+	--sl-color-hairline: #24314f;
+	--sl-color-hairline-light: #24314f;
+	--sl-color-hairline-shade: #24314f;
+	--sl-color-text: #f5f6f8;
+	--sl-color-text-accent: #e0d2fe;
+	--sl-color-accent: #6788ff;
+	--sl-color-accent-high: #e0d2fe;
+	--sl-color-accent-low: #1e2e5c;
+}
+
+/* Search button hover */
+@media (min-width: 50rem) {
+	[data-theme="dark"] button[data-open-modal]:hover {
+		background-color: #111a33;
+		border-color: #24314f !important;
+	}
+}
+
+/* Pagination links */
+[data-theme="dark"] .pagination-links a:hover {
+	background-color: #111a33;
+	border-color: #24314f;
+}
+
+/* Mobile "On this page" toggle button */
+[data-theme="dark"] #starlight__on-this-page--mobile .toggle:hover {
+	background-color: #111a33;
+	border-color: #24314f;
+}
+
+/* Mobile hamburger button — remove circle, fix alignment (mobile only) */
+@media (max-width: 49.999rem) {
+	starlight-menu-button button {
+		border-radius: 0 !important;
+		background-color: transparent !important;
+		box-shadow: none !important;
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+		padding: 0 !important;
+		width: 2rem !important;
+		height: 2rem !important;
+	}
+}
+
+starlight-menu-button button svg {
+	width: 20px !important;
+	height: 20px !important;
+}
+
+/* X icon — hidden by default, shown when menu open */
+starlight-menu-button button .icon-close {
+	display: none;
+}
+starlight-menu-button[aria-expanded="true"] button .icon-close {
+	display: block;
+}
+starlight-menu-button[aria-expanded="true"] button .icon-menu {
+	display: none;
+}
+
+/* Mobile "On this page" dropdown bottom border */
+[data-theme="dark"] details:has(#starlight__on-this-page--mobile) .dropdown {
+	border-bottom: 1px solid #24314f;
+}
+
+/* Page title */
+.content-panel h1 {
+	font-size: 1.3rem;
+	font-weight: 600;
+}
+
+/* Sidebar active link */
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover,
+.sidebar-content a[aria-current="page"]:focus {
+	font-weight: inherit;
+	color: #214ce9;
+	background-color: #efefef;
+}
+
+[data-theme="dark"] .sidebar-content a[aria-current="page"],
+[data-theme="dark"] .sidebar-content a[aria-current="page"]:hover,
+[data-theme="dark"] .sidebar-content a[aria-current="page"]:focus {
+	color: #6788ff;
+	background-color: #1b2543;
 }
 
 /* Sidebar link hover states */
 .sidebar-content a {
-  border-radius: 0.25rem;
-  transition: background-color 150ms ease;
+	border-radius: 0.25rem;
+	transition: background-color 150ms ease;
 }
 
-.sidebar-content a:hover:not([aria-current="page"]) {
-  background-color: rgb(0 0 0 / 0.03);
+[data-theme="light"] .sidebar-content a:hover:not([aria-current="page"]) {
+	background-color: #efefef;
+}
+
+[data-theme="dark"] .sidebar-content a:hover:not([aria-current="page"]) {
+	background-color: #1b2543;
 }
 
 /* Sidebar group summary hover */
 .sidebar-content summary {
-  border-radius: 0.25rem;
-  transition: background-color 150ms ease;
+	display: flex;
+	align-items: center;
+	border-radius: 0.25rem;
+	transition: background-color 150ms ease;
+	list-style: none;
+}
+.sidebar-content summary::-webkit-details-marker {
+	display: none;
 }
 
 .sidebar-content summary:hover {
-  background-color: rgb(0 0 0 / 0.03);
+	background-color: rgba(229, 229, 229, 0.03);
 }

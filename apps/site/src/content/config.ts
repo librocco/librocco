@@ -37,4 +37,14 @@ const services = defineCollection({
 
 const docs = defineCollection({ schema: docsSchema() });
 
-export const collections = { blog, projects, services, docs };
+const changelog = defineCollection({
+  type: "content",
+  schema: z.object({
+    title: z.string(),
+    date: z.coerce.date(),
+    author: z.string(),
+    draft: z.boolean().optional(),
+  }),
+});
+
+export const collections = { blog, projects, services, docs, changelog };

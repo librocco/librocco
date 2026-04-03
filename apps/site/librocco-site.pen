@@ -1,244 +1,82 @@
 {
-  "version": "2.9",
+  "version": "2.10",
   "children": [
     {
       "type": "frame",
       "id": "bi8Au",
-      "x": 0,
-      "y": 0,
-      "name": "Frame",
+      "x": -12,
+      "y": 3,
+      "name": "Index - Desktop",
       "width": 1200,
       "fill": "#F8FAFF",
       "layout": "vertical",
       "children": [
         {
-          "type": "frame",
-          "id": "bt3tg",
-          "name": "Nav Section",
-          "width": "fill_container",
-          "fill": "#FFFFFF",
-          "stroke": {
-            "thickness": {
-              "bottom": 1
-            },
-            "fill": "$--color-base-300"
-          },
-          "padding": [
-            "$--space-3",
-            "$--space-5"
-          ],
-          "justifyContent": "space_between",
-          "alignItems": "center",
-          "children": [
-            {
-              "id": "x1zEZ",
-              "type": "ref",
-              "ref": "g39hH",
+          "id": "AFetz",
+          "type": "ref",
+          "ref": "bt3tg",
+          "x": 0,
+          "y": 0,
+          "height": "fit_content",
+          "descendants": {
+            "x1zEZ": {
               "x": 20,
-              "y": 17.547619047619047
+              "y": 17.54761904761905
             },
-            {
-              "type": "frame",
-              "id": "qZZXh",
-              "name": "navLinks",
-              "gap": "$--space-6",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "6WPxR",
-                  "name": "lnk1",
-                  "fill": "$--color-base-content",
-                  "content": "Features",
-                  "fontFamily": "Inter",
-                  "fontSize": "$--text-sm",
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "text",
-                  "id": "AkrK5",
-                  "name": "lnk2",
-                  "fill": "$--color-base-content",
-                  "content": "Changelog",
-                  "fontFamily": "Inter",
-                  "fontSize": "$--text-sm",
-                  "fontWeight": "500"
-                },
-                {
-                  "type": "text",
-                  "id": "1fan2",
-                  "name": "lnk3",
-                  "fill": "$--color-base-content",
-                  "content": "GitHub",
-                  "fontFamily": "Inter",
-                  "fontSize": "$--text-sm",
-                  "fontWeight": "500"
-                },
-                {
-                  "id": "Hyiqj",
-                  "type": "ref",
-                  "ref": "hX60E",
-                  "x": 251,
-                  "y": 0,
-                  "descendants": {
-                    "hYpzv": {
-                      "content": "Docs"
-                    }
-                  }
-                }
-              ]
+            "qZZXh": {
+              "x": 889,
+              "y": 12,
+              "width": "fit_content",
+              "height": "fit_content"
+            },
+            "AkrK5": {
+              "x": 0,
+              "y": 8
+            },
+            "6WPxR": {
+              "y": 8,
+              "x": 97
+            },
+            "1fan2": {
+              "x": 194,
+              "y": 9
+            },
+            "rXp0s": {
+              "width": "fit_content",
+              "height": "fit_content",
+              "x": 232
             }
-          ]
+          }
         },
         {
           "type": "frame",
           "id": "kzJtD",
           "name": "Hero Section",
           "width": "fill_container",
-          "fill": {
-            "type": "mesh_gradient",
-            "enabled": true,
-            "columns": 3,
-            "rows": 3,
-            "colors": [
-              "$--color-base-200",
-              "#00b7ff14",
-              "$--color-base-200",
-              "$--color-base-200",
-              "#a166ff08",
-              "$--color-base-200",
-              "$--color-base-200",
-              "#00b7ff1f",
-              "$--color-base-200"
-            ],
-            "points": [
-              [
-                0,
-                0
-              ],
-              [
-                0.5,
-                0
-              ],
-              [
-                1,
-                0
-              ],
-              [
-                0,
-                0.5
-              ],
-              {
-                "position": [
-                  0.4806,
-                  0.4952
-                ],
-                "leftHandle": [
-                  -0.2355,
-                  -0.027
-                ],
-                "rightHandle": [
-                  0.2355,
-                  0.027
-                ],
-                "topHandle": [
-                  -0.0034,
-                  -0.1936
-                ],
-                "bottomHandle": [
-                  0.0034,
-                  0.1936
-                ]
-              },
-              {
-                "position": [
-                  1,
-                  0.4154
-                ],
-                "leftHandle": [
-                  -0.2489,
-                  -0.1782
-                ],
-                "rightHandle": [
-                  0.2489,
-                  0.1782
-                ]
-              },
-              {
-                "position": [
-                  0,
-                  1
-                ],
-                "leftHandle": [
-                  -0.114,
-                  -0.1316
-                ],
-                "rightHandle": [
-                  0.114,
-                  0.1316
-                ]
-              },
-              {
-                "position": [
-                  0.4996,
-                  1
-                ],
-                "topHandle": [
-                  -0.3263,
-                  0.2325
-                ],
-                "bottomHandle": [
-                  0.3263,
-                  -0.2325
-                ]
-              },
-              [
-                1,
-                1
-              ]
-            ]
-          },
+          "fill": "$--color-base-100",
           "layout": "vertical",
           "gap": "$--space-8",
-          "padding": 80,
+          "padding": "$--space-20",
           "alignItems": "center",
           "children": [
             {
-              "type": "frame",
-              "id": "amY0u",
-              "name": "badge",
-              "reusable": true,
-              "fill": "$--color-info",
-              "cornerRadius": "$--radius-full",
-              "gap": "$--space-1",
-              "padding": [
-                6,
-                12
-              ],
-              "justifyContent": "center",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "M8MXJ",
-                  "name": "badgeText",
-                  "fill": "$--color-base-content",
-                  "content": "zap",
-                  "fontFamily": "lucide",
-                  "fontSize": "$--text-sm",
-                  "fontWeight": "600"
+              "id": "29W2t",
+              "type": "ref",
+              "ref": "amY0u",
+              "y": 80,
+              "width": "fit_content",
+              "height": "fit_content",
+              "x": 513,
+              "descendants": {
+                "M8MXJ": {
+                  "x": 8,
+                  "y": 7
                 },
-                {
-                  "type": "text",
-                  "id": "JT8Eu",
-                  "name": "badgeText",
-                  "fill": "$--color-base-content",
-                  "content": "Powered by cr-sqlite",
-                  "fontFamily": "Inter",
-                  "fontSize": "$--text-sm",
-                  "fontWeight": "600"
+                "JT8Eu": {
+                  "x": 26,
+                  "y": 6
                 }
-              ]
+              }
             },
             {
               "type": "frame",
@@ -252,11 +90,11 @@
                   "type": "text",
                   "id": "lYdY3",
                   "name": "headline",
-                  "fill": "#0B132B",
+                  "fill": "$--color-base-content",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "Local-first,\nlightning fast,\ninventory management",
-                  "lineHeight": 1.05,
+                  "content": "Local-First\nInventory Management",
+                  "lineHeight": "$--leading-tight",
                   "textAlign": "center",
                   "fontFamily": "$--typeface-sans",
                   "fontSize": "$--text-6xl",
@@ -269,7 +107,7 @@
                   "fill": "$--color-base-content",
                   "textGrowth": "fixed-width",
                   "width": "fill_container",
-                  "content": "Accurate stock tracking that never stops. Sync effortlessly across multiple terminals, even when the internet goes dark.",
+                  "content": "Lightning fast and accurate stock tracking that never stops. Sync effortlessly across multiple terminals, even when the internet goes dark.",
                   "lineHeight": 1.4,
                   "textAlign": "center",
                   "fontFamily": "$--typeface-sans",
@@ -286,58 +124,55 @@
               "alignItems": "center",
               "children": [
                 {
-                  "type": "frame",
-                  "id": "9fRPn",
-                  "name": "primaryBtn",
-                  "fill": "#4F46E5",
-                  "cornerRadius": 16,
-                  "padding": [
-                    14,
-                    30
-                  ],
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "Zn75A",
-                      "name": "primaryTxt",
-                      "fill": "#FFFFFF",
-                      "content": "Deploy Now →",
-                      "fontFamily": "Inter",
-                      "fontSize": 28,
-                      "fontWeight": "700"
+                  "id": "uVwft",
+                  "type": "ref",
+                  "ref": "Qv0dG",
+                  "x": 0,
+                  "y": 0,
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "fill": "$--color-base-content",
+                  "descendants": {
+                    "MB1op": {
+                      "x": 24,
+                      "y": 13,
+                      "fill": "$--color-base-100"
+                    },
+                    "kNoTU": {
+                      "x": 45,
+                      "y": 12,
+                      "fill": "$--color-base-100"
                     }
-                  ]
+                  }
                 },
                 {
-                  "type": "frame",
-                  "id": "glmUe",
-                  "name": "secondaryBtn",
-                  "fill": "#FFFFFF",
-                  "cornerRadius": 16,
+                  "id": "A0yyW",
+                  "type": "ref",
+                  "ref": "Qv0dG",
+                  "x": 177,
+                  "y": 0,
+                  "fill": "$--color-base-200",
                   "stroke": {
+                    "align": "inside",
                     "thickness": 1,
-                    "fill": "#E2E8F0"
+                    "fill": "$--color-base-300"
                   },
-                  "padding": [
-                    14,
-                    30
-                  ],
-                  "justifyContent": "center",
-                  "alignItems": "center",
-                  "children": [
-                    {
-                      "type": "text",
-                      "id": "Y6YNR",
-                      "name": "secondaryTxt",
-                      "fill": "#0F172A",
-                      "content": "☆  Star on GitHub",
-                      "fontFamily": "Inter",
-                      "fontSize": 28,
-                      "fontWeight": "700"
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "descendants": {
+                    "MB1op": {
+                      "content": "github",
+                      "fill": "$--color-base-content",
+                      "x": 24,
+                      "y": 13
+                    },
+                    "kNoTU": {
+                      "content": "Star on Github",
+                      "fill": "$--color-base-content",
+                      "x": 45,
+                      "y": 12
                     }
-                  ]
+                  }
                 }
               ]
             }
@@ -345,55 +180,58 @@
         },
         {
           "type": "frame",
-          "id": "U0rvv",
-          "name": "Features Placeholder",
+          "id": "Ogrs7",
+          "name": "Divider",
           "width": "fill_container",
-          "fill": "#FFFFFF",
+          "height": 1,
+          "fill": "$--color-base-300"
+        },
+        {
+          "type": "frame",
+          "id": "U0rvv",
+          "name": "Features",
+          "width": "fill_container",
+          "fill": "$--color-base-100",
           "layout": "vertical",
           "gap": 40,
-          "padding": [
-            72,
-            80,
-            96,
-            80
-          ],
+          "padding": "$--space-20",
           "alignItems": "center",
           "children": [
             {
               "type": "frame",
               "id": "6qZuV",
               "name": "headingBlock",
-              "width": "fill_container",
+              "width": 575,
               "layout": "vertical",
-              "gap": 14,
+              "gap": "$--space-2",
               "alignItems": "center",
               "children": [
                 {
                   "type": "text",
                   "id": "CyehY",
                   "name": "heading",
-                  "fill": "#0F172A",
+                  "fill": "$--color-base-content",
                   "textGrowth": "fixed-width",
-                  "width": 720,
-                  "content": "Built for resiliancy",
+                  "width": "fill_container",
+                  "content": "Built for Resiliancy",
                   "lineHeight": 1.08,
                   "textAlign": "center",
                   "fontFamily": "Inter",
-                  "fontSize": 28,
+                  "fontSize": "$--text-3xl",
                   "fontWeight": "700"
                 },
                 {
                   "type": "text",
                   "id": "e0SCQ",
                   "name": "subheading",
-                  "fill": "#475569",
+                  "fill": "$--color-base-content",
                   "textGrowth": "fixed-width",
-                  "width": 720,
+                  "width": "fill_container",
                   "content": "Everything you need to manage massive catalogs across distributed locations without fear of data loss.",
                   "lineHeight": 1.45,
                   "textAlign": "center",
                   "fontFamily": "Inter",
-                  "fontSize": 18,
+                  "fontSize": "$--text-lg",
                   "fontWeight": "normal"
                 }
               ]
@@ -403,169 +241,209 @@
               "id": "B8F39",
               "name": "cardsRow",
               "width": "fill_container",
+              "height": "fit_content(250)",
               "gap": 24,
               "children": [
                 {
-                  "type": "frame",
-                  "id": "Xz7MO",
-                  "name": "card1",
+                  "id": "SC33C",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 0,
+                  "height": "fill_container",
                   "width": "fill_container",
-                  "fill": "#F8FAFC",
-                  "cornerRadius": 20,
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1,
-                    "fill": "#E2E8F0"
-                  },
-                  "layout": "vertical",
-                  "gap": 16,
-                  "padding": 28,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "UWx7Z",
-                      "name": "iconWrap1",
-                      "width": 56,
-                      "height": 56,
-                      "fill": "#DBEAFE",
-                      "cornerRadius": 14,
-                      "layout": "none"
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
                     },
-                    {
-                      "type": "text",
-                      "id": "vr67q",
-                      "name": "title1",
-                      "fill": "#0F172A",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "Live Stock Visibility",
-                      "lineHeight": 1.2,
-                      "fontFamily": "Inter",
-                      "fontSize": 22,
-                      "fontWeight": "700"
+                    "7AVRz": {
+                      "x": 13.5,
+                      "y": 12.5
                     },
-                    {
-                      "type": "text",
-                      "id": "kJKLD",
-                      "name": "desc1",
-                      "fill": "#475569",
-                      "textGrowth": "fixed-width",
+                    "vr67q": {
+                      "content": "Offline-first",
                       "width": "fill_container",
-                      "content": "Monitor inventory across channels in one dashboard and prevent costly stockouts before they happen.",
-                      "lineHeight": 1.5,
-                      "fontFamily": "Inter",
-                      "fontSize": 16,
-                      "fontWeight": "normal"
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Continue scanning, editing, and selling even when offline. Data is persisted locally and synced automatically when a connection is restored.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
                     }
-                  ]
+                  }
                 },
                 {
-                  "type": "frame",
-                  "id": "YuU6U",
-                  "name": "card2",
+                  "id": "6uLFV",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 354.6666666666667,
+                  "y": 0,
+                  "height": "fill_container",
                   "width": "fill_container",
-                  "fill": "#F8FAFC",
-                  "cornerRadius": 20,
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1,
-                    "fill": "#E2E8F0"
-                  },
-                  "layout": "vertical",
-                  "gap": 16,
-                  "padding": 28,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "ugh92",
-                      "name": "iconWrap2",
-                      "width": 56,
-                      "height": 56,
-                      "fill": "#E0E7FF",
-                      "cornerRadius": 14,
-                      "layout": "none"
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
                     },
-                    {
-                      "type": "text",
-                      "id": "1UZcb",
-                      "name": "title2",
-                      "fill": "#0F172A",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "Smart Reorder Forecasts",
-                      "lineHeight": 1.2,
-                      "fontFamily": "Inter",
-                      "fontSize": 22,
-                      "fontWeight": "700"
+                    "7AVRz": {
+                      "content": "layers",
+                      "x": 13.5,
+                      "y": 12.5
                     },
-                    {
-                      "type": "text",
-                      "id": "uJxZO",
-                      "name": "desc2",
-                      "fill": "#475569",
-                      "textGrowth": "fixed-width",
+                    "vr67q": {
+                      "content": "Multi-Terminal Sync",
                       "width": "fill_container",
-                      "content": "Predict demand with AI-powered recommendations so you reorder at the right time and protect cash flow.",
-                      "lineHeight": 1.5,
-                      "fontFamily": "Inter",
-                      "fontSize": 16,
-                      "fontWeight": "normal"
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Coordinate stock levels across multiple devices in real-time. Concurrent edits are merged seamlessly using cr-sqlite's CRDT capabilities.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
                     }
-                  ]
+                  }
                 },
                 {
-                  "type": "frame",
-                  "id": "KkNgp",
-                  "name": "card3",
+                  "id": "Z2Ps9",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 709.3333333333334,
+                  "y": 0,
+                  "height": "fill_container",
                   "width": "fill_container",
-                  "fill": "#F8FAFC",
-                  "cornerRadius": 20,
-                  "stroke": {
-                    "align": "inside",
-                    "thickness": 1,
-                    "fill": "#E2E8F0"
-                  },
-                  "layout": "vertical",
-                  "gap": 16,
-                  "padding": 28,
-                  "children": [
-                    {
-                      "type": "frame",
-                      "id": "cqG8O",
-                      "name": "iconWrap3",
-                      "width": 56,
-                      "height": 56,
-                      "fill": "#DCFCE7",
-                      "cornerRadius": 14,
-                      "layout": "none"
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
                     },
-                    {
-                      "type": "text",
-                      "id": "CMROR",
-                      "name": "title3",
-                      "fill": "#0F172A",
-                      "textGrowth": "fixed-width",
-                      "width": "fill_container",
-                      "content": "Profit & Turnover Insights",
-                      "lineHeight": 1.2,
-                      "fontFamily": "Inter",
-                      "fontSize": 22,
-                      "fontWeight": "700"
+                    "7AVRz": {
+                      "content": "database",
+                      "x": 13.5,
+                      "y": 12.5
                     },
-                    {
-                      "type": "text",
-                      "id": "mRaBO",
-                      "name": "desc3",
-                      "fill": "#475569",
-                      "textGrowth": "fixed-width",
+                    "vr67q": {
+                      "content": "CR-SQLite Core",
                       "width": "fill_container",
-                      "content": "Spot slow-moving SKUs, improve sell-through, and prioritize the products that grow your margins.",
-                      "lineHeight": 1.5,
-                      "fontFamily": "Inter",
-                      "fontSize": 16,
-                      "fontWeight": "normal"
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Leverages the power of Conflict-free Replicated SQLite to ensure your inventory state is always deterministic and accurate.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
                     }
-                  ]
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "4nWlC",
+              "name": "cardsRow",
+              "width": "fill_container",
+              "height": "fit_content(250)",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "aJVlt",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 0,
+                  "height": "fill_container",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "terminal",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Developer Friendly",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Extensible API and modular architecture. Easy to integrate with existing POS systems or custom library management workflows.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                },
+                {
+                  "id": "2Fpc2",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 354.6666666666667,
+                  "y": 0,
+                  "height": "fill_container",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "smartphone",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Responsive UI",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "A polished interface that works perfectly on desktop scanners, tablets for floor workers, and mobile devices for quick checks.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                },
+                {
+                  "id": "JVIl8",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 709.3333333333334,
+                  "y": 0,
+                  "height": "fill_container",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "zap",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Lightning Fast",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Optimized for huge datasets. Search through millions of records in milliseconds using native SQLite indexing.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
                 }
               ]
             }
@@ -573,18 +451,20 @@
         },
         {
           "type": "frame",
+          "id": "XeMt3",
+          "name": "Divider",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "$--color-base-300"
+        },
+        {
+          "type": "frame",
           "id": "66Ymh",
-          "name": "Closing Placeholder",
+          "name": "CTA",
           "width": "fill_container",
           "fill": "#0B1226",
-          "layout": "vertical",
           "gap": 40,
-          "padding": [
-            88,
-            80,
-            40,
-            80
-          ],
+          "padding": "$--space-20",
           "alignItems": "center",
           "children": [
             {
@@ -592,57 +472,38 @@
               "id": "jDE3S",
               "name": "CTA Card",
               "width": "fill_container",
-              "fill": "#111A33",
               "cornerRadius": 24,
               "stroke": {
-                "thickness": 1,
-                "fill": "#24314F"
+                "thickness": 1
               },
               "layout": "vertical",
               "gap": 24,
-              "padding": [
-                48,
-                56
-              ],
-              "alignItems": "center",
+              "justifyContent": "center",
               "children": [
-                {
-                  "type": "text",
-                  "id": "eCNDn",
-                  "name": "ctaEyebrow",
-                  "fill": "#93C5FD",
-                  "content": "READY TO MODERNIZE YOUR INVENTORY?",
-                  "fontFamily": "Inter",
-                  "fontSize": 13,
-                  "fontWeight": "700",
-                  "letterSpacing": 1.1
-                },
                 {
                   "type": "text",
                   "id": "1Vk2u",
                   "name": "ctaTitle",
-                  "fill": "#F8FAFF",
+                  "fill": "$--color-base-content",
                   "textGrowth": "fixed-width",
-                  "width": 760,
-                  "content": "Start shipping with confidence\n—even when the network fails.",
+                  "width": "fill_container",
+                  "content": "Ready to catalog?",
                   "lineHeight": 1.1,
-                  "textAlign": "center",
                   "fontFamily": "Inter",
-                  "fontSize": 56,
+                  "fontSize": "$--text-5xl",
                   "fontWeight": "800"
                 },
                 {
                   "type": "text",
                   "id": "lFt0G",
                   "name": "ctaSub",
-                  "fill": "#94A3B8",
+                  "fill": "$--color-base-content",
                   "textGrowth": "fixed-width",
-                  "width": 700,
-                  "content": "Deploy in minutes, keep every terminal in sync, and never lose track of stock again.",
+                  "width": "fill_container",
+                  "content": "Our documentation covers everything from single-store setups to enterprise-wide distributed deployments. Get up and running in under 5 minutes.",
                   "lineHeight": 1.4,
-                  "textAlign": "center",
                   "fontFamily": "Inter",
-                  "fontSize": 22,
+                  "fontSize": "$--text-base",
                   "fontWeight": "500"
                 },
                 {
@@ -653,109 +514,163 @@
                   "alignItems": "center",
                   "children": [
                     {
-                      "type": "frame",
-                      "id": "gBY0h",
-                      "name": "ctaPrimary",
-                      "fill": "#4F46E5",
-                      "cornerRadius": 14,
-                      "padding": [
-                        14,
-                        26
-                      ],
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "bh3vw",
-                          "name": "ctaPrimaryTxt",
-                          "fill": "#FFFFFF",
-                          "content": "Deploy Now",
-                          "fontFamily": "Inter",
-                          "fontSize": 22,
-                          "fontWeight": "700"
+                      "id": "3Pmu9",
+                      "type": "ref",
+                      "ref": "Qv0dG",
+                      "x": 0,
+                      "y": 0,
+                      "fill": "$--color-info",
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "descendants": {
+                        "MB1op": {
+                          "fill": "$--color-base-100",
+                          "content": "book-open",
+                          "x": 24,
+                          "y": 13
+                        },
+                        "kNoTU": {
+                          "content": "Read the docs",
+                          "x": 45,
+                          "y": 12,
+                          "fill": "$--color-base-100"
                         }
-                      ]
+                      }
                     },
                     {
-                      "type": "frame",
-                      "id": "FGH9D",
-                      "name": "ctaGhost",
-                      "fill": "#1E293B",
-                      "cornerRadius": 14,
+                      "id": "ktPkE",
+                      "type": "ref",
+                      "ref": "Qv0dG",
+                      "x": 194,
+                      "y": 0,
+                      "fill": "$--color-base-200",
                       "stroke": {
+                        "align": "inside",
                         "thickness": 1,
-                        "fill": "#334155"
+                        "fill": "$--color-base-300"
                       },
-                      "padding": [
-                        14,
-                        26
-                      ],
-                      "justifyContent": "center",
-                      "alignItems": "center",
-                      "children": [
-                        {
-                          "type": "text",
-                          "id": "uNROk",
-                          "name": "ctaGhostTxt",
-                          "fill": "#E2E8F0",
-                          "content": "View Docs",
-                          "fontFamily": "Inter",
-                          "fontSize": 22,
-                          "fontWeight": "700"
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "descendants": {
+                        "MB1op": {
+                          "content": "branchgit-branch",
+                          "fill": "$--color-base-content",
+                          "x": 24,
+                          "y": 13
+                        },
+                        "kNoTU": {
+                          "content": "View source",
+                          "fill": "$--color-base-content",
+                          "x": 45,
+                          "y": 12
                         }
-                      ]
+                      }
                     }
                   ]
-                },
-                {
-                  "type": "text",
-                  "id": "0bOlf",
-                  "name": "trust",
-                  "fill": "#64748B",
-                  "content": "No credit card required · MIT licensed · Self-hosted",
-                  "fontFamily": "Inter",
-                  "fontSize": 16,
-                  "fontWeight": "500"
                 }
               ]
             },
             {
               "type": "frame",
-              "id": "ZvRum",
-              "name": "footerDivider",
+              "id": "DB88c",
+              "name": "CTA Card",
               "width": "fill_container",
-              "height": 1,
-              "fill": "#1E293B"
-            },
+              "fill": "$--color-base-200",
+              "cornerRadius": "$--radius-xl",
+              "stroke": {
+                "thickness": 1,
+                "fill": "$--color-base-300"
+              },
+              "layout": "vertical",
+              "gap": "$--text-xl",
+              "padding": "$--space-4",
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "GCH7L",
+                  "name": "WindowControls",
+                  "clip": true,
+                  "width": "fill_container",
+                  "gap": "$--space-2",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "imTlc",
+                      "fill": "#fa2c36ff",
+                      "width": 14,
+                      "height": 14
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "mp6mT",
+                      "fill": "#fd9a03ff",
+                      "width": 14,
+                      "height": 14
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "OpTly",
+                      "fill": "#05bd7dff",
+                      "width": 14,
+                      "height": 14
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "xgm0V",
+                  "name": "terminalPrompt",
+                  "fill": "$--color-primary-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "# Clone the repository\ngit clone https://github.com/librestock/core.git\n\n# Install dependencies\nnpm install\n\n# Initialize local SQLite DB\nnpm run db:init\n\n# Start the sync engine\nnpm run start:sync\n\n# Success! Local terminal is now live.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "$--typeface-mono",
+                  "fontSize": "$--text-sm",
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "z73WC",
+          "name": "Divider",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "$--color-base-300"
+        },
+        {
+          "type": "frame",
+          "id": "SMzan",
+          "name": "Footer",
+          "width": "fill_container",
+          "fill": "#0B1226",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": "$--space-6",
+          "alignItems": "center",
+          "children": [
             {
               "type": "frame",
-              "id": "YOzCF",
+              "id": "uj8Fu",
               "name": "footerRow",
               "width": "fill_container",
-              "justifyContent": "space_between",
+              "gap": "$--space-8",
               "alignItems": "center",
               "children": [
                 {
-                  "type": "text",
-                  "id": "luJm0",
-                  "name": "footBrand",
-                  "fill": "#94A3B8",
-                  "content": "© 2026 LibreStock",
-                  "fontFamily": "Inter",
-                  "fontSize": 15,
-                  "fontWeight": "500"
-                },
-                {
                   "type": "frame",
-                  "id": "kK84D",
+                  "id": "284ZE",
                   "name": "footLinks",
                   "gap": 22,
                   "alignItems": "center",
                   "children": [
                     {
                       "type": "text",
-                      "id": "7D6WH",
+                      "id": "kpqkF",
                       "name": "footL1",
                       "fill": "#CBD5E1",
                       "content": "Docs",
@@ -765,25 +680,45 @@
                     },
                     {
                       "type": "text",
-                      "id": "efpBX",
+                      "id": "Ke2oe",
                       "name": "footL2",
                       "fill": "#CBD5E1",
-                      "content": "Privacy",
+                      "content": "Changelog",
                       "fontFamily": "Inter",
                       "fontSize": 15,
                       "fontWeight": "500"
                     },
                     {
                       "type": "text",
-                      "id": "uq5no",
+                      "id": "CHqgX",
                       "name": "footL3",
                       "fill": "#CBD5E1",
-                      "content": "Terms",
+                      "content": "Github",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Trd79",
+                      "name": "footL3",
+                      "fill": "#CBD5E1",
+                      "content": "Contact us",
                       "fontFamily": "Inter",
                       "fontSize": 15,
                       "fontWeight": "500"
                     }
                   ]
+                },
+                {
+                  "type": "text",
+                  "id": "AQXGz",
+                  "name": "footBrand",
+                  "fill": "#94A3B8",
+                  "content": "© 2026 Librocco",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "500"
                 }
               ]
             }
@@ -814,8 +749,8 @@
     {
       "type": "frame",
       "id": "hX60E",
-      "x": -555,
-      "y": 179,
+      "x": -559,
+      "y": 253,
       "name": "btn-sm",
       "reusable": true,
       "fill": "$--color-base-content",
@@ -832,7 +767,7 @@
           "type": "text",
           "id": "hYpzv",
           "name": "ctaTxt",
-          "fill": "#FFFFFF",
+          "fill": "$--color-base-100",
           "content": "Get Started",
           "textAlignVertical": "middle",
           "fontFamily": "$--typeface-sans",
@@ -844,8 +779,8 @@
     {
       "type": "frame",
       "id": "HvYDv",
-      "x": -437,
-      "y": 179,
+      "x": -441,
+      "y": 253,
       "name": "btn-sm-icon",
       "reusable": true,
       "fill": "$--color-base-content",
@@ -862,7 +797,7 @@
           "type": "text",
           "id": "VJtp9",
           "name": "ctaTxt",
-          "fill": "#FFFFFF",
+          "fill": "$--color-base-100",
           "content": "lightninspsparklebobo",
           "textAlignVertical": "middle",
           "fontFamily": "lucide",
@@ -873,12 +808,2542 @@
           "type": "text",
           "id": "4jEbz",
           "name": "ctaTxt",
-          "fill": "#FFFFFF",
+          "fill": "$--color-base-100",
           "content": "Get Started",
           "textAlignVertical": "middle",
           "fontFamily": "$--typeface-sans",
           "fontSize": "$--text-sm",
           "fontWeight": "700"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "amY0u",
+      "x": -559,
+      "y": 180,
+      "name": "badge",
+      "reusable": true,
+      "fill": "$--color-info",
+      "cornerRadius": "$--radius-full",
+      "gap": "$--space-1",
+      "padding": [
+        6,
+        "$--space-2"
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "text",
+          "id": "M8MXJ",
+          "name": "badgeText",
+          "fill": "$--color-base-100",
+          "content": "zap",
+          "fontFamily": "lucide",
+          "fontSize": "$--text-sm",
+          "fontWeight": "600"
+        },
+        {
+          "type": "text",
+          "id": "JT8Eu",
+          "name": "badgeText",
+          "fill": "$--color-base-100",
+          "content": "Powered by cr-sqlite",
+          "fontFamily": "$--typeface-sans",
+          "fontSize": "$--text-sm",
+          "fontWeight": "600"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Qv0dG",
+      "x": -441,
+      "y": 356,
+      "name": "btn-lg-icon",
+      "reusable": true,
+      "fill": "$--color-base-content",
+      "cornerRadius": "$--radius-xl",
+      "gap": "$--space-1",
+      "padding": [
+        "$--space-3",
+        "$--space-6"
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "text",
+          "id": "MB1op",
+          "name": "ctaTxt",
+          "fill": "$--color-base-100",
+          "content": "arrow-right",
+          "textAlignVertical": "middle",
+          "fontFamily": "lucide",
+          "fontSize": 16,
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "kNoTU",
+          "name": "ctaTxt",
+          "fill": "$--color-base-100",
+          "content": "Deploy now",
+          "textAlignVertical": "middle",
+          "fontFamily": "$--typeface-sans",
+          "fontSize": "$--text-base",
+          "fontWeight": "700"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Xz7MO",
+      "x": -559,
+      "y": 607,
+      "name": "card",
+      "reusable": true,
+      "width": "fill_container(300)",
+      "fill": "$--color-base-200",
+      "cornerRadius": "$--radius-2xl",
+      "stroke": {
+        "align": "inside",
+        "thickness": 1,
+        "fill": "$--color-base-300"
+      },
+      "layout": "vertical",
+      "gap": "$--space-4",
+      "padding": "$--space-6",
+      "children": [
+        {
+          "type": "frame",
+          "id": "UWx7Z",
+          "name": "iconWrap1",
+          "width": 56,
+          "height": 56,
+          "fill": "$--color-base-300",
+          "cornerRadius": 14,
+          "layout": "vertical",
+          "justifyContent": "center",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "7AVRz",
+              "name": "ctaTxt",
+              "fill": "$--color-base-content",
+              "content": "wifwifi-off",
+              "textAlignVertical": "middle",
+              "fontFamily": "lucide",
+              "fontSize": 28,
+              "fontWeight": "700"
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "id": "vr67q",
+          "name": "title1",
+          "fill": "$--color-base-content",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "Live Stock Visibility",
+          "lineHeight": 1.2,
+          "fontFamily": "$--typeface-sans",
+          "fontSize": "$--text-2xl",
+          "fontWeight": "700"
+        },
+        {
+          "type": "text",
+          "id": "kJKLD",
+          "name": "desc1",
+          "fill": "$--color-base-content",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "Monitor inventory across channels in one dashboard and prevent costly stockouts before they happen.",
+          "lineHeight": 1.5,
+          "fontFamily": "Inter",
+          "fontSize": "$--text-sm",
+          "fontWeight": "normal"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "Z3ZrI",
+      "x": 1292,
+      "y": 3,
+      "name": "Index - Tablet",
+      "width": 1000,
+      "fill": "#F8FAFF",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "A32P4",
+          "type": "ref",
+          "ref": "bt3tg",
+          "x": 0,
+          "y": 0,
+          "width": "fill_container",
+          "height": "fit_content",
+          "descendants": {
+            "x1zEZ": {
+              "x": 20,
+              "y": 17.54761904761905
+            },
+            "qZZXh": {
+              "x": 689,
+              "y": 12,
+              "width": "fit_content",
+              "height": "fit_content"
+            },
+            "AkrK5": {
+              "x": 0,
+              "y": 8
+            },
+            "6WPxR": {
+              "y": 8,
+              "x": 97
+            },
+            "1fan2": {
+              "x": 194,
+              "y": 9
+            },
+            "rXp0s": {
+              "width": "fit_content",
+              "height": "fit_content",
+              "x": 232
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "3vBJC",
+          "name": "Hero Section",
+          "width": "fill_container",
+          "fill": "$--color-base-100",
+          "layout": "vertical",
+          "gap": "$--space-8",
+          "padding": [
+            "$--space-20",
+            "$--space-10"
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "CjFls",
+              "type": "ref",
+              "ref": "amY0u",
+              "y": 80,
+              "width": "fit_content",
+              "height": "fit_content",
+              "x": 413,
+              "descendants": {
+                "M8MXJ": {
+                  "x": 8,
+                  "y": 7
+                },
+                "JT8Eu": {
+                  "x": 26,
+                  "y": 6
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "hZdn4",
+              "name": "Frame 1",
+              "width": "fit_content(640)",
+              "layout": "vertical",
+              "gap": "$--space-5",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "2THz2",
+                  "name": "headline",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Local-First\nInventory Management",
+                  "lineHeight": "$--leading-tight",
+                  "textAlign": "center",
+                  "fontFamily": "$--typeface-sans",
+                  "fontSize": "$--text-5xl",
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "2lyzP",
+                  "name": "sub",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Lightning fast and accurate stock tracking that never stops. Sync effortlessly across multiple terminals, even when the internet goes dark.",
+                  "lineHeight": 1.4,
+                  "textAlign": "center",
+                  "fontFamily": "$--typeface-sans",
+                  "fontSize": "$--text-lg",
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "xqPZg",
+              "name": "heroCtas",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "ovohL",
+                  "type": "ref",
+                  "ref": "Qv0dG",
+                  "x": 0,
+                  "y": 0,
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "descendants": {
+                    "MB1op": {
+                      "x": 24,
+                      "y": 13
+                    },
+                    "kNoTU": {
+                      "x": 45,
+                      "y": 12
+                    }
+                  }
+                },
+                {
+                  "id": "mgj6n",
+                  "type": "ref",
+                  "ref": "Qv0dG",
+                  "x": 177,
+                  "y": 0,
+                  "fill": "$--color-base-100",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--color-base-300"
+                  },
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "descendants": {
+                    "MB1op": {
+                      "content": "github",
+                      "fill": "$--color-base-content",
+                      "x": 24,
+                      "y": 13
+                    },
+                    "kNoTU": {
+                      "content": "Star on Github",
+                      "fill": "$--color-base-content",
+                      "x": 45,
+                      "y": 12
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "48l0j",
+          "name": "Divider",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "$--color-base-300"
+        },
+        {
+          "type": "frame",
+          "id": "I8K3Q",
+          "name": "Features",
+          "width": "fill_container",
+          "fill": "$--color-base-100",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": [
+            "$--space-20",
+            "$--space-10"
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "eJDLd",
+              "name": "headingBlock",
+              "width": 575,
+              "layout": "vertical",
+              "gap": "$--space-2",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "rRBTr",
+                  "name": "heading",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Built for Resiliancy",
+                  "lineHeight": 1.08,
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-3xl",
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "WBUdB",
+                  "name": "subheading",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Everything you need to manage massive catalogs across distributed locations without fear of data loss.",
+                  "lineHeight": 1.45,
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-lg",
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "ad6rR",
+              "name": "cardsRow",
+              "width": "fill_container",
+              "height": "fit_content(250)",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "6U8gu",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 0,
+                  "height": "fill_container",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Offline-first",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Continue scanning, editing, and selling even when offline. Data is persisted locally and synced automatically when a connection is restored.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                },
+                {
+                  "id": "3ktdp",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 472,
+                  "y": 0,
+                  "height": "fill_container",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "layers",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Multi-Terminal Sync",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Coordinate stock levels across multiple devices in real-time. Concurrent edits are merged seamlessly using cr-sqlite's CRDT capabilities.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "H0u6e",
+              "name": "cardsRow",
+              "width": "fill_container",
+              "height": "fit_content(250)",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "0eL1C",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 0,
+                  "height": "fill_container",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "database",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "CR-SQLite Core",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Leverages the power of Conflict-free Replicated SQLite to ensure your inventory state is always deterministic and accurate.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                },
+                {
+                  "id": "IozjX",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 472,
+                  "y": 0,
+                  "height": "fill_container",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "terminal",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Developer Friendly",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Extensible API and modular architecture. Easy to integrate with existing POS systems or custom library management workflows.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "R5dJt",
+              "name": "cardsRow",
+              "width": "fill_container",
+              "height": "fit_content(250)",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "T3BIO",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 0,
+                  "height": "fill_container",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "smartphone",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Responsive UI",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "A polished interface that works perfectly on desktop scanners, tablets for floor workers, and mobile devices for quick checks.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                },
+                {
+                  "id": "WRJPm",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 472,
+                  "y": 0,
+                  "height": "fill_container",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "zap",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Lightning Fast",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Optimized for huge datasets. Search through millions of records in milliseconds using native SQLite indexing.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Gp82m",
+          "name": "Divider",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "$--color-base-300"
+        },
+        {
+          "type": "frame",
+          "id": "fiwfM",
+          "name": "CTA",
+          "width": "fill_container",
+          "fill": "#0B1226",
+          "gap": 40,
+          "padding": [
+            "$--space-16",
+            "$--space-10"
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "fCexX",
+              "name": "CTA Card",
+              "width": "fill_container",
+              "cornerRadius": 24,
+              "stroke": {
+                "thickness": 1
+              },
+              "layout": "vertical",
+              "gap": 24,
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "jadxE",
+                  "name": "ctaTitle",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Ready to catalog?",
+                  "lineHeight": 1.1,
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-5xl",
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "sx0vK",
+                  "name": "ctaSub",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Our documentation covers everything from single-store setups to enterprise-wide distributed deployments. Get up and running in under 5 minutes.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-base",
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "hnQ0z",
+                  "name": "ctaBtns",
+                  "gap": 14,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "OxFnW",
+                      "type": "ref",
+                      "ref": "Qv0dG",
+                      "x": 0,
+                      "y": 0,
+                      "fill": "$--color-info",
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "descendants": {
+                        "MB1op": {
+                          "fill": "$--color-base-100",
+                          "content": "book-open",
+                          "x": 24,
+                          "y": 13
+                        },
+                        "kNoTU": {
+                          "content": "Read the docs",
+                          "x": 45,
+                          "y": 12,
+                          "fill": "$--color-base-100"
+                        }
+                      }
+                    },
+                    {
+                      "id": "nJwum",
+                      "type": "ref",
+                      "ref": "Qv0dG",
+                      "x": 194,
+                      "y": 0,
+                      "fill": "$--color-base-100",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--color-base-300"
+                      },
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "descendants": {
+                        "MB1op": {
+                          "content": "branchgit-branch",
+                          "fill": "$--color-base-content",
+                          "x": 24,
+                          "y": 13
+                        },
+                        "kNoTU": {
+                          "content": "View source",
+                          "fill": "$--color-base-content",
+                          "x": 45,
+                          "y": 12
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "9R9DR",
+              "name": "CTA Card",
+              "width": "fill_container",
+              "fill": "#111A33",
+              "cornerRadius": "$--radius-xl",
+              "stroke": {
+                "thickness": 1,
+                "fill": "#24314F"
+              },
+              "layout": "vertical",
+              "gap": "$--text-xl",
+              "padding": "$--space-4",
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "pY72e",
+                  "name": "WindowControls",
+                  "clip": true,
+                  "width": "fill_container",
+                  "gap": "$--space-2",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "9TxwE",
+                      "fill": "#fa2c36ff",
+                      "width": 14,
+                      "height": 14
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "0u6ZP",
+                      "fill": "#fd9a03ff",
+                      "width": 14,
+                      "height": 14
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "u57Rz",
+                      "fill": "#05bd7dff",
+                      "width": 14,
+                      "height": 14
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Ulno4",
+                  "name": "terminalPrompt",
+                  "fill": "$--color-primary-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "# Clone the repository\ngit clone https://github.com/librestock/core.git\n\n# Install dependencies\nnpm install\n\n# Initialize local SQLite DB\nnpm run db:init\n\n# Start the sync engine\nnpm run start:sync\n\n# Success! Local terminal is now live.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "$--typeface-mono",
+                  "fontSize": "$--text-sm",
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "vRhga",
+          "name": "Divider",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "$--color-neutral"
+        },
+        {
+          "type": "frame",
+          "id": "DF50u",
+          "name": "Footer",
+          "width": "fill_container",
+          "fill": "#0B1226",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": "$--space-6",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "CgAko",
+              "name": "footerRow",
+              "width": "fill_container",
+              "gap": "$--space-6",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "rmtiW",
+                  "name": "footLinks",
+                  "gap": 22,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "327mg",
+                      "name": "footL1",
+                      "fill": "#CBD5E1",
+                      "content": "Docs",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Y9SCY",
+                      "name": "footL2",
+                      "fill": "#CBD5E1",
+                      "content": "Changelog",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "OVucO",
+                      "name": "footL3",
+                      "fill": "#CBD5E1",
+                      "content": "Github",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "DNqko",
+                      "name": "footL3",
+                      "fill": "#CBD5E1",
+                      "content": "Contact us",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "rUCSB",
+                  "name": "footBrand",
+                  "fill": "#94A3B8",
+                  "content": "© 2026 Librocco",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "fkRHM",
+      "x": 2392,
+      "y": 3,
+      "name": "Index - Mobile",
+      "width": 375,
+      "fill": "#F8FAFF",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "KUyue",
+          "type": "ref",
+          "ref": "vtOVn",
+          "x": 0,
+          "y": 0,
+          "height": "fit_content",
+          "descendants": {
+            "8RLX8": {
+              "y": 17.54761904761905
+            },
+            "nXbFG": {
+              "width": "fit_content",
+              "height": "fit_content",
+              "x": 252,
+              "y": 12
+            },
+            "QSB3e": {
+              "width": "fit_content",
+              "height": "fit_content"
+            },
+            "1AlRN": {
+              "x": 83,
+              "y": 5.5
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "B9Zyw",
+          "name": "Hero Section",
+          "width": "fill_container",
+          "fill": "$--color-base-100",
+          "layout": "vertical",
+          "gap": "$--space-8",
+          "padding": [
+            "$--space-20",
+            "$--space-5"
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "id": "wDadJ",
+              "type": "ref",
+              "ref": "amY0u",
+              "y": 80,
+              "width": "fit_content",
+              "height": "fit_content",
+              "x": 100.5,
+              "descendants": {
+                "M8MXJ": {
+                  "x": 8,
+                  "y": 7
+                },
+                "JT8Eu": {
+                  "x": 26,
+                  "y": 6
+                }
+              }
+            },
+            {
+              "type": "frame",
+              "id": "bt5gp",
+              "name": "Frame 1",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$--space-5",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "ZTQg1",
+                  "name": "headline",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Local-First\nInventory Management",
+                  "lineHeight": "$--leading-tight",
+                  "textAlign": "center",
+                  "fontFamily": "$--typeface-sans",
+                  "fontSize": "$--text-5xl",
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "ndaE2",
+                  "name": "sub",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Lightning fast and accurate stock tracking that never stops. Sync effortlessly across multiple terminals, even when the internet goes dark.",
+                  "lineHeight": 1.4,
+                  "textAlign": "center",
+                  "fontFamily": "$--typeface-sans",
+                  "fontSize": "$--text-lg",
+                  "fontWeight": "500"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "8idVQ",
+              "name": "heroCtas",
+              "layout": "vertical",
+              "gap": 16,
+              "alignItems": "center",
+              "children": [
+                {
+                  "id": "sK2wn",
+                  "type": "ref",
+                  "ref": "Qv0dG",
+                  "x": 10,
+                  "y": 0,
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "descendants": {
+                    "MB1op": {
+                      "x": 24,
+                      "y": 13
+                    },
+                    "kNoTU": {
+                      "x": 45,
+                      "y": 12
+                    }
+                  }
+                },
+                {
+                  "id": "ypyRr",
+                  "type": "ref",
+                  "ref": "Qv0dG",
+                  "x": 0,
+                  "y": 59,
+                  "fill": "$--color-base-100",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1,
+                    "fill": "$--color-base-300"
+                  },
+                  "width": "fit_content",
+                  "height": "fit_content",
+                  "descendants": {
+                    "MB1op": {
+                      "content": "github",
+                      "fill": "$--color-base-content",
+                      "x": 24,
+                      "y": 13
+                    },
+                    "kNoTU": {
+                      "content": "Star on Github",
+                      "fill": "$--color-base-content",
+                      "x": 45,
+                      "y": 12
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Ex7a3",
+          "name": "Divider",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "$--color-base-300"
+        },
+        {
+          "type": "frame",
+          "id": "jJD0p",
+          "name": "Features",
+          "width": "fill_container",
+          "fill": "$--color-base-100",
+          "layout": "vertical",
+          "gap": "$--space-6",
+          "padding": [
+            "$--space-20",
+            "$--space-5"
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "aiDWB",
+              "name": "headingBlock",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$--space-2",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "RjDrL",
+                  "name": "heading",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Built for Resiliancy",
+                  "lineHeight": 1.08,
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-3xl",
+                  "fontWeight": "700"
+                },
+                {
+                  "type": "text",
+                  "id": "1ooNO",
+                  "name": "subheading",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Everything you need to manage massive catalogs across distributed locations without fear of data loss.",
+                  "lineHeight": 1.45,
+                  "textAlign": "center",
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-lg",
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "9ZMWv",
+              "name": "cardsRow",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "FxLwo",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 0,
+                  "height": "fit_content",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Offline-first",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Continue scanning, editing, and selling even when offline. Data is persisted locally and synced automatically when a connection is restored.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                },
+                {
+                  "id": "TQfr3",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 273,
+                  "height": "fit_content",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "layers",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Multi-Terminal Sync",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Coordinate stock levels across multiple devices in real-time. Concurrent edits are merged seamlessly using cr-sqlite's CRDT capabilities.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "BPpAb",
+              "name": "cardsRow",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "LjRfG",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 0,
+                  "height": "fit_content",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "database",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "CR-SQLite Core",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Leverages the power of Conflict-free Replicated SQLite to ensure your inventory state is always deterministic and accurate.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                },
+                {
+                  "id": "NhnLW",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 252,
+                  "height": "fit_content",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "terminal",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Developer Friendly",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Extensible API and modular architecture. Easy to integrate with existing POS systems or custom library management workflows.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "4K6Zo",
+              "name": "cardsRow",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 24,
+              "children": [
+                {
+                  "id": "iXhLu",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 0,
+                  "height": "fit_content",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "smartphone",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Responsive UI",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "A polished interface that works perfectly on desktop scanners, tablets for floor workers, and mobile devices for quick checks.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                },
+                {
+                  "id": "FxEBG",
+                  "type": "ref",
+                  "ref": "Xz7MO",
+                  "x": 0,
+                  "y": 273,
+                  "height": "fit_content",
+                  "width": "fill_container",
+                  "descendants": {
+                    "UWx7Z": {
+                      "x": 24,
+                      "y": 24
+                    },
+                    "7AVRz": {
+                      "content": "zap",
+                      "x": 13.5,
+                      "y": 12.5
+                    },
+                    "vr67q": {
+                      "content": "Lightning Fast",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 96
+                    },
+                    "kJKLD": {
+                      "content": "Optimized for huge datasets. Search through millions of records in milliseconds using native SQLite indexing.",
+                      "width": "fill_container",
+                      "x": 24,
+                      "y": 141
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "uim2j",
+          "name": "Divider",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "$--color-base-300"
+        },
+        {
+          "type": "frame",
+          "id": "CIwv1",
+          "name": "CTA",
+          "width": "fill_container",
+          "fill": "#0B1226",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": [
+            "$--space-16",
+            "$--space-5"
+          ],
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "gNicb",
+              "name": "CTA Card",
+              "width": "fill_container",
+              "cornerRadius": 24,
+              "stroke": {
+                "thickness": 1
+              },
+              "layout": "vertical",
+              "gap": 24,
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "IWDSD",
+                  "name": "ctaTitle",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Ready to catalog?",
+                  "lineHeight": 1.1,
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-5xl",
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "WHyY5",
+                  "name": "ctaSub",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Our documentation covers everything from single-store setups to enterprise-wide distributed deployments. Get up and running in under 5 minutes.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-base",
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "a1cKy",
+                  "name": "ctaBtns",
+                  "layout": "vertical",
+                  "gap": 14,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "DTfYk",
+                      "type": "ref",
+                      "ref": "Qv0dG",
+                      "x": 0,
+                      "y": 0,
+                      "fill": "$--color-info",
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "descendants": {
+                        "MB1op": {
+                          "fill": "$--color-base-100",
+                          "content": "book-open",
+                          "x": 24,
+                          "y": 13
+                        },
+                        "kNoTU": {
+                          "content": "Read the docs",
+                          "x": 45,
+                          "y": 12,
+                          "fill": "$--color-base-100"
+                        }
+                      }
+                    },
+                    {
+                      "id": "WKYQs",
+                      "type": "ref",
+                      "ref": "Qv0dG",
+                      "x": 7,
+                      "y": 57,
+                      "fill": "$--color-base-100",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--color-base-300"
+                      },
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "descendants": {
+                        "MB1op": {
+                          "content": "branchgit-branch",
+                          "fill": "$--color-base-content",
+                          "x": 24,
+                          "y": 13
+                        },
+                        "kNoTU": {
+                          "content": "View source",
+                          "fill": "$--color-base-content",
+                          "x": 45,
+                          "y": 12
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "B7dou",
+              "name": "CTA Card",
+              "width": "fill_container",
+              "fill": "#111A33",
+              "cornerRadius": "$--radius-xl",
+              "stroke": {
+                "thickness": 1,
+                "fill": "#24314F"
+              },
+              "layout": "vertical",
+              "gap": "$--text-xl",
+              "padding": "$--space-4",
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "wcxSC",
+                  "name": "WindowControls",
+                  "clip": true,
+                  "width": "fill_container",
+                  "gap": "$--space-2",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "Zf5Xa",
+                      "fill": "#fa2c36ff",
+                      "width": 14,
+                      "height": 14
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "p45bI",
+                      "fill": "#fd9a03ff",
+                      "width": 14,
+                      "height": 14
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "4iqGV",
+                      "fill": "#05bd7dff",
+                      "width": 14,
+                      "height": 14
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Ll02u",
+                  "name": "terminalPrompt",
+                  "fill": "$--color-primary-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "# Clone the repository\ngit clone https://github.com/librestock/core.git\n\n# Install dependencies\nnpm install\n\n# Initialize local SQLite DB\nnpm run db:init\n\n# Start the sync engine\nnpm run start:sync\n\n# Success! Local terminal is now live.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "$--typeface-mono",
+                  "fontSize": "$--text-sm",
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "LsVUL",
+          "name": "Divider",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "$--color-neutral"
+        },
+        {
+          "type": "frame",
+          "id": "rIzq7",
+          "name": "Footer",
+          "width": "fill_container",
+          "fill": "#0B1226",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": "$--space-5",
+          "children": [
+            {
+              "type": "frame",
+              "id": "0BJIR",
+              "name": "footerRow",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$--space-3",
+              "justifyContent": "space_between",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "euXqK",
+                  "name": "footLinks",
+                  "gap": 22,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "tljuJ",
+                      "name": "footL1",
+                      "fill": "#CBD5E1",
+                      "content": "Docs",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "olxqz",
+                      "name": "footL2",
+                      "fill": "#CBD5E1",
+                      "content": "Changelog",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "NT1be",
+                      "name": "footL3",
+                      "fill": "#CBD5E1",
+                      "content": "Github",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "1DikT",
+                      "name": "footL3",
+                      "fill": "#CBD5E1",
+                      "content": "Contact us",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "VMY7e",
+                  "name": "footBrand",
+                  "fill": "#94A3B8",
+                  "content": "© 2026 Librocco",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "bt3tg",
+      "x": -1863,
+      "y": 180,
+      "name": "Nav / Desktop",
+      "reusable": true,
+      "width": "fill_container(1200)",
+      "fill": "$--color-base-100",
+      "stroke": {
+        "thickness": {
+          "bottom": 1
+        },
+        "fill": "$--color-base-200"
+      },
+      "padding": [
+        "$--space-3",
+        "$--space-5"
+      ],
+      "justifyContent": "space_between",
+      "alignItems": "center",
+      "children": [
+        {
+          "id": "x1zEZ",
+          "type": "ref",
+          "ref": "g39hH",
+          "x": 20,
+          "y": 17.54761904761905,
+          "descendants": {
+            "7plHm": {
+              "fill": "#ffffff"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "qZZXh",
+          "name": "navLinks",
+          "gap": "$--space-6",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "AkrK5",
+              "name": "lnk2",
+              "fill": "$--color-base-content",
+              "content": "Changelog",
+              "fontFamily": "Inter",
+              "fontSize": "$--text-sm",
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "6WPxR",
+              "name": "lnk1",
+              "fill": "$--color-base-content",
+              "content": "Contact us",
+              "fontFamily": "Inter",
+              "fontSize": "$--text-sm",
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "1fan2",
+              "name": "lnk3",
+              "fill": "$--color-base-content",
+              "content": "github",
+              "fontFamily": "lucide",
+              "fontSize": "$--text-sm",
+              "fontWeight": "500"
+            },
+            {
+              "id": "rXp0s",
+              "type": "ref",
+              "ref": "HvYDv",
+              "x": 232,
+              "y": 0,
+              "width": "fit_content",
+              "height": "fit_content",
+              "descendants": {
+                "VJtp9": {
+                  "enabled": false
+                },
+                "4jEbz": {
+                  "content": "Docs",
+                  "x": 12,
+                  "y": 8
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "vtOVn",
+      "x": -1863,
+      "y": 323,
+      "name": "Nav / Mobile",
+      "reusable": true,
+      "width": "fill_container(375)",
+      "fill": "$--color-base-100",
+      "stroke": {
+        "thickness": {
+          "bottom": 1
+        },
+        "fill": "$--color-base-300"
+      },
+      "padding": [
+        "$--space-3",
+        "$--space-5"
+      ],
+      "justifyContent": "space_between",
+      "alignItems": "center",
+      "children": [
+        {
+          "id": "8RLX8",
+          "type": "ref",
+          "ref": "g39hH",
+          "x": 20,
+          "y": 17.54761904761905,
+          "descendants": {
+            "7plHm": {
+              "fill": "#ffffff"
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "nXbFG",
+          "name": "navLinks",
+          "gap": "$--space-6",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "3Y6BW",
+              "x": 0,
+              "y": 8,
+              "name": "lnk1",
+              "enabled": false,
+              "fill": "$--color-base-content",
+              "content": "Features",
+              "fontFamily": "Inter",
+              "fontSize": "$--text-sm",
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "98R6a",
+              "x": 0,
+              "y": 8,
+              "name": "lnk2",
+              "enabled": false,
+              "fill": "$--color-base-content",
+              "content": "Changelog",
+              "fontFamily": "Inter",
+              "fontSize": "$--text-sm",
+              "fontWeight": "500"
+            },
+            {
+              "type": "text",
+              "id": "dy8gx",
+              "x": 0,
+              "y": 8,
+              "name": "lnk3",
+              "enabled": false,
+              "fill": "$--color-base-content",
+              "content": "GitHub",
+              "fontFamily": "Inter",
+              "fontSize": "$--text-sm",
+              "fontWeight": "500"
+            },
+            {
+              "id": "QSB3e",
+              "type": "ref",
+              "ref": "HvYDv",
+              "x": 0,
+              "y": 0,
+              "width": "fit_content",
+              "height": "fit_content",
+              "descendants": {
+                "VJtp9": {
+                  "enabled": false
+                },
+                "4jEbz": {
+                  "content": "Docs",
+                  "x": 12,
+                  "y": 8
+                }
+              }
+            },
+            {
+              "type": "text",
+              "id": "1AlRN",
+              "name": "lnk3",
+              "fill": "$--color-base-content",
+              "content": "menu",
+              "fontFamily": "lucide",
+              "fontSize": 20,
+              "fontWeight": "500"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "dYF8D",
+      "x": -622,
+      "y": 478,
+      "name": "badge-codemyriad",
+      "height": "fill_container(28)",
+      "fill": "$--color-base-200",
+      "cornerRadius": "$--radius-full",
+      "stroke": {
+        "align": "inside",
+        "thickness": 1,
+        "fill": "$--color-base-300"
+      },
+      "gap": "$--space-1",
+      "padding": [
+        6,
+        "$--space-2"
+      ],
+      "justifyContent": "center",
+      "alignItems": "center",
+      "children": [
+        {
+          "type": "group",
+          "id": "qbDsK",
+          "children": [
+            {
+              "type": "path",
+              "id": "iNYhk",
+              "x": 6.64661654135341,
+              "y": 3.96240552744473,
+              "geometry": "M60 36c0-13.255-10.745-24-24-24-13.255 0-24 10.745-24 24 0 13.25501 10.745 24 24 24l0 12c-19.882 0-36-16.11799-36-36 0-19.882 16.118-36 36-36 19.882 0 36 16.118 36 36 0 19.882-16.118 36-36 36l0-12c13.255 0 24-10.745 24-24m599.13202-34.791l10.04401 0 0 65.10001-10.04401 0 0-6.69601c-3.534 4.929-9.021 7.905-16.27503 7.90501-12.64801 0-23.15698-10.695-23.15698-24.45901 0-13.857 10.50897-24.459 23.15698-24.459 7.25403 0 12.74103 2.976 16.27503 7.812l0-25.203z m-14.69403 56.73c8.36999 0 14.69397-6.231 14.69397-14.88 0-8.64899-6.32398-14.88-14.69397-14.88-8.37 0-14.69397 6.231-14.69397 14.88 0 8.649 6.32397 14.88 14.69397 14.88m-41.88501-38.13l10.044 0 0 46.49999-10.044 0 0-6.69599c-3.534 4.929-9.021 7.90499-16.27503 7.90499-12.64801 0-23.15698-10.695-23.15698-24.459 0-13.857 10.50897-24.459 23.15698-24.45899 7.25403 0 12.74103 2.976 16.27503 7.812l0-6.603z m-14.69397 38.13c8.36999 0 14.69397-6.231 14.69397-14.88 0-8.64899-6.32398-14.88-14.69397-14.88-8.37 0-14.69397 6.231-14.69397 14.88 0 8.649 6.32397 14.88 14.69397 14.88m-36.81799-45.105c-3.534 0-6.417-2.976-6.417-6.417 0-3.534 2.883-6.417 6.417-6.417 3.53399 0 6.41699 2.883 6.41699 6.417 0 3.441-2.883 6.417-6.41699 6.417m-5.02198 53.47499l0-47.30899 10.04401 0 0 47.30901-10.04401-0.00002z m-21.74304-38.68899c2.78998-6.323 8.46301-8.648 14.32202-8.648l0 10.88c-6.60302-0.464-14.32202 2.605-14.32202 13.02l0 23.438-10.04401 0 0-46.5 10.04401 0 0 7.81z m-28.01898-7.811l10.69501 0-17.85602 47.988c-4.37097 11.811-11.99701 17.763-22.69202 17.112l0-9.39299c6.51001 0.37199 10.04401-2.976 12.36902-9.114l0.46503-0.93001-19.71601-45.66299 10.974 0 13.857 33.75899 11.90399-33.759z m-57.76001-1.209c10.509 0 17.577 7.254 17.577 18.879l0 28.83001-10.04401 0 0-28.17901c0-6.51-3.534-10.137-9.021-10.137-5.95199 0-10.13699 3.813-10.13699 12.276l0 26.04001-10.04401 0 0-28.17901c0-6.51-3.255-10.137-8.742-10.137-5.67301 0-10.323 3.813-10.323 12.276l0 26.04001-10.04401 0 0-46.50001 10.04401 0 0 5.58c2.97601-4.557 7.53299-6.789 13.29901-6.789 6.04502 0 10.509 2.697 13.206 7.347 3.069-4.836 7.99798-7.347 14.229-7.347m-96.00201 28.737c1.58099 7.254 7.44 10.974 14.88 10.974 5.57999 0 9.76501-2.511 11.99701-5.766l8.27701 4.836c-4.27799 6.324-11.25299 10.137-20.36701 10.13701-15.345 0-25.29599-10.50901-25.29599-24.45901 0-13.764 9.95099-24.459 24.552-24.459 13.857 0 23.34299 11.16 23.34299 24.552 0 1.395-0.186 2.883-0.37201 4.185l-37.014 0z m-0.09299-8.184l27.34201 0c-1.39499-7.998-7.254-11.439-13.29901-11.43899-7.53299 0-12.64801 4.464-14.043 11.43899m-27.56299-37.944l10.04401 0 0 65.10001-10.04401 0 0-6.69601c-3.534 4.929-9.021 7.905-16.27499 7.90501-12.64801 0-23.15702-10.695-23.15702-24.45901 0-13.857 10.50901-24.459 23.15702-24.459 7.25399 0 12.74099 2.976 16.27499 7.812l0-25.203z m-14.694 56.73c8.36999 0 14.694-6.231 14.694-14.88 0-8.64899-6.32401-14.88-14.694-14.88-8.37 0-14.694 6.231-14.694 14.88 0 8.649 6.324 14.88 14.694 14.88m-55.76801 9.57901c-13.578 0-24.552-10.695-24.552-24.45901 0-13.857 10.974-24.459 24.552-24.459 13.67099 0 24.55201 10.602 24.55201 24.459 0 13.764-10.88102 24.459-24.55201 24.45901m0-9.76501c8.18399 0 14.508-6.231 14.508-14.694 0-8.463-6.32401-14.694-14.508-14.694-8.18399 0-14.50799 6.231-14.50799 14.694 0 8.463 6.324 14.694 14.50799 14.694m-58.084 9.76501c-19.809 0-34.03799-14.88-34.03799-33.759 0-18.879 14.22897-33.759 34.03798-33.75901 11.90401 0 22.50601 6.045 27.99301 15.531l-9.29999 5.394c-3.44099-6.417-10.509-10.509-18.69299-10.509-14.043 0-23.343 9.951-23.343 23.34301 0 13.392 9.3 23.343 23.343 23.343 8.18401 0 15.345-4.092 18.69299-10.509l9.29999 5.301c-5.39401 9.486-15.996 15.624-27.993 15.624",
+              "fill": "#fff",
+              "width": 85.55737704918035,
+              "height": 10.868852459016393
+            },
+            {
+              "type": "path",
+              "id": "rIZLH",
+              "x": 3.6882330241957106,
+              "y": 7.6691729323308095,
+              "geometry": "M18 1l-18 0 0 12 18 0 0-12z m48.701-1l-24.556 0 0 12 34 0 0-12-9.444 0z m34.153 13l18 0 0-12-18 0 0 12z",
+              "fill": "#fff",
+              "width": 15.32786885245902,
+              "height": 1.6721311475409837
+            },
+            {
+              "type": "path",
+              "id": "6MhYb",
+              "x": 0,
+              "y": 0,
+              "geometry": "M81.91 127l12 0 0-18-12 0 0 18z m-33.003-120.906l-10.547-6.094-38.36 66.5 37.93 65.755 10.547-6.094-34.415-59.661 34.845-60.406z m88.733-6.094l-10.546 6.095 34.844 60.405-34.844 60.406 10.546 6.094 38.36-66.5-38.36-66.5z m-43.728 7l-12 0 0 18 12 0 0-18z",
+              "fill": "#fff",
+              "width": 22.573770491803284,
+              "height": 17
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wheeD",
+      "type": "ref",
+      "ref": "amY0u",
+      "x": -504,
+      "y": 478,
+      "fill": "$--color-accent",
+      "height": "fill_container(28)",
+      "name": "badge-open-source",
+      "width": "fit_content",
+      "descendants": {
+        "M8MXJ": {
+          "content": "globe",
+          "x": 8,
+          "y": 6.5
+        },
+        "JT8Eu": {
+          "content": "Open source",
+          "fontSize": "$--text-xs",
+          "x": 26,
+          "y": 6.5
+        }
+      }
+    },
+    {
+      "type": "frame",
+      "id": "L7zyn",
+      "x": 3707,
+      "y": 3,
+      "name": "Changelog - Desktop",
+      "width": 1200,
+      "fill": "#F8FAFF",
+      "layout": "vertical",
+      "children": [
+        {
+          "id": "7mwnv",
+          "type": "ref",
+          "ref": "bt3tg",
+          "x": 0,
+          "y": 0,
+          "height": "fit_content",
+          "descendants": {
+            "x1zEZ": {
+              "x": 20,
+              "y": 17.54761904761905
+            },
+            "qZZXh": {
+              "x": 889,
+              "y": 12,
+              "width": "fit_content",
+              "height": "fit_content"
+            },
+            "AkrK5": {
+              "x": 0,
+              "y": 8
+            },
+            "6WPxR": {
+              "y": 8,
+              "x": 97
+            },
+            "1fan2": {
+              "x": 194,
+              "y": 9
+            },
+            "rXp0s": {
+              "width": "fit_content",
+              "height": "fit_content",
+              "x": 232
+            }
+          }
+        },
+        {
+          "type": "frame",
+          "id": "7fsbI",
+          "name": "Hero Section",
+          "width": 1201,
+          "fill": "$--color-base-100",
+          "layout": "vertical",
+          "gap": "$--space-8",
+          "padding": "$--space-20",
+          "children": [
+            {
+              "type": "text",
+              "id": "Gnw4k",
+              "fill": "#ffffff",
+              "content": "Changelog",
+              "fontFamily": "Inter",
+              "fontSize": "$--text-2xl",
+              "fontWeight": "700"
+            },
+            {
+              "type": "frame",
+              "id": "NZoDE",
+              "name": "Frame 3",
+              "clip": true,
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": "$--space-3",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "CGE0w",
+                  "name": "ChangelogEntry",
+                  "reusable": true,
+                  "clip": true,
+                  "width": "fill_container",
+                  "stroke": {
+                    "align": "inside",
+                    "thickness": 1
+                  },
+                  "gap": "$--space-4",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "V9aD2",
+                      "name": "Frame 2",
+                      "clip": true,
+                      "width": 18,
+                      "height": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$--space-2",
+                      "padding": [
+                        "$--space-2",
+                        0,
+                        0,
+                        0
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "ellipse",
+                          "id": "fA2uh",
+                          "name": "Ellipse",
+                          "fill": "$--color-primary",
+                          "width": 12,
+                          "height": 12
+                        },
+                        {
+                          "type": "rectangle",
+                          "id": "FuvjU",
+                          "fill": "$--color-base-300",
+                          "width": 1,
+                          "height": "fill_container"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "rAuv7",
+                      "name": "Header",
+                      "clip": true,
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": "$--space-2",
+                      "padding": [
+                        0,
+                        0,
+                        "$--space-10",
+                        0
+                      ],
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "IFiL5",
+                          "name": "Metadata",
+                          "clip": true,
+                          "width": "fill_container",
+                          "height": 29,
+                          "gap": "$--space-2",
+                          "children": [
+                            {
+                              "id": "s6WQo",
+                              "type": "ref",
+                              "ref": "amY0u",
+                              "y": 0,
+                              "width": "fit_content",
+                              "height": "fit_content",
+                              "x": 0,
+                              "fill": "$--color-base-200",
+                              "stroke": {
+                                "align": "inside",
+                                "thickness": 1,
+                                "fill": "$--color-base-300"
+                              },
+                              "descendants": {
+                                "M8MXJ": {
+                                  "x": 8,
+                                  "y": 7,
+                                  "content": "calendar",
+                                  "fill": "$--color-base-content",
+                                  "enabled": false
+                                },
+                                "JT8Eu": {
+                                  "x": 8,
+                                  "y": 6,
+                                  "content": "31 Mar 2026",
+                                  "fill": "$--color-primary",
+                                  "fontStyle": "normal",
+                                  "fontWeight": "400"
+                                }
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "rCNPz",
+                          "name": "PostTitle",
+                          "fill": "$--color-base-content",
+                          "textGrowth": "fixed-width",
+                          "width": "fill_container",
+                          "content": "New change, who dis",
+                          "fontFamily": "$--typeface-sans",
+                          "fontSize": "$--text-2xl",
+                          "fontWeight": "700"
+                        },
+                        {
+                          "type": "frame",
+                          "id": "KH2mW",
+                          "name": "PostBody",
+                          "clip": true,
+                          "width": "fill_container",
+                          "layout": "vertical",
+                          "gap": "$--space-2",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "1IqOo",
+                              "fill": "$--color-base-content",
+                              "textGrowth": "fixed-width",
+                              "width": "fill_container",
+                              "content": "We are excited to announce that Librocco is open for sign-ups today. It has been almost exactly a year since we started working on Librocco, and we can’t wait to go deeper and bring even more of our vision to life. A public roadmap with details about what we are working on is also coming.",
+                              "fontFamily": "$--typeface-sans",
+                              "fontSize": "$--text-base",
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "id": "D8bOL",
+                  "type": "ref",
+                  "ref": "CGE0w",
+                  "x": 0,
+                  "y": 183,
+                  "height": "fit_content",
+                  "width": "fill_container",
+                  "descendants": {
+                    "V9aD2": {
+                      "width": 18,
+                      "height": "fill_container",
+                      "x": 0,
+                      "y": 0
+                    },
+                    "rAuv7": {
+                      "width": "fill_container",
+                      "height": "fit_content",
+                      "x": 34,
+                      "y": 0
+                    },
+                    "IFiL5": {
+                      "width": "fill_container"
+                    },
+                    "s6WQo": {
+                      "width": "fit_content",
+                      "height": "fit_content"
+                    },
+                    "s6WQo/M8MXJ": {
+                      "y": 7
+                    },
+                    "s6WQo/JT8Eu": {
+                      "x": 8
+                    },
+                    "rCNPz": {
+                      "width": "fill_container",
+                      "y": 37
+                    }
+                  }
+                },
+                {
+                  "id": "P1G46",
+                  "type": "ref",
+                  "ref": "CGE0w",
+                  "x": 0,
+                  "y": 366,
+                  "height": "fit_content",
+                  "width": "fill_container",
+                  "descendants": {
+                    "V9aD2": {
+                      "width": 18,
+                      "height": "fill_container",
+                      "x": 0,
+                      "y": 0
+                    },
+                    "rAuv7": {
+                      "width": "fill_container",
+                      "height": "fit_content",
+                      "x": 34,
+                      "y": 0
+                    },
+                    "IFiL5": {
+                      "width": "fill_container"
+                    },
+                    "s6WQo": {
+                      "width": "fit_content",
+                      "height": "fit_content"
+                    },
+                    "s6WQo/M8MXJ": {
+                      "y": 7
+                    },
+                    "s6WQo/JT8Eu": {
+                      "x": 8
+                    },
+                    "rCNPz": {
+                      "width": "fill_container",
+                      "y": 37
+                    }
+                  }
+                },
+                {
+                  "id": "ms0cw",
+                  "type": "ref",
+                  "ref": "CGE0w",
+                  "x": 0,
+                  "y": 549,
+                  "height": "fit_content",
+                  "width": "fill_container",
+                  "descendants": {
+                    "V9aD2": {
+                      "width": 18,
+                      "height": "fill_container",
+                      "x": 0,
+                      "y": 0
+                    },
+                    "rAuv7": {
+                      "width": "fill_container",
+                      "height": "fit_content",
+                      "x": 34,
+                      "y": 0
+                    },
+                    "IFiL5": {
+                      "width": "fill_container"
+                    },
+                    "s6WQo": {
+                      "width": "fit_content",
+                      "height": "fit_content"
+                    },
+                    "s6WQo/M8MXJ": {
+                      "y": 7
+                    },
+                    "s6WQo/JT8Eu": {
+                      "x": 8
+                    },
+                    "rCNPz": {
+                      "width": "fill_container",
+                      "y": 37
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "ISlpL",
+          "name": "CTA",
+          "width": "fill_container",
+          "fill": "#0B1226",
+          "gap": 40,
+          "padding": "$--space-20",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "Yb6V3",
+              "name": "CTA Card",
+              "width": "fill_container",
+              "cornerRadius": 24,
+              "stroke": {
+                "thickness": 1
+              },
+              "layout": "vertical",
+              "gap": 24,
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "Li9N0",
+                  "name": "ctaTitle",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Ready to catalog?",
+                  "lineHeight": 1.1,
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-5xl",
+                  "fontWeight": "800"
+                },
+                {
+                  "type": "text",
+                  "id": "e20nn",
+                  "name": "ctaSub",
+                  "fill": "$--color-base-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "Our documentation covers everything from single-store setups to enterprise-wide distributed deployments. Get up and running in under 5 minutes.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": "$--text-base",
+                  "fontWeight": "500"
+                },
+                {
+                  "type": "frame",
+                  "id": "qlZhD",
+                  "name": "ctaBtns",
+                  "gap": 14,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "id": "q9QMG",
+                      "type": "ref",
+                      "ref": "Qv0dG",
+                      "x": 0,
+                      "y": 0,
+                      "fill": "$--color-info",
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "descendants": {
+                        "MB1op": {
+                          "fill": "$--color-base-100",
+                          "content": "book-open",
+                          "x": 24,
+                          "y": 13
+                        },
+                        "kNoTU": {
+                          "content": "Read the docs",
+                          "x": 45,
+                          "y": 12,
+                          "fill": "$--color-base-100"
+                        }
+                      }
+                    },
+                    {
+                      "id": "wgWWd",
+                      "type": "ref",
+                      "ref": "Qv0dG",
+                      "x": 194,
+                      "y": 0,
+                      "fill": "$--color-base-200",
+                      "stroke": {
+                        "align": "inside",
+                        "thickness": 1,
+                        "fill": "$--color-base-300"
+                      },
+                      "width": "fit_content",
+                      "height": "fit_content",
+                      "descendants": {
+                        "MB1op": {
+                          "content": "branchgit-branch",
+                          "fill": "$--color-base-content",
+                          "x": 24,
+                          "y": 13
+                        },
+                        "kNoTU": {
+                          "content": "View source",
+                          "fill": "$--color-base-content",
+                          "x": 45,
+                          "y": 12
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "jjvur",
+              "name": "CTA Card",
+              "width": "fill_container",
+              "fill": "$--color-base-200",
+              "cornerRadius": "$--radius-xl",
+              "stroke": {
+                "thickness": 1,
+                "fill": "$--color-base-300"
+              },
+              "layout": "vertical",
+              "gap": "$--text-xl",
+              "padding": "$--space-4",
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "s8Ab5",
+                  "name": "WindowControls",
+                  "clip": true,
+                  "width": "fill_container",
+                  "gap": "$--space-2",
+                  "children": [
+                    {
+                      "type": "ellipse",
+                      "id": "RhjRS",
+                      "fill": "#fa2c36ff",
+                      "width": 14,
+                      "height": 14
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "BLBmr",
+                      "fill": "#fd9a03ff",
+                      "width": 14,
+                      "height": 14
+                    },
+                    {
+                      "type": "ellipse",
+                      "id": "k7pw6",
+                      "fill": "#05bd7dff",
+                      "width": 14,
+                      "height": 14
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "nAx5S",
+                  "name": "terminalPrompt",
+                  "fill": "$--color-primary-content",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "# Clone the repository\ngit clone https://github.com/librestock/core.git\n\n# Install dependencies\nnpm install\n\n# Initialize local SQLite DB\nnpm run db:init\n\n# Start the sync engine\nnpm run start:sync\n\n# Success! Local terminal is now live.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "$--typeface-mono",
+                  "fontSize": "$--text-sm",
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "w0YZr",
+          "name": "Footer",
+          "width": "fill_container",
+          "fill": "#0B1226",
+          "layout": "vertical",
+          "gap": 40,
+          "padding": "$--space-10",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "frame",
+              "id": "o5UTs",
+              "name": "footerDivider",
+              "width": "fill_container",
+              "height": 1,
+              "fill": "$--color-base-300"
+            },
+            {
+              "type": "frame",
+              "id": "lNROO",
+              "name": "footerRow",
+              "width": "fill_container",
+              "gap": "$--space-8",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "irliv",
+                  "name": "footLinks",
+                  "gap": 22,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "FQRIl",
+                      "name": "footL1",
+                      "fill": "#CBD5E1",
+                      "content": "Docs",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "XsylU",
+                      "name": "footL2",
+                      "fill": "#CBD5E1",
+                      "content": "Changelog",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "hhsBO",
+                      "name": "footL3",
+                      "fill": "#CBD5E1",
+                      "content": "Github",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    },
+                    {
+                      "type": "text",
+                      "id": "cMTcG",
+                      "name": "footL3",
+                      "fill": "#CBD5E1",
+                      "content": "Contact us",
+                      "fontFamily": "Inter",
+                      "fontSize": 15,
+                      "fontWeight": "500"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "0kpT0",
+                  "name": "footBrand",
+                  "fill": "#94A3B8",
+                  "content": "© 2026 Librocco",
+                  "fontFamily": "Inter",
+                  "fontSize": 15,
+                  "fontWeight": "500"
+                }
+              ]
+            }
+          ]
         }
       ]
     }
@@ -902,19 +3367,19 @@
     },
     "--leading-normal": {
       "type": "number",
-      "value": 1.5
+      "value": 1.4
     },
     "--leading-relaxed": {
       "type": "number",
-      "value": 1.625
+      "value": 1.25
     },
     "--leading-snug": {
       "type": "number",
-      "value": 1.375
+      "value": 1.1
     },
     "--leading-tight": {
       "type": "number",
-      "value": 1.25
+      "value": 1
     },
     "--radius-2xl": {
       "type": "number",
@@ -986,7 +3451,7 @@
     },
     "--color-accent": {
       "type": "color",
-      "value": "#1DCDBC"
+      "value": "#b19eef"
     },
     "--color-accent-content": {
       "type": "color",
@@ -994,19 +3459,19 @@
     },
     "--color-base-100": {
       "type": "color",
-      "value": "#FFFFFF"
+      "value": "#0B1226"
     },
     "--color-base-200": {
       "type": "color",
-      "value": "#F2F2F2"
+      "value": "#111A33"
     },
     "--color-base-300": {
       "type": "color",
-      "value": "#E5E6E6"
+      "value": "#24314F"
     },
     "--color-base-content": {
       "type": "color",
-      "value": "#1F2937"
+      "value": "#f5f6f8"
     },
     "--color-error": {
       "type": "color",
@@ -1034,7 +3499,7 @@
     },
     "--color-primary": {
       "type": "color",
-      "value": "#570DF8"
+      "value": "#6788ff"
     },
     "--color-primary-content": {
       "type": "color",
