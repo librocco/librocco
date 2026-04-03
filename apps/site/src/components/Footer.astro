@@ -1,5 +1,6 @@
 ---
-const base = import.meta.env.BASE_URL.replace(//?$/, '/');
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith('/') ? rawBase : rawBase + '/';
 ---
 
 <div class="h-px bg-base-300 w-full"></div>
