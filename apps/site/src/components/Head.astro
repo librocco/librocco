@@ -4,14 +4,18 @@ import { ViewTransitions } from "astro:transitions";
 import type { Props } from "@astrojs/starlight/props";
 
 const pageTitle = Astro.props.entry?.data?.title;
-const docTitle = pageTitle ? `Librocco Docs | ${pageTitle}` : "Librocco Docs";
+const docTitle = pageTitle ? `Librocco Docs – ${pageTitle}` : "Librocco Docs";
 ---
 
 <StarlightHead {...Astro.props} />
 <ViewTransitions />
 <script is:inline define:vars={{ docTitle }}>
   document.title = docTitle;
-  document.addEventListener('astro:page-load', () => { document.title = docTitle; });
+  const setTitle = () => { document.title = docTitle; };
+  document.addEventListener('astro:page-load', setTitle);
+  document.addEventListener('astro:before-swap', () => {
+    document.removeEventListener('astro:page-load', setTitle);
+  }, { once: true });
 </script>
 
 <script>

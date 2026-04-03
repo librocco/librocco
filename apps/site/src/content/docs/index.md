@@ -1,11 +1,11 @@
 ---
-title: Librocco Documentation
-description: Offline-first bookstore inventory management.
+title: Librocco Docs
+description: Local-first inventory management.
 ---
 
 Welcome to the Librocco documentation.
 
-Librocco is an **offline-first bookstore inventory management tool** built for independent bookshops that need to work reliably with or without an internet connection.
+Librocco is an **local-first, open source inventory management tool** built for independent bookshops that need to work reliably with or without an internet connection.
 
 ## Where to start
 
