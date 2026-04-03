@@ -57,14 +57,22 @@ npm run start:sync
 </style>
 
 <script>
-  const cols = document.querySelectorAll<HTMLElement>('.cta-col');
+  function initCtaBanner() {
+    const cols = document.querySelectorAll<HTMLElement>('.cta-col');
+    if (!cols.length) return;
 
-  const observer = new IntersectionObserver((records) => {
-    records.filter(r => r.isIntersecting).forEach(record => {
-      (record.target as HTMLElement).classList.add('in-view');
-      observer.unobserve(record.target);
-    });
-  }, { threshold: 0.2 });
+    // Reset state on each init (e.g. after View Transitions navigation)
+    cols.forEach(el => el.classList.remove('in-view'));
 
-  cols.forEach(el => observer.observe(el));
+    const observer = new IntersectionObserver((records) => {
+      records.filter(r => r.isIntersecting).forEach(record => {
+        (record.target as HTMLElement).classList.add('in-view');
+        observer.unobserve(record.target);
+      });
+    }, { threshold: 0.15 });
+
+    cols.forEach(el => observer.observe(el));
+  }
+
+  document.addEventListener('astro:page-load', initCtaBanner);
 </script>
