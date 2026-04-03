@@ -1,0 +1,66 @@
+name: Site CI
+"on":
+  push:
+    branches-ignore:
+    - ci-debug/*
+    - wip/**
+    paths:
+    - apps/site/**
+    - .github/workflow.templates/site-ci.yml
+jobs:
+  deploy-preview-site:
+    name: Deploy preview site to R2
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository and submodules
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        lfs: false
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush install
+    - name: Build site using prefix ${{ github.head_ref || github.ref_name }}
+      run: cd apps/site && rushx build
+      env:
+        BASE_PATH: /${{ github.head_ref || github.ref_name }}/site
+    - name: Install and configure rclone for R2
+      run: |
+        wget -q https://downloads.rclone.org/v1.71.1/rclone-v1.71.1-linux-amd64.zip
+        unzip -q rclone-v1.71.1-linux-amd64.zip
+        sudo mv rclone-v1.71.1-linux-amd64/rclone /usr/local/bin/rclone
+        sudo chmod +x /usr/local/bin/rclone
+        rm -rf rclone-v1.71.1-linux-amd64.zip rclone-v1.71.1-linux-amd64
+
+        mkdir -p ~/.config/rclone
+        cat > ~/.config/rclone/rclone.conf <<EOF
+        [r2]
+        type = s3
+        provider = Cloudflare
+        access_key_id = ${CLOUDFLARE_ACCESS_KEY_ID}
+        secret_access_key = ${CLOUDFLARE_SECRET_ACCESS_KEY}
+        endpoint = ${CLOUDFLARE_BUCKET_URL}
+        acl = public-read
+        no_check_bucket = true
+        EOF
+      env:
+        CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_ACCESS_KEY_ID }}
+        CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_SECRET_ACCESS_KEY }}
+        CLOUDFLARE_BUCKET_URL: ${{ secrets.CLOUDFLARE_BUCKET_URL }}
+    - name: 'Upload to R2: apps/site/dist/ -> ${{ github.head_ref || github.ref_name }}/site/'
+      run: rclone copy apps/site/dist/ r2:librocco-ci/${{ github.head_ref || github.ref_name }}/site/
+    - name: Output link to deployed site
+      run: echo You can view the site on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/site/index.html | tee -a $GITHUB_STEP_SUMMARY

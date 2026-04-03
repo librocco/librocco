@@ -6,6 +6,7 @@ import tailwind from "@astrojs/tailwind";
 
 export default defineConfig({
 	site: "https://codemyriad.io",
+	base: process.env.BASE_PATH,
 	integrations: [
 		starlight({
 			title: "",
