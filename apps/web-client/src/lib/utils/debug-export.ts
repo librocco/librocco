@@ -1,6 +1,8 @@
 import { zipSync, strToU8 } from "fflate";
 
 import { VERSION, GIT_SHA } from "$lib/constants";
+import { deleteDBFromOPFS, wrapFileHandle } from "$lib/db/cr-sqlite/core/utils";
+import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
 
 /**
  * Exports the current app state (SQLite DB + localStorage config) as a zip archive.
@@ -65,4 +67,45 @@ export async function exportStateArchive(dbid: string): Promise<void> {
 	a.click();
 	document.body.removeChild(a);
 	URL.revokeObjectURL(url);
+}
+
+async function writeDbBytesToOPFS(bytes: Uint8Array, dbid: string): Promise<void> {
+	if (bytes.length < 16) throw new Error("File too small to be a valid SQLite DB");
+	const magic = [83, 81, 76, 105, 116, 101, 32, 102, 111, 114, 109, 97, 116, 32, 51]; // "SQLite format 3"
+	if (!magic.every((b, i) => bytes[i] === b)) throw new Error("Invalid SQLite file: magic header mismatch");
+
+	// Release all OPFS file handles held by workers, then wait briefly for the OS to free them
+	terminateAllWorkers();
+	await new Promise<void>((r) => setTimeout(r, 300));
+
+	// Write to a temp file first so the live DB is only removed after the write succeeds
+	const root = await navigator.storage.getDirectory();
+	const tempDbid = `${dbid}-temp`;
+	const fh = await root.getFileHandle(tempDbid, { create: true });
+	const ws = await fh.createWritable();
+	await ws.write(bytes.buffer as ArrayBuffer);
+	await ws.close();
+
+	await deleteDBFromOPFS(dbid);
+	await wrapFileHandle(root, fh).move(dbid);
+
+	window.location.reload();
+}
+
+/**
+ * Imports a raw SQLite file into OPFS as the active database, then reloads the page.
+ * Terminates any running DB workers first to release OPFS file handles.
+ */
+export async function importStateArchive(file: File, dbid: string): Promise<void> {
+	await writeDbBytesToOPFS(new Uint8Array(await file.arrayBuffer()), dbid);
+}
+
+/**
+ * Fetches a raw SQLite file from a URL, writes it into OPFS as the active database, then reloads.
+ * Useful for loading a known debug snapshot without a file picker (e.g. from dev server).
+ */
+export async function importStateArchiveFromUrl(url: string, dbid: string): Promise<void> {
+	const res = await fetch(url);
+	if (!res.ok) throw new Error(`Failed to fetch DB from "${url}": ${res.status} ${res.statusText}`);
+	await writeDbBytesToOPFS(new Uint8Array(await res.arrayBuffer()), dbid);
 }

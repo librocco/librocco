@@ -1,4 +1,6 @@
 import path from "path";
+import { createReadStream } from "fs";
+import { stat } from "fs/promises";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { sentrySvelteKit } from "@sentry/sveltekit";
 
@@ -38,6 +40,27 @@ const config = {
 					res.setHeader("Cross-Origin-Embedder-Policy", "require-corp");
 					res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
 					next();
+				});
+
+				// Serve live-data/ directory at /_live-data/ for dev/debug use
+				const liveDataDir = path.join(__dirname, "..", "..", "live-data");
+				server.middlewares.use("/_live-data", async (req, res) => {
+					const fname = (req.url || "/").replace(/^\/+/, "");
+					if (!fname || fname.includes("..")) {
+						res.statusCode = 403;
+						res.end("Forbidden");
+						return;
+					}
+					const fpath = path.join(liveDataDir, fname);
+					try {
+						const { size } = await stat(fpath);
+						res.setHeader("Content-Length", size);
+						res.setHeader("Content-Type", "application/octet-stream");
+						createReadStream(fpath).pipe(res);
+					} catch {
+						res.statusCode = 404;
+						res.end("Not found");
+					}
 				});
 			}
 		}
