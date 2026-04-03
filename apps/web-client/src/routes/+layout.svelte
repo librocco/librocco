@@ -144,7 +144,7 @@
 			const compatibilityResult = await checkSyncCompatibility({
 				dbid: currentDbid,
 				syncUrl: currentSyncUrl,
-				mode: "strict"
+				mode: "background"
 			});
 			if (!compatibilityResult.ok) {
 				markAutoRecoveryNoop();

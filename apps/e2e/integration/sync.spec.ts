@@ -466,6 +466,82 @@ test("remote DB indicator degrades when syncserver stops and recovers after rest
 	await expect.poll(badgeStatus, { timeout: 25000, intervals: [250] }).toBe("synced");
 });
 
+test("does not show nuke dialog for transient server outage with pending changes", async ({ page }, testInfo) => {
+	testInfo.setTimeout(60_000);
+
+	const circusControlAvailable = await isSyncServerCircusControlAvailable();
+	if (!circusControlAvailable) {
+		if (IS_CI) {
+			throw new Error("Circus control for syncserver is unavailable in CI. Refusing to skip the transient-outage nuke-dialog test.");
+		}
+		test.skip(true, "Circus control for syncserver is not available in this environment");
+	}
+
+	const dbName = `no-nuke-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
+	await startSyncServerViaCircus();
+	await waitForSyncServerCircusStatus("active");
+
+	await page.evaluate(
+		([syncUrl, dbName]) => {
+			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
+			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
+			window.localStorage.setItem("librocco-sync-active", "true");
+		},
+		[syncUrl, dbName]
+	);
+	await page.goto(baseURL);
+
+	// Write a record and confirm it syncs — establishes baseline and creates change history
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(upsertCustomer, { id: 1, displayId: "1", fullname: "Pre-Outage Customer", email: "pre@test.com" });
+
+	await expect
+		.poll(
+			async () => {
+				const remoteDbHandle = await getStableRemoteDbHandle(page);
+				const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
+				return remoteCustomers.some((c) => c.fullname === "Pre-Outage Customer");
+			},
+			{ timeout: 20000, intervals: [250] }
+		)
+		.toBe(true);
+
+	// Simulate total server outage: stop sync server and block the meta endpoint.
+	// This is the exact scenario that triggered false-positive nuke dialogs in production:
+	// stale recovery fires after 15s, calls checkSyncCompatibility, meta is unreachable.
+	try {
+		await stopSyncServerViaCircus();
+		await waitForSyncServerCircusStatus("stopped");
+		await page.route("**/meta", (route) => route.abort());
+
+		// Wait longer than DISCONNECT_RECOVERY_MIN_MS (15 000 ms) to guarantee stale recovery fires
+		await sleep(22_000);
+
+		// The nuke dialog must NOT have appeared — a transient outage is not a reason to destroy data
+		await expect(page.locator(".modal-box")).not.toBeVisible();
+
+		// Badge may be "connecting" / "stuck" but must never reach "incompatible"
+		const badgeStatus = await page.getAttribute('[data-testid="remote-db-badge"]', "data-status");
+		expect(badgeStatus).not.toBe("incompatible");
+	} finally {
+		await page.unroute("**/meta");
+		await startSyncServerViaCircus();
+		await waitForSyncServerCircusStatus("active");
+	}
+
+	// After server restart, sync should recover and the pre-outage record must still be present
+	await expect
+		.poll(async () => page.getAttribute('[data-testid="remote-db-badge"]', "data-status"), {
+			timeout: 25000,
+			intervals: [250]
+		})
+		.toBe("synced");
+
+	const remoteDbHandle = await getStableRemoteDbHandle(page);
+	const remoteCustomers = await retry(() => remoteDbHandle.evaluate(getCustomerOrderList), { fallback: [] });
+	expect(remoteCustomers.some((c) => c.fullname === "Pre-Outage Customer")).toBe(true);
+});
+
 test("shows incompatible state when remote DB is rebuilt and recovers after nuke and resync", async ({ page }) => {
 	const dbName = `compat-test-db-${Math.floor(Math.random() * 1000000)}.sqlite3`;
 	await page.evaluate(
