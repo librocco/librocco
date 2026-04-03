@@ -93,7 +93,7 @@ async function start() {
 		self.postMessage(msg);
 	}
 }
-start();
+// Entry point: see bottom of file — dual-mode detection (SharedWorker vs DedicatedWorker)
 
 class SharedConnectionSyncDB implements SyncDB {
 	readonly #db: DBAsync;
@@ -663,4 +663,78 @@ class WrappedDB implements DBAsync, SyncWorkerBridge {
 
 function wrapDB(db: DBAsync) {
 	return new WrappedDB(db);
+}
+
+// ---------------------------------------------------------------------------
+// SharedWorker DB singleton
+// ---------------------------------------------------------------------------
+
+const WORKER_INIT_TIMEOUT_MS = 30_000;
+let _dbPromise: Promise<WrappedDB> | null = null;
+
+function getOrInitDB(dbname: string, vfs: VFSWhitelist): Promise<WrappedDB> {
+	if (!_dbPromise) {
+		const initPromise = getCrsqliteDB(dbname, vfs).then(wrapDB);
+		const timeoutPromise = new Promise<never>((_, reject) =>
+			setTimeout(
+				() => reject(new Error(`[SharedWorker] DB init timed out after ${WORKER_INIT_TIMEOUT_MS}ms`)),
+				WORKER_INIT_TIMEOUT_MS
+			)
+		);
+		const racePromise = Promise.race([initPromise, timeoutPromise]);
+		// If the timeout wins but getCrsqliteDB still resolves later, close the leaked handle.
+		racePromise.catch(() => {
+			initPromise.then((db) => db.close()).catch(() => {});
+		});
+		_dbPromise = racePromise.catch((err) => {
+			_dbPromise = null; // allow retry after page reload creates a fresh SharedWorker
+			throw err;
+		});
+	}
+	return _dbPromise;
+}
+
+// ---------------------------------------------------------------------------
+// Dual-mode entry point: SharedWorker (Chrome/Firefox/desktop Safari) OR
+// DedicatedWorker (iOS Safari fallback, which lacks SharedWorker support).
+// Both modes use the same worker file; the runtime decides which path to take.
+// ---------------------------------------------------------------------------
+
+// In a SharedWorker, `self` exposes an `onconnect` setter (part of SharedWorkerGlobalScope).
+// In a DedicatedWorker, `onconnect` is not a property of `self`.
+if ("onconnect" in self) {
+	// ---- SharedWorker path ----
+	(self as unknown as { onconnect: ((e: MessageEvent) => void) | null }).onconnect = async (e: MessageEvent) => {
+		const port = (e as MessageEvent).ports[0];
+		port.start();
+
+		const [dbname, vfs] = (self.name as string).split("---") as [string, VFSWhitelist];
+		if (!dbname || !vfs) {
+			const msg: MsgWkrError = {
+				_type: "wkr-init",
+				status: "error",
+				error: "Invalid worker name format. Expected '<dbname>---<vfs>'."
+			};
+			port.postMessage(msg);
+			return;
+		}
+
+		try {
+			const db = await getOrInitDB(dbname, vfs);
+			Comlink.expose(db, port);
+			const msg: MsgInitOk = { _type: "wkr-init", status: "ok" };
+			port.postMessage(msg);
+		} catch (err) {
+			const msg: MsgWkrError = {
+				_type: "wkr-init",
+				status: "error",
+				error: (err as Error).message,
+				stack: (err as Error).stack
+			};
+			port.postMessage(msg);
+		}
+	};
+} else {
+	// ---- DedicatedWorker path (iOS Safari fallback) ----
+	start();
 }

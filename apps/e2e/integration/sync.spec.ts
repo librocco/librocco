@@ -802,8 +802,7 @@ test("sync status stays consistent across two tabs during stop/restart", async (
 			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
 			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
 			window.localStorage.setItem("librocco-sync-active", "true");
-			// Use a multi-tab friendly VFS for this scenario to avoid OPFS lock contention.
-			window.localStorage.setItem("vfs", "asyncify-idb-batch-atomic");
+			// SharedWorker eliminates OPFS lock contention across tabs — no VFS override needed.
 		},
 		[syncUrl, dbName]
 	);

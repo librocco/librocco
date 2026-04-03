@@ -13,43 +13,133 @@ import type {
 } from "./types";
 
 import DBWorker from "./worker-db.worker?worker";
+import DBSharedWorker from "./worker-db.worker?sharedworker";
 import type { MsgInit } from "./worker-db.worker";
 
-// Track all active DB workers so they can be terminated synchronously on page unload,
-// even if the page reloads before getWorkerDB() completes (before app.db.db is set).
+// ---------------------------------------------------------------------------
+// Active connection tracking (for disconnectAllPorts / pagehide teardown)
+// ---------------------------------------------------------------------------
+
+// SharedWorker ports (Chrome, Firefox, desktop Safari)
+const activePorts = new Set<MessagePort>();
+// DedicatedWorker instances (iOS Safari fallback)
 const activeWorkers = new Set<Worker>();
 
 /**
- * Synchronously terminates all active DB workers, immediately releasing OPFS file handles.
+ * Synchronously closes all active DB connections:
+ * - SharedWorker: closes MessagePorts (browser GCs the worker when last port closes → OPFS released)
+ * - DedicatedWorker (iOS): terminates the worker directly (OPFS released immediately)
+ *
  * Call this from pagehide/beforeunload to prevent lock conflicts on rapid reload.
  */
-export function terminateAllWorkers(): void {
+export function disconnectAllPorts(): void {
+	for (const p of activePorts) {
+		p.close();
+	}
+	activePorts.clear();
 	for (const w of activeWorkers) {
 		w.terminate();
 	}
 	activeWorkers.clear();
 }
 
-export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync> {
-	console.time("[worker-db] worker init");
-	const wkr = await initWorker(dbname, vfs);
-	console.timeEnd("[worker-db] worker init");
+// ---------------------------------------------------------------------------
+// Public entry point
+// ---------------------------------------------------------------------------
 
-	console.time("[worker-db] comlink setup");
+export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync> {
+	if (typeof SharedWorker !== "undefined") {
+		return getSharedWorkerDB(dbname, vfs);
+	}
+	// iOS Safari / environments without SharedWorker support → DedicatedWorker fallback
+	return getDedicatedWorkerDB(dbname, vfs);
+}
+
+// ---------------------------------------------------------------------------
+// SharedWorker path
+// ---------------------------------------------------------------------------
+
+async function getSharedWorkerDB(dbname: string, vfs: string): Promise<DBAsync> {
+	console.time("[worker-db] SharedWorker port init");
+	const port = await initWorkerPort(dbname, vfs);
+	console.timeEnd("[worker-db] SharedWorker port init");
+
+	console.time("[worker-db] comlink setup (shared)");
+	try {
+		const ifc = Comlink.wrap<DBAsyncRemote>(port);
+		const [__mutex, siteid, filename, tablesUsedStmt] = await Promise.all([ifc.__mutex, ifc.siteid, ifc.filename, ifc.tablesUsedStmt]);
+		console.timeEnd("[worker-db] comlink setup (shared)");
+		const cleanup = () => {
+			port.close();
+			activePorts.delete(port);
+		};
+		return new WorkerDB(cleanup, ifc, __mutex, siteid, filename, tablesUsedStmt);
+	} catch (err) {
+		console.timeEnd("[worker-db] comlink setup (shared)");
+		port.close();
+		activePorts.delete(port);
+		throw err;
+	}
+}
+
+function initWorkerPort(dbname: string, vfs: string): Promise<MessagePort> {
+	const name = [dbname, vfs].join("---");
+	const sharedWkr = new DBSharedWorker({ name });
+	const port = sharedWkr.port;
+	port.start();
+	activePorts.add(port);
+
+	return new Promise<MessagePort>((resolve, reject) => {
+		const listener = (e: MessageEvent) => {
+			const isInitMsg = (e: MessageEvent): e is MessageEvent<MsgInit> => e.data?._type === "wkr-init";
+			if (!isInitMsg(e)) return;
+			port.removeEventListener("message", listener);
+			switch (e.data.status) {
+				case "ok":
+					return resolve(port);
+				case "error": {
+					port.close();
+					activePorts.delete(port);
+					const err = new Error(e.data.error);
+					if (e.data.stack) {
+						err.stack = e.data.stack;
+					}
+					return reject(err);
+				}
+			}
+		};
+		port.addEventListener("message", listener);
+	});
+}
+
+// ---------------------------------------------------------------------------
+// DedicatedWorker path (iOS Safari fallback — original implementation)
+// ---------------------------------------------------------------------------
+
+async function getDedicatedWorkerDB(dbname: string, vfs: string): Promise<DBAsync> {
+	console.time("[worker-db] DedicatedWorker init");
+	const wkr = await initDedicatedWorker(dbname, vfs);
+	console.timeEnd("[worker-db] DedicatedWorker init");
+
+	console.time("[worker-db] comlink setup (dedicated)");
 	try {
 		const ifc = Comlink.wrap<DBAsyncRemote>(wkr);
 		const [__mutex, siteid, filename, tablesUsedStmt] = await Promise.all([ifc.__mutex, ifc.siteid, ifc.filename, ifc.tablesUsedStmt]);
-		console.timeEnd("[worker-db] comlink setup");
-		return new WorkerDB(wkr, ifc, __mutex, siteid, filename, tablesUsedStmt);
+		console.timeEnd("[worker-db] comlink setup (dedicated)");
+		const cleanup = () => {
+			wkr.terminate();
+			activeWorkers.delete(wkr);
+		};
+		return new WorkerDB(cleanup, ifc, __mutex, siteid, filename, tablesUsedStmt);
 	} catch (err) {
-		console.timeEnd("[worker-db] comlink setup");
+		console.timeEnd("[worker-db] comlink setup (dedicated)");
 		wkr.terminate();
 		activeWorkers.delete(wkr);
 		throw err;
 	}
 }
 
-function initWorker(dbname: string, vfs: string) {
+function initDedicatedWorker(dbname: string, vfs: string): Promise<Worker> {
 	const name = [dbname, vfs].join("---");
 	const wkr = new DBWorker({ name });
 	activeWorkers.add(wkr);
@@ -79,12 +169,16 @@ function initWorker(dbname: string, vfs: string) {
 	});
 }
 
+// ---------------------------------------------------------------------------
+// WorkerDB: main-thread proxy over the worker DB
+// ---------------------------------------------------------------------------
+
 class WorkerDB implements DBAsync {
-	private _worker: Worker;
+	private _teardown: () => void;
 	private _isConnected = false;
 
 	constructor(
-		worker: Worker,
+		teardown: () => void,
 		readonly remote: Comlink.Remote<DBAsyncRemote>,
 		// TODO: running the mutex over a Comlink proxy might not be the terribly performant solution,
 		// check if we should implement a local mutex here.
@@ -93,7 +187,7 @@ class WorkerDB implements DBAsync {
 		readonly filename: string,
 		readonly tablesUsedStmt: StmtAsync
 	) {
-		this._worker = worker;
+		this._teardown = teardown;
 		void Promise.resolve(this.remote.isConnected)
 			.then((connected) => {
 				this._isConnected = connected;
@@ -105,12 +199,11 @@ class WorkerDB implements DBAsync {
 	}
 
 	/**
-	 * Synchronously terminates the underlying Web Worker, immediately releasing
+	 * Synchronously closes the underlying connection (port or worker), immediately releasing
 	 * any OPFS file handles. Use this on page unload instead of the async close().
 	 */
 	terminate(): void {
-		this._worker.terminate();
-		activeWorkers.delete(this._worker);
+		this._teardown();
 	}
 
 	prepare(sql: string) {
@@ -134,10 +227,7 @@ class WorkerDB implements DBAsync {
 	}
 
 	close() {
-		return this.remote.close().finally(() => {
-			this._worker.terminate();
-			activeWorkers.delete(this._worker);
-		});
+		return this.remote.close().finally(() => this._teardown());
 	}
 
 	createFunction(name: string, fn: (...args: any) => unknown, opts?: Record<string, any>) {
