@@ -48,10 +48,15 @@ export function disconnectAllPorts(): void {
 // ---------------------------------------------------------------------------
 
 export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync> {
-	if (typeof SharedWorker !== "undefined") {
+	// SharedWorker is used in production to share one OPFS handle across tabs.
+	// In the vitest browser test environment, createSyncAccessHandle is not available inside
+	// SharedWorkers (Playwright headless Chromium restriction); DedicatedWorker works fine for
+	// single-tab unit tests.
+	const isTestEnv = import.meta.env.MODE === "test";
+	if (typeof SharedWorker !== "undefined" && !isTestEnv) {
 		return getSharedWorkerDB(dbname, vfs);
 	}
-	// iOS Safari / environments without SharedWorker support → DedicatedWorker fallback
+	// iOS Safari / environments without SharedWorker support, or test env → DedicatedWorker fallback
 	return getDedicatedWorkerDB(dbname, vfs);
 }
 

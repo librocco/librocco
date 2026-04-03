@@ -676,10 +676,7 @@ function getOrInitDB(dbname: string, vfs: VFSWhitelist): Promise<WrappedDB> {
 	if (!_dbPromise) {
 		const initPromise = getCrsqliteDB(dbname, vfs).then(wrapDB);
 		const timeoutPromise = new Promise<never>((_, reject) =>
-			setTimeout(
-				() => reject(new Error(`[SharedWorker] DB init timed out after ${WORKER_INIT_TIMEOUT_MS}ms`)),
-				WORKER_INIT_TIMEOUT_MS
-			)
+			setTimeout(() => reject(new Error(`[SharedWorker] DB init timed out after ${WORKER_INIT_TIMEOUT_MS}ms`)), WORKER_INIT_TIMEOUT_MS)
 		);
 		const racePromise = Promise.race([initPromise, timeoutPromise]);
 		// If the timeout wins but getCrsqliteDB still resolves later, close the leaked handle.
