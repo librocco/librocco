@@ -796,15 +796,20 @@
 	};
 
 	const handleImportState = () => {
+		if (isLoading) return;
 		const dbid = get(app.config.dbid);
 		const input = Object.assign(document.createElement("input"), { type: "file", accept: ".sqlite3,.sqlite,.db" });
 		input.onchange = async () => {
 			if (!input.files?.[0]) return;
+			isLoading = true;
+			errorMessage = null;
 			try {
 				await importStateArchive(input.files[0], dbid);
 			} catch (error) {
 				console.error("Error importing state:", error);
 				errorMessage = error;
+			} finally {
+				isLoading = false;
 			}
 		};
 		input.click();
@@ -2132,7 +2137,11 @@
 								<div class="text-sm font-semibold">Import state</div>
 								<p class="text-xs opacity-70">Replace local database with a .sqlite3 file for debugging. Reloads the page.</p>
 							</div>
-							<button class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start" on:click={handleImportState}>
+							<button
+								class="btn-neutral btn-sm btn w-36 shrink-0 justify-center self-start"
+								on:click={handleImportState}
+								disabled={isLoading}
+							>
 								<Upload size={16} />
 								Import
 							</button>

@@ -200,11 +200,16 @@ function attachWindowHelpers(app: App) {
 		const dbid = dbidOverride ?? app.db.dbid ?? get(app.config.dbid);
 		const input = Object.assign(document.createElement("input"), { type: "file", accept: ".sqlite3,.sqlite,.db" });
 		input.onchange = async () => {
-			if (input.files?.[0]) await importStateArchive(input.files[0], dbid);
+			try {
+				if (input.files?.[0]) await importStateArchive(input.files[0], dbid);
+			} catch (err) {
+				console.error("[importStateArchive] import failed:", err);
+			} finally {
+				document.body.removeChild(input);
+			}
 		};
 		document.body.appendChild(input);
 		input.click();
-		document.body.removeChild(input);
 	};
 	window["importStateArchiveFromUrl"] = (url: string, dbidOverride?: string) => {
 		const dbid = dbidOverride ?? app.db.dbid ?? get(app.config.dbid);

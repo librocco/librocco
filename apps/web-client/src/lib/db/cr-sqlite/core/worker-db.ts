@@ -36,11 +36,17 @@ export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync>
 	console.timeEnd("[worker-db] worker init");
 
 	console.time("[worker-db] comlink setup");
-	const ifc = Comlink.wrap<DBAsyncRemote>(wkr);
-	const [__mutex, siteid, filename, tablesUsedStmt] = await Promise.all([ifc.__mutex, ifc.siteid, ifc.filename, ifc.tablesUsedStmt]);
-	console.timeEnd("[worker-db] comlink setup");
-
-	return new WorkerDB(wkr, ifc, __mutex, siteid, filename, tablesUsedStmt);
+	try {
+		const ifc = Comlink.wrap<DBAsyncRemote>(wkr);
+		const [__mutex, siteid, filename, tablesUsedStmt] = await Promise.all([ifc.__mutex, ifc.siteid, ifc.filename, ifc.tablesUsedStmt]);
+		console.timeEnd("[worker-db] comlink setup");
+		return new WorkerDB(wkr, ifc, __mutex, siteid, filename, tablesUsedStmt);
+	} catch (err) {
+		console.timeEnd("[worker-db] comlink setup");
+		wkr.terminate();
+		activeWorkers.delete(wkr);
+		throw err;
+	}
 }
 
 function initWorker(dbname: string, vfs: string) {
@@ -59,6 +65,8 @@ function initWorker(dbname: string, vfs: string) {
 				}
 				case "error": {
 					wkr.removeEventListener("message", listener);
+					wkr.terminate();
+					activeWorkers.delete(wkr);
 					const err = new Error(e.data.error);
 					if (e.data.stack) {
 						err.stack = e.data.stack;

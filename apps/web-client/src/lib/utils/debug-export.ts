@@ -1,7 +1,7 @@
 import { zipSync, strToU8 } from "fflate";
 
 import { VERSION, GIT_SHA } from "$lib/constants";
-import { deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
+import { deleteDBFromOPFS, wrapFileHandle } from "$lib/db/cr-sqlite/core/utils";
 import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
 
 /**
@@ -78,13 +78,16 @@ async function writeDbBytesToOPFS(bytes: Uint8Array, dbid: string): Promise<void
 	terminateAllWorkers();
 	await new Promise<void>((r) => setTimeout(r, 300));
 
-	await deleteDBFromOPFS(dbid);
-
+	// Write to a temp file first so the live DB is only removed after the write succeeds
 	const root = await navigator.storage.getDirectory();
-	const fh = await root.getFileHandle(dbid, { create: true });
+	const tempDbid = `${dbid}-temp`;
+	const fh = await root.getFileHandle(tempDbid, { create: true });
 	const ws = await fh.createWritable();
 	await ws.write(bytes.buffer as ArrayBuffer);
 	await ws.close();
+
+	await deleteDBFromOPFS(dbid);
+	await wrapFileHandle(root, fh).move(dbid);
 
 	window.location.reload();
 }
