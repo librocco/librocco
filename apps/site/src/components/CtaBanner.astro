@@ -1,6 +1,6 @@
 ---
 import { BookOpen, GitBranch } from '@lucide/astro';
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(//?$/, '/');
 ---
 
 <section class="flex bg-base-100 py-16 w-full justify-center">

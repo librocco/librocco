@@ -1,6 +1,6 @@
 ---
 import { Menu, X } from '@lucide/astro';
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(//?$/, '/');
 ---
 
 <header id="site-header" class="fixed w-full top-0 z-50 bg-base-100/60 backdrop-blur-md nav-header">

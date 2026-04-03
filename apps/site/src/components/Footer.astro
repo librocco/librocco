@@ -1,5 +1,5 @@
 ---
-const base = import.meta.env.BASE_URL;
+const base = import.meta.env.BASE_URL.replace(//?$/, '/');
 ---
 
 <div class="h-px bg-base-300 w-full"></div>
