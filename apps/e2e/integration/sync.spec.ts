@@ -802,7 +802,10 @@ test("sync status stays consistent across two tabs during stop/restart", async (
 			window.localStorage.setItem("librocco-current-db", `"${dbName}"`);
 			window.localStorage.setItem("librocco-sync-url", `"${syncUrl}"`);
 			window.localStorage.setItem("librocco-sync-active", "true");
-			// SharedWorker eliminates OPFS lock contention across tabs — no VFS override needed.
+			// Use asyncify-idb-batch-atomic to avoid OPFS lock contention between tabs in browsers
+			// where SharedWorker createSyncAccessHandle is unavailable (e.g. Firefox, Playwright Chromium).
+			// This test focuses on sync protocol behavior; the multi-tab OPFS fix is tested in multi-tab.spec.ts.
+			window.localStorage.setItem("vfs", "asyncify-idb-batch-atomic");
 		},
 		[syncUrl, dbName]
 	);
