@@ -66,7 +66,18 @@ export async function getWorkerDB(dbname: string, vfs: string): Promise<DBAsync>
 
 async function getSharedWorkerDB(dbname: string, vfs: string): Promise<DBAsync> {
 	console.time("[worker-db] SharedWorker port init");
-	const port = await initWorkerPort(dbname, vfs);
+	let port: MessagePort;
+	try {
+		port = await initWorkerPort(dbname, vfs);
+	} catch (err) {
+		// SharedWorker init failed (e.g. createSyncAccessHandle unavailable in SharedWorker
+		// in certain Chromium environments such as Playwright headless). Fall back to
+		// DedicatedWorker so the app stays functional. The multi-tab fix is sacrificed in
+		// this fallback path, but real Chrome 108+ always succeeds here.
+		console.warn("[worker-db] SharedWorker init failed, falling back to DedicatedWorker:", err);
+		console.timeEnd("[worker-db] SharedWorker port init");
+		return getDedicatedWorkerDB(dbname, vfs);
+	}
 	console.timeEnd("[worker-db] SharedWorker port init");
 
 	console.time("[worker-db] comlink setup (shared)");
