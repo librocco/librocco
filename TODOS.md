@@ -18,17 +18,3 @@ Deferred work captured during engineering review.
 **Files:** `src/lib/db/cr-sqlite/core/worker-db.worker.ts`, `src/lib/utils/debug-export.ts`
 
 **Depends on:** SharedWorker DB migration landing first.
-
----
-
-## Demo DB SharedWorker migration
-
-**What:** `initializeDemoDb` in `src/lib/app/db.ts` uses `DEMO_VFS` (same `sync-opfs-coop-sync`) but a different DB file (`DEMO_DB_NAME`). It currently calls `getDBCore()` which goes through the worker path, but demo DB init has its own lifecycle separate from the main DB SharedWorker.
-
-**Why:** After the main DB SharedWorker migration, demo DB still runs a DedicatedWorker. If a user opens demo mode in two tabs, they hit the same OPFS lock contention bug (just for the demo DB). Low probability but inconsistent.
-
-**Fix:** Apply the same SharedWorker pattern to demo DB initialization. Same `onconnect`/`getOrInitDB` approach, different dbname key (`DEMO_DB_NAME---<vfs>`).
-
-**Files:** `src/lib/app/db.ts` (`initializeDemoDb`), potentially `src/lib/db/cr-sqlite/core/worker-db.ts`
-
-**Depends on:** SharedWorker DB migration landing and proving stable in production (at least one release cycle).
