@@ -12,7 +12,7 @@
 
 import SharedServiceRelay from "./shared-service-relay.worker?sharedworker";
 
-const PROVIDER_REQUEST_TIMEOUT = 3000;
+const PROVIDER_REQUEST_TIMEOUT = 500;
 
 type ProviderChangeCallback = () => void;
 
