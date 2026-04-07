@@ -25,7 +25,7 @@ const activePorts = new Set<MessagePort>();
 // DedicatedWorker instances (leader tab, or iOS fallback)
 const activeWorkers = new Set<Worker>();
 // Active SharedService instances
-let activeService: SharedService | null = null;
+const activeServices = new Set<SharedService>();
 
 /**
  * Synchronously closes all active DB connections:
@@ -44,10 +44,10 @@ export function disconnectAllPorts(): void {
 		w.terminate();
 	}
 	activeWorkers.clear();
-	if (activeService) {
-		activeService.close();
-		activeService = null;
+	for (const s of activeServices) {
+		s.close();
 	}
+	activeServices.clear();
 }
 
 // ---------------------------------------------------------------------------
@@ -80,10 +80,19 @@ async function getSharedServiceDB(dbname: string, vfs: string): Promise<DBAsync>
 		const wkr = new DBWorker({ name: serviceName });
 		activeWorkers.add(wkr);
 
+		const WORKER_INIT_TIMEOUT = 10_000;
 		await new Promise<void>((resolve, reject) => {
+			const timer = setTimeout(() => {
+				wkr.removeEventListener("message", listener);
+				wkr.terminate();
+				activeWorkers.delete(wkr);
+				reject(new Error("DedicatedWorker init timed out"));
+			}, WORKER_INIT_TIMEOUT);
+
 			const listener = (e: MessageEvent) => {
 				const isInitMsg = (e: MessageEvent): e is MessageEvent<MsgInit> => e.data?._type === "wkr-init";
 				if (!isInitMsg(e)) return;
+				clearTimeout(timer);
 				wkr.removeEventListener("message", listener);
 				if (e.data.status === "ok") {
 					resolve();
@@ -103,7 +112,7 @@ async function getSharedServiceDB(dbname: string, vfs: string): Promise<DBAsync>
 		});
 	});
 
-	activeService = service;
+	activeServices.add(service);
 	service.activate();
 
 	// Wait for a provider to be available and get our port to the worker.
@@ -115,7 +124,7 @@ async function getSharedServiceDB(dbname: string, vfs: string): Promise<DBAsync>
 		console.warn("[worker-db] shared service init failed, falling back to DedicatedWorker:", err);
 		console.timeEnd("[worker-db] shared service port");
 		service.close();
-		activeService = null;
+		activeServices.delete(service);
 		return getDedicatedWorkerDB(dbname, vfs);
 	}
 	console.timeEnd("[worker-db] shared service port");
