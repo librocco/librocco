@@ -2,7 +2,7 @@ import { zipSync, strToU8 } from "fflate";
 
 import { VERSION, GIT_SHA } from "$lib/constants";
 import { deleteDBFromOPFS, wrapFileHandle } from "$lib/db/cr-sqlite/core/utils";
-import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
+import { disconnectAllPorts } from "$lib/db/cr-sqlite/core/worker-db";
 
 /**
  * Exports the current app state (SQLite DB + localStorage config) as a zip archive.
@@ -75,7 +75,7 @@ async function writeDbBytesToOPFS(bytes: Uint8Array, dbid: string): Promise<void
 	if (!magic.every((b, i) => bytes[i] === b)) throw new Error("Invalid SQLite file: magic header mismatch");
 
 	// Release all OPFS file handles held by workers, then wait briefly for the OS to free them
-	terminateAllWorkers();
+	disconnectAllPorts();
 	await new Promise<void>((r) => setTimeout(r, 300));
 
 	// Write to a temp file first so the live DB is only removed after the write succeeds

@@ -85,6 +85,17 @@ async function start() {
 		Comlink.expose(db);
 		console.timeEnd("[worker] wrapDB + expose");
 
+		// Listen for client ports forwarded by the leader tab (shared service pattern).
+		// When a new client tab connects, the leader transfers a MessagePort here;
+		// we expose the same DB instance on that port via Comlink.
+		self.addEventListener("message", (e: MessageEvent) => {
+			if (e.data?._type === "client-port" && e.ports[0]) {
+				const clientPort = e.ports[0];
+				clientPort.start();
+				Comlink.expose(db, clientPort);
+			}
+		});
+
 		console.log(`[worker] db exposed, sending ok msg...`);
 		const msg: MsgInitOk = { _type: "wkr-init", status: "ok" };
 		self.postMessage(msg);

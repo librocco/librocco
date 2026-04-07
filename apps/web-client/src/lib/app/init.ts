@@ -12,7 +12,7 @@ import { DEMO_VFS } from "$lib/db/cr-sqlite/core/constants";
 import { type App } from ".";
 import { AppDbState, getDb, initializeDb, initializeDemoDb } from "./db";
 import { ErrDBInitTimeout } from "./errors";
-import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
+import { disconnectAllPorts } from "$lib/db/cr-sqlite/core/worker-db";
 import { _performInitialSync, initializeSync, startSync } from "./sync";
 
 import { updateTranslationOverrides } from "$lib/i18n-overrides";
@@ -44,7 +44,7 @@ export async function initApp(app: App) {
 	let timeoutId: ReturnType<typeof setTimeout> | undefined;
 	const timeoutPromise = new Promise<never>((_, reject) => {
 		timeoutId = setTimeout(() => {
-			terminateAllWorkers();
+			disconnectAllPorts();
 			const dbid = app.db.dbid ?? get(app.config.dbid);
 			const err = new ErrDBInitTimeout();
 			const currentState = get(app.db.state);
