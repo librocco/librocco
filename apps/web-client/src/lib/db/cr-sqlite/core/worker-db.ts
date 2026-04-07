@@ -89,6 +89,7 @@ async function getSharedWorkerDB(dbname: string, vfs: string): Promise<DBAsync> 
 			port.close();
 			activePorts.delete(port);
 		};
+		if (typeof window !== "undefined") (window as any).__librocco_worker_type = "shared";
 		return new WorkerDB(cleanup, ifc, __mutex, siteid, filename, tablesUsedStmt);
 	} catch (err) {
 		console.timeEnd("[worker-db] comlink setup (shared)");
@@ -146,6 +147,7 @@ async function getDedicatedWorkerDB(dbname: string, vfs: string): Promise<DBAsyn
 			wkr.terminate();
 			activeWorkers.delete(wkr);
 		};
+		if (typeof window !== "undefined") (window as any).__librocco_worker_type = "dedicated";
 		return new WorkerDB(cleanup, ifc, __mutex, siteid, filename, tablesUsedStmt);
 	} catch (err) {
 		console.timeEnd("[worker-db] comlink setup (dedicated)");

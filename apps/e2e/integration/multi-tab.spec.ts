@@ -8,10 +8,20 @@
  * After the fix: Tab 2 connects to the already-running SharedWorker in ~50ms.
  */
 
-import { expect } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 import { baseURL } from "@/constants";
 import { testBase as test } from "@/helpers/fixtures";
+
+/**
+ * Returns the worker type chosen by worker-db.ts for this page.
+ * In Playwright headless, createSyncAccessHandle is unavailable in SharedWorkers,
+ * so the SharedWorker init fails and the code falls back to DedicatedWorker.
+ * In a real browser served with COOP/COEP headers (crossOriginIsolated = true),
+ * SharedWorker must be chosen — otherwise the multi-tab OPFS fix is broken.
+ */
+const getWorkerType = (page: Page) => page.evaluate(() => (window as any).__librocco_worker_type as "shared" | "dedicated" | undefined);
+const getIsIsolated = (page: Page) => page.evaluate(() => self.crossOriginIsolated);
 
 // The SharedWorker should attach Tab 2 to an already-running worker — well under 10s.
 // The old behavior was a 30s hard timeout followed by an error.
@@ -37,6 +47,17 @@ test("two tabs open the same DB — both reach db_ready without timeout", async 
 		const tab2Ready = await page2.evaluate(() => Boolean((window as any).db_ready));
 		expect(tab1Ready).toBe(true);
 		expect(tab2Ready).toBe(true);
+
+		// Verify the correct worker type was chosen for the environment.
+		// In Playwright headless, SharedWorker init fails (createSyncAccessHandle unavailable)
+		// so DedicatedWorker is expected. In a real browser with COOP/COEP headers,
+		// SharedWorker must be used — otherwise the multi-tab OPFS fix is silently broken.
+		const [tab1Type, tab2Type, isIsolated] = await Promise.all([getWorkerType(page), getWorkerType(page2), getIsIsolated(page)]);
+		expect(tab1Type).toBeDefined();
+		expect(tab1Type).toBe(tab2Type); // Both tabs must agree on the worker type
+		if (isIsolated) {
+			expect(tab1Type).toBe("shared");
+		}
 	} finally {
 		await page2.close();
 	}

@@ -190,6 +190,10 @@ https://:{CADDY_PORT} {{
     handle {{
         root * {app_dir}
         file_server browse
+        header {{
+            Cross-Origin-Opener-Policy "same-origin"
+            Cross-Origin-Embedder-Policy "credentialless"
+        }}
     }}
 
     # Access logs (HTTP requests)
