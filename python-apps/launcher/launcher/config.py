@@ -186,6 +186,11 @@ https://:{CADDY_PORT} {{
         reverse_proxy localhost:3000
     }}
 
+    # Proxy label printing requests to the labelprinter service
+    handle /printlabel* {{
+        reverse_proxy localhost:8026
+    }}
+
     # Serve the app directory for all other requests
     handle {{
         root * {app_dir}
