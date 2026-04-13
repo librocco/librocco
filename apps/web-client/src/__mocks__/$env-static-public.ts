@@ -9,3 +9,4 @@ export const PUBLIC_IS_DEBUG = "false";
 export const PUBLIC_LOG_LEVEL = "none";
 export const PUBLIC_IS_DEMO = "false";
 export const PUBLIC_DEMO_DB_URL = "";
+export const PUBLIC_SENTRY_DSN = "";

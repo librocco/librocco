@@ -13,7 +13,7 @@ export const DEFAULT_BASE_PATH = "/preview";
 const dev = process.env.NODE_ENV === "development";
 const CURRENT_SHA = process.env.CURRENT_SHA;
 
-if (process.env.SENTRY_AUTH_TOKEN != "") {
+if (process.env.SENTRY_AUTH_TOKEN) {
 	console.log("building with sentry...");
 }
 
