@@ -103,11 +103,11 @@ const getSeqName = async (db: TXAsync, kind: "inbound" | "outbound"): Promise<st
  */
 export function createInboundNote(db: DBAsync, warehouseId: number, noteId: number): Promise<void> {
 	const timestamp = Date.now();
-	const stmt = "INSERT INTO note (id, display_name, warehouse_id, updated_at) VALUES (?, ?, ?, ?)";
+	const stmt = "INSERT INTO note (id, display_name, warehouse_id, updated_at, created_at) VALUES (?, ?, ?, ?, ?)";
 
 	return db.tx(async (txDb) => {
 		const displayName = await getSeqName(txDb, "inbound");
-		await txDb.exec(stmt, [noteId, displayName, warehouseId, timestamp]);
+		await txDb.exec(stmt, [noteId, displayName, warehouseId, timestamp, timestamp]);
 	});
 }
 
@@ -121,11 +121,11 @@ export function createInboundNote(db: DBAsync, warehouseId: number, noteId: numb
  */
 export function createOutboundNote(db: DBAsync, noteId: number): Promise<void> {
 	const timestamp = Date.now();
-	const stmt = "INSERT INTO note (id, display_name, updated_at) VALUES (?, ?, ?)";
+	const stmt = "INSERT INTO note (id, display_name, updated_at, created_at) VALUES (?, ?, ?, ?)";
 
 	return db.tx(async (txDb) => {
 		const displayName = await getSeqName(txDb, "outbound");
-		await txDb.exec(stmt, [noteId, displayName, timestamp]);
+		await txDb.exec(stmt, [noteId, displayName, timestamp, timestamp]);
 	});
 }
 
@@ -143,6 +143,7 @@ async function _getActiveInboundNotes(db: TXAsync): Promise<InboundNoteListItem[
 			note.display_name AS displayName,
 			warehouse.display_name AS warehouseName,
 			note.updated_at,
+			note.created_at,
 			COALESCE(SUM(book_transaction.quantity), 0) AS totalBooks
 		FROM note
 		INNER JOIN warehouse ON note.warehouse_id = warehouse.id
@@ -152,10 +153,21 @@ async function _getActiveInboundNotes(db: TXAsync): Promise<InboundNoteListItem[
 		ORDER BY note.updated_at DESC
 	`;
 
-	const res = await db.execO<{ id: number; displayName: string; warehouseName: string; updated_at: number; totalBooks: number }>(query);
+	const res = await db.execO<{
+		id: number;
+		displayName: string;
+		warehouseName: string;
+		updated_at: number;
+		created_at: number;
+		totalBooks: number;
+	}>(query);
 
 	// TODO: update total books when we add note volume stock functionality
-	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
+	return res.map(({ updated_at, created_at, ...el }) => ({
+		...el,
+		updatedAt: new Date(updated_at),
+		createdAt: new Date(created_at)
+	}));
 }
 
 /**
@@ -171,6 +183,7 @@ async function _getActiveOutboundNotes(db: TXAsync): Promise<OutboundNoteListIte
 			note.id,
 			note.display_name AS displayName,
 			note.updated_at,
+			note.created_at,
 			COALESCE(SUM(book_transaction.quantity), 0) AS totalBooks
 		FROM note
 		LEFT JOIN book_transaction ON note.id = book_transaction.note_id
@@ -180,10 +193,14 @@ async function _getActiveOutboundNotes(db: TXAsync): Promise<OutboundNoteListIte
 		ORDER BY note.updated_at DESC
 	`;
 
-	const res = await db.execO<{ id: number; displayName: string; updated_at: number; totalBooks: number }>(query);
+	const res = await db.execO<{ id: number; displayName: string; updated_at: number; created_at: number; totalBooks: number }>(query);
 
 	// TODO: update total books when we add note volume stock functionality
-	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
+	return res.map(({ updated_at, created_at, ...el }) => ({
+		...el,
+		updatedAt: new Date(updated_at),
+		createdAt: new Date(created_at)
+	}));
 }
 
 /**
@@ -867,9 +884,9 @@ async function _createAndCommitReconciliationNote(db: DBAsync, id: number, volum
 
 		// Insert the reconciliation note
 		await txDb.exec(
-			`INSERT INTO note (id, display_name, is_reconciliation_note, updated_at, committed, committed_at)
-			VALUES (?, ?, 1, ?, 1, ?)`,
-			[id, displayName, timestamp, timestamp]
+			`INSERT INTO note (id, display_name, is_reconciliation_note, updated_at, created_at, committed, committed_at)
+			VALUES (?, ?, 1, ?, ?, 1, ?)`,
+			[id, displayName, timestamp, timestamp, timestamp]
 		);
 	});
 }

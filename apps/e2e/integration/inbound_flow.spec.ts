@@ -396,3 +396,44 @@ test("should display book original price and discounted price as well as the war
 		.table("warehouse")
 		.assertRows([{ isbn: "1234567890", price: { price: "(€12.00)", discountedPrice: "€10.80", discount: "-10%" } }]);
 });
+
+test("editing a purchase note does not change its createdAt timestamp", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Create a note (helper INSERTs with created_at = updated_at = now, then UPDATEs display_name → bumps updated_at)
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+
+	await page.getByRole("link", { name: "Purchase" }).click();
+
+	const list = content.entityList("inbound-list");
+	const row = list.item(0);
+	const createdCell = row.locator('[data-property="createdAt"]');
+	await createdCell.waitFor();
+
+	// Capture the rendered "Created:" text and the DB-level created_at / updated_at
+	const createdTextBefore = (await createdCell.textContent())?.trim();
+	const before = await dbHandle.evaluate(async (db) => {
+		const [r] = await (db as any).execO("SELECT created_at AS createdAt, updated_at AS updatedAt FROM note WHERE id = ?", [1]);
+		return r as { createdAt: number; updatedAt: number };
+	});
+
+	// Edit the note (bumps updated_at; must not touch created_at)
+	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Purchase 1 (edited)" });
+
+	// Wait for the row to re-render with the new displayName (proves the list picked up fresh DB state)
+	await row.getByText("Warehouse 1 / Purchase 1 (edited)").waitFor();
+
+	// Rendered "Created:" text must be identical
+	const createdTextAfter = (await createdCell.textContent())?.trim();
+	expect(createdTextAfter).toBe(createdTextBefore);
+
+	// DB contract: created_at unchanged, updated_at moved forward
+	const after = await dbHandle.evaluate(async (db) => {
+		const [r] = await (db as any).execO("SELECT created_at AS createdAt, updated_at AS updatedAt FROM note WHERE id = ?", [1]);
+		return r as { createdAt: number; updatedAt: number };
+	});
+	expect(after.createdAt).toBe(before.createdAt);
+	expect(after.updatedAt).toBeGreaterThan(before.updatedAt);
+});

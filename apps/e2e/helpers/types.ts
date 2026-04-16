@@ -85,6 +85,7 @@ export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGr
 export interface EntityListMatcher {
 	name?: string;
 	updatedAt?: Date;
+	createdAt?: Date;
 	numBooks?: number;
 	numPurchaseNotes?: number;
 	discount?: number;

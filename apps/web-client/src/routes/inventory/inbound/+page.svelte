@@ -4,6 +4,7 @@
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import Clock from "$lucide/clock";
 	import ClockArrowUp from "$lucide/clock-arrow-up";
 	import FilePlus from "$lucide/file-plus";
 	import Layers from "$lucide/layers";
@@ -119,6 +120,7 @@
 					{@const noteName = note.displayName || `Note - ${note.id}`}
 					{@const displayName = `${note.warehouseName} / ${noteName}`}
 					{@const updatedAt = $dateFormatters.dateTime(note.updatedAt)}
+					{@const createdAt = $dateFormatters.dateTime(note.createdAt)}
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("inbound", note.id)}
 
@@ -131,6 +133,13 @@
 									<Layers size={18} />
 									<span class="entity-list-text-sm text-sm text-base-content"> {t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
+								{#if note.createdAt}
+									<div class="flex items-center gap-x-2 text-sm text-base-content" data-property="createdAt">
+										<Clock size={18} />
+										Created:
+										{createdAt}
+									</div>
+								{/if}
 								{#if note.updatedAt}
 									<div class="flex items-center gap-x-2 text-sm text-base-content">
 										<ClockArrowUp size={18} />

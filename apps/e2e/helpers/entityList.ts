@@ -23,13 +23,20 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 		// are no more elements (than specified) in a list (when asserting for the entire list)
 		if (element === null) return locator.waitFor({ state: "detached" });
 
-		const { name, updatedAt, numBooks, numPurchaseNotes, discount, totalCoverPrice, totalDiscountedPrice } = element;
+		const { name, updatedAt, createdAt, numBooks, numPurchaseNotes, discount, totalCoverPrice, totalDiscountedPrice } = element;
 
 		if (name) await locator.getByText(name, { exact: true }).waitFor();
 		if (updatedAt) {
 			const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace("Updated: ", ""));
 			await getDateString(Object.assign(locator, { dashboard: _parent.dashboard }), "Updated:", extractDateFromUpdatedAtString).assert(
 				updatedAt
+			);
+		}
+		if (createdAt) {
+			const createdAtCell = locator.locator('[data-property="createdAt"]');
+			const extractDateFromCreatedAtString = (str: string) => new Date(str.replace("Created: ", ""));
+			await getDateString(Object.assign(createdAtCell, { dashboard: _parent.dashboard }), "Created:", extractDateFromCreatedAtString).assert(
+				createdAt
 			);
 		}
 
