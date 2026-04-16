@@ -316,6 +316,27 @@ test("should display book count and warehouse discount for each respective wareh
 	]);
 });
 
+test("should display active purchase note counts per warehouse", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+	const dbHandle = await getDbHandle(page);
+	const warehouseList = content.entityList("warehouse-list");
+
+	// Create two warehouses
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+
+	// Create 2 draft inbound notes in warehouse 1; none in warehouse 2 (notes stay uncommitted)
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+
+	// Warehouse 1 shows "2 purchase notes"; warehouse 2 shows the muted ghost pill "0 purchase notes"
+	await warehouseList.assertElements([
+		{ name: "Warehouse 1", numPurchaseNotes: 2 },
+		{ name: "Warehouse 2", numPurchaseNotes: 0 }
+	]);
+});
+
 test("should update the warehouse using the 'Edit' dialog", async ({ page }) => {
 	const dashboard = getDashboard(page);
 

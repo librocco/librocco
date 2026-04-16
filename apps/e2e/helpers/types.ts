@@ -86,6 +86,7 @@ export interface EntityListMatcher {
 	name?: string;
 	updatedAt?: Date;
 	numBooks?: number;
+	numPurchaseNotes?: number;
 	discount?: number;
 	totalCoverPrice?: number;
 	totalDiscountedPrice?: number;

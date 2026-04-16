@@ -187,6 +187,26 @@ async function _getActiveOutboundNotes(db: TXAsync): Promise<OutboundNoteListIte
 }
 
 /**
+ * Returns a map of warehouseId -> count of uncommitted inbound notes for that warehouse.
+ * Warehouses with zero drafts are omitted from the map (callers should default to 0).
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<Map<number, number>>} Map from warehouse ID to active inbound note count
+ */
+async function _getInboundNoteCountsByWarehouse(db: TXAsync): Promise<Map<number, number>> {
+	const query = `
+		SELECT note.warehouse_id AS warehouseId, COUNT(*) AS count
+		FROM note
+		INNER JOIN warehouse ON note.warehouse_id = warehouse.id
+		WHERE note.committed = 0
+		GROUP BY note.warehouse_id
+	`;
+
+	const rows = await db.execO<{ warehouseId: number; count: number }>(query);
+	return new Map(rows.map(({ warehouseId, count }) => [warehouseId, count]));
+}
+
+/**
  * Cheap count-only variant of {@link _getActiveOutboundNotes}: returns the number of
  * uncommitted outbound notes without fetching rows or joining book_transaction.
  *
@@ -836,6 +856,7 @@ export const getNoteIdSeq = timed(_getNoteIdSeq);
 export const getActiveInboundNotes = timed(_getActiveInboundNotes);
 export const getActiveOutboundNotes = timed(_getActiveOutboundNotes);
 export const getActiveOutboundNoteCount = timed(_getActiveOutboundNoteCount);
+export const getInboundNoteCountsByWarehouse = timed(_getInboundNoteCountsByWarehouse);
 export const getNoteById = timed(_getNoteById);
 export const updateNote = timed(_updateNote);
 export const getNoWarehouseEntries = timed(_getNoWarehouseEntries);
