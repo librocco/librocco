@@ -142,7 +142,7 @@
 									{#if note.createdAt}
 										<div class="flex items-center gap-x-2 text-sm text-base-content" data-property="createdAt">
 											<Clock size={18} />
-											Created:
+											{tOutboundPage.stats.created()}:
 											{createdAt}
 										</div>
 									{/if}

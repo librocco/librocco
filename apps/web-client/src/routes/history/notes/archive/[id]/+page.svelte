@@ -106,12 +106,12 @@
 					{#if noteType === "inbound"}
 						<span class="badge badge-md badge-green gap-1 !px-1" data-property="noteType" data-value="purchase">
 							<PackagePlus class="h-3 w-3" />
-							Purchase
+							{t.type.purchase()}
 						</span>
 					{:else if noteType === "outbound"}
 						<span class="badge badge-md badge-red gap-1 !px-1" data-property="noteType" data-value="sale">
 							<PackageMinus class="h-3 w-3" />
-							Sale
+							{t.type.sale()}
 						</span>
 					{/if}
 					{#if updatedAt}

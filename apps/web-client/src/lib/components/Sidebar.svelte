@@ -29,7 +29,7 @@
 		icon: any;
 	}
 
-	$: ({ nav: tNav } = $LL);
+	$: ({ nav: tNav, common: tCommon } = $LL);
 
 	const saleHref = appHash("outbound");
 
@@ -98,7 +98,7 @@
 							<span
 								class="badge-primary badge badge-sm ml-auto"
 								data-property="numSaleNotes"
-								aria-label={`${$activeOutboundNoteCount} sale note${$activeOutboundNoteCount === 1 ? "" : "s"}`}
+								aria-label={tCommon.badges.sale_notes({ count: $activeOutboundNoteCount })}
 							>
 								{$activeOutboundNoteCount}
 							</span>

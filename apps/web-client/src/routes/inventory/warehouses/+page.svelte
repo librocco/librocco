@@ -169,11 +169,11 @@
 										class="badge-primary badge badge-sm px-1.5 py-2.5 hover:underline focus:underline"
 										data-property="numPurchaseNotes"
 									>
-										{numPurchaseNotes} purchase note{numPurchaseNotes === 1 ? "" : "s"}
+										{tCommon.badges.purchase_notes({ count: numPurchaseNotes })}
 									</a>
 								{:else}
 									<span class="badge-ghost badge badge-sm px-1.5 py-2.5 text-base-content/60" data-property="numPurchaseNotes">
-										0 purchase notes
+										{tCommon.badges.purchase_notes({ count: 0 })}
 									</span>
 								{/if}
 
