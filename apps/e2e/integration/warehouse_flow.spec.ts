@@ -337,6 +337,47 @@ test("should display active purchase note counts per warehouse", async ({ page }
 	]);
 });
 
+test("should display active purchase note count on the warehouse detail page", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+	const dbHandle = await getDbHandle(page);
+
+	// Create two warehouses and 2 draft inbound notes in warehouse 1 (warehouse 2 has zero drafts)
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+
+	// Navigate to warehouse 1 detail page: counter is an anchor with plural copy
+	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
+	await dashboard.view("warehouse").waitFor();
+
+	const counter = page.locator('a[data-property="numPurchaseNotes"]');
+	await counter.getByText("2 purchase notes", { exact: true }).waitFor();
+
+	// Click the counter: lands on the inbound (purchase notes) list
+	await counter.click();
+	await dashboard.view("inventory").waitFor();
+	await content.entityList("inbound-list").waitFor();
+
+	// Warehouse 2 has zero drafts: counter is present but muted (not an anchor) and reads "0 purchase notes"
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	await content.entityList("warehouse-list").item(1).dropdown().viewStock();
+	await dashboard.view("warehouse").waitFor();
+
+	await page.getByText("0 purchase notes", { exact: true }).waitFor();
+	await page.locator('a[data-property="numPurchaseNotes"]').waitFor({ state: "detached" });
+
+	// Commit one of warehouse 1's drafts and return: counter shows singular "1 purchase note"
+	await dbHandle.evaluate(commitNote, 1);
+
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
+	await dashboard.view("warehouse").waitFor();
+
+	await page.locator('a[data-property="numPurchaseNotes"]').getByText("1 purchase note", { exact: true }).waitFor();
+});
+
 test("should update the warehouse using the 'Edit' dialog", async ({ page }) => {
 	const dashboard = getDashboard(page);
 

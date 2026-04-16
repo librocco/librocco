@@ -207,6 +207,27 @@ async function _getInboundNoteCountsByWarehouse(db: TXAsync): Promise<Map<number
 }
 
 /**
+ * Returns the count of uncommitted inbound notes for a single warehouse. Scoped,
+ * count-only variant of {@link _getInboundNoteCountsByWarehouse} for detail pages
+ * that only need one warehouse's number.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} warehouseId - Warehouse to scope the count to
+ * @returns {Promise<number>} Count of active inbound notes for the warehouse
+ */
+async function _getInboundNoteCountForWarehouse(db: TXAsync, warehouseId: number): Promise<number> {
+	const query = `
+		SELECT COUNT(*) AS count
+		FROM note
+		WHERE committed = 0
+		AND warehouse_id = ?
+	`;
+
+	const [[count]] = await db.execA<[number]>(query, [warehouseId]);
+	return count ?? 0;
+}
+
+/**
  * Cheap count-only variant of {@link _getActiveOutboundNotes}: returns the number of
  * uncommitted outbound notes without fetching rows or joining book_transaction.
  *
@@ -857,6 +878,7 @@ export const getActiveInboundNotes = timed(_getActiveInboundNotes);
 export const getActiveOutboundNotes = timed(_getActiveOutboundNotes);
 export const getActiveOutboundNoteCount = timed(_getActiveOutboundNoteCount);
 export const getInboundNoteCountsByWarehouse = timed(_getInboundNoteCountsByWarehouse);
+export const getInboundNoteCountForWarehouse = timed(_getInboundNoteCountForWarehouse);
 export const getNoteById = timed(_getNoteById);
 export const updateNote = timed(_updateNote);
 export const getNoWarehouseEntries = timed(_getNoWarehouseEntries);
