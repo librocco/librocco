@@ -224,9 +224,9 @@
 				<div use:scroll.container={{ rootMargin: "400px" }} class="min-h-0 flex-1 overflow-y-auto" style="scrollbar-width: thin">
 					<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 					<div>
-						<StockTable {table}>
+						<StockTable {table} plainQty>
 							<tr slot="row" let:row let:rowIx>
-								<StockBookRow {row} {rowIx}>
+								<StockBookRow {row} {rowIx} plainQty>
 									<div slot="row-actions">
 										<PopoverWrapper
 											options={{
