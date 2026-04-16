@@ -248,7 +248,7 @@ export interface InventoryFieldLookup {
 	isbn: Asserter<string> & AssertedLocator<string>;
 	title: Asserter<string> & AssertedLocator<string>;
 	authors: Asserter<string> & AssertedLocator<string>;
-	quantity: Asserter<number> & Setter<number> & AssertedLocator<number>;
+	quantity: Asserter<number> & Setter<number> & AssertedLocator<number> & { setWithBlur: (value: number) => Promise<void> };
 	year: Asserter<string> & AssertedLocator<string>;
 	publisher: Asserter<string> & AssertedLocator<string>;
 	price: Asserter<number | string | IBookPrice> & AssertedLocator<number | string | IBookPrice>;
@@ -262,7 +262,7 @@ export interface HistoryFieldLookup {
 	isbn: Asserter<string>;
 	title: Asserter<string>;
 	authors: Asserter<string>;
-	quantity: Asserter<number> & Setter<number>;
+	quantity: Asserter<number> & Setter<number> & { setWithBlur: (value: number) => Promise<void> };
 	warehouseName: Asserter<string>;
 	noteName: Locator & Asserter<string>;
 	committedAt: Asserter<string | Date>;

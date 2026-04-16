@@ -244,8 +244,15 @@ const quantityFieldCostructor: FieldConstructor<InventoryFieldLookup & HistoryFi
 		await input.fill(value.toString());
 		await input.press("Enter");
 	};
+	const setWithBlur = async (value: number) => {
+		const input = row.locator('[data-property="quantity"]').locator("input");
+		await input.fill(value.toString());
+		// Tab moves focus off the input via a real keyboard gesture, firing blur.
+		// (input.blur() via Playwright doesn't reliably dispatch the blur event in all contexts.)
+		await input.press("Tab");
+	};
 
-	return { assertedLocator, assert, set };
+	return { assertedLocator, assert, set, setWithBlur };
 };
 
 const outOfPrintFieldConstructor: FieldConstructor<InventoryFieldLookup, "outOfPrint"> = (row) => {
