@@ -35,9 +35,11 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 		if (createdAt) {
 			const createdAtCell = locator.locator('[data-property="createdAt"]');
 			const extractDateFromCreatedAtString = (str: string) => new Date(str.replace("Created: ", ""));
-			await getDateString(Object.assign(createdAtCell, { dashboard: _parent.dashboard }), "Created:", extractDateFromCreatedAtString).assert(
-				createdAt
-			);
+			await getDateString(
+				Object.assign(createdAtCell, { dashboard: _parent.dashboard }),
+				"Created:",
+				extractDateFromCreatedAtString
+			).assert(createdAt);
 		}
 
 		if (numBooks === 1) await locator.getByText(`${numBooks} book`).waitFor();

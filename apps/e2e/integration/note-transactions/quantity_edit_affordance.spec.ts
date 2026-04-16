@@ -32,7 +32,10 @@ test.beforeEach(async ({ page }) => {
 	// Seed a single row we can edit in every test
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 
-	await getDashboard(page).content().table("inbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }]);
+	await getDashboard(page)
+		.content()
+		.table("inbound-note")
+		.assertRows([{ isbn: "1234567890", quantity: 1 }]);
 });
 
 test("blur with a changed value commits", async ({ page }) => {

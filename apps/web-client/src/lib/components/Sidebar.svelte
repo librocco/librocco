@@ -96,7 +96,7 @@
 						{label}
 						{#if href === saleHref && $activeOutboundNoteCount > 0}
 							<span
-								class="badge badge-primary badge-sm ml-auto"
+								class="badge-primary badge badge-sm ml-auto"
 								data-property="numSaleNotes"
 								aria-label={`${$activeOutboundNoteCount} sale note${$activeOutboundNoteCount === 1 ? "" : "s"}`}
 							>
