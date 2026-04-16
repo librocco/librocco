@@ -19,6 +19,8 @@
 
 	import { page } from "$app/stores";
 
+	import { activeOutboundNoteCount } from "$lib/stores/active-outbound-count";
+
 	import LanguageSelector from "./LanguageSelector.svelte";
 
 	interface Link {
@@ -28,6 +30,8 @@
 	}
 
 	$: ({ nav: tNav } = $LL);
+
+	const saleHref = appHash("outbound");
 
 	let links: Link[];
 	$: links = [
@@ -48,7 +52,7 @@
 		},
 		{
 			label: tNav.sale(),
-			href: appHash("outbound"),
+			href: saleHref,
 			icon: PackageMinus
 		},
 		{
@@ -90,6 +94,15 @@
 					<a {href} class={$page.url.hash.startsWith(href) ? "active" : ""}>
 						<svelte:component this={icon} size={24} />
 						{label}
+						{#if href === saleHref && $activeOutboundNoteCount > 0}
+							<span
+								class="badge badge-primary badge-sm ml-auto"
+								data-property="numSaleNotes"
+								aria-label={`${$activeOutboundNoteCount} sale note${$activeOutboundNoteCount === 1 ? "" : "s"}`}
+							>
+								{$activeOutboundNoteCount}
+							</span>
+						{/if}
 					</a>
 				</li>
 			{/each}

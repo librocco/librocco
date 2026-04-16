@@ -186,6 +186,25 @@ async function _getActiveOutboundNotes(db: TXAsync): Promise<OutboundNoteListIte
 	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
 }
 
+/**
+ * Cheap count-only variant of {@link _getActiveOutboundNotes}: returns the number of
+ * uncommitted outbound notes without fetching rows or joining book_transaction.
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<number>} Count of active outbound notes
+ */
+async function _getActiveOutboundNoteCount(db: TXAsync): Promise<number> {
+	const query = `
+		SELECT COUNT(*) AS count
+		FROM note
+		WHERE warehouse_id IS NULL
+		AND committed = 0
+	`;
+
+	const [[count]] = await db.execA<[number]>(query);
+	return count ?? 0;
+}
+
 type GetNoteResponse = {
 	id: number;
 	displayName: string;
@@ -816,6 +835,7 @@ async function _createAndCommitReconciliationNote(db: DBAsync, id: number, volum
 export const getNoteIdSeq = timed(_getNoteIdSeq);
 export const getActiveInboundNotes = timed(_getActiveInboundNotes);
 export const getActiveOutboundNotes = timed(_getActiveOutboundNotes);
+export const getActiveOutboundNoteCount = timed(_getActiveOutboundNoteCount);
 export const getNoteById = timed(_getNoteById);
 export const updateNote = timed(_updateNote);
 export const getNoWarehouseEntries = timed(_getNoWarehouseEntries);

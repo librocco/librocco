@@ -27,6 +27,7 @@
 	import { applyHandshakeStatus, checkSyncCompatibility, resetSyncCompatibility, syncCompatibility } from "$lib/stores/sync-compatibility";
 	import { attachPendingMonitor, resetPendingTracker, setLastAckedVersion, pendingChangesCount } from "$lib/stores/sync-pending";
 	import { attachLocalDbHealthMonitor, resetLocalDbHealth, runLocalDbQuickCheck } from "$lib/stores/local-db-health";
+	import { attachActiveOutboundCountMonitor, resetActiveOutboundCount } from "$lib/stores/active-outbound-count";
 	import { recordSyncAck, recordSyncStatus, resetSyncRuntimeHealth } from "$lib/stores/sync-runtime-health";
 	import { createSyncState } from "$lib/stores/sync-state";
 	import {
@@ -91,6 +92,7 @@
 	let detachSyncStatus: (() => void) | null = null;
 	let detachLocalDbHealth: (() => void) | null = null;
 	let detachStaleRecovery: (() => void) | null = null;
+	let detachActiveOutboundCount: (() => void) | null = null;
 
 	// Config stores
 	const dbid = app.config.dbid;
@@ -240,13 +242,16 @@
 		const currentDb = await getDb(app);
 		detachLocalDbHealth = await attachLocalDbHealthMonitor(currentDb);
 		detachPendingMonitor = await attachPendingMonitor(currentDb, getDbRx(app), get(dbid));
+		detachActiveOutboundCount = await attachActiveOutboundCountMonitor(currentDb, getDbRx(app));
 		detachPendingInvalidate = getDbRx(app).onInvalidate(async () => {
 			detachLocalDbHealth?.();
 			detachPendingMonitor?.();
+			detachActiveOutboundCount?.();
 			resetSyncRuntimeHealth();
 			if (app.db.db && app.db.dbid) {
 				detachLocalDbHealth = await attachLocalDbHealthMonitor(app.db.db);
 				detachPendingMonitor = await attachPendingMonitor(app.db.db, getDbRx(app), app.db.dbid);
+				detachActiveOutboundCount = await attachActiveOutboundCountMonitor(app.db.db, getDbRx(app));
 			}
 		});
 		detachSyncStatus = await app.sync.runExclusive(async (sync) => {
@@ -281,10 +286,12 @@
 		detachSyncStatus?.();
 		detachLocalDbHealth?.();
 		detachStaleRecovery?.();
+		detachActiveOutboundCount?.();
 		resetPendingTracker();
 		resetSyncRuntimeHealth();
 		resetLocalDbHealth();
 		resetAutoRecoveryState();
+		resetActiveOutboundCount();
 	});
 
 	const {
