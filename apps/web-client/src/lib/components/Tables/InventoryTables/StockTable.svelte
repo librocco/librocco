@@ -7,6 +7,8 @@
 	import StockBookRow from "./StockBookRow.svelte";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
+	export let showWarehouse = false;
+	export let plainQty = false;
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
@@ -26,6 +28,9 @@
 			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_tables.stock_table.authors()} </th>
 			<th scope="col"> {$LL.table_components.inventory_tables.stock_table.price()} </th>
 			<th scope="col"> {$LL.table_components.inventory_tables.stock_table.quantity()} </th>
+			{#if showWarehouse}
+				<th scope="col"> {$LL.table_components.inventory_tables.outbound_table.warehouse()} </th>
+			{/if}
 			<th scope="col"> {$LL.table_components.inventory_tables.stock_table.publisher()} </th>
 			<th scope="col" class="show-col-lg"> {$LL.table_components.inventory_tables.stock_table.year()} </th>
 			<th scope="col" class="show-col-xl"> {$LL.table_components.inventory_tables.stock_table.edited_by()} </th>
@@ -42,7 +47,7 @@
 
 			<slot name="row" row={rowData} {rowIx}>
 				<tr use:table.tableRow={{ position: rowIx }}>
-					<StockBookRow row={rowData} {rowIx} />
+					<StockBookRow row={rowData} {rowIx} {showWarehouse} {plainQty} />
 				</tr>
 			</slot>
 		{/each}

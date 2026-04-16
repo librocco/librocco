@@ -231,9 +231,11 @@ const quantityFieldCostructor: FieldConstructor<InventoryFieldLookup & HistoryFi
 	const _assertedLocator = (container: Page | Locator, want: number): Locator =>
 		view === "warehouse"
 			? container.locator('[data-property="quantity"]', { hasText: want.toString() })
-			: // NOTE: matching by data-value is a horrible hack, but we can't set up a locator in such a way as to match the input value
-				// (and we need a locator, not an assertion as we're using these to build out a single matcher for the full row)
-				container.locator('[data-property="quantity"]').locator(`input[data-value="${want}"]`);
+			: // NOTE: matching by data-value is a hack, but we can't set up a locator to match the input value otherwise
+				// (and we need a locator, not an assertion, as we're using these to build out a single matcher for the full row).
+				// Tag-agnostic descendant selector: matches `<input data-value="3">` (editable rows)
+				// AND `<span data-value="3">` (read-only badge on archive/history rows).
+				container.locator(`[data-property="quantity"] [data-value="${want}"]`);
 
 	const assertedLocator = (page: Page, want: number) => _assertedLocator(page, want);
 	const assert = (want: number, opts?: WaitForOpts) => _assertedLocator(row, want).waitFor({ timeout: assertionTimeout, ...opts });
