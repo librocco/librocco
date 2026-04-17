@@ -91,7 +91,7 @@
 		<ul class="menu gap-y-1">
 			{#each links as { label, icon, href }}
 				<li>
-					<a {href} class={$page.url.hash.startsWith(href) ? "active" : ""}>
+					<a {href} aria-label={label} class={$page.url.hash.startsWith(href) ? "active" : ""}>
 						<svelte:component this={icon} size={24} />
 						{label}
 						{#if href === saleHref && $activeOutboundNoteCount > 0}

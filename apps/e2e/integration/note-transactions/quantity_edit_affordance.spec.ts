@@ -23,7 +23,7 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 	await dashboard.content().entityList("inbound-list").waitFor();
 
 	await page.getByRole("link", { name: "Edit" }).first().click();
