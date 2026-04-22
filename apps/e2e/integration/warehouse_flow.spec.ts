@@ -1,3 +1,5 @@
+import { expect } from "@playwright/test";
+
 import { baseURL } from "@/constants";
 
 import { testBase as test } from "@/helpers/fixtures";
@@ -314,6 +316,70 @@ test("should display book count and warehouse discount for each respective wareh
 		{ name: "Warehouse 1", numBooks: 2, discount: 10 },
 		{ name: "Warehouse 2", numBooks: 3, discount: 20 }
 	]);
+});
+
+test("should export warehouses as csv", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1", discount: 10 });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2", discount: 20 });
+	await dbHandle.evaluate(upsertBook, {
+		isbn: "1234567890",
+		title: "Book One",
+		authors: "Author One",
+		publisher: "Publisher One",
+		price: 12,
+		year: "2024",
+		category: "Fiction",
+		editedBy: "Editor One",
+		outOfPrint: false
+	});
+	await dbHandle.evaluate(upsertBook, {
+		isbn: "2222222222",
+		title: "Book Two",
+		authors: "Author Two",
+		publisher: "Publisher Two",
+		price: 18,
+		year: "2023",
+		category: "Essay",
+		editedBy: "Editor Two",
+		outOfPrint: true
+	});
+
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
+
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "2222222222", quantity: 3, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	await content.entityList("warehouse-list").assertElements([
+		{ name: "Warehouse 1", numBooks: 2, discount: 10 },
+		{ name: "Warehouse 2", numBooks: 3, discount: 20 }
+	]);
+
+	const downloadPromise = page.waitForEvent("download");
+	await content.entityList("warehouse-list").item(0).dropdown().open();
+	await page.getByText("Export to CSV", { exact: true }).click();
+	const download = await downloadPromise;
+
+	expect(download.suggestedFilename()).toMatch(/^Warehouse-1-\d+\.csv$/);
+
+	const stream = await download.createReadStream();
+	expect(stream).not.toBeNull();
+
+	const chunks: Buffer[] = [];
+	for await (const chunk of stream!) {
+		chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+	}
+
+	const csv = Buffer.concat(chunks).toString("utf-8").replace(/^\uFEFF/, "");
+	expect(csv).toContain("\"Quantity\",\"ISBN\",\"Title\",\"Publisher\",\"Authors\",\"Year\",\"Price\",\"Category\",\"Edited by\",\"Out of print\"");
+	expect(csv).toContain("2,\"1234567890\",\"Book One\",\"Publisher One\",\"Author One\",2024,12,\"Fiction\",\"Editor One\",FALSE");
+	expect(csv).not.toContain("\"2222222222\"");
 });
 
 test("should update the warehouse using the 'Edit' dialog", async ({ page }) => {
