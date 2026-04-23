@@ -362,8 +362,7 @@ test("should export warehouses as csv", async ({ page }) => {
 	]);
 
 	const downloadPromise = page.waitForEvent("download");
-	await content.entityList("warehouse-list").item(0).dropdown().open();
-	await page.getByText("Export to CSV", { exact: true }).click();
+	await content.entityList("warehouse-list").item(0).dropdown().exportCsv();
 	const download = await downloadPromise;
 
 	expect(download.suggestedFilename()).toMatch(/^Warehouse-1-\d+\.csv$/);
@@ -371,15 +370,15 @@ test("should export warehouses as csv", async ({ page }) => {
 	const stream = await download.createReadStream();
 	expect(stream).not.toBeNull();
 
-	const chunks: Buffer[] = [];
+	let csv = "";
 	for await (const chunk of stream!) {
-		chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+		csv += chunk.toString();
 	}
 
-	const csv = Buffer.concat(chunks).toString("utf-8").replace(/^\uFEFF/, "");
-	expect(csv).toContain("\"Quantity\",\"ISBN\",\"Title\",\"Publisher\",\"Authors\",\"Year\",\"Price\",\"Category\",\"Edited by\",\"Out of print\"");
-	expect(csv).toContain("2,\"1234567890\",\"Book One\",\"Publisher One\",\"Author One\",2024,12,\"Fiction\",\"Editor One\",FALSE");
-	expect(csv).not.toContain("\"2222222222\"");
+	csv = csv.replace(/^\uFEFF/, "");
+	expect(csv).toContain('"Quantity","ISBN","Title","Publisher","Authors","Year","Price","Category","Edited by","Out of print"');
+	expect(csv).toContain('2,"1234567890","Book One","Publisher One","Author One",2024,12,"Fiction","Editor One",FALSE');
+	expect(csv).not.toContain('"2222222222"');
 });
 
 test("should update the warehouse using the 'Edit' dialog", async ({ page }) => {

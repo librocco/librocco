@@ -77,8 +77,9 @@ function getWarehouseDropdown(parent: DashboardNode): WarehouseItemDropdown {
 	const opened = dropdown.opened;
 
 	const edit = opened(() => dropdown.getByText("Edit").click());
+	const exportCsv = opened(() => dropdown.getByText("Export to CSV").click());
 	const viewStock = opened(() => dropdown.getByText("View Stock").click());
 	const _delete = opened(() => dropdown.getByText("Delete").click());
 
-	return Object.assign(dropdown, { edit, viewStock, delete: _delete });
+	return Object.assign(dropdown, { edit, exportCsv, viewStock, delete: _delete });
 }
