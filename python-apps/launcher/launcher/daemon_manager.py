@@ -361,6 +361,19 @@ class EmbeddedSupervisor(QObject):
         # Set NODE_PATH so Node can find node_modules in bundled syncserver directory
         env["NODE_PATH"] = str(syncserver_dir / "node_modules")
 
+        # Parse USE_SUBMODULES as boolean
+        use_submodules_str = os.environ.get("USE_SUBMODULES", "").lower()
+        use_submodules = use_submodules_str in {"1", "true", "yes", "on"}
+
+        if not is_bundled and (os.environ.get("VLCN_ROOT") or use_submodules):
+            vendor_loader = project_root / "scripts" / "register_vendor_source.mjs"
+            import_flag = f"--import={vendor_loader}"
+            existing_node_options = env.get("NODE_OPTIONS", "").strip()
+            if import_flag not in existing_node_options:
+                env["NODE_OPTIONS"] = (
+                    f"{existing_node_options} {import_flag}".strip()
+                )
+
         # Sync server runs with node executing the script
         args = [str(syncserver_script)]
 

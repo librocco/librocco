@@ -27,6 +27,16 @@ from pathlib import Path
 launcher_dir = Path(__file__).parent.parent
 sync_server_dir = launcher_dir.parent.parent / "apps" / "sync-server"
 bundled_dir = launcher_dir / "bundled_syncserver"
+project_root = launcher_dir.parent.parent
+sync_server_package_json_path = sync_server_dir / "package.json"
+
+DEFAULT_REGISTRY_URL = "https://npm.codemyriad.io/"
+
+
+def load_json(path: Path) -> dict:
+    """Load JSON from disk."""
+    with path.open() as handle:
+        return json.load(handle)
 
 
 def run_command(cmd: list[str], cwd: Path = None, description: str = ""):
@@ -79,45 +89,29 @@ def main():
 
     # Step 3: Install production dependencies with npm
     print("[3/4] Installing production dependencies with npm...")
+    registry_url = os.environ.get("LIBROCCO_NPM_REGISTRY", DEFAULT_REGISTRY_URL)
+    sync_server_package_json = load_json(sync_server_package_json_path)
+    sync_server_dependencies = sync_server_package_json["dependencies"]
 
-    artefacts_dir = launcher_dir.parent.parent / "3rd-party" / "artefacts"
-    custom_packages = {
-        "@vlcn.io/crsqlite": "vlcn.io-crsqlite-0.16.3.tgz",
-        "@vlcn.io/ws-server": "vlcn.io-ws-server-0.2.2.tgz",
-        "@vlcn.io/ws-common": "vlcn.io-ws-common-0.2.0.tgz",
-        "@vlcn.io/ws-client": "vlcn.io-ws-client-0.2.0.tgz",
-        "@vlcn.io/ws-browserdb": "vlcn.io-ws-browserdb-0.2.0.tgz",
-        "@vlcn.io/rx-tbl": "vlcn.io-rx-tbl-0.15.0.tgz",
-        "@vlcn.io/wa-sqlite": "vlcn.io-wa-sqlite-0.22.0.tgz",
-        "@vlcn.io/crsqlite-wasm": "vlcn.io-crsqlite-wasm-0.16.0.tgz",
-        "@vlcn.io/xplat-api": "vlcn.io-xplat-api-0.15.0.tgz",
+    vlcn_runtime_deps = {
+        "@vlcn.io/ws-server": sync_server_dependencies["@vlcn.io/ws-server"],
+        "@vlcn.io/crsqlite": sync_server_dependencies["@vlcn.io/crsqlite"],
+    }
+    runtime_dependencies = {
+        **vlcn_runtime_deps,
+        "better-sqlite3": sync_server_dependencies["better-sqlite3"],
     }
 
-    resolved_custom = {}
-    for pkg, filename in custom_packages.items():
-        tgz_path = artefacts_dir / filename
-        if not tgz_path.exists():
-            print(f"✗ Custom package tarball not found: {tgz_path}", file=sys.stderr)
-            return 1
-        resolved_custom[pkg] = f"file:{os.path.relpath(tgz_path, bundled_dir)}"
-
     # Create a minimal package.json for bundling
-    # Only runtime dependencies, no devDependencies
+    # Only runtime dependencies, no devDependencies. The exact @vlcn.io versions
+    # come from apps/sync-server/package.json, which is already pinned to the
+    # registry snapshots validated by Rush.
     package_json = {
         "name": "librocco-syncserver-bundled",
         "version": "0.0.1",
         "type": "module",
         "private": True,
-        "dependencies": {
-            "@vlcn.io/ws-server": resolved_custom["@vlcn.io/ws-server"],
-            "@vlcn.io/crsqlite": resolved_custom["@vlcn.io/crsqlite"],
-            "@vlcn.io/logger-provider": "0.2.0",
-            "@vlcn.io/ws-common": resolved_custom["@vlcn.io/ws-common"],
-            "better-sqlite3": "~11.4.0",
-        },
-        "overrides": {
-            **resolved_custom,
-        },
+        "dependencies": runtime_dependencies,
     }
 
     # Write package.json
@@ -126,10 +120,16 @@ def main():
         json.dump(package_json, f, indent=2)
     print(f"✓ Created: {package_json_path}")
 
+    npmrc_path = bundled_dir / ".npmrc"
+    npmrc_path.write_text(
+        f"registry={registry_url}\n@vlcn.io:registry={registry_url}\n", encoding="utf-8"
+    )
+    print(f"✓ Created: {npmrc_path}")
+
     # Run npm install (production only, no optional deps)
-    print(f"  Running npm install (this may take a moment)...")
+    print("  Running npm install (this may take a moment)...")
     run_command(
-        ["npm", "install", "--production", "--no-optional"],
+        ["npm", "install", "--production", "--no-optional", "--registry", registry_url],
         cwd=bundled_dir,
         description="Installing dependencies with npm",
     )
