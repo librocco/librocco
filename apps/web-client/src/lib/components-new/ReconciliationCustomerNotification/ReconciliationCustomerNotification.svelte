@@ -39,15 +39,15 @@
 	}
 </script>
 
-<div use:melt={$collapsibleRoot} class="rounded-lg border border-neutral-200 bg-neutral-50">
-	<div use:melt={$trigger} class="cursor-pointer px-4 py-3 transition-all {interactive ? 'hover:bg-neutral-100' : ''}">
+<div use:melt={$collapsibleRoot} class="rounded-lg border border-base-300 bg-base-100 text-base-content">
+	<div use:melt={$trigger} class="cursor-pointer px-4 py-3 transition-all {interactive ? 'hover:bg-base-200/60' : ''}">
 		<div class="flex items-center gap-6">
 			<div class="flex min-w-0 flex-1 items-center gap-2">
 				<Bell class="text-foreground h-4 w-4 shrink-0" aria-hidden="true" />
 				<p class="text-foreground text-sm">{label}</p>
 			</div>
 			{#if interactive}
-				<button class="shrink-0 rounded p-1 transition-colors {interactive ? 'hover:bg-neutral-200' : ''}">
+				<button class="shrink-0 rounded p-1 transition-colors {interactive ? 'hover:bg-base-200/70' : ''}">
 					<ChevronDown class={`text-foreground h-5 w-5 transition-transform ${$open ? "rotate-180" : ""}`} aria-hidden="true" />
 				</button>
 			{/if}
@@ -60,9 +60,9 @@
 				{#each books as book}
 					<div>
 						<div class="mb-1">
-							<div class="text-foreground inline-flex items-center gap-1.5 rounded bg-neutral-200 px-2 py-0.5 text-xs font-medium">
+							<div class="text-foreground inline-flex items-center gap-1.5 rounded bg-base-200 px-2 py-0.5 text-xs font-medium">
 								<span>{book.isbn}</span>
-								<span class="text-neutral-500">·</span>
+								<span class="text-base-content/50">·</span>
 								<span>{book.title}</span>
 								<span>{getCopyLabel(book.customers.length)}</span>
 							</div>
@@ -81,7 +81,7 @@
 							</div>
 							{#each book.customers as customer, index}
 								{@const isLastCustomer = index === book.customers.length - 1}
-								<div class="flex items-center gap-4 px-2 py-1 {!isLastCustomer ? 'border-b border-neutral-200' : ''}">
+								<div class="flex items-center gap-4 px-2 py-1 {!isLastCustomer ? 'border-b border-base-300/70' : ''}">
 									<div class="min-w-0 flex-1">
 										<span class="text-foreground text-sm">{customer.customer_name}</span>
 									</div>

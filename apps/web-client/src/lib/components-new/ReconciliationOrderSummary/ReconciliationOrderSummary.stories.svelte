@@ -155,7 +155,9 @@
 			</svelte:fragment>
 		</ReconciliationOrderSummary>
 
-		<div class="mt-8 rounded border border-neutral-300 p-2">Underdelivery behaviour: {$underdeliveryBehaviourStore}</div>
+		<div class="mt-8 rounded border border-base-300 bg-base-100 p-2 text-base-content">
+			Underdelivery behaviour: {$underdeliveryBehaviourStore}
+		</div>
 	</div>
 </Story>
 

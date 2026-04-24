@@ -36,8 +36,8 @@
 	}
 </script>
 
-<div class="flex flex-1 flex-col overflow-hidden">
-	<div class="shrink-0 border-b border-neutral-200 bg-white">
+<div class="flex flex-1 flex-col overflow-hidden bg-base-100 text-base-content">
+	<div class="shrink-0 border-b border-base-300 bg-base-100">
 		<div class="px-6 py-4">
 			<div class="space-y-4">
 				<DaisyUIScannerForm onSubmit={onScan} />
@@ -45,7 +45,7 @@
 		</div>
 	</div>
 
-	<div class="flex h-full flex-col space-y-4 overflow-hidden bg-white px-6 py-4">
+	<div class="flex h-full flex-col space-y-4 overflow-hidden bg-base-100 px-6 py-4">
 		<div class="flex gap-3">
 			<CounterBadge label={t.step1.stats.total_ordered()} value={totalOrdered} />
 			<CounterBadge label={t.step1.stats.total_delivered()} value={totalDelivered} />
@@ -55,7 +55,7 @@
 			{#each orderStats as supplierOrder (supplierOrder.supplier_order_id)}
 				<div class="mb-4">
 					<div class="-mb-6">
-						<span class="text-foreground rounded-md bg-[#f8f8f8] px-2 py-0.5 text-xs font-medium">
+						<span class="text-foreground rounded-md bg-base-200 px-2 py-0.5 text-xs font-medium">
 							{supplierOrder.supplier_name} # {supplierOrder.supplier_order_id}
 						</span>
 					</div>
@@ -82,7 +82,7 @@
 								{@const deliveredColor = getDeliveredColorClass(stats.ordered, stats.delivered)}
 								<TableRow
 									variant="naked"
-									className="hover:bg-neutral-50 transition-all duration-[120ms] {isLastBook ? '' : 'border-b border-neutral-100'}"
+									className="transition-all duration-[120ms] hover:bg-base-200/60 {isLastBook ? '' : 'border-b border-base-300/70'}"
 								>
 									<td class="text-foreground w-32 min-w-0 shrink-0 px-2 py-1.5 align-middle text-sm font-medium">
 										{book.isbn}
@@ -104,14 +104,14 @@
 											<button
 												on:click={() => onDecrement(book.isbn)}
 												disabled={stats.delivered === 0}
-												class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+												class="flex h-6 w-6 items-center justify-center rounded border border-base-300 bg-base-100 text-base-content transition-colors hover:bg-base-200 disabled:cursor-not-allowed disabled:opacity-50"
 												aria-label={t.step1.aria_labels.decrease_quantity({ title: book.title, count: stats.delivered })}
 											>
 												−
 											</button>
 											<button
 												on:click={() => onIncrement(book.isbn)}
-												class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 transition-colors hover:bg-neutral-200"
+												class="flex h-6 w-6 items-center justify-center rounded border border-base-300 bg-base-100 text-base-content transition-colors hover:bg-base-200"
 												aria-label={t.step1.aria_labels.increase_quantity({ title: book.title, count: stats.delivered })}
 											>
 												+
@@ -128,14 +128,14 @@
 	</div>
 
 	{#if totalDelivered > 0}
-		<div class="shrink-0 border-t border-neutral-200 bg-neutral-50 px-6 py-4">
+		<div class="shrink-0 border-t border-base-300 bg-base-200/40 px-6 py-4">
 			<div class="flex items-center justify-between">
-				<div class="text-sm text-zinc-900">
+				<div class="text-sm text-base-content">
 					{t.step1.footer.total_scanned({ count: totalDelivered })}
 				</div>
 				<button
 					on:click={onContinue}
-					class="flex items-center gap-2 rounded-md bg-zinc-900 px-6 py-2 text-white transition-colors hover:bg-zinc-800"
+					class="flex items-center gap-2 rounded-md bg-neutral px-6 py-2 text-neutral-content transition-colors hover:bg-neutral/80"
 				>
 					{t.step1.footer.continue()}
 					<ArrowRight aria-hidden />

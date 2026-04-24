@@ -30,13 +30,13 @@
 	$: t = $LL.reconcile_page.step2;
 </script>
 
-<div class="flex h-screen max-h-full flex-1 flex-col overflow-hidden">
+<div class="flex h-screen max-h-full flex-1 flex-col overflow-hidden bg-base-100 text-base-content">
 	<div class="mt-6 mb-6 flex gap-3 px-6">
 		<CounterBadge label={t.stats.total_ordered()} value={totalOrdered} />
 		<CounterBadge label={t.stats.total_delivered()} value={totalDelivered} />
 	</div>
 
-	<div class="flex flex-1 flex-col overflow-y-auto bg-white px-6 pb-6">
+	<div class="flex flex-1 flex-col overflow-y-auto bg-base-100 px-6 pb-6">
 		<div class="mb-4 space-y-4">
 			{#each orderStats as { supplier_order_id, supplier_name, underdelivery_policy, totalUnderdelivered, lines }}
 				{@const underdeliveryAction = underdelivery_policy === 0 ? "pending" : "queue"}
@@ -61,17 +61,17 @@
 	</div>
 
 	{#if !finalized}
-		<div class="shrink-0 border-t border-neutral-200 bg-neutral-50">
+		<div class="shrink-0 border-t border-base-300 bg-base-200/40">
 			<div class="flex items-center justify-between px-6 py-4">
 				<button
 					on:click={onBack}
-					class="rounded-md border border-neutral-200 bg-white px-6 py-2 text-zinc-900 transition-colors hover:bg-neutral-50"
+					class="rounded-md border border-base-300 bg-base-100 px-6 py-2 text-base-content transition-colors hover:bg-base-200"
 				>
 					{t.actions.back()}
 				</button>
 				<button
 					disabled={finalized || disableFinalize}
-					class="rounded-md bg-zinc-900 px-6 py-2 text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-zinc-900"
+					class="rounded-md bg-neutral px-6 py-2 text-neutral-content transition-colors hover:bg-neutral/80 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-neutral"
 					on:click={onFinalize}
 				>
 					{t.actions.finalize()}
@@ -79,8 +79,8 @@
 			</div>
 		</div>
 	{:else}
-		<div class="flex shrink-0 items-center justify-between border-t border-neutral-200 bg-neutral-50 px-6 py-4">
-			<div class="text-sm text-zinc-900">{t.finalized.message({ date: new Date(data?.reconciliationOrder.updatedAt) })}</div>
+		<div class="flex shrink-0 items-center justify-between border-t border-base-300 bg-base-200/40 px-6 py-4">
+			<div class="text-sm text-base-content">{t.finalized.message({ date: new Date(data?.reconciliationOrder.updatedAt) })}</div>
 		</div>
 	{/if}
 </div>

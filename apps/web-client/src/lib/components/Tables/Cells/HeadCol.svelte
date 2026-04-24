@@ -9,7 +9,7 @@
 
 <span class="inline-flex items-center gap-2">
 	<svelte:component this={icon} aria-hidden="true" />
-	<span class="whitespace-nowrap text-base font-medium leading-5 text-gray-900" class:sr-only={srOnly}>
+	<span class="whitespace-nowrap text-base font-medium leading-5 text-base-content" class:sr-only={srOnly}>
 		{label}
 	</span>
 </span>

@@ -41,7 +41,7 @@
 </script>
 
 <Story name="Supplier Page > Orders">
-	<div class="max-w-xl">
+	<div class="max-w-xl text-base-content">
 		<Table columnWidths={["3", "3", "6"]}>
 			<svelte:fragment slot="head-cells">
 				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left align-middle text-xs">Order ID</th>
@@ -63,7 +63,7 @@
 </Story>
 
 <Story name="Supplier Page > Orders (Empty State)">
-	<div class="max-w-xl">
+	<div class="max-w-xl text-base-content">
 		<Table columnWidths={["3", "3", "6"]} showEmptyState={true}>
 			<svelte:fragment slot="head-cells">
 				<th scope="col" class="text-muted-foreground w-auto px-4 py-3 text-left text-xs">Order ID</th>
@@ -77,9 +77,9 @@
 </Story>
 
 <Story name="Reconcile Deliveries > Reconciliation">
-	<div class="max-w-4xl">
+	<div class="max-w-4xl text-base-content">
 		<div class="mb-2">
-			<span class="rounded-md bg-[#f8f8f8] px-2 py-0.5 text-xs font-medium">BooksRUS #1</span>
+			<span class="rounded-md bg-base-200 px-2 py-0.5 text-xs font-medium text-base-content">BooksRUS #1</span>
 		</div>
 		<Table variant="naked" columnWidths={["2", "3", "4", "2", "2", "2"]}>
 			<svelte:fragment slot="head-cells">
@@ -106,14 +106,14 @@
 								<button
 									on:click={() => decrementDelivered(book.isbn)}
 									disabled={book.delivered === 0}
-									class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 hover:bg-neutral-200 disabled:cursor-not-allowed disabled:opacity-50"
+									class="flex h-6 w-6 items-center justify-center rounded border border-base-300 bg-base-100 text-base-content transition-colors hover:bg-base-200 disabled:cursor-not-allowed disabled:opacity-50"
 									aria-label={`Decrease delivered quantity for ${book.title}, currently ${book.delivered}`}
 								>
 									−</button
 								>
 								<button
 									on:click={() => incrementDelivered(book.isbn)}
-									class="flex h-6 w-6 items-center justify-center rounded border border-neutral-200 hover:bg-neutral-200"
+									class="flex h-6 w-6 items-center justify-center rounded border border-base-300 bg-base-100 text-base-content transition-colors hover:bg-base-200"
 									aria-label={`Increase delivered quantity for ${book.title}, currently ${book.delivered}`}
 								>
 									+</button

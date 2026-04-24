@@ -27,7 +27,7 @@
 <Story name="Assigned Publishers">
 	<SupplierPublisherTable>
 		<svelte:fragment slot="title">Assigned Publishers</svelte:fragment>
-		<span slot="badge" class="inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white">
+		<span slot="badge" class="inline-flex items-center rounded-full bg-base-content px-2 py-0.5 text-[10px] font-medium text-base-100">
 			{assignedPublishers.length}
 		</span>
 
@@ -35,7 +35,7 @@
 			<SupplierPublisherTableRow publisherName={publisher}>
 				<button
 					slot="action-button"
-					class="h-5 whitespace-nowrap rounded border-0 bg-transparent px-1 text-[11px] font-medium text-gray-500 hover:bg-red-50 hover:!text-red-600"
+					class="h-5 whitespace-nowrap rounded border-0 bg-transparent px-1 text-[11px] font-medium text-base-content/60 transition-colors hover:bg-error/10 hover:!text-error"
 				>
 					Remove
 				</button>
@@ -47,7 +47,7 @@
 <Story name="Available Publishers">
 	<SupplierPublisherTable>
 		<svelte:fragment slot="title">Available Publishers</svelte:fragment>
-		<span slot="badge" class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+		<span slot="badge" class="inline-flex items-center rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-medium text-base-content/70">
 			{availablePublishers.length}
 		</span>
 
@@ -64,7 +64,7 @@
 
 					<button
 						slot="action-button"
-						class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
+						class="h-5 whitespace-nowrap rounded border border-base-content/50 bg-base-100 px-1 text-[11px] font-medium text-base-content transition-colors hover:bg-accent hover:text-accent-content"
 					>
 						Add
 					</button>
@@ -73,7 +73,7 @@
 				<SupplierPublisherTableRow publisherName={name}>
 					<button
 						slot="action-button"
-						class="hover:text-accent-foreground h-5 whitespace-nowrap rounded border border-gray-900 bg-white px-1 text-[11px] font-medium text-gray-900 hover:bg-[#00d3bb]"
+						class="h-5 whitespace-nowrap rounded border border-base-content/50 bg-base-100 px-1 text-[11px] font-medium text-base-content transition-colors hover:bg-accent hover:text-accent-content"
 					>
 						Re-assign
 					</button>
@@ -86,7 +86,7 @@
 <Story name="Empty State">
 	<SupplierPublisherTable showEmptyState={true} emptyStateMessage="No assigned publishers">
 		<svelte:fragment slot="title">Assigned Publishers</svelte:fragment>
-		<span slot="badge" class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+		<span slot="badge" class="inline-flex items-center rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-medium text-base-content/70">
 			0
 		</span>
 	</SupplierPublisherTable>
@@ -95,11 +95,11 @@
 <Story name="Custom Empty State">
 	<SupplierPublisherTable showEmptyState={true}>
 		<svelte:fragment slot="title">Custom Publishers</svelte:fragment>
-		<span slot="badge" class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+		<span slot="badge" class="inline-flex items-center rounded-full bg-base-200 px-2 py-0.5 text-[10px] font-medium text-base-content/70">
 			0
 		</span>
 		<svelte:fragment slot="empty-state">
-			<div class="py-8 px-3 text-center text-sm text-blue-500">No publishers found - custom message</div>
+			<div class="py-8 px-3 text-center text-sm text-info">No publishers found - custom message</div>
 		</svelte:fragment>
 	</SupplierPublisherTable>
 </Story>

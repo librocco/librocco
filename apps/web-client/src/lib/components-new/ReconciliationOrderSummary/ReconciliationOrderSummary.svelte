@@ -35,14 +35,14 @@
 	$: t = $LL.reconcile_page;
 </script>
 
-<div use:melt={$collapsibleRoot} class="rounded-lg border border-neutral-200">
-	<div use:melt={$trigger} class="bg-card cursor-pointer px-4 py-3 transition-all {interactive ? 'hover:bg-neutral-100' : ''}">
+<div use:melt={$collapsibleRoot} class="rounded-lg border border-base-300 bg-base-100 text-base-content">
+	<div use:melt={$trigger} class="cursor-pointer bg-base-100 px-4 py-3 transition-all {interactive ? 'hover:bg-base-200/60' : ''}">
 		<div class="flex items-center justify-between gap-4">
 			<div class="flex min-w-0 flex-1 items-start gap-3">
 				<div class="min-w-0 flex-1">
 					<div class="flex flex-wrap items-center gap-2">
-						<span class="font-medium text-zinc-900">{customerName}</span>
-						<span class="text-muted-foreground text-sm">{orderId}</span>
+						<span class="font-medium text-base-content">{customerName}</span>
+						<span class="text-sm text-base-content/70">{orderId}</span>
 						{#if !allDelivered && hasBooks}
 							<span class="rounded bg-orange-100 px-2 py-1 text-xs font-medium text-orange-800">
 								{t.step2.order_summary.books_undelivered({ count: undeliveredCount })}
@@ -53,9 +53,9 @@
 					</div>
 				</div>
 				{#if interactive}
-					<button class="rounded p-1 transition-colors {interactive ? 'hover:bg-neutral-200' : ''}">
+					<button class="rounded p-1 transition-colors {interactive ? 'hover:bg-base-200/70' : ''}">
 						<ChevronDown
-							class={`lucide lucide-chevron-down h-5 w-5 text-zinc-900 transition-transform ${$open ? "rotate-180" : ""}`}
+							class={`lucide lucide-chevron-down h-5 w-5 text-base-content transition-transform ${$open ? "rotate-180" : ""}`}
 							aria-hidden="true"
 						/>
 					</button>
@@ -87,7 +87,7 @@
 						{#each books as book (book.isbn)}
 							{@const isLastBook = book === books[books.length - 1]}
 							{@const missingQuantity = book.orderedQuantity - book.deliveredQuantity}
-							<TableRow variant="naked" className="transition-all duration-100 {isLastBook ? '' : 'border-b border-neutral-100'}">
+							<TableRow variant="naked" className="transition-all duration-100 {isLastBook ? '' : 'border-b border-base-300/70'}">
 								<td class="text-foreground line-clamp-1 w-32 min-w-0 shrink-0 px-2 py-1.5 align-middle text-sm font-medium">
 									{book.isbn}
 								</td>

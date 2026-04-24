@@ -37,16 +37,16 @@
 				on:click={handleOrderBy("isbn")}
 				scope="col"
 				class="group relative cursor-pointer {$orderBy === 'isbn'
-					? 'bg-gray-700/30'
-					: 'hover:bg-gray-500/10'} w-[20%] lg:w-[13%] xl:w-[10%]"
+					? 'bg-base-content/10'
+					: 'hover:bg-base-content/5'} w-[20%] lg:w-[13%] xl:w-[10%]"
 			>
 				<span class="hidden lg:inline">ISBN</span>
 				<span class="inline lg:hidden">Book</span>
 				<span class="{$orderBy === 'isbn' ? '' : 'hidden group-hover:block'} absolute right-2 top-1/2 -translate-y-1/2">
 					{#if $orderBy === "isbn" && !$orderAsc}
-						<ChevronUp class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronUp class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{:else}
-						<ChevronDown class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronDown class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{/if}
 				</span>
 			</th>
@@ -54,14 +54,14 @@
 			<th
 				on:click={handleOrderBy("title")}
 				scope="col"
-				class="group relative cursor-pointer {$orderBy === 'title' ? 'bg-gray-700/30' : 'hover:bg-gray-500/10'} show-col-lg"
+				class="group relative cursor-pointer {$orderBy === 'title' ? 'bg-base-content/10' : 'hover:bg-base-content/5'} show-col-lg"
 			>
 				<span>Title</span>
 				<span class="{$orderBy === 'title' ? '' : 'hidden group-hover:block'} absolute right-2 top-1/2 -translate-y-1/2">
 					{#if $orderBy === "title" && !$orderAsc}
-						<ChevronUp class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronUp class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{:else}
-						<ChevronDown class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronDown class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{/if}
 				</span>
 			</th>
@@ -69,14 +69,14 @@
 			<th
 				on:click={handleOrderBy("authors")}
 				scope="col"
-				class="group relative cursor-pointer {$orderBy === 'authors' ? 'bg-gray-700/30' : 'hover:bg-gray-500/10'} show-col-lg"
+				class="group relative cursor-pointer {$orderBy === 'authors' ? 'bg-base-content/10' : 'hover:bg-base-content/5'} show-col-lg"
 			>
 				<span>Authors</span>
 				<span class="{$orderBy === 'authors' ? '' : 'hidden group-hover:block'} absolute right-2 top-1/2 -translate-y-1/2">
 					{#if $orderBy === "authors" && !$orderAsc}
-						<ChevronUp class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronUp class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{:else}
-						<ChevronDown class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronDown class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{/if}
 				</span>
 			</th>
@@ -84,14 +84,14 @@
 			<th
 				on:click={handleOrderBy("price")}
 				scope="col"
-				class="group relative cursor-pointer {$orderBy === 'price' ? 'bg-gray-700/30' : 'hover:bg-gray-500/10'} "
+				class="group relative cursor-pointer {$orderBy === 'price' ? 'bg-base-content/10' : 'hover:bg-base-content/5'} "
 			>
 				<span>Price</span>
 				<span class="{$orderBy === 'price' ? '' : 'hidden group-hover:block'} absolute right-2 top-1/2 -translate-y-1/2">
 					{#if $orderBy === "price" && !$orderAsc}
-						<ChevronUp class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronUp class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{:else}
-						<ChevronDown class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronDown class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{/if}
 				</span>
 			</th>
@@ -99,14 +99,14 @@
 			<th
 				on:click={handleOrderBy("publisher")}
 				scope="col"
-				class="group relative cursor-pointer {$orderBy === 'publisher' ? 'bg-gray-700/30' : 'hover:bg-gray-500/10'} "
+				class="group relative cursor-pointer {$orderBy === 'publisher' ? 'bg-base-content/10' : 'hover:bg-base-content/5'} "
 			>
 				<span>Publisher</span>
 				<span class="{$orderBy === 'publisher' ? '' : 'hidden group-hover:block'} absolute right-2 top-1/2 -translate-y-1/2">
 					{#if $orderBy === "publisher" && !$orderAsc}
-						<ChevronUp class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronUp class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{:else}
-						<ChevronDown class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronDown class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{/if}
 				</span>
 			</th>
@@ -114,14 +114,14 @@
 			<th
 				on:click={handleOrderBy("year")}
 				scope="col"
-				class="group relative cursor-pointer {$orderBy === 'year' ? 'bg-gray-700/30' : 'hover:bg-gray-500/10'} show-col-lg"
+				class="group relative cursor-pointer {$orderBy === 'year' ? 'bg-base-content/10' : 'hover:bg-base-content/5'} show-col-lg"
 			>
 				<span>Year</span>
 				<span class="{$orderBy === 'year' ? '' : 'hidden group-hover:block'} absolute right-2 top-1/2 -translate-y-1/2">
 					{#if $orderBy === "year" && !$orderAsc}
-						<ChevronUp class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronUp class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{:else}
-						<ChevronDown class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronDown class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{/if}
 				</span>
 			</th>
@@ -129,14 +129,14 @@
 			<th
 				on:click={handleOrderBy("editedBy")}
 				scope="col"
-				class="group relative cursor-pointer {$orderBy === 'editedBy' ? 'bg-gray-700/30' : 'hover:bg-gray-500/10'} show-col-xl"
+				class="group relative cursor-pointer {$orderBy === 'editedBy' ? 'bg-base-content/10' : 'hover:bg-base-content/5'} show-col-xl"
 			>
 				<span>Edited By</span>
 				<span class="{$orderBy === 'editedBy' ? '' : 'hidden group-hover:block'} absolute right-2 top-1/2 -translate-y-1/2">
-					{#if $orderBy === "editedBy" && !$orderAsc}<ChevronUp class="h-4 w-4 rounded border border-gray-900 bg-white" />
-						<ChevronUp class="h-4 w-4 rounded border border-gray-900 bg-white" />
+					{#if $orderBy === "editedBy" && !$orderAsc}<ChevronUp class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
+						<ChevronUp class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{:else}
-						<ChevronDown class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronDown class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{/if}
 				</span>
 			</th>
@@ -144,7 +144,7 @@
 			<th
 				on:click={handleOrderBy("outOfPrint")}
 				scope="col"
-				class="group relative cursor-pointer {$orderBy === 'outOfPrint' ? 'bg-gray-700/30' : 'hover:bg-gray-500/10'} show-col-xl"
+				class="group relative cursor-pointer {$orderBy === 'outOfPrint' ? 'bg-base-content/10' : 'hover:bg-base-content/5'} show-col-xl"
 			>
 				<span>O.P</span>
 				<span class="{$orderBy === 'outOfPrint' ? '' : 'hidden group-hover:block'} absolute right-2 top-1/2 -translate-y-1/2"></span>
@@ -153,14 +153,14 @@
 			<th
 				on:click={handleOrderBy("category")}
 				scope="col"
-				class="group relative cursor-pointer {$orderBy === 'category' ? 'bg-gray-700/30' : 'hover:bg-gray-500/10'} show-col-xl"
+				class="group relative cursor-pointer {$orderBy === 'category' ? 'bg-base-content/10' : 'hover:bg-base-content/5'} show-col-xl"
 			>
 				<span>Category</span>
 				<span class="{$orderBy === 'category' ? '' : 'hidden group-hover:block'} absolute right-2 top-1/2 -translate-y-1/2">
 					{#if $orderBy === "category" && !$orderAsc}
-						<ChevronUp class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronUp class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{:else}
-						<ChevronDown class="h-4 w-4 rounded border border-gray-900 bg-white" />
+						<ChevronDown class="h-4 w-4 rounded border border-base-content/40 bg-base-100" />
 					{/if}
 				</span>
 			</th>
