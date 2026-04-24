@@ -5,7 +5,7 @@
 	$: progressWidth = value !== undefined ? `${value * 100}%` : undefined;
 </script>
 
-<div {...$$restProps} class="relative h-4 w-52 rounded-lg border-[1.5px] border-gray-200 bg-white {$$restProps.class}">
+<div {...$$restProps} class="relative h-4 w-52 rounded-lg border-[1.5px] border-base-300 bg-base-100 {$$restProps.class}">
 	<div class="absolute -left-0.5 -top-0.5 -bottom-0.5 -right-0.5 overflow-hidden rounded">
 		{#if progressWidth}
 			<div class="absolute top-0 left-0 h-full animate-pulse overflow-hidden rounded bg-teal-500" style:width={progressWidth}></div>

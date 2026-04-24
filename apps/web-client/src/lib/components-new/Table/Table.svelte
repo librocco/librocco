@@ -6,7 +6,7 @@
 	export let showEmptyState: boolean = false;
 </script>
 
-<div class="overflow-hidden {variant === 'default' ? 'rounded border border-[#E5E5E5]' : ''}">
+<div class="overflow-hidden text-base-content {variant === 'default' ? 'rounded border border-base-300 bg-base-100' : ''}">
 	<table class="w-full table-fixed">
 		{#if columnWidths && columnWidths.length > 0}
 			<colgroup>
@@ -23,7 +23,7 @@
 		{/if}
 
 		<thead>
-			<tr class="{variant === 'default' ? 'border-b border-[#E5E5E5] bg-[#FAFAFA]' : ''} px-4">
+			<tr class="{variant === 'default' ? 'border-b border-base-300 bg-base-200/60' : ''} px-4">
 				<slot name="head-cells" />
 			</tr>
 		</thead>

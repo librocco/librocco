@@ -102,7 +102,7 @@
 			{/if}
 		</div>
 	{:else}
-		<span class="font-light text-gray-600">{t.default_option()}</span>
+		<span class="font-light text-base-content/60">{t.default_option()}</span>
 	{/if}
 	<ChevronsUpDown size={18} class="ml-auto shrink-0 self-center" />
 </button>
@@ -132,7 +132,7 @@
 					{/each}
 				</div>
 			{:else}
-				<p class="p-2 text-sm text-gray-600">
+				<p class="p-2 text-sm text-base-content/60">
 					{t.empty_options()}
 				</p>
 			{/if}

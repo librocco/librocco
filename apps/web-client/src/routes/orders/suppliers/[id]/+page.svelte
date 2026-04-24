@@ -118,7 +118,7 @@
 			<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 				<div class="card h-full">
 					<div class="card-body p-0">
-						<div class="col-span-3 overflow-auto border-[#E5E5E5] p-[20px] py-6 px-[20px]">
+						<div class="col-span-3 overflow-auto border-base-300 p-[20px] px-[20px] py-6">
 							{#if supplier}
 								<SupplierCard
 									name={supplier.name}
@@ -140,20 +140,20 @@
 
 			<div class="flex min-h-0 w-full flex-1 flex-col gap-y-2 overflow-y-auto">
 				<!-- Tab Navigation -->
-				<div class="z-20 bg-white px-5 pt-6 pb-6">
+				<div class="z-20 bg-base-100 px-5 pb-6 pt-6">
 					<nav class="flex gap-2">
 						<button
 							class="rounded font-normal transition-colors {$activeTab === 'orders'
-								? 'border border-gray-900 bg-gray-900 text-white'
-								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'} px-4 py-2 text-[14px]"
+								? 'border border-base-content bg-base-content text-base-100'
+								: 'border border-base-300 bg-transparent text-base-content hover:bg-base-200'} px-4 py-2 text-[14px]"
 							on:click={() => activeTab.set("orders")}
 						>
 							{t.tabs.orders()}
 						</button>
 						<button
 							class="rounded font-normal transition-colors {$activeTab === 'publishers'
-								? 'border border-gray-900 bg-gray-900 text-white'
-								: 'border border-gray-200 bg-transparent text-gray-900 hover:bg-gray-50'} px-4 py-2 text-[14px]"
+								? 'border border-base-content bg-base-content text-base-100'
+								: 'border border-base-300 bg-transparent text-base-content hover:bg-base-200'} px-4 py-2 text-[14px]"
 							on:click={() => activeTab.set("publishers")}
 						>
 							{t.tabs.assigned_publishers()}

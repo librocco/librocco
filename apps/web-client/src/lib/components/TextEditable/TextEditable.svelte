@@ -57,7 +57,7 @@
 
 <div
 	id={testId("text-editable-form")}
-	class="relative block w-full rounded border-2 border-transparent bg-transparent p-2 delay-75 focus-within:border-gray-500 focus-within:bg-gray-50 hover:border-gray-500"
+	class="relative block w-full rounded border-2 border-transparent bg-transparent p-2 text-base-content delay-75 focus-within:border-primary focus-within:bg-base-200/60 hover:border-base-300"
 	use:clickOutside
 	on:clickoutside={save}
 >
@@ -71,7 +71,7 @@
 			{:else}
 				<input
 					type="text"
-					class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0 {textClassName}"
+					class="min-w-0 grow border-0 bg-transparent p-0 text-base-content placeholder:text-base-content/50 focus:border-transparent focus:ring-0 {textClassName}"
 					{placeholder}
 					{name}
 					{id}
@@ -87,7 +87,7 @@
 	<div
 		class="flex flex-row items-center gap-x-2
 		{isEditing ? 'invisible' : 'visible'}
-		{text === '' || disabled ? 'text-gray-400' : 'text-gray-800'}"
+		{text === '' || disabled ? 'text-base-content/50' : 'text-base-content'}"
 		class:cursor-pointer={!disabled}
 		role="textbox"
 		aria-label="Edit {name}"
@@ -100,7 +100,7 @@
 			{text === "" ? placeholder : text}
 		</svelte:element>
 		{#if !disabled}
-			<span class="text-gray-500" aria-hidden="true">
+			<span class="text-base-content/60" aria-hidden="true">
 				<PencilLine size={20} />
 			</span>
 		{/if}
