@@ -8,6 +8,7 @@ import { IS_DEMO } from "$lib/constants";
 import { clearIDBBatchAtomic, deleteDBFromOPFS } from "$lib/db/cr-sqlite/core/utils";
 import type { VFSWhitelist } from "$lib/db/cr-sqlite/core";
 import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
+import { disconnectAllPorts } from "$lib/db/cr-sqlite/core/worker-db";
 import { resetSyncCompatibility } from "$lib/stores/sync-compatibility";
 
 export class App {
@@ -36,6 +37,9 @@ export async function nukeAndResyncDb(app: App, dbid: string, vfs: VFSWhitelist)
 	await stopSync(app);
 	// Close the current connection
 	await app.db.db?.close();
+	// Tear down SharedService and DedicatedWorker so the leader Web Lock and
+	// OPFS SyncAccessHandle are released before we delete and re-create the DB.
+	disconnectAllPorts();
 
 	// Delete the DB file (this should be safe now -- no open connections)
 	if (vfsSupportsOPFS(vfs)) {
@@ -65,6 +69,8 @@ export async function selectDb(app: App, dbid: string, vfs: VFSWhitelist) {
 	await stopSync(app);
 	// Close the current connection
 	await app.db.db?.close();
+	// Release the SharedService leader lock and OPFS handle before re-init.
+	disconnectAllPorts();
 
 	// Reinitialise the (clean) DB with provided DBID
 	// NOTE: this sets the DB state to "ready" -- thus unlocking the DB for high-level usage
@@ -86,6 +92,8 @@ export async function deleteCurrentDb(app: App, next: { dbid: string; vfs: VFSWh
 	await stopSync(app);
 	// Close the current connection
 	await app.db.db?.close();
+	// Release the SharedService leader lock and OPFS handle before re-init.
+	disconnectAllPorts();
 
 	// Delete the DB file (this should be safe now -- no open connections)
 	if (vfsSupportsOPFS(vfs)) {

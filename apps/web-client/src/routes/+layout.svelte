@@ -20,7 +20,7 @@
 	import { Sidebar } from "$lib/components";
 
 	import { ErrDemoDBNotInitialised } from "$lib/db/cr-sqlite/errors";
-	import { terminateAllWorkers } from "$lib/db/cr-sqlite/core/worker-db";
+	import { disconnectAllPorts } from "$lib/db/cr-sqlite/core/worker-db";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import { timeLogger } from "$lib/utils/timer";
 	import { resetSyncStuckState, syncConnectivityMonitor } from "$lib/stores";
@@ -213,11 +213,11 @@
 	};
 
 	// Synchronously terminate all DB workers on page unload to immediately release OPFS file handles.
-	// terminateAllWorkers() is synchronous and works even if the page reloads during DB init
+	// disconnectAllPorts() is synchronous and works even if the page reloads during DB init
 	// (before app.db.db is set), because it tracks workers at module level from the moment they're created.
 	const releaseDbOnUnload = () => {
 		try {
-			terminateAllWorkers();
+			disconnectAllPorts();
 		} catch {
 			// Best-effort: ignore errors during teardown
 		}
