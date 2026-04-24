@@ -93,6 +93,7 @@ export interface EntityListMatcher {
 
 export type WarehouseItemDropdown = DashboardNode<{
 	edit: () => Promise<void>;
+	exportCsv: () => Promise<void>;
 	viewStock: () => Promise<void>;
 	delete: () => Promise<void>;
 }>;

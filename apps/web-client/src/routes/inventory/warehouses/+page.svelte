@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
+	import { download, generateCsv, mkConfig } from "export-to-csv";
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import Edit from "$lucide/edit";
+	import Download from "$lucide/download";
 	import Table2 from "$lucide/table-2";
 	import Trash2 from "$lucide/trash-2";
 	import HousePlus from "$lucide/house-plus";
@@ -32,6 +34,7 @@
 	import { invalidate as invalidateStockCache } from "$lib/db/cr-sqlite/stock_cache";
 
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import LL from "@librocco/shared/i18n-svelte";
 
@@ -46,6 +49,8 @@
 
 	$: tWarehouse = $LL.warehouse_list_page;
 	$: tInventory = $LL.inventory_page.warehouses_tab;
+	$: tWarehousePageLabels = $LL.warehouse_page.labels;
+	$: tWarehousePageTable = $LL.warehouse_page.table;
 	$: tCommon = $LL.common;
 
 	// #region reactivity
@@ -61,6 +66,29 @@
 	$: goto = racefreeGoto(disposer);
 
 	$: ({ warehouseTotals } = stockCache);
+
+	const handleExportCsv = async (warehouseId: number, displayName: string) => {
+		const db = await getDb(app);
+		const entries = await getStock(db, { warehouseId });
+		const csvConfig = mkConfig({
+			columnHeaders: [
+				{ displayLabel: tWarehousePageTable.quantity(), key: "quantity" },
+				{ displayLabel: tWarehousePageTable.isbn(), key: "isbn" },
+				{ displayLabel: tWarehousePageTable.title(), key: "title" },
+				{ displayLabel: tWarehousePageTable.publisher(), key: "publisher" },
+				{ displayLabel: tWarehousePageTable.authors(), key: "authors" },
+				{ displayLabel: tWarehousePageTable.year(), key: "year" },
+				{ displayLabel: tWarehousePageTable.price(), key: "price" },
+				{ displayLabel: tWarehousePageTable.category(), key: "category" },
+				{ displayLabel: tWarehousePageTable.edited_by(), key: "editedBy" },
+				{ displayLabel: tWarehousePageTable.out_of_print(), key: "outOfPrint" }
+			],
+			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
+		});
+
+		const gen = generateCsv(csvConfig)(entries);
+		download(csvConfig)(gen);
+	};
 
 	const handleDeleteWarehouse = (id: number) => async () => {
 		const db = await getDb(app);
@@ -192,6 +220,19 @@
 								>
 									<Edit aria-hidden size={18} />
 									<span>{tWarehouse.labels.edit()}</span>
+								</div>
+
+								<div {...separator} use:separator.action class="h-[1px] bg-base-300"></div>
+
+								<div
+									{...item}
+									use:item.action
+									on:m-click={async () => handleExportCsv(id, displayName)}
+									on:m-keydown={async () => handleExportCsv(id, displayName)}
+									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
+								>
+									<Download aria-hidden size={18} />
+									<span>{tWarehousePageLabels.export_to_csv()}</span>
 								</div>
 
 								<div {...separator} use:separator.action class="h-[1px] bg-base-300"></div>
