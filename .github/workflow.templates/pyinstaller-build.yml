@@ -133,6 +133,12 @@ jobs:
       - name: Build web-client for root path
         run: cd apps/web-client && rushx build:prod-rootdir
         shell: bash
+        env:
+          SENTRY_ORG: codemyriad
+          SENTRY_PROJECT: librocco
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
+          PUBLIC_SENTRY_ENVIRONMENT: bookstore
 
       #! Install Python launcher dependencies (needed for build scripts)
       #! Use uv-managed Python to ensure dev headers are available
