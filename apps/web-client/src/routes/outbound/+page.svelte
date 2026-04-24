@@ -8,6 +8,7 @@
 	import Library from "$lucide/library";
 	import FilePlus from "$lucide/file-plus";
 	import Layers from "$lucide/layers";
+	import Clock from "$lucide/clock";
 	import ClockArrowUp from "$lucide/clock-arrow-up";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
@@ -123,6 +124,7 @@
 					{#each notes as note}
 						{@const displayName = note.displayName || `Note - ${note.id}`}
 						{@const updatedAt = $dateFormatters.dateTime(note.updatedAt)}
+						{@const createdAt = $dateFormatters.dateTime(note.createdAt)}
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", note.id)}
 
@@ -137,6 +139,13 @@
 										>
 									</div>
 
+									{#if note.createdAt}
+										<div class="flex items-center gap-x-2 text-sm text-base-content" data-property="createdAt">
+											<Clock size={18} />
+											{tOutboundPage.stats.created()}:
+											{createdAt}
+										</div>
+									{/if}
 									{#if note.updatedAt}
 										<div class="flex items-center gap-x-2 text-sm text-base-content">
 											<ClockArrowUp size={18} />

@@ -83,6 +83,10 @@
 			"archive": {
 				"committed_at": "Confermato il",
 				"export_csv": "Esporta CSV",
+				"type": {
+					"purchase": "Acquisto",
+					"sale": "Vendita"
+				},
 				"column_headers": {
 					"quantity": "quantità",
 					"isbn": "ISBN",
@@ -150,6 +154,7 @@
 			"stats": {
 				"back_to_warehouses": "Torna ai magazzini",
 				"books": "{ no_of_books } libr{{o|i}}",
+				"created": "Creata",
 				"last_updated": "Aggiornato"
 			},
 			"labels": {
@@ -380,6 +385,7 @@
 	"sale_page": {
 		"heading": "Vendita",
 		"stats": {
+			"created": "Creata",
 			"last_updated": "Ultimo aggiornamento",
 			"books": "{ bookCount } libr{{o|i}}"
 		},
@@ -498,6 +504,10 @@
 			"no_results": "Nessun risultato",
 			"search_found_no_results": "La ricerca non ha prodotto risultati",
 			"unknown_title": "Titolo sconosciuto"
+		},
+		"badges": {
+			"purchase_notes": "{count:number} not{{a|e}} di acquisto",
+			"sale_notes": "{count:number} not{{a|e}} di vendita"
 		},
 		"loading": "Caricamento"
 	},

@@ -90,6 +90,10 @@ const history_page = {
 		archive: {
 			committed_at: "Committed At",
 			export_csv: "Export CSV",
+			type: {
+				purchase: "Purchase",
+				sale: "Sale"
+			},
 			column_headers: {
 				quantity: "quantity",
 				isbn: "isbn",
@@ -158,6 +162,7 @@ const inventory_page = {
 		stats: {
 			back_to_warehouses: "Back to warehouses",
 			books: "{ no_of_books } book{{s}}",
+			created: "Created",
 			last_updated: "Updated"
 		},
 		labels: {
@@ -639,6 +644,10 @@ const common = {
 		search_found_no_results: "Search found no results",
 		unknown_title: "Unknown Title"
 	},
+	badges: {
+		purchase_notes: "{count:number} purchase note{{s}}",
+		sale_notes: "{count:number} sale note{{s}}"
+	},
 	loading: "Loading"
 };
 const sale_note = {
@@ -703,6 +712,7 @@ const sale_note = {
 const sale_page = {
 	heading: "Sale",
 	stats: {
+		created: "Created",
 		last_updated: "Last updated",
 		books: "{ bookCount } book{{s}}"
 	},

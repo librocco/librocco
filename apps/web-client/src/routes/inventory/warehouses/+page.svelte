@@ -45,7 +45,7 @@
 
 	export let data: PageData;
 
-	$: ({ warehouses, plugins } = data);
+	$: ({ warehouses, plugins, inboundNoteCountsByWarehouse } = data);
 
 	$: tWarehouse = $LL.warehouse_list_page;
 	$: tInventory = $LL.inventory_page.warehouses_tab;
@@ -170,13 +170,14 @@
 			{:else}
 				{#each warehouses as { id, displayName, discount }}
 					{@const href = appPath("warehouses", id)}
+					{@const numPurchaseNotes = inboundNoteCountsByWarehouse?.get(id) ?? 0}
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a data-sveltekit-preload-data="hover" {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">
 								{displayName}
 							</a>
-							<div class="flex flex-row gap-x-8 gap-y-2 max-xs:flex-col">
+							<div class="flex flex-row items-center gap-x-4 gap-y-2 max-xs:flex-col max-xs:items-start">
 								<div class="entity-list-text-sm flex items-center gap-x-2 text-sm text-base-content">
 									<Layers size={18} />
 
@@ -189,6 +190,20 @@
 										{tWarehouse.stats.books()}
 									</div>
 								</div>
+
+								{#if numPurchaseNotes > 0}
+									<a
+										href={appPath("inbound")}
+										class="badge-primary badge badge-sm px-1.5 py-2.5 hover:underline focus:underline"
+										data-property="numPurchaseNotes"
+									>
+										{tCommon.badges.purchase_notes({ count: numPurchaseNotes })}
+									</a>
+								{:else}
+									<span class="badge-ghost badge badge-sm px-1.5 py-2.5 text-base-content/60" data-property="numPurchaseNotes">
+										{tCommon.badges.purchase_notes({ count: 0 })}
+									</span>
+								{/if}
 
 								{#if discount}
 									<div class="flex items-center gap-x-2 text-sm text-base-content">

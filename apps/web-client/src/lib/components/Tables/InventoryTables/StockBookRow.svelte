@@ -8,6 +8,8 @@
 
 	export let row: InventoryTableData;
 	export let rowIx: number;
+	export let showWarehouse = false;
+	export let plainQty = false;
 
 	// TODO: this is a duplicate
 	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
@@ -23,6 +25,7 @@
 	{@const editedBy = row.editedBy || ""}
 	{@const category = row.category || ""}
 	{@const outOfPrint = row.outOfPrint || false}
+	{@const warehouseName = row.warehouseName ?? ""}
 
 	<th scope="row" class="table-cell-max">
 		<BookHeadCell data={{ isbn, title, authors, year }} />
@@ -38,10 +41,19 @@
 		<BookPriceCell data={row} />
 	</td>
 	<td data-property="quantity" class="">
-		<span class="badge-secondary badge-outline badge badge-md">
-			{quantity}
-		</span>
+		{#if plainQty}
+			<span data-value={quantity}>{quantity}</span>
+		{:else}
+			<span class="badge-secondary badge-outline badge badge-md" data-value={quantity}>
+				{quantity}
+			</span>
+		{/if}
 	</td>
+	{#if showWarehouse}
+		<td data-property="warehouseName" class="table-cell-max">
+			{warehouseName}
+		</td>
+	{/if}
 	<td data-property="publisher" class="show-col-sm table-cell-max">
 		{publisher}
 	</td>
@@ -77,6 +89,9 @@
 		<BookPriceCell data={row} />
 	</td>
 	<td></td>
+	{#if showWarehouse}
+		<td></td>
+	{/if}
 	<td></td>
 	<td></td>
 	<td></td>
