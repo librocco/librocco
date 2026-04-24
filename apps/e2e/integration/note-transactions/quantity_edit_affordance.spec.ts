@@ -92,7 +92,10 @@ test("Enter still commits (regression guard)", async ({ page }) => {
 	await entries.assertRows([{ isbn: "1234567890", quantity: 5 }]);
 });
 
-test("focus applies editing affordance, blur removes it", async ({ page }) => {
+test("focus and blur toggle input focus state", async ({ page }) => {
+	// Pin the focus transitions that gate the editing affordance — the visual affordance
+	// itself is pure CSS (`focus:` classes on the input), so asserting focus state is the
+	// correct DOM-observable proxy.
 	const entries = getDashboard(page).content().table("inbound-note");
 	const input = entries.row(0).locator('[data-property="quantity"] input');
 

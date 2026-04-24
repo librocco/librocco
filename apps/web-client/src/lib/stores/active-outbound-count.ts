@@ -10,20 +10,31 @@ export const activeOutboundNoteCount = writable(0);
 let currentDb: DBAsync | null = null;
 let unsubscribe: (() => void) | null = null;
 let refreshPromise: Promise<void> | null = null;
+let refreshPending = false;
 
 const refresh = async () => {
 	if (!currentDb) return;
-	if (refreshPromise) return refreshPromise;
+	if (refreshPromise) {
+		// An onRange event landed mid-flight — queue a trailing re-run so the latest
+		// DB state is read after the current one resolves.
+		refreshPending = true;
+		return refreshPromise;
+	}
 
 	refreshPromise = (async () => {
 		try {
 			const count = await getActiveOutboundNoteCount(currentDb);
 			activeOutboundNoteCount.set(count);
 		} catch (err) {
+			// Keep the previous value on transient read failures; resetting to 0 would
+			// be indistinguishable from a genuine empty state in the sidebar badge.
 			console.error("[active-outbound-count] refresh failed:", err);
-			activeOutboundNoteCount.set(0);
 		} finally {
 			refreshPromise = null;
+			if (refreshPending) {
+				refreshPending = false;
+				void refresh();
+			}
 		}
 	})();
 
@@ -41,15 +52,21 @@ export async function attachActiveOutboundCountMonitor(db: DBAsync, rx: IAppDbRx
 	currentDb = db;
 
 	unsubscribe?.();
-	unsubscribe = rx.onRange(["note"], () => {
+	// Capture this attach's subscription locally so the returned detach only tears
+	// down its own handle — the module-scoped `unsubscribe` may point at a later
+	// monitor by the time this detach runs (HMR, remount, re-attach on DB swap).
+	const localUnsubscribe = rx.onRange(["note"], () => {
 		void refresh();
 	});
+	unsubscribe = localUnsubscribe;
 
 	await refresh();
 
 	return () => {
-		unsubscribe?.();
-		unsubscribe = null;
+		localUnsubscribe();
+		if (unsubscribe === localUnsubscribe) {
+			unsubscribe = null;
+		}
 		if (currentDb === db) {
 			currentDb = null;
 		}

@@ -10,8 +10,15 @@
 	};
 
 	const handleBlur = (e: FocusEvent) => {
-		const nextValue = (e.currentTarget as HTMLInputElement).valueAsNumber;
-		if (Number.isNaN(nextValue) || nextValue === originalValue) return;
+		const input = e.currentTarget as HTMLInputElement;
+		const nextValue = input.valueAsNumber;
+		// Invalid blur (cleared field, value below min) reverts to the original — mirrors
+		// the Escape path so the DOM never gets stuck showing a value that won't commit.
+		if (Number.isNaN(nextValue) || !input.checkValidity()) {
+			input.value = String(originalValue);
+			return;
+		}
+		if (nextValue === originalValue) return;
 		form?.requestSubmit();
 	};
 
