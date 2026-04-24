@@ -63,6 +63,20 @@ export class ErrDBOpenTransient extends Error {
 }
 
 /**
+ * Thrown when DB initialization exceeds the allowed time budget. This usually means
+ * the worker is deadlocked or the Comlink channel is broken. A page reload often fixes it;
+ * if not, resetting the database is the nuclear option.
+ */
+export class ErrDBInitTimeout extends Error {
+	constructor() {
+		super(
+			"Database initialization timed out. The database may be locked by a previous session — try reloading the page. If the problem persists, reset the database."
+		);
+		this.name = "ErrDBInitTimeout";
+	}
+}
+
+/**
  * Thrown when trying to retrieve the app sync interface (e.g. `await getAppSync(app)`) before the sync was registered to the app
  */
 export class ErrInvalidSyncURL extends Error {

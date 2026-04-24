@@ -640,3 +640,41 @@ testInventory("should handle warehouse selection for books in stock", async ({ p
 	await expect(table.row(0).field("warehouseName")).toContainText("Empty Warehouse");
 	await expect(table.row(0).field("warehouseName")).toContainText("Forced");
 });
+
+test("editing a sale note does not change its createdAt timestamp", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	await page.getByRole("link", { name: "Sale" }).click();
+
+	const content = dashboard.content();
+
+	// Create a sale note via helper
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Sale 1" });
+
+	const list = content.entityList("outbound-list");
+	const row = list.item(0);
+	const createdCell = row.locator('[data-property="createdAt"]');
+	await createdCell.waitFor();
+
+	const createdTextBefore = (await createdCell.textContent())?.trim();
+	const before = await dbHandle.evaluate(async (db) => {
+		const [r] = await (db as any).execO("SELECT created_at AS createdAt, updated_at AS updatedAt FROM note WHERE id = ?", [1]);
+		return r as { createdAt: number; updatedAt: number };
+	});
+
+	// Edit the note (bumps updated_at; must not touch created_at)
+	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Sale 1 (edited)" });
+
+	// Wait for the row to re-render with the new displayName
+	await row.getByText("Sale 1 (edited)").waitFor();
+
+	const createdTextAfter = (await createdCell.textContent())?.trim();
+	expect(createdTextAfter).toBe(createdTextBefore);
+
+	const after = await dbHandle.evaluate(async (db) => {
+		const [r] = await (db as any).execO("SELECT created_at AS createdAt, updated_at AS updatedAt FROM note WHERE id = ?", [1]);
+		return r as { createdAt: number; updatedAt: number };
+	});
+	expect(after.createdAt).toBe(before.createdAt);
+	expect(after.updatedAt).toBeGreaterThan(before.updatedAt);
+});

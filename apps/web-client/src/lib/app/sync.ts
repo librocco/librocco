@@ -228,7 +228,9 @@ export async function initializeSync(app: App): Promise<void> {
 			});
 
 			// Wait for the worker to be initialised
+			console.time("[sync] worker init");
 			await sync.worker.initPromise;
+			console.timeEnd("[sync] worker init");
 			sync.addDisposer(cleanupInitListener);
 			sync.state.set(AppSyncState.Idle);
 		} catch (err) {

@@ -75,11 +75,15 @@ async function start() {
 			throw new Error("Invalid worker name format. Expected '<dbname>---<vfs>'.");
 		}
 
+		console.time("[worker] getCrsqliteDB");
 		const _db = await getCrsqliteDB(dbname, vfs);
+		console.timeEnd("[worker] getCrsqliteDB");
 		console.log(`[worker] db initialised!`);
 
+		console.time("[worker] wrapDB + expose");
 		const db = wrapDB(_db);
 		Comlink.expose(db);
+		console.timeEnd("[worker] wrapDB + expose");
 
 		console.log(`[worker] db exposed, sending ok msg...`);
 		const msg: MsgInitOk = { _type: "wkr-init", status: "ok" };

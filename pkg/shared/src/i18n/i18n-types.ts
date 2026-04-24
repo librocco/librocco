@@ -240,6 +240,16 @@ type RootTranslation = {
 				 * E​x​p​o​r​t​ ​C​S​V
 				 */
 				export_csv: string
+				type: {
+					/**
+					 * P​u​r​c​h​a​s​e
+					 */
+					purchase: string
+					/**
+					 * S​a​l​e
+					 */
+					sale: string
+				}
 				column_headers: {
 					/**
 					 * q​u​a​n​t​i​t​y
@@ -426,6 +436,10 @@ type RootTranslation = {
 				 * @param {string | number | boolean} no_of_books
 				 */
 				books: RequiredParams<'no_of_books'>
+				/**
+				 * C​r​e​a​t​e​d
+				 */
+				created: string
 				/**
 				 * U​p​d​a​t​e​d
 				 */
@@ -1083,6 +1097,10 @@ type RootTranslation = {
 		heading: string
 		stats: {
 			/**
+			 * C​r​e​a​t​e​d
+			 */
+			created: string
+			/**
 			 * L​a​s​t​ ​u​p​d​a​t​e​d
 			 */
 			last_updated: string
@@ -1398,6 +1416,18 @@ type RootTranslation = {
 			 * U​n​k​n​o​w​n​ ​T​i​t​l​e
 			 */
 			unknown_title: string
+		}
+		badges: {
+			/**
+			 * {​c​o​u​n​t​}​ ​p​u​r​c​h​a​s​e​ ​n​o​t​e​{​{​s​}​}
+			 * @param {number} count
+			 */
+			purchase_notes: RequiredParams<'count'>
+			/**
+			 * {​c​o​u​n​t​}​ ​s​a​l​e​ ​n​o​t​e​{​{​s​}​}
+			 * @param {number} count
+			 */
+			sale_notes: RequiredParams<'count'>
 		}
 		/**
 		 * L​o​a​d​i​n​g
@@ -3378,6 +3408,16 @@ export type TranslationFunctions = {
 				 * Export CSV
 				 */
 				export_csv: () => LocalizedString
+				type: {
+					/**
+					 * Purchase
+					 */
+					purchase: () => LocalizedString
+					/**
+					 * Sale
+					 */
+					sale: () => LocalizedString
+				}
 				column_headers: {
 					/**
 					 * quantity
@@ -3562,6 +3602,10 @@ export type TranslationFunctions = {
 				 * {no_of_books} book{{s}}
 				 */
 				books: (arg: { no_of_books: string | number | boolean }) => LocalizedString
+				/**
+				 * Created
+				 */
+				created: () => LocalizedString
 				/**
 				 * Updated
 				 */
@@ -4204,6 +4248,10 @@ export type TranslationFunctions = {
 		heading: () => LocalizedString
 		stats: {
 			/**
+			 * Created
+			 */
+			created: () => LocalizedString
+			/**
 			 * Last updated
 			 */
 			last_updated: () => LocalizedString
@@ -4513,6 +4561,16 @@ export type TranslationFunctions = {
 			 * Unknown Title
 			 */
 			unknown_title: () => LocalizedString
+		}
+		badges: {
+			/**
+			 * {count} purchase note{{s}}
+			 */
+			purchase_notes: (arg: { count: number }) => LocalizedString
+			/**
+			 * {count} sale note{{s}}
+			 */
+			sale_notes: (arg: { count: number }) => LocalizedString
 		}
 		/**
 		 * Loading

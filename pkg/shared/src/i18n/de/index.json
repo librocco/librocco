@@ -83,6 +83,10 @@
 			"archive": {
 				"committed_at": "",
 				"export_csv": "",
+				"type": {
+					"purchase": "Einkauf",
+					"sale": "Verkauf"
+				},
 				"column_headers": {
 					"quantity": "",
 					"isbn": "",
@@ -150,6 +154,7 @@
 			"stats": {
 				"back_to_warehouses": "",
 				"books": "",
+				"created": "Erstellt",
 				"last_updated": ""
 			},
 			"labels": {
@@ -382,6 +387,7 @@
 	"sale_page": {
 		"heading": "",
 		"stats": {
+			"created": "Erstellt",
 			"last_updated": "",
 			"books": ""
 		},
@@ -500,6 +506,10 @@
 			"no_results": "",
 			"search_found_no_results": "",
 			"unknown_title": "Unbekannter Titel"
+		},
+		"badges": {
+			"purchase_notes": "{count:number} Einkaufsnoti{{z|zen}}",
+			"sale_notes": "{count:number} Verkaufsnoti{{z|zen}}"
 		},
 		"loading": ""
 	},

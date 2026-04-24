@@ -148,10 +148,13 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	let lastOpenError: Error | null = null;
 	for (let attempt = 0; attempt < DB_OPEN_RETRIES; attempt++) {
 		try {
+			console.time(`[db] open (attempt ${attempt + 1})`);
 			db = await getDBCore(dbid, vfs);
+			console.timeEnd(`[db] open (attempt ${attempt + 1})`);
 			lastOpenError = null;
 			break;
 		} catch (e) {
+			console.timeEnd(`[db] open (attempt ${attempt + 1})`);
 			lastOpenError = e as Error;
 			if (attempt < DB_OPEN_RETRIES - 1) {
 				console.warn(`[db] Failed to open database (attempt ${attempt + 1}/${DB_OPEN_RETRIES}), retrying...`, e);
@@ -170,23 +173,22 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 		throw lastOpenError;
 	}
 
-	// Integrity check - if this fails, DB needs to be nuked
-	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
-	if (res !== "ok") {
-		const err = new ErrDBCorrupted(res);
-		app.db.setState(dbid, AppDbState.Error, err);
-		throw err;
-	}
-
 	// Check if DB initialized (internally)
+	console.time("[db] schema_check");
 	const schemaRes = await getSchemaNameAndVersion(db);
+	console.timeEnd("[db] schema_check");
 	if (!schemaRes) {
 		// Apply the schema (initialise the db)
+		console.time("[db] schema_apply");
 		await db.exec(schemaContent);
 
 		// Store schema info in crsql_master
 		await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
 		await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
+		console.timeEnd("[db] schema_apply");
+
+		// Idempotent slice-4 backfill — see comment in the migrate branch below.
+		await db.exec("UPDATE note SET created_at = updated_at WHERE created_at = 0");
 
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
@@ -201,6 +203,9 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	if (name === schemaName && version === schemaVersion) {
 		// All God - We're done here!
 		//
+		// Idempotent slice-4 backfill — covers DBs that migrated before the backfill code
+		// landed (preview hot-reload race) and any future columns we add with a similar pattern.
+		await db.exec("UPDATE note SET created_at = updated_at WHERE created_at = 0");
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
 		// happening in production anyway
@@ -216,8 +221,14 @@ export const initializeDb = async (app: App, dbid: string, vfs: VFSWhitelist): P
 	}
 
 	try {
+		console.time("[db] automigrate");
 		const result = await db.automigrateTo(schemaName, schemaContent);
+		console.timeEnd("[db] automigrate");
 		console.log(`Auto-migration completed: ${result}`);
+		// One-shot backfill for slice 4's created_at column: pre-existing note rows land with
+		// created_at = 0 from the ALTER TABLE default. Seed them from updated_at (best-available
+		// guess). Idempotent — new notes always INSERT created_at = Date.now() > 0.
+		await db.exec("UPDATE note SET created_at = updated_at WHERE created_at = 0");
 		// TODO: maybe handle a case when the DB had switched (and we simply throw away this DB),
 		// e.g. console.warn or return back to the caller, right now it's not a priority and I don't imagine it
 		// happening in production anyway
@@ -255,12 +266,6 @@ export async function initializeDemoDb(app: App, vfs: VFSWhitelist) {
 	// Initialising
 	const db = await getDBCore(dbid, vfs);
 
-	// Integrity check - if this fails, DB needs to be nuked
-	const [[res]] = await db.execA<[string]>("PRAGMA integrity_check");
-	if (res !== "ok") {
-		throwDemoDBError();
-	}
-
 	// Check if DB initialized (internally)
 	const schemaRes = await getSchemaNameAndVersion(db);
 	if (!schemaRes) {
@@ -271,6 +276,8 @@ export async function initializeDemoDb(app: App, vfs: VFSWhitelist) {
 	const [name, version] = schemaRes;
 	if (name === schemaName && version === schemaVersion) {
 		// All God - We're done here!
+		// Idempotent slice-4 backfill — see comment in the main initializeDb.
+		await db.exec("UPDATE note SET created_at = updated_at WHERE created_at = 0");
 		app.db.setState(dbid, AppDbState.Ready, { db, vfs });
 		return;
 	}
@@ -281,6 +288,8 @@ export async function initializeDemoDb(app: App, vfs: VFSWhitelist) {
 	try {
 		const result = await db.automigrateTo(schemaName, schemaContent);
 		console.log(`Auto-migration completed: ${result}`);
+		// Same one-shot backfill as the main init path — see comment there.
+		await db.exec("UPDATE note SET created_at = updated_at WHERE created_at = 0");
 		app.db.setState(dbid, AppDbState.Ready, { db, vfs });
 	} catch (migrationError) {
 		// Migration failure is treated as a corrupted DB state - needs nuke

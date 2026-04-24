@@ -103,11 +103,11 @@ const getSeqName = async (db: TXAsync, kind: "inbound" | "outbound"): Promise<st
  */
 export function createInboundNote(db: DBAsync, warehouseId: number, noteId: number): Promise<void> {
 	const timestamp = Date.now();
-	const stmt = "INSERT INTO note (id, display_name, warehouse_id, updated_at) VALUES (?, ?, ?, ?)";
+	const stmt = "INSERT INTO note (id, display_name, warehouse_id, updated_at, created_at) VALUES (?, ?, ?, ?, ?)";
 
 	return db.tx(async (txDb) => {
 		const displayName = await getSeqName(txDb, "inbound");
-		await txDb.exec(stmt, [noteId, displayName, warehouseId, timestamp]);
+		await txDb.exec(stmt, [noteId, displayName, warehouseId, timestamp, timestamp]);
 	});
 }
 
@@ -121,11 +121,11 @@ export function createInboundNote(db: DBAsync, warehouseId: number, noteId: numb
  */
 export function createOutboundNote(db: DBAsync, noteId: number): Promise<void> {
 	const timestamp = Date.now();
-	const stmt = "INSERT INTO note (id, display_name, updated_at) VALUES (?, ?, ?)";
+	const stmt = "INSERT INTO note (id, display_name, updated_at, created_at) VALUES (?, ?, ?, ?)";
 
 	return db.tx(async (txDb) => {
 		const displayName = await getSeqName(txDb, "outbound");
-		await txDb.exec(stmt, [noteId, displayName, timestamp]);
+		await txDb.exec(stmt, [noteId, displayName, timestamp, timestamp]);
 	});
 }
 
@@ -143,6 +143,7 @@ async function _getActiveInboundNotes(db: TXAsync): Promise<InboundNoteListItem[
 			note.display_name AS displayName,
 			warehouse.display_name AS warehouseName,
 			note.updated_at,
+			note.created_at,
 			COALESCE(SUM(book_transaction.quantity), 0) AS totalBooks
 		FROM note
 		INNER JOIN warehouse ON note.warehouse_id = warehouse.id
@@ -152,10 +153,21 @@ async function _getActiveInboundNotes(db: TXAsync): Promise<InboundNoteListItem[
 		ORDER BY note.updated_at DESC
 	`;
 
-	const res = await db.execO<{ id: number; displayName: string; warehouseName: string; updated_at: number; totalBooks: number }>(query);
+	const res = await db.execO<{
+		id: number;
+		displayName: string;
+		warehouseName: string;
+		updated_at: number;
+		created_at: number;
+		totalBooks: number;
+	}>(query);
 
 	// TODO: update total books when we add note volume stock functionality
-	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
+	return res.map(({ updated_at, created_at, ...el }) => ({
+		...el,
+		updatedAt: new Date(updated_at),
+		createdAt: new Date(created_at)
+	}));
 }
 
 /**
@@ -171,6 +183,7 @@ async function _getActiveOutboundNotes(db: TXAsync): Promise<OutboundNoteListIte
 			note.id,
 			note.display_name AS displayName,
 			note.updated_at,
+			note.created_at,
 			COALESCE(SUM(book_transaction.quantity), 0) AS totalBooks
 		FROM note
 		LEFT JOIN book_transaction ON note.id = book_transaction.note_id
@@ -180,10 +193,74 @@ async function _getActiveOutboundNotes(db: TXAsync): Promise<OutboundNoteListIte
 		ORDER BY note.updated_at DESC
 	`;
 
-	const res = await db.execO<{ id: number; displayName: string; updated_at: number; totalBooks: number }>(query);
+	const res = await db.execO<{ id: number; displayName: string; updated_at: number; created_at: number; totalBooks: number }>(query);
 
 	// TODO: update total books when we add note volume stock functionality
-	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
+	return res.map(({ updated_at, created_at, ...el }) => ({
+		...el,
+		updatedAt: new Date(updated_at),
+		createdAt: new Date(created_at)
+	}));
+}
+
+/**
+ * Returns a map of warehouseId -> count of uncommitted inbound notes for that warehouse.
+ * Warehouses with zero drafts are omitted from the map (callers should default to 0).
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<Map<number, number>>} Map from warehouse ID to active inbound note count
+ */
+async function _getInboundNoteCountsByWarehouse(db: TXAsync): Promise<Map<number, number>> {
+	const query = `
+		SELECT note.warehouse_id AS warehouseId, COUNT(*) AS count
+		FROM note
+		INNER JOIN warehouse ON note.warehouse_id = warehouse.id
+		WHERE note.committed = 0
+		GROUP BY note.warehouse_id
+	`;
+
+	const rows = await db.execO<{ warehouseId: number; count: number }>(query);
+	return new Map(rows.map(({ warehouseId, count }) => [warehouseId, count]));
+}
+
+/**
+ * Returns the count of uncommitted inbound notes for a single warehouse. Scoped,
+ * count-only variant of {@link _getInboundNoteCountsByWarehouse} for detail pages
+ * that only need one warehouse's number.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} warehouseId - Warehouse to scope the count to
+ * @returns {Promise<number>} Count of active inbound notes for the warehouse
+ */
+async function _getInboundNoteCountForWarehouse(db: TXAsync, warehouseId: number): Promise<number> {
+	const query = `
+		SELECT COUNT(*) AS count
+		FROM note
+		WHERE committed = 0
+		AND warehouse_id = ?
+	`;
+
+	const [[count]] = await db.execA<[number]>(query, [warehouseId]);
+	return count ?? 0;
+}
+
+/**
+ * Cheap count-only variant of {@link _getActiveOutboundNotes}: returns the number of
+ * uncommitted outbound notes without fetching rows or joining book_transaction.
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<number>} Count of active outbound notes
+ */
+async function _getActiveOutboundNoteCount(db: TXAsync): Promise<number> {
+	const query = `
+		SELECT COUNT(*) AS count
+		FROM note
+		WHERE warehouse_id IS NULL
+		AND committed = 0
+	`;
+
+	const [[count]] = await db.execA<[number]>(query);
+	return count ?? 0;
 }
 
 type GetNoteResponse = {
@@ -807,15 +884,18 @@ async function _createAndCommitReconciliationNote(db: DBAsync, id: number, volum
 
 		// Insert the reconciliation note
 		await txDb.exec(
-			`INSERT INTO note (id, display_name, is_reconciliation_note, updated_at, committed, committed_at)
-			VALUES (?, ?, 1, ?, 1, ?)`,
-			[id, displayName, timestamp, timestamp]
+			`INSERT INTO note (id, display_name, is_reconciliation_note, updated_at, created_at, committed, committed_at)
+			VALUES (?, ?, 1, ?, ?, 1, ?)`,
+			[id, displayName, timestamp, timestamp, timestamp]
 		);
 	});
 }
 export const getNoteIdSeq = timed(_getNoteIdSeq);
 export const getActiveInboundNotes = timed(_getActiveInboundNotes);
 export const getActiveOutboundNotes = timed(_getActiveOutboundNotes);
+export const getActiveOutboundNoteCount = timed(_getActiveOutboundNoteCount);
+export const getInboundNoteCountsByWarehouse = timed(_getInboundNoteCountsByWarehouse);
+export const getInboundNoteCountForWarehouse = timed(_getInboundNoteCountForWarehouse);
 export const getNoteById = timed(_getNoteById);
 export const updateNote = timed(_updateNote);
 export const getNoWarehouseEntries = timed(_getNoWarehouseEntries);

@@ -46,13 +46,24 @@ export function getWasmBuildArtefacts(vfs: VFSWhitelist) {
 export async function getCrsqliteDB(dbname: string, vfs: VFSWhitelist): Promise<DBAsync> {
 	const { wasmUrl, getModule } = wasmBuildArtefacts[vfsWasmLookup[vfs]];
 
+	console.time("[worker] wasm: getModule");
 	const ModuleFactory = await getModule();
+	console.timeEnd("[worker] wasm: getModule");
+
 	const vfsFactory = createVFSFactory(vfs);
 	// We're using the vfs as cache key as it includes all information
 	// about the module: `${build}-${vfs}`
 	const cacheKey = vfs;
 
 	const initializer = createWasmInitializer({ ModuleFactory, vfsFactory, cacheKey });
+
+	console.time("[worker] wasm: instantiate");
 	const sqlite = await initializer(() => wasmUrl);
-	return sqlite.open(dbname);
+	console.timeEnd("[worker] wasm: instantiate");
+
+	console.time("[worker] wasm: open");
+	const db = await sqlite.open(dbname);
+	console.timeEnd("[worker] wasm: open");
+
+	return db;
 }
