@@ -86,8 +86,19 @@ function getPackages(basepath, dirnames) {
 	}, []);
 }
 // Get contents of a directory with full path prepended to each entry
+// Only includes entries that are directories containing a package.json (i.e. actual packages)
 function getContents(dirpath) {
-	return fs_1.default.readdirSync(dirpath).map((c) => path_1.default.join(dirpath, c));
+	return fs_1.default
+		.readdirSync(dirpath)
+		.map((c) => path_1.default.join(dirpath, c))
+		.filter((p) => {
+			try {
+				return fs_1.default.statSync(p).isDirectory() &&
+					fs_1.default.existsSync(path_1.default.join(p, "package.json"));
+			} catch {
+				return false;
+			}
+		});
 }
 // #region outputMessages
 const colours = {
