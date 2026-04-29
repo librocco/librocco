@@ -31,7 +31,12 @@ const config = {
 		"import.meta.env.VITE_PKG_VERSION": `"${pkg.version}"`
 	},
 	plugins: [
-		process.env.SENTRY_AUTH_TOKEN && sentrySvelteKit(),
+		process.env.SENTRY_AUTH_TOKEN &&
+			sentrySvelteKit({
+				sourceMapsUploadOptions: {
+					release: { name: process.env.VITE_GIT_SHA }
+				}
+			}),
 		sveltekit(),
 		{
 			name: "configure-response-headers",
