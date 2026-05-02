@@ -1,0 +1,84 @@
+---
+import { Menu, X } from '@lucide/astro';
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith('/') ? rawBase : rawBase + '/';
+---
+
+<header id="site-header" class="fixed w-full top-0 z-50 bg-base-100/60 backdrop-blur-md nav-header">
+  <nav class="flex items-center justify-between px-5 py-3">
+    <a href={base}><img src={`${base}logo-dark.svg`} alt="Librocco" class="nav-logo h-[1.3rem] w-auto" /></a>
+    <!-- Desktop links -->
+    <div class="hidden md:flex items-center gap-6">
+      <a href={`${base}changelog`} class="text-sm font-medium text-base-content hover:text-primary transition-colors">Changelog</a>
+      <a href="mailto:hello@codemyriad.io" class="text-sm font-medium text-base-content hover:text-primary transition-colors">Contact us</a>
+      <a href="https://github.com/librocco" aria-label="GitHub" class="text-base-content hover:text-primary transition-colors">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+      </a>
+      <a href={`${base}getting-started/introduction`} class="flex items-center gap-1.5 bg-base-content text-base-100 text-sm font-bold px-3 py-2 rounded-md hover:opacity-80 transition-opacity">
+        Docs
+      </a>
+    </div>
+    <!-- Mobile: Docs + hamburger -->
+    <div class="flex md:hidden items-center gap-2">
+      <a href={`${base}getting-started/introduction`} class="flex items-center gap-1.5 bg-base-content text-base-100 text-sm font-bold px-3 py-2 rounded-md hover:opacity-90 transition-opacity">
+        Docs
+      </a>
+      <button id="nav-toggle" class="flex items-center justify-center p-2 text-base-content rounded-md hover:bg-base-200 transition-colors" aria-label="Toggle menu">
+        <span id="nav-icon-open"><Menu size={20} /></span>
+        <span id="nav-icon-close" class="hidden"><X size={20} /></span>
+      </button>
+    </div>
+  </nav>
+</header>
+<!-- Mobile menu (outside header to allow backdrop-blur to composite against page content) -->
+<div id="mobile-menu" class="md:hidden fixed left-0 right-0 top-[60px] z-40 flex flex-col px-5 pb-4 gap-1 border-b border-base-300 bg-base-100/60 backdrop-blur-md nav-menu">
+  <a href={`${base}changelog`} class="text-lg font-medium text-base-content hover:text-primary py-2.5 border-b border-base-300 transition-colors">Changelog</a>
+  <a href="https://github.com/librocco" class="text-lg font-medium text-base-content hover:text-primary py-2.5 border-b border-base-300 transition-colors">GitHub</a>
+  <a href="mailto:hello@codemyriad.io" class="text-lg font-medium text-base-content hover:text-primary py-2.5 transition-colors">Contact us</a>
+</div>
+
+<style>
+  .nav-logo {
+    animation: logoFadeIn 0.6s ease both;
+  }
+  @keyframes logoFadeIn {
+    from { opacity: 1; }
+    to   { opacity: 1; }
+  }
+
+  .nav-header {
+    background-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: background-color 0.4s ease, backdrop-filter 0.4s ease, -webkit-backdrop-filter 0.4s ease;
+  }
+  .nav-header.is-scrolled {
+    background-color: color-mix(in srgb, var(--color-base-100) 60%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .nav-menu {
+    opacity: 0;
+    transform: translateY(-8px);
+    pointer-events: none;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  .nav-menu.is-open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+</style>
+
+<script>
+  const toggle = document.getElementById('nav-toggle');
+  const menu = document.getElementById('mobile-menu');
+  const iconOpen = document.getElementById('nav-icon-open');
+  const iconClose = document.getElementById('nav-icon-close');
+  toggle?.addEventListener('click', () => {
+    const isOpen = menu?.classList.contains('is-open');
+    menu?.classList.toggle('is-open', !isOpen);
+    iconOpen?.classList.toggle('hidden', !isOpen);
+    iconClose?.classList.toggle('hidden', isOpen);
+  });
+</script>

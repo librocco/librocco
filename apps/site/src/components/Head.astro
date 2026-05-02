@@ -1,0 +1,40 @@
+---
+import StarlightHead from "@astrojs/starlight/components/Head.astro";
+import { ViewTransitions } from "astro:transitions";
+import type { Props } from "@astrojs/starlight/props";
+
+const pageTitle = Astro.props.entry?.data?.title;
+const docTitle = pageTitle ? `Librocco Docs – ${pageTitle}` : "Librocco Docs";
+---
+
+<StarlightHead {...Astro.props} />
+<ViewTransitions />
+<script is:inline define:vars={{ docTitle }}>
+  document.title = docTitle;
+  const setTitle = () => { document.title = docTitle; };
+  document.addEventListener('astro:page-load', setTitle);
+  document.addEventListener('astro:before-swap', () => {
+    document.removeEventListener('astro:page-load', setTitle);
+  }, { once: true });
+</script>
+
+<script>
+  function initHamburgerIcon() {
+    const btn = document.querySelector('starlight-menu-button button');
+    if (!btn || btn.querySelector('.icon-close')) return;
+
+    // Inject X icon alongside the existing hamburger SVG
+    btn.querySelector('svg')?.classList.add('icon-menu');
+    const close = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    close.setAttribute('class', 'icon-close');
+    close.setAttribute('aria-hidden', 'true');
+    close.setAttribute('width', '20');
+    close.setAttribute('height', '20');
+    close.setAttribute('viewBox', '0 0 24 24');
+    close.setAttribute('fill', 'currentColor');
+    close.innerHTML = '<path d="M18.36 6.64a1 1 0 0 0-1.41 0L12 11.59 7.05 6.64a1 1 0 1 0-1.41 1.41L10.59 13l-4.95 4.95a1 1 0 1 0 1.41 1.41L12 14.41l4.95 4.95a1 1 0 0 0 1.41-1.41L13.41 13l4.95-4.95a1 1 0 0 0 0-1.41Z"/>';
+    btn.appendChild(close);
+  }
+
+  document.addEventListener('astro:page-load', initHamburgerIcon);
+</script>

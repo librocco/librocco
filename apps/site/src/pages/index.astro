@@ -1,0 +1,193 @@
+---
+import { ArrowRight, Zap, WifiOff, Layers, Database, Terminal, Smartphone, BookOpen, GitBranch } from '@lucide/astro';
+import { ViewTransitions } from 'astro:transitions';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import Card from '../components/Card.astro';
+import Aurora from '../components/Aurora.astro';
+import ElectricBorder from '../components/ElectricBorder.astro';
+import FixedBadges from '../components/FixedBadges.astro';
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith('/') ? rawBase : rawBase + '/';
+---
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Librocco – Local-First, Open Source Inventory Management</title>
+  <ViewTransitions />
+</head>
+<body class="font-sans bg-base-100 antialiased">
+
+  <Nav transition:persist="site-nav" />
+
+  <!-- Hero -->
+  <section class="relative flex flex-col items-center gap-8 bg-base-100 px-5 pt-32 pb-24 md:px-10 lg:px-20 w-full overflow-hidden">
+    <Aurora colorStops={["#00b5ff","#B19EEF","#5227FF"]} amplitude={0.7} blend={0.45} />
+
+    <!-- Hero content (above aurora canvas) -->
+    <div class="relative z-10 flex flex-col items-center gap-6">
+
+    <!-- Badge -->
+    <div data-animate data-delay="0" class="flex items-center gap-1.5 bg-info text-base-100 text-sm font-semibold px-3 py-1.5 rounded-full">
+      <Zap size={14} stroke-width={2.5} />
+      Powered by cr-sqlite
+    </div>
+
+    <!-- Headline + Sub -->
+    <div data-animate data-delay="150" class="flex flex-col gap-5 max-w-[720px] text-center">
+      <h1 class="text-[48px] lg:text-[60px] font-bold leading-none text-base-content">
+        Local-First<br />Inventory Management
+      </h1>
+      <p class="text-lg font-medium text-base-content/70 leading-[1.4]">
+        Lightning fast and accurate stock tracking that never stops. Sync effortlessly across multiple terminals, even when the internet goes dark.
+      </p>
+    </div>
+
+    <!-- CTAs -->
+    <div data-animate data-delay="300" class="flex flex-wrap md:flex-row justify-center gap-4">
+      <a href={`${base}getting-started/quick-start`} class="flex items-center gap-2 bg-base-content text-base-100 text-base font-bold px-6 py-3 rounded-xl hover:opacity-80 transition-opacity">
+        Deploy now
+        <ArrowRight size={16} stroke-width={2.5} />
+      </a>
+      <a href="https://github.com/codemyriad/librocco" class="flex items-center gap-2 bg-base-200 text-base-content text-base font-bold px-6 py-3 rounded-xl border border-base-300 hover:bg-base-300/50 transition-colors">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+        </svg>
+        Star on GitHub
+      </a>
+    </div>
+
+    </div><!-- end z-10 wrapper -->
+  </section>
+
+  <div class="h-px bg-base-300 w-full"></div>
+
+  <!-- Features -->
+  <section id="features" class="flex bg-base-100 py-20 w-full justify-center">
+  <div class="flex flex-col items-center gap-10 w-full max-w-7xl px-5 md:px-10 lg:px-20">
+
+
+    <!-- Heading -->
+    <div data-animate class="flex flex-col items-center gap-2">
+      <h2 class="text-[30px] font-bold leading-[1.08] text-base-content text-center max-w-[500px]">Built for Resiliancy</h2>
+      <p class="text-lg text-base-content/70 leading-[1.45] text-center max-w-[500px]">Everything you need to manage massive catalogs across distributed locations without fear of data loss.</p>
+    </div>
+
+    <!-- Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
+      <Card data-animate data-delay="200" title="Offline-first" description="Continue scanning, editing, and selling even when offline. Data is persisted locally and synced automatically when a connection is restored.">
+        <WifiOff size={28} color="var(--color-base-content)" stroke-width={2} />
+      </Card>
+      <Card data-animate data-delay="350" title="Multi-Terminal Sync" description="Coordinate stock levels across multiple devices in real-time. Concurrent edits are merged seamlessly using cr-sqlite's CRDT capabilities.">
+        <Layers size={28} color="var(--color-base-content)" stroke-width={2} />
+      </Card>
+      <Card data-animate data-delay="500" title="CR-SQLite Core" description="Leverages the power of Conflict-free Replicated SQLite to ensure your inventory state is always deterministic and accurate.">
+        <Database size={28} color="var(--color-base-content)" stroke-width={2} />
+      </Card>
+      <Card data-animate data-delay="650" title="Developer Friendly" description="Extensible API and modular architecture. Easy to integrate with existing POS systems or custom library management workflows.">
+        <Terminal size={28} color="var(--color-base-content)" stroke-width={2} />
+      </Card>
+      <Card data-animate data-delay="800" title="Responsive UI" description="A polished interface that works perfectly on desktop scanners, tablets for floor workers, and mobile devices for quick checks.">
+        <Smartphone size={28} color="var(--color-base-content)" stroke-width={2} />
+      </Card>
+      <ElectricBorder data-animate data-delay="950" color="#B19EEF" speed={1} chaos={0.08} borderRadius={16}>
+        <Card title="Lightning Fast" description="Optimized to handle huge datasets effortlessly. Search through millions of records in milliseconds using native SQLite indexing.">
+          <Zap size={28} color="var(--color-base-content)" stroke-width={2} />
+        </Card>
+      </ElectricBorder>
+    </div>
+
+  </div>
+  </section>
+
+  <div class="h-px bg-base-300 w-full"></div>
+
+  <!-- CTA -->
+  <section class="flex bg-base-100 py-16 w-full justify-center">
+  <div class="flex flex-col lg:flex-row items-stretch gap-10 w-full max-w-7xl px-5 md:px-10 lg:px-20">
+
+    <!-- Left: Text -->
+    <div data-animate data-delay="0" class="flex flex-col gap-4 flex-1 justify-center lg:pr-4">
+      <h2 class="text-5xl font-extrabold leading-[1.1] text-base-content">Ready to catalog?</h2>
+      <p class="text-lg font-medium text-base-content/70 leading-[1.4]">Our documentation covers everything from single-store setups to enterprise-wide distributed deployments. Get up and running in under 5 minutes.</p>
+      <div class="flex flex-wrap md:flex-row items-start md:items-center gap-3.5">
+        <a href={`${base}getting-started/introduction`} class="flex items-center gap-2 bg-info text-base-100 text-base font-bold px-6 py-3 rounded-xl hover:opacity-80 transition-opacity">
+          <BookOpen size={16} stroke-width={2.5} />
+          Read the docs
+        </a>
+        <a href="https://github.com/librocco" class="flex items-center gap-2 bg-base-200 text-base-content text-base font-bold px-6 py-3 rounded-xl border border-base-300 hover:bg-base-300/50 transition-colors">
+          <GitBranch size={16} stroke-width={2} />
+          View source
+        </a>
+      </div>
+    </div>
+
+    <!-- Right: Terminal -->
+    <div data-animate data-delay="150" class="flex flex-col gap-5 flex-1 bg-base-200 rounded-xl p-4 border border-base-300">
+      <div class="flex items-center gap-2">
+        <div class="w-3.5 h-3.5 rounded-full bg-error"></div>
+        <div class="w-3.5 h-3.5 rounded-full bg-warning"></div>
+        <div class="w-3.5 h-3.5 rounded-full bg-success"></div>
+      </div>
+      <pre class="text-base-content font-[JetBrains_Mono,ui-monospace,monospace] text-sm leading-[1.4] whitespace-pre-wrap"><code># Clone the repository
+git clone https://github.com/librestock/core.git
+
+# Install dependencies
+npm install
+
+# Initialize local SQLite DB
+npm run db:init
+
+# Start the sync engine
+npm run start:sync
+
+# Success! Local terminal is now live.</code></pre>
+    </div>
+
+  </div>
+  </section>
+
+  <Footer />
+
+  <FixedBadges />
+
+</body>
+</html>
+
+<style is:global>
+  @import '../tailwind.css';
+
+  [data-animate] {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  [data-animate].is-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<script>
+  function init() {
+    function reveal() {
+      document.querySelectorAll<HTMLElement>('[data-animate]:not(.is-visible)').forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < window.innerHeight * 0.92) {
+          const delay = parseInt(el.dataset.delay ?? '0', 10);
+          setTimeout(() => el.classList.add('is-visible'), delay);
+        }
+      });
+    }
+
+    const controller = new AbortController();
+    window.addEventListener('scroll', reveal, { passive: true, signal: controller.signal });
+    document.addEventListener('astro:before-swap', () => controller.abort(), { once: true });
+    setTimeout(reveal, 50);
+  }
+
+  document.addEventListener('astro:page-load', init);
+</script>

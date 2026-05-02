@@ -314,6 +314,10 @@
 		{
 			"packageName": "@librocco/open-library-api-plugin",
 			"projectFolder": "plugins/open-library-api"
+		},
+		{
+			"packageName": "@librocco/site",
+			"projectFolder": "apps/site"
 		}
 	]
 }

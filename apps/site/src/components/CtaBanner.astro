@@ -1,0 +1,80 @@
+---
+import { BookOpen, GitBranch } from '@lucide/astro';
+const rawBase = import.meta.env.BASE_URL;
+const base = rawBase.endsWith('/') ? rawBase : rawBase + '/';
+---
+
+<section class="flex bg-base-100 py-16 w-full justify-center">
+  <div class="flex flex-col lg:flex-row items-stretch gap-10 w-full max-w-7xl px-5 md:px-10 lg:px-20">
+    <div class="cta-col flex flex-col gap-4 flex-1 justify-center lg:pr-4" style="--col-delay: 0ms">
+      <h2 class="text-5xl font-extrabold leading-[1.1] text-base-content">Ready to catalog?</h2>
+      <p class="text-lg font-medium text-base-content/70 leading-[1.4]">Our documentation covers everything from single-store setups to enterprise-wide distributed deployments. Get up and running in under 5 minutes.</p>
+      <div class="flex flex-wrap md:flex-row items-start md:items-center gap-3.5">
+        <a href={`${base}getting-started/introduction`} class="flex items-center gap-2 bg-info text-base-100 text-base font-bold px-6 py-3 rounded-xl hover:opacity-80 transition-opacity">
+          <BookOpen size={16} stroke-width={2.5} />
+          Read the docs
+        </a>
+        <a href="https://github.com/librocco" class="flex items-center gap-2 bg-base-200 text-base-content text-base font-bold px-6 py-3 rounded-xl border border-base-300 hover:bg-base-300/50 transition-colors">
+          <GitBranch size={16} stroke-width={2} />
+          View source
+        </a>
+      </div>
+    </div>
+    <div class="cta-col flex flex-col gap-5 flex-1 bg-base-200 rounded-xl p-4 border border-base-300" style="--col-delay: 150ms">
+      <div class="flex items-center gap-2">
+        <div class="w-3.5 h-3.5 rounded-full bg-error"></div>
+        <div class="w-3.5 h-3.5 rounded-full bg-warning"></div>
+        <div class="w-3.5 h-3.5 rounded-full bg-success"></div>
+      </div>
+      <pre class="text-base-content font-[JetBrains_Mono,ui-monospace,monospace] text-sm leading-[1.4] whitespace-pre-wrap"><code># Clone the repository
+git clone https://github.com/librestock/core.git
+
+# Install dependencies
+npm install
+
+# Initialize local SQLite DB
+npm run db:init
+
+# Start the sync engine
+npm run start:sync
+
+# Success! Local terminal is now live.</code></pre>
+    </div>
+  </div>
+</section>
+
+<style>
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0);    }
+  }
+
+  .cta-col {
+    opacity: 0;
+  }
+  .cta-col.in-view {
+    animation: fadeSlideIn 0.5s ease both;
+    animation-delay: var(--col-delay, 0ms);
+  }
+</style>
+
+<script>
+  function initCtaBanner() {
+    const cols = document.querySelectorAll<HTMLElement>('.cta-col');
+    if (!cols.length) return;
+
+    // Reset state on each init (e.g. after View Transitions navigation)
+    cols.forEach(el => el.classList.remove('in-view'));
+
+    const observer = new IntersectionObserver((records) => {
+      records.filter(r => r.isIntersecting).forEach(record => {
+        (record.target as HTMLElement).classList.add('in-view');
+        observer.unobserve(record.target);
+      });
+    }, { threshold: 0.15 });
+
+    cols.forEach(el => observer.observe(el));
+  }
+
+  document.addEventListener('astro:page-load', initCtaBanner);
+</script>

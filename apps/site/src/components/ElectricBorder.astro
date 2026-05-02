@@ -1,0 +1,257 @@
+---
+// CREDIT
+// Component inspired by @BalintFerenczy on X
+// https://codepen.io/BalintFerenczy/pen/KwdoyEN
+
+interface Props {
+  color?: string;
+  speed?: number;
+  chaos?: number;
+  borderRadius?: number;
+  class?: string;
+  [key: string]: unknown;
+}
+
+const {
+  color = '#5227FF',
+  speed = 1,
+  chaos = 0.12,
+  borderRadius = 24,
+  class: className = '',
+  ...rest
+} = Astro.props;
+---
+
+<div
+  class={`electric-border ${className}`}
+  style={`--electric-border-color: ${color}; border-radius: ${borderRadius}px;`}
+  data-eb-speed={speed}
+  data-eb-chaos={chaos}
+  data-eb-radius={borderRadius}
+  data-eb-color={color}
+  {...rest}
+>
+  <div class="eb-canvas-container">
+    <canvas class="eb-canvas"></canvas>
+  </div>
+  <div class="eb-layers">
+    <div class="eb-glow-1"></div>
+    <div class="eb-glow-2"></div>
+    <div class="eb-background-glow"></div>
+  </div>
+  <div class="eb-content">
+    <slot />
+  </div>
+</div>
+
+<style>
+  .electric-border {
+    --electric-light-color: oklch(from var(--electric-border-color) l c h);
+    position: relative;
+    overflow: visible;
+    isolation: isolate;
+  }
+
+  .eb-canvas-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  .eb-canvas {
+    display: block;
+  }
+
+  .eb-content {
+    position: relative;
+    border-radius: inherit;
+    z-index: 1;
+  }
+
+  /* Neon glow on the card border itself */
+  .eb-content :global(> *) {
+    border-width: 0 !important;
+    box-shadow:
+      0 0 6px oklch(from var(--electric-border-color) l c h / 0.4),
+      0 0 18px oklch(from var(--electric-border-color) l c h / 0.25),
+      0 0 40px oklch(from var(--electric-border-color) l c h / 0.1);
+  }
+
+  .eb-layers {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .eb-glow-1,
+  .eb-glow-2,
+  .eb-background-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-sizing: border-box;
+  }
+
+  .eb-glow-1 {
+    border: 1px solid oklch(from var(--electric-border-color) l c h / 0.3);
+    filter: blur(2px);
+  }
+
+  .eb-glow-2 {
+    border: 1px solid var(--electric-light-color);
+    filter: blur(2px);
+  }
+
+  .eb-background-glow {
+    z-index: -1;
+    transform: scale(1.1);
+    filter: blur(32px);
+    opacity: 0;
+    background: linear-gradient(-30deg, var(--electric-light-color), transparent, var(--electric-border-color));
+  }
+</style>
+
+<script>
+  // CREDIT: Component inspired by @BalintFerenczy on X — https://codepen.io/BalintFerenczy/pen/KwdoyEN
+
+  function init() {
+  document.querySelectorAll<HTMLElement>('.electric-border').forEach((container) => {
+    const canvas = container.querySelector<HTMLCanvasElement>('.eb-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const color = container.dataset.ebColor ?? '#5227FF';
+    const speed = parseFloat(container.dataset.ebSpeed ?? '1');
+    const chaos = parseFloat(container.dataset.ebChaos ?? '0.12');
+    const borderRadius = parseFloat(container.dataset.ebRadius ?? '24');
+
+    const octaves = 10, lacunarity = 1.6, gain = 0.7;
+    const amplitude = chaos, frequency = 10, baseFlatness = 0;
+    const displacement = 60, borderOffset = 60;
+
+    let timeRef = 0, lastFrameTime = 0, animationId = 0;
+    let canvasWidth = 0, canvasHeight = 0;
+
+    function random(x: number) {
+      return (Math.sin(x * 12.9898) * 43758.5453) % 1;
+    }
+
+    function noise2D(x: number, y: number) {
+      const i = Math.floor(x), j = Math.floor(y);
+      const fx = x - i, fy = y - j;
+      const a = random(i + j * 57), b = random(i + 1 + j * 57);
+      const c = random(i + (j + 1) * 57), d = random(i + 1 + (j + 1) * 57);
+      const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+      return a * (1 - ux) * (1 - uy) + b * ux * (1 - uy) + c * (1 - ux) * uy + d * ux * uy;
+    }
+
+    function octavedNoise(x: number, time: number, seed: number) {
+      let y = 0, amp = amplitude, freq = frequency;
+      for (let i = 0; i < octaves; i++) {
+        y += (i === 0 ? amp * baseFlatness : amp) * noise2D(freq * x + seed * 100, time * freq * 0.3);
+        freq *= lacunarity;
+        amp *= gain;
+      }
+      return y;
+    }
+
+    function cornerPoint(cx: number, cy: number, r: number, startAngle: number, arcLen: number, p: number) {
+      const angle = startAngle + p * arcLen;
+      return { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+    }
+
+    function roundedRectPoint(t: number, left: number, top: number, w: number, h: number, r: number) {
+      const sw = w - 2 * r, sh = h - 2 * r, arc = (Math.PI * r) / 2;
+      const perim = 2 * sw + 2 * sh + 4 * arc;
+      let dist = t * perim, acc = 0;
+
+      if (dist <= acc + sw) return { x: left + r + ((dist - acc) / sw) * sw, y: top };
+      acc += sw;
+      if (dist <= acc + arc) return cornerPoint(left + w - r, top + r, r, -Math.PI / 2, Math.PI / 2, (dist - acc) / arc);
+      acc += arc;
+      if (dist <= acc + sh) return { x: left + w, y: top + r + ((dist - acc) / sh) * sh };
+      acc += sh;
+      if (dist <= acc + arc) return cornerPoint(left + w - r, top + h - r, r, 0, Math.PI / 2, (dist - acc) / arc);
+      acc += arc;
+      if (dist <= acc + sw) return { x: left + w - r - ((dist - acc) / sw) * sw, y: top + h };
+      acc += sw;
+      if (dist <= acc + arc) return cornerPoint(left + r, top + h - r, r, Math.PI / 2, Math.PI / 2, (dist - acc) / arc);
+      acc += arc;
+      if (dist <= acc + sh) return { x: left, y: top + h - r - ((dist - acc) / sh) * sh };
+      acc += sh;
+      return cornerPoint(left + r, top + r, r, Math.PI, Math.PI / 2, (dist - acc) / arc);
+    }
+
+    function updateSize() {
+      if (!canvas || !ctx) return;
+      const rect = container.getBoundingClientRect();
+      const w = rect.width + borderOffset * 2;
+      const h = rect.height + borderOffset * 2;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.scale(dpr, dpr);
+      canvasWidth = w;
+      canvasHeight = h;
+    }
+
+    updateSize();
+
+    function draw(currentTime: number) {
+      if (!canvas || !ctx) return;
+      const delta = (currentTime - lastFrameTime) / 1000;
+      timeRef += delta * speed;
+      lastFrameTime = currentTime;
+
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(dpr, dpr);
+
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      const left = borderOffset, top = borderOffset;
+      const bw = canvasWidth - 2 * borderOffset, bh = canvasHeight - 2 * borderOffset;
+      const r = Math.min(borderRadius, Math.min(bw, bh) / 2);
+      const sampleCount = Math.floor((2 * (bw + bh) + 2 * Math.PI * r) / 2);
+
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+
+      ctx.beginPath();
+      for (let i = 0; i <= sampleCount; i++) {
+        const p = i / sampleCount;
+        const pt = roundedRectPoint(p, left, top, bw, bh, r);
+        const dx = octavedNoise(p * 8, timeRef, 0) * displacement;
+        const dy = octavedNoise(p * 8, timeRef, 1) * displacement;
+        if (i === 0) ctx.moveTo(pt.x + dx, pt.y + dy);
+        else ctx.lineTo(pt.x + dx, pt.y + dy);
+      }
+      ctx.closePath();
+      ctx.stroke();
+
+      animationId = requestAnimationFrame(draw);
+    }
+
+    const ro = new ResizeObserver(updateSize);
+    ro.observe(container);
+    animationId = requestAnimationFrame(draw);
+
+    document.addEventListener('astro:before-swap', () => {
+      cancelAnimationFrame(animationId);
+      ro.disconnect();
+    }, { once: true });
+  });
+  }
+
+  document.addEventListener('astro:page-load', init);
+</script>
