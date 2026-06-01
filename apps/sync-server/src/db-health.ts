@@ -222,9 +222,10 @@ export function checkDatabaseHealth(dbPath: string, extensionPath: string): Heal
 				let maxDbVersion = 0n;
 
 				for (const table of tables) {
-					const stats = db
-						.prepare(`SELECT COUNT(*) as count, MAX(db_version) as max_v FROM "${table.name}"`)
-						.get() as { count: number; max_v: bigint | null };
+					const stats = db.prepare(`SELECT COUNT(*) as count, MAX(db_version) as max_v FROM "${table.name}"`).get() as {
+						count: number;
+						max_v: bigint | null;
+					};
 					totalClockEntries += stats.count;
 					if (stats.max_v && stats.max_v > maxDbVersion) {
 						maxDbVersion = stats.max_v;
@@ -243,6 +244,56 @@ export function checkDatabaseHealth(dbPath: string, extensionPath: string): Heal
 				name: "clock_tables_exist",
 				passed: false,
 				message: `Failed to check clock tables: ${err instanceof Error ? err.message : String(err)}`,
+				severity: "warning"
+			});
+		}
+
+		// Check 8: Negative derived stock invariant.
+		// Stock in librocco is derived as SUM(+inbound/+reconciliation, -outbound) per
+		// (isbn, warehouse_id) over committed notes; physical stock can never be < 0.
+		// A negative sum means the ledger is unbalanced (e.g. a warehouse with committed
+		// sales was deleted, stranding the outbound (-) lines with no matching inbound —
+		// see D-293/D-217). Surfaced as a WARNING so it shows up in /health for monitoring
+		// (D-296) without blocking startup or marking the DB unhealthy.
+		try {
+			const signedSum = "SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END)";
+			const negatives = db
+				.prepare(
+					`SELECT bt.isbn AS isbn, bt.warehouse_id AS warehouseId, ${signedSum} AS quantity
+					 FROM book_transaction bt
+					 JOIN note n ON bt.note_id = n.id
+					 WHERE n.committed = 1
+					 GROUP BY bt.isbn, bt.warehouse_id
+					 HAVING ${signedSum} < 0
+					 ORDER BY quantity ASC`
+				)
+				.all() as { isbn: string; warehouseId: number; quantity: number }[];
+
+			if (negatives.length === 0) {
+				checks.push({
+					name: "negative_stock",
+					passed: true,
+					message: "No negative committed stock",
+					severity: "warning"
+				});
+			} else {
+				const sample = negatives
+					.slice(0, 5)
+					.map((r) => `${r.isbn}@wh${r.warehouseId}=${r.quantity}`)
+					.join(", ");
+				checks.push({
+					name: "negative_stock",
+					passed: false,
+					message: `${negatives.length} (isbn, warehouse) pair(s) have negative committed stock: ${sample}${negatives.length > 5 ? ", …" : ""}`,
+					severity: "warning"
+				});
+			}
+		} catch (err) {
+			// note / book_transaction not present (non-librocco DB) -> skip gracefully.
+			checks.push({
+				name: "negative_stock",
+				passed: true,
+				message: `Negative-stock check skipped: ${err instanceof Error ? err.message : String(err)}`,
 				severity: "warning"
 			});
 		}
@@ -322,7 +373,11 @@ export function formatHealthCheckResults(results: Map<string, HealthCheckResult>
 		lines.push(`${BOLD}Database: ${dbName}${RESET} ${statusIcon}`);
 
 		for (const check of result.checks) {
-			const checkIcon = check.passed ? `${GREEN}[PASS]${RESET}` : check.severity === "error" ? `${RED}[FAIL]${RESET}` : `${YELLOW}[WARN]${RESET}`;
+			const checkIcon = check.passed
+				? `${GREEN}[PASS]${RESET}`
+				: check.severity === "error"
+					? `${RED}[FAIL]${RESET}`
+					: `${YELLOW}[WARN]${RESET}`;
 			lines.push(`  ${checkIcon} ${check.name}: ${check.message}`);
 		}
 		lines.push("");

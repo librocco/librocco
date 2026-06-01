@@ -59,6 +59,31 @@ function createCorruptDb(name: string): string {
 	return dbPath;
 }
 
+// Creates a minimal librocco-shaped DB (note + book_transaction CRRs) with a
+// committed inbound of +5 and a committed outbound sale. With `outboundQty` > 5
+// the derived stock for the (isbn, warehouse) pair goes negative.
+function createDbWithStock(name: string, outboundQty: number): string {
+	const dbPath = path.join(TEST_DIR, name);
+	const db = new Database(dbPath);
+	db.loadExtension(extensionPath);
+	db.exec(`
+		CREATE TABLE note (id INTEGER PRIMARY KEY NOT NULL, warehouse_id INTEGER, is_reconciliation_note INTEGER DEFAULT 0, committed INTEGER NOT NULL DEFAULT 0);
+		CREATE TABLE book_transaction (isbn TEXT NOT NULL, quantity INTEGER NOT NULL DEFAULT 0, note_id INTEGER NOT NULL, warehouse_id INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (isbn, note_id, warehouse_id));
+		SELECT crsql_as_crr('note');
+		SELECT crsql_as_crr('book_transaction');
+	`);
+	// committed inbound +5 into warehouse 1
+	db.exec(`INSERT INTO note (id, warehouse_id, committed) VALUES (1, 1, 1);`);
+	db.exec(`INSERT INTO book_transaction (isbn, quantity, note_id, warehouse_id) VALUES ('111', 5, 1, 1);`);
+	// committed outbound sale of `outboundQty` from warehouse 1
+	db.exec(`INSERT INTO note (id, warehouse_id, committed) VALUES (2, NULL, 1);`);
+	db.exec(`INSERT INTO book_transaction (isbn, quantity, note_id, warehouse_id) VALUES ('111', ${outboundQty}, 2, 1);`);
+	db.exec(`INSERT OR REPLACE INTO crsql_master (key, value) VALUES ('schema_name', 'init');`);
+	db.exec(`INSERT OR REPLACE INTO crsql_master (key, value) VALUES ('schema_version', '1');`);
+	db.close();
+	return dbPath;
+}
+
 describe("Database Health Check", () => {
 	beforeEach(() => {
 		cleanup();
@@ -209,5 +234,42 @@ describe("Sync Server Startup", () => {
 
 		expect(formatted).toContain("Restore from a backup");
 		expect(formatted).toContain("Delete the corrupted database");
+	});
+
+	describe("negative_stock check (D-296)", () => {
+		it("flags negative committed stock as a WARNING without marking the database unhealthy", () => {
+			// outbound 8 from a warehouse holding only 5 => derived stock -3
+			const dbPath = createDbWithStock("negative.sqlite3", 8);
+			const result = checkDatabaseHealth(dbPath, extensionPath);
+
+			const check = result.checks.find((c) => c.name === "negative_stock");
+			expect(check).toBeDefined();
+			expect(check!.passed).toBe(false);
+			expect(check!.severity).toBe("warning");
+			expect(check!.message).toContain("111@wh1=-3");
+
+			// A warning must NOT make the DB unhealthy (would block startup / 503 /health).
+			expect(result.ok).toBe(true);
+		});
+
+		it("passes the negative_stock check for balanced stock", () => {
+			// outbound 2 from a warehouse holding 5 => derived stock +3
+			const dbPath = createDbWithStock("balanced.sqlite3", 2);
+			const result = checkDatabaseHealth(dbPath, extensionPath);
+
+			const check = result.checks.find((c) => c.name === "negative_stock");
+			expect(check!.passed).toBe(true);
+			expect(result.ok).toBe(true);
+		});
+
+		it("skips the negative_stock check gracefully for a non-librocco schema", () => {
+			// createHealthyDb only has a `test` table, no note/book_transaction.
+			const dbPath = createHealthyDb("plain.sqlite3");
+			const result = checkDatabaseHealth(dbPath, extensionPath);
+
+			const check = result.checks.find((c) => c.name === "negative_stock");
+			expect(check!.passed).toBe(true); // skipped, not failed
+			expect(result.ok).toBe(true);
+		});
 	});
 });
