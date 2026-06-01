@@ -9,7 +9,12 @@
  * - Stock can be filtered by ISBN/warehouse pairs or search string
  * - Includes book metadata (title, price, etc) in stock queries
  * - Only considers committed notes when calculating quantities
- * - Returns zero or positive quantities only (negative stock is prevented)
+ * - Returns strictly positive quantities only: zero AND negative stock are never surfaced.
+ *   Physical stock can never be negative, but the derived SUM can go negative when the
+ *   ledger is unbalanced (e.g. a warehouse with committed sales is deleted — see D-293,
+ *   where the outbound lines are relocated to "no warehouse" with no matching inbound).
+ *   We clamp at the read layer so the UI never shows "negative copies"; the underlying
+ *   imbalance is surfaced via monitoring instead, not to the cashier.
  *
  * Data Sources:
  * - book_transaction table: Records individual book movements
@@ -38,7 +43,7 @@ type GetStockParams = {
  * Retrieves current stock levels for books across all warehouses.
  * Calculates quantities based on committed note transactions.
  * Can filter results by search string or specific ISBN/warehouse pairs.
- * Only returns entries with non-zero quantities.
+ * Only returns entries with strictly positive quantities (zero/negative are clamped out).
  *
  * @param {DB} db - Database connection
  * @param {GetStockParams} params - Query filters
@@ -118,7 +123,7 @@ async function _getStock(
 		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
 		${whereClause}
 		GROUP BY bt.isbn, bt.warehouse_id
-		HAVING SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) != 0
+		HAVING SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) > 0
 		ORDER BY bt.isbn, bt.warehouse_id
 	`;
 
