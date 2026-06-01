@@ -19,6 +19,7 @@ Each document below covers one slice of the system. They reference each other fr
 | 6 | [Diagnosis: Known Issues](./06-known-issues.md) | Detailed analysis of both target issues with root causes, contributing factors, and potential improvements. |
 | 7 | [Sync User Requirements](./07-sync-user-requirements.md) | User-facing sync requirements, gap analysis, and implementation roadmap. **Start here for sync indicator and pending changes tracking.** |
 | 8 | [Multi-Tab Shared Service](./08-multi-tab-shared-service.md) | Why SharedWorker can't hold the OPFS database, the shared service leader-election pattern, and a minimal implementation plan for multi-tab support. **Start here for the multi-tab timeout issue.** |
+| 9 | [Extracting the Database](./09-extracting-the-database.md) | Copying a live database out of browser OPFS from the CLI — where the bytes are on disk, why it's safe, the `scripts/extract-opfs-db.py` tool, and the in-app export. |
 
 ## The 30-Second Picture
 
