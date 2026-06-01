@@ -4,6 +4,7 @@ import { getRandomDb } from "./lib";
 
 import { upsertWarehouse, getAllWarehouses, getWarehouseById, getWarehouseIdSeq, deleteWarehouse } from "../warehouse";
 import { addVolumesToNote, createAndCommitReconciliationNote, createInboundNote, createOutboundNote, commitNote } from "../note";
+import { getStock } from "../stock";
 
 describe("Warehouse tests", () => {
 	it("creates a new warehouse, using only id, with default fields", async () => {
@@ -111,6 +112,42 @@ describe("Warehouse tests", () => {
 		// Verify the warehouse is deleted
 		res = await getAllWarehouses(db);
 		expect(res).toEqual([]);
+	});
+
+	it("deleting a warehouse removes its stock symmetrically, leaving no phantom negative stock", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse A" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse B" });
+
+		// Same ISBN stocked in both warehouses
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 10, warehouseId: 1 });
+		await commitNote(db, 1);
+
+		await createInboundNote(db, 2, 2);
+		await addVolumesToNote(db, 2, { isbn: "1111111111", quantity: 5, warehouseId: 2 });
+		await commitNote(db, 2);
+
+		// A committed sale sourced from warehouse 1. Its book_transaction carries warehouse_id = 1
+		// while the (outbound) note has warehouse_id IS NULL, so it counts as -3 against warehouse 1.
+		// Warehouse 1 nets 10 - 3 = 7; warehouse 2 holds 5.
+		await createOutboundNote(db, 3);
+		await addVolumesToNote(db, 3, { isbn: "1111111111", quantity: 3, warehouseId: 1 });
+		await commitNote(db, 3);
+
+		await deleteWarehouse(db, 1);
+
+		const stock = await getStock(db);
+
+		// All of warehouse 1's legs (the +10 inbound AND the -3 outbound) must be removed together.
+		// Only warehouse 2's 5 should remain.
+		expect(stock).toEqual([expect.objectContaining({ isbn: "1111111111", warehouseId: 2, quantity: 5 })]);
+
+		// The bug: the outbound leg is reassigned to the sentinel warehouse 0 instead of being
+		// removed, leaving a phantom { warehouseId: 0, quantity: -3 } behind.
+		expect(stock.some((s) => s.quantity < 0)).toBe(false);
+		expect(stock.some((s) => s.warehouseId === 0)).toBe(false);
 	});
 
 	it("reflects the total stock in each respective warehouse", async () => {
