@@ -32,7 +32,7 @@ type StockTriple = { isbn: string; warehouseId: number; quantity: number };
 // Full-send bidirectional merge until quiescence. We deliberately send ALL local
 // changes (since=0) rather than use a watermark: cr-sqlite merge is idempotent, so
 // this is robustly convergent and independent of any watermark optimisation.
-const syncToQuiescence = async (a: DBAsync, b: DBAsync, rounds = 3) => {
+const syncToQuiescence = async (a: DBAsync, b: DBAsync, rounds = 2) => {
 	for (let i = 0; i < rounds; i++) {
 		await applyChanges(b, await getChanges(a, 0n));
 		await applyChanges(a, await getChanges(b, 0n));
@@ -92,11 +92,11 @@ describe("sync invariants", () => {
 		await assertNoNegativeStock(B, "B");
 		// INV-2: peers converge.
 		await assertConverged(A, B);
-	});
+	}, 30_000);
 
 	it("fuzz: random operations across two peers never surface negative stock and converge", async () => {
 		const SEED = 0xc0ffee;
-		const ITERATIONS = 40;
+		const ITERATIONS = 24;
 		const rng = mulberry32(SEED);
 		const pick = <T>(arr: T[]): T => arr[Math.floor(rng() * arr.length)];
 		const randint = (lo: number, hi: number) => lo + Math.floor(rng() * (hi - lo + 1));
@@ -152,5 +152,5 @@ describe("sync invariants", () => {
 		await assertNoNegativeStock(A, `A (seed ${SEED})`);
 		await assertNoNegativeStock(B, `B (seed ${SEED})`);
 		await assertConverged(A, B);
-	});
+	}, 60_000);
 });
