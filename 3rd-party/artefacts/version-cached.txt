@@ -1,2 +1,2 @@
-js repo hash: 435b75d4d9b499c89ff10b9e12e44c305643971d
+js repo hash: e99c5d700a7e4da9712ab10be1249a296cf72384
 typed-sql repo hash: bed447324d1d078d30eedc73504ac99e7874fe31
