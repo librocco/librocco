@@ -166,11 +166,20 @@ async function _getWarehouseById(db: TXAsync, id: number) {
 
 export function deleteWarehouse(db: DBAsync, id: number): Promise<void> {
 	return db.tx(async (txDb) => {
+		// Remove every committed transaction leg tagged to this warehouse. Both the positive
+		// (inbound/reconciliation) and negative (outbound) legs carry warehouse_id = id, so
+		// deleting by warehouse_id neutralises the warehouse's entire stock contribution
+		// symmetrically. The previous code deleted only the inbound legs and reassigned the
+		// outbound legs to the sentinel warehouse 0, leaving phantom negative stock behind.
+		await txDb.exec("DELETE FROM book_transaction WHERE warehouse_id = ? AND note_id IN (SELECT id FROM note WHERE committed = 1)", [id]);
+		// Legs of draft notes owned by this warehouse (inbound) disappear along with their notes.
 		await txDb.exec("DELETE FROM book_transaction WHERE note_id IN (SELECT id FROM note WHERE warehouse_id = ?)", [id]);
-		await txDb.exec(
-			"UPDATE book_transaction SET warehouse_id = 0 WHERE warehouse_id = ? AND note_id IN (SELECT id FROM note WHERE warehouse_id IS NULL)",
-			[id]
-		);
+		// Any leg still tagged to this warehouse belongs to a draft note someone may be actively
+		// editing (e.g. an open outbound note): keep the line, just unassign it (sentinel
+		// warehouse 0) so the user can pick another warehouse. Drafts don't count toward stock,
+		// and commit validation rejects unassigned legs, so this can't reintroduce phantom stock.
+		await txDb.exec("UPDATE book_transaction SET warehouse_id = 0 WHERE warehouse_id = ?", [id]);
+		// Drop the (now-empty) notes owned by this warehouse, then the warehouse itself.
 		await txDb.exec("DELETE FROM note WHERE warehouse_id = ?", [id]);
 		await txDb.exec("DELETE FROM warehouse WHERE id = ?", [id]);
 	});
