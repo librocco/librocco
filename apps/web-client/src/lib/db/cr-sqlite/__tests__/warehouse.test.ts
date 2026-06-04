@@ -3,7 +3,14 @@ import { describe, it, expect } from "vitest";
 import { getRandomDb } from "./lib";
 
 import { upsertWarehouse, getAllWarehouses, getWarehouseById, getWarehouseIdSeq, deleteWarehouse } from "../warehouse";
-import { addVolumesToNote, createAndCommitReconciliationNote, createInboundNote, createOutboundNote, commitNote, getNoteEntries } from "../note";
+import {
+	addVolumesToNote,
+	createAndCommitReconciliationNote,
+	createInboundNote,
+	createOutboundNote,
+	commitNote,
+	getNoteEntries
+} from "../note";
 import { getStock } from "../stock";
 
 describe("Warehouse tests", () => {
