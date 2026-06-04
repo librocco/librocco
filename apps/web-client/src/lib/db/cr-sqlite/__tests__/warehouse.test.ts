@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { getRandomDb } from "./lib";
 
 import { upsertWarehouse, getAllWarehouses, getWarehouseById, getWarehouseIdSeq, deleteWarehouse } from "../warehouse";
-import { addVolumesToNote, createAndCommitReconciliationNote, createInboundNote, createOutboundNote, commitNote } from "../note";
+import { addVolumesToNote, createAndCommitReconciliationNote, createInboundNote, createOutboundNote, commitNote, getNoteEntries } from "../note";
 import { getStock } from "../stock";
 
 describe("Warehouse tests", () => {
@@ -148,6 +148,30 @@ describe("Warehouse tests", () => {
 		// removed, leaving a phantom { warehouseId: 0, quantity: -3 } behind.
 		expect(stock.some((s) => s.quantity < 0)).toBe(false);
 		expect(stock.some((s) => s.warehouseId === 0)).toBe(false);
+	});
+
+	it("deleting a warehouse unassigns (rather than deletes) draft outbound lines pointing to it", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse A" });
+
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 10, warehouseId: 1 });
+		await commitNote(db, 1);
+
+		// An open (uncommitted) outbound note with a line sourced from warehouse 1
+		await createOutboundNote(db, 2);
+		await addVolumesToNote(db, 2, { isbn: "1111111111", quantity: 3, warehouseId: 1 });
+
+		await deleteWarehouse(db, 1);
+
+		// The draft line survives, but is unassigned (sentinel warehouse 0) so the user can re-pick.
+		// Deleting it outright would silently discard work-in-progress.
+		const entries = await getNoteEntries(db, 2);
+		expect(entries).toEqual([expect.objectContaining({ isbn: "1111111111", quantity: 3, warehouseId: 0 })]);
+
+		// Drafts don't count toward stock, so nothing should be left over.
+		expect(await getStock(db)).toEqual([]);
 	});
 
 	it("reflects the total stock in each respective warehouse", async () => {
