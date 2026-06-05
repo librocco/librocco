@@ -30,6 +30,24 @@ Backup runs are reused per schema target version, so repeated failed restarts do
 - `SCHEMA_FOLDER`: schema folder path (default `./schemas`)
 - `SCHEMA_NAME`: schema file name in `SCHEMA_FOLDER` (default `init`)
 - `IS_DEV=true`: enables dev-only RPC endpoints
+- `READONLY_QUERY_API=false`: disables `POST /:dbname/readonly-query` (enabled by default)
 - `SKIP_HEALTH_CHECK=true`: disables startup health checks
 - `STARTUP_MIGRATION_BACKUP_FOLDER`: optional explicit backup folder (default `DB_FOLDER/.startup-migration-backups`)
 - `STARTUP_MIGRATION_MAX_BACKUP_RUNS`: number of backup run directories to retain (default `5`)
+
+## Read-only query API
+
+The read-only query API is enabled by default and is available at:
+
+```http
+POST /:dbname/readonly-query
+Content-Type: application/json
+
+{
+  "sql": "SELECT * FROM book WHERE updated_at > ? ORDER BY updated_at ASC",
+  "bind": [1234567890]
+}
+```
+
+The endpoint only accepts SQLite reader statements and executes them with `PRAGMA query_only = ON`.
+It exists for external integrations that need authoritative reads through the sync server's active DB connection without enabling the dev-only generic `/exec` endpoint.
