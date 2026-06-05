@@ -75,8 +75,14 @@ export class SyncEventEmitter {
 		reason?: string;
 		message?: string;
 	}) {
-		this.#lastSyncStatus = msg;
-		this.notifySyncStatus(msg);
+		const ackDbVersion = msg.ackDbVersion ?? this.#lastSyncStatus?.ackDbVersion;
+		const nextMsg = ackDbVersion == null ? msg : { ...msg, ackDbVersion };
+		this.#lastSyncStatus = nextMsg;
+		this.notifySyncStatus(nextMsg);
+	}
+
+	resetSyncStatusCache() {
+		this.#lastSyncStatus = null;
 	}
 }
 
@@ -214,16 +220,23 @@ export class SyncTransportController implements Transport {
 		this.#transport.onStartStreaming = this._onStartStreaming.bind(this);
 		this.#transport.onResetStream = this._onResetStream.bind(this);
 
-		// Wire up connection event handlers
+		// Wire up connection event handlers.
+		// Raw WebSocket open does not mean the sync protocol is established.
+		// Reset connection state here; the actual "connected" signal is emitted
+		// by _onStartStreaming or _onSyncStatus once the protocol is operational.
 		this.#transport.onConnOpen = () => {
-			// Raw socket-open does not imply sync readiness.
-			// We only promote to "connected" after StartStreaming or a positive sync status.
-			this.#isConnected = false;
+			if (this.#isConnected) {
+				this.#isConnected = false;
+				this.#connectionEmitter.notifyConnClose();
+			}
 		};
 
 		this.#transport.onConnClose = () => {
+			const wasConnected = this.#isConnected;
 			this.#isConnected = false;
-			this.#connectionEmitter.notifyConnClose();
+			if (wasConnected) {
+				this.#connectionEmitter.notifyConnClose();
+			}
 		};
 
 		this.#transport.onSyncStatus = this._onSyncStatus.bind(this);

@@ -13,6 +13,11 @@ import { extensionPath } from "@vlcn.io/crsqlite";
 
 import { performStartupHealthCheck, checkDatabaseHealth, checkAllDatabases } from "./db-health.js";
 import { migrateDatabasesOnStartup } from "./startup-migrations.js";
+import {
+	readonlyDatabaseExists,
+	runReadonlyQuery,
+	sendReadonlyQueryError
+} from "./readonly-query.js";
 
 const IS_DEV = process.env.IS_DEV === "true";
 const SKIP_HEALTH_CHECK = process.env.SKIP_HEALTH_CHECK === "true";
@@ -20,6 +25,7 @@ const PORT = process.env.PORT || 3000;
 const DB_FOLDER = path.resolve(process.env.DB_FOLDER || "./test-dbs");
 const SCHEMA_FOLDER = path.resolve(process.env.SCHEMA_FOLDER || "./schemas");
 const SCHEMA_NAME = process.env.SCHEMA_NAME || "init";
+const READONLY_QUERY_API = (process.env.READONLY_QUERY_API ?? "true") === "true";
 const STARTUP_MIGRATION_BACKUP_FOLDER = process.env.STARTUP_MIGRATION_BACKUP_FOLDER
 	? path.resolve(process.env.STARTUP_MIGRATION_BACKUP_FOLDER)
 	: undefined;
@@ -179,6 +185,30 @@ app.post("/:dbname/exec", async (req, res) => {
 	});
 });
 
+app.post("/:dbname/readonly-query", async (req, res) => {
+	if (!READONLY_QUERY_API) {
+		return res.status(403).json({ message: "Read-only query API is disabled" });
+	}
+
+	const { sql, bind = [] } = req.body ?? {};
+	if (typeof sql !== "string" || !sql.trim()) {
+		return res.status(400).json({ message: "sql must be a non-empty string" });
+	}
+	if (!Array.isArray(bind)) {
+		return res.status(400).json({ message: "bind must be an array" });
+	}
+	if (!readonlyDatabaseExists(DB_FOLDER, req.params.dbname)) {
+		return res.status(404).json({ message: `Database not found: ${req.params.dbname}` });
+	}
+
+	try {
+		const rows = await useReadonlyDb(req.params.dbname, (db) => runReadonlyQuery(db, sql, bind));
+		return res.json({ rows });
+	} catch (err) {
+		return sendReadonlyQueryError(res, err, { dbname: req.params.dbname, sql });
+	}
+});
+
 app.get("/:dbname/meta", async (req, res) => {
 	const dbname = req.params.dbname;
 
@@ -295,6 +325,19 @@ async function runStartupMigrations(): Promise<void> {
 	} finally {
 		await startupDbCache.destroy();
 	}
+}
+
+async function useReadonlyDb<T>(dbname: string, cb: (db: any) => T): Promise<T> {
+	let result: T | undefined;
+	await dbCache.use(dbname, SCHEMA_NAME, (idb: IDB) => {
+		result = cb(idb.getDB());
+	});
+
+	if (result === undefined) {
+		throw new Error(`Database callback did not return a result for ${dbname}`);
+	}
+
+	return result;
 }
 
 function parsePositiveInteger(rawValue: string | undefined): number | undefined {

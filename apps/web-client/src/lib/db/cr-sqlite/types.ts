@@ -225,6 +225,7 @@ export type InboundNoteListItem = {
 	displayName: string;
 	warehouseName: string;
 	updatedAt: Date;
+	createdAt: Date;
 	totalBooks: number;
 };
 
@@ -232,6 +233,7 @@ export type OutboundNoteListItem = {
 	id: number;
 	displayName: string;
 	updatedAt: Date;
+	createdAt: Date;
 	totalBooks: number;
 };
 

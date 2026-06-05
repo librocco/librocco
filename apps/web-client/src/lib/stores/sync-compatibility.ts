@@ -119,6 +119,21 @@ async function fetchRemoteMeta(syncUrl: string, dbid: string, fetchImpl: typeof 
 	return (await resp.json()) as RemoteMeta;
 }
 
+/**
+ * Check whether the remote DB is compatible with the local DB.
+ *
+ * **mode: "background"** (default) — safe for use while sync is running or during recovery.
+ * On transient network failures (404 / 500 / unreachable), the previous compatibility state
+ * is restored unchanged and `{ ok: false, pendingMeta: true }` is returned so callers can
+ * defer the decision to the WebSocket handshake. Schema mismatches and identity changes are
+ * still surfaced immediately.
+ *
+ * **mode: "strict"** — intended for one-time setup flows (e.g. first-time sync activation)
+ * where the caller must be certain the remote is reachable before proceeding. Any network
+ * failure sets `incompatible / remote_unreachable`. Do NOT use this in recurring recovery
+ * paths: a transient outage would incorrectly mark the DB as incompatible and trigger the
+ * "Nuke and resync" dialog, risking data loss on nodes with unsynced changes.
+ */
 export async function checkSyncCompatibility(args: {
 	dbid: string;
 	syncUrl: string;

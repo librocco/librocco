@@ -90,6 +90,10 @@ const history_page = {
 		archive: {
 			committed_at: "Committed At",
 			export_csv: "Export CSV",
+			type: {
+				purchase: "Purchase",
+				sale: "Sale"
+			},
 			column_headers: {
 				quantity: "quantity",
 				isbn: "isbn",
@@ -158,6 +162,7 @@ const inventory_page = {
 		stats: {
 			back_to_warehouses: "Back to warehouses",
 			books: "{ no_of_books } book{{s}}",
+			created: "Created",
 			last_updated: "Updated"
 		},
 		labels: {
@@ -599,31 +604,6 @@ const books_page = {
 	}
 };
 
-const debug_page = {
-	title: "Debug",
-	labels: {
-		runtime_error: "Kaboom! Runtime error"
-	},
-	actions: {
-		trigger_load_error: "Trigger Load Error",
-		trigger_runtime_error: "Trigger Runtime Error",
-		populate_database: "Populate Database",
-		reset_database: "Reset Database",
-		upsert_100_books: "Upsert 100 Books",
-		run_query: "Run Query",
-		executing: "Executing..."
-	},
-	query_interface: {
-		title: "Database Query Interface",
-		results_title: "Query Results:",
-		no_results: "No results found."
-	},
-	table: {
-		title: "Table",
-		number_of_objects: "Number of objects"
-	}
-};
-
 const common = {
 	delete_dialog: {
 		title: `Permenantly delete {entity}?`,
@@ -663,6 +643,10 @@ const common = {
 		no_results: "No results",
 		search_found_no_results: "Search found no results",
 		unknown_title: "Unknown Title"
+	},
+	badges: {
+		purchase_notes: "{count:number} purchase note{{s}}",
+		sale_notes: "{count:number} sale note{{s}}"
 	},
 	loading: "Loading"
 };
@@ -728,6 +712,7 @@ const sale_note = {
 const sale_page = {
 	heading: "Sale",
 	stats: {
+		created: "Created",
 		last_updated: "Last updated",
 		books: "{ bookCount } book{{s}}"
 	},
@@ -926,6 +911,23 @@ const misc_components = {
 	extension_banner: {
 		book_data_extension: "Book Data Extension",
 		remote_db: "Remote DB",
+		remote_db_incompatible: "Remote DB (incompatible)",
+		remote_db_sync_disabled: "Remote DB (sync disabled)",
+		remote_db_connecting_checking_compatibility: "Remote DB (checking compatibility)",
+		remote_db_connecting_reconnecting: "Remote DB (reconnecting)",
+		remote_db_stuck: "Remote DB (reconnect loop)",
+		remote_db_warning_local_db_warning: "Remote DB (local db warning)",
+		remote_db_warning_ack_stale: "Remote DB (ack stale)",
+		remote_db_warning_pending_stale: "Remote DB (pending stale)",
+		remote_db_warning: "Remote DB (sync warning)",
+		remote_db_pending: "Remote DB ({pending:number} pending)",
+		remote_db_title_disconnected: "Sync is disabled in settings",
+		remote_db_title_incompatible: "Local and remote databases are not compatible",
+		remote_db_title_warning: "Sync has warnings",
+		remote_db_title_stuck: "Sync connection appears stuck",
+		remote_db_title_connecting_checking_compatibility: "Connected, waiting for sync compatibility check to complete",
+		remote_db_title_connecting_reconnecting: "Sync connection is not active. Reconnecting…",
+		remote_db_title_default: "Remote DB sync status",
 		reload_translations_override: "Reload translations overrides"
 	},
 	page_layout: {
@@ -1206,7 +1208,6 @@ const en = {
 	layout,
 	error_page,
 	books_page,
-	debug_page,
 	forms,
 	table
 } satisfies BaseTranslation;

@@ -38,6 +38,7 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v7
       with:
+        version: 0.10.7
         enable-cache: true
         python-version: "3.13"
         cache-python: true
@@ -74,6 +75,12 @@ jobs:
     - name: Build web-client for root path
       run: cd apps/web-client && rushx build:prod-rootdir
       shell: bash
+      env:
+        SENTRY_ORG: codemyriad
+        SENTRY_PROJECT: librocco
+        SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
+        PUBLIC_SENTRY_ENVIRONMENT: production
     - name: Create virtual environment and install launcher
       run: |
         cd python-apps/launcher
