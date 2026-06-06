@@ -67,6 +67,49 @@ For changes that should be available to everyone:
    - `apps/e2e/package.json`
    - `common/config/rush/pnpm-config.json`
 
+## Emergency Vendor Fix (Runbook)
+
+When a production bug needs a fork change shipped fast (e.g. the D-302 sync gap-recovery fix):
+
+1. Fix and commit in the `vlcn-js` fork (`3rd-party/js`); push to `codemyriad/vlcn-js` `librocco/main`.
+2. Publish: `./scripts/publish_vlcn.sh dev` (requires publish auth, see [Registry Access](#registry-access)).
+   Versions are stamped `<base>-dev.<yyyymmdd>.<shortsha>` under the `dev` dist-tag.
+3. Re-pin the exact new versions in all four places:
+   - `common/config/rush/pnpm-config.json` (`globalOverrides`)
+   - `apps/web-client/package.json`, `apps/sync-server/package.json`, `apps/e2e/package.json`
+4. `rush update` — regenerates `common/config/rush/pnpm-lock.yaml` and `repo-state.json`; commit both, never hand-edit them.
+5. Validate against the *installed* packages (not the submodule source):
+   - `cd apps/sync-server && rushx test:ci` (plain `rushx test` is vitest watch mode and never exits)
+   - `cd apps/web-client && rushx typecheck`
+6. Deploy the sync server.
+
+### Publish gotcha: `@vlcn.io/crsqlite` prebuilt binary
+
+`@vlcn.io/crsqlite` publishes from `deps/cr-sqlite/core` inside the *upstream* cr-sqlite submodule. A correct
+published package needs three things that are NOT committed upstream (they exist only as local modifications
+in a prepared publish checkout):
+
+- `binaries/<os>-<arch>/crsqlite.<so|dylib|dll>` — the prebuilt native extension (`make loadable`, needs a rust toolchain);
+- a patched `nodejs-install-helper.js` that installs the packaged binary instead of building from source;
+- `"binaries/**/*"` in the package.json `files` array (otherwise `pnpm publish` silently drops the binary).
+
+A publish from a clean checkout produces a package that attempts a from-source build at install time and
+breaks `rush update` on any machine without cargo. After publishing, always verify:
+
+```bash
+curl -s https://npm.codemyriad.io/@vlcn.io/crsqlite/-/crsqlite-<version>.tgz | tar tz | grep binaries
+```
+
+## Registry Access
+
+- **Installs/reads are anonymous.** `rush update` needs no token: the `.npmrc` auth line references
+  `${VERDACCIO_TOKEN}` and Rush omits lines whose environment variables are undefined.
+- **Publishing requires auth**: an `//npm.codemyriad.io/:_authToken=...` entry in `~/.npmrc` (or
+  `VERDACCIO_TOKEN` exported in the environment). Ask a maintainer for a token.
+- **Registry down?** `rush update` fails fetching `@vlcn.io/*` metadata or tarballs from
+  `npm.codemyriad.io` (fetch/meta errors, ECONNREFUSED, 5xx). Escape hatch: source mode builds the
+  vendor packages locally — `./scripts/prepare_vlcn_source.sh`, see [Quick Start](#quick-start-source-mode).
+
 ## Forked Package Inventory
 
 Only the 10 packages below are overridden in source mode.

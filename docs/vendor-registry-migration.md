@@ -44,7 +44,7 @@ These facts are true in the current tree:
 
 ### Phase 1: publish the real forked builds — DONE
 
-All 10 `@vlcn.io/*` packages published to `npm.codemyriad.io` under dev snapshot versions using `3rd-party/js/scripts/publish/publish.sh`:
+All 10 `@vlcn.io/*` packages published to `npm.codemyriad.io` under dev snapshot versions using `./scripts/publish_vlcn.sh` (the canonical publish script, see [`3rd-party/README.md`](../3rd-party/README.md)):
 
 | Package | Version |
 |---------|---------|
