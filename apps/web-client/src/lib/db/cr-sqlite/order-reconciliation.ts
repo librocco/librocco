@@ -451,17 +451,19 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		if (delivered > 0) {
 			const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
 
-			// NOTE: strict consistency check skipped for now.
-			// Reassess later whether we want this level of strictness here.
-			// if (customerOrderLines.length < delivered) {
-			// 	const msg = [
-			// 		"unexpected state: remaining placed customer order lines < delivered lines",
-			// 		`  isbn: ${isbn}`,
-			// 		`  delivered: ${delivered}`,
-			// 		`  remining customer orders: ${customerOrderLines.length}`
-			// 	].join("\\n");
-			// 	throw new Error(msg);
-			// }
+			// NOTE: this is an unexpected state (e.g. customer order lines un-placed/deleted on another device
+			// after the supplier order was placed). We don't fail the finalization (the books are still delivered,
+			// just fewer customer order lines get marked as received), but we log the inconsistency for observability.
+			if (customerOrderLines.length < delivered) {
+				const msg = [
+					"reconciliation finalize: unexpected state: remaining placed customer order lines < delivered lines",
+					`  reconciliation order id: ${id}`,
+					`  isbn: ${isbn}`,
+					`  delivered: ${delivered}`,
+					`  remaining customer orders: ${customerOrderLines.length}`
+				].join("\n");
+				console.error(msg);
+			}
 
 			const idsToDeliver = customerOrderLines.splice(0, delivered);
 
@@ -473,20 +475,22 @@ async function _finalizeReconciliationOrder(db: DBAsync, id: number) {
 		if (underdelivered > 0 && underdelivery_policy === 0) {
 			const customerOrderLines = customerOrdersByISBN.get(isbn) || [];
 
-			// NOTE: strict consistency check skipped for now.
-			// Reassess later whether we want this level of strictness here.
-			// if (customerOrderLines.length < underdelivered) {
-			// 	const msg = [
-			// 		"unexpected state: remaining placed customer order lines < underdelivered lines",
-			// 		`  isbn: ${isbn}`,
-			// 		`  underdelivered: ${underdelivered}`,
-			// 		`  remaining customer orders: ${customerOrderLines.length}`
-			// 	].join("\\n");
-			// 	throw new Error(msg);
-			// }
+			// NOTE: this is an unexpected state (see the delivery branch above). We don't fail the finalization,
+			// but we log the inconsistency for observability. The splice below clamps: when fewer placed lines
+			// remain than `underdelivered`, all remaining lines are rejected.
+			if (customerOrderLines.length < underdelivered) {
+				const msg = [
+					"reconciliation finalize: unexpected state: remaining placed customer order lines < underdelivered lines",
+					`  reconciliation order id: ${id}`,
+					`  isbn: ${isbn}`,
+					`  underdelivered: ${underdelivered}`,
+					`  remaining customer orders: ${customerOrderLines.length}`
+				].join("\n");
+				console.error(msg);
+			}
 
 			// NOTE: rejecting from the back (first-come-first-served -- last ordered first rejected)
-			const idsToReject = customerOrderLines.splice(-underdelivered, underdelivered);
+			const idsToReject = customerOrderLines.splice(-Math.min(underdelivered, customerOrderLines.length), underdelivered);
 
 			linesToReject.push(...idsToReject);
 			customerOrdersByISBN.set(isbn, customerOrderLines);

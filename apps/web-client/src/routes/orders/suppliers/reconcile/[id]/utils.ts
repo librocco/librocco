@@ -17,13 +17,21 @@ export type ReconciliationOverdeliveryLine = {
 export type ReconciliationBreakdown = {
 	acceptedDeliveredByIsbn: Map<string, number>;
 	overdeliveryLines: ReconciliationOverdeliveryLine[];
+	acceptedDeliveredTotal: number;
+	overdeliveredTotal: number;
 };
+
+export function calcTotalOrdered(data?: PageData): number {
+	return data?.placedOrderLines?.reduce((sum, { quantity }) => sum + quantity, 0) ?? 0;
+}
 
 export function calcReconciliationBreakdown(data?: PageData): ReconciliationBreakdown {
 	if (!data) {
 		return {
 			acceptedDeliveredByIsbn: new Map(),
-			overdeliveryLines: []
+			overdeliveryLines: [],
+			acceptedDeliveredTotal: 0,
+			overdeliveredTotal: 0
 		};
 	}
 
@@ -43,12 +51,16 @@ export function calcReconciliationBreakdown(data?: PageData): ReconciliationBrea
 
 	const acceptedDeliveredByIsbn = new Map<string, number>();
 	const overdeliveryLines: ReconciliationOverdeliveryLine[] = [];
+	let acceptedDeliveredTotal = 0;
+	let overdeliveredTotal = 0;
 	for (const [isbn, scannedQuantity] of scannedByIsbn.entries()) {
 		const orderedQuantity = orderedByIsbn.get(isbn) || 0;
 		const acceptedDelivered = Math.min(scannedQuantity, orderedQuantity);
 		const overdeliveredQuantity = scannedQuantity - acceptedDelivered;
 
 		acceptedDeliveredByIsbn.set(isbn, acceptedDelivered);
+		acceptedDeliveredTotal += acceptedDelivered;
+		overdeliveredTotal += overdeliveredQuantity;
 
 		if (overdeliveredQuantity > 0) {
 			const meta = scannedMetaByIsbn.get(isbn) || { title: "N/A", authors: "N/A" };
@@ -67,31 +79,18 @@ export function calcReconciliationBreakdown(data?: PageData): ReconciliationBrea
 
 	return {
 		acceptedDeliveredByIsbn,
-		overdeliveryLines
+		overdeliveryLines,
+		acceptedDeliveredTotal,
+		overdeliveredTotal
 	};
 }
 
-export function calcOverdeliveryLines(data?: PageData, breakdown?: ReconciliationBreakdown): ReconciliationOverdeliveryLine[] {
-	return (breakdown || calcReconciliationBreakdown(data)).overdeliveryLines;
-}
-
-export function calcAcceptedDeliveredTotal(data?: PageData, breakdown?: ReconciliationBreakdown): number {
-	return [...(breakdown || calcReconciliationBreakdown(data)).acceptedDeliveredByIsbn.values()].reduce(
-		(sum, quantity) => sum + quantity,
-		0
-	);
-}
-
-export function calcOverdeliveredTotal(data?: PageData, breakdown?: ReconciliationBreakdown): number {
-	return calcOverdeliveryLines(data, breakdown).reduce((sum, line) => sum + line.overdeliveredQuantity, 0);
-}
-
-export function calcStatsBySupplierOrder(data?: PageData, breakdown?: ReconciliationBreakdown) {
+export function calcStatsBySupplierOrder(data: PageData | undefined, breakdown: ReconciliationBreakdown) {
 	if (!data) {
 		return [];
 	}
 
-	const { acceptedDeliveredByIsbn } = breakdown || calcReconciliationBreakdown(data);
+	const { acceptedDeliveredByIsbn } = breakdown;
 	const { placedOrderLines } = data;
 	const scannedLineLookup = new Map(acceptedDeliveredByIsbn.entries());
 
@@ -133,12 +132,12 @@ export function calcStatsBySupplierOrder(data?: PageData, breakdown?: Reconcilia
 	return Array.from(orders.values());
 }
 
-export function calcCustomerOrderDelivery(data: PageData, breakdown?: ReconciliationBreakdown): DeliveryByISBN[] {
+export function calcCustomerOrderDelivery(data: PageData, breakdown: ReconciliationBreakdown): DeliveryByISBN[] {
 	if (!data) {
 		return [];
 	}
 
-	const { acceptedDeliveredByIsbn } = breakdown || calcReconciliationBreakdown(data);
+	const { acceptedDeliveredByIsbn } = breakdown;
 
 	// Map { isbn => Iterable<CustomerDeliveryEntry> }
 	const customerLineLookup = _groupIntoMap(data.customerOrderLines, ({ isbn, customer_name, customer_display_id, created }) => [

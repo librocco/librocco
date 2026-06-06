@@ -9,7 +9,7 @@
 
 	import type { PageData } from "./$types";
 	import type { ReconciliationBreakdown } from "./utils";
-	import { calcAcceptedDeliveredTotal, calcOverdeliveryLines, calcOverdeliveredTotal, calcStatsBySupplierOrder } from "./utils";
+	import { calcStatsBySupplierOrder, calcTotalOrdered } from "./utils";
 
 	export let data: PageData;
 	export let reconciliationBreakdown: ReconciliationBreakdown;
@@ -20,10 +20,8 @@
 	export let onContinue: () => void;
 
 	$: orderStats = calcStatsBySupplierOrder(data, reconciliationBreakdown);
-	$: overdeliveryLines = calcOverdeliveryLines(data, reconciliationBreakdown);
-	$: totalOrdered = data.placedOrderLines.reduce((sum, line) => sum + line.quantity, 0);
-	$: totalDelivered = calcAcceptedDeliveredTotal(data, reconciliationBreakdown);
-	$: totalOverdelivered = calcOverdeliveredTotal(data, reconciliationBreakdown);
+	$: ({ overdeliveryLines, acceptedDeliveredTotal: totalDelivered, overdeliveredTotal: totalOverdelivered } = reconciliationBreakdown);
+	$: totalOrdered = calcTotalOrdered(data);
 	$: totalScanned = totalDelivered + totalOverdelivered;
 
 	$: t = $LL.reconcile_page;

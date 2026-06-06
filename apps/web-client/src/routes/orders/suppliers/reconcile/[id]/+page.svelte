@@ -31,7 +31,7 @@
 
 	import { app } from "$lib/app";
 	import { getDb, getDbRx } from "$lib/app/db";
-	import { calcAcceptedDeliveredTotal, calcOverdeliveryLines, calcReconciliationBreakdown } from "./utils";
+	import { calcReconciliationBreakdown, calcStatsBySupplierOrder } from "./utils";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -86,9 +86,14 @@
 			.subscribe((b) => upsertBook(db, b));
 	}
 
-	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0) ?? 0;
 	$: reconciliationBreakdown = calcReconciliationBreakdown(data);
-	$: totalDelivered = calcAcceptedDeliveredTotal(data, reconciliationBreakdown);
+	$: totalDelivered = reconciliationBreakdown.acceptedDeliveredTotal;
+
+	// NOTE: only underdelivered books of suppliers with the "reject" policy (underdelivery_policy = 0) get their
+	// customer order lines rejected on finalization -- "queue" policy (1) books are reordered via a continuation order.
+	$: rejectedBookCount = calcStatsBySupplierOrder(data, reconciliationBreakdown)
+		.filter(({ underdelivery_policy }) => underdelivery_policy === 0)
+		.reduce((acc, { totalUnderdelivered }) => acc + totalUnderdelivered, 0);
 
 	// Supports only incdement / decrement by 1
 	const handleEditQuantity = (quantity: -1 | 1) => async (isbn: string) => {
@@ -108,21 +113,13 @@
 	} = deleteDialog;
 
 	$: t = $LL.reconcile_page;
-	$: overdeliveryLines = calcOverdeliveryLines(data, reconciliationBreakdown).map(({ isbn, title, overdeliveredQuantity }) => ({
-		isbn,
-		title,
-		overdeliveredQuantity
-	}));
-
-	async function finalizeAndNavigate() {
-		const db = await getDb(app);
-		await finalizeReconciliationOrder(db, parseInt($page.params.id));
-		await goto(appPath("supplier_orders"));
-	}
 
 	async function handleCommit() {
 		commitDialogOpen.set(false);
-		await finalizeAndNavigate();
+
+		const db = await getDb(app);
+		await finalizeReconciliationOrder(db, parseInt($page.params.id));
+		await goto(appPath("supplier_orders"));
 	}
 
 	async function handleDelete() {
@@ -167,8 +164,8 @@
 <PageCenterDialog dialog={commitDialog} title="" description="">
 	<CommitDialog
 		deliveredBookCount={totalDelivered}
-		rejectedBookCount={Math.max(totalOrdered - totalDelivered, 0)}
-		{overdeliveryLines}
+		{rejectedBookCount}
+		overdeliveryLines={reconciliationBreakdown.overdeliveryLines}
 		on:cancel={() => commitDialogOpen.set(false)}
 		on:confirm={handleCommit}
 	/>

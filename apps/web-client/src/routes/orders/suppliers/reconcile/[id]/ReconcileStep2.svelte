@@ -9,13 +9,7 @@
 	import UnderdeliveryActionBadge from "$lib/components-new/ReconciliationOrderSummary/UnderdeliveryActionBadge.svelte";
 	import ReconciliationCustomerNotification from "$lib/components-new/ReconciliationCustomerNotification/ReconciliationCustomerNotification.svelte";
 
-	import {
-		calcAcceptedDeliveredTotal,
-		calcCustomerOrderDelivery,
-		calcOverdeliveryLines,
-		calcOverdeliveredTotal,
-		calcStatsBySupplierOrder
-	} from "./utils";
+	import { calcCustomerOrderDelivery, calcStatsBySupplierOrder, calcTotalOrdered } from "./utils";
 
 	export let data: PageData;
 	export let reconciliationBreakdown: ReconciliationBreakdown;
@@ -30,10 +24,8 @@
 
 	$: orderStats = calcStatsBySupplierOrder(data, reconciliationBreakdown);
 	$: customerDelivery = calcCustomerOrderDelivery(data, reconciliationBreakdown);
-	$: overdeliveryLines = calcOverdeliveryLines(data, reconciliationBreakdown);
-	$: totalOrdered = data.placedOrderLines.reduce((sum, line) => sum + line.quantity, 0);
-	$: totalDelivered = calcAcceptedDeliveredTotal(data, reconciliationBreakdown);
-	$: totalOverdelivered = calcOverdeliveredTotal(data, reconciliationBreakdown);
+	$: ({ overdeliveryLines, acceptedDeliveredTotal: totalDelivered, overdeliveredTotal: totalOverdelivered } = reconciliationBreakdown);
+	$: totalOrdered = calcTotalOrdered(data);
 
 	$: t = $LL.reconcile_page.step2;
 </script>

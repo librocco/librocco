@@ -371,7 +371,7 @@ describe("deleteSupplier:", () => {
 		await associatePublisher(db, supplier1.id, "TestPub");
 		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
 
-		// Add customer order line to not affect the finalization (throws if not enough customer order lines to deliver/reject)
+		// Add customer order line to not affect the finalization (logs an inconsistency if not enough customer order lines to deliver/reject)
 		await upsertCustomer(db, { id: 1, displayId: "1" });
 		await addBooksToCustomer(db, 1, ["test-1"]);
 
@@ -391,7 +391,7 @@ describe("deleteSupplier:", () => {
 		await associatePublisher(db, supplier1.id, "TestPub");
 		await upsertBook(db, { isbn: "test-1", publisher: "TestPub", title: "Test Book", price: 10 });
 
-		// Add customer order line to not affect the finalization (throws if not enough customer order lines to deliver/reject)
+		// Add customer order line to not affect the finalization (logs an inconsistency if not enough customer order lines to deliver/reject)
 		await upsertCustomer(db, { id: 1, displayId: "1" });
 		await addBooksToCustomer(db, 1, ["test-1"]);
 

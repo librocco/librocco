@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { PageData } from "../$types";
-import { calcAcceptedDeliveredTotal, calcCustomerOrderDelivery, calcOverdeliveryLines, calcOverdeliveredTotal } from "../utils";
+import { calcCustomerOrderDelivery, calcReconciliationBreakdown } from "../utils";
 import { OrderLineStatus } from "$lib/db/cr-sqlite/types";
 
 function createData(): PageData {
@@ -109,10 +109,11 @@ function createData(): PageData {
 describe("reconcile step utils", () => {
 	it("calculates known and unknown overdelivery", () => {
 		const data = createData();
+		const breakdown = calcReconciliationBreakdown(data);
 
-		expect(calcAcceptedDeliveredTotal(data)).toBe(2);
-		expect(calcOverdeliveredTotal(data)).toBe(3);
-		expect(calcOverdeliveryLines(data)).toEqual([
+		expect(breakdown.acceptedDeliveredTotal).toBe(2);
+		expect(breakdown.overdeliveredTotal).toBe(3);
+		expect(breakdown.overdeliveryLines).toEqual([
 			expect.objectContaining({ isbn: "111", overdeliveredQuantity: 1, orderedQuantity: 2, scannedQuantity: 3 }),
 			expect.objectContaining({ isbn: "999", overdeliveredQuantity: 2, orderedQuantity: 0, scannedQuantity: 2 })
 		]);
@@ -120,7 +121,7 @@ describe("reconcile step utils", () => {
 
 	it("excludes overdelivered quantities from customer notification", () => {
 		const data = createData();
-		const delivery = calcCustomerOrderDelivery(data);
+		const delivery = calcCustomerOrderDelivery(data, calcReconciliationBreakdown(data));
 
 		expect(delivery).toHaveLength(1);
 		expect(delivery[0].isbn).toBe("111");

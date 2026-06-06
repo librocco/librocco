@@ -602,10 +602,10 @@
 			"stats": {
 				"total_ordered": "Insgesamt bestellt",
 				"total_delivered": "Insgesamt geliefert",
-				"overdelivered": "Uberliefert"
+				"overdelivered": "Überliefert"
 			},
 			"overdelivery": {
-				"title": "Uberlieferung",
+				"title": "Überlieferung",
 				"ordered": "Bestellt",
 				"scanned": "Gescannt",
 				"extra": "Extra"
@@ -631,10 +631,10 @@
 			"stats": {
 				"total_ordered": "Insgesamt bestellt",
 				"total_delivered": "Insgesamt geliefert",
-				"overdelivered": "Uberliefert"
+				"overdelivered": "Überliefert"
 			},
 			"overdelivery": {
-				"title": "Uberlieferung ({count})",
+				"title": "Überlieferung ({count})",
 				"show_details": "Details anzeigen",
 				"hide_details": "Details ausblenden"
 			},
@@ -738,7 +738,7 @@
 			"heading": "",
 			"delivered_book_count": "",
 			"rejected_book_count": "",
-			"overdelivery_description": "Die folgenden uberlieferten Bucher werden beim Abschluss ignoriert:",
+			"overdelivery_description": "Die folgenden überlieferten Bücher werden beim Abschluss ignoriert:",
 			"overdelivery_table": {
 				"isbn": "ISBN",
 				"title": "Titel",
