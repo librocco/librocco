@@ -13,6 +13,7 @@
 #   PREPARE=true      Initialize submodules and build the vlcn-js checkout first
 #   INSTALL=true      Install vlcn-js workspace dependencies before publishing
 #   ALLOW_DIRTY=true  Allow publishing from a dirty vlcn-js worktree
+#   ALLOW_MISSING_CRSQLITE_BINARY=true  Skip the crsqlite prebuilt-binary check
 #   MYRIAD_N=1        Required for the "myriad" track
 #   VLCN_ROOT=...     Override the vlcn-js checkout path
 
@@ -193,6 +194,19 @@ for required_pkg in "$VLCN_ROOT/deps/cr-sqlite/core/package.json" "$VLCN_ROOT/de
 		exit 1
 	fi
 done
+
+# pnpm publish silently drops binaries/ when it is empty or missing; a
+# crsqlite package without a prebuilt binary forces a from-source build at
+# install time and breaks rush update on machines without cargo (see
+# 3rd-party/README.md, "Publish gotcha"). Production installs need the
+# linux-x86_64 binary specifically.
+CRSQLITE_BINARY="$VLCN_ROOT/deps/cr-sqlite/core/binaries/linux-x86_64/crsqlite.so"
+if [[ ! -f "$CRSQLITE_BINARY" && "${ALLOW_MISSING_CRSQLITE_BINARY:-false}" != "true" ]]; then
+	echo "Error: missing $CRSQLITE_BINARY." >&2
+	echo "Build it (cd deps/cr-sqlite/core && make loadable, then copy dist/crsqlite.so to binaries/linux-x86_64/)" >&2
+	echo "or set ALLOW_MISSING_CRSQLITE_BINARY=true to publish without it." >&2
+	exit 1
+fi
 
 WORKTREE_STATE="$(git -C "$VLCN_ROOT" status --short --ignore-submodules=none)"
 if [[ -n "$WORKTREE_STATE" && "$ALLOW_DIRTY" != "true" ]]; then

@@ -85,16 +85,19 @@ When a production bug needs a fork change shipped fast (e.g. the D-302 sync gap-
 
 ### Publish gotcha: `@vlcn.io/crsqlite` prebuilt binary
 
-`@vlcn.io/crsqlite` publishes from `deps/cr-sqlite/core` inside the *upstream* cr-sqlite submodule. A correct
-published package needs three things that are NOT committed upstream (they exist only as local modifications
-in a prepared publish checkout):
+`@vlcn.io/crsqlite` publishes from `deps/cr-sqlite/core` (the `codemyriad/cr-sqlite` fork). The
+packaged-binary install helper and the `"binaries/**/*"` `files` entry are committed in the fork, but the
+binary itself is a build artifact that must exist before publishing:
 
-- `binaries/<os>-<arch>/crsqlite.<so|dylib|dll>` — the prebuilt native extension (`make loadable`, needs a rust toolchain);
-- a patched `nodejs-install-helper.js` that installs the packaged binary instead of building from source;
-- `"binaries/**/*"` in the package.json `files` array (otherwise `pnpm publish` silently drops the binary).
+```bash
+cd 3rd-party/js/deps/cr-sqlite/core
+make loadable                                  # needs a rust toolchain
+mkdir -p binaries/linux-x86_64 && cp dist/crsqlite.so binaries/linux-x86_64/
+```
 
-A publish from a clean checkout produces a package that attempts a from-source build at install time and
-breaks `rush update` on any machine without cargo. After publishing, always verify:
+Without it the published package attempts a from-source build at install time and breaks `rush update`
+on any machine without cargo. `publish_vlcn.sh` refuses to publish without the linux-x86_64 binary
+(escape hatch: `ALLOW_MISSING_CRSQLITE_BINARY=true`). After publishing, always verify:
 
 ```bash
 curl -s https://npm.codemyriad.io/@vlcn.io/crsqlite/-/crsqlite-<version>.tgz | tar tz | grep binaries
