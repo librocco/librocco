@@ -4,6 +4,8 @@
 	import { invalidate } from "$app/navigation";
 
 	import QrCode from "$lucide/qr-code";
+	import PackagePlus from "$lucide/package-plus";
+	import PackageMinus from "$lucide/package-minus";
 
 	import type { PageData } from "./$types";
 
@@ -25,7 +27,7 @@
 
 	export let data: PageData;
 
-	$: ({ plugins, displayName, updatedAt } = data);
+	$: ({ plugins, displayName, updatedAt, noteType } = data);
 
 	$: t = $LL.history_page.notes_tab.archive;
 	$: tCommon = $LL.common;
@@ -95,16 +97,27 @@
 <HistoryPage view="history/notes" {app} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div class="flex w-full items-center justify-between">
-			<div class="flex max-w-md flex-col">
-				<div class="relative block w-full p-2">
-					<div class="flex flex-row items-center gap-x-2 text-base-content">
-						<h1 class="text-2xl font-bold leading-7 text-base-content">{displayName}</h1>
-					</div>
+			<div class="flex max-w-md flex-col gap-y-2 p-3">
+				<div class="relative block w-full">
+					<h1 class="text-2xl font-bold leading-7 text-base-content">{displayName}</h1>
 				</div>
 
-				<div class="w-fit">
+				<div class="flex w-fit flex-row items-center gap-x-2">
+					{#if noteType === "inbound"}
+						<span class="badge badge-md badge-green gap-1 !px-1" data-property="noteType" data-value="purchase">
+							<PackagePlus class="h-3 w-3" />
+							{t.type.purchase()}
+						</span>
+					{:else if noteType === "outbound"}
+						<span class="badge badge-md badge-red gap-1 !px-1" data-property="noteType" data-value="sale">
+							<PackageMinus class="h-3 w-3" />
+							{t.type.sale()}
+						</span>
+					{/if}
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">{t.committed_at()}: {$dateFormatters.dateTime(updatedAt)}</span>
+						<span class="badge badge-md !px-1 {noteType === 'outbound' ? 'badge-red' : 'badge-green'}">
+							{t.committed_at()}: {$dateFormatters.dateTime(updatedAt)}
+						</span>
 					{/if}
 				</div>
 			</div>
@@ -132,9 +145,9 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
-					<StockTable {table}>
+					<StockTable {table} showWarehouse plainQty>
 						<tr slot="row" let:row let:rowIx>
-							<StockBookRow {row} {rowIx} />
+							<StockBookRow {row} {rowIx} showWarehouse plainQty />
 						</tr>
 					</StockTable>
 				</div>

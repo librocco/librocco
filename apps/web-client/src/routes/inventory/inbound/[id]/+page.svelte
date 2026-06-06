@@ -165,9 +165,13 @@
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData<"book">) => {
+		// NOTE: e.currentTarget is cleared after the first await in some dispatch paths
+		// (e.g. blur-triggered form.requestSubmit), so fall back to e.target which always
+		// points to the form for submit events.
+		const form = (e.currentTarget || e.target) as HTMLFormElement;
 		const db = await getDb(app);
 
-		const data = new FormData(e.currentTarget as HTMLFormElement);
+		const data = new FormData(form);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
 

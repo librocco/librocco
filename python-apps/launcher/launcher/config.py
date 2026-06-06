@@ -132,6 +132,7 @@ class Config:
     pki {{
         ca local {{
             name "Librocco CA"
+            intermediate_lifetime 8760h
         }}
     }}
 
@@ -153,8 +154,16 @@ class Config:
 https://:{CADDY_PORT} {{
     # Use Caddy's internal CA for on-demand certificate generation
     # This automatically issues certificates for any hostname that connects (SNI-based)
-    tls internal {{
+    tls {{
+        issuer internal {{
+            lifetime 4320h
+        }}
         on_demand
+    }}
+
+    # Proxy label-printer requests to the local FastAPI print server
+    handle /printlabel* {{
+        reverse_proxy localhost:8026
     }}
 
     # Proxy sync WebSocket + HTTPS requests to the sync server

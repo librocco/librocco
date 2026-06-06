@@ -18,6 +18,7 @@ Each document below covers one slice of the system. They reference each other fr
 | 5 | [CRDT Conflict Resolution](./05-crdt-conflict-resolution.md) | Last-Write-Wins semantics, the `crsql_changes` virtual table, causal clocks, site IDs, and what can go wrong. **Start here for the inconsistent-note issue.** |
 | 6 | [Diagnosis: Known Issues](./06-known-issues.md) | Detailed analysis of both target issues with root causes, contributing factors, and potential improvements. |
 | 7 | [Sync User Requirements](./07-sync-user-requirements.md) | User-facing sync requirements, gap analysis, and implementation roadmap. **Start here for sync indicator and pending changes tracking.** |
+| 8 | [Multi-Tab Shared Service](./08-multi-tab-shared-service.md) | Why SharedWorker can't hold the OPFS database, the shared service leader-election pattern, and a minimal implementation plan for multi-tab support. **Start here for the multi-tab timeout issue.** |
 
 ## The 30-Second Picture
 

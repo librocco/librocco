@@ -45,7 +45,7 @@ test("should display notes, namespaced to warehouses, in the inbound note list",
 	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Purchase 2" });
 
 	// Navigate to inbound list
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	// The notes should appear in the list
 	await inNoteList.assertElements([{ name: "Warehouse 1 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
@@ -73,7 +73,7 @@ test("should delete the note on delete button click (after confirming the prompt
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Purchase 2" });
 
 	// Wait for the notes to appear
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
 
@@ -160,7 +160,7 @@ test("should assign default name to notes in sequential order (regardless of war
 
 	// Should display created notes in the inbound list
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	const entityList = content.entityList("inbound-list");
 
@@ -200,7 +200,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 	// Check names
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	await content
 		.entityList("inbound-list")
@@ -223,7 +223,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 	// Check names
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	await content
 		.entityList("inbound-list")
@@ -243,7 +243,7 @@ test("should be able to edit note title", async ({ page }) => {
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
 
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	await content.entityList("inbound-list").item(0).edit();
 	// Check title
@@ -254,7 +254,7 @@ test("should be able to edit note title", async ({ page }) => {
 	await dashboard.textEditableField().submit();
 	// to make sure title is persisted
 	await page.getByRole("link", { name: "Manage Inventory" }).click();
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	await expect(content.entityList("inbound-list").item(0).getByText("Warehouse 1 / title")).toBeVisible();
 });
@@ -269,7 +269,7 @@ test("should be able to delete the note (from the note view)", async ({ t, page 
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: noteName });
 
 	const dashboard = getDashboard(page);
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	const content = dashboard.content();
 
@@ -303,7 +303,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Purchase 2" });
 
 	// Naviate to the inbound list
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
 
@@ -316,7 +316,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 	// Navigate back to inbound page and to Purchase 2
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	await content.entityList("inbound-list").item(0).edit();
 
@@ -336,7 +336,7 @@ test("should display book count for each respective note in the list", async ({ 
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Purchase 2" });
 
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	// Both should display 0 books
 	await content.entityList("inbound-list").assertElements([
@@ -384,7 +384,7 @@ test("should display book original price and discounted price as well as the war
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 
 	// Navigate to the inbound list
-	await page.getByRole("link", { name: "Purchase" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
 
 	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Note 1" }]);
 
@@ -395,4 +395,45 @@ test("should display book original price and discounted price as well as the war
 	await content
 		.table("warehouse")
 		.assertRows([{ isbn: "1234567890", price: { price: "(€12.00)", discountedPrice: "€10.80", discount: "-10%" } }]);
+});
+
+test("editing a purchase note does not change its createdAt timestamp", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Create a note (helper INSERTs with created_at = updated_at = now, then UPDATEs display_name → bumps updated_at)
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+
+	const list = content.entityList("inbound-list");
+	const row = list.item(0);
+	const createdCell = row.locator('[data-property="createdAt"]');
+	await createdCell.waitFor();
+
+	// Capture the rendered "Created:" text and the DB-level created_at / updated_at
+	const createdTextBefore = (await createdCell.textContent())?.trim();
+	const before = await dbHandle.evaluate(async (db) => {
+		const [r] = await (db as any).execO("SELECT created_at AS createdAt, updated_at AS updatedAt FROM note WHERE id = ?", [1]);
+		return r as { createdAt: number; updatedAt: number };
+	});
+
+	// Edit the note (bumps updated_at; must not touch created_at)
+	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Purchase 1 (edited)" });
+
+	// Wait for the row to re-render with the new displayName (proves the list picked up fresh DB state)
+	await row.getByText("Warehouse 1 / Purchase 1 (edited)").waitFor();
+
+	// Rendered "Created:" text must be identical
+	const createdTextAfter = (await createdCell.textContent())?.trim();
+	expect(createdTextAfter).toBe(createdTextBefore);
+
+	// DB contract: created_at unchanged, updated_at moved forward
+	const after = await dbHandle.evaluate(async (db) => {
+		const [r] = await (db as any).execO("SELECT created_at AS createdAt, updated_at AS updatedAt FROM note WHERE id = ?", [1]);
+		return r as { createdAt: number; updatedAt: number };
+	});
+	expect(after.createdAt).toBe(before.createdAt);
+	expect(after.updatedAt).toBeGreaterThan(before.updatedAt);
 });

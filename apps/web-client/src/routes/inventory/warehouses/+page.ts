@@ -1,5 +1,6 @@
 import { browser } from "$app/environment";
 import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
+import { getInboundNoteCountsByWarehouse } from "$lib/db/cr-sqlite/note";
 
 import type { PageLoad } from "./$types";
 import type { Warehouse } from "$lib/db/cr-sqlite/types";
@@ -21,17 +22,18 @@ const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
 	stockCache.disableRefresh();
 
 	if (!browser) {
-		return { warehouses: [] as Warehouse[] };
+		return { warehouses: [] as Warehouse[], inboundNoteCountsByWarehouse: new Map<number, number>() };
 	}
 
 	const db = await getDb(app);
 
 	const warehouses = await getAllWarehouses(db, { skipTotals: true });
+	const inboundNoteCountsByWarehouse = await getInboundNoteCountsByWarehouse(db);
 
 	// Re-enable the stock cache refreshing to execute in the background
 	stockCache.enableRefresh(db);
 
-	return { warehouses };
+	return { warehouses, inboundNoteCountsByWarehouse };
 };
 
 export const load: PageLoad = timed(_load);

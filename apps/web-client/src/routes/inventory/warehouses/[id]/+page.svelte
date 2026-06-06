@@ -44,7 +44,7 @@
 
 	export let data: PageData;
 
-	$: ({ plugins, displayName, publisherList, id } = data);
+	$: ({ plugins, displayName, publisherList, id, numPurchaseNotes } = data);
 
 	let entries: GetStockResponseItem[] = [];
 	$: data.entries.then((e) => (entries = e));
@@ -176,6 +176,21 @@
 	<div slot="main" class="flex h-full w-full flex-col gap-y-4 divide-y">
 		<div class="p-4">
 			<Breadcrumbs class="" links={breadcrumbs} />
+			<div class="mt-2">
+				{#if numPurchaseNotes > 0}
+					<a
+						href={appPath("inbound")}
+						class="badge-primary badge badge-sm px-1.5 py-2.5 hover:underline focus:underline"
+						data-property="numPurchaseNotes"
+					>
+						{tCommon.badges.purchase_notes({ count: numPurchaseNotes })}
+					</a>
+				{:else}
+					<span class="badge-ghost badge badge-sm px-1.5 py-2.5 text-base-content/60" data-property="numPurchaseNotes">
+						{tCommon.badges.purchase_notes({ count: 0 })}
+					</span>
+				{/if}
+			</div>
 			<div class="flex justify-between">
 				{#if $csvEntries?.length}
 					<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
@@ -209,9 +224,9 @@
 				<div use:scroll.container={{ rootMargin: "400px" }} class="min-h-0 flex-1 overflow-y-auto" style="scrollbar-width: thin">
 					<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 					<div>
-						<StockTable {table}>
+						<StockTable {table} plainQty>
 							<tr slot="row" let:row let:rowIx>
-								<StockBookRow {row} {rowIx}>
+								<StockBookRow {row} {rowIx} plainQty>
 									<div slot="row-actions">
 										<PopoverWrapper
 											options={{

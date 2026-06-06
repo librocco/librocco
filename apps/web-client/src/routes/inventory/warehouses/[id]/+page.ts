@@ -3,6 +3,7 @@ import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
 
 import { getWarehouseById } from "$lib/db/cr-sqlite/warehouse";
+import { getInboundNoteCountForWarehouse } from "$lib/db/cr-sqlite/note";
 import { stockByWarehouse } from "$lib/db/cr-sqlite/stock_cache";
 
 import type { PageLoad } from "./$types";
@@ -31,6 +32,7 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 			id,
 			displayName: "N/A",
 			discount: 0,
+			numPurchaseNotes: 0,
 			publisherList: [] as string[],
 			entries: new Promise<GetStockResponseItem[]>(() => {})
 		};
@@ -48,6 +50,7 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 	}
 
 	const publisherList = await getPublisherList(db);
+	const numPurchaseNotes = await getInboundNoteCountForWarehouse(db, id);
 
 	// Re-enable the stock cache refreshing to execute in the background
 	stockCache.enableRefresh(db);
@@ -66,7 +69,7 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 			return [...iter];
 		});
 
-	return { ...warehouse, publisherList, entries };
+	return { ...warehouse, numPurchaseNotes, publisherList, entries };
 };
 
 export const load: PageLoad = timed(_load);

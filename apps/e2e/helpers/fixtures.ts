@@ -37,6 +37,15 @@ const warmupOnce = (async () => {
 	}
 })();
 
+const createUniqueTestDbId = () => {
+	if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+		return `sync-test-db-${crypto.randomUUID()}`;
+	}
+	const time = Date.now().toString(36);
+	const rand = Math.random().toString(16).slice(2, 14);
+	return `sync-test-db-${time}-${rand}`;
+};
+
 const books = [
 	{ isbn: "1234", authors: "author1", title: "title1", publisher: "pub1", price: 10 },
 	{ isbn: "4321", authors: "author2", title: "title2", publisher: "pub2", price: 20 },
@@ -271,23 +280,27 @@ export const testBase = test.extend<BaseTestFixture>({
 		await warmupOnce;
 
 		const hydrationTimeout = 45_000;
+		const testDbId = createUniqueTestDbId();
+
+		// Apply E2E runtime config before any app script executes on first load.
+		// This removes the "first boot with old persisted settings" window where sync may still be on.
+		// IMPORTANT: keep explicit per-test overrides intact (sync tests set these keys themselves).
+		await page.addInitScript(
+			([dbid]) => {
+				// NOTE: surrounding quotes are required because svelte-persisted stores JSON values.
+				if (window.localStorage.getItem("librocco-current-db") == null) {
+					window.localStorage.setItem("librocco-current-db", `"${dbid}"`);
+				}
+				if (window.localStorage.getItem("librocco-sync-active") == null) {
+					window.localStorage.setItem("librocco-sync-active", "false");
+				}
+			},
+			[testDbId]
+		);
 
 		// Make sure the DB schema is initialised before running any tests
 		// This is here to prevent partial initialisation (and subsequent conflicts when reinitialising the, partially initialised, schema)
 		await page.goto(baseURL);
-		await getDbHandle(page);
-
-		// Make sure each run gets its own DB - to avoid conflicts on the sync server
-		await page.evaluate(() => {
-			// NOTE: the surrounding double quotes need to be part of the string as the svelte-persisted reads (and stores) the
-			// values as JSON objects (so a string including the quotes is a valid JSON value)
-			window.localStorage.setItem("librocco-current-db", `"sync-test-db-${Math.floor(Math.random() * 1000000)}"`);
-			// Sync in on by default, we're turning it off for the majority of tests so as to not cause conflicts (sync-server errors),
-			// and this interfere with testing of the app -- a small subset of sync functionality is alreayd testsd in dedicated tests
-			// TODO: extend test runs (perhaps environments) to include the app connected to sync server (ensuring connection itself won't interfere with desired functionality)
-			window.localStorage.setItem("librocco-sync-active", "false");
-		});
-		await page.reload();
 		await getDbHandle(page);
 
 		const goto = page.goto;

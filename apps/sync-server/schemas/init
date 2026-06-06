@@ -160,6 +160,7 @@ CREATE TABLE IF NOT EXISTS note (
 	is_reconciliation_note INTEGER DEFAULT 0,
 	default_warehouse INTEGER,
 	updated_at INTEGER NOT NULL DEFAULT 0,
+	created_at INTEGER NOT NULL DEFAULT 0,
 	committed INTEGER NOT NULL DEFAULT 0,
 	committed_at INTEGER,
 	PRIMARY KEY (id)
