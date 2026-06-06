@@ -174,13 +174,6 @@ if [[ ! -d "$VLCN_ROOT/.git" && ! -f "$VLCN_ROOT/.git" ]]; then
 	exit 1
 fi
 
-for required_pkg in "$VLCN_ROOT/deps/cr-sqlite/core/package.json" "$VLCN_ROOT/deps/wa-sqlite/package.json"; do
-	if [[ ! -f "$required_pkg" ]]; then
-		echo "Error: missing $required_pkg. Run with PREPARE=true or initialize submodules first." >&2
-		exit 1
-	fi
-done
-
 PREPARE="${PREPARE:-false}"
 INSTALL="${INSTALL:-true}"
 ALLOW_DIRTY="${ALLOW_DIRTY:-false}"
@@ -191,6 +184,15 @@ if [[ "$PREPARE" == "true" ]]; then
 elif [[ "$INSTALL" == "true" ]]; then
 	install_workspace
 fi
+
+# This guard must run after the PREPARE/INSTALL block: PREPARE=true is what
+# initializes the submodules that materialize these package.json files.
+for required_pkg in "$VLCN_ROOT/deps/cr-sqlite/core/package.json" "$VLCN_ROOT/deps/wa-sqlite/package.json"; do
+	if [[ ! -f "$required_pkg" ]]; then
+		echo "Error: missing $required_pkg. Run with PREPARE=true or initialize submodules first." >&2
+		exit 1
+	fi
+done
 
 WORKTREE_STATE="$(git -C "$VLCN_ROOT" status --short --ignore-submodules=none)"
 if [[ -n "$WORKTREE_STATE" && "$ALLOW_DIRTY" != "true" ]]; then

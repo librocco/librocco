@@ -127,7 +127,7 @@ def main():
     print(f"✓ Created: {npmrc_path}")
 
     # Run npm install (production only, no optional deps)
-    print(f"  Running npm install (this may take a moment)...")
+    print("  Running npm install (this may take a moment)...")
     run_command(
         ["npm", "install", "--production", "--no-optional", "--registry", registry_url],
         cwd=bundled_dir,
@@ -151,7 +151,7 @@ def main():
             f"✓ Installed {package_count} top-level packages (~{node_modules_size / 1024 / 1024:.0f} MB)"
         )
     else:
-        print(f"✗ node_modules not created", file=sys.stderr)
+        print("✗ node_modules not created", file=sys.stderr)
         return 1
     print()
 
