@@ -255,4 +255,34 @@ describe("Warehouse tests", () => {
 
 		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: 1 }), expect.objectContaining({ id: 2 })]);
 	});
+
+	it("excludes orphan legs (leg whose note row is absent) from warehouse totals, agreeing with the stock page", async () => {
+		// Regression: a leg whose note row no longer exists is an "orphan". This happens under CRDT
+		// sync when a note is deleted on one node while another node concurrently adds a leg to it
+		// (deletes are not cascading). The warehouse-list total used to count such legs (LEFT JOIN
+		// note + `committed IS NULL`) while the stock page (INNER JOIN note) did not, so the two views
+		// disagreed. Both must now ignore the orphan.
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "X" });
+		await createInboundNote(db, 1, 10);
+		await addVolumesToNote(db, 10, { isbn: "1111111111111", quantity: 5, warehouseId: 1 });
+		await commitNote(db, 10);
+
+		// Inject an orphan leg directly (the single-node app API won't produce this state).
+		await db.exec("INSERT INTO book_transaction (isbn, quantity, note_id, warehouse_id, committed_at) VALUES (?, ?, ?, ?, ?)", [
+			"2222222222222",
+			7,
+			99999,
+			1,
+			Date.now()
+		]);
+
+		const [warehouse] = await getAllWarehouses(db);
+		const stock = await getStock(db);
+		const stockTotal = stock.filter((s) => s.warehouseId === 1).reduce((acc, s) => acc + s.quantity, 0);
+
+		expect(stockTotal).toBe(5);
+		expect(warehouse.totalBooks).toBe(5);
+	});
 });
