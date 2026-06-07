@@ -3,21 +3,28 @@ import { writable, get, derived } from "svelte/store";
 import type { TXAsync, GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
 import { getStock } from "$lib/db/cr-sqlite/stock";
+import { getDBVersion } from "$lib/db/cr-sqlite/db";
 import { reduce, wrapIter } from "@librocco/shared";
 import { timed } from "$lib/utils/timer";
 
 const dbStore = writable<TXAsync | null>(null);
 const valid = writable(false);
-const cacheTimestamp = writable(0);
+// Local crsql db_version at the time the cache was last (re)built. cr-sqlite re-stamps applied
+// remote changes with the local, monotonically-increasing db_version, so this is a node-safe
+// "have I seen everything up to here" watermark (a wall-clock timestamp is not — see maybeInvalidate).
+const cacheVersion = writable<bigint>(0n);
 
 /**
  * Executes the stock query and sets the cache as valid (upon resolution)
  */
 const execQuery = async (db: TXAsync) => {
+	// Capture the watermark BEFORE reading stock: any change applied after this point is strictly
+	// greater than `version`, so maybeInvalidate will catch it (at worst a redundant recompute, never
+	// a missed one).
+	const version = await getDBVersion(db);
 	const stock = await getStock(db);
-	const [[timestamp]] = await db.execA<[number]>("SELECT COALESCE(MAX(committed_at), 0) FROM book_transaction");
 	valid.set(true);
-	cacheTimestamp.set(timestamp);
+	cacheVersion.set(version);
 	return stock;
 };
 
@@ -81,9 +88,26 @@ export const invalidate = () => {
 	}
 };
 
-async function _countRelevantUpdates(db: TXAsync, cacheTimestamp: number) {
-	// Count the number of updates that are relevant to the stock calculation
-	const [[res]] = await db.execA<[number]>("SELECT COUNT(*) FROM book_transaction WHERE committed_at > ?", [cacheTimestamp]);
+async function _countRelevantUpdates(db: TXAsync, cacheVersion: bigint) {
+	// Count stock-affecting changes applied since the cache was built, using the local db_version as
+	// a logical, node-safe watermark. The stock SUM depends on: committed legs (a leg gets a
+	// committed_at written when its note is committed), note.committed flips, and warehouse rows (the
+	// stock query JOINs note ON committed = 1 and LEFT JOINs warehouse). Draft scanning only writes a
+	// leg's quantity/updated_at — never committed_at — so it does not match here and the (expensive)
+	// stock query is not needlessly recomputed.
+	//
+	// Previously this counted `book_transaction WHERE committed_at > ?` against MAX(committed_at), a
+	// per-node WALL CLOCK: a commit synced in from a workstation whose clock was behind (or simply an
+	// earlier-but-later-arriving commit) carried a committed_at <= the watermark and never
+	// invalidated the cache, leaving permanently stale stock on a connected node.
+	const [[res]] = await db.execA<[number]>(
+		`SELECT COUNT(*) FROM crsql_changes
+		 WHERE db_version > ?
+		   AND ( ("table" = 'book_transaction' AND cid = 'committed_at')
+		      OR ("table" = 'note' AND cid = 'committed')
+		      OR "table" = 'warehouse' )`,
+		[cacheVersion]
+	);
 	return res;
 }
 const countRelevantUpdates = timed(_countRelevantUpdates);
@@ -95,7 +119,7 @@ const countRelevantUpdates = timed(_countRelevantUpdates);
  *
  */
 export const maybeInvalidate = async (db: TXAsync) => {
-	const numUpdates = await countRelevantUpdates(db, get(cacheTimestamp));
+	const numUpdates = await countRelevantUpdates(db, get(cacheVersion));
 	if (numUpdates > 0) {
 		invalidate();
 	}

@@ -229,10 +229,14 @@
 		// This helps us in e2e to know when the page is interactive
 		document.body.setAttribute("hydrated", "true");
 
-		// Control the invalidation of the stock cache
-		// On every 'book_transaction' change, we run 'maybeInvalidate', which checks for relevant changes
-		// between the last cached value and the current one and invalidates the cache if needed
-		disposer = getDbRx(app).onRange(["book_transaction"], async () => stockCache.maybeInvalidate(await getDb(app)));
+		// Control the invalidation of the stock cache.
+		// Watch every table the stock calculation depends on: book_transaction (legs), note (the
+		// stock SUM gates on note.committed, so a commit must trigger a recompute) and warehouse (a
+		// deletion/discount change affects the warehouse JOIN). maybeInvalidate then checks, via a
+		// node-safe db_version watermark, whether a stock-affecting change actually landed since the
+		// last cache and invalidates only if so. Watching book_transaction alone missed peer commits
+		// (committed flips on note) and warehouse deletions arriving via sync.
+		disposer = getDbRx(app).onRange(["book_transaction", "note", "warehouse"], async () => stockCache.maybeInvalidate(await getDb(app)));
 
 		// Prevent user from navigating away if sync is in progress
 		// NOTE: this is a noop if sync not active (e.g. in demo mode)
