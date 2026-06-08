@@ -81,6 +81,9 @@ jobs:
           #! 2, not 3: 3 over-subscribed the 4-vCPU runner and tripped timeouts on
           #! data-heavy tests. 2 leaves headroom for Caddy + sync-server + node host.
           PLAYWRIGHT_WORKERS: "2"
+          #! Run the non-sync suite on chromium only at PR time; both browsers run
+          #! nightly via playwright-matrix. sync.spec.ts always runs on firefox.
+          PLAYWRIGHT_BROWSERS: "chromium"
       - name: Stop services
         if: always()
         run: |

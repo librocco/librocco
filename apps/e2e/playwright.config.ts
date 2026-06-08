@@ -9,47 +9,30 @@ if (IS_CI) {
 	reporter.push(["blob"]);
 }
 
-const browsers = [
-	{
-		name: "chromium",
-		device: devices["Desktop Chrome"]
-	},
-	{
-		name: "firefox",
-		device: devices["Desktop FireFox"]
-	}
+// Available browser projects. webkit is omitted because some tests fail on it in
+// CI (scan input, enter form submission) — TODO: re-enable once those are fixed.
+const availableBrowsers: Record<string, (typeof devices)[string]> = {
+	chromium: devices["Desktop Chrome"],
+	firefox: devices["Desktop FireFox"]
 
-	// Skipped as some tests are failing on webkit in CI. The functionality is there and we wish to still
-	// run those tests, and have the ability for PRs to be green.
-	// TODO: Uncomment this when we have time to fix the tests failing on webkit:
-	// - scan input
-	// - enter form submission
-	//
-	// {
-	// 	name: "webkit",
-	// 	device: devices["Desktop Safari"]
-	// }
+	// webkit: devices["Desktop Safari"],
+	/* Mobile viewports: */
+	// "Mobile Chrome": devices["Pixel 5"],
+	// "Mobile Safari": devices["iPhone 12"],
+	/* Branded browsers: */
+	// "Microsoft Edge": devices["Desktop Edge"],
+	// "Google Chrome": devices["Desktop Chrome"],
+};
 
-	/* Test against mobile viewports. */
-	// {
-	//   name: 'Mobile Chrome',
-	//   device: devices['Pixel 5']
-	// },
-	// {
-	//   name: 'Mobile Safari',
-	//   device: devices['iPhone 12']
-	// },
-
-	/* Test against branded browsers. */
-	// {
-	//   name: 'Microsoft Edge',
-	//   device: devices['Desktop Edge']
-	// },
-	// {
-	//   name: 'Google Chrome',
-	//   device: devices['Desktop Chrome']
-	// },
-];
+// Which browsers the (non-sync) suite runs on. Defaults to both, so nightly
+// playwright-matrix, the VFS benchmark and local runs keep full coverage. PR
+// runs set PLAYWRIGHT_BROWSERS=chromium to halve per-shard test time; the
+// firefox-only "sync" project (below) keeps sync coverage on firefox regardless.
+const BROWSERS = (process.env.PLAYWRIGHT_BROWSERS ?? "chromium,firefox")
+	.split(",")
+	.map((s) => s.trim())
+	.filter(Boolean);
+const browsers = BROWSERS.map((name) => ({ name, device: availableBrowsers[name] }));
 
 const locales = ["en"];
 
