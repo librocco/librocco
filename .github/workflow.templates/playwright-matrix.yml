@@ -1,12 +1,9 @@
 #@ load("github.lib.yml", "checkout")
-#@ load("github.lib.yml", "pull_artefacts")
-#@ load("github.lib.yml", "load_artefacts")
 #@ load("cache.lib.yml", "cache_node")
-#@ load("cache.lib.yml", "load_cached_artefacts")
+#@ load("cache.lib.yml", "cache_playwright")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
-#@ load("build-crsqlite.lib.yml", "build_crsqlite")
 
 name: PlaywrightMatrix
 
@@ -19,12 +16,9 @@ name: PlaywrightMatrix
     - cron: "30 5 * * 1,3"
 
 jobs:
-  build-cr-sqlite: #@ build_crsqlite()
-
   e2e-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    needs: build-cr-sqlite
     strategy:
       fail-fast: false
       matrix:
@@ -32,14 +26,9 @@ jobs:
         dummy2: [1, 2, 3, 4, 5, 6]
     steps:
       -  #@ checkout()
-      -  #@ pull_artefacts()
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Compute desired compiled artifact version
-        run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
-      -  #@ load_artefacts()
-      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()
@@ -52,14 +41,28 @@ jobs:
           mkdir preview
           mv build/* preview/
           mv preview build/
+      -  #@ cache_playwright()
       - name: Download playwright browsers
-        run: cd apps/e2e && npx playwright install
+        run: cd apps/e2e && npx playwright install chromium firefox
       - name: Install uv (Python package manager)
         uses: astral-sh/setup-uv@v7
         with:
           version: "0.10.11"
           enable-cache: true
           working-directory: python-apps/launcher
+      - name: Pre-install Python interpreter (retry transient download failures)
+        working-directory: python-apps/launcher
+        run: |
+          # uv otherwise downloads the standalone CPython lazily when the launcher starts; a transient
+          # GitHub 504 there leaves the sync server unstarted and fails "Wait for services". Fetch it
+          # here, up front and with retries (and cached), so the launcher start is offline-fast.
+          for i in 1 2 3 4 5; do
+            if uv python install; then echo "Python interpreter ready"; exit 0; fi
+            echo "uv python install failed (attempt $i/5); retrying in $((i * 5))s"
+            sleep $((i * 5))
+          done
+          echo "Failed to install the Python interpreter after 5 attempts"
+          exit 1
       - name: Clean stale test DBs (fix schema mismatch)
         run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
       - name: Start headless launcher in background
@@ -77,6 +80,10 @@ jobs:
           echo "All services ready!"
       - name: Run Playwright tests
         run: cd apps/e2e && rushx test:ci
+        #! Match the per-shard worker count so this flakiness harness validates
+        #! the real PLAYWRIGHT_WORKERS config used by the e2e-test job.
+        env:
+          PLAYWRIGHT_WORKERS: "2"
       - name: Stop services
         if: always()
         run: |

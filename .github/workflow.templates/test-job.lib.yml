@@ -1,15 +1,13 @@
 #@ load("github.lib.yml", "checkout")
-#@ load("github.lib.yml", "pull_artefacts")
-#@ load("github.lib.yml", "load_artefacts")
-#@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("cache.lib.yml", "cache_node")
+#@ load("cache.lib.yml", "cache_playwright")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
 
 #@ def test_script(workdir, install_playwright):
 #@  if install_playwright:
-#@    return "cd "+workdir+" && npx playwright install && rushx test:ci"
+#@    return "cd "+workdir+" && npx playwright install chromium firefox && rushx test:ci"
 #@  else:
 #@    return "cd "+workdir+" && rushx test:ci"
 #@  end
@@ -19,25 +17,22 @@
 name: #@ name
 runs-on: ubuntu-latest
 timeout-minutes: 10
-needs: build-cr-sqlite
 permissions:
   id-token: write
   contents: read
   checks: write
 steps:
 -  #@ checkout()
--  #@ pull_artefacts()
 - uses: actions/setup-node@v4
   with:
     node-version: "22"
-- name: Compute desired compiled artefact version
-  run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
--  #@ load_artefacts()
--  #@ load_cached_artefacts()
 -  #@ cache_node()
 -  #@ rush_add_path()
 -  #@ rush_install()
 -  #@ rush_build()
+#@ if install_playwright:
+-  #@ cache_playwright()
+#@ end
 - name: Run tests
   run: #@ test_script(workdir, install_playwright)
 #@ if reporter!=None:

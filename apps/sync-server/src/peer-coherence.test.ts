@@ -2,10 +2,9 @@
  * Tests for the peer coherence check in the shipped ws-server artefact.
  *
  * These tests run against the *installed* @vlcn.io/ws-server package
- * (unpacked from the tarball in 3rd-party/artefacts), NOT the submodule
- * source. This catches cases where the tarball wasn't rebuilt after a
- * submodule fix — exactly the bug that shipped a broken peer coherence
- * check in 76622702.
+ * (published on npm.codemyriad.io), NOT the submodule source. This catches
+ * cases where the published package wasn't rebuilt after a submodule fix —
+ * exactly the bug that shipped a broken peer coherence check in 76622702.
  */
 
 import { describe, it, expect } from "vitest";
