@@ -1,5 +1,6 @@
 import type { DashboardNode } from "./types";
 import { selector, testIdSelector } from "./utils";
+import { assertionTimeout } from "@/constants";
 
 type DropdownInterface = DashboardNode<{
 	open(): Promise<void>;
@@ -25,17 +26,22 @@ export function getDropdown(parent: DashboardNode): DropdownInterface {
 	const isOpen = () => control.getAttribute("data-open").then((value) => value === "true");
 
 	const open = async () => {
+		// The control lives in a list row that can be detached/re-rendered while its data settles (e.g.
+		// right after an in-app navigation or a burst of writes). Wait for it to be present first, so a
+		// mid-render interaction fails fast (and is retried) instead of letting the unbounded
+		// getAttribute/click below auto-wait the entire per-test timeout budget -> "Test timeout exceeded".
+		await control.waitFor({ state: "visible", timeout: assertionTimeout });
 		// Noop if the dropdown is already open
 		if (await isOpen()) return;
 		await control.click();
-		return container.waitFor();
+		return container.waitFor({ timeout: assertionTimeout });
 	};
 
 	const close = async () => {
 		// Noop if the dropdown is already closed
 		if (!(await isOpen())) return;
 		await control.click();
-		return container.waitFor({ state: "detached" });
+		return container.waitFor({ state: "detached", timeout: assertionTimeout });
 	};
 
 	const opened = <F extends () => Promise<any>>(fn: F): F =>
