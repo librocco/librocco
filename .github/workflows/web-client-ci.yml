@@ -190,6 +190,7 @@ jobs:
       run: cd apps/e2e && rushx test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
       env:
         SHARD_INDEX: ${{ matrix.shardIndex }}
+        PLAYWRIGHT_WORKERS: "2"
     - name: Stop services
       if: always()
       run: |

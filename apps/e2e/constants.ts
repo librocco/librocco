@@ -4,6 +4,14 @@ export const IS_CI = /^(?:1|true|on)$/i.test(process.env.CI?.trim() ?? "");
 export const VFS_TEST = process.env.VFS_TEST === "true";
 export const SHARD_INDEX = process.env.PLAYWRIGHT_SHARD_INDEX;
 export const FULLY_PARALLEL = process.env.PLAYWRIGHT_FULLY_PARALLEL === "true";
+/**
+ * Number of parallel Playwright workers in CI. Opt-in via PLAYWRIGHT_WORKERS;
+ * defaults to 1 to preserve serial behaviour everywhere it isn't explicitly set
+ * (e.g. the VFS benchmark, which must not run tests concurrently). With
+ * fullyParallel=false, workers parallelise whole spec FILES, so the only file
+ * that touches the shared sync server (sync.spec.ts) stays pinned to one worker.
+ */
+export const CI_WORKERS = Number(process.env.PLAYWRIGHT_WORKERS) || 1;
 
 export function getPort(): Promise<number> {
 	const testSocket = new net.Socket();
