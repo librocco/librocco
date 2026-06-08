@@ -360,6 +360,25 @@ class EmbeddedSupervisor(QObject):
         env["SCHEMA_FOLDER"] = schema_folder
         # Set NODE_PATH so Node can find node_modules in bundled syncserver directory
         env["NODE_PATH"] = str(syncserver_dir / "node_modules")
+        # Activate local vendor source mode when an env var requests it
+        # (VLCN_ROOT / USE_SUBMODULES) OR the developer ran the preferred prepare
+        # step, which records state in <repo>/.librocco/vendor-source.json. Without
+        # the state-file check, the documented prepare_vlcn_source.sh flow silently
+        # falls back to registry packages because the loader's --import flag is
+        # never injected. project_root is only defined in the dev branch above, but
+        # `not is_bundled` short-circuits before it is referenced here.
+        if not is_bundled and (
+            os.environ.get("VLCN_ROOT")
+            or os.environ.get("USE_SUBMODULES")
+            or (project_root / ".librocco" / "vendor-source.json").exists()
+        ):
+            vendor_loader = project_root / "scripts" / "register_vendor_source.mjs"
+            import_flag = f"--import={vendor_loader}"
+            existing_node_options = env.get("NODE_OPTIONS", "").strip()
+            if import_flag not in existing_node_options:
+                env["NODE_OPTIONS"] = (
+                    f"{existing_node_options} {import_flag}".strip()
+                )
 
         # Sync server runs with node executing the script
         args = [str(syncserver_script)]
