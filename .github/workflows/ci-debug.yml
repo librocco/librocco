@@ -13,11 +13,6 @@ jobs:
       with:
         submodules: recursive
         lfs: false
-    - name: Pull artefacts from R2
-      run: ./scripts/artefacts-download.sh
-      env:
-        ARTEFACT_API_KEY: ${{ secrets.ARTEFACT_API_KEY }}
-        ARTEFACT_WORKER_URL: ${{ vars.ARTEFACT_WORKER_URL }}
     - uses: actions/setup-node@v4
       with:
         node-version: "22"
