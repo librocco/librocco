@@ -77,6 +77,8 @@ jobs:
         run: cd apps/e2e && rushx test:ci --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
           SHARD_INDEX: "${{ matrix.shardIndex }}"
+          #! Parallelise tests within each shard (whole files; sync.spec.ts stays serial).
+          PLAYWRIGHT_WORKERS: "3"
       - name: Stop services
         if: always()
         run: |

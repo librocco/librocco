@@ -1,7 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 import type { Config } from "@playwright/test";
 
-import { IS_CI, VFS_TEST, SHARD_INDEX, baseURL, FULLY_PARALLEL } from "./constants";
+import { IS_CI, VFS_TEST, SHARD_INDEX, baseURL, FULLY_PARALLEL, CI_WORKERS } from "./constants";
 
 const reporter: Config["reporter"] = [["list"]];
 // Produce a merge‑able blob report when running in CI
@@ -63,8 +63,10 @@ const baseConfig: Config = {
 	retries: 1,
 	timeout: 15000,
 	globalTimeout: 55 * 60 * 1000, // 55 minutes of global timeout - the github job has a 60 minutes limit
-	/* Opt out of parallel tests on CI. */
-	workers: IS_CI ? 1 : undefined,
+	/* In CI, parallelise across PLAYWRIGHT_WORKERS workers (default 1). With
+	 * fullyParallel=false this parallelises whole spec files, keeping each file —
+	 * notably sync.spec.ts, the only file using the shared sync server — serial. */
+	workers: IS_CI ? CI_WORKERS : undefined,
 	/* Reporter to use. See https://playwright.dev/docs/test-reporters */
 	reporter: reporter,
 	/* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -81,15 +83,31 @@ const baseConfig: Config = {
 	}
 };
 
+// sync.spec.ts drives a single process-global sync server (start/stop via circus),
+// so it must run as exactly ONE task — never duplicated across browser projects, or
+// parallel workers would race on stopping/starting that shared server. Pin it to a
+// single browser (firefox, which has historically surfaced real sync regressions)
+// and exclude it from the per-browser projects.
+const SYNC_SPEC = /sync\.spec\.ts/;
+const syncProject = {
+	name: "sync",
+	testMatch: SYNC_SPEC,
+	use: { ...devices["Desktop FireFox"], locale: locales[0] }
+};
+
 const defaultConfig: Config = {
 	...baseConfig,
 	reporter,
-	projects: browsers
-		.flatMap((browser) => locales.map((locale) => ({ ...browser, locale })))
-		.map(({ name, device, locale }) => ({
-			name,
-			use: { ...device, locale }
-		}))
+	projects: [
+		...browsers
+			.flatMap((browser) => locales.map((locale) => ({ ...browser, locale })))
+			.map(({ name, device, locale }) => ({
+				name,
+				testIgnore: SYNC_SPEC,
+				use: { ...device, locale }
+			})),
+		syncProject
+	]
 };
 
 const vfsList = [
