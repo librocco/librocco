@@ -94,8 +94,13 @@ jobs:
           echo "Build failed with exit code: $exit_code"
           exit $exit_code
         fi
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Run tests
-      run: cd apps/web-client && npx playwright install && rushx test:ci
+      run: cd apps/web-client && npx playwright install chromium firefox && rushx test:ci
   e2e-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
@@ -153,8 +158,13 @@ jobs:
         mkdir preview
         mv build/* preview/
         mv preview build/
+    - name: Cache Playwright browsers
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Download playwright browsers
-      run: cd apps/e2e && npx playwright install
+      run: cd apps/e2e && npx playwright install chromium firefox
     - name: Install uv (Python package manager)
       uses: astral-sh/setup-uv@v7
       with:

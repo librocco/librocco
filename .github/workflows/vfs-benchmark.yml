@@ -60,7 +60,7 @@ jobs:
     - name: Build the app
       run: cd apps/web-client && rushx build:e2e
     - name: Download playwright browsers
-      run: cd apps/e2e && npx playwright install
+      run: cd apps/e2e && npx playwright install chromium firefox
     - name: Run Playwright tests (shard ${{ matrix.shardIndex }}/${{ matrix.shardTotal }})
       run: cd apps/e2e && rushx test:vfs:ci
       env:

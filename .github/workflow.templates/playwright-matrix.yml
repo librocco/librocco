@@ -1,5 +1,6 @@
 #@ load("github.lib.yml", "checkout")
 #@ load("cache.lib.yml", "cache_node")
+#@ load("cache.lib.yml", "cache_playwright")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
@@ -40,8 +41,9 @@ jobs:
           mkdir preview
           mv build/* preview/
           mv preview build/
+      -  #@ cache_playwright()
       - name: Download playwright browsers
-        run: cd apps/e2e && npx playwright install
+        run: cd apps/e2e && npx playwright install chromium firefox
       - name: Install uv (Python package manager)
         uses: astral-sh/setup-uv@v7
         with:
