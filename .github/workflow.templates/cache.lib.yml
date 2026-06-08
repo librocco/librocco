@@ -9,3 +9,14 @@ with:
     ./common/temp/node_modules/
   key: ${{ runner.os }}-modules-node20-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
 #@ end
+
+#@ def cache_playwright():
+name: Cache Playwright browsers
+uses: actions/cache@v4
+with:
+  path: ~/.cache/ms-playwright
+  #! Keyed on the lockfile so the cache busts when @playwright/test is bumped.
+  #! `playwright install` is idempotent and tops up any missing browser, so a
+  #! stale hit is always safe (never masks a newly-added browser).
+  key: ${{ runner.os }}-playwright-${{ hashFiles('**/pnpm-lock.yaml') }}
+#@ end

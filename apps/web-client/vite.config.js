@@ -89,7 +89,10 @@ const config = {
 		}
 	},
 	build: {
-		sourcemap: true
+		// Sourcemaps are only consumed by Sentry on prod/preview builds (gated on
+		// SENTRY_AUTH_TOKEN). e2e never reads them — debugging uses Playwright trace +
+		// video — so skip them for the e2e build to save build time and disk.
+		sourcemap: process.env.PUBLIC_IS_E2E === "true" ? false : true
 	}
 	// TODO: Uncomment this when we figure out how to make it work
 	// preview: {
