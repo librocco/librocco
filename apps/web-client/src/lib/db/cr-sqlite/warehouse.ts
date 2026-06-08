@@ -104,25 +104,26 @@ async function _getAllWarehouses(
 	db: TXAsync,
 	{ skipTotals = false }: { skipTotals?: boolean } = {}
 ): Promise<(Warehouse & { totalBooks: number })[]> {
-	// NOTE: there's a n.committed IS NULL constraint
-	// - this makes sure there are no issues if warehouse doesn't have any notes associated with it
-	// - we make sure committed = 0 (default) and is never null to avoid miscalculations here
-	//   ^ the tests thouroughly test this
+	// NOTE: this subquery must stay consistent with stock.ts `_getStock` so the warehouse list
+	// totals and the stock page agree. It therefore INNER JOINs note and gates on `n.committed = 1`,
+	// exactly like the stock query: only committed notes count, and a leg whose note row is absent
+	// (an orphan left behind when a note is deleted on one node while another node concurrently adds
+	// a leg to it — CRDT deletes are not cascading) contributes nothing. The previous
+	// `LEFT JOIN note ... WHERE n.committed = 1 OR n.committed IS NULL` counted exactly those orphan
+	// legs (their joined note is NULL, so `n.committed IS NULL` was true), inflating the total while
+	// the stock page — which INNER JOINs note — showed nothing, so the two views disagreed.
 	//
-	// NOTE: we're separating the queries so that the total books calculation doesn't affect the warehouse data retrieval.
-	// There was an edge case where the warehouse would be omitted from the list if it contains a single non-committed note
-	// with one or more txns, thus failing the WHARE n.committed = 1 OR n.committed IS NULL as the note is not committed,
-	// the txns and the note DO exist so committed is not NULL either.
-	// This way the totalBooks will simply be COALESCED and the warehouse will appear in the list.
+	// Warehouses with no committed legs are NOT dropped from the list: the outer query below LEFT
+	// JOINs this subquery onto `warehouse` and COALESCEs the total to 0, so every warehouse still
+	// appears regardless of whether it has any (committed) transactions.
 	const totalBooksQuery = `
 		SELECT
-			w.id,
+			bt.warehouse_id AS id,
 			SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) AS totalBooks
-		FROM warehouse w
-		LEFT JOIN book_transaction bt ON w.id = bt.warehouse_id
-		LEFT JOIN note n ON bt.note_id = n.id
-		WHERE n.committed = 1 OR n.committed IS NULL
-		GROUP BY w.id
+		FROM book_transaction bt
+		JOIN note n ON bt.note_id = n.id
+		WHERE n.committed = 1
+		GROUP BY bt.warehouse_id
 	`;
 
 	const queryWithTotals = `
