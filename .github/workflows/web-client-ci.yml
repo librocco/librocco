@@ -204,6 +204,7 @@ jobs:
       env:
         SHARD_INDEX: ${{ matrix.shardIndex }}
         PLAYWRIGHT_WORKERS: "2"
+        PLAYWRIGHT_BROWSERS: chromium
     - name: Stop services
       if: always()
       run: |
