@@ -76,6 +76,19 @@ jobs:
         version: 0.10.11
         enable-cache: true
         working-directory: python-apps/launcher
+    - name: Pre-install Python interpreter (retry transient download failures)
+      working-directory: python-apps/launcher
+      run: |
+        # uv otherwise downloads the standalone CPython lazily when the launcher starts; a transient
+        # GitHub 504 there leaves the sync server unstarted and fails "Wait for services". Fetch it
+        # here, up front and with retries (and cached), so the launcher start is offline-fast.
+        for i in 1 2 3 4 5; do
+          if uv python install; then echo "Python interpreter ready"; exit 0; fi
+          echo "uv python install failed (attempt $i/5); retrying in $((i * 5))s"
+          sleep $((i * 5))
+        done
+        echo "Failed to install the Python interpreter after 5 attempts"
+        exit 1
     - name: Clean stale test DBs (fix schema mismatch)
       run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
     - name: Start headless launcher in background
