@@ -219,8 +219,10 @@ SHORT_SHA="$(git -C "$VLCN_ROOT" rev-parse --short=8 HEAD)"
 
 case "$TRACK" in
 	dev)
-		DATE_STAMP="$(date -u +%Y%m%d)"
-		VERSION_SUFFIX="dev.${DATE_STAMP}.${SHORT_SHA}"
+		# UTC timestamp to the second so same-day re-publishes of the same fork commit
+		# (e.g. emergency hotfix retries) get a unique, non-colliding version.
+		TIME_STAMP="$(date -u +%Y%m%d%H%M%S)"
+		VERSION_SUFFIX="dev.${TIME_STAMP}.${SHORT_SHA}"
 		DIST_TAG="$DEV_DIST_TAG"
 		;;
 	myriad)

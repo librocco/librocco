@@ -1,6 +1,6 @@
 # 3rd-Party Dependencies
 
-Librocco uses `@vlcn.io/*` packages from `npm.codemyriad.io` by default.  
+Librocco uses `@vlcn.io/*` packages from `npm.codemyriad.io` by default.
 Source mode is only for unpublished local changes and is never meant to be committed in manifests or lockfiles.
 This document is the source of truth for that workflow. [`README.md`](../README.md) points here for the workflow; [`docs/vendor-registry-migration.md`](../docs/vendor-registry-migration.md) is migration/design background.
 

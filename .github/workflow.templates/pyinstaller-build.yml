@@ -10,6 +10,10 @@ name: PyInstaller Build
   push:
     paths:
       - "python-apps/**"
+      #! Packaging reads vendor versions from the sync-server manifest and resolves
+      #! them via the Rush lockfile, so vendor roll-forwards must rebuild the launcher.
+      - "apps/sync-server/package.json"
+      - "common/config/rush/pnpm-lock.yaml"
       - ".github/workflows/pyinstaller-build.yml"
   workflow_dispatch:
 

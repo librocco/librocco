@@ -3,6 +3,8 @@ name: PyInstaller Build
   push:
     paths:
     - python-apps/**
+    - apps/sync-server/package.json
+    - common/config/rush/pnpm-lock.yaml
     - .github/workflows/pyinstaller-build.yml
   workflow_dispatch: null
 jobs:
