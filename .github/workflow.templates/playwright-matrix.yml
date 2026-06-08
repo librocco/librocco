@@ -67,6 +67,10 @@ jobs:
           echo "All services ready!"
       - name: Run Playwright tests
         run: cd apps/e2e && rushx test:ci
+        #! Match the per-shard worker count so this flakiness harness validates
+        #! the real PLAYWRIGHT_WORKERS config used by the e2e-test job.
+        env:
+          PLAYWRIGHT_WORKERS: "2"
       - name: Stop services
         if: always()
         run: |
