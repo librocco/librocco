@@ -1,40 +1,54 @@
 import { writable, get, derived } from "svelte/store";
 
-import type { TXAsync, GetStockResponseItem } from "$lib/db/cr-sqlite/types";
+import type { DBAsync, GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
-import { getStock } from "$lib/db/cr-sqlite/stock";
-import { getDBVersion } from "$lib/db/cr-sqlite/db";
 import { reduce, wrapIter } from "@librocco/shared";
-import { timed } from "$lib/utils/timer";
 
-const dbStore = writable<TXAsync | null>(null);
-const valid = writable(false);
-// Local crsql db_version at the time the cache was last (re)built. cr-sqlite re-stamps applied
-// remote changes with the local, monotonically-increasing db_version, so this is a node-safe
-// "have I seen everything up to here" watermark (a wall-clock timestamp is not — see maybeInvalidate).
-const cacheVersion = writable<bigint>(0n);
+import { getCachedStock, isStockCacheStale } from "$lib/db/cr-sqlite/stock_cache_db";
 
 /**
- * Executes the stock query and sets the cache as valid (upon resolution)
+ * Reactive layer over the persistent stock snapshot (stock_cache_db.ts).
+ *
+ * The snapshot lives in a local SQLite table and is invalidated by the cr-sqlite logical clock, so it
+ * survives reloads and is only recomputed when the data it depends on actually changed. This store is
+ * just the Svelte glue that publishes the current stock to the UI and refreshes it.
+ *
+ * "Only improve, never degrade": when a consumer activates the cache we read the persisted snapshot,
+ * recomputing the fold only if the logical clock has moved since it was built (otherwise a cheap read —
+ * the cold-start win). Consumers are only ever handed a value equal to what `getStock` would return for
+ * some db state. The decision-critical paths (outbound availability, out-of-stock validation)
+ * deliberately bypass this cache and fold live; this layer is for display.
  */
-const execQuery = async (db: TXAsync) => {
-	// Capture the watermark BEFORE reading stock: any change applied after this point is strictly
-	// greater than `version`, so maybeInvalidate will catch it (at worst a redundant recompute, never
-	// a missed one).
-	const version = await getDBVersion(db);
-	const stock = await getStock(db);
+
+const dbStore = writable<DBAsync | null>(null);
+
+/**
+ * Whether the currently-published `query` value still reflects the latest known stock.
+ *
+ * This gate is load-bearing for the consumers' reactive wiring: the warehouse page subscribes to
+ * `onInvalidated` (which fires on every `query` change) and reacts by re-running its load, which calls
+ * `enableRefresh` again. If `enableRefresh` republished `query` unconditionally it would fire
+ * `onInvalidated` on every page load and spin that reload loop forever. So we republish only when the
+ * cache is not already valid; a real invalidation (the logical clock moved) is the only thing that
+ * flips this back to false.
+ */
+const valid = writable(false);
+
+/**
+ * Read the freshest stock from the persistent cache, rebuilding the snapshot only if the logical clock
+ * has moved since it was built. Marks the cache valid once resolved.
+ */
+const execQuery = async (db: DBAsync) => {
+	const stock = await getCachedStock(db);
 	valid.set(true);
-	cacheVersion.set(version);
 	return stock;
 };
 
 /**
- * An internal store keeping the full stock query as a promise
+ * An internal store keeping the current stock query as a promise.
  * NOTE: This is somewhat lazy - the initial promise never resolves, but it doesn't
  * choke up the DB either. Only when the cached stock is activated (needed by a consumer), does it
  * run the query.
- *
- * This is a tradeoff between prefetching the results and not blocking other DB interactions until the stock is needed.
  */
 const query = writable<Promise<GetStockResponseItem[]>>(new Promise(() => {}));
 
@@ -64,11 +78,14 @@ export const warehouseTotals = derived(stockByWarehouse, ($stockByWarehouse) =>
 	)
 );
 
-export const enableRefresh = (db: TXAsync) => {
+export const enableRefresh = (db: DBAsync) => {
 	// Set the DB -- effectively enabling the cache
 	dbStore.set(db);
 
-	// If cache invalidated while not active, rerun the query
+	// Only (re)publish when the cache isn't already valid -- see `valid`. The query itself is cheap when
+	// nothing changed (it reads the persisted snapshot rather than refolding), but republishing fires
+	// onInvalidated, and consumers react to that by re-running their load -> enableRefresh, which would
+	// loop forever.
 	if (!get(valid)) {
 		query.set(execQuery(db));
 	}
@@ -82,45 +99,21 @@ export const invalidate = () => {
 
 	const db = get(dbStore);
 
-	// If currently active, rerun the query
+	// If currently active, rerun the query (rebuilds the snapshot iff the clock moved, then reads). If
+	// not, there's nothing to publish: `valid` is now false, so the next enableRefresh rebuilds.
 	if (db) {
 		query.set(execQuery(db));
 	}
 };
 
-async function _countRelevantUpdates(db: TXAsync, cacheVersion: bigint) {
-	// Count stock-affecting changes applied since the cache was built, using the local db_version as
-	// a logical, node-safe watermark. The stock SUM depends on: committed legs (a leg gets a
-	// committed_at written when its note is committed), note.committed flips, and warehouse rows (the
-	// stock query JOINs note ON committed = 1 and LEFT JOINs warehouse). Draft scanning only writes a
-	// leg's quantity/updated_at — never committed_at — so it does not match here and the (expensive)
-	// stock query is not needlessly recomputed.
-	//
-	// Previously this counted `book_transaction WHERE committed_at > ?` against MAX(committed_at), a
-	// per-node WALL CLOCK: a commit synced in from a workstation whose clock was behind (or simply an
-	// earlier-but-later-arriving commit) carried a committed_at <= the watermark and never
-	// invalidated the cache, leaving permanently stale stock on a connected node.
-	const [[res]] = await db.execA<[number]>(
-		`SELECT COUNT(*) FROM crsql_changes
-		 WHERE db_version > ?
-		   AND ( ("table" = 'book_transaction' AND cid = 'committed_at')
-		      OR ("table" = 'note' AND cid = 'committed')
-		      OR "table" = 'warehouse' )`,
-		[cacheVersion]
-	);
-	return res;
-}
-const countRelevantUpdates = timed(_countRelevantUpdates);
-
 /**
- * We run a intermediate (cheap) query to check if the observed updates affect the stock calculation:
- * - if so, we invalidate the cache (which will then may, or may not, re-execute the, expensive stock query - depending on the cache being active)
- * - if not, noop
- *
+ * Cheap gate run on every observed stock-affecting change (local or synced): if the logical clock has
+ * moved past the persisted snapshot, invalidate. `invalidate` flips `valid` whether or not a consumer
+ * is active, so a change landing while inactive still forces the next enableRefresh to rebuild. If
+ * nothing relevant changed, noop.
  */
-export const maybeInvalidate = async (db: TXAsync) => {
-	const numUpdates = await countRelevantUpdates(db, get(cacheVersion));
-	if (numUpdates > 0) {
+export const maybeInvalidate = async (db: DBAsync) => {
+	if (await isStockCacheStale(db)) {
 		invalidate();
 	}
 };
