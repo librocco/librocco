@@ -1,11 +1,8 @@
 #@ load("github.lib.yml", "checkout")
-#@ load("github.lib.yml", "load_artefacts")
-#@ load("cache.lib.yml", "load_cached_artefacts")
 #@ load("cache.lib.yml", "cache_node")
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
-#@ load("build-crsqlite.lib.yml", "build_crsqlite")
 #@ load("r2.lib.yml", "install_and_configure_rclone")
 #@ load("r2.lib.yml", "upload_to_r2")
 
@@ -17,12 +14,9 @@ name: VFS Benchmark
       - "vfs-benchmark/**"
 
 jobs:
-  build-cr-sqlite: #@ build_crsqlite()
-
   vfs-benchmark:
     timeout-minutes: 60
     runs-on: ubuntu-latest
-    needs: build-cr-sqlite
     strategy:
       fail-fast: false
       matrix:
@@ -33,10 +27,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Compute desired compiled artifact version
-        run: ./scripts/compute_artefacts_version.sh #! This will inform the cache to load the correct artefacts
-      -  #@ load_artefacts()
-      -  #@ load_cached_artefacts()
       -  #@ cache_node()
       -  #@ rush_add_path()
       -  #@ rush_install()

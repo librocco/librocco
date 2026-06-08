@@ -5,15 +5,16 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@vlcn.io/crsqlite': file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
-  '@vlcn.io/crsqlite-wasm': file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
-  '@vlcn.io/rx-tbl': file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz
-  '@vlcn.io/wa-sqlite': file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz
-  '@vlcn.io/ws-browserdb': file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz
-  '@vlcn.io/ws-client': file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz
-  '@vlcn.io/ws-common': file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz
-  '@vlcn.io/ws-server': file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz
-  '@vlcn.io/xplat-api': file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
+  '@vlcn.io/crsqlite': 0.16.3-dev.20260605.800616cc
+  '@vlcn.io/crsqlite-wasm': 0.16.0-dev.20260605.800616cc
+  '@vlcn.io/rx-tbl': 0.15.0-dev.20260605.800616cc
+  '@vlcn.io/logger-provider': 0.2.0-dev.20260605.800616cc
+  '@vlcn.io/wa-sqlite': 0.22.0-dev.20260605.800616cc
+  '@vlcn.io/ws-browserdb': 0.2.0-dev.20260605.800616cc
+  '@vlcn.io/ws-client': 0.2.0-dev.20260605.800616cc
+  '@vlcn.io/ws-common': 0.2.0-dev.20260605.800616cc
+  '@vlcn.io/ws-server': 0.2.2-dev.20260605.800616cc
+  '@vlcn.io/xplat-api': 0.15.0-dev.20260605.800616cc
 
 packageExtensionsChecksum: 6651ed4b3335913054df03d137e55021
 
@@ -44,8 +45,8 @@ importers:
         specifier: ^8.22.0
         version: 8.56.0(eslint@8.57.1)(typescript@5.9.3)
       '@vlcn.io/crsqlite-wasm':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
+        specifier: 0.16.0-dev.20260605.800616cc
+        version: 0.16.0-dev.20260605.800616cc
       eslint:
         specifier: ^8.13.0
         version: 8.57.1
@@ -68,11 +69,11 @@ importers:
   ../../apps/sync-server:
     dependencies:
       '@vlcn.io/crsqlite':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
+        specifier: 0.16.3-dev.20260605.800616cc
+        version: 0.16.3-dev.20260605.800616cc
       '@vlcn.io/ws-server':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz
+        specifier: 0.2.2-dev.20260605.800616cc
+        version: 0.2.2-dev.20260605.800616cc
       better-sqlite3:
         specifier: ~11.4.0
         version: 11.4.0
@@ -114,29 +115,29 @@ importers:
         specifier: ~9.34.0
         version: 9.34.0(@sveltejs/kit@2.52.2(@opentelemetry/api@1.9.0)(@sveltejs/vite-plugin-svelte@5.1.1(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4)))(svelte@5.37.3)(typescript@5.9.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4)))(svelte@5.37.3)(vite@6.0.15(@types/node@20.4.10)(tsx@4.19.4))
       '@vlcn.io/crsqlite':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
+        specifier: 0.16.3-dev.20260605.800616cc
+        version: 0.16.3-dev.20260605.800616cc
       '@vlcn.io/crsqlite-wasm':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
+        specifier: 0.16.0-dev.20260605.800616cc
+        version: 0.16.0-dev.20260605.800616cc
       '@vlcn.io/rx-tbl':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz
+        specifier: 0.15.0-dev.20260605.800616cc
+        version: 0.15.0-dev.20260605.800616cc
       '@vlcn.io/wa-sqlite':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz
+        specifier: 0.22.0-dev.20260605.800616cc
+        version: 0.22.0-dev.20260605.800616cc
       '@vlcn.io/ws-browserdb':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz
+        specifier: 0.2.0-dev.20260605.800616cc
+        version: 0.2.0-dev.20260605.800616cc
       '@vlcn.io/ws-client':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz
+        specifier: 0.2.0-dev.20260605.800616cc
+        version: 0.2.0-dev.20260605.800616cc
       '@vlcn.io/ws-common':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz
+        specifier: 0.2.0-dev.20260605.800616cc
+        version: 0.2.0-dev.20260605.800616cc
       '@vlcn.io/xplat-api':
-        specifier: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
-        version: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
+        specifier: 0.15.0-dev.20260605.800616cc
+        version: 0.15.0-dev.20260605.800616cc
       async-mutex:
         specifier: ~0.5.0
         version: 0.5.0
@@ -1975,44 +1976,35 @@ packages:
   '@vitest/utils@3.2.4':
     resolution: {integrity: sha512-fB2V0JFrQSMsCo9HiSq3Ezpdv4iYaXRG1Sx8edX3MwxfyNn83mKiGzOcH+Fkxt4MHxr3y42fQi1oeAInqgX2QA==}
 
-  '@vlcn.io/crsqlite-wasm@file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz':
-    resolution: {integrity: sha512-y6Qc3rzIxVCQTAehrJCZLejX+4dNazJS8PBQUSvc+FvljoDl+HbuwDH/57MPSDejWjOFON+lKpUgAyJM0oZ1qQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz}
-    version: 0.16.0
+  '@vlcn.io/crsqlite-wasm@0.16.0-dev.20260605.800616cc':
+    resolution: {integrity: sha512-7m5akMj5dfG9p6cQ0U5g+pfA6Y8QjsbiMR3QwPkEyPXYoLMuNjvmPdgPr4r0r2d0xVtpu58W9SBLP8yipIm6Ow==}
 
-  '@vlcn.io/crsqlite@file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz':
-    resolution: {integrity: sha512-XyE3emGQBT8CoYdFXz80JA7qs//QIZykOTcEkBhoyfjEKZHFW3ij0XHLhphxlwr+y8QxSk+8UX7HDrIujBI3rg==, tarball: file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz}
-    version: 0.16.3
+  '@vlcn.io/crsqlite@0.16.3-dev.20260605.800616cc':
+    resolution: {integrity: sha512-a85bOPAjVFwi2+yZjDwwWzAJEMPV2eNdOFDyRbFuS4gkffoNi8qAK6gNSu2l49WXZ9CRejfKoR1jxzmwN72QIg==}
 
-  '@vlcn.io/logger-provider@0.2.0':
-    resolution: {integrity: sha512-HLYSnXDo5gCLN22CEIX1eg78JTuw49l7F/KEDTbtoZXch6IJDQ1621z0m162q6T9oIOGTM400y/RUOXaKCRo8w==}
+  '@vlcn.io/logger-provider@0.2.0-dev.20260605.800616cc':
+    resolution: {integrity: sha512-M3zrkHtYWUJjpJ7fBFqrBiv6gGtbBpyjLc7zdjxMpoG2I11GCP1dVlsy9WciyVXhXTwBrZKebZkSTuI0Ag9PNw==}
 
-  '@vlcn.io/rx-tbl@file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz':
-    resolution: {integrity: sha512-bnnNnAKXq1LM7DDf6ENKrfDxL6j35lqcm8fBl79z6LROJyaBtCB+1divScTys6TD+AFlbdgUgx1e6/yYd2V88Q==, tarball: file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz}
-    version: 0.15.0
+  '@vlcn.io/rx-tbl@0.15.0-dev.20260605.800616cc':
+    resolution: {integrity: sha512-FNqDNUGhzNrq7pevmNYV9yXcsI3S2Im39q2SOQ1bbZH8opTdYlbJNt2idYIkTWIE/JACz/m7FaT0UUZoW0BYhQ==}
 
-  '@vlcn.io/wa-sqlite@file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz':
-    resolution: {integrity: sha512-C4VwdfMvdOni4FBj7+6ql6xC5JgiW859OKN69uYx/uiWnrzVT+8dLASCsVGBnsaTvy7/ZvwdtfqRmggqjXpiww==, tarball: file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz}
-    version: 0.22.0
+  '@vlcn.io/wa-sqlite@0.22.0-dev.20260605.800616cc':
+    resolution: {integrity: sha512-hK3/t12Mf5e5Yx9OgIWFv9rizrmm08rmC8dHlKvK1S22n/OmlLz8Cpjn7b8Zu6fJwU3684Ml3YfLTH0Jtcrzig==}
 
-  '@vlcn.io/ws-browserdb@file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz':
-    resolution: {integrity: sha512-4FmhxZUdtvMVFlOJWlMznLXDdN+cdha+xhCCjcEdU5uc4Dhi3/NvSvDm/6xcqP6LjwzlXHMaYH0+oiOUFW/znw==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz}
-    version: 0.2.0
+  '@vlcn.io/ws-browserdb@0.2.0-dev.20260605.800616cc':
+    resolution: {integrity: sha512-jPYm7CkzrXAbEQ0VCC3LT76n1YYpxg/QLfsh/gaohvDoe1OKrSjMoojtb7DRAlGltModhZ1g93zk+wdWScdbtg==}
 
-  '@vlcn.io/ws-client@file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz':
-    resolution: {integrity: sha512-ZNmThoIpQUw1dReJDoeoHHNvDfkCol2MhuH5XG35t49Sbo54qNn7y4cdKmhfsVcmHwOFdYe1EC52iTdsQ7Vbag==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz}
-    version: 0.2.0
+  '@vlcn.io/ws-client@0.2.0-dev.20260605.800616cc':
+    resolution: {integrity: sha512-a4wT5S1lJtRTg0yGS38nYW4BSwl0B/nryhosxWegryswSYRoOoMJLszvYqHBF2Eo85mCaYLmOs1pWTKum229mw==}
 
-  '@vlcn.io/ws-common@file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz':
-    resolution: {integrity: sha512-d7mbZXAaRCtOGF74gu4IbOhn04ZpKfm0gyHY176ffxzr9q7K/IbckgDNbwt3BeMiU5I+VJ9sqeg7Xg3amwGzOQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz}
-    version: 0.2.0
+  '@vlcn.io/ws-common@0.2.0-dev.20260605.800616cc':
+    resolution: {integrity: sha512-7FTobMCJIfTzmUaoQNdMPJp1BTt0uFDBM4vb7CEmx8SBVu+DmkjAlfiZCOmt3c5rr6f3sjwPlbfezxbRGBtHgw==}
 
-  '@vlcn.io/ws-server@file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz':
-    resolution: {integrity: sha512-HK0b4sd430jPqrSfyxlPn2JYUW4NZO894aeqjzsoeBAbCIgv5c3t/IaeqGzaNsbFmt3YzkUl3CGwyT1t+loQnQ==, tarball: file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz}
-    version: 0.2.2
+  '@vlcn.io/ws-server@0.2.2-dev.20260605.800616cc':
+    resolution: {integrity: sha512-E4RvhfmloJkr8lhWEr+nNBxvtqyiMNKcyaeR5/GEEiA4tqKCuXLbso0t9S32H+DeZqBI3MTOwNdSq2GsxD32zg==}
 
-  '@vlcn.io/xplat-api@file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz':
-    resolution: {integrity: sha512-JwDmca4DXun43c0Zn0snlviiBYEpWsUGclWSg6x6M/SFZwuOs4cn7OYSbb5hddfB2Q3S3/WnRG/aNRqGWUtkCA==, tarball: file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz}
-    version: 0.15.0
+  '@vlcn.io/xplat-api@0.15.0-dev.20260605.800616cc':
+    resolution: {integrity: sha512-eLn7wXZFQTP+5uKCN7tBeHFMN0xq+4cKBbQ8txQYHpBTyzi3O348TaC6A/RmIx+pOblBjgEC1ihLYyYrIoqC8w==}
 
   accepts@1.3.8:
     resolution: {integrity: sha512-PYAthTa2m2VKxuvSD3DPC/Gy+U+sOA1LAuT8mkmRuvw+NACSaeXEQ+NHcVF7rONl6qcaxV3Uuemwawk+7+SJLw==}
@@ -6218,49 +6210,48 @@ snapshots:
       loupe: 3.2.1
       tinyrainbow: 2.0.0
 
-  '@vlcn.io/crsqlite-wasm@file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz':
+  '@vlcn.io/crsqlite-wasm@0.16.0-dev.20260605.800616cc':
     dependencies:
-      '@vlcn.io/wa-sqlite': file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz
-      '@vlcn.io/xplat-api': file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
+      '@vlcn.io/wa-sqlite': 0.22.0-dev.20260605.800616cc
+      '@vlcn.io/xplat-api': 0.15.0-dev.20260605.800616cc
       async-mutex: 0.4.1
 
-  '@vlcn.io/crsqlite@file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz': {}
+  '@vlcn.io/crsqlite@0.16.3-dev.20260605.800616cc': {}
 
-  '@vlcn.io/logger-provider@0.2.0':
+  '@vlcn.io/logger-provider@0.2.0-dev.20260605.800616cc':
     dependencies:
       winston: 3.19.0
 
-  '@vlcn.io/rx-tbl@file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz':
+  '@vlcn.io/rx-tbl@0.15.0-dev.20260605.800616cc':
     dependencies:
-      '@vlcn.io/xplat-api': file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
+      '@vlcn.io/xplat-api': 0.15.0-dev.20260605.800616cc
 
-  '@vlcn.io/wa-sqlite@file:../../3rd-party/artefacts/vlcn.io-wa-sqlite-0.22.0.tgz': {}
+  '@vlcn.io/wa-sqlite@0.22.0-dev.20260605.800616cc': {}
 
-  '@vlcn.io/ws-browserdb@file:../../3rd-party/artefacts/vlcn.io-ws-browserdb-0.2.0.tgz':
-    dependencies:
-      '@types/throttle-debounce': 5.0.2
-      '@vlcn.io/crsqlite-wasm': file:../../3rd-party/artefacts/vlcn.io-crsqlite-wasm-0.16.0.tgz
-      '@vlcn.io/rx-tbl': file:../../3rd-party/artefacts/vlcn.io-rx-tbl-0.15.0.tgz
-      '@vlcn.io/ws-client': file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz
-      '@vlcn.io/ws-common': file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz
-      '@vlcn.io/xplat-api': file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz
-
-  '@vlcn.io/ws-client@file:../../3rd-party/artefacts/vlcn.io-ws-client-0.2.0.tgz':
+  '@vlcn.io/ws-browserdb@0.2.0-dev.20260605.800616cc':
     dependencies:
       '@types/throttle-debounce': 5.0.2
-      '@vlcn.io/ws-common': file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz
+      '@vlcn.io/crsqlite-wasm': 0.16.0-dev.20260605.800616cc
+      '@vlcn.io/rx-tbl': 0.15.0-dev.20260605.800616cc
+      '@vlcn.io/ws-client': 0.2.0-dev.20260605.800616cc
+      '@vlcn.io/ws-common': 0.2.0-dev.20260605.800616cc
+      '@vlcn.io/xplat-api': 0.15.0-dev.20260605.800616cc
 
-  '@vlcn.io/ws-common@file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz':
+  '@vlcn.io/ws-client@0.2.0-dev.20260605.800616cc':
+    dependencies:
+      '@types/throttle-debounce': 5.0.2
+      '@vlcn.io/ws-common': 0.2.0-dev.20260605.800616cc
+
+  '@vlcn.io/ws-common@0.2.0-dev.20260605.800616cc':
     dependencies:
       lib0: 0.2.117
-      typescript: 5.9.3
 
-  '@vlcn.io/ws-server@file:../../3rd-party/artefacts/vlcn.io-ws-server-0.2.2.tgz':
+  '@vlcn.io/ws-server@0.2.2-dev.20260605.800616cc':
     dependencies:
       '@types/better-sqlite3': 7.6.13
-      '@vlcn.io/crsqlite': file:../../3rd-party/artefacts/vlcn.io-crsqlite-0.16.3.tgz
-      '@vlcn.io/logger-provider': 0.2.0
-      '@vlcn.io/ws-common': file:../../3rd-party/artefacts/vlcn.io-ws-common-0.2.0.tgz
+      '@vlcn.io/crsqlite': 0.16.3-dev.20260605.800616cc
+      '@vlcn.io/logger-provider': 0.2.0-dev.20260605.800616cc
+      '@vlcn.io/ws-common': 0.2.0-dev.20260605.800616cc
       better-sqlite3: 12.6.2
       chokidar: 3.6.0
       throttle-debounce: 5.0.2
@@ -6270,7 +6261,7 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@vlcn.io/xplat-api@file:../../3rd-party/artefacts/vlcn.io-xplat-api-0.15.0.tgz':
+  '@vlcn.io/xplat-api@0.15.0-dev.20260605.800616cc':
     dependencies:
       comlink: 4.4.2
 
