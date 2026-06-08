@@ -230,13 +230,18 @@
 		document.body.setAttribute("hydrated", "true");
 
 		// Control the invalidation of the stock cache.
-		// Watch every table the stock calculation depends on: book_transaction (legs), note (the
-		// stock SUM gates on note.committed, so a commit must trigger a recompute) and warehouse (a
-		// deletion/discount change affects the warehouse JOIN). maybeInvalidate then checks, via a
-		// node-safe db_version watermark, whether a stock-affecting change actually landed since the
-		// last cache and invalidates only if so. Watching book_transaction alone missed peer commits
-		// (committed flips on note) and warehouse deletions arriving via sync.
-		disposer = getDbRx(app).onRange(["book_transaction", "note", "warehouse"], async () => stockCache.maybeInvalidate(await getDb(app)));
+		// Trigger on book_transaction changes: every stock-affecting operation writes a leg —
+		// committing a note stamps committed_at on its legs, and deleting a warehouse deletes/reassigns
+		// its legs — so a leg change (local or synced) is a reliable trigger. maybeInvalidate then
+		// decides, via a node-safe db_version watermark, whether a stock-affecting change (a leg's
+		// committed_at, a note.committed flip, or a warehouse row change) actually landed, and
+		// recomputes only if so.
+		// NOTE: do NOT add 'warehouse'/'note' here. The warehouse-management page keeps the stock cache
+		// active, so watching 'warehouse' makes every warehouse create/rename re-run the full stock
+		// query and re-enter the {#await $warehouseTotals} block, churning the page (it timed out the
+		// warehouse-naming e2e). The committed_at/warehouse-row signals are still detected by
+		// maybeInvalidate's predicate when a leg change triggers it.
+		disposer = getDbRx(app).onRange(["book_transaction"], async () => stockCache.maybeInvalidate(await getDb(app)));
 
 		// Prevent user from navigating away if sync is in progress
 		// NOTE: this is a noop if sync not active (e.g. in demo mode)
