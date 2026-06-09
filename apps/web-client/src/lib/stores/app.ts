@@ -11,12 +11,22 @@ import { readableFromStream } from "$lib/utils/streams";
 
 import WorkerInterface from "$lib/workers/WorkerInterface";
 
-import { LOCAL_STORAGE_APP_SETTINGS, LOCAL_STORAGE_SETTINGS } from "$lib/constants";
+import { LOCAL_STORAGE_AUTO_PRINT_LABELS, LOCAL_STORAGE_SETTINGS } from "$lib/constants";
 import { deviceSettingsSchema } from "$lib/forms/schemas";
 
-const autoPrintLabelsInner = persisted(LOCAL_STORAGE_APP_SETTINGS, false);
-const toggleAutoprintLabels = () => autoPrintLabelsInner.update((v) => !v);
-export const autoPrintLabels = Object.assign(autoPrintLabelsInner, { toggle: toggleAutoprintLabels });
+// The auto-print-labels setting is deliberately scoped per note AND per workstation (localStorage, not synced via CRDT)
+const autoPrintLabelsKey = (noteId: number) => `${LOCAL_STORAGE_AUTO_PRINT_LABELS}:${noteId}`;
+
+export const getAutoPrintLabelsStore = (noteId: number) => {
+	const store = persisted(autoPrintLabelsKey(noteId), false);
+	return Object.assign(store, { toggle: () => store.update((v) => !v) });
+};
+
+/** Removes the (localStorage persisted) auto-print-labels setting for a note (cleanup when the note is committed/deleted) */
+export const removeAutoPrintLabelsSetting = (noteId: number) => {
+	if (!browser) return;
+	localStorage.removeItem(autoPrintLabelsKey(noteId));
+};
 
 const { data: defaultSettings } = defaults(zod(deviceSettingsSchema));
 export const deviceSettingsStore = persisted<typeof defaultSettings>(LOCAL_STORAGE_SETTINGS, defaultSettings);
