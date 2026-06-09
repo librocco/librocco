@@ -33,6 +33,7 @@
 	import { defaultDialogConfig } from "$lib/components/Melt";
 	import { invalidate as invalidateStockCache } from "$lib/db/cr-sqlite/stock_cache";
 
+	import { removeAutoPrintLabelsSetting } from "$lib/stores/app";
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
@@ -118,6 +119,10 @@
 	const handleCreateInboundNote = (warehouseId: number) => async () => {
 		const db = await getDb(app);
 		const id = await getNoteIdSeq(db);
+		// Note ids get recycled (id seq = MAX(id) + 1): clear any stale auto-print flag left behind by a
+		// previous note with the same id (e.g. one deleted from another workstation - cleanup there can't reach
+		// this workstation's localStorage)
+		removeAutoPrintLabelsSetting(id);
 		await createInboundNote(db, warehouseId, id);
 		await goto(appPath("inbound", id));
 	};

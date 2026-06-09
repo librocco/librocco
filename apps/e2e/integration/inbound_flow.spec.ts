@@ -512,3 +512,91 @@ test("editing a purchase note does not change its createdAt timestamp", async ({
 	expect(after.createdAt).toBe(before.createdAt);
 	expect(after.updatedAt).toBeGreaterThan(before.updatedAt);
 });
+
+test("auto-print labels toggle is scoped per note", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Create two notes to work with
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Purchase 2" });
+
+	const toggle = page.getByTestId("auto-print-labels-toggle");
+
+	// Navigate to note A (Purchase 1) and turn auto-print ON
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+	await content.entityList("inbound-list").item(1).edit();
+	await page.getByRole("heading", { name: "Purchase 1" }).first().waitFor();
+
+	await expect(toggle).not.toBeChecked();
+	await toggle.click();
+	await expect(toggle).toBeChecked();
+
+	// Note B (Purchase 2) is unaffected - the setting is scoped per note
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+	await content.entityList("inbound-list").item(0).edit();
+	await page.getByRole("heading", { name: "Purchase 2" }).first().waitFor();
+
+	await expect(toggle).not.toBeChecked();
+
+	// Back on note A the setting is still ON (persisted across navigation)
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+	await content.entityList("inbound-list").item(1).edit();
+	await page.getByRole("heading", { name: "Purchase 1" }).first().waitFor();
+
+	await expect(toggle).toBeChecked();
+});
+
+test("auto-print posts a label for scanned books with metadata and skips books without metadata", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+	// Seed a book WITH metadata (helper sets 'updated_at' when more than the isbn is provided)
+	await dbHandle.evaluate(upsertBook, book1);
+
+	// Point the label printer to a same-origin URL (no CORS) and intercept it, counting the POSTs
+	// NOTE: this is set before navigating to the note page - the device settings store hydrates from localStorage on page mount
+	await page.evaluate(() =>
+		window.localStorage.setItem("librocco:settings", JSON.stringify({ labelPrinterUrl: "/print-label", receiptPrinterUrl: "" }))
+	);
+	const printRequests: string[] = [];
+	await page.route("**/print-label", (route) => {
+		printRequests.push(route.request().postData());
+		return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+	});
+
+	// Navigate to the note and turn auto-print ON
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 1" }]);
+	await content.entityList("inbound-list").item(0).edit();
+	await page.getByRole("heading", { name: "Purchase 1" }).first().waitFor();
+
+	const toggle = page.getByTestId("auto-print-labels-toggle");
+	await toggle.click();
+	await expect(toggle).toBeChecked();
+
+	// Scan an unknown isbn: the transaction is added, but no label is printed (no fetched metadata - it would print blank)
+	// NOTE: the "inbound-note" view matters: it matches quantity against the editable input's data-value
+	// (the "warehouse" view matches text content, which never appears in this table)
+	await content.scanField().add("9999999999");
+	await content.table("inbound-note").assertRows([{ isbn: "9999999999", quantity: 1 }]);
+	expect(printRequests.length).toBe(0);
+
+	// Scan the seeded book: exactly one label POST, for the seeded isbn
+	await content.scanField().add(book1.isbn);
+	await content.table("inbound-note").assertRows([
+		{ isbn: book1.isbn, quantity: 1 },
+		{ isbn: "9999999999", quantity: 1 }
+	]);
+	await expect.poll(() => printRequests.length, { timeout: assertionTimeout }).toBe(1);
+	// Had the unknown-isbn scan printed, ITS request would have arrived first and this assertion would fail
+	expect(JSON.parse(printRequests[0]).isbn).toBe(book1.isbn);
+});

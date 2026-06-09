@@ -22,6 +22,7 @@
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	import { appPath } from "$lib/paths";
+	import { removeAutoPrintLabelsSetting } from "$lib/stores/app";
 	import { deleteNote } from "$lib/db/cr-sqlite/note";
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import { InventoryManagementPage } from "$lib/controllers";
@@ -79,6 +80,7 @@
 	const handleDeleteNote = async (id: number) => {
 		const db = await getDb(app);
 		await deleteNote(db, id);
+		removeAutoPrintLabelsSetting(id);
 	};
 
 	// Navigate to the (warehouse) filtered/unfiltered list. The filter is kept in the (hash) query

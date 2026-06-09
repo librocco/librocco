@@ -414,6 +414,7 @@
 			"commit": "Conferma",
 			"print": "Stampa",
 			"auto_print_book_labels": "Stampa automatica etichette libri",
+			"auto_print_book_labels_note": "Stampa automatica etichette (questa nota)",
 			"delete": "Elimina",
 			"edit_row": "Modifica riga",
 			"print_book_label": "Stampa etichetta libro",

@@ -40,7 +40,7 @@
 
 	import { type DialogContent } from "$lib/types";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
-	import { autoPrintLabels, deviceSettingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore, getAutoPrintLabelsStore, removeAutoPrintLabelsSetting } from "$lib/stores/app";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
@@ -66,6 +66,9 @@
 	export let data: PageData;
 
 	$: ({ plugins, id: noteId, warehouseId, warehouseName, displayName, updatedAt, publisherList } = data);
+
+	// Auto-print is scoped per note and per workstation (localStorage, not synced)
+	$: autoPrintLabels = getAutoPrintLabelsStore(noteId);
 
 	$: t = $LL.inventory_page.purchase_tab;
 	$: tInbound = $LL.purchase_note;
@@ -97,12 +100,14 @@
 	const handleCommitSelf = async (closeDialog: () => void) => {
 		const db = await getDb(app);
 		await commitNote(db, noteId);
+		removeAutoPrintLabelsSetting(noteId);
 		closeDialog();
 	};
 
 	const handleDeleteSelf = async (closeDialog: () => void) => {
 		const db = await getDb(app);
 		await deleteNote(db, noteId);
+		removeAutoPrintLabelsSetting(noteId);
 		closeDialog();
 	};
 
@@ -282,6 +287,19 @@
 				</div>
 
 				<div class="ml-auto flex items-center gap-x-2">
+					<label class="flex cursor-pointer items-center gap-x-2" title={tInbound.labels.auto_print_book_labels_note()}>
+						<Printer class="text-base-content/70" aria-hidden size={20} />
+						<span class="hidden text-sm text-base-content sm:inline">{tInbound.labels.auto_print_book_labels_note()}</span>
+						<input
+							type="checkbox"
+							class="toggle-success toggle"
+							data-testid={testId("auto-print-labels-toggle")}
+							aria-label={tInbound.labels.auto_print_book_labels_note()}
+							checked={$autoPrintLabels}
+							on:change={autoPrintLabels.toggle}
+						/>
+					</label>
+
 					<button
 						class="btn-primary btn-sm btn hidden xs:block"
 						use:melt={$confirmDialogTrigger}
@@ -334,19 +352,6 @@
 							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 						>
 							<Printer class="text-base-content/70" aria-hidden size={20} /><span class="text-base-content">{tInbound.labels.print()}</span>
-						</div>
-						<div
-							{...item}
-							use:item.action
-							on:m-click={autoPrintLabels.toggle}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 {$autoPrintLabels
-								? '!bg-success text-success-content'
-								: ''}"
-						>
-							<Printer class="text-base-content/70" size={20} aria-hidden />
-							<span class="text-base-content">
-								{tInbound.labels.auto_print_book_labels()}
-							</span>
 						</div>
 						<div
 							{...item}
