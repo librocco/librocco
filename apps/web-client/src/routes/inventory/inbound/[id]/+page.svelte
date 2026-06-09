@@ -391,11 +391,10 @@
 							await handleAddTransaction(isbn);
 
 							if ($autoPrintLabels) {
-								try {
-									getBookData(db, isbn).then(handlePrintLabel);
-									// Success
-								} catch (err) {
-									// Show error
+								// Only print if the book has fetched metadata ('updatedAt' set): isbn-only rows would print blank labels
+								const book = await getBookData(db, isbn);
+								if (book?.updatedAt) {
+									await handlePrintLabel(book);
 								}
 							}
 						}
