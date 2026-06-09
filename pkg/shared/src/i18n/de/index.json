@@ -160,6 +160,10 @@
 			"labels": {
 				"button_edit": "",
 				"button_delete": ""
+			},
+			"filter": {
+				"label": "Nach Lager filtern",
+				"all_warehouses": "Alle Lager"
 			}
 		},
 		"warehouses_tab": {

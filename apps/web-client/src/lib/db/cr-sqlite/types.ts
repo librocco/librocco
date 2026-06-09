@@ -223,6 +223,7 @@ export type Warehouse = {
 export type InboundNoteListItem = {
 	id: number;
 	displayName: string;
+	warehouseId: number;
 	warehouseName: string;
 	updatedAt: Date;
 	createdAt: Date;

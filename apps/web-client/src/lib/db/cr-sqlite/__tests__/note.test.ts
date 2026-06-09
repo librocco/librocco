@@ -88,6 +88,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 3,
 				displayName: "New Purchase (3)",
+				warehouseId: 2,
 				warehouseName: "Warehouse 2",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -96,6 +97,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -104,6 +106,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "New Purchase",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -117,6 +120,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 3,
 				displayName: "New Purchase (3)",
+				warehouseId: 2,
 				warehouseName: "Warehouse 2",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -125,6 +129,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -138,6 +143,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 3,
 				displayName: "New Purchase (3)",
+				warehouseId: 2,
 				warehouseName: "Warehouse 2",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -146,11 +152,47 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
 				totalBooks: 0
 			}
+		]);
+	});
+
+	it("filters inbound notes by warehouse (when provided)", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+
+		await createInboundNote(db, 1, 1);
+		await createInboundNote(db, 1, 2);
+		await createInboundNote(db, 2, 3);
+
+		// No filter - all (uncommitted) notes are returned
+		expect(await getActiveInboundNotes(db)).toEqual([
+			expect.objectContaining({ id: 3, warehouseId: 2, warehouseName: "Warehouse 2" }),
+			expect.objectContaining({ id: 2, warehouseId: 1, warehouseName: "Warehouse 1" }),
+			expect.objectContaining({ id: 1, warehouseId: 1, warehouseName: "Warehouse 1" })
+		]);
+
+		// Filtering by warehouse returns only that warehouse's notes
+		expect(await getActiveInboundNotes(db, 1)).toEqual([
+			expect.objectContaining({ id: 2, warehouseId: 1, warehouseName: "Warehouse 1" }),
+			expect.objectContaining({ id: 1, warehouseId: 1, warehouseName: "Warehouse 1" })
+		]);
+		expect(await getActiveInboundNotes(db, 2)).toEqual([expect.objectContaining({ id: 3, warehouseId: 2, warehouseName: "Warehouse 2" })]);
+
+		// A warehouse with no (uncommitted) notes yields an empty list
+		expect(await getActiveInboundNotes(db, 3)).toEqual([]);
+
+		// Explicit 'null' filter behaves the same as no filter
+		expect(await getActiveInboundNotes(db, null)).toEqual([
+			expect.objectContaining({ id: 3 }),
+			expect.objectContaining({ id: 2 }),
+			expect.objectContaining({ id: 1 })
 		]);
 	});
 
@@ -301,6 +343,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "New Purchase",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -315,6 +358,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -323,6 +367,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "New Purchase",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -337,6 +382,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "Purchase 1",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -345,6 +391,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -359,6 +406,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 3,
 				displayName: "New Purchase (3)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -367,6 +415,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "Purchase 1",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -375,6 +424,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -391,6 +441,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 3,
 				displayName: "Purchase 3",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -399,6 +450,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "Purchase 2",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -407,6 +459,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "Purchase 1",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -421,6 +474,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 4,
 				displayName: "New Purchase",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -429,6 +483,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 3,
 				displayName: "Purchase 3",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -437,6 +492,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "Purchase 2",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -445,6 +501,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "Purchase 1",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -460,6 +517,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 6,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -468,6 +526,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 4,
 				displayName: "New Purchase",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -476,6 +535,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 3,
 				displayName: "Purchase 3",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -484,6 +544,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "Purchase 2",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -492,6 +553,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "Purchase 1",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -507,6 +569,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 7,
 				displayName: "New Purchase (3)",
+				warehouseId: 2,
 				warehouseName: "Warehouse 2",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -515,6 +578,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 6,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -523,6 +587,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 4,
 				displayName: "New Purchase",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -531,6 +596,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 3,
 				displayName: "Purchase 3",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -539,6 +605,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "Purchase 2",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -547,6 +614,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "Purchase 1",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -567,6 +635,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -575,6 +644,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "New Purchase",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -587,6 +657,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 2,
 				displayName: "New Purchase (2)",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),
@@ -631,6 +702,7 @@ describe("Inbound note tests", () => {
 			{
 				id: 1,
 				displayName: "New Purchase",
+				warehouseId: 1,
 				warehouseName: "Warehouse 1",
 				updatedAt: expect.any(Date),
 				createdAt: expect.any(Date),

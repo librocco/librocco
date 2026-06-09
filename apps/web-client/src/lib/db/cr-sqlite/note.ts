@@ -134,13 +134,15 @@ export function createOutboundNote(db: DBAsync, noteId: number): Promise<void> {
  * Only returns notes that have not been committed (draft state).
  *
  * @param {DB} db - Database connection
+ * @param {number | null} [warehouseId] - Optional warehouse ID to filter the notes by
  * @returns {Promise<InboundNoteListItem[]>} Array of inbound notes
  */
-async function _getActiveInboundNotes(db: TXAsync): Promise<InboundNoteListItem[]> {
+async function _getActiveInboundNotes(db: TXAsync, warehouseId?: number | null): Promise<InboundNoteListItem[]> {
 	const query = `
 		SELECT
 			note.id,
 			note.display_name AS displayName,
+			note.warehouse_id AS warehouseId,
 			warehouse.display_name AS warehouseName,
 			note.updated_at,
 			note.created_at,
@@ -149,6 +151,7 @@ async function _getActiveInboundNotes(db: TXAsync): Promise<InboundNoteListItem[
 		INNER JOIN warehouse ON note.warehouse_id = warehouse.id
 		LEFT JOIN book_transaction ON note.id = book_transaction.note_id
 		WHERE note.committed = 0
+		${warehouseId ? "AND note.warehouse_id = ?" : ""}
 		GROUP BY note.id
 		ORDER BY note.updated_at DESC
 	`;
@@ -156,11 +159,12 @@ async function _getActiveInboundNotes(db: TXAsync): Promise<InboundNoteListItem[
 	const res = await db.execO<{
 		id: number;
 		displayName: string;
+		warehouseId: number;
 		warehouseName: string;
 		updated_at: number;
 		created_at: number;
 		totalBooks: number;
-	}>(query);
+	}>(query, warehouseId ? [warehouseId] : []);
 
 	// TODO: update total books when we add note volume stock functionality
 	return res.map(({ updated_at, created_at, ...el }) => ({

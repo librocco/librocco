@@ -168,6 +168,10 @@ const inventory_page = {
 		labels: {
 			button_edit: "Edit",
 			button_delete: "Delete"
+		},
+		filter: {
+			label: "Filter by warehouse",
+			all_warehouses: "All warehouses"
 		}
 	},
 	warehouses_tab: {
