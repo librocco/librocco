@@ -17,7 +17,7 @@
 
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
-	import { racefreeGoto } from "$lib/utils/navigation";
+	import { goto as navigate, racefreeGoto } from "$lib/utils/navigation";
 
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
@@ -83,9 +83,13 @@
 
 	// Navigate to the (warehouse) filtered/unfiltered list. The filter is kept in the (hash) query
 	// string so the filtered list can be deep-linked (e.g. from the warehouse pages).
+	//
+	// NOTE: this is a same-route navigation (only the hash query changes), so the component is reused and
+	// 'onMount' doesn't rerun. Use the plain (non-disposing) 'goto' here: 'racefreeGoto' would tear down
+	// the DB subscription above, permanently stopping live updates for the list.
 	const handleWarehouseFilterChange = (e: Event) => {
 		const value = (e.currentTarget as HTMLSelectElement).value;
-		return goto(appPath("inbound") + (value ? `?warehouse=${value}` : ""));
+		return navigate(appPath("inbound") + (value ? `?warehouse=${value}` : ""));
 	};
 </script>
 

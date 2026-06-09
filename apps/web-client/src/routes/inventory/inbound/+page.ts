@@ -20,7 +20,9 @@ const _load = async ({ url, depends, parent }: Parameters<PageLoad>[0]) => {
 	// Reading 'url.hash' also registers a URL dependency - the load reruns whenever the hash
 	// (including its query part) changes.
 	const hashParams = new URLSearchParams(url.hash.split("?")[1] ?? "");
-	const warehouseFilter = Number(hashParams.get("warehouse")) || null;
+	// NOTE: parseInt (rather than Number) tolerates the trailing slash app.html appends on a full
+	// document load ("?warehouse=2" gets rewritten to "?warehouse=2/" - parseInt("2/") === 2)
+	let warehouseFilter = parseInt(hashParams.get("warehouse") ?? "", 10) || null;
 
 	if (!browser) {
 		return { notes: [], warehouses: [] as Warehouse[], warehouseFilter };
@@ -28,8 +30,16 @@ const _load = async ({ url, depends, parent }: Parameters<PageLoad>[0]) => {
 
 	const db = await getDb(app);
 
-	const notes = await getActiveInboundNotes(db, warehouseFilter);
 	const warehouses: Warehouse[] = await getAllWarehouses(db, { skipTotals: true });
+
+	// Fall back to the unfiltered list if the requested warehouse doesn't exist (e.g. a stale deep
+	// link to a warehouse deleted elsewhere) - otherwise the select would render blank above a
+	// (misleadingly) empty list
+	if (warehouseFilter && !warehouses.some(({ id }) => id === warehouseFilter)) {
+		warehouseFilter = null;
+	}
+
+	const notes = await getActiveInboundNotes(db, warehouseFilter);
 
 	return { notes, warehouses, warehouseFilter };
 };
