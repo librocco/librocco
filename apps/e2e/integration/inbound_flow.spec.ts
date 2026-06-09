@@ -62,6 +62,81 @@ test("should display notes, namespaced to warehouses, in the inbound note list",
 	]);
 });
 
+test("should filter the inbound note list by warehouse (filter reflected in the URL)", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const inNoteList = content.entityList("inbound-list");
+
+	// Two warehouses ("Warehouse 1" is created in beforeEach), each with an uncommitted note
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	await (await getDbHandle(page)).evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Purchase 2" });
+
+	// Navigate to the inbound list - no filter: all notes are shown
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await inNoteList.assertElements([{ name: "Warehouse 2 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+
+	// Filter by Warehouse 1 using the select - only its notes are shown and the filter is reflected in the URL (hash query)
+	await page.getByTestId("warehouse-filter-select").selectOption("1");
+	await page.waitForURL(/#\/inventory\/inbound\/\?warehouse=1$/);
+	await inNoteList.assertElements([{ name: "Warehouse 1 / Purchase 1" }]);
+
+	// Switch back to "All warehouses": all notes are shown again
+	await page.getByTestId("warehouse-filter-select").selectOption("");
+	await page.waitForURL(/#\/inventory\/inbound\/$/);
+	await inNoteList.assertElements([{ name: "Warehouse 2 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+});
+
+test("should apply the warehouse filter from a deep link on a hard (full document) load", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const inNoteList = content.entityList("inbound-list");
+
+	// Two warehouses ("Warehouse 1" is created in beforeEach), each with an uncommitted note
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	await (await getDbHandle(page)).evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Purchase 2" });
+
+	// 'page.goto' to a URL differing only in hash is a same-document navigation, so the subsequent
+	// reload is what makes this a true document load - it runs the app.html trailing-slash
+	// normalizer, which rewrites the URL to "?warehouse=2/" (regression: the filter used to be
+	// silently dropped because "2/" failed to parse)
+	await page.goto(appHash("inbound") + "?warehouse=2");
+	await page.reload();
+
+	// The filter survives the rewrite: the list is filtered and the select reflects the warehouse
+	await inNoteList.assertElements([{ name: "Warehouse 2 / Purchase 2" }]);
+	await expect(page.getByTestId("warehouse-filter-select")).toHaveValue("2");
+});
+
+test("should keep the list reacting to db updates after changing the warehouse filter", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const inNoteList = content.entityList("inbound-list");
+
+	// Two warehouses ("Warehouse 1" is created in beforeEach), each with an uncommitted note
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Purchase 2" });
+
+	// Navigate to the inbound list and filter by Warehouse 1 (a same-route navigation - the component is reused)
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await page.getByTestId("warehouse-filter-select").selectOption("1");
+	await page.waitForURL(/#\/inventory\/inbound\/\?warehouse=1$/);
+	await inNoteList.assertElements([{ name: "Warehouse 1 / Purchase 1" }]);
+
+	// The list should pick up DB changes without any further navigation (regression: the filter
+	// navigation used to tear down the DB subscription, permanently freezing the list)
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 1, displayName: "Purchase 3" });
+	await inNoteList.assertElements([{ name: "Warehouse 1 / Purchase 3" }, { name: "Warehouse 1 / Purchase 1" }]);
+});
+
 test("should delete the note on delete button click (after confirming the prompt)", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
@@ -436,4 +511,92 @@ test("editing a purchase note does not change its createdAt timestamp", async ({
 	});
 	expect(after.createdAt).toBe(before.createdAt);
 	expect(after.updatedAt).toBeGreaterThan(before.updatedAt);
+});
+
+test("auto-print labels toggle is scoped per note", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Create two notes to work with
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Purchase 2" });
+
+	const toggle = page.getByTestId("auto-print-labels-toggle");
+
+	// Navigate to note A (Purchase 1) and turn auto-print ON
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+	await content.entityList("inbound-list").item(1).edit();
+	await page.getByRole("heading", { name: "Purchase 1" }).first().waitFor();
+
+	await expect(toggle).not.toBeChecked();
+	await toggle.click();
+	await expect(toggle).toBeChecked();
+
+	// Note B (Purchase 2) is unaffected - the setting is scoped per note
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+	await content.entityList("inbound-list").item(0).edit();
+	await page.getByRole("heading", { name: "Purchase 2" }).first().waitFor();
+
+	await expect(toggle).not.toBeChecked();
+
+	// Back on note A the setting is still ON (persisted across navigation)
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+	await content.entityList("inbound-list").item(1).edit();
+	await page.getByRole("heading", { name: "Purchase 1" }).first().waitFor();
+
+	await expect(toggle).toBeChecked();
+});
+
+test("auto-print posts a label for scanned books with metadata and skips books without metadata", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+	// Seed a book WITH metadata (helper sets 'updated_at' when more than the isbn is provided)
+	await dbHandle.evaluate(upsertBook, book1);
+
+	// Point the label printer to a same-origin URL (no CORS) and intercept it, counting the POSTs
+	// NOTE: this is set before navigating to the note page - the device settings store hydrates from localStorage on page mount
+	await page.evaluate(() =>
+		window.localStorage.setItem("librocco:settings", JSON.stringify({ labelPrinterUrl: "/print-label", receiptPrinterUrl: "" }))
+	);
+	const printRequests: string[] = [];
+	await page.route("**/print-label", (route) => {
+		printRequests.push(route.request().postData());
+		return route.fulfill({ status: 200, contentType: "application/json", body: "{}" });
+	});
+
+	// Navigate to the note and turn auto-print ON
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Purchase 1" }]);
+	await content.entityList("inbound-list").item(0).edit();
+	await page.getByRole("heading", { name: "Purchase 1" }).first().waitFor();
+
+	const toggle = page.getByTestId("auto-print-labels-toggle");
+	await toggle.click();
+	await expect(toggle).toBeChecked();
+
+	// Scan an unknown isbn: the transaction is added, but no label is printed (no fetched metadata - it would print blank)
+	// NOTE: the "inbound-note" view matters: it matches quantity against the editable input's data-value
+	// (the "warehouse" view matches text content, which never appears in this table)
+	await content.scanField().add("9999999999");
+	await content.table("inbound-note").assertRows([{ isbn: "9999999999", quantity: 1 }]);
+	expect(printRequests.length).toBe(0);
+
+	// Scan the seeded book: exactly one label POST, for the seeded isbn
+	await content.scanField().add(book1.isbn);
+	await content.table("inbound-note").assertRows([
+		{ isbn: book1.isbn, quantity: 1 },
+		{ isbn: "9999999999", quantity: 1 }
+	]);
+	await expect.poll(() => printRequests.length, { timeout: assertionTimeout }).toBe(1);
+	// Had the unknown-isbn scan printed, ITS request would have arrived first and this assertion would fail
+	expect(JSON.parse(printRequests[0]).isbn).toBe(book1.isbn);
 });

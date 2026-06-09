@@ -57,6 +57,7 @@ export type TestId =
 	| "collect-row"
 	| "delete-row"
 	| "print-book-label"
+	| "auto-print-labels-toggle"
 	| "book-form"
 	| "custom-item-form"
 	| "calendar-picker-control"
@@ -74,6 +75,7 @@ export type TestId =
 	| "db-action-delete"
 	| "customer-search-form"
 	| "text-editable-form"
+	| "warehouse-filter-select"
 	| "force-withdrawal-button"
 	| "tooltip-container"
 	| "tooltip-trigger";

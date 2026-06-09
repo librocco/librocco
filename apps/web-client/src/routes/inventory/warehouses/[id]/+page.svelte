@@ -20,7 +20,7 @@
 	import { Page } from "$lib/controllers";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
-	import { deviceSettingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore, removeAutoPrintLabelsSetting } from "$lib/stores/app";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
@@ -44,7 +44,11 @@
 
 	export let data: PageData;
 
-	$: ({ plugins, displayName, publisherList, id, numPurchaseNotes } = data);
+	$: ({ plugins, displayName, publisherList, id, numPurchaseNotes, singlePurchaseNoteId } = data);
+
+	// A single draft links straight to the note, multiple drafts link to the warehouse-filtered inbound list
+	$: purchaseNotesHref =
+		numPurchaseNotes === 1 && singlePurchaseNoteId ? appPath("inbound", singlePurchaseNoteId) : `${appPath("inbound")}?warehouse=${id}`;
 
 	let entries: GetStockResponseItem[] = [];
 	$: data.entries.then((e) => (entries = e));
@@ -106,6 +110,10 @@
 	const handleCreateInboundNote = async () => {
 		const db = await getDb(app);
 		const noteId = await getNoteIdSeq(db);
+		// Note ids get recycled (id seq = MAX(id) + 1): clear any stale auto-print flag left behind by a
+		// previous note with the same id (e.g. one deleted from another workstation - cleanup there can't reach
+		// this workstation's localStorage)
+		removeAutoPrintLabelsSetting(noteId);
 		await createInboundNote(db, id, noteId); // Id here is warehouseId ^^^
 		await goto(appPath("inbound", noteId));
 	};
@@ -179,7 +187,7 @@
 			<div class="mt-2">
 				{#if numPurchaseNotes > 0}
 					<a
-						href={appPath("inbound")}
+						href={purchaseNotesHref}
 						class="badge-primary badge badge-sm px-1.5 py-2.5 hover:underline focus:underline"
 						data-property="numPurchaseNotes"
 					>

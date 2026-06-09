@@ -168,6 +168,10 @@ const inventory_page = {
 		labels: {
 			button_edit: "Edit",
 			button_delete: "Delete"
+		},
+		filter: {
+			label: "Filter by warehouse",
+			all_warehouses: "All warehouses"
 		}
 	},
 	warehouses_tab: {
@@ -220,6 +224,7 @@ const purchase_note = {
 		commit: "Commit",
 		print: "Print",
 		auto_print_book_labels: "Auto print book labels",
+		auto_print_book_labels_note: "Auto-print labels (this note)",
 		delete: "Delete",
 		edit_row: "Edit row",
 		print_book_label: "Print book label",

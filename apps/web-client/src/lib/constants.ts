@@ -2,7 +2,7 @@ import { PUBLIC_IS_E2E, PUBLIC_IS_DEBUG, PUBLIC_LOG_LEVEL, PUBLIC_IS_DEMO, PUBLI
 import type { Locales } from "@librocco/shared";
 
 export const LOCAL_STORAGE_SETTINGS = "librocco:settings";
-export const LOCAL_STORAGE_APP_SETTINGS = "librocco:app_settings";
+export const LOCAL_STORAGE_AUTO_PRINT_LABELS = "librocco:auto_print_labels";
 
 export const IS_E2E = PUBLIC_IS_E2E === "true";
 export const IS_DEBUG = PUBLIC_IS_DEBUG === "true";

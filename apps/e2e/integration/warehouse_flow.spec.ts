@@ -324,19 +324,35 @@ test("should display active purchase note counts per warehouse", async ({ page }
 	const dbHandle = await getDbHandle(page);
 	const warehouseList = content.entityList("warehouse-list");
 
-	// Create two warehouses
+	// Create three warehouses
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
 
-	// Create 2 draft inbound notes in warehouse 1; none in warehouse 2 (notes stay uncommitted)
+	// Create 2 draft inbound notes in warehouse 1; one in warehouse 2; none in warehouse 3 (notes stay uncommitted)
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2 });
 
-	// Warehouse 1 shows "2 purchase notes"; warehouse 2 shows the muted ghost pill "0 purchase notes"
+	// Warehouse 1 shows "2 purchase notes"; warehouse 2 shows "1 purchase note"; warehouse 3 shows the muted "0 purchase notes" pill
 	await warehouseList.assertElements([
 		{ name: "Warehouse 1", numPurchaseNotes: 2 },
-		{ name: "Warehouse 2", numPurchaseNotes: 0 }
+		{ name: "Warehouse 2", numPurchaseNotes: 1 },
+		{ name: "Warehouse 3", numPurchaseNotes: 0 }
 	]);
+
+	// Multiple drafts: the badge links to the warehouse-filtered inbound list
+	await expect(warehouseList.item(0).locator('a[data-property="numPurchaseNotes"]')).toHaveAttribute(
+		"href",
+		/#\/inventory\/inbound\/\?warehouse=1$/
+	);
+	// A single draft: the badge deep-links straight to the note
+	await expect(warehouseList.item(1).locator('a[data-property="numPurchaseNotes"]')).toHaveAttribute("href", /#\/inventory\/inbound\/3\/$/);
+
+	// Click-through (single draft): lands on the note page
+	await warehouseList.item(1).locator('a[data-property="numPurchaseNotes"]').click();
+	await dashboard.view("inbound-note").waitFor();
+	await page.waitForURL(/#\/inventory\/inbound\/3\/$/);
 });
 
 test("should display active purchase note count on the warehouse detail page", async ({ page }) => {
@@ -357,10 +373,14 @@ test("should display active purchase note count on the warehouse detail page", a
 	const counter = page.locator('a[data-property="numPurchaseNotes"]');
 	await counter.getByText("2 purchase notes", { exact: true }).waitFor();
 
-	// Click the counter: lands on the inbound (purchase notes) list
+	// Multiple drafts: the counter links to the warehouse-filtered inbound list
+	await expect(counter).toHaveAttribute("href", /#\/inventory\/inbound\/\?warehouse=1$/);
+
+	// Click the counter: lands on the inbound (purchase notes) list, filtered to warehouse 1
 	await counter.click();
 	await dashboard.view("inventory").waitFor();
 	await content.entityList("inbound-list").waitFor();
+	await page.waitForURL(/#\/inventory\/inbound\/\?warehouse=1$/);
 
 	// Warehouse 2 has zero drafts: counter is present but muted (not an anchor) and reads "0 purchase notes"
 	await page.getByRole("link", { name: "Manage inventory" }).click();
@@ -377,7 +397,14 @@ test("should display active purchase note count on the warehouse detail page", a
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await dashboard.view("warehouse").waitFor();
 
-	await page.locator('a[data-property="numPurchaseNotes"]').getByText("1 purchase note", { exact: true }).waitFor();
+	const singleCounter = page.locator('a[data-property="numPurchaseNotes"]');
+	await singleCounter.getByText("1 purchase note", { exact: true }).waitFor();
+
+	// A single draft: the counter deep-links straight to the remaining note (id = 2)
+	await expect(singleCounter).toHaveAttribute("href", /#\/inventory\/inbound\/2\/$/);
+	await singleCounter.click();
+	await dashboard.view("inbound-note").waitFor();
+	await page.waitForURL(/#\/inventory\/inbound\/2\/$/);
 });
 
 test("should export warehouses as csv", async ({ page }) => {

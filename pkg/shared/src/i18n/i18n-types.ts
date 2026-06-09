@@ -455,6 +455,16 @@ type RootTranslation = {
 				 */
 				button_delete: string
 			}
+			filter: {
+				/**
+				 * F​i​l​t​e​r​ ​b​y​ ​w​a​r​e​h​o​u​s​e
+				 */
+				label: string
+				/**
+				 * A​l​l​ ​w​a​r​e​h​o​u​s​e​s
+				 */
+				all_warehouses: string
+			}
 		}
 		warehouses_tab: {
 			/**
@@ -1170,6 +1180,10 @@ type RootTranslation = {
 			 * A​u​t​o​ ​p​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l​s
 			 */
 			auto_print_book_labels: string
+			/**
+			 * A​u​t​o​-​p​r​i​n​t​ ​l​a​b​e​l​s​ ​(​t​h​i​s​ ​n​o​t​e​)
+			 */
+			auto_print_book_labels_note: string
 			/**
 			 * D​e​l​e​t​e
 			 */
@@ -3621,6 +3635,16 @@ export type TranslationFunctions = {
 				 */
 				button_delete: () => LocalizedString
 			}
+			filter: {
+				/**
+				 * Filter by warehouse
+				 */
+				label: () => LocalizedString
+				/**
+				 * All warehouses
+				 */
+				all_warehouses: () => LocalizedString
+			}
 		}
 		warehouses_tab: {
 			/**
@@ -4317,6 +4341,10 @@ export type TranslationFunctions = {
 			 * Auto print book labels
 			 */
 			auto_print_book_labels: () => LocalizedString
+			/**
+			 * Auto-print labels (this note)
+			 */
+			auto_print_book_labels_note: () => LocalizedString
 			/**
 			 * Delete
 			 */

@@ -33,6 +33,7 @@
 	import { defaultDialogConfig } from "$lib/components/Melt";
 	import { invalidate as invalidateStockCache } from "$lib/db/cr-sqlite/stock_cache";
 
+	import { removeAutoPrintLabelsSetting } from "$lib/stores/app";
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
@@ -118,6 +119,10 @@
 	const handleCreateInboundNote = (warehouseId: number) => async () => {
 		const db = await getDb(app);
 		const id = await getNoteIdSeq(db);
+		// Note ids get recycled (id seq = MAX(id) + 1): clear any stale auto-print flag left behind by a
+		// previous note with the same id (e.g. one deleted from another workstation - cleanup there can't reach
+		// this workstation's localStorage)
+		removeAutoPrintLabelsSetting(id);
 		await createInboundNote(db, warehouseId, id);
 		await goto(appPath("inbound", id));
 	};
@@ -170,7 +175,15 @@
 			{:else}
 				{#each warehouses as { id, displayName, discount }}
 					{@const href = appPath("warehouses", id)}
-					{@const numPurchaseNotes = inboundNoteCountsByWarehouse?.get(id) ?? 0}
+					{@const { count: numPurchaseNotes, singleNoteId: singlePurchaseNoteId } = inboundNoteCountsByWarehouse?.get(id) ?? {
+						count: 0,
+						singleNoteId: null
+					}}
+					<!-- A single draft links straight to the note, multiple drafts link to the warehouse-filtered inbound list -->
+					{@const purchaseNotesHref =
+						numPurchaseNotes === 1 && singlePurchaseNoteId
+							? appPath("inbound", singlePurchaseNoteId)
+							: `${appPath("inbound")}?warehouse=${id}`}
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
@@ -193,7 +206,7 @@
 
 								{#if numPurchaseNotes > 0}
 									<a
-										href={appPath("inbound")}
+										href={purchaseNotesHref}
 										class="badge-primary badge badge-sm px-1.5 py-2.5 hover:underline focus:underline"
 										data-property="numPurchaseNotes"
 									>

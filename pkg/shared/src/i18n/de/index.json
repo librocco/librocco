@@ -160,6 +160,10 @@
 			"labels": {
 				"button_edit": "",
 				"button_delete": ""
+			},
+			"filter": {
+				"label": "Nach Lager filtern",
+				"all_warehouses": "Alle Lager"
 			}
 		},
 		"warehouses_tab": {
@@ -412,6 +416,7 @@
 			"commit": "",
 			"print": "",
 			"auto_print_book_labels": "",
+			"auto_print_book_labels_note": "Etiketten automatisch drucken (diese Notiz)",
 			"delete": "",
 			"edit_row": "",
 			"print_book_label": "",

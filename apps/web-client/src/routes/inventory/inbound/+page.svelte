@@ -17,11 +17,12 @@
 
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
-	import { racefreeGoto } from "$lib/utils/navigation";
+	import { goto as navigate, racefreeGoto } from "$lib/utils/navigation";
 
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
 
 	import { appPath } from "$lib/paths";
+	import { removeAutoPrintLabelsSetting } from "$lib/stores/app";
 	import { deleteNote } from "$lib/db/cr-sqlite/note";
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import { InventoryManagementPage } from "$lib/controllers";
@@ -38,7 +39,7 @@
 		description: string;
 	}
 
-	$: ({ notes, plugins } = data);
+	$: ({ notes, warehouses, warehouseFilter, plugins } = data);
 
 	$: t = $LL.inventory_page.purchase_tab;
 	$: tPurchase = $LL.purchase_note;
@@ -79,6 +80,18 @@
 	const handleDeleteNote = async (id: number) => {
 		const db = await getDb(app);
 		await deleteNote(db, id);
+		removeAutoPrintLabelsSetting(id);
+	};
+
+	// Navigate to the (warehouse) filtered/unfiltered list. The filter is kept in the (hash) query
+	// string so the filtered list can be deep-linked (e.g. from the warehouse pages).
+	//
+	// NOTE: this is a same-route navigation (only the hash query changes), so the component is reused and
+	// 'onMount' doesn't rerun. Use the plain (non-disposing) 'goto' here: 'racefreeGoto' would tear down
+	// the DB subscription above, permanently stopping live updates for the list.
+	const handleWarehouseFilterChange = (e: Event) => {
+		const value = (e.currentTarget as HTMLSelectElement).value;
+		return navigate(appPath("inbound") + (value ? `?warehouse=${value}` : ""));
 	};
 </script>
 
@@ -90,6 +103,22 @@
 			</div>
 		</div>
 	{:else}
+		<div class="flex items-center gap-x-2 px-4">
+			<label for={testId("warehouse-filter-select")} class="text-sm font-medium text-base-content">{t.filter.label()}</label>
+			<select
+				id={testId("warehouse-filter-select")}
+				data-testid={testId("warehouse-filter-select")}
+				class="select-bordered select select-sm"
+				value={warehouseFilter ?? ""}
+				on:change={handleWarehouseFilterChange}
+			>
+				<option value="">{t.filter.all_warehouses()}</option>
+				{#each warehouses as warehouse}
+					<option value={warehouse.id}>{warehouse.displayName || `Warehouse - ${warehouse.id}`}</option>
+				{/each}
+			</select>
+		</div>
+
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
@@ -172,7 +201,6 @@
 	{/if}
 </InventoryManagementPage>
 
->
 <ConfirmDialog
 	{dialog}
 	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
