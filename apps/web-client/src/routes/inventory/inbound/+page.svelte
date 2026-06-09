@@ -38,7 +38,7 @@
 		description: string;
 	}
 
-	$: ({ notes, plugins } = data);
+	$: ({ notes, warehouses, warehouseFilter, plugins } = data);
 
 	$: t = $LL.inventory_page.purchase_tab;
 	$: tPurchase = $LL.purchase_note;
@@ -80,6 +80,13 @@
 		const db = await getDb(app);
 		await deleteNote(db, id);
 	};
+
+	// Navigate to the (warehouse) filtered/unfiltered list. The filter is kept in the (hash) query
+	// string so the filtered list can be deep-linked (e.g. from the warehouse pages).
+	const handleWarehouseFilterChange = (e: Event) => {
+		const value = (e.currentTarget as HTMLSelectElement).value;
+		return goto(appPath("inbound") + (value ? `?warehouse=${value}` : ""));
+	};
 </script>
 
 <InventoryManagementPage {handleCreateWarehouse} {app} {plugins}>
@@ -90,6 +97,22 @@
 			</div>
 		</div>
 	{:else}
+		<div class="flex items-center gap-x-2 px-4">
+			<label for={testId("warehouse-filter-select")} class="text-sm font-medium text-base-content">{t.filter.label()}</label>
+			<select
+				id={testId("warehouse-filter-select")}
+				data-testid={testId("warehouse-filter-select")}
+				class="select-bordered select select-sm"
+				value={warehouseFilter ?? ""}
+				on:change={handleWarehouseFilterChange}
+			>
+				<option value="">{t.filter.all_warehouses()}</option>
+				{#each warehouses as warehouse}
+					<option value={warehouse.id}>{warehouse.displayName || `Warehouse - ${warehouse.id}`}</option>
+				{/each}
+			</select>
+		</div>
+
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
@@ -172,7 +195,6 @@
 	{/if}
 </InventoryManagementPage>
 
->
 <ConfirmDialog
 	{dialog}
 	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}

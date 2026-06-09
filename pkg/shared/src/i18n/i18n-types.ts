@@ -455,6 +455,16 @@ type RootTranslation = {
 				 */
 				button_delete: string
 			}
+			filter: {
+				/**
+				 * F​i​l​t​e​r​ ​b​y​ ​w​a​r​e​h​o​u​s​e
+				 */
+				label: string
+				/**
+				 * A​l​l​ ​w​a​r​e​h​o​u​s​e​s
+				 */
+				all_warehouses: string
+			}
 		}
 		warehouses_tab: {
 			/**
@@ -3620,6 +3630,16 @@ export type TranslationFunctions = {
 				 * Delete
 				 */
 				button_delete: () => LocalizedString
+			}
+			filter: {
+				/**
+				 * Filter by warehouse
+				 */
+				label: () => LocalizedString
+				/**
+				 * All warehouses
+				 */
+				all_warehouses: () => LocalizedString
 			}
 		}
 		warehouses_tab: {

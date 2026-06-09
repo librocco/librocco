@@ -74,6 +74,7 @@ export type TestId =
 	| "db-action-delete"
 	| "customer-search-form"
 	| "text-editable-form"
+	| "warehouse-filter-select"
 	| "force-withdrawal-button"
 	| "tooltip-container"
 	| "tooltip-trigger";

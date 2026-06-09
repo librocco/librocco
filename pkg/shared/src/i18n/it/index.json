@@ -160,6 +160,10 @@
 			"labels": {
 				"button_edit": "Modifica",
 				"button_delete": "Elimina"
+			},
+			"filter": {
+				"label": "Filtra per magazzino",
+				"all_warehouses": "Tutti i magazzini"
 			}
 		},
 		"warehouses_tab": {

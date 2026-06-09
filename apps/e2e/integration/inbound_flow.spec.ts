@@ -62,6 +62,38 @@ test("should display notes, namespaced to warehouses, in the inbound note list",
 	]);
 });
 
+test("should filter the inbound note list by warehouse (filter reflected in the URL)", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const inNoteList = content.entityList("inbound-list");
+
+	// Two warehouses ("Warehouse 1" is created in beforeEach), each with an uncommitted note
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	await (await getDbHandle(page)).evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Purchase 1" });
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Purchase 2" });
+
+	// Navigate to the inbound list - no filter: all notes are shown
+	await page.getByRole("link", { name: "Purchases", exact: true }).click();
+	await inNoteList.assertElements([{ name: "Warehouse 2 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+
+	// Filter by Warehouse 1 using the select - only its notes are shown and the filter is reflected in the URL (hash query)
+	await page.getByTestId("warehouse-filter-select").selectOption("1");
+	await page.waitForURL(/#\/inventory\/inbound\/\?warehouse=1$/);
+	await inNoteList.assertElements([{ name: "Warehouse 1 / Purchase 1" }]);
+
+	// Deep-load the filtered URL (with a full page reload): the filter is applied from the URL
+	await page.goto(appHash("inbound") + "?warehouse=2");
+	await page.reload();
+	await inNoteList.assertElements([{ name: "Warehouse 2 / Purchase 2" }]);
+
+	// Switch back to "All warehouses": all notes are shown again
+	await page.getByTestId("warehouse-filter-select").selectOption("");
+	await page.waitForURL(/#\/inventory\/inbound\/$/);
+	await inNoteList.assertElements([{ name: "Warehouse 2 / Purchase 2" }, { name: "Warehouse 1 / Purchase 1" }]);
+});
+
 test("should delete the note on delete button click (after confirming the prompt)", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
