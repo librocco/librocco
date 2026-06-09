@@ -509,13 +509,15 @@ test("auto-print posts a label for scanned books with metadata and skips books w
 	await expect(toggle).toBeChecked();
 
 	// Scan an unknown isbn: the transaction is added, but no label is printed (no fetched metadata - it would print blank)
+	// NOTE: the "inbound-note" view matters: it matches quantity against the editable input's data-value
+	// (the "warehouse" view matches text content, which never appears in this table)
 	await content.scanField().add("9999999999");
-	await content.table("warehouse").assertRows([{ isbn: "9999999999", quantity: 1 }]);
+	await content.table("inbound-note").assertRows([{ isbn: "9999999999", quantity: 1 }]);
 	expect(printRequests.length).toBe(0);
 
 	// Scan the seeded book: exactly one label POST, for the seeded isbn
 	await content.scanField().add(book1.isbn);
-	await content.table("warehouse").assertRows([
+	await content.table("inbound-note").assertRows([
 		{ isbn: book1.isbn, quantity: 1 },
 		{ isbn: "9999999999", quantity: 1 }
 	]);
