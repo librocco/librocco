@@ -324,19 +324,21 @@ test("should display active purchase note counts per warehouse", async ({ page }
 	const dbHandle = await getDbHandle(page);
 	const warehouseList = content.entityList("warehouse-list");
 
-	// Create two warehouses
+	// Create three warehouses
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
 
-	// Create 2 draft inbound notes in warehouse 1; one in warehouse 2 (notes stay uncommitted)
+	// Create 2 draft inbound notes in warehouse 1; one in warehouse 2; none in warehouse 3 (notes stay uncommitted)
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
 	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2 });
 
-	// Warehouse 1 shows "2 purchase notes"; warehouse 2 shows "1 purchase note"
+	// Warehouse 1 shows "2 purchase notes"; warehouse 2 shows "1 purchase note"; warehouse 3 shows the muted "0 purchase notes" pill
 	await warehouseList.assertElements([
 		{ name: "Warehouse 1", numPurchaseNotes: 2 },
-		{ name: "Warehouse 2", numPurchaseNotes: 1 }
+		{ name: "Warehouse 2", numPurchaseNotes: 1 },
+		{ name: "Warehouse 3", numPurchaseNotes: 0 }
 	]);
 
 	// Multiple drafts: the badge links to the warehouse-filtered inbound list
