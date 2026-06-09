@@ -12,6 +12,8 @@ import {
 	deleteNote,
 	getActiveInboundNotes,
 	getActiveOutboundNotes,
+	getInboundNoteCountsByWarehouse,
+	getInboundNoteCountForWarehouse,
 	getNoteById,
 	commitNote,
 	addVolumesToNote,
@@ -194,6 +196,44 @@ describe("Inbound note tests", () => {
 			expect.objectContaining({ id: 2 }),
 			expect.objectContaining({ id: 1 })
 		]);
+	});
+
+	it("counts uncommitted inbound notes per warehouse (exposing the note id when there's exactly one)", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+		await upsertWarehouse(db, { id: 3, displayName: "Warehouse 3" });
+
+		// Warehouse 1 has two drafts, warehouse 2 has one, warehouse 3 has none
+		await createInboundNote(db, 1, 1);
+		await createInboundNote(db, 1, 2);
+		await createInboundNote(db, 2, 3);
+
+		// Outbound note (noise) - shouldn't be counted anywhere
+		await createOutboundNote(db, 4);
+
+		// Map variant: zero-draft warehouses are omitted, singleNoteId is set only for exactly one draft
+		expect(await getInboundNoteCountsByWarehouse(db)).toEqual(
+			new Map([
+				[1, { count: 2, singleNoteId: null }],
+				[2, { count: 1, singleNoteId: 3 }]
+			])
+		);
+
+		// Scoped variant mirrors the map (and returns a zero count for warehouses with no drafts)
+		expect(await getInboundNoteCountForWarehouse(db, 1)).toEqual({ count: 2, singleNoteId: null });
+		expect(await getInboundNoteCountForWarehouse(db, 2)).toEqual({ count: 1, singleNoteId: 3 });
+		expect(await getInboundNoteCountForWarehouse(db, 3)).toEqual({ count: 0, singleNoteId: null });
+
+		// Committing a note removes it from the counts: warehouse 1 drops to a single
+		// (linkable) draft, warehouse 2 drops out of the map entirely
+		await commitNote(db, 1);
+		await commitNote(db, 3);
+
+		expect(await getInboundNoteCountsByWarehouse(db)).toEqual(new Map([[1, { count: 1, singleNoteId: 2 }]]));
+		expect(await getInboundNoteCountForWarehouse(db, 1)).toEqual({ count: 1, singleNoteId: 2 });
+		expect(await getInboundNoteCountForWarehouse(db, 2)).toEqual({ count: 0, singleNoteId: null });
 	});
 
 	it("commits an inbound note (updating committed_at for both the note and all associated book transactions)", async () => {

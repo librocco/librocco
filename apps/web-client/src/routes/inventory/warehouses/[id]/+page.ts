@@ -33,6 +33,7 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 			displayName: "N/A",
 			discount: 0,
 			numPurchaseNotes: 0,
+			singlePurchaseNoteId: null as number | null,
 			publisherList: [] as string[],
 			entries: new Promise<GetStockResponseItem[]>(() => {})
 		};
@@ -50,7 +51,7 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 	}
 
 	const publisherList = await getPublisherList(db);
-	const numPurchaseNotes = await getInboundNoteCountForWarehouse(db, id);
+	const { count: numPurchaseNotes, singleNoteId: singlePurchaseNoteId } = await getInboundNoteCountForWarehouse(db, id);
 
 	// Re-enable the stock cache refreshing to execute in the background
 	stockCache.enableRefresh(db);
@@ -69,7 +70,7 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 			return [...iter];
 		});
 
-	return { ...warehouse, numPurchaseNotes, publisherList, entries };
+	return { ...warehouse, numPurchaseNotes, singlePurchaseNoteId, publisherList, entries };
 };
 
 export const load: PageLoad = timed(_load);

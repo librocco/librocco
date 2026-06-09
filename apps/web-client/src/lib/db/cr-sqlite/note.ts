@@ -37,6 +37,7 @@
 import type {
 	DBAsync,
 	TXAsync,
+	InboundNoteCount,
 	InboundNoteListItem,
 	VolumeStock,
 	NoteEntriesItem,
@@ -208,44 +209,52 @@ async function _getActiveOutboundNotes(db: TXAsync): Promise<OutboundNoteListIte
 }
 
 /**
- * Returns a map of warehouseId -> count of uncommitted inbound notes for that warehouse.
- * Warehouses with zero drafts are omitted from the map (callers should default to 0).
+ * Returns a map of warehouseId -> count of uncommitted inbound notes for that warehouse
+ * (along with the note's id when there's exactly one draft - used for deep-linking straight
+ * to the note). Warehouses with zero drafts are omitted from the map (callers should default
+ * to a zero count).
  *
  * @param {DB} db - Database connection
- * @returns {Promise<Map<number, number>>} Map from warehouse ID to active inbound note count
+ * @returns {Promise<Map<number, InboundNoteCount>>} Map from warehouse ID to active inbound note count (+ single note id)
  */
-async function _getInboundNoteCountsByWarehouse(db: TXAsync): Promise<Map<number, number>> {
+async function _getInboundNoteCountsByWarehouse(db: TXAsync): Promise<Map<number, InboundNoteCount>> {
 	const query = `
-		SELECT note.warehouse_id AS warehouseId, COUNT(*) AS count
+		SELECT
+			note.warehouse_id AS warehouseId,
+			COUNT(*) AS count,
+			CASE WHEN COUNT(*) = 1 THEN MAX(note.id) ELSE NULL END AS singleNoteId
 		FROM note
 		INNER JOIN warehouse ON note.warehouse_id = warehouse.id
 		WHERE note.committed = 0
 		GROUP BY note.warehouse_id
 	`;
 
-	const rows = await db.execO<{ warehouseId: number; count: number }>(query);
-	return new Map(rows.map(({ warehouseId, count }) => [warehouseId, count]));
+	const rows = await db.execO<{ warehouseId: number; count: number; singleNoteId: number | null }>(query);
+	return new Map(rows.map(({ warehouseId, count, singleNoteId }) => [warehouseId, { count, singleNoteId }]));
 }
 
 /**
- * Returns the count of uncommitted inbound notes for a single warehouse. Scoped,
- * count-only variant of {@link _getInboundNoteCountsByWarehouse} for detail pages
- * that only need one warehouse's number.
+ * Returns the count of uncommitted inbound notes for a single warehouse (along with the note's
+ * id when there's exactly one draft - used for deep-linking straight to the note). Scoped
+ * variant of {@link _getInboundNoteCountsByWarehouse} for detail pages that only need one
+ * warehouse's number.
  *
  * @param {DB} db - Database connection
  * @param {number} warehouseId - Warehouse to scope the count to
- * @returns {Promise<number>} Count of active inbound notes for the warehouse
+ * @returns {Promise<InboundNoteCount>} Count of active inbound notes for the warehouse (+ single note id)
  */
-async function _getInboundNoteCountForWarehouse(db: TXAsync, warehouseId: number): Promise<number> {
+async function _getInboundNoteCountForWarehouse(db: TXAsync, warehouseId: number): Promise<InboundNoteCount> {
 	const query = `
-		SELECT COUNT(*) AS count
+		SELECT
+			COUNT(*) AS count,
+			CASE WHEN COUNT(*) = 1 THEN MAX(id) ELSE NULL END AS singleNoteId
 		FROM note
 		WHERE committed = 0
 		AND warehouse_id = ?
 	`;
 
-	const [[count]] = await db.execA<[number]>(query, [warehouseId]);
-	return count ?? 0;
+	const [res] = await db.execO<{ count: number; singleNoteId: number | null }>(query, [warehouseId]);
+	return res ?? { count: 0, singleNoteId: null };
 }
 
 /**

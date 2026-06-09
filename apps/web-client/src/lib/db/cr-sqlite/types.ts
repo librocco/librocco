@@ -238,6 +238,15 @@ export type OutboundNoteListItem = {
 	totalBooks: number;
 };
 
+/**
+ * Count of uncommitted inbound notes for a warehouse. When there's exactly one such note,
+ * 'singleNoteId' holds its id (so the UI can link straight to it), otherwise it's null.
+ */
+export type InboundNoteCount = {
+	count: number;
+	singleNoteId: number | null;
+};
+
 export type VolumeStock = {
 	isbn: string;
 	quantity: number;
