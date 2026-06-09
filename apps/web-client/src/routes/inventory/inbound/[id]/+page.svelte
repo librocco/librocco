@@ -287,14 +287,14 @@
 				</div>
 
 				<div class="ml-auto flex items-center gap-x-2">
-					<label class="flex cursor-pointer items-center gap-x-2" title={tInbound.labels.auto_print_book_labels()}>
+					<label class="flex cursor-pointer items-center gap-x-2" title={tInbound.labels.auto_print_book_labels_note()}>
 						<Printer class="text-base-content/70" aria-hidden size={20} />
-						<span class="hidden text-sm text-base-content sm:inline">{tInbound.labels.auto_print_book_labels()}</span>
+						<span class="hidden text-sm text-base-content sm:inline">{tInbound.labels.auto_print_book_labels_note()}</span>
 						<input
 							type="checkbox"
 							class="toggle-success toggle"
 							data-testid={testId("auto-print-labels-toggle")}
-							aria-label={tInbound.labels.auto_print_book_labels()}
+							aria-label={tInbound.labels.auto_print_book_labels_note()}
 							checked={$autoPrintLabels}
 							on:change={autoPrintLabels.toggle}
 						/>

@@ -412,6 +412,7 @@
 			"commit": "",
 			"print": "",
 			"auto_print_book_labels": "",
+			"auto_print_book_labels_note": "Etiketten automatisch drucken (diese Notiz)",
 			"delete": "",
 			"edit_row": "",
 			"print_book_label": "",

@@ -22,9 +22,16 @@ export const getAutoPrintLabelsStore = (noteId: number) => {
 	return Object.assign(store, { toggle: () => store.update((v) => !v) });
 };
 
-/** Removes the (localStorage persisted) auto-print-labels setting for a note (cleanup when the note is committed/deleted) */
+/**
+ * Removes the (localStorage persisted) auto-print-labels setting for a note (cleanup when the note is committed/deleted).
+ *
+ * NOTE: svelte-local-storage-store caches stores per key (module-level map) and a same-tab `removeItem` fires no storage
+ * event, so the cached writable would keep holding `true`. Since note ids get recycled (id seq = MAX(id) + 1, deletes are
+ * hard deletes), we reset the cached store first - otherwise a new note reusing the id would start with auto-print ON.
+ */
 export const removeAutoPrintLabelsSetting = (noteId: number) => {
 	if (!browser) return;
+	getAutoPrintLabelsStore(noteId).set(false);
 	localStorage.removeItem(autoPrintLabelsKey(noteId));
 };
 

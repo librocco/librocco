@@ -20,7 +20,7 @@
 	import { Page } from "$lib/controllers";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
-	import { deviceSettingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore, removeAutoPrintLabelsSetting } from "$lib/stores/app";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
@@ -106,6 +106,10 @@
 	const handleCreateInboundNote = async () => {
 		const db = await getDb(app);
 		const noteId = await getNoteIdSeq(db);
+		// Note ids get recycled (id seq = MAX(id) + 1): clear any stale auto-print flag left behind by a
+		// previous note with the same id (e.g. one deleted from another workstation - cleanup there can't reach
+		// this workstation's localStorage)
+		removeAutoPrintLabelsSetting(noteId);
 		await createInboundNote(db, id, noteId); // Id here is warehouseId ^^^
 		await goto(appPath("inbound", noteId));
 	};

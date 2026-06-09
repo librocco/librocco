@@ -1171,6 +1171,10 @@ type RootTranslation = {
 			 */
 			auto_print_book_labels: string
 			/**
+			 * A​u​t​o​-​p​r​i​n​t​ ​l​a​b​e​l​s​ ​(​t​h​i​s​ ​n​o​t​e​)
+			 */
+			auto_print_book_labels_note: string
+			/**
 			 * D​e​l​e​t​e
 			 */
 			'delete': string
@@ -4317,6 +4321,10 @@ export type TranslationFunctions = {
 			 * Auto print book labels
 			 */
 			auto_print_book_labels: () => LocalizedString
+			/**
+			 * Auto-print labels (this note)
+			 */
+			auto_print_book_labels_note: () => LocalizedString
 			/**
 			 * Delete
 			 */
