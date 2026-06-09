@@ -3,7 +3,7 @@ import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
 import { getInboundNoteCountsByWarehouse } from "$lib/db/cr-sqlite/note";
 
 import type { PageLoad } from "./$types";
-import type { Warehouse } from "$lib/db/cr-sqlite/types";
+import type { InboundNoteCount, Warehouse } from "$lib/db/cr-sqlite/types";
 
 import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 
@@ -22,7 +22,7 @@ const _load = async ({ depends, parent }: Parameters<PageLoad>[0]) => {
 	stockCache.disableRefresh();
 
 	if (!browser) {
-		return { warehouses: [] as Warehouse[], inboundNoteCountsByWarehouse: new Map<number, number>() };
+		return { warehouses: [] as Warehouse[], inboundNoteCountsByWarehouse: new Map<number, InboundNoteCount>() };
 	}
 
 	const db = await getDb(app);

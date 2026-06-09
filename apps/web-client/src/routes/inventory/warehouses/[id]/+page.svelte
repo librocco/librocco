@@ -44,7 +44,11 @@
 
 	export let data: PageData;
 
-	$: ({ plugins, displayName, publisherList, id, numPurchaseNotes } = data);
+	$: ({ plugins, displayName, publisherList, id, numPurchaseNotes, singlePurchaseNoteId } = data);
+
+	// A single draft links straight to the note, multiple drafts link to the warehouse-filtered inbound list
+	$: purchaseNotesHref =
+		numPurchaseNotes === 1 && singlePurchaseNoteId ? appPath("inbound", singlePurchaseNoteId) : `${appPath("inbound")}?warehouse=${id}`;
 
 	let entries: GetStockResponseItem[] = [];
 	$: data.entries.then((e) => (entries = e));
@@ -179,7 +183,7 @@
 			<div class="mt-2">
 				{#if numPurchaseNotes > 0}
 					<a
-						href={appPath("inbound")}
+						href={purchaseNotesHref}
 						class="badge-primary badge badge-sm px-1.5 py-2.5 hover:underline focus:underline"
 						data-property="numPurchaseNotes"
 					>
