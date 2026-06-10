@@ -230,13 +230,15 @@
 		document.body.setAttribute("hydrated", "true");
 
 		// Control the invalidation of the stock cache.
-		// Watch every table the stock calculation depends on: book_transaction (legs), note (the
-		// stock SUM gates on note.committed, so a commit must trigger a recompute) and warehouse (a
-		// deletion/discount change affects the warehouse JOIN). maybeInvalidate then checks, via a
-		// node-safe db_version watermark, whether a stock-affecting change actually landed since the
-		// last cache and invalidates only if so. Watching book_transaction alone missed peer commits
-		// (committed flips on note) and warehouse deletions arriving via sync.
-		disposer = getDbRx(app).onRange(["book_transaction", "note", "warehouse"], async () => stockCache.maybeInvalidate(await getDb(app)));
+		// Watch the two tables the stock fold reads: book_transaction (legs) and note (the stock SUM
+		// gates on note.committed, so a commit must trigger a recompute). maybeInvalidate then scans
+		// the cr-sqlite change clocks to decide whether a stock-relevant change actually landed since
+		// the snapshot's watermark — and WHICH warehouses it touched — invalidating only if so.
+		// Draft-note edits, renames and bubble-up touches don't register. Watching book_transaction
+		// alone missed peer commits (committed flips on note) and warehouse deletions arriving via
+		// sync (a deletion is caught through its legs' tombstones; warehouse name/discount edits
+		// don't concern the fold — the consumers' own warehouse watchers handle their repaint).
+		disposer = getDbRx(app).onRange(["book_transaction", "note"], async () => stockCache.maybeInvalidate(await getDb(app)));
 
 		// Prevent user from navigating away if sync is in progress
 		// NOTE: this is a noop if sync not active (e.g. in demo mode)
