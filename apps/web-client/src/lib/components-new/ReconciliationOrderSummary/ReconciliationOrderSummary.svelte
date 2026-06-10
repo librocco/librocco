@@ -73,10 +73,10 @@
 						<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.title()}</th>
 						<th scope="col" class="text-muted-foreground px-2 py-1.5 text-left text-xs uppercase tracking-wide">{t.table.authors()}</th>
 						<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"
-							>{t.table.quantity()}</th
+							>{t.step1.table.order_quantity()}</th
 						>
 						<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"
-							>{t.table.quantity()}</th
+							>{t.step1.table.delivered()}</th
 						>
 						<th scope="col" class="text-muted-foreground w-20 px-2 py-1.5 text-left text-xs uppercase tracking-wide"
 							>{t.step2.order_summary.status()}</th

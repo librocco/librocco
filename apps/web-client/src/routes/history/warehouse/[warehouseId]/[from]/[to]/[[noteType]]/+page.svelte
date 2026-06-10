@@ -200,7 +200,7 @@
 							<div class="col-span-8 grid items-center gap-x-4 md:grid-cols-1 lg:col-span-7 lg:grid-cols-7 xl:col-span-8 xl:grid-cols-8">
 								<p data-property="isbn" class="col-span-2 overflow-hidden">{txn.isbn}</p>
 
-								<p data-property="title" class="col-span-3 overflow-hidden">{txn.title || "Unkonwn Title"}</p>
+								<p data-property="title" class="col-span-3 overflow-hidden">{txn.title || tCommon.placeholders.unknown_title()}</p>
 
 								<p data-property="authors" class="col-span-2 overflow-hidden xl:col-span-3">{txn.authors || ""}</p>
 							</div>
