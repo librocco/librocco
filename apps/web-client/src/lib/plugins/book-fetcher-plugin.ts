@@ -115,10 +115,16 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 		this.#fetchingISBNS.set(isbn, res);
 		this.#fetchedISBNS.set(isbn, res);
 
-		// Clear the memoized ongoing fetch once the fetch is complete
-		res.all().then(() => {
-			this.#fetchingISBNS.delete(isbn);
-		});
+		// Clear the memoized ongoing fetch once the fetch settles - also on rejection, otherwise the ISBN stays in the
+		// in-flight map forever and every subsequent call (including explicit retries) keeps returning the stale, failed result.
+		// The catch only terminates this internal housekeeping chain (preventing an unhandled rejection):
+		// callers still observe failures through the returned 'res'.
+		res
+			.all()
+			.catch(() => {})
+			.finally(() => {
+				this.#fetchingISBNS.delete(isbn);
+			});
 
 		return res;
 	}
