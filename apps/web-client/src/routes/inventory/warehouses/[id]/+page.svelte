@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
 	import { fade, fly } from "svelte/transition";
-	import { readable, writable } from "svelte/store";
+	import { writable } from "svelte/store";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 	import { invalidate } from "$app/navigation";
 
@@ -89,8 +89,8 @@
 				{ displayLabel: tColumnHeaders.year(), key: "year" },
 				{ displayLabel: tColumnHeaders.price(), key: "price" },
 				{ displayLabel: tColumnHeaders.category(), key: "category" },
-				{ displayLabel: tColumnHeaders.edited_by(), key: "edited_by" },
-				{ displayLabel: tColumnHeaders.out_of_print(), key: "out_of_print" }
+				{ displayLabel: tColumnHeaders.edited_by(), key: "editedBy" },
+				{ displayLabel: tColumnHeaders.out_of_print(), key: "outOfPrint" }
 			],
 			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
 		});
@@ -98,8 +98,6 @@
 		const gen = generateCsv(csvConfig)(entries);
 		download(csvConfig)(gen);
 	};
-	const csvEntries = readable([] as any[]);
-
 	// #endregion csv
 
 	// #region warehouse-actions
@@ -200,7 +198,7 @@
 				{/if}
 			</div>
 			<div class="flex justify-between">
-				{#if $csvEntries?.length}
+				{#if entries?.length}
 					<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
 						<span class="aria-hidden"> {tLabels.export_to_csv()} </span>
 					</button>
