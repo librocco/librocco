@@ -212,7 +212,6 @@ export class SyncTransportController implements Transport {
 		this.announcePresence = this.#transport.announcePresence.bind(this.#transport);
 		this.sendChanges = this._sendChanges.bind(this);
 		this.rejectChanges = this.#transport.rejectChanges.bind(this.#transport);
-		this.close = this.#transport.close.bind(this.#transport);
 
 		// Hijack the transport's (internal) mutable methods and expose the same interface
 		// safe from override
