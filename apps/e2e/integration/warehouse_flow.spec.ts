@@ -212,8 +212,15 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	]);
 
 	// Rename remaining warehouses to restart the sequence
-	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
-	await dbHandle.evaluate(upsertWarehouse, { id: 4, displayName: "Warehouse 4" });
+	// (warehouses created through the UI get site-scoped ids, so look the ids up by name)
+	const [{ id: warehouse3Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM warehouse WHERE display_name = 'New Warehouse (3)'")
+	);
+	const [{ id: warehouse4Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM warehouse WHERE display_name = 'New Warehouse (4)'")
+	);
+	await dbHandle.evaluate(upsertWarehouse, { id: warehouse3Id, displayName: "Warehouse 3" });
+	await dbHandle.evaluate(upsertWarehouse, { id: warehouse4Id, displayName: "Warehouse 4" });
 
 	// Create a final warehouse with reset sequence
 	await page.getByRole("link", { name: "Manage inventory" }).click();

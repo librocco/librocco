@@ -195,8 +195,15 @@ test("should continue the naming sequence from the highest sequenced note name (
 		.assertElements([{ name: "New Sale (4)" }, { name: "Sale 2" }, { name: "Sale 1" }, { name: "New Sale (3)" }]);
 
 	// Rename remaining notes to reset the sequence
-	await dbHandle.evaluate(updateNote, { id: 3, displayName: "Sale 3" });
-	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Sale 4" });
+	// (notes created through the UI get site-scoped ids, so look the ids up by name)
+	const [{ id: note3Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'New Sale (3)'")
+	);
+	const [{ id: note4Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'New Sale (4)'")
+	);
+	await dbHandle.evaluate(updateNote, { id: note3Id, displayName: "Sale 3" });
+	await dbHandle.evaluate(updateNote, { id: note4Id, displayName: "Sale 4" });
 	await content
 		.entityList("outbound-list")
 		.assertElements([{ name: "Sale 4" }, { name: "Sale 3" }, { name: "Sale 2" }, { name: "Sale 1" }]);
