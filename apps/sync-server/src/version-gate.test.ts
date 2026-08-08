@@ -8,7 +8,7 @@
  * client completes the websocket upgrade (101).
  */
 
-import { test, expect, describe, afterEach } from "vitest";
+import { test, expect, describe, afterEach, vi } from "vitest";
 import * as http from "http";
 import * as fs from "fs";
 import * as os from "os";
@@ -65,6 +65,21 @@ describe("makeVersionGate", () => {
 		const denied = new Set([UNVERSIONED]);
 		expect(await run(denied, "/sync")).toBeInstanceOf(Error);
 		expect(await run(denied, "/sync?client_version=abc123")).toBe(null);
+	});
+
+	test("rate-limits repeated deny logs for the same version+room (denies every attempt regardless)", async () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		try {
+			const gate = makeVersionGate(new Set(["bad001"]));
+			const req = { url: "/sync?client_version=bad001", headers: {} } as http.IncomingMessage;
+			const errors: unknown[] = [];
+			// A denied client retries every 1-3s; each attempt must be denied, but only the first logged
+			for (let i = 0; i < 5; i++) gate(req, null, (err) => errors.push(err));
+			expect(errors.filter((e) => e instanceof Error)).toHaveLength(5);
+			expect(warn).toHaveBeenCalledTimes(1);
+		} finally {
+			warn.mockRestore();
+		}
 	});
 });
 

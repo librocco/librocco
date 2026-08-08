@@ -118,6 +118,9 @@ app.get("/health", (_, res) => {
 
 	const response: Record<string, unknown> = {
 		status: allHealthy ? "healthy" : "unhealthy",
+		// Surface the active deny list so an operator can verify what the running
+		// process actually loaded (the env is sampled at startup only; see README)
+		versionGate: { deniedClientVersions: [...DENIED_CLIENT_VERSIONS] },
 		databases: Object.fromEntries(
 			Array.from(results.entries()).map(([name, result]) => [
 				name,
