@@ -178,7 +178,8 @@
 		const db = await getDb(app);
 
 		if (invalidTransactions?.length) {
-			// TODO: this should probably be wrapped in a txn, but doing so resulted in app freezing at this point
+			// The id fetched here is only a candidate: createAndCommitReconciliationNote re-checks it
+			// inside its transaction and re-allocates if it was taken in the meantime
 			const id = await getNoteIdSeq(db);
 			await createAndCommitReconciliationNote(
 				db,

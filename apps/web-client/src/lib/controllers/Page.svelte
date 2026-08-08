@@ -24,8 +24,7 @@
 	 */
 	const handleCreateOutboundNote = async () => {
 		const db = await getDb(app);
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
+		const id = await createOutboundNote(db, await getNoteIdSeq(db));
 		await goto(appPath("outbound", id));
 	};
 

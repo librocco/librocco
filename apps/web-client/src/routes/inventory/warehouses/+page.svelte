@@ -118,12 +118,11 @@
 	 */
 	const handleCreateInboundNote = (warehouseId: number) => async () => {
 		const db = await getDb(app);
-		const id = await getNoteIdSeq(db);
-		// Note ids get recycled (id seq = MAX(id) + 1): clear any stale auto-print flag left behind by a
-		// previous note with the same id (e.g. one deleted from another workstation - cleanup there can't reach
-		// this workstation's localStorage)
+		const id = await createInboundNote(db, warehouseId, await getNoteIdSeq(db));
+		// Note ids get recycled (id seq = MAX(id) + 1, deletes are hard deletes): clear any stale auto-print
+		// flag left behind by a previous note with the same id (e.g. one deleted from another workstation -
+		// cleanup there can't reach this workstation's localStorage)
 		removeAutoPrintLabelsSetting(id);
-		await createInboundNote(db, warehouseId, id);
 		await goto(appPath("inbound", id));
 	};
 
