@@ -29,7 +29,13 @@
 				<div class="label">
 					<span class="label-text">{$LL.forms.device_settings.labels.workstation_name()}</span>
 				</div>
-				<input id="workstationName" name="workstationName" bind:value={$formStore.workstationName} class="input-bordered input w-full" />
+				<input
+					id="workstationName"
+					name="workstationName"
+					maxlength="60"
+					bind:value={$formStore.workstationName}
+					class="input-bordered input w-full"
+				/>
 				<div class="label">
 					<span class="label-text-alt">{$LL.forms.device_settings.labels.workstation_name_description()}</span>
 				</div>

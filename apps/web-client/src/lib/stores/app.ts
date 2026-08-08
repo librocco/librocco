@@ -48,7 +48,13 @@ export const ensureWorkstationName = (generateDefault: () => string): string => 
 	if (settings.workstationName) return settings.workstationName;
 
 	const workstationName = generateDefault();
-	deviceSettingsStore.update((s) => ({ ...s, workstationName }));
+	// A failed persist (storage quota, disabled storage) must not block note creation:
+	// fall back to using the generated name for this session only
+	try {
+		deviceSettingsStore.update((s) => ({ ...s, workstationName }));
+	} catch (err) {
+		console.warn("[workstation-name] failed to persist the generated name; using it for this session only", err);
+	}
 	return workstationName;
 };
 

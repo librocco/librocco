@@ -174,22 +174,32 @@
 		openReconciliationDialog([]);
 	};
 
+	// Guards against double-activation of the commit confirm: a second concurrent run
+	// would mint a second reconciliation note from the same stale shortage list
+	// (id re-allocation makes both inserts succeed), leaving phantom positive stock
+	let committing = false;
 	const handleReconcileAndCommitSelf = (invalidTransactions?: OutOfStockTransaction[]) => async (closeDialog: () => void) => {
-		const db = await getDb(app);
+		if (committing) return;
+		committing = true;
+		try {
+			const db = await getDb(app);
 
-		if (invalidTransactions?.length) {
-			// The id fetched here is only a candidate: createAndCommitReconciliationNote re-checks it
-			// inside its transaction and re-allocates if it was taken in the meantime
-			const id = await getNoteIdSeq(db);
-			await createAndCommitReconciliationNote(
-				db,
-				id,
-				invalidTransactions.map(({ quantity, available, ...txn }) => ({ ...txn, quantity: quantity - available }))
-			);
+			if (invalidTransactions?.length) {
+				// The id fetched here is only a candidate: createAndCommitReconciliationNote re-checks it
+				// inside its transaction and re-allocates if it was taken in the meantime
+				const id = await getNoteIdSeq(db);
+				await createAndCommitReconciliationNote(
+					db,
+					id,
+					invalidTransactions.map(({ quantity, available, ...txn }) => ({ ...txn, quantity: quantity - available }))
+				);
+			}
+			await commitNote(db, noteId);
+			closeDialog();
+			confirmDialogOpen.set(false);
+		} finally {
+			committing = false;
 		}
-		await commitNote(db, noteId);
-		closeDialog();
-		confirmDialogOpen.set(false);
 	};
 
 	const handleDeleteSelf = async (closeDialog: () => void) => {

@@ -15,9 +15,10 @@ import { ensureWorkstationName } from "$lib/stores/app";
  */
 
 const workstationName = (): string => {
-	// The generated default is localized ("Workstation 374" / "Postazione 374") and stored
-	// as-is: it's just an initial value for a user-editable name, not a live translation
-	return ensureWorkstationName(() => get(LL).common.workstation_default_name({ n: Math.floor(Math.random() * 900) + 100 }));
+	// The generated default is localized ("Workstation 3741" / "Postazione 3741") and stored
+	// as-is: it's just an initial value for a user-editable name, not a live translation.
+	// 9000 values keep the chance of two devices drawing the same default negligible
+	return ensureWorkstationName(() => get(LL).common.workstation_default_name({ n: Math.floor(Math.random() * 9000) + 1000 }));
 };
 
 /** Default display name (base) for a new sale note created on this device */
