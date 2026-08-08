@@ -236,13 +236,15 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	await header.title().assert("New Warehouse (11)");
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
+	// The list has no explicit ordering, so rows come back in id order: the explicitly-seeded
+	// ids (1, 2, 10) precede the UI-created warehouses, whose site-scoped ids are far larger
 	await warehouseList.assertElements([
 		{ name: "Warehouse 1" },
 		{ name: "Warehouse 2" },
+		{ name: "New Warehouse (10)" },
 		{ name: "Warehouse 3" },
 		{ name: "Warehouse 4" },
 		{ name: "New Warehouse" },
-		{ name: "New Warehouse (10)" },
 		{ name: "New Warehouse (11)" }
 	]);
 });
