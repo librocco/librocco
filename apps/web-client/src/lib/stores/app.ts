@@ -2,7 +2,7 @@ import { persisted } from "svelte-local-storage-store";
 import { of } from "rxjs";
 import { defaults } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
-import { type Writable, type Readable, writable } from "svelte/store";
+import { type Writable, type Readable, writable, get } from "svelte/store";
 import { browser } from "$app/environment";
 
 import type { PluginsInterface } from "$lib/plugins";
@@ -37,6 +37,20 @@ export const removeAutoPrintLabelsSetting = (noteId: number) => {
 
 const { data: defaultSettings } = defaults(zod(deviceSettingsSchema));
 export const deviceSettingsStore = persisted<typeof defaultSettings>(LOCAL_STORAGE_SETTINGS, defaultSettings);
+
+/**
+ * Returns this device's workstation name (used in default note names). If none was ever set
+ * (fresh device, or settings predating the field), generates one via `generateDefault` and
+ * persists it so the device keeps the same name until changed in settings.
+ */
+export const ensureWorkstationName = (generateDefault: () => string): string => {
+	const settings = get(deviceSettingsStore);
+	if (settings.workstationName) return settings.workstationName;
+
+	const workstationName = generateDefault();
+	deviceSettingsStore.update((s) => ({ ...s, workstationName }));
+	return workstationName;
+};
 
 const createDBConnectivityStream = () => {
 	// TODO: this is updated in a different PR, remove when merged

@@ -24,6 +24,7 @@
 
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { newSaleNoteName } from "$lib/utils/note-names";
 	import LL from "@librocco/shared/i18n-svelte";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
@@ -65,7 +66,7 @@
 	 */
 	const handleCreateNote = async () => {
 		const db = await getDb(app);
-		const id = await createOutboundNote(db, await getNoteIdSeq(db));
+		const id = await createOutboundNote(db, await getNoteIdSeq(db), newSaleNoteName());
 		await goto(appPath("outbound", id));
 	};
 

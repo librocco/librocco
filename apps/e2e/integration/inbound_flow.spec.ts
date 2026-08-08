@@ -27,9 +27,9 @@ test('should create a new inbound note, under the particular warehouse, on wareh
 	// Create a new note under "Warehouse 1"
 	await content.entityList("warehouse-list").item(0).getByRole("button", { name: "New Purchase" }).click();
 
-	// Check that we've been redirected to the new note's page
+	// Check that we've been redirected to the new note's page (named after the workstation)
 	await dashboard.view("inbound-note").waitFor();
-	await page.getByRole("main").getByRole("heading", { name: "New Purchase" }).first().waitFor();
+	await page.getByRole("main").getByRole("heading", { name: "Purchase Alpha" }).first().waitFor();
 });
 
 test("should display notes, namespaced to warehouses, in the inbound note list", async ({ page }) => {
@@ -169,7 +169,7 @@ test("note heading should display note name, 'updated at' timestamp", async ({ p
 	await dashboard.content().entityList("warehouse-list").item(0).createNote();
 
 	// Check the title
-	await page.getByRole("heading", { name: "New Purchase" }).first().waitFor();
+	await page.getByRole("heading", { name: "Purchase Alpha" }).first().waitFor();
 
 	// Check the 'updated at' timestamp
 	const updatedAt = new Date();
@@ -184,7 +184,7 @@ test("note should display breadcrumbs leading back to inbound page, or the paren
 	await dashboard.content().entityList("warehouse-list").item(0).createNote();
 
 	await header.breadcrumbs().waitFor();
-	await header.breadcrumbs().assert(["Inbound", "Warehouse 1", "New Purchase"]);
+	await header.breadcrumbs().assert(["Inbound", "Warehouse 1", "Purchase Alpha"]);
 
 	await header.breadcrumbs().getByText("Inbound").click();
 
@@ -216,21 +216,21 @@ test("should assign default name to notes in sequential order (regardless of war
 
 	// First note (Warehouse 1)
 	await warehouseList.item(0).createNote();
-	await page.getByRole("heading", { name: "New Purchase" }).first().waitFor();
+	await page.getByRole("heading", { name: "Purchase Alpha", exact: true }).first().waitFor();
 	const note1UpdatedAt = await header.updatedAt().value();
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
 	// Second note (Warehouse 1)
 	await warehouseList.item(0).createNote();
-	await page.getByRole("heading", { name: "New Purchase (2)" }).first().waitFor();
+	await page.getByRole("heading", { name: "Purchase Alpha (2)" }).first().waitFor();
 	const note2UpdatedAt = await header.updatedAt().value();
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
 	// Third note (Warehouse 2)
 	await warehouseList.item(1).createNote();
-	await page.getByRole("heading", { name: "New Purchase (3)" }).first().waitFor();
+	await page.getByRole("heading", { name: "Purchase Alpha (3)" }).first().waitFor();
 	const note3UpdatedAt = await header.updatedAt().value();
 
 	// Should display created notes in the inbound list
@@ -240,15 +240,13 @@ test("should assign default name to notes in sequential order (regardless of war
 	const entityList = content.entityList("inbound-list");
 
 	await entityList.assertElements([
-		{ name: "Warehouse 2 / New Purchase (3)", numBooks: 0, updatedAt: note3UpdatedAt },
-		{ name: "Warehouse 1 / New Purchase (2)", numBooks: 0, updatedAt: note2UpdatedAt },
-		{ name: "Warehouse 1 / New Purchase", numBooks: 0, updatedAt: note1UpdatedAt }
+		{ name: "Warehouse 2 / Purchase Alpha (3)", numBooks: 0, updatedAt: note3UpdatedAt },
+		{ name: "Warehouse 1 / Purchase Alpha (2)", numBooks: 0, updatedAt: note2UpdatedAt },
+		{ name: "Warehouse 1 / Purchase Alpha", numBooks: 0, updatedAt: note1UpdatedAt }
 	]);
 });
 
-test("should continue the naming sequence from the highest sequenced note name (even if lower sequenced notes have been renamed)", async ({
-	page
-}) => {
+test("should restart the workstation naming sequence once no active note carries the base name", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
 	const content = dashboard.content();
@@ -256,22 +254,26 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 	const dbHandle = await getDbHandle(page);
 
-	// TODO: Create two notes with default names
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "New Purchase" });
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "New Purchase (2)" });
-
-	// Create a new note, continuning the naming sequence
+	// Create two notes through the UI: "Purchase Alpha", "Purchase Alpha (2)"
 	await warehouseList.item(0).createNote();
-	await page.getByRole("heading", { name: "New Purchase (3)" }).first().waitFor();
+	await page.getByRole("heading", { name: "Purchase Alpha", exact: true }).first().waitFor();
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
-	// Rename the first two notes (leaving us with only "New Purchase (3)", having the default name)
-	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Purchase 1" });
-	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Purchase 2" });
+	await warehouseList.item(0).createNote();
+	await page.getByRole("heading", { name: "Purchase Alpha (2)" }).first().waitFor();
+
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
+	// Rename the first note: the highest active suffix still wins
+	// (notes created through the UI get site-scoped ids, so look the ids up by name)
+	const [{ id: note1Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'Purchase Alpha'")
+	);
+	await dbHandle.evaluate(updateNote, { id: note1Id, displayName: "Purchase 1" });
 
 	await warehouseList.item(0).createNote();
-	await page.getByRole("heading", { name: "New Purchase (4)" }).first().waitFor();
+	await page.getByRole("heading", { name: "Purchase Alpha (3)" }).first().waitFor();
 
 	// Check names
 	await page.getByRole("link", { name: "Manage inventory" }).click();
@@ -280,28 +282,26 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await content
 		.entityList("inbound-list")
 		.assertElements([
-			{ name: "Warehouse 1 / New Purchase (4)" },
-			{ name: "Warehouse 1 / Purchase 2" },
+			{ name: "Warehouse 1 / Purchase Alpha (3)" },
 			{ name: "Warehouse 1 / Purchase 1" },
-			{ name: "Warehouse 1 / New Purchase (3)" }
+			{ name: "Warehouse 1 / Purchase Alpha (2)" }
 		]);
 
-	// Rename the remaining notes to restart the sequence
-	// (notes created through the UI get site-scoped ids, so look the ids up by name)
+	// Rename the remaining workstation-named notes: the sequence restarts
+	const [{ id: note2Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'Purchase Alpha (2)'")
+	);
 	const [{ id: note3Id }] = await dbHandle.evaluate((db) =>
-		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'New Purchase (3)'")
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'Purchase Alpha (3)'")
 	);
-	const [{ id: note4Id }] = await dbHandle.evaluate((db) =>
-		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'New Purchase (4)'")
-	);
+	await dbHandle.evaluate(updateNote, { id: note2Id, displayName: "Purchase 2" });
 	await dbHandle.evaluate(updateNote, { id: note3Id, displayName: "Purchase 3" });
-	await dbHandle.evaluate(updateNote, { id: note4Id, displayName: "Purchase 4" });
 
 	// Create a final note (with reset sequence)
 	await page.getByRole("link", { name: "Warehouses" }).click();
 
 	await warehouseList.item(0).createNote();
-	await page.getByRole("heading", { name: "New Purchase" }).first().waitFor();
+	await page.getByRole("heading", { name: "Purchase Alpha", exact: true }).first().waitFor();
 
 	// Check names
 	await page.getByRole("link", { name: "Manage inventory" }).click();
@@ -310,8 +310,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await content
 		.entityList("inbound-list")
 		.assertElements([
-			{ name: "Warehouse 1 / New Purchase" },
-			{ name: "Warehouse 1 / Purchase 4" },
+			{ name: "Warehouse 1 / Purchase Alpha" },
 			{ name: "Warehouse 1 / Purchase 3" },
 			{ name: "Warehouse 1 / Purchase 2" },
 			{ name: "Warehouse 1 / Purchase 1" }

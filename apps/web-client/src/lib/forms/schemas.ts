@@ -6,6 +6,7 @@ import type { CustomerDisplayIdInfo } from "$lib/db/cr-sqlite/customers";
 
 export type DeviceSettingsSchema = Infer<typeof deviceSettingsSchema>;
 export const deviceSettingsSchema = z.object({
+	workstationName: z.string(),
 	labelPrinterUrl: z.string(),
 	receiptPrinterUrl: z.string()
 });

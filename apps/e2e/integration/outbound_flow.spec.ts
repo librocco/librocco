@@ -36,8 +36,8 @@ test('should create a new outbound note, on "New sale" and redirect to it', asyn
 	// Create a new note
 	await dashboard.content().header().getByRole("button", { name: "New sale" }).first().click();
 
-	// Check that we've been redirected to the new note's page
-	await page.getByRole("heading", { name: "New Sale" }).first().waitFor();
+	// Check that we've been redirected to the new note's page (named after the workstation)
+	await page.getByRole("heading", { name: "Sale Alpha" }).first().waitFor();
 });
 
 test("should delete the note on delete button click (after confirming the prompt) then make sure a newly created note has an empty state", async ({
@@ -84,7 +84,7 @@ test("note heading should display note name, 'updated at' timestamp", async ({ p
 	await dashboard.content().header().getByRole("button", { name: "New sale" }).first().click();
 
 	// Check the title
-	await page.getByRole("heading", { name: "New Sale" }).first().waitFor();
+	await page.getByRole("heading", { name: "Sale Alpha" }).first().waitFor();
 
 	// Check the 'updated at' timestamp
 	const updatedAt = new Date();
@@ -101,14 +101,14 @@ test("note should display breadcrumbs leading back to outbound page", async ({ p
 
 	await header.breadcrumbs().waitFor();
 
-	await header.breadcrumbs().assert(["Outbound", "New Sale"]);
+	await header.breadcrumbs().assert(["Outbound", "Sale Alpha"]);
 
 	await header.breadcrumbs().getByText("Outbound").click();
 
 	await dashboard.view("outbound").waitFor();
 });
 
-test("should assign default name to notes in sequential order", async ({ page }) => {
+test("should assign workstation-based default names, suffixing concurrent drafts in sequential order", async ({ page }) => {
 	const dashboard = getDashboard(page);
 	await page.getByRole("link", { name: "Sale" }).click();
 
@@ -118,7 +118,7 @@ test("should assign default name to notes in sequential order", async ({ page })
 	// First note
 	await dashboard.content().header().getByRole("button", { name: "New sale" }).first().click();
 
-	await page.getByRole("heading", { name: "New Sale" }).first().waitFor();
+	await page.getByRole("heading", { name: "Sale Alpha", exact: true }).first().waitFor();
 	const note1UpdatedAt = await header.updatedAt().value();
 
 	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
@@ -126,7 +126,7 @@ test("should assign default name to notes in sequential order", async ({ page })
 	// Second note
 	await dashboard.content().header().getByRole("button", { name: "New sale" }).first().click();
 
-	await page.getByRole("heading", { name: "New Sale (2)" }).first().waitFor();
+	await page.getByRole("heading", { name: "Sale Alpha (2)" }).first().waitFor();
 	const note2UpdatedAt = await header.updatedAt().value();
 
 	// Should display created notes in the outbound note list
@@ -137,86 +137,74 @@ test("should assign default name to notes in sequential order", async ({ page })
 	await entityList.waitFor();
 
 	await entityList.assertElements([
-		{ name: "New Sale (2)", numBooks: 0, updatedAt: note2UpdatedAt },
-		{ name: "New Sale", numBooks: 0, updatedAt: note1UpdatedAt }
+		{ name: "Sale Alpha (2)", numBooks: 0, updatedAt: note2UpdatedAt },
+		{ name: "Sale Alpha", numBooks: 0, updatedAt: note1UpdatedAt }
 	]);
 
-	// assert for note sequence > 10
+	// A note with a different (explicit) name doesn't disturb the workstation sequence
 	const dbHandle = await getDbHandle(page);
 
-	await dbHandle.evaluate(createOutboundNote, { id: 10, displayName: "New Sale (10)" });
+	await dbHandle.evaluate(createOutboundNote, { id: 10, displayName: "Some other note" });
 	await dashboard.content().header().getByRole("button", { name: "New sale" }).first().click();
 	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
 
 	await entityList.assertElements([
-		{ name: "New Sale (11)", numBooks: 0 },
-		{ name: "New Sale (10)", numBooks: 0 },
-		{ name: "New Sale (2)", numBooks: 0, updatedAt: note2UpdatedAt },
-		{ name: "New Sale", numBooks: 0, updatedAt: note1UpdatedAt }
+		{ name: "Sale Alpha (3)", numBooks: 0 },
+		{ name: "Some other note", numBooks: 0 },
+		{ name: "Sale Alpha (2)", numBooks: 0, updatedAt: note2UpdatedAt },
+		{ name: "Sale Alpha", numBooks: 0, updatedAt: note1UpdatedAt }
 	]);
 });
 
-test("should continue the naming sequence from the highest sequenced note name (even if lower sequenced notes have been renamed)", async ({
-	page
-}) => {
+test("should restart the workstation naming sequence once no active note carries the base name", async ({ page }) => {
 	const dashboard = getDashboard(page);
 	await page.getByRole("link", { name: "Sale" }).click();
 
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
 
-	// Create notes with default names
-	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "New Sale" });
-	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "New Sale (2)" });
-
-	// Create a new note, continuing the naming sequence
-	await page.getByRole("button", { name: "New Sale", exact: true }).click();
-	await page.getByRole("heading", { name: "New Sale (3)" }).first().waitFor();
-
-	// Verify names
+	// Create two drafts through the UI: "Sale Alpha", "Sale Alpha (2)"
+	await page.getByRole("button", { name: "New Sale", exact: true }).first().click();
+	await page.getByRole("heading", { name: "Sale Alpha", exact: true }).first().waitFor();
 	await page.getByRole("link", { name: "Sale" }).first().click(); // In the main nav, not the breadcrumb nav
-	await content.entityList("outbound-list").assertElements([{ name: "New Sale (3)" }, { name: "New Sale (2)" }, { name: "New Sale" }]);
 
-	// Rename the first two notes
-	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Sale 1" });
-	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Sale 2" });
+	await page.getByRole("button", { name: "New Sale", exact: true }).first().click();
+	await page.getByRole("heading", { name: "Sale Alpha (2)" }).first().waitFor();
+	await page.getByRole("link", { name: "Sale" }).first().click(); // In the main nav, not the breadcrumb nav
 
-	// Verify names
-	await content.entityList("outbound-list").assertElements([{ name: "Sale 2" }, { name: "Sale 1" }, { name: "New Sale (3)" }]);
+	await content.entityList("outbound-list").assertElements([{ name: "Sale Alpha (2)" }, { name: "Sale Alpha" }]);
 
-	// Create another note, continuing the sequence
-	await page.getByRole("button", { name: "New Sale", exact: true }).click();
-	await page.getByRole("heading", { name: "New Sale (4)" }).first().waitFor();
-
-	// Verify names
-	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
-	await content
-		.entityList("outbound-list")
-		.assertElements([{ name: "New Sale (4)" }, { name: "Sale 2" }, { name: "Sale 1" }, { name: "New Sale (3)" }]);
-
-	// Rename remaining notes to reset the sequence
+	// Rename the first draft: the highest active suffix still wins
 	// (notes created through the UI get site-scoped ids, so look the ids up by name)
-	const [{ id: note3Id }] = await dbHandle.evaluate((db) =>
-		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'New Sale (3)'")
+	const [{ id: note1Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'Sale Alpha'")
 	);
-	const [{ id: note4Id }] = await dbHandle.evaluate((db) =>
-		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'New Sale (4)'")
-	);
-	await dbHandle.evaluate(updateNote, { id: note3Id, displayName: "Sale 3" });
-	await dbHandle.evaluate(updateNote, { id: note4Id, displayName: "Sale 4" });
-	await content
-		.entityList("outbound-list")
-		.assertElements([{ name: "Sale 4" }, { name: "Sale 3" }, { name: "Sale 2" }, { name: "Sale 1" }]);
+	await dbHandle.evaluate(updateNote, { id: note1Id, displayName: "Sale 1" });
+	await content.entityList("outbound-list").assertElements([{ name: "Sale 1" }, { name: "Sale Alpha (2)" }]);
 
-	// Create a final note with reset sequence
-	await page.getByRole("button", { name: "New Sale", exact: true }).click();
-	await page.getByRole("heading", { name: "New Sale" }).first().waitFor();
+	await page.getByRole("button", { name: "New Sale", exact: true }).first().click();
+	await page.getByRole("heading", { name: "Sale Alpha (3)" }).first().waitFor();
+	await page.getByRole("link", { name: "Sale" }).first().click(); // In the main nav, not the breadcrumb nav
+
+	// Rename the remaining workstation-named drafts: the sequence restarts
+	const [{ id: note2Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'Sale Alpha (2)'")
+	);
+	const [{ id: note3Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'Sale Alpha (3)'")
+	);
+	await dbHandle.evaluate(updateNote, { id: note2Id, displayName: "Sale 2" });
+	await dbHandle.evaluate(updateNote, { id: note3Id, displayName: "Sale 3" });
+	await content.entityList("outbound-list").assertElements([{ name: "Sale 3" }, { name: "Sale 2" }, { name: "Sale 1" }]);
+
+	await page.getByRole("button", { name: "New Sale", exact: true }).first().click();
+	await page.getByRole("heading", { name: "Sale Alpha", exact: true }).first().waitFor();
 
 	// Verify names
 	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
 	await content
 		.entityList("outbound-list")
-		.assertElements([{ name: "New Sale" }, { name: "Sale 4" }, { name: "Sale 3" }, { name: "Sale 2" }, { name: "Sale 1" }]);
+		.assertElements([{ name: "Sale Alpha" }, { name: "Sale 3" }, { name: "Sale 2" }, { name: "Sale 1" }]);
 });
 
 test("should navigate to note page on 'edit' button click", async ({ page }) => {

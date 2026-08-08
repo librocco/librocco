@@ -653,6 +653,11 @@ const common = {
 		purchase_notes: "{count:number} purchase note{{s}}",
 		sale_notes: "{count:number} sale note{{s}}"
 	},
+	new_note_names: {
+		sale: "Sale {workstation}",
+		purchase: "Purchase {workstation}"
+	},
+	workstation_default_name: "Workstation {n:number}",
 	loading: "Loading"
 };
 const sale_note = {
@@ -1021,6 +1026,8 @@ const forms = {
 	},
 	device_settings: {
 		labels: {
+			workstation_name: "Workstation name",
+			workstation_name_description: "Used in the default name of notes created on this device",
 			label_printer_url: "Label Printer URL",
 			receipt_printer_url: "Receipt Printer URL",
 			save_reload: "Save and Reload"

@@ -9,6 +9,7 @@
 	import { goto } from "$lib/utils/navigation";
 
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { newSaleNoteName } from "$lib/utils/note-names";
 
 	import { PageLayout, ExtensionStatusBanner } from "$lib/components";
 
@@ -24,7 +25,7 @@
 	 */
 	const handleCreateOutboundNote = async () => {
 		const db = await getDb(app);
-		const id = await createOutboundNote(db, await getNoteIdSeq(db));
+		const id = await createOutboundNote(db, await getNoteIdSeq(db), newSaleNoteName());
 		await goto(appPath("outbound", id));
 	};
 
