@@ -17,6 +17,7 @@ import { vfsSupportsOPFS } from "$lib/db/cr-sqlite/core/vfs";
 import { browser } from "$app/environment";
 import { updateSyncConnectivityMonitor } from "$lib/stores";
 import { checkSyncCompatibility, markCompatibilityChecking } from "$lib/stores/sync-compatibility";
+import { withClientVersion } from "$lib/utils/sync-url";
 
 // ---------------------------------- Structs ---------------------------------- //
 export enum AppSyncState {
@@ -102,7 +103,9 @@ class AppSyncCore implements IAppSyncExclusive {
 		// Stop sync if active with different setup (noop otherwise)
 		await this.stop();
 
-		await this.worker.startSync(dbid, { url, room: dbid });
+		// Announce this build's version so the server can log it and refuse
+		// known-problematic versions (version gate, D-609)
+		await this.worker.startSync(dbid, { url: withClientVersion(url), room: dbid });
 		this.#activeConfig = { dbid, url };
 	}
 
