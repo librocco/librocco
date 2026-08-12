@@ -19,10 +19,10 @@ import type { DBAsync, TXAsync, PickPartial, Warehouse } from "./types";
 
 import { timed } from "$lib/utils/timer";
 
+import { nextSiteScopedId } from "./site-id-block";
+
 async function _getWarehouseIdSeq(db: TXAsync) {
-	const query = `SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM warehouse;`;
-	const [result] = await db.execO<{ nextId: number }>(query);
-	return result.nextId;
+	return nextSiteScopedId(db, "warehouse");
 }
 
 /**

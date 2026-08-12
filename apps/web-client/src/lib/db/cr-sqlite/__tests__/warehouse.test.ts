@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { getRandomDb } from "./lib";
 
 import { upsertWarehouse, getAllWarehouses, getWarehouseById, getWarehouseIdSeq, deleteWarehouse } from "../warehouse";
+import { siteIdBlockBase } from "../site-id-block";
 import {
 	addVolumesToNote,
 	createAndCommitReconciliationNote,
@@ -247,13 +248,16 @@ describe("Warehouse tests", () => {
 		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: 1 })]);
 	});
 
-	it("retrieves a warehouse id seq", async () => {
+	it("retrieves a warehouse id seq (scoped to this site's id block)", async () => {
 		const db = await getRandomDb();
 
+		const [[siteId]] = await db.execA<[Uint8Array]>("SELECT crsql_site_id()");
+		const base = siteIdBlockBase(siteId);
+
 		await upsertWarehouse(db, { id: await getWarehouseIdSeq(db) });
 		await upsertWarehouse(db, { id: await getWarehouseIdSeq(db) });
 
-		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: 1 }), expect.objectContaining({ id: 2 })]);
+		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: base + 1 }), expect.objectContaining({ id: base + 2 })]);
 	});
 
 	it("excludes orphan legs (leg whose note row is absent) from warehouse totals, agreeing with the stock page", async () => {

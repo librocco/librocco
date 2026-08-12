@@ -30,6 +30,7 @@ import {
 import { upsertWarehouse } from "../warehouse";
 import { upsertBook } from "../books";
 import { getStock } from "../stock";
+import { siteIdBlockBase } from "../site-id-block";
 
 describe("Inbound note tests", () => {
 	it("creates a new inbound note, using id and warehouseId, with default fields", async () => {
@@ -1820,20 +1821,23 @@ describe("Reconciliation note", () => {
 });
 
 describe("Misc note tests", () => {
-	it("returns a note id seq", async () => {
+	it("returns a note id seq (scoped to this site's id block)", async () => {
 		const db = await getRandomDb();
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
 		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+
+		const [[siteId]] = await db.execA<[Uint8Array]>("SELECT crsql_site_id()");
+		const base = siteIdBlockBase(siteId);
 
 		await createInboundNote(db, 1, await getNoteIdSeq(db));
 		await createInboundNote(db, 2, await getNoteIdSeq(db));
 		await createOutboundNote(db, await getNoteIdSeq(db));
 
 		expect(await getActiveInboundNotes(db)).toEqual([
-			expect.objectContaining({ id: 2, warehouseName: "Warehouse 2" }),
-			expect.objectContaining({ id: 1, warehouseName: "Warehouse 1" })
+			expect.objectContaining({ id: base + 2, warehouseName: "Warehouse 2" }),
+			expect.objectContaining({ id: base + 1, warehouseName: "Warehouse 1" })
 		]);
 
-		expect(await getActiveOutboundNotes(db)).toEqual([expect.objectContaining({ id: 3 })]);
+		expect(await getActiveOutboundNotes(db)).toEqual([expect.objectContaining({ id: base + 3 })]);
 	});
 });

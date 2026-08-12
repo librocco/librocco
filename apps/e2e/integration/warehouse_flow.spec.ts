@@ -212,8 +212,15 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	]);
 
 	// Rename remaining warehouses to restart the sequence
-	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
-	await dbHandle.evaluate(upsertWarehouse, { id: 4, displayName: "Warehouse 4" });
+	// (warehouses created through the UI get site-scoped ids, so look the ids up by name)
+	const [{ id: warehouse3Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM warehouse WHERE display_name = 'New Warehouse (3)'")
+	);
+	const [{ id: warehouse4Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM warehouse WHERE display_name = 'New Warehouse (4)'")
+	);
+	await dbHandle.evaluate(upsertWarehouse, { id: warehouse3Id, displayName: "Warehouse 3" });
+	await dbHandle.evaluate(upsertWarehouse, { id: warehouse4Id, displayName: "Warehouse 4" });
 
 	// Create a final warehouse with reset sequence
 	await page.getByRole("link", { name: "Manage inventory" }).click();
@@ -229,13 +236,15 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	await header.title().assert("New Warehouse (11)");
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
+	// The list has no explicit ordering, so rows come back in id order: the explicitly-seeded
+	// ids (1, 2, 10) precede the UI-created warehouses, whose site-scoped ids are far larger
 	await warehouseList.assertElements([
 		{ name: "Warehouse 1" },
 		{ name: "Warehouse 2" },
+		{ name: "New Warehouse (10)" },
 		{ name: "Warehouse 3" },
 		{ name: "Warehouse 4" },
 		{ name: "New Warehouse" },
-		{ name: "New Warehouse (10)" },
 		{ name: "New Warehouse (11)" }
 	]);
 });

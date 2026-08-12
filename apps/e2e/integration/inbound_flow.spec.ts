@@ -287,8 +287,15 @@ test("should continue the naming sequence from the highest sequenced note name (
 		]);
 
 	// Rename the remaining notes to restart the sequence
-	await dbHandle.evaluate(updateNote, { id: 3, displayName: "Purchase 3" });
-	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Purchase 4" });
+	// (notes created through the UI get site-scoped ids, so look the ids up by name)
+	const [{ id: note3Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'New Purchase (3)'")
+	);
+	const [{ id: note4Id }] = await dbHandle.evaluate((db) =>
+		db.execO<{ id: number }>("SELECT id FROM note WHERE display_name = 'New Purchase (4)'")
+	);
+	await dbHandle.evaluate(updateNote, { id: note3Id, displayName: "Purchase 3" });
+	await dbHandle.evaluate(updateNote, { id: note4Id, displayName: "Purchase 4" });
 
 	// Create a final note (with reset sequence)
 	await page.getByRole("link", { name: "Warehouses" }).click();

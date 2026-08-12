@@ -54,10 +54,22 @@ import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
 
 import { getStock } from "./stock";
 
+import { nextSiteScopedId } from "./site-id-block";
+
 async function _getNoteIdSeq(db: TXAsync) {
-	const query = `SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM note;`;
-	const [result] = await db.execO<{ nextId: number }>(query);
-	return result.nextId;
+	return nextSiteScopedId(db, "note");
+}
+
+/**
+ * Returns `candidate` if no note with that id exists, otherwise allocates a
+ * fresh id from this site's block. Run inside the same transaction as the
+ * INSERT using the id: there the check-and-insert is atomic with respect to
+ * other writers, closing the race left open by fetching an id in one await
+ * and inserting in another (two tabs, double-click).
+ */
+async function resolveFreeNoteId(txDb: TXAsync, candidate: number): Promise<number> {
+	const [taken] = await txDb.execO<{ id: number }>("SELECT id FROM note WHERE id = ?", [candidate]);
+	return taken ? nextSiteScopedId(txDb, "note") : candidate;
 }
 
 /**
@@ -99,17 +111,20 @@ const getSeqName = async (db: TXAsync, kind: "inbound" | "outbound"): Promise<st
  *
  * @param {DB} db - Database connection
  * @param {number} warehouseId - ID of warehouse receiving books
- * @param {number} noteId - Unique identifier for the new note
- * @returns {Promise<void>} Resolves when note is created
+ * @param {number} noteId - Requested id for the new note (re-allocated in-transaction if already taken)
+ * @returns {Promise<number>} The id the note was actually created with
  */
-export function createInboundNote(db: DBAsync, warehouseId: number, noteId: number): Promise<void> {
+export async function createInboundNote(db: DBAsync, warehouseId: number, noteId: number): Promise<number> {
 	const timestamp = Date.now();
 	const stmt = "INSERT INTO note (id, display_name, warehouse_id, updated_at, created_at) VALUES (?, ?, ?, ?, ?)";
 
-	return db.tx(async (txDb) => {
+	let id = noteId;
+	await db.tx(async (txDb) => {
+		id = await resolveFreeNoteId(txDb, noteId);
 		const displayName = await getSeqName(txDb, "inbound");
-		await txDb.exec(stmt, [noteId, displayName, warehouseId, timestamp, timestamp]);
+		await txDb.exec(stmt, [id, displayName, warehouseId, timestamp, timestamp]);
 	});
+	return id;
 }
 
 /**
@@ -117,17 +132,20 @@ export function createInboundNote(db: DBAsync, warehouseId: number, noteId: numb
  * Generates a default sequential display name automatically.
  *
  * @param {DB} db - Database connection
- * @param {number} noteId - Unique identifier for the new note
- * @returns {Promise<void>} Resolves when note is created
+ * @param {number} noteId - Requested id for the new note (re-allocated in-transaction if already taken)
+ * @returns {Promise<number>} The id the note was actually created with
  */
-export function createOutboundNote(db: DBAsync, noteId: number): Promise<void> {
+export async function createOutboundNote(db: DBAsync, noteId: number): Promise<number> {
 	const timestamp = Date.now();
 	const stmt = "INSERT INTO note (id, display_name, updated_at, created_at) VALUES (?, ?, ?, ?)";
 
-	return db.tx(async (txDb) => {
+	let id = noteId;
+	await db.tx(async (txDb) => {
+		id = await resolveFreeNoteId(txDb, noteId);
 		const displayName = await getSeqName(txDb, "outbound");
-		await txDb.exec(stmt, [noteId, displayName, timestamp, timestamp]);
+		await txDb.exec(stmt, [id, displayName, timestamp, timestamp]);
 	});
+	return id;
 }
 
 /**
@@ -885,13 +903,15 @@ async function _createAndCommitReconciliationNote(db: DBAsync, id: number, volum
 	const displayName = `Reconciliation note: ${new Date(timestamp).toISOString()}`;
 
 	await db.tx(async (txDb) => {
+		const noteId = await resolveFreeNoteId(txDb, id);
+
 		// Insert book transactions
 		for (const volume of volumes) {
 			// TODO: This isn't terribly efficient and should probably be run as a prepared statement, but having done so (with the exact same statement and args)
 			// made the tests fail. Should investigate further
 			await txDb.exec(
 				"INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id, updated_at, committed_at) VALUES (?, ?, ?, ?, ?, ?)",
-				[volume.isbn, volume.quantity, volume.warehouseId, id, timestamp, timestamp]
+				[volume.isbn, volume.quantity, volume.warehouseId, noteId, timestamp, timestamp]
 			);
 		}
 
@@ -899,7 +919,7 @@ async function _createAndCommitReconciliationNote(db: DBAsync, id: number, volum
 		await txDb.exec(
 			`INSERT INTO note (id, display_name, is_reconciliation_note, updated_at, created_at, committed, committed_at)
 			VALUES (?, ?, 1, ?, ?, 1, ?)`,
-			[id, displayName, timestamp, timestamp, timestamp]
+			[noteId, displayName, timestamp, timestamp, timestamp]
 		);
 	});
 }
