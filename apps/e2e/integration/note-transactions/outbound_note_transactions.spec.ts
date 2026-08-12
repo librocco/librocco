@@ -826,6 +826,35 @@ test("should check validity of the transactions and commit the note on 'commit' 
 		.assertRows([{ isbn: "22222222", quantity: 2 }]);
 });
 
+test("should not create a reconciliation note when committing a note with all transactions in stock", async ({ page }) => {
+	const dbHandle = await getDbHandle(page);
+
+	// Setup - add some stock
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "11111111", quantity: 4, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+
+	// Add a fully-in-stock transaction to the outbound note
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "11111111", quantity: 2, warehouseId: 1 }] as const);
+
+	const dashboard = getDashboard(page);
+	const entries = dashboard.content().table("outbound-note");
+	await entries.assertRows([{ isbn: "11111111", quantity: 2, warehouseName: "Warehouse 1" }]);
+
+	await page.getByRole("button", { name: "Commit" }).click();
+
+	const dialog = dashboard.dialog();
+	await dialog.confirm();
+	await expect(dialog).not.toBeVisible();
+
+	// The note should be committed, we're redirected to '/outbound' page
+	await dashboard.view("outbound").waitFor();
+
+	// Regression (D-597): a clean commit used to mint an empty reconciliation note
+	const reconciliationNotes = await dbHandle.evaluate((db) => db.execO("SELECT id FROM note WHERE is_reconciliation_note = 1", []));
+	expect(reconciliationNotes).toEqual([]);
+});
+
 // TODO: Should not allow committing of an empty note ??
 
 test("should create a new (forced) row for the same isbn/warehouse when quantity is increased beyond available stock in specified warehouse", async ({

@@ -177,9 +177,9 @@
 	const handleReconcileAndCommitSelf = (invalidTransactions?: OutOfStockTransaction[]) => async (closeDialog: () => void) => {
 		const db = await getDb(app);
 
-		// TODO: this should probably be wrapped in a txn, but doing so resulted in app freezing at this point
-		const id = await getNoteIdSeq(db);
-		if (invalidTransactions) {
+		if (invalidTransactions?.length) {
+			// TODO: this should probably be wrapped in a txn, but doing so resulted in app freezing at this point
+			const id = await getNoteIdSeq(db);
 			await createAndCommitReconciliationNote(
 				db,
 				id,
