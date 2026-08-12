@@ -34,6 +34,7 @@
 
 	import { appPath } from "$lib/paths";
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { newPurchaseNoteName } from "$lib/utils/note-names";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 	import * as stockCache from "$lib/db/cr-sqlite/stock_cache";
 	import LL from "@librocco/shared/i18n-svelte";
@@ -109,7 +110,7 @@
 	 */
 	const handleCreateInboundNote = async () => {
 		const db = await getDb(app);
-		const noteId = await createInboundNote(db, id, await getNoteIdSeq(db)); // Id here is warehouseId ^^^
+		const noteId = await createInboundNote(db, id, await getNoteIdSeq(db), newPurchaseNoteName()); // Id here is warehouseId ^^^
 		// Note ids get recycled (id seq = MAX(id) + 1, deletes are hard deletes): clear any stale auto-print
 		// flag left behind by a previous note with the same id (e.g. one deleted from another workstation -
 		// cleanup there can't reach this workstation's localStorage)

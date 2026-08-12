@@ -6,6 +6,8 @@ import type { CustomerDisplayIdInfo } from "$lib/db/cr-sqlite/customers";
 
 export type DeviceSettingsSchema = Infer<typeof deviceSettingsSchema>;
 export const deviceSettingsSchema = z.object({
+	// The name is copied into every note's display name and synced with it - keep it short
+	workstationName: z.string().max(60),
 	labelPrinterUrl: z.string(),
 	receiptPrinterUrl: z.string()
 });

@@ -516,6 +516,11 @@
 			"purchase_notes": "{count:number} Einkaufsnoti{{z|zen}}",
 			"sale_notes": "{count:number} Verkaufsnoti{{z|zen}}"
 		},
+		"new_note_names": {
+			"sale": "Verkauf {workstation}",
+			"purchase": "Einkauf {workstation}"
+		},
+		"workstation_default_name": "Arbeitsplatz {n:number}",
 		"loading": ""
 	},
 	"supplier_orders_page": {
@@ -982,6 +987,8 @@
 		},
 		"device_settings": {
 			"labels": {
+				"workstation_name": "Name des Arbeitsplatzes",
+				"workstation_name_description": "Wird im Standardnamen der auf diesem Gerät erstellten Notizen verwendet",
 				"label_printer_url": "",
 				"receipt_printer_url": "",
 				"save_reload": ""

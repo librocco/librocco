@@ -1443,6 +1443,23 @@ type RootTranslation = {
 			 */
 			sale_notes: RequiredParams<'count'>
 		}
+		new_note_names: {
+			/**
+			 * S​a​l​e​ ​{​w​o​r​k​s​t​a​t​i​o​n​}
+			 * @param {unknown} workstation
+			 */
+			sale: RequiredParams<'workstation'>
+			/**
+			 * P​u​r​c​h​a​s​e​ ​{​w​o​r​k​s​t​a​t​i​o​n​}
+			 * @param {unknown} workstation
+			 */
+			purchase: RequiredParams<'workstation'>
+		}
+		/**
+		 * W​o​r​k​s​t​a​t​i​o​n​ ​{​n​}
+		 * @param {number} n
+		 */
+		workstation_default_name: RequiredParams<'n'>
 		/**
 		 * L​o​a​d​i​n​g
 		 */
@@ -2772,6 +2789,14 @@ type RootTranslation = {
 		}
 		device_settings: {
 			labels: {
+				/**
+				 * W​o​r​k​s​t​a​t​i​o​n​ ​n​a​m​e
+				 */
+				workstation_name: string
+				/**
+				 * U​s​e​d​ ​i​n​ ​t​h​e​ ​d​e​f​a​u​l​t​ ​n​a​m​e​ ​o​f​ ​n​o​t​e​s​ ​c​r​e​a​t​e​d​ ​o​n​ ​t​h​i​s​ ​d​e​v​i​c​e
+				 */
+				workstation_name_description: string
 				/**
 				 * L​a​b​e​l​ ​P​r​i​n​t​e​r​ ​U​R​L
 				 */
@@ -4600,6 +4625,20 @@ export type TranslationFunctions = {
 			 */
 			sale_notes: (arg: { count: number }) => LocalizedString
 		}
+		new_note_names: {
+			/**
+			 * Sale {workstation}
+			 */
+			sale: (arg: { workstation: unknown }) => LocalizedString
+			/**
+			 * Purchase {workstation}
+			 */
+			purchase: (arg: { workstation: unknown }) => LocalizedString
+		}
+		/**
+		 * Workstation {n}
+		 */
+		workstation_default_name: (arg: { n: number }) => LocalizedString
 		/**
 		 * Loading
 		 */
@@ -5906,6 +5945,14 @@ export type TranslationFunctions = {
 		}
 		device_settings: {
 			labels: {
+				/**
+				 * Workstation name
+				 */
+				workstation_name: () => LocalizedString
+				/**
+				 * Used in the default name of notes created on this device
+				 */
+				workstation_name_description: () => LocalizedString
 				/**
 				 * Label Printer URL
 				 */

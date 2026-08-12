@@ -514,6 +514,11 @@
 			"purchase_notes": "{count:number} not{{a|e}} di acquisto",
 			"sale_notes": "{count:number} not{{a|e}} di vendita"
 		},
+		"new_note_names": {
+			"sale": "Vendita {workstation}",
+			"purchase": "Acquisto {workstation}"
+		},
+		"workstation_default_name": "Postazione {n:number}",
 		"loading": "Caricamento"
 	},
 	"supplier_orders_page": {
@@ -980,6 +985,8 @@
 		},
 		"device_settings": {
 			"labels": {
+				"workstation_name": "Nome postazione",
+				"workstation_name_description": "Usato nel nome predefinito delle note create su questo dispositivo",
 				"label_printer_url": "URL Stampante Etichette",
 				"receipt_printer_url": "URL Stampante Ricevute",
 				"save_reload": "Salva e Ricarica"

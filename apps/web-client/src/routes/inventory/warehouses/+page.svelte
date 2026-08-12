@@ -35,6 +35,7 @@
 
 	import { removeAutoPrintLabelsSetting } from "$lib/stores/app";
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { newPurchaseNoteName } from "$lib/utils/note-names";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import LL from "@librocco/shared/i18n-svelte";
@@ -118,7 +119,7 @@
 	 */
 	const handleCreateInboundNote = (warehouseId: number) => async () => {
 		const db = await getDb(app);
-		const id = await createInboundNote(db, warehouseId, await getNoteIdSeq(db));
+		const id = await createInboundNote(db, warehouseId, await getNoteIdSeq(db), newPurchaseNoteName());
 		// Note ids get recycled (id seq = MAX(id) + 1, deletes are hard deletes): clear any stale auto-print
 		// flag left behind by a previous note with the same id (e.g. one deleted from another workstation -
 		// cleanup there can't reach this workstation's localStorage)

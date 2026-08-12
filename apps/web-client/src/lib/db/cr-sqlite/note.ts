@@ -105,6 +105,42 @@ const getSeqName = async (db: TXAsync, kind: "inbound" | "outbound"): Promise<st
 	return kind === "inbound" ? `New Purchase (${maxSequence})` : `New Sale (${maxSequence})`;
 };
 
+const escapeLike = (str: string) => str.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+/**
+ * Returns a display name for a new note based on `base` (the workstation-derived
+ * default, e.g. "Sale Front desk"): `base` itself if free, otherwise "base (n)".
+ *
+ * Unlike the legacy `getSeqName`, the sequence only considers ACTIVE (uncommitted)
+ * notes: it exists to tell concurrent drafts apart, and committed notes in history
+ * are already distinguished by their timestamps. This keeps the suffix from growing
+ * unboundedly over the life of the database.
+ */
+const getSeqNameForBase = async (db: TXAsync, kind: "inbound" | "outbound", base: string): Promise<string> => {
+	const query = `
+		SELECT display_name AS displayName FROM note
+		WHERE (displayName = ? OR displayName LIKE ? ESCAPE '\\')
+		AND warehouse_id ${kind === "outbound" ? "IS NULL" : "IS NOT NULL"}
+		AND COALESCE(committed, 0) = 0
+		ORDER BY LENGTH(displayName) DESC, displayName DESC
+		LIMIT 1;
+	`;
+	const [result] = await db.execO<{ displayName?: string }>(query, [base, `${escapeLike(base)} (%`]);
+	const displayName = result?.displayName;
+
+	if (!displayName) {
+		return base;
+	}
+
+	const suffix = displayName.slice(base.length).match(/^ \((\d+)\)$/);
+	// A note named exactly `base` exists, or one with an unparsable suffix: start at (2)
+	if (!suffix) {
+		return `${base} (2)`;
+	}
+
+	return `${base} (${Number(suffix[1]) + 1})`;
+};
+
 /**
  * Creates a new inbound note associated with a specific warehouse.
  * Generates a default sequential display name automatically.
@@ -112,16 +148,17 @@ const getSeqName = async (db: TXAsync, kind: "inbound" | "outbound"): Promise<st
  * @param {DB} db - Database connection
  * @param {number} warehouseId - ID of warehouse receiving books
  * @param {number} noteId - Requested id for the new note (re-allocated in-transaction if already taken)
+ * @param {string} [displayNameBase] - Base for the display name (e.g. the workstation-derived default); suffixed with "(n)" if an active note already carries it. Falls back to the legacy "New Purchase (n)" sequence when omitted.
  * @returns {Promise<number>} The id the note was actually created with
  */
-export async function createInboundNote(db: DBAsync, warehouseId: number, noteId: number): Promise<number> {
+export async function createInboundNote(db: DBAsync, warehouseId: number, noteId: number, displayNameBase?: string): Promise<number> {
 	const timestamp = Date.now();
 	const stmt = "INSERT INTO note (id, display_name, warehouse_id, updated_at, created_at) VALUES (?, ?, ?, ?, ?)";
 
 	let id = noteId;
 	await db.tx(async (txDb) => {
 		id = await resolveFreeNoteId(txDb, noteId);
-		const displayName = await getSeqName(txDb, "inbound");
+		const displayName = displayNameBase ? await getSeqNameForBase(txDb, "inbound", displayNameBase) : await getSeqName(txDb, "inbound");
 		await txDb.exec(stmt, [id, displayName, warehouseId, timestamp, timestamp]);
 	});
 	return id;
@@ -133,16 +170,17 @@ export async function createInboundNote(db: DBAsync, warehouseId: number, noteId
  *
  * @param {DB} db - Database connection
  * @param {number} noteId - Requested id for the new note (re-allocated in-transaction if already taken)
+ * @param {string} [displayNameBase] - Base for the display name (e.g. the workstation-derived default); suffixed with "(n)" if an active note already carries it. Falls back to the legacy "New Sale (n)" sequence when omitted.
  * @returns {Promise<number>} The id the note was actually created with
  */
-export async function createOutboundNote(db: DBAsync, noteId: number): Promise<number> {
+export async function createOutboundNote(db: DBAsync, noteId: number, displayNameBase?: string): Promise<number> {
 	const timestamp = Date.now();
 	const stmt = "INSERT INTO note (id, display_name, updated_at, created_at) VALUES (?, ?, ?, ?)";
 
 	let id = noteId;
 	await db.tx(async (txDb) => {
 		id = await resolveFreeNoteId(txDb, noteId);
-		const displayName = await getSeqName(txDb, "outbound");
+		const displayName = displayNameBase ? await getSeqNameForBase(txDb, "outbound", displayNameBase) : await getSeqName(txDb, "outbound");
 		await txDb.exec(stmt, [id, displayName, timestamp, timestamp]);
 	});
 	return id;

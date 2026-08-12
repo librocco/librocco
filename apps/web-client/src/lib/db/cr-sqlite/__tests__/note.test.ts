@@ -1841,3 +1841,42 @@ describe("Misc note tests", () => {
 		expect(await getActiveOutboundNotes(db)).toEqual([expect.objectContaining({ id: base + 3 })]);
 	});
 });
+
+describe("Workstation-based note names", () => {
+	it("names notes after the provided base, suffixing only among active notes", async () => {
+		const db = await getRandomDb();
+
+		const id1 = await createOutboundNote(db, await getNoteIdSeq(db), "Sale Front desk");
+		const id2 = await createOutboundNote(db, await getNoteIdSeq(db), "Sale Front desk");
+		expect(await getNoteById(db, id1)).toEqual(expect.objectContaining({ displayName: "Sale Front desk" }));
+		expect(await getNoteById(db, id2)).toEqual(expect.objectContaining({ displayName: "Sale Front desk (2)" }));
+
+		// Committed notes drop out of the sequence: a fresh draft starts over
+		await commitNote(db, id1);
+		await commitNote(db, id2);
+		const id3 = await createOutboundNote(db, await getNoteIdSeq(db), "Sale Front desk");
+		expect(await getNoteById(db, id3)).toEqual(expect.objectContaining({ displayName: "Sale Front desk" }));
+	});
+
+	it("keeps inbound and outbound name sequences separate", async () => {
+		const db = await getRandomDb();
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+
+		const saleId = await createOutboundNote(db, await getNoteIdSeq(db), "Cassa");
+		const purchaseId = await createInboundNote(db, 1, await getNoteIdSeq(db), "Cassa");
+		expect(await getNoteById(db, saleId)).toEqual(expect.objectContaining({ displayName: "Cassa" }));
+		expect(await getNoteById(db, purchaseId)).toEqual(expect.objectContaining({ displayName: "Cassa" }));
+	});
+
+	it("treats LIKE wildcards in the workstation name literally", async () => {
+		const db = await getRandomDb();
+
+		// A name that would match "Sale 100%" as a LIKE pattern, but isn't a suffixed variant of it
+		await createOutboundNote(db, await getNoteIdSeq(db), "Sale 100234 (2)");
+
+		const id1 = await createOutboundNote(db, await getNoteIdSeq(db), "Sale 100%");
+		const id2 = await createOutboundNote(db, await getNoteIdSeq(db), "Sale 100%");
+		expect(await getNoteById(db, id1)).toEqual(expect.objectContaining({ displayName: "Sale 100%" }));
+		expect(await getNoteById(db, id2)).toEqual(expect.objectContaining({ displayName: "Sale 100% (2)" }));
+	});
+});

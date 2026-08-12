@@ -65,7 +65,22 @@ const baseConfig: Config = {
 		/* Collect trace for failed test. See https://playwright.dev/docs/trace-viewer */
 		trace: "retain-on-failure",
 		/** Record video for all test runs and retain for failed tests. See https://playwright.dev/docs/videos */
-		video: "retain-on-failure"
+		video: "retain-on-failure",
+		/**
+		 * Seed a deterministic workstation name: notes created through the UI are named
+		 * "<Sale|Purchase> <workstation name>" (the name is otherwise randomly generated on first use)
+		 */
+		storageState: {
+			origins: [
+				{
+					origin: new URL(baseURL).origin,
+					localStorage: [
+						{ name: "librocco:settings", value: JSON.stringify({ workstationName: "Alpha", labelPrinterUrl: "", receiptPrinterUrl: "" }) }
+					]
+				}
+			],
+			cookies: [] as any[]
+		}
 	}
 };
 
@@ -118,7 +133,21 @@ const vfsTestConfig: Config = {
 			use: {
 				...device,
 				locale: locales[0],
-				storageState: { origins: [{ origin: new URL(baseURL).origin, localStorage: [{ name: "vfs", value: vfs }] }], cookies: [] as any[] }
+				storageState: {
+					origins: [
+						{
+							origin: new URL(baseURL).origin,
+							localStorage: [
+								{ name: "vfs", value: vfs },
+								{
+									name: "librocco:settings",
+									value: JSON.stringify({ workstationName: "Alpha", labelPrinterUrl: "", receiptPrinterUrl: "" })
+								}
+							]
+						}
+					],
+					cookies: [] as any[]
+				}
 			}
 		}))
 };

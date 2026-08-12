@@ -27,6 +27,22 @@
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<label class="form-control basis-full">
 				<div class="label">
+					<span class="label-text">{$LL.forms.device_settings.labels.workstation_name()}</span>
+				</div>
+				<input
+					id="workstationName"
+					name="workstationName"
+					maxlength="60"
+					bind:value={$formStore.workstationName}
+					class="input-bordered input w-full"
+				/>
+				<div class="label">
+					<span class="label-text-alt">{$LL.forms.device_settings.labels.workstation_name_description()}</span>
+				</div>
+			</label>
+
+			<label class="form-control basis-full">
+				<div class="label">
 					<span class="label-text">{$LL.forms.device_settings.labels.label_printer_url()}</span>
 				</div>
 				<input id="url" name="labelPrinterUrl" bind:value={$formStore.labelPrinterUrl} class="input-bordered input w-full" />
