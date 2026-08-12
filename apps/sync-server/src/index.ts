@@ -13,6 +13,7 @@ import { extensionPath } from "@vlcn.io/crsqlite";
 
 import { performStartupHealthCheck, checkDatabaseHealth, checkAllDatabases } from "./db-health.js";
 import { migrateDatabasesOnStartup } from "./startup-migrations.js";
+import { makeVersionGate, parseDeniedClientVersions } from "./version-gate.js";
 import {
 	readonlyDatabaseExists,
 	runReadonlyQuery,
@@ -32,6 +33,9 @@ const STARTUP_MIGRATION_BACKUP_FOLDER = process.env.STARTUP_MIGRATION_BACKUP_FOL
 const STARTUP_MIGRATION_MAX_BACKUP_RUNS = parsePositiveInteger(
 	process.env.STARTUP_MIGRATION_MAX_BACKUP_RUNS
 );
+// Comma-separated client versions refused at the sync WS upgrade; the special
+// token "unversioned" refuses clients that predate version announcement (D-609)
+const DENIED_CLIENT_VERSIONS = parseDeniedClientVersions(process.env.DENIED_CLIENT_VERSIONS);
 
 // Create the DB folder if it doesn't exist
 if (!fs.existsSync(DB_FOLDER)) {
@@ -72,7 +76,10 @@ try {
 	process.exit(1);
 }
 
-const dbCache = attachWebsocketServer(server, wsConfig);
+if (DENIED_CLIENT_VERSIONS.size) {
+	console.warn(`Denying sync connections from client versions: ${[...DENIED_CLIENT_VERSIONS].join(", ")}`);
+}
+const dbCache = attachWebsocketServer(server, wsConfig, undefined, undefined, makeVersionGate(DENIED_CLIENT_VERSIONS));
 const originalUnref = dbCache.unref.bind(dbCache) as (roomId: string) => Promise<void>;
 dbCache.unref = async (roomId: string) => {
 	try {
@@ -111,6 +118,9 @@ app.get("/health", (_, res) => {
 
 	const response: Record<string, unknown> = {
 		status: allHealthy ? "healthy" : "unhealthy",
+		// Surface the active deny list so an operator can verify what the running
+		// process actually loaded (the env is sampled at startup only; see README)
+		versionGate: { deniedClientVersions: [...DENIED_CLIENT_VERSIONS] },
 		databases: Object.fromEntries(
 			Array.from(results.entries()).map(([name, result]) => [
 				name,

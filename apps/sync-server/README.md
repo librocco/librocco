@@ -34,6 +34,37 @@ Backup runs are reused per schema target version, so repeated failed restarts do
 - `SKIP_HEALTH_CHECK=true`: disables startup health checks
 - `STARTUP_MIGRATION_BACKUP_FOLDER`: optional explicit backup folder (default `DB_FOLDER/.startup-migration-backups`)
 - `STARTUP_MIGRATION_MAX_BACKUP_RUNS`: number of backup run directories to retain (default `5`)
+- `DENIED_CLIENT_VERSIONS`: comma-separated client build versions (git SHAs) refused at the sync WebSocket upgrade; the special token `unversioned` refuses clients that predate version announcement. Unset (the default) admits everyone. See "Client version gate" below before using.
+
+## Client version gate
+
+Clients announce their build version as a `client_version` query parameter on the sync
+WebSocket URL. Every connection's version is logged; versions listed in
+`DENIED_CLIENT_VERSIONS` are refused at the HTTP upgrade (401), before any sync protocol
+runs — a denied client can neither push nor pull. Purpose: after a fix that requires the
+whole fleet to run it (e.g. per-site id allocation, D-595), a straggler tab on the old
+build can silently corrupt shared CRDT data; listing that build enforces the upgrade.
+
+Operational notes — read before enabling:
+
+- **The env is sampled at process startup only**, and the launcher snapshots its own
+  environment: changing the variable in a shell and clicking "restart sync server" in the
+  launcher will NOT pick it up. Set it where the launcher itself gets its environment,
+  then relaunch. Verify what the running process actually loaded via
+  `curl -s localhost:3000/health | grep -o '"deniedClientVersions":[^]]*]'`.
+- **Rollback** is the same procedure with the variable unset. Because a mistake can
+  disconnect tills, only change the list during a staffed window and re-check `/health`
+  afterwards.
+- **`unversioned` disconnects every pre-gate client at once.** Roll out the announcing
+  client first, confirm every register's version appears in the connection logs, and only
+  then add `unversioned` to the list.
+- **A denied till keeps selling offline.** The gate stops live mixing, but the denied
+  build keeps writing to its local DB; those writes sync as soon as the denial is lifted
+  or the same DB is opened by an upgraded build. Before re-admitting a device, reload it
+  on the fixed build — and if the denied build's writes are themselves the problem,
+  remediate its local DB first. On the client, a denied connection currently surfaces as
+  the generic "sync stuck" state (the pre-upgrade 401 carries no readable reason in the
+  browser WebSocket API).
 
 ## Read-only query API
 
