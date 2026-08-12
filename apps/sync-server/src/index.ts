@@ -107,6 +107,14 @@ const dbProvider = {
 app.use(cors());
 app.use(express.json());
 
+// Validate the db name for every route with a :dbname param
+app.param("dbname", (_req, res, next, dbname: string) => {
+	if (!isValidDbname(dbname)) {
+		return res.status(400).json({ message: "Invalid database name" });
+	}
+	return next();
+});
+
 app.get("/", (_, res) => {
 	res.send("Ok");
 });
@@ -348,6 +356,12 @@ async function useReadonlyDb<T>(dbname: string, cb: (db: any) => T): Promise<T> 
 	}
 
 	return result;
+}
+
+// A database name must be a plain file name within the DB folder.
+// Same rule as getDbPath in @vlcn.io/ws-server, plus a null-byte check.
+function isValidDbname(dbname: string): boolean {
+	return dbname.length > 0 && !dbname.includes("..") && !dbname.includes("/") && !dbname.includes("\\") && !dbname.includes("\0");
 }
 
 function parsePositiveInteger(rawValue: string | undefined): number | undefined {
