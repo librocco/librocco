@@ -66,7 +66,16 @@ const _load = async ({ params, depends, parent }: Parameters<PageLoad>[0]) => {
 			const bookData = await getMultipleBookData(db, ...isbns);
 			const iter = wrapIter(entries)
 				.zip(bookData)
-				.map(([stock, bookData]) => ({ ...stock, ...bookData }));
+				// Overlay warehouse metadata from THIS load's (fresh, `warehouse:data`-invalidated)
+				// warehouse query: the cached rows' warehouseName/warehouseDiscount may predate a
+				// rename/discount edit (the stock cache only tracks stock changes, not warehouse
+				// metadata — its own watcher re-runs this load on warehouse changes).
+				.map(([stock, bookData]) => ({
+					...stock,
+					...bookData,
+					warehouseName: warehouse.displayName ?? String(id),
+					warehouseDiscount: warehouse.discount ?? 0
+				}));
 			return [...iter];
 		});
 
