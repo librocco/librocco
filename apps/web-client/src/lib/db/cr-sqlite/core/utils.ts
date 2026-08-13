@@ -188,7 +188,7 @@ export function wrapFileHandle(dirHandle: FileSystemDirectoryHandle, fileHandle:
 		// Case params = [destDirHandle, destName?]
 		const destDir = params[0] as FileSystemDirectoryHandle;
 		// If dest name not provided, use the same name as current file
-		const dest = params[0] || srcHandle.name;
+		const dest = (params[1] as string) || srcHandle.name;
 		return moveImpl(srcDir, srcHandle, destDir, dest);
 	};
 
@@ -214,7 +214,7 @@ async function moveImpl(
 	const srcFile = await srcHandle.getFile();
 	const srcBuf = await srcFile.arrayBuffer();
 
-	const destHandle = await destDir.getFileHandle(destName);
+	const destHandle = await destDir.getFileHandle(destName, { create: true });
 	const destWritable = await destHandle.createWritable();
 
 	await destWritable.write(srcBuf);
