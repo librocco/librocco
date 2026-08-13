@@ -233,7 +233,7 @@ const purchase_note = {
 	},
 	placeholder: {
 		scan_title: "Scan to add books",
-		scan_description: "Plugin your barcode scanner and pull the trigger"
+		scan_description: "Plug in your barcode scanner and pull the trigger"
 	}
 };
 
@@ -272,7 +272,7 @@ const customer_orders_page = {
 			description: "Create a new customer order to get started"
 		},
 		scan_title: "Scan to add books",
-		scan_description: "Plugin your barcode scanner and pull the trigger"
+		scan_description: "Plug in your barcode scanner and pull the trigger"
 	},
 	new_customer_dialog: {
 		title: "new customer form dialog",
@@ -611,7 +611,7 @@ const books_page = {
 
 const common = {
 	delete_dialog: {
-		title: `Permenantly delete {entity}?`,
+		title: `Permanently delete {entity}?`,
 		description: "Once you delete this note, you will not be able to access it again"
 	},
 	edit_book_dialog: {
@@ -710,7 +710,7 @@ const sale_note = {
 		any_warehouse: "Any warehouse",
 		no_warehouses: "No available warehouses",
 		scan_title: "Scan to select books from...",
-		scan_description: "Plugin your barcode scanner and pull the trigger"
+		scan_description: "Plug in your barcode scanner and pull the trigger"
 	},
 	alerts: {
 		insufficient_quantity:
@@ -985,7 +985,7 @@ const layout = {
 	error_dialog: {
 		demo_db_not_initialised: {
 			title: "Load the DB with data",
-			call_to_action: "Click on the button below to load the DB prepupulated with demo data",
+			call_to_action: "Click on the button below to load the DB prepopulated with demo data",
 			description: "This will download the demo DB .sqlite3 file and store it to browser's OPFS (for in app usage)",
 			button: "Load DB"
 		},

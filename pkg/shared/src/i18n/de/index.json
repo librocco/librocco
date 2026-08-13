@@ -254,9 +254,7 @@
 		}
 	},
 	"suppliers_page": {
-		"title": {
-			"suppliers": ""
-		},
+		"title": "",
 		"placeholder": {
 			"title": "",
 			"description": ""
@@ -637,7 +635,7 @@
 			},
 			"order_summary": {
 				"order_id": "Bestellung #{id}",
-				"books_undelivered": "{count} Buch{{er}} nicht geliefert",
+				"books_undelivered": "{count} {{Buch|Bücher}} nicht geliefert",
 				"complete": "Vollständig",
 				"status": "Status",
 				"missing": "{count} fehlend"

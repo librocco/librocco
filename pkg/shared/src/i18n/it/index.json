@@ -405,7 +405,7 @@
 	"purchase_note": {
 		"commit_dialog": {
 			"title": "Confermare acquisto \"{entity}\"?",
-			"description": "{ bookCount } libr{{o|i}} verr{{à|anno}} aggiunti a { warehouseName }"
+			"description": "{ bookCount } libr{{o|i}} verr{{à|anno}} aggiunt{{o|i}} a { warehouseName }"
 		},
 		"stats": {
 			"last_updated": "Ultimo aggiornamento"
