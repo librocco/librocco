@@ -20,7 +20,7 @@ const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>
 
 	// Validate the date - if not valid, redirect to default
 	if (!date || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date)) {
-		redirect(307, appPath("history/date", new Date().toISOString().slice(0, 10)));
+		redirect(307, appPath("history/notes/date", new Date().toISOString().slice(0, 10)));
 	}
 
 	// Prepare the date for usage with date picker
