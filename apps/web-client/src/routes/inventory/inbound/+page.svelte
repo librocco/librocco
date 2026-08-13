@@ -203,8 +203,8 @@
 
 <ConfirmDialog
 	{dialog}
-	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
-	title={$LL.common.delete_dialog.description()}
+	title={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
+	description={$LL.common.delete_dialog.description()}
 	onConfirm={() => {
 		handleDeleteNote(noteToDelete.id);
 		resetDialogState();
