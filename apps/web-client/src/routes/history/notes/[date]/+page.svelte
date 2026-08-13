@@ -14,7 +14,7 @@
 	import { HistoryPage } from "$lib/controllers";
 
 	import { formatters as dateFormatters } from "@librocco/shared/i18n-formatters";
-	import { racefreeGoto } from "$lib/utils/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import { appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
@@ -38,7 +38,9 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
-	$: goto = racefreeGoto(disposer);
+	// NOTE: the only navigation from this page is same-route (just the [date] param changes), so the component is
+	// reused and 'onMount' doesn't rerun. Use the plain (non-disposing) 'goto': 'racefreeGoto' would tear down the
+	// DB subscription above, permanently stopping live updates for the view (D-328).
 
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
 		if (!a || !b) return false;

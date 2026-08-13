@@ -15,7 +15,7 @@
 	import ArrowLeft from "$lucide/arrow-left";
 	import ArrowRight from "$lucide/arrow-right";
 
-	import { racefreeGoto } from "$lib/utils/navigation";
+	import { goto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
 
 	import type { PageData } from "./$types";
@@ -43,7 +43,9 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
-	$: goto = racefreeGoto(disposer);
+	// NOTE: the only navigation from this page is same-route (just the [date] param changes), so the component is
+	// reused and 'onMount' doesn't rerun. Use the plain (non-disposing) 'goto': 'racefreeGoto' would tear down the
+	// DB subscription above, permanently stopping live updates for the view (D-328).
 
 	const handlePrint = () => {
 		window.print();
