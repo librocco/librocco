@@ -12,12 +12,16 @@ testOrders("general: closes the form 'Cancel' click or 'Esc' press", async ({ pa
 
 	await page.getByRole("button", { name: "New Supplier" }).first().click();
 
+	await dialog.getByText("Create new supplier").waitFor();
 	await page.getByRole("button", { name: "Cancel" }).click();
 	await dialog.waitFor({ state: "detached" });
 
 	await page.getByRole("button", { name: "New Supplier" }).first().click();
 
-	await page.keyboard.press("Escape");
+	// NOTE: see the same test in customer_order_form.spec.ts -- pressing Escape before the dialog
+	// content has mounted drops the keydown and the dialog never closes.
+	await dialog.getByText("Create new supplier").waitFor();
+	await dialog.press("Escape");
 	await dialog.waitFor({ state: "detached" });
 });
 

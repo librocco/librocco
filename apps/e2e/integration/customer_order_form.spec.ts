@@ -13,12 +13,19 @@ testOrders("general: closes the form 'Cancel' click or 'Esc' press", async ({ pa
 
 	await page.getByRole("button", { name: tCustomers.labels.new_order() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
+	await dialog.getByText("Create new order").waitFor();
 	await page.getByRole("button", { name: t.common.actions.cancel() }).click({ force: true });
 	await dialog.waitFor({ state: "detached" });
 
 	await page.getByRole("button", { name: tCustomers.labels.new_order() }).first().click(); // First as there might be 2 (in case of no customer orders)
 
-	await page.keyboard.press("Escape");
+	// NOTE: the dialog's Escape handler is registered when its content mounts, and it only acts on a
+	// keydown that bubbles up to `document` from an attached node. A bare page-level press fired right
+	// after the trigger click can land before the content is mounted/focused, in which case the keydown
+	// is dropped and the dialog stays open forever. Wait for the content, then press on the dialog
+	// itself, so Playwright focuses an attached in-dialog node before dispatching the key.
+	await dialog.getByText("Create new order").waitFor();
+	await dialog.press("Escape");
 	await dialog.waitFor({ state: "detached" });
 });
 
