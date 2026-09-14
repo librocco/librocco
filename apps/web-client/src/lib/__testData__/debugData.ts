@@ -60,28 +60,54 @@ const supplierPublishers = [
 const customers = [
 	{
 		id: 1,
-		displayId: "1",
+		displayId: "DBG-1001",
 		fullname: "Alice Smith",
 		email: "alice.smith@example.com",
 		deposit: 50.0
 	},
 	{
 		id: 2,
-		displayId: "2",
+		displayId: "DBG-1002",
 		fullname: "Bob Johnson",
 		email: "bob.johnson@example.com",
 		deposit: 30.0
+	},
+	{
+		id: 3,
+		displayId: "DBG-1003",
+		fullname: "Carla Rossi",
+		email: "carla.rossi@example.com",
+		deposit: 40.0
+	},
+	{
+		id: 4,
+		displayId: "DBG-1004",
+		fullname: "David Klein",
+		email: "david.klein@example.com",
+		deposit: 25.0
+	},
+	{
+		id: 5,
+		displayId: "DBG-1005",
+		fullname: "Emma Novak",
+		email: "emma.novak@example.com",
+		deposit: 35.0
 	}
 ];
 
 // Customer Order Lines
 const customerOrderLines = [
-	{ id: 1, customer_id: 1, isbn: "9781234567897", placed: 1, received: 0, collected: 0 },
-	{ id: 2, customer_id: 1, isbn: "9788804797142", placed: 1, received: 1, collected: 0 },
-	{ id: 3, customer_id: 1, isbn: "9780385504201", placed: 0, received: 0, collected: 0 },
-	{ id: 4, customer_id: 2, isbn: "9780385504201", placed: 1, received: 1, collected: 1 },
-	{ id: 5, customer_id: 2, isbn: "9780553296983", placed: 1, received: 0, collected: 0 },
-	{ id: 6, customer_id: 2, isbn: "9781234567897", placed: 0, received: 0, collected: 0 }
+	{ id: 1, customer_id: 1, isbn: "9788804797142", placed: 0, received: 0, collected: 0 },
+	{ id: 2, customer_id: 2, isbn: "9788804797142", placed: 0, received: 0, collected: 0 },
+	{ id: 3, customer_id: 3, isbn: "9788804797142", placed: 0, received: 0, collected: 0 },
+	{ id: 4, customer_id: 4, isbn: "9788804797142", placed: 0, received: 0, collected: 0 },
+	{ id: 5, customer_id: 1, isbn: "9780385504201", placed: 0, received: 0, collected: 0 },
+	{ id: 6, customer_id: 5, isbn: "9780385504201", placed: 0, received: 0, collected: 0 },
+	{ id: 7, customer_id: 2, isbn: "9781234567897", placed: 0, received: 0, collected: 0 },
+	{ id: 8, customer_id: 3, isbn: "9781234567897", placed: 0, received: 0, collected: 0 },
+	{ id: 9, customer_id: 4, isbn: "9781234567897", placed: 0, received: 0, collected: 0 },
+	{ id: 10, customer_id: 5, isbn: "9780553296983", placed: 0, received: 0, collected: 0 },
+	{ id: 11, customer_id: 1, isbn: "9780553296983", placed: 0, received: 0, collected: 0 }
 ];
 
 // Supplier Orders
@@ -92,8 +118,10 @@ const supplierOrders = [
 
 // Supplier Order Lines
 const supplierOrderLines = [
-	{ supplier_order_id: 1, isbn: "9780590353427", quantity: 5, supplier_id: 1 },
-	{ supplier_order_id: 2, isbn: "9780439064873", quantity: 3, supplier_id: 2 }
+	{ supplier_order_id: 1, isbn: "9788804797142", quantity: 2, supplier_id: 1 },
+	{ supplier_order_id: 1, isbn: "9780385504201", quantity: 1, supplier_id: 1 },
+	{ supplier_order_id: 2, isbn: "9781234567897", quantity: 2, supplier_id: 2 },
+	{ supplier_order_id: 2, isbn: "9780553296983", quantity: 1, supplier_id: 2 }
 ];
 
 // Reconciliation Orders
@@ -104,8 +132,10 @@ const reconciliationOrders = [
 
 // Reconciliation Order Lines
 const reconciliationOrderLines = [
-	{ reconciliation_order_id: 1, isbn: "9781234567897", quantity: 1 },
-	{ reconciliation_order_id: 2, isbn: "9788804797142", quantity: 1 }
+	{ reconciliation_order_id: 1, isbn: "9788804797142", quantity: 3 },
+	{ reconciliation_order_id: 1, isbn: "9780385504201", quantity: 1 },
+	{ reconciliation_order_id: 2, isbn: "9781234567897", quantity: 1 },
+	{ reconciliation_order_id: 2, isbn: "9780553296983", quantity: 2 }
 ];
 
 // Complete data object

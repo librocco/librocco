@@ -11,6 +11,7 @@
 <script lang="ts">
 	import { Story } from "@storybook/addon-svelte-csf";
 	import type { PageData } from "./$types";
+	import { calcReconciliationBreakdown } from "./utils";
 
 	const mockData: Partial<PageData> = {
 		reconciliationOrder: {
@@ -98,12 +99,16 @@
 		],
 		plugins: {} as any
 	};
+
+	const mockPageData = mockData as PageData;
+	const mockReconciliationBreakdown = calcReconciliationBreakdown(mockPageData);
 </script>
 
 <Story name="Default (Interactive)">
 	<div class="h-[800px]">
 		<ReconcileStep2
-			data={mockData as PageData}
+			data={mockPageData}
+			reconciliationBreakdown={mockReconciliationBreakdown}
 			finalized={false}
 			onBack={() => {
 				console.log("Back clicked");
@@ -118,7 +123,8 @@
 <Story name="Finalized (View-Only)">
 	<div class="h-[800px]">
 		<ReconcileStep2
-			data={mockData as PageData}
+			data={mockPageData}
+			reconciliationBreakdown={mockReconciliationBreakdown}
 			finalized={true}
 			onBack={() => {
 				console.log("Back clicked");
@@ -133,7 +139,8 @@
 <Story name="Different Underdelivery Policies">
 	<div class="h-[800px]">
 		<ReconcileStep2
-			data={mockData as PageData}
+			data={mockPageData}
+			reconciliationBreakdown={mockReconciliationBreakdown}
 			finalized={false}
 			onBack={() => {
 				console.log("Back clicked");

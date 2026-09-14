@@ -31,6 +31,7 @@
 
 	import { app } from "$lib/app";
 	import { getDb, getDbRx } from "$lib/app/db";
+	import { calcReconciliationBreakdown, calcStatsBySupplierOrder } from "./utils";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -85,8 +86,14 @@
 			.subscribe((b) => upsertBook(db, b));
 	}
 
-	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
-	$: totalDelivered = data?.reconciliationOrderLines.reduce((acc, { quantity }) => acc + quantity, 0);
+	$: reconciliationBreakdown = calcReconciliationBreakdown(data);
+	$: totalDelivered = reconciliationBreakdown.acceptedDeliveredTotal;
+
+	// NOTE: only underdelivered books of suppliers with the "reject" policy (underdelivery_policy = 0) get their
+	// customer order lines rejected on finalization -- "queue" policy (1) books are reordered via a continuation order.
+	$: rejectedBookCount = calcStatsBySupplierOrder(data, reconciliationBreakdown)
+		.filter(({ underdelivery_policy }) => underdelivery_policy === 0)
+		.reduce((acc, { totalUnderdelivered }) => acc + totalUnderdelivered, 0);
 
 	// Supports only incdement / decrement by 1
 	const handleEditQuantity = (quantity: -1 | 1) => async (isbn: string) => {
@@ -108,7 +115,6 @@
 	$: t = $LL.reconcile_page;
 
 	async function handleCommit() {
-		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
 
 		const db = await getDb(app);
@@ -134,6 +140,7 @@
 					{#if currentStep === 1}
 						<ReconcileStep1
 							{data}
+							{reconciliationBreakdown}
 							onScan={handleIsbnSubmit}
 							onDecrement={handleEditQuantity(-1)}
 							onIncrement={handleEditQuantity(1)}
@@ -142,6 +149,7 @@
 					{:else if currentStep > 1}
 						<ReconcileStep2
 							{data}
+							{reconciliationBreakdown}
 							finalized={data?.reconciliationOrder.finalized}
 							onBack={() => (currentStep = 1)}
 							onFinalize={() => commitDialogOpen.set(true)}
@@ -156,7 +164,8 @@
 <PageCenterDialog dialog={commitDialog} title="" description="">
 	<CommitDialog
 		deliveredBookCount={totalDelivered}
-		rejectedBookCount={totalOrdered - totalDelivered}
+		{rejectedBookCount}
+		overdeliveryLines={reconciliationBreakdown.overdeliveryLines}
 		on:cancel={() => commitDialogOpen.set(false)}
 		on:confirm={handleCommit}
 	/>
