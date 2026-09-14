@@ -148,33 +148,49 @@ jobs:
         version: 0.10.11
         enable-cache: true
         working-directory: python-apps/launcher
-    - name: Pre-install Python interpreter (retry transient download failures)
+    - name: Pre-install Python interpreter and launcher deps (retry transient download failures)
       working-directory: python-apps/launcher
       run: |
-        # uv otherwise downloads the standalone CPython lazily when the launcher starts; a transient
-        # GitHub 504 there leaves the sync server unstarted and fails "Wait for services". Fetch it
-        # here, up front and with retries (and cached), so the launcher start is offline-fast.
-        for i in 1 2 3 4 5; do
-          if uv python install; then echo "Python interpreter ready"; exit 0; fi
-          echo "uv python install failed (attempt $i/5); retrying in $((i * 5))s"
-          sleep $((i * 5))
-        done
-        echo "Failed to install the Python interpreter after 5 attempts"
-        exit 1
+        # uv otherwise resolves the standalone CPython *and* the launcher's ~120MB of PyQt6 wheels
+        # lazily, at launcher start; a slow or 504'd download there leaves the sync server unstarted
+        # and fails "Wait for services". Fetch both here, up front and with retries (and cached),
+        # so the launcher start is offline-fast.
+        retry() {
+          label="$1"; shift
+          for i in 1 2 3 4 5; do
+            if "$@"; then echo "$label ready"; return 0; fi
+            echo "$label: attempt $i/5 failed; retrying in $((i * 5))s"
+            sleep $((i * 5))
+          done
+          echo "Failed to prepare $label after 5 attempts"
+          return 1
+        }
+        retry "Python interpreter" uv python install
+        retry "launcher dependencies" uv sync --frozen
     - name: Clean stale test DBs (fix schema mismatch)
       run: rm -rf apps/sync-server/test-dbs && mkdir -p apps/sync-server/test-dbs
     - name: Start headless launcher in background
       run: |
         mkdir -p ~/.local/share/librocco-launcher/logs
-        uv run --directory python-apps/launcher python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
+        uv run --directory python-apps/launcher --frozen python main_headless.py 2>&1 | tee ~/.local/share/librocco-launcher/logs/headless.log &
         echo $! > /tmp/launcher.pid
         echo "Started launcher (PID: $(cat /tmp/launcher.pid))"
     - name: Wait for services to be ready
       run: |
-        echo "Waiting for sync server..."
-        timeout 30 bash -c 'until curl -f http://127.0.0.1:3000/ 2>/dev/null; do sleep 1; done'
-        echo "Waiting for Caddy/web app..."
-        timeout 30 bash -c 'until curl -f -k https://localhost:8433/preview/ 2>/dev/null; do sleep 1; done'
+        # On timeout, surface the launcher log -- without it a failure here says only "exit 124".
+        wait_for() {
+          echo "Waiting for $1..."
+          if timeout 90 bash -c "until curl -fsk \"$2\" >/dev/null 2>&1; do sleep 1; done"; then
+            echo "$1 is up"
+            return 0
+          fi
+          echo "::error::$1 did not become ready within 90s"
+          echo "--- launcher log ---"
+          cat ~/.local/share/librocco-launcher/logs/headless.log 2>/dev/null || echo "(no launcher log)"
+          return 1
+        }
+        wait_for "sync server" http://127.0.0.1:3000/
+        wait_for "Caddy/web app" https://localhost:8433/preview/
         echo "All services ready!"
     - name: Run Claude Code
       id: claude
