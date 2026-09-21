@@ -1,4 +1,4 @@
-#@ def install_and_configure_rclone():
+#@ def install_and_configure_rclone(key_id_var='CLOUDFLARE_ACCESS_KEY_ID', secret_access_key_var='CLOUDFLARE_SECRET_ACCESS_KEY'):
 name: Install and configure rclone for R2
 run: |
   wget -q https://downloads.rclone.org/v1.71.1/rclone-v1.71.1-linux-amd64.zip
@@ -19,8 +19,8 @@ run: |
   no_check_bucket = true
   EOF
 env:
-  CLOUDFLARE_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_ACCESS_KEY_ID }}
-  CLOUDFLARE_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_SECRET_ACCESS_KEY }}
+  CLOUDFLARE_ACCESS_KEY_ID: #@ "${{ secrets." + key_id_var + " }}"
+  CLOUDFLARE_SECRET_ACCESS_KEY: #@ "${{ secrets." + secret_access_key_var + " }}"
   CLOUDFLARE_BUCKET_URL: ${{ secrets.CLOUDFLARE_BUCKET_URL }}
 #@ end
 
