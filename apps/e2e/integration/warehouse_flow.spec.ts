@@ -117,6 +117,14 @@ test("should not carry over state from a deleted warehose into a new one", async
 	// Create a new warehouse
 	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 
+	// Wait for the redirect to the new warehouse's page to settle before asserting anything:
+	// the click only schedules the (async) create + goto, and `assertRows([])` below passes
+	// vacuously while we're still on the warehouse list (there's no stock table to have rows).
+	// Navigating away at that point leaves the in-flight goto to fire afterwards, bouncing us
+	// back to the warehouse page - where the list assertions can never pass.
+	await dashboard.view("warehouse").waitFor();
+	await page.getByRole("heading", { name: "New Warehouse" }).waitFor();
+
 	// check stock is empty
 	await content.table("warehouse").assertRows([]);
 
