@@ -127,7 +127,7 @@
 				</div>
 
 				<h2 id="stats-total" class="px-4 py-4 pt-8 text-xl font-semibold">
-					{t.transactions.title()}: <span data-property="transactions">{stats.totalOutboundBookCount}</span>
+					{t.transactions.title()}: <span data-property="transactions">{bookList.length}</span>
 				</h2>
 
 				<div id="history-table" class="w-full">

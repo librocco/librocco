@@ -161,11 +161,11 @@
 				<div id="inbound-outbound-filter" class="inline-block">
 					<div class="mt-1 flex items-center divide-x divide-base-300 overflow-hidden rounded-md border">
 						{#each options as { label, value }}
-							{@const active = value === filter}
+							{@const active = value === (filter ?? "")}
 							<button
 								on:click={selectFilter(value)}
 								class="{active ? 'btn-primary' : 'btn-neutral'} btn-sm btn border-none px-3 py-1"
-								class:selected={filter === value}
+								class:selected={active}
 							>
 								{label}
 							</button>
