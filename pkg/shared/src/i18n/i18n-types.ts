@@ -618,7 +618,7 @@ type RootTranslation = {
 			 */
 			scan_title: string
 			/**
-			 * P​l​u​g​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
+			 * P​l​u​g​ ​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
 			 */
 			scan_description: string
 		}
@@ -1085,7 +1085,7 @@ type RootTranslation = {
 			 */
 			scan_title: string
 			/**
-			 * P​l​u​g​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
+			 * P​l​u​g​ ​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
 			 */
 			scan_description: string
 		}
@@ -1211,7 +1211,7 @@ type RootTranslation = {
 			 */
 			scan_title: string
 			/**
-			 * P​l​u​g​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
+			 * P​l​u​g​ ​i​n​ ​y​o​u​r​ ​b​a​r​c​o​d​e​ ​s​c​a​n​n​e​r​ ​a​n​d​ ​p​u​l​l​ ​t​h​e​ ​t​r​i​g​g​e​r
 			 */
 			scan_description: string
 		}
@@ -1329,7 +1329,7 @@ type RootTranslation = {
 	common: {
 		delete_dialog: {
 			/**
-			 * P​e​r​m​e​n​a​n​t​l​y​ ​d​e​l​e​t​e​ ​{​e​n​t​i​t​y​}​?
+			 * P​e​r​m​a​n​e​n​t​l​y​ ​d​e​l​e​t​e​ ​{​e​n​t​i​t​y​}​?
 			 * @param {unknown} entity
 			 */
 			title: RequiredParams<'entity'>
@@ -2622,7 +2622,7 @@ type RootTranslation = {
 				 */
 				title: string
 				/**
-				 * C​l​i​c​k​ ​o​n​ ​t​h​e​ ​b​u​t​t​o​n​ ​b​e​l​o​w​ ​t​o​ ​l​o​a​d​ ​t​h​e​ ​D​B​ ​p​r​e​p​u​p​u​l​a​t​e​d​ ​w​i​t​h​ ​d​e​m​o​ ​d​a​t​a
+				 * C​l​i​c​k​ ​o​n​ ​t​h​e​ ​b​u​t​t​o​n​ ​b​e​l​o​w​ ​t​o​ ​l​o​a​d​ ​t​h​e​ ​D​B​ ​p​r​e​p​o​p​u​l​a​t​e​d​ ​w​i​t​h​ ​d​e​m​o​ ​d​a​t​a
 				 */
 				call_to_action: string
 				/**
@@ -3823,7 +3823,7 @@ export type TranslationFunctions = {
 			 */
 			scan_title: () => LocalizedString
 			/**
-			 * Plugin your barcode scanner and pull the trigger
+			 * Plug in your barcode scanner and pull the trigger
 			 */
 			scan_description: () => LocalizedString
 		}
@@ -4275,7 +4275,7 @@ export type TranslationFunctions = {
 			 */
 			scan_title: () => LocalizedString
 			/**
-			 * Plugin your barcode scanner and pull the trigger
+			 * Plug in your barcode scanner and pull the trigger
 			 */
 			scan_description: () => LocalizedString
 		}
@@ -4397,7 +4397,7 @@ export type TranslationFunctions = {
 			 */
 			scan_title: () => LocalizedString
 			/**
-			 * Plugin your barcode scanner and pull the trigger
+			 * Plug in your barcode scanner and pull the trigger
 			 */
 			scan_description: () => LocalizedString
 		}
@@ -4515,7 +4515,7 @@ export type TranslationFunctions = {
 	common: {
 		delete_dialog: {
 			/**
-			 * Permenantly delete {entity}?
+			 * Permanently delete {entity}?
 			 */
 			title: (arg: { entity: unknown }) => LocalizedString
 			/**
@@ -5780,7 +5780,7 @@ export type TranslationFunctions = {
 				 */
 				title: () => LocalizedString
 				/**
-				 * Click on the button below to load the DB prepupulated with demo data
+				 * Click on the button below to load the DB prepopulated with demo data
 				 */
 				call_to_action: () => LocalizedString
 				/**

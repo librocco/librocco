@@ -105,7 +105,7 @@
 							<span data-property="inbound-cover-price">{stats.totalInboundCoverPrice.toFixed(2)}</span>
 						</div>
 						<div class="badge badge-green m-2 p-2 font-bold">
-							{t.stats.total_purchase_cover_price()}:
+							{t.stats.total_purchase_discounted_price()}:
 							<span data-property="inbound-discounted-price">{stats.totalInboundDiscountedPrice.toFixed(2)}</span>
 						</div>
 					</div>

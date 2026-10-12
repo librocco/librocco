@@ -9,10 +9,14 @@ function syncLocaleWithBase(base: any, target: any): any {
 	const result: any = {}
 
 	for (const key in base) {
+		const targetVal = target?.[key]
 		if (typeof base[key] === 'object' && base[key] !== null && !Array.isArray(base[key])) {
-			result[key] = syncLocaleWithBase(base[key], target?.[key] || {})
+			const targetObj = typeof targetVal === 'object' && targetVal !== null && !Array.isArray(targetVal) ? targetVal : {}
+			result[key] = syncLocaleWithBase(base[key], targetObj)
 		} else {
-			result[key] = key in target ? target[key] : ''
+			// Keep the existing value only if its type matches the base value - prunes stale structures
+			// (e.g. an object left shadowing a base string after a key was flattened)
+			result[key] = typeof targetVal === typeof base[key] ? targetVal : ''
 		}
 	}
 
