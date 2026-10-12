@@ -24,7 +24,7 @@
 
 	import { createSearchDropdown } from "./actions";
 
-	import { racefreeGoto } from "$lib/utils/navigation";
+	import { goto } from "$lib/utils/navigation";
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
@@ -52,7 +52,9 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
-	$: goto = racefreeGoto(disposer);
+	// NOTE: both navigations from this page are same-route (just the [isbn] param changes), so the component is
+	// reused and 'onMount' doesn't rerun. Use the plain (non-disposing) 'goto': 'racefreeGoto' would tear down the
+	// DB subscription above, permanently stopping live updates for the view (D-328).
 
 	const createMetaString = ({ authors, year, publisher }: Pick<BookData, "authors" | "year" | "publisher">) =>
 		[authors, year, publisher].filter(Boolean).join(", ");

@@ -4,7 +4,7 @@
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { racefreeGoto } from "$lib/utils/navigation";
+	import { goto as navigate, racefreeGoto } from "$lib/utils/navigation";
 
 	import Settings from "$lucide/settings";
 	import Plus from "$lucide/plus";
@@ -47,7 +47,8 @@
 	let disposer: () => void;
 	onMount(() => {
 		if ($page.url.hash.split("?filter=").length <= 1) {
-			goto(`${$page.url.hash}?filter=unordered`);
+			// Same-route navigation (only the hash query changes) - use the plain (non-disposing) 'navigate'
+			navigate(`${$page.url.hash}?filter=unordered`);
 		}
 		const disposer1 = getDbRx(app).onRange(["book"], () => invalidate("books:data"));
 		const disposer2 = getDbRx(app).onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
@@ -96,12 +97,15 @@
 		const s = params.get("filter")?.split("/")[0];
 		orderStatusFilter = isOrderStatus(s) ? s : "unordered";
 	}
+	// NOTE: this is a same-route navigation (only the hash query changes), so the component is reused and
+	// 'onMount' doesn't rerun. Use the plain (non-disposing) 'navigate' here: 'racefreeGoto' would tear down
+	// the DB subscriptions above, permanently stopping live updates for the lists (D-328).
 	function setFilter(status: OrderStatus) {
 		const [base, search = ""] = $page.url.hash.split("?");
 		const params = new URLSearchParams(search);
 		params.set("filter", status);
 		// Let URL drive the reactive state; no need to pre-set `orderStatusFilter`.
-		goto(`${base}?${params.toString()}`);
+		navigate(`${base}?${params.toString()}`);
 	}
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {

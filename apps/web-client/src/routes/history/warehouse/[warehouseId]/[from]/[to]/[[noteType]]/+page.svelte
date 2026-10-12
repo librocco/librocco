@@ -11,7 +11,7 @@
 
 	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
 
-	import { racefreeGoto } from "$lib/utils/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
 
@@ -23,7 +23,6 @@
 
 	import { appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
-	import type { LocalizedString } from "typesafe-i18n";
 
 	import { app } from "$lib/app";
 	import { getDbRx } from "$lib/app/db";
@@ -44,16 +43,14 @@
 		disposer?.();
 	});
 
-	$: goto = racefreeGoto(disposer);
+	// NOTE: all navigations from this page are same-route (only the date range / [[noteType]] params change), so the
+	// component is reused and 'onMount' doesn't rerun. Use the plain (non-disposing) 'goto': 'racefreeGoto' would
+	// tear down the DB subscription above, permanently stopping live updates for the view (D-328).
 
 	$: t = $LL.history_page.warehouse_tab.note_table;
 	$: tCommon = $LL.common;
 
-	let tt: { [option: string]: () => LocalizedString };
-	LL.subscribe((LL) => {
-		// Update the translation object
-		tt = LL.history_page.warehouse_tab.note_table.filter_options;
-	});
+	$: tt = $LL.history_page.warehouse_tab.note_table.filter_options;
 
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
@@ -87,7 +84,8 @@
 	};
 
 	// #region dropdown
-	const options = [
+	// Reactive (not a const): 'tt' is only assigned reactively, and the labels should react to language changes
+	$: options = [
 		{
 			label: tt.all(),
 			value: ""
