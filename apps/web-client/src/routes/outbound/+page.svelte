@@ -190,6 +190,6 @@
 	}}
 	onCancel={resetDialogState}
 	labels={{ confirm: "Confirm", cancel: "Cancel" }}
-	title={$LL.common.delete_dialog.description()}
-	description={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
+	title={$LL.common.delete_dialog.title({ entity: noteToDelete?.displayName })}
+	description={$LL.common.delete_dialog.description()}
 />
