@@ -82,8 +82,8 @@
 				{ displayLabel: t.column_headers.year(), key: "year" },
 				{ displayLabel: t.column_headers.price(), key: "price" },
 				{ displayLabel: t.column_headers.category(), key: "category" },
-				{ displayLabel: t.column_headers.edited_by(), key: "edited_by" },
-				{ displayLabel: t.column_headers.out_of_print(), key: "out_of_print" }
+				{ displayLabel: t.column_headers.edited_by(), key: "editedBy" },
+				{ displayLabel: t.column_headers.out_of_print(), key: "outOfPrint" }
 			],
 			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
 		});
