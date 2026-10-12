@@ -67,8 +67,11 @@
 		const disposer1 = getDbRx(app).onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
 		// Reload when some stock changes (note being committed)
 		const disposer2 = getDbRx(app).onRange(["book"], () => invalidate("warehouse:books"));
-		// Reload when stock cache invalidates
-		const disposer3 = stockCache.onInvalidated(() => invalidate("warehouse:books"));
+		// Reload when the stock cache invalidates THIS warehouse (a null payload means "anything may
+		// have changed"); other warehouses' stock changes don't concern this page.
+		const disposer3 = stockCache.onInvalidated((warehouseIds) => {
+			if (!warehouseIds || warehouseIds.has(data.id)) invalidate("warehouse:books");
+		});
 
 		disposer = () => (disposer1(), disposer2(), disposer3());
 	});
