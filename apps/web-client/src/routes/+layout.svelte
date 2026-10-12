@@ -441,14 +441,15 @@
 <svelte:window on:error={handleClientSideError} />
 
 <div class="flex h-full bg-base-100 lg:divide-x lg:divide-base-content">
-	<div class="hidden h-full w-72 lg:block">
+	<div id="sidebar" class="hidden h-full w-72 lg:block">
 		<Sidebar />
 	</div>
 
 	<!-- flex flex-1 flex-col justify-items-center overflow-y-auto -->
-	<main class="h-full w-full overflow-hidden">
+	<main id="main" class="h-full w-full overflow-hidden">
 		{#if !$mobileNavOpen}
 			<button
+				id="mobile-nav-trigger"
 				use:melt={$mobileNavTrigger}
 				class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden"
 				aria-label={tLayout.mobile_nav.trigger.aria_label()}
@@ -632,7 +633,27 @@
 		height: 100%;
 		padding: 0;
 	}
+	/*
+	 * On screen the app is a fixed-viewport shell: html/body/main are pinned to 100% height and
+	 * inner containers scroll. In paged media that pins the whole document to a single page and
+	 * everything past it is clipped, so window.print() output must escape the height/overflow chain.
+	 * Inner percentage heights (h-full) resolve to auto once these are lifted.
+	 */
 	@media print {
+		/* !important: body { height; overflow-y } is also set in global.css and the
+		   bundle order of that sheet vs this component's CSS is not guaranteed */
+		:global(html),
+		:global(body) {
+			height: auto !important;
+			overflow: visible !important;
+		}
+
+		#main {
+			height: auto;
+			overflow: visible;
+		}
+
+		#sidebar,
 		#mobile-nav-trigger {
 			display: none;
 		}
