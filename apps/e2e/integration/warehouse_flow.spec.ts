@@ -117,6 +117,11 @@ test("should not carry over state from a deleted warehose into a new one", async
 	// Create a new warehouse
 	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 
+	// Wait for the navigation to the new warehouse page to settle: the empty-table assertion below passes vacuously
+	// on the list page, and a late navigation would otherwise land after we've navigated back to the list
+	await page.waitForURL(/#\/inventory\/warehouses\/\d+\/$/);
+	await content.header().title().assert("New Warehouse");
+
 	// check stock is empty
 	await content.table("warehouse").assertRows([]);
 
